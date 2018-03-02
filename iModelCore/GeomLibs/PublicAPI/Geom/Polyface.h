@@ -2143,12 +2143,13 @@ MeshAnnotationVector &messages  //!< [out] array of status messages
 //!<li> If this is applied to facets of a triangulation (whose outer boundary is convex), the successive outer boundaries
 //! are polygons that contain short edges and have inlets where there are long edges on the outside.
 //! The readIndexSequence contains sequences of readIndices for the shuffled facets.
-//! <li>  Suppose a facet
+//!<li>  Suppose a facet
 //!    <ul>
 //!    <li>initially has vertices, params, normals, and colors indicated at (consecutive) readIndices [a b c]
 //!    <li> the edges from b to c is chosen for removal
 //!    </ul>
-//! <li>That facet will appear as [b c a SIZE_MAX].
+//!</li>
+//!<li>That facet will appear as [b c a SIZE_MAX].
 //!</ul>
 GEOMDLLIMPEXP bool ConstructOrderingForLongEdgeRemoval
 (
