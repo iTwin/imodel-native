@@ -72,11 +72,11 @@
     <ClCompile Include="Published\QuantityTests.cpp">
       <Filter>Published\Quantity</Filter>
     </ClCompile>
-    <ClCompile Include="Published\formatting_test.cpp">
-      <Filter>Published\Formatting</Filter>
-    </ClCompile>
     <ClCompile Include="TestFixture\FormattingTestFixture.cpp">
       <Filter>TestFixture\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\FormattingTests.cpp">
+      <Filter>Published\Formatting</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -244,28 +244,6 @@ void FormattingTestFixture::ShowQuantityS(Utf8CP descr)
         }
     }
 
-void FormattingTestFixture::CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP jsonCustomFormat)
-{
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
-    if (nullptr == unit)
-        {
-        LOG.infov("Invalid UOM: >%s<", uom);
-        return;
-        }
-    BEU::Quantity const qty = BEU::Quantity(dval, *unit);
-     
-    // now we need to add a new format definition from the json string
-    FormatProblemDetail problem;
-    NamedFormatSpecCP nfs = StdFormatSet::AddFormat(jsonCustomFormat, problem);
-    if (problem.IsProblem())
-        {
-        LOG.infov("Invalid JSON definition. error code %d", problem.GetProblemCode());
-        return;
-        }
-    LOG.infov("Created custom format spec %s (%s)", nfs->GetName(), nfs->GetAlias());
-    Utf8String str = NumericFormatSpec::StdFormatQuantity(*nfs, qty);
-    LOG.infov("===CustomFormatAnalyzer: %f of %s = %s", dval, uom, str.c_str());
-}
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -1084,19 +1062,19 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
     //LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", unitName, synonym, jval.ToString().c_str(), FormatConstant::BoolText(ident));
     }
 
-void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(unitName);
-    if (nullptr == unit)
-        {
-        LOG.infov("Unit Name %s is not defined", unitName);
-        return;
-        }
-    int diff = BeStringUtilities::StricmpAscii(unitName, unit->GetName().c_str());
-    EXPECT_TRUE(diff == 0);
-    if(!diff)
-        LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName().c_str());
-    }
+//void FormattingTestFixture::RegistryLookupUnitTest(Utf8CP unitName)
+//    {
+//    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(unitName);
+//    if (nullptr == unit)
+//        {
+//        LOG.infov("Unit Name %s is not defined", unitName);
+//        return;
+//        }
+//    int diff = BeStringUtilities::StricmpAscii(unitName, unit->GetName().c_str());
+//    EXPECT_TRUE(diff == 0);
+//    if(!diff)
+//        LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName().c_str());
+//    }
 
 void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
     {
@@ -1180,7 +1158,7 @@ void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int pr
     if(Utils::IsNameNullOrEmpty(expect))
        LOG.infov("%f formatted: %s (%d)", dval, txt.c_str(), txt.size());
     else
-        EXPECT_STREQ (expect, txt.c_str());
+        EXPECT_STREQ(expect, txt.c_str());
     }
 
 void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName)

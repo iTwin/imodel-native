@@ -75,7 +75,7 @@ static almost_equal(const T x, const T y, int ulp)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Quantity::Quantity (double magnitude, UnitCR unit)
+Quantity::Quantity(double magnitude, UnitCR unit)
     {
     m_unit = &unit;
     m_magnitude = magnitude;

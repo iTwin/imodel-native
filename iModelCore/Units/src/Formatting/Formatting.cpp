@@ -6,44 +6,15 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
-#include <locale>
 #include <Formatting/FormattingApi.h>
-#include <BeSQLite/L10N.h>
+
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-
-
-//DecimalPrecision NumericFormat::DecimalPrecisionByIndex(size_t num)
-//    {
-//    switch (num)
-//        {
-//        case 1: return DecimalPrecision::Precision1;
-//        case 2: return DecimalPrecision::Precision2;        
-//        case 3: return DecimalPrecision::Precision3;        
-//        case 4: return DecimalPrecision::Precision4;        
-//        case 5: return DecimalPrecision::Precision5;
-//        case 6: return DecimalPrecision::Precision6;
-//        case 7: return DecimalPrecision::Precision7;        
-//        case 8: return DecimalPrecision::Precision8;        
-//        case 9: return DecimalPrecision::Precision9;        
-//        case 10: return DecimalPrecision::Precision10;
-//        case 11: return DecimalPrecision::Precision11;
-//        case 12: return DecimalPrecision::Precision12;
-//        default: return DecimalPrecision::Precision0;
-//        }
-//    }
-
-
-//FractionalNumeric::FractionalNumeric(double dval, FractionalPrecision fprec)
-//    {
-//    m_denominator = FractionalPrecisionDenominator(fprec);
-//    double fract = modf(dval, &m_integral);
-//    
-//    }
+//===================================================
+//
+// NumericFormatSpec Methods
+//
+//===================================================
 
 
 //===================================================
@@ -56,11 +27,11 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //----------------------------------------------------------------------------------------
 LocaleProperties::LocaleProperties(Utf8CP localeName)
 {
-	std::locale loc = std::locale(localeName);
-	const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
+    std::locale loc = std::locale(localeName);
+    const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
 
-	m_decimalSeparator = myfacet.decimal_point();
-	m_thousandsSeparator = myfacet.thousands_sep();
+    m_decimalSeparator = myfacet.decimal_point();
+    m_thousandsSeparator = myfacet.thousands_sep();
 }
 
 //----------------------------------------------------------------------------------------
@@ -68,7 +39,7 @@ LocaleProperties::LocaleProperties(Utf8CP localeName)
 //----------------------------------------------------------------------------------------
 LocaleProperties LocaleProperties::DefaultAmerican()
 {
-	return LocaleProperties('.',',');
+    return LocaleProperties('.',',');
 }
 
 //----------------------------------------------------------------------------------------
@@ -76,37 +47,37 @@ LocaleProperties LocaleProperties::DefaultAmerican()
 //----------------------------------------------------------------------------------------
 LocaleProperties LocaleProperties::DefaultEuropean(bool useBlank)
 {
-	return LocaleProperties(',', (useBlank? ' ' : '.'));
+    return LocaleProperties(',', (useBlank? ' ' : '.'));
 }
 
 LocaleProperties::LocaleProperties(Json::Value jval)
 {
-	if (!jval.empty())
-	{
-		Utf8CP paramName;
-		Utf8String str;
-		Utf8String jStr = jval.ToString();
-		for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-		{
-			paramName = iter.memberName();
-			JsonValueCR val = *iter;
-			if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
-			{
-				str = val.asString();
-				m_decimalSeparator = str.c_str()[0];
-			}
-			else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
-			{
-				str = val.asString();
-				m_thousandsSeparator = str.c_str()[0];
-			}
-		}
-	}
-	else
-	{
-		m_decimalSeparator = '.';
-		m_thousandsSeparator = '\0';
-	}
+    if (!jval.empty())
+    {
+        Utf8CP paramName;
+        Utf8String str;
+        Utf8String jStr = jval.ToString();
+        for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+            paramName = iter.memberName();
+            JsonValueCR val = *iter;
+            if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
+            {
+                str = val.asString();
+                m_decimalSeparator = str.c_str()[0];
+            }
+            else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
+            {
+                str = val.asString();
+                m_thousandsSeparator = str.c_str()[0];
+            }
+        }
+    }
+    else
+    {
+        m_decimalSeparator = '.';
+        m_thousandsSeparator = '\0';
+    }
 }
 
 //----------------------------------------------------------------------------------------
@@ -114,10 +85,10 @@ LocaleProperties::LocaleProperties(Json::Value jval)
 //----------------------------------------------------------------------------------------
 Json::Value LocaleProperties::ToJson()
 {
-	Json::Value jval;
-	jval[json_decimalSeparator()] = Utils::CharToString(m_decimalSeparator);
-	jval[json_thousandSeparator()] = Utils::CharToString(m_thousandsSeparator);
-	return jval;
+    Json::Value jval;
+    jval[json_decimalSeparator()] = Utils::CharToString(m_decimalSeparator);
+    jval[json_thousandSeparator()] = Utils::CharToString(m_thousandsSeparator);
+    return jval;
 }
 
 //----------------------------------------------------------------------------------------
@@ -128,16 +99,10 @@ Utf8String LocaleProperties::ToText()
    return Utf8PrintfString("Separators: decimal |%c| thousands |%c|", m_decimalSeparator, m_thousandsSeparator);
 }
 
-//===================================================
-//
-// NumericFormatSpec Methods
-//
-//===================================================
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-//void NumericFormatSpec::DefaultInit(Utf8CP name, size_t precision)
 void NumericFormatSpec::DefaultInit(size_t precision)
     {
     m_roundFactor = 0.0;
@@ -147,37 +112,12 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
     m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
     m_barType = FractionBarType::Diagonal;
-    //m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
-    //m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
-	ImbueLocale("");
+    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
+    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
     m_minWidth = 0;
     }
-
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-bool NumericFormatSpec::ImbueLocale(Utf8CP name) // en-US en-UK   en-GB
-{
-	std::locale loc = std::locale(name);
-	const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
-
-	m_decimalSeparator = myfacet.decimal_point();
-	m_thousandsSeparator = myfacet.thousands_sep(); 
-	return true;
-}
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-bool NumericFormatSpec::ImbueLocaleProperties(LocalePropertiesCR locProp)
-{
-	m_decimalSeparator = locProp.GetDecimalSeparator();
-	m_thousandsSeparator = locProp.GetThousandSeparator();
-	return true;
-}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -201,40 +141,24 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
         m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
         }
 
-	ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
+    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
+    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
     m_minWidth = 0;
     }
 
-void NumericFormatSpec::Clone(NumericFormatSpecCR other)
-    {
-	m_roundFactor = other.m_roundFactor;
-	m_presentationType = other.m_presentationType;
-	m_signOption = other.m_signOption;  
-	m_formatTraits = other.m_formatTraits;
-	m_decPrecision = other.m_decPrecision;     
-	m_fractPrecision = other.m_fractPrecision;
-	m_barType = other.m_barType;
-
-	m_decimalSeparator = other.m_decimalSeparator;
-	m_thousandsSeparator = other.m_thousandsSeparator;
-	m_uomSeparator = other.m_uomSeparator;  
-	m_statSeparator = other.m_statSeparator;
-	m_minWidth = other.m_minWidth;
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
-NumericFormatSpec& NumericFormatSpec::operator=(const NumericFormatSpec& other)
-    {
-    if (this != &other)
-        {
-        Clone(other);
-        }
-    return *this;
-    }
+//NumericFormatSpec& NumericFormatSpec::operator=(const NumericFormatSpec& other)
+//    {
+//    if (this != &other)
+//        {
+//        Clone(other);
+//        }
+//    return *this;
+//    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -255,7 +179,7 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
 bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double maxDiff) 
-    { 
+    {
     return (fabs(maxDiff) > fabs(dval1 - dval2));
     }
 
@@ -448,18 +372,6 @@ void NumericFormatSpec::SetPrecisionByValue(int prec)
 //    m_formatTraits = static_cast<FormatTraits>(temp);
 //    }
 
-//void NumericFormatSpec::DefaultSeparators()
-//{
-//	Utf8String sep = Utils::GetCurrentDecimalSeparator();
-//	m_decimalSeparator = *sep.c_str();
-//	sep = Utils::GetCurrentThousandSeparator();
-//	if (!sep.empty())
-//	{
-//		m_thousandsSeparator = *sep.c_str();
-//		SetUse1000Separator(true);
-//	}
-//}
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
@@ -501,7 +413,7 @@ int NumericFormatSpec::RightAlignedCopy(Utf8P dest, int destLen, bool termZero, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::IntPartToText (double n, Utf8P bufOut, int bufLen, bool useSeparator) const
+int NumericFormatSpec::IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const
     {
     char sign = '+';
     char buf[64];
@@ -562,7 +474,7 @@ int NumericFormatSpec::IntPartToText (double n, Utf8P bufOut, int bufLen, bool u
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::FormatInteger (int n, Utf8P bufOut,  int bufLen)
+int NumericFormatSpec::FormatInteger(int n, Utf8P bufOut,  int bufLen)
     {
     char sign = '+';
     char buf[64];
@@ -671,7 +583,7 @@ int NumericFormatSpec::FormatIntegerSimple (int n, Utf8P bufOut, int bufLen, boo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::FormatIntegerToString(int n, int minSize, bool padSpace) const
+Utf8String NumericFormatSpec::FormatIntegerToString(int n, int minSize) const
     {
     const int bufLen = 64;  // this's overkill, but does not hurt
     char dig[bufLen+2];
@@ -925,7 +837,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         size_t k = 0;
         if (hiPart > 0)
             {
-            Utf8String hiS = FormatIntegerToString(hiPart, 0, false);
+            Utf8String hiS = FormatIntegerToString(hiPart, 0);
             memcpy(locBuf, hiS.c_str(), hiS.length());
             k += hiS.length();
             }
@@ -933,12 +845,12 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
             locBuf[k++] = '0';
         
         locBuf[k++] = GetStopSeparator();
-        Utf8String loS = FormatIntegerToString(loPart, m_minWidth, false);
+        Utf8String loS = FormatIntegerToString(loPart, m_minWidth);
         memcpy(&locBuf[k], loS.c_str(), loS.length());
         k += loS.length();
         if (frPart > 0)
             {
-            Utf8String frS = FormatIntegerToString(frPart, 0, false);
+            Utf8String frS = FormatIntegerToString(frPart, 0);
             locBuf[k++] = GetDecimalSeparator();
             memcpy(&locBuf[k], frS.c_str(), frS.length());
             k += frS.length();
@@ -1257,9 +1169,7 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- // the caller provided buffer must be at least 9 byte long with the 9th byte for the terminating 0
- // this function returns the number of bytes that was not populated - in case of success it will 0
- int NumericFormatSpec::FormatBinaryByte (unsigned char n, Utf8P bufOut, int bufLen)
+ int NumericFormatSpec::FormatBinaryByte(unsigned char n, Utf8P bufOut, int bufLen)
  {
      char binBuf[8];
      unsigned char mask = 0x80;
@@ -1276,7 +1186,7 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- int NumericFormatSpec::FormatBinaryShort (short int n, Utf8P bufOut, int bufLen, bool useSeparator)
+ int NumericFormatSpec::FormatBinaryShort(short int n, Utf8P bufOut, int bufLen, bool useSeparator)
  {
      char binBuf[64];
 
@@ -1293,7 +1203,7 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- int NumericFormatSpec::FormatBinaryInt (int n, Utf8P bufOut, int bufLen, bool useSeparator)
+ int NumericFormatSpec::FormatBinaryInt(int n, Utf8P bufOut, int bufLen, bool useSeparator)
  {
      char binBuf[80];
 
@@ -1309,7 +1219,7 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
      return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
  }
 
- int NumericFormatSpec::FormatBinaryDouble (double x, Utf8P bufOut, int bufLen, bool useSeparator)
+ int NumericFormatSpec::FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bool useSeparator)
  {
      char binBuf[80];
      union { unsigned int ival[2]; double x; }temp;
@@ -1364,6 +1274,9 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
      return Utf8String(buf);
  }
 
+  //---------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz
+ //----------------------------------------------------------------------------------------
  bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
      {
      if (fabs(m_roundFactor - other.m_roundFactor) > 0.01) return false;
@@ -1654,22 +1567,15 @@ NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name)
     return nullptr;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/17
-//----------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
 bool StdFormatSet::IsFormatDefined(Utf8CP name, Utf8CP alias)
     {
-    NamedFormatSpecCP fmtP;
-    if (Set()->m_formatSet.size() == 0)
-        return false;
-    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
-        {
-        fmtP = *itr;
-        if (fmtP->HasName(name) || fmtP->HasAlias(name) || fmtP->HasName(alias) || fmtP->HasAlias(alias))
-            return true;
-        }
-
-    return false;
+    bvector<NamedFormatSpecCP> const& fmtSet = Set()->m_formatSet;
+    return fmtSet.end() != std::find_if(fmtSet.begin(), fmtSet.end(),
+        [name, alias](NamedFormatSpecCP pNamedFmtSpec) -> bool
+            {return pNamedFmtSpec->HasName(name) || pNamedFmtSpec->HasAlias(name) || pNamedFmtSpec->HasName(alias) || pNamedFmtSpec->HasAlias(alias);});
     }
 
 //---------------------------------------------------------------------------------------

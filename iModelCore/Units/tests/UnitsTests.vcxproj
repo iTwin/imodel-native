@@ -31,7 +31,7 @@
     <Text Include="ignore_list.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Published\formatting_test.cpp" />
+    <ClCompile Include="Published\FormattingTests.cpp" />
     <ClCompile Include="Published\UnitConversionTests.cpp" />
     <ClCompile Include="Published\UnitRegistryTests.cpp" />
     <ClCompile Include="TestFixture\FormattingTestFixture.cpp" />
