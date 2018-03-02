@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDbSchema.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -519,7 +519,45 @@ DbResult DgnDb::OpenParams::UpgradeProfile(DgnDbR project) const
     return project.SaveChanges();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/13
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbProfileVersion DgnDb::GetProfileVersion() { return m_profileVersion; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                      02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult DgnDb::_OnBeforeVerifyProfileVersion()
+    {  
+    if (IsMasterCopy() || IsReadonly())
+        return BE_SQLITE_OK;
+
+    Txns().EnableTracking(true);
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Affan.Khan                   02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::DbResult DgnDb::_OnAfterVerifyProfileVersion()
+    {
+    if (IsMasterCopy() || IsReadonly())
+        return BE_SQLITE_OK;
+
+    if (Txns().HasDbSchemaChanges())
+        {
+        if (RepositoryStatus::Success != BriefcaseManager().LockSchemas().Result())
+            {
+            BeAssert(false && "Unable to obtain the schema lock");          
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+        }
+
+    if (Txns().HasChanges())
+        return SaveChanges("Automatic Profile Upgrade");
+
+    return BE_SQLITE_OK;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/13
