@@ -1269,7 +1269,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             m_scmIndexPtr->SetClipRegistry(registry);
 
        
-            filterP.release();
+            //filterP.release();
 
 #ifdef INDEX_DUMPING_ACTIVATED
             if (s_dropNodes)
