@@ -56,6 +56,8 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ExtrusionManipulationStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(SolidPrimitivePlacementStrategy)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ExtrusionPlacementStrategy)
 
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(RectanglePlacementStrategy)
+
 BEGIN_BUILDING_SHARED_NAMESPACE
 enum class LinePlacementStrategyType;
 enum class ArcPlacementMethod;
@@ -98,3 +100,5 @@ END_BUILDING_SHARED_NAMESPACE
 #include "ExtrusionManipulationStrategy.h"
 #include "SolidPrimitivePlacementStrategy.h"
 #include "ExtrusionPlacementStrategy.h"
+
+#include "RectanglePlacementStrategy.h"

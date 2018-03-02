@@ -81,6 +81,8 @@ $(o)SolidPrimitivePlacementStrategy$(oext) : $(_MakeFilePath)SolidPrimitivePlace
 
 $(o)ExtrusionPlacementStrategy$(oext) : $(_MakeFilePath)ExtrusionPlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ExtrusionPlacementStrategy.h
 
+$(o)RectanglePlacementStrategy$(oext) : $(_MakeFilePath)RectanglePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RectanglePlacementStrategy.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

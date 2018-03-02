@@ -49,6 +49,7 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         EPS_PROPERTY_OVERRIDE(double)
         EPS_PROPERTY_OVERRIDE(DVec3d)
         EPS_PROPERTY_OVERRIDE(DPlane3d)
+        EPS_PROPERTY_OVERRIDE(RotMatrix)
         EPS_PROPERTY_OVERRIDE(Dgn::DgnElementId)
         EPS_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
         EPS_PROPERTY_OVERRIDE(Utf8String)

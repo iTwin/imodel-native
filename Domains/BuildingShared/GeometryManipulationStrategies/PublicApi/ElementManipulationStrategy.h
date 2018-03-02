@@ -57,6 +57,7 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         ELEM_PROPERTY_OVERRIDE(double)
         ELEM_PROPERTY_OVERRIDE(DVec3d)
         ELEM_PROPERTY_OVERRIDE(DPlane3d)
+        ELEM_PROPERTY_OVERRIDE(RotMatrix)
         ELEM_PROPERTY_OVERRIDE(Dgn::DgnElementId)
         ELEM_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
         ELEM_PROPERTY_OVERRIDE(Utf8String)

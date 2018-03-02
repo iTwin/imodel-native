@@ -362,7 +362,7 @@ bvector<DPoint3d> CurveVectorManipulationStrategy::_GetKeyPoints() const
     {
     bvector<DPoint3d> allKeyPoints;
 
-    for (CurvePrimitiveManipulationStrategyPtr const& strategy : m_primitiveStrategyContainer.GetManipulationStrategies())
+    for (CurvePrimitivePlacementStrategyPtr const& strategy : m_primitiveStrategyContainer.GetPlacementStrategies())
         {
         bvector<DPoint3d> const& strategyKeyPoints = strategy->GetKeyPoints();
         if (strategyKeyPoints.empty())
@@ -728,6 +728,7 @@ GMS_PROPERTY_OVERRIDE_IMPL(bool)
 GMS_PROPERTY_OVERRIDE_IMPL(int)
 GMS_PROPERTY_OVERRIDE_IMPL(double)
 GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)
+GMS_PROPERTY_OVERRIDE_IMPL(RotMatrix)
 GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
 GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementCP)
 GMS_PROPERTY_OVERRIDE_IMPL(Utf8String)

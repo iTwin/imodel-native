@@ -46,6 +46,7 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GMS_PROPERTY_OVERRIDE(double)
         GMS_PROPERTY_OVERRIDE(DVec3d)
         GMS_PROPERTY_OVERRIDE(DPlane3d)
+        GMS_PROPERTY_OVERRIDE(RotMatrix)
         GMS_PROPERTY_OVERRIDE(Dgn::DgnElementId)
         GMS_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
         GMS_PROPERTY_OVERRIDE(Utf8String)
