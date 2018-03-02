@@ -271,6 +271,7 @@ namespace Attachment
         uint32_t m_pixels;
         double m_biasDistance;
         ClipVectorPtr m_clip;      //! clip volume applied to tiles, in root coordinates
+        ClipVectorPtr m_graphicsClip;
 
         TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
 
@@ -314,6 +315,7 @@ namespace Attachment
         TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
         double _GetMaximumSize() const override {return m_maxPixelSize;}
 
+        void PopulateGraphics(uint32_t depth, SceneContextR context);
         void SetupRange();
         TRoot& GetTree() const {return (TRoot&) m_root;}
 
