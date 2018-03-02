@@ -152,7 +152,9 @@ Utf8StringCR KindOfQuantity::GetDescription() const
 //---------------+---------------+---------------+---------------+---------------+-------
 bool KindOfQuantity::SetPersistenceUnit(Formatting::FormatUnitSet persistenceFUS)
     {
-    if (persistenceFUS.HasProblem() || ((nullptr != persistenceFUS.GetUnit()) && persistenceFUS.GetUnit()->IsConstant()) || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(persistenceFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+    if (persistenceFUS.HasProblem() ||
+        ((nullptr != persistenceFUS.GetUnit()) && persistenceFUS.GetUnit()->IsConstant()) ||
+        (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(persistenceFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
         return false;
 
     m_persistenceFUS = persistenceFUS;
@@ -164,8 +166,10 @@ bool KindOfQuantity::SetPersistenceUnit(Formatting::FormatUnitSet persistenceFUS
 //---------------+---------------+---------------+---------------+---------------+-------
 bool KindOfQuantity::AddPresentationUnit(Formatting::FormatUnitSet presentationFUS)
     {
-    if (presentationFUS.HasProblem() ||((nullptr != presentationFUS.GetUnit()) && presentationFUS.GetUnit()->IsConstant()) || (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), m_persistenceFUS.GetUnit()))
-        || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+    if (presentationFUS.HasProblem() ||
+        ((nullptr != presentationFUS.GetUnit()) && presentationFUS.GetUnit()->IsConstant()) ||
+        (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), m_persistenceFUS.GetUnit())) ||
+        (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
         return false;
 
     m_presentationFUS.push_back(presentationFUS);
@@ -309,60 +313,20 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    auto concatenateName = [](Utf8StringCR schemaName, Utf8StringCR unit, Utf8StringCR format)
+    double relError;
+    if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, ECXML_RELATIVE_ERROR_ATTRIBUTE))
         {
-        auto totalLen = schemaName.length() + unit.length() + format.length() + 4;
-        auto buf = Utf8String();
-        buf.resize(totalLen);
-        BeStringUtilities::Snprintf((Utf8P)buf.c_str(), totalLen, "%s:%s(%s)", schemaName.c_str(), unit.c_str(), format.c_str());
-        return buf;
-        };
-
-    auto getResolvedName = [&concatenateName](ECSchemaCR schema, Utf8StringCR value)
-        {
-        Utf8String resolvedName;
-        Utf8String unitName;
-        Utf8String format;
-        Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, value.c_str());
-        if(schema.GetOriginalECXmlVersionMajor() <= 3 && schema.GetOriginalECXmlVersionMinor() < 2)
-            resolvedName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
-        else
-            { 
-            Utf8String alias;
-            Utf8String name;
-            ECClass::ParseClassName(alias, name, unitName);
-            if(alias.empty() || alias == schema.GetAlias())
-                {
-                if(schema.GetUnitCP(name.c_str()))
-                    resolvedName = concatenateName(schema.GetName(), name, format);
-                }
-            else
-                {
-                for (const auto& s : schema.GetReferencedSchemas())
-                    {
-                    auto const& refSchema = s.second;
-                    if((refSchema->GetAlias() == alias) && (nullptr != refSchema->GetUnitCP(name.c_str())))
-                        {
-                        resolvedName = concatenateName(refSchema->GetName(), name, format);
-                        break;
-                        }
-                    }
-                }
-            }
-        if(resolvedName.empty())
-            {
-            // HACK because we don't have base units in a schema yet, can't fully qualify them
-            if(Units::UnitRegistry::Instance().HasUnit(unitName.c_str()))
-                resolvedName = value.c_str();
-            }
-        return resolvedName;
-        };
-
-    auto resolvedName = getResolvedName(GetSchema(), value);
-    if(resolvedName.empty())
+        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), ECXML_RELATIVE_ERROR_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
+        }
 
-    Formatting::FormatUnitSet persistenceFUS(resolvedName.c_str());
+    SetRelativeError(relError);
+
+    // Read Persistence FUS
+
+    Formatting::FormatUnitSet persistenceFUS;
+    bool hasInvalidUnit = false;
+    ParseFUSDescriptor(persistenceFUS, hasInvalidUnit, value.c_str(), *this, true, true);
 
     if (persistenceFUS.HasProblem())
         LOG.warningv("Persistence FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
@@ -376,14 +340,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
     SetPersistenceUnit(persistenceFUS);
 
-    double relError;
-    if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, ECXML_RELATIVE_ERROR_ATTRIBUTE))
-        {
-        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), ECXML_RELATIVE_ERROR_ATTRIBUTE);
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    SetRelativeError(relError);
+    // Read Presentation FUS'
 
     if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, PRESENTATION_UNITS_ATTRIBUTE))
         {
@@ -391,28 +348,16 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         BeStringUtilities::Split(value.c_str(), ";", presentationUnits);
         for(auto const& presValue : presentationUnits)
             {
-            auto resolvedName = getResolvedName(GetSchema(), presValue);
-            if(resolvedName.empty())
-                return SchemaReadStatus::InvalidECSchemaXml;
-
             Formatting::FormatUnitSet presFUS;
             bool invalidUnit = false;
-            ECObjectsStatus status = ParseFUSDescriptor(presFUS, invalidUnit, presValue.c_str(), *this, true, !ecSchemaXmlGreaterThen31);
+            ECObjectsStatus status = ParseFUSDescriptor(presFUS, invalidUnit, presValue.c_str(), *this, true, true);
             if (ECObjectsStatus::Success != status || invalidUnit)
-                {
-                if (ecSchemaXmlGreaterThen31)
-                    {
-                    LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' is being dropped.",
-                        presValue.c_str(), GetFullName().c_str());
-                    continue; // Drop the presentation FUS
-                    }
-
                 LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
                     presValue.c_str(), GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
 
             if (nullptr != presFUS.GetUnit() && presFUS.GetUnit()->IsConstant())
                 { 
-                LOG.errorv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has constant as a presentation unit", presUnit.c_str(), kindOfQuantityNode.GetName());
+                LOG.errorv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has constant as a presentation unit", presValue.c_str(), GetFullName().c_str());
                 return SchemaReadStatus::InvalidECSchemaXml;
                 }
 
@@ -422,14 +367,60 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     return SchemaReadStatus::Success;
     }
 
+// Given a fus Descriptor and an ECSchema will parse the 
+static void getResolvedName(Utf8String& unitName, Utf8String& formatName, ECSchemaCR schema, Utf8StringCR descriptor)
+    {
+    Utf8String unit;
+    Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unit, formatName, descriptor.c_str());
+    if (schema.OriginalECXmlVersionLessThan(ECVersion::V3_2))
+        {
+        unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unit.c_str());
+
+        // If empty look for name in standards Units and add ref
+        }
+    else // > EC3.2
+        {
+        Utf8String alias;
+        Utf8String name;
+        ECClass::ParseClassName(alias, name, unit);
+        if (alias.empty() || alias == schema.GetAlias())
+            {
+            if (nullptr != schema.GetUnitCP(name.c_str()))
+                unitName = schema.GetName() + ":" + name;
+            }
+        else
+            {
+            for (const auto& s : schema.GetReferencedSchemas())
+                {
+                auto const& refSchema = s.second;
+                if ((refSchema->GetAlias() == alias) && (nullptr != refSchema->GetUnitCP(name.c_str())))
+                    {
+                    unitName = refSchema->GetName() + ":" + name;
+                    break;
+                    }
+                }
+            }
+        }
+
+    if (!unitName.empty())
+        return;
+
+    // HACK because we don't have base units in a schema yet, can't fully qualify them
+    if (Units::UnitRegistry::Instance().HasUnit(unit.c_str()))
+        unitName = unit.c_str();
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
+// static
 ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fus, bool& hasInvalidUnit, Utf8CP descriptor, KindOfQuantityCR koq, bool strictUnit, bool strictFUS)
     {
     Utf8String unitName;
     Utf8String format;
     Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, descriptor);
+
+    getResolvedName(unitName, format, koq.GetSchema(), descriptor);
 
     Formatting::NamedFormatSpecCP nfs = nullptr;
     if (Utf8String::IsNullOrEmpty(format.c_str()))

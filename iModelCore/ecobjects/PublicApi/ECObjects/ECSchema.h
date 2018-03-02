@@ -1548,6 +1548,26 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
+
+    //! Given a FUS descriptor string, with format {unitName}({formatName}), it will be parsed and populate the FormatUnitSet (FUS) with a Unit and NamedFormatSpec found
+    //! in the UnitRegistry. The formatName is an optional part of the FUS descriptor and will use "DefaultRealU" if not provided.
+    //!
+    //! When strictUnit,
+    //! - True, if the Unit is not found in the registry it will fail to populate the FUS and return an error,
+    //! - False, if the Unit is not found in the registry, a "dummy" unit will be created with the provided name.
+    //!
+    //! When strictFUS,
+    //! - True, if a format is provided and not found it will fail to populate the FUS and return an error.
+    //! - False, if a format is provided and not found, the default "DefaultRealU" will be used.
+    //! 
+    //! @param[out] fus The FUS to create from the given descriptor
+    //! @param[out] hasInvalidUnit Set to true if the Unit set to the FUS has an invalid unit.
+    //! @param[in] descriptor String describing the FUS.
+    //! @param[in] koq The KoQ to the descriptor originated from.
+    //! @param[in] strictUnit See above comment for information.
+    //! @param[in] strictFUS See above comment for information.
+    //! @return ECObjectsStatus::Success if the FUS is successfully created; otherwise, ECObjectsStatus::Error.
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseFUSDescriptor(Formatting::FormatUnitSet& fus, bool& hasInvalidUnit, Utf8CP descriptor, KindOfQuantityCR koq, bool strictUnit, bool strictFUS);
 };
 
 //=======================================================================================
