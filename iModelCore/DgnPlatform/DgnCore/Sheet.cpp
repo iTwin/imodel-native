@@ -804,6 +804,7 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
     auto& def = view->GetViewDefinitionR();
     auto& style = def.GetDisplayStyle();
 
+    ColorDef bgColor;
 #if defined(DEBUG_SHEET_BACKGROUND)
     static int sCount = 0;
     ColorDef sCols[12] = {
@@ -820,12 +821,17 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
         ColorDef::DarkMagenta(),
         ColorDef::DarkBrown(),
     };
-    style.SetBackgroundColor(sCols[sCount++]);
+    bgColor = sCols[sCount++];
     if (sCount > 11) sCount = 0;
 #else
     // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
-    style.SetBackgroundColor(sheetController.GetViewDefinitionR().GetDisplayStyle().GetBackgroundColor());
+    bgColor = sheetController.GetViewDefinitionR().GetDisplayStyle().GetBackgroundColor();
+
+    // Set fully-transparent so that we discard background pixels (probably no point to the above line any more...)
+    bgColor.SetAlpha(0xff);
 #endif
+
+    style.SetBackgroundColor(bgColor);
 
     SpatialViewDefinitionP spatial = def.ToSpatialViewP();
     if (spatial)
