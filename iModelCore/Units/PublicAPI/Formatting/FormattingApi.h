@@ -263,22 +263,22 @@ public:
 struct LocaleProperties
 {
 private:
-	Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
-	Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+    Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
+    Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
 public:
 
-	UNITS_EXPORT LocaleProperties(Json::Value jval);
-	UNITS_EXPORT LocaleProperties(Utf8Char decimal, Utf8Char thousand) : m_decimalSeparator(decimal), m_thousandsSeparator(thousand) {}
-	UNITS_EXPORT LocaleProperties(Utf8CP localeName = nullptr);
-	UNITS_EXPORT static LocaleProperties DefaultAmerican();
-	UNITS_EXPORT static LocaleProperties DefaultEuropean(bool useBlank = false);
+    UNITS_EXPORT LocaleProperties(Json::Value jval);
+    UNITS_EXPORT LocaleProperties(Utf8Char decimal, Utf8Char thousand) : m_decimalSeparator(decimal), m_thousandsSeparator(thousand) {}
+    UNITS_EXPORT LocaleProperties(Utf8CP localeName = nullptr);
+    UNITS_EXPORT static LocaleProperties DefaultAmerican();
+    UNITS_EXPORT static LocaleProperties DefaultEuropean(bool useBlank = false);
 
-	Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
-	Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
-	Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
-	Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
-	UNITS_EXPORT Json::Value ToJson();
-	UNITS_EXPORT Utf8String ToText();
+    Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
+    Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
+    Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
+    Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
+    UNITS_EXPORT Json::Value ToJson();
+    UNITS_EXPORT Utf8String ToText();
 };
 
 //=======================================================================================
@@ -288,57 +288,129 @@ struct NumericFormatSpec
     {
 private:
     double              m_roundFactor;
-    PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
-    ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
+    PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, ScientificNorm
+    ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
     FractionalPrecision m_fractPrecision;
-    FractionBarType     m_barType;               // oblique, horizontal, diagonal
+    FractionBarType     m_barType;               // Oblique, Horizontal, Diagonal
 
     Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
-    Utf8String          m_uomSeparator;          // default separator between the number and UOM
-    Utf8Char            m_statSeparator;         // default separator between parts of the stopping format
-    int                 m_minWidth;              // the minimum width of the field. It will be taken into account
+    Utf8String          m_uomSeparator;          // Default separator between the number and UOM.
+    Utf8Char            m_statSeparator;         // Default separator between parts of the stopping format.
+    int                 m_minWidth;              // The minimum width of the field. It will be taken into account
                                                  // only if the overall length (width) of the text representing integer
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
                                                  // insignificant zeroes. Blanks are not considered because aligning text
-                                                 // with the boundaries of a virtual box is the responsibility of annotation layer
+                                                 // with the boundaries of a virtual box is the responsibility of annotation layer.
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
-    UNITS_EXPORT void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
-    UNITS_EXPORT double RoundedValue(double dval, double round) const;
-    UNITS_EXPORT int TrimTrailingZeroes(Utf8P buf, int index) const;
-    UNITS_EXPORT size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
-
+    void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
+    double RoundedValue(double dval, double round) const;
+    int TrimTrailingZeroes(Utf8P buf, int index) const;
+    size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
     void LoadJson(Json::Value jval);
+
 public:
-	UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
-	UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
-    UNITS_EXPORT void DefaultInit(size_t precision);
-    UNITS_EXPORT void Clone(NumericFormatSpecCR other);
-    NumericFormatSpec() { DefaultInit( FormatConstant::DefaultDecimalPrecisionIndex()); }
+    NumericFormatSpec() { DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex()); }
+    NumericFormatSpec(NumericFormatSpecCR other) = default;
+    NumericFormatSpec(NumericFormatSpecCP other) : NumericFormatSpec(*other) {};
     NumericFormatSpec(size_t precision) { DefaultInit(precision); }
-    NumericFormatSpec(NumericFormatSpecCP other) :
-        m_roundFactor(other->m_roundFactor), m_presentationType(other->m_presentationType),
-        m_signOption(other->m_signOption), m_formatTraits(other->m_formatTraits), m_decPrecision(other->m_decPrecision),
-        m_fractPrecision(other->m_fractPrecision), m_decimalSeparator(other->m_decimalSeparator),
-        m_thousandsSeparator(other->m_thousandsSeparator), m_barType(other->m_barType), m_uomSeparator(other->m_uomSeparator),
-        m_statSeparator(other->m_statSeparator), m_minWidth(other->m_minWidth){}
-    NumericFormatSpec(NumericFormatSpecCR other) :
-        m_roundFactor(other.m_roundFactor), m_presentationType(other.m_presentationType),
-        m_signOption(other.m_signOption), m_formatTraits(other.m_formatTraits), m_decPrecision(other.m_decPrecision),
-        m_fractPrecision(other.m_fractPrecision), m_decimalSeparator(other.m_decimalSeparator),
-        m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), m_uomSeparator(other.m_uomSeparator),
-        m_statSeparator(other.m_statSeparator), m_minWidth(other.m_minWidth) {}
+    ~NumericFormatSpec() = default;
+    UNITS_EXPORT static const NumericFormatSpecCP DefaultFormat();
+
+    NumericFormatSpec& operator=(NumericFormatSpecCR other) = default;
+    UNITS_EXPORT void Clone(NumericFormatSpecCR other) { *this = other; }
+
+    UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
+
+    /* TODO: These are untested. */
+    UNITS_EXPORT void DefaultInit(size_t precision);
     UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     UNITS_EXPORT NumericFormatSpec(Utf8CP jsonString);
-    UNITS_EXPORT NumericFormatSpec& operator=(const NumericFormatSpec& other);
+    /* !TODO */
+
+    UNITS_EXPORT static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
+    UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff);
+    UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
+
+    UNITS_EXPORT int GetDecimalPrecisionIndex(int prec) const;
+    UNITS_EXPORT double GetDecimalPrecisionFactor(int prec) const;
+    UNITS_EXPORT void SetPrecisionByValue(int prec);
+
+    UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
+    UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
+
+    //======================================
+    // Data Member Setters/Getters
+    //======================================
+    double SetRoundingFactor(double round) { return m_roundFactor = round; }
+    double GetRoundingFactor() const { return m_roundFactor; }
+
+    void SetPresentationType(PresentationType type) { m_presentationType = type; }
+    PresentationType GetPresentationType() const { return m_presentationType; }
+
+    void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
+    ShowSignOption GetSignOption() const { return m_signOption; }
 
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
-    FormatTraits GetFormatTraits() const { return m_formatTraits; }   
+    FormatTraits GetFormatTraits() const { return m_formatTraits; }
+
+    void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
+    DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
+
+    FractionalPrecision SetFractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
+    FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
+
+    // SetFractionalBarType missing?
+    FractionBarType GetFractionalBarType() const { return m_barType; }
+
+    Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
+    Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
+
+    Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
+    Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
+    size_t GetThousandSeparatorSize() const { return sizeof(m_thousandsSeparator); }
+
+    Utf8CP SetUomSeparator(Utf8CP sep) { m_uomSeparator = Utf8String(sep); return m_uomSeparator.c_str(); }
+    Utf8CP GetUomSeparator(Utf8CP def = nullptr) const { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
+
+    int SetMinWidth(int wid) { return m_minWidth = wid; }
+    int GetMinWidth() { return m_minWidth; }
+
+    Utf8Char SetStopSeparator(Utf8Char sep) { return m_statSeparator = sep; }
+    Utf8Char GetStopSeparator() const { return m_statSeparator; }
+
+    //======================================
+    // Presentation Type Setters/Getters
+    //======================================
+    // IsDecimal missing?
+    bool IsFractional() const { return m_presentationType == PresentationType::Fractional; }
+    bool IsScientific() const { return (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm); }
+    // Not sure if IsStop/IsStop100/IsStop1000 getters would be needed.
+
+
+    //======================================
+    // Show Sign Option Setters/Getters
+    //======================================
+    // SetNoSign missing?
+    // IsNotSign missing?
+
+    // SetOnlyNegative missing?
+    bool IsOnlyNegative() const { return (m_signOption == ShowSignOption::OnlyNegative); }
+
+    // SetSignAlways missing?
+    bool IsSignAlways() const { return (m_signOption == ShowSignOption::SignAlways); }
+
+    void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
+    bool IsNegativeParentheses() const { return (m_signOption == ShowSignOption::NegativeParentheses); }
+
+    //======================================
+    // Format Traits Bit Setters/Getters
+    //======================================
     bool CheckTraitsBit(FormatTraits word, FormatTraits bit) const { return ((static_cast<int>(word) & static_cast<int>(bit)) != 0); }
     bool CheckTraitsBit(FormatTraits bit) const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(bit)) != 0); }
     //UNITS_EXPORT void SetTraitsBit(bool set, FormatTraits bit, FormatTraits* word = nullptr);
@@ -346,11 +418,11 @@ public:
     UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits bit, FormatTraits traits, bool set);
     UNITS_EXPORT static void TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits);
 
-    void SetKeepTrailingZeroes(bool keep) {m_formatTraits = SetTraitsBit(FormatTraits::TrailingZeroes, m_formatTraits, keep);}
-    bool IsKeepTrailingZeroes() const { return CheckTraitsBit(FormatTraits::TrailingZeroes);}
-
     void SetUseLeadingZeroes(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::LeadingZeroes, m_formatTraits, use); }
     bool IsUseLeadingZeroes() const { return CheckTraitsBit(FormatTraits::LeadingZeroes); }
+
+    void SetKeepTrailingZeroes(bool keep) {m_formatTraits = SetTraitsBit(FormatTraits::TrailingZeroes, m_formatTraits, keep);}
+    bool IsKeepTrailingZeroes() const { return CheckTraitsBit(FormatTraits::TrailingZeroes);}
 
     void SetKeepDecimalPoint(bool use) {m_formatTraits = SetTraitsBit(FormatTraits::KeepDecimalPoint, m_formatTraits, use);}
     bool IsKeepDecimalPoint() const { return CheckTraitsBit(FormatTraits::KeepDecimalPoint); }
@@ -370,75 +442,55 @@ public:
     void SetApplyRounding(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::ApplyRounding, m_formatTraits, use); }
     bool IsApplyRounding() const { return CheckTraitsBit(FormatTraits::ApplyRounding); }
 
-    void SetAppendUnit(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::AppendUnitName, m_formatTraits, use); }
-    bool IsAppendUnit() const { return CheckTraitsBit(FormatTraits::AppendUnitName); }
-
     void SetFractionDash(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::FractionDash, m_formatTraits, use); }
     bool IsFractionDash() const { return CheckTraitsBit(FormatTraits::FractionDash); }
 
     void SetUseFractSymbol(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::UseFractSymbol, m_formatTraits, use); }
     bool IsUseFractSymbol() const { return CheckTraitsBit(FormatTraits::UseFractSymbol); }
 
+    void SetAppendUnit(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::AppendUnitName, m_formatTraits, use); }
+    bool IsAppendUnit() const { return CheckTraitsBit(FormatTraits::AppendUnitName); }
+
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
-    void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
-    bool IsNegativeParentheses() const { return (m_signOption == ShowSignOption::NegativeParentheses); }
-    bool IsOnlyNegative() const { return (m_signOption == ShowSignOption::OnlyNegative); }
-    bool IsSignAlways() const { return (m_signOption == ShowSignOption::SignAlways); }
-    bool IsFractional() const { return m_presentationType == PresentationType::Fractional; }
-    bool IsScientific() const { return (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm); }
-    void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
-    DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
-    UNITS_EXPORT int GetDecimalPrecisionIndex(int prec) const;
-    UNITS_EXPORT double GetDecimalPrecisionFactor(int prec) const;
-    FractionalPrecision SetFractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
-    FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
-    double SetRoundingFactor(double round) { return m_roundFactor = round; }
-    double GetRoundingFactor() const { return m_roundFactor; }
-    UNITS_EXPORT void SetPrecisionByValue(int prec);
-    void SetPresentationType(PresentationType type) { m_presentationType = type; }
-    PresentationType GetPresentationType() const { return m_presentationType; }
-    void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
-    int SetMinWidth(int wid) { return m_minWidth = wid; }
-    int GetMinWidth() { return m_minWidth; }
-    ShowSignOption GetSignOption() const { return m_signOption; }
-    Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
-    Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
-    Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
-    Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
-    Utf8CP   SetUomSeparator(Utf8CP sep) { m_uomSeparator = Utf8String(sep); return m_uomSeparator.c_str(); }
-    Utf8CP   GetUomSeparator(Utf8CP def=nullptr) const { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
-    Utf8Char SetStopSeparator(Utf8Char sep) { return m_statSeparator = sep; }
-    Utf8Char GetStopSeparator() const { return m_statSeparator; }
-    FractionBarType  GetFractionalBarType() const { return m_barType; }
-    UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
-    UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff); 
-    bool IsPrecisionZero() const {return (m_decPrecision == DecimalPrecision::Precision0);}
+
+    //======================================
+    // DecimalPrecision Setters/Getters
+    //======================================
+    bool IsPrecisionZero() const { return (m_decPrecision == DecimalPrecision::Precision0); }
+
+    //======================================
+    // Formatting Methods
+    //======================================
+    // The caller provided buffer must be at least 9 byte long with the 9th byte for the null
+    // terminator.Returns the number of bytes that were not populated; in case of success
+    // the function will return 0.
+    UNITS_EXPORT int FormatBinaryByte(unsigned char n, Utf8P bufOut, int bufLen);
+    UNITS_EXPORT int FormatBinaryShort(short int n, Utf8P bufOut, int bufLen, bool useSeparator);
+    UNITS_EXPORT int FormatBinaryInt(int n, Utf8P bufOut, int bufLen, bool useSeparator);
+    UNITS_EXPORT int FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bool useSeparator);
+
     UNITS_EXPORT int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
-    
-    UNITS_EXPORT int FormatInteger (int n, Utf8P bufOut, int bufLen);
-    UNITS_EXPORT int static FormatIntegerSimple (int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
-    UNITS_EXPORT Utf8String FormatIntegerToString(int n, int minSize, bool padSpace) const;
+
+    // Returns the number of bytes written.
+    UNITS_EXPORT int FormatInteger(int n, Utf8P bufOut, int bufLen);
+    UNITS_EXPORT Utf8String FormatInteger(int ival);
+    // Formats an integer and zero pads the formatted string with zeros up to length == minSize.
+    UNITS_EXPORT Utf8String FormatIntegerToString(int n, int minSize) const;
+    UNITS_EXPORT int static FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
+
     UNITS_EXPORT size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
-    
+    UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
+    UNITS_EXPORT Utf8String FormatRoundedDouble(double dval, double round);
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
+
     UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit=nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0); 
     UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
     // UNITS_EXPORT static Utf8String StdFormatQuantity(FormatUnitSetCR fus, BEU::QuantityCR qty);
-
     UNITS_EXPORT static Utf8String StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr,Utf8CP space, int prec = -1, double round = -1.0);
-    UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
+
     UNITS_EXPORT static Utf8String StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
 
-    UNITS_EXPORT static const NumericFormatSpecCP DefaultFormat();
-
-    UNITS_EXPORT int FormatBinaryByte (unsigned char n, Utf8P bufOut, int bufLen);
-    UNITS_EXPORT int FormatBinaryShort (short int n, Utf8P bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT int FormatBinaryInt (int n, Utf8P bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT int FormatBinaryDouble (double x, Utf8P bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
-    UNITS_EXPORT Utf8String FormatRoundedDouble(double dval, double round);
-    UNITS_EXPORT Utf8String FormatInteger(int ival);
     UNITS_EXPORT Utf8String ByteToBinaryText(unsigned char n);
     UNITS_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
     UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
@@ -447,7 +499,6 @@ public:
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
     UNITS_EXPORT Json::Value JsonFormatTraits(bool verbose) const;
     UNITS_EXPORT FormatTraits TraitsFromJson(JsonValueCR jval);
-    UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
     };
 
 //=======================================================================================
@@ -582,7 +633,7 @@ protected:
     static const size_t  indxMinor  = 2;
     static const size_t  indxSub    = 3;
     static const size_t  indxInput  = 4;
-    static const size_t  indxLimit  = 5;   
+    static const size_t  indxLimit  = 5;
     size_t m_ratio[indxSub];
     //BEU::UnitCP m_units[indxLimit];
     UnitProxySet m_unitProx = UnitProxySet(indxLimit);
@@ -776,6 +827,7 @@ struct FormatUnitSet
         UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_localCopy(false), m_problem(FormatProblemDetail(FormatProblemCode::NotInitialized)) {}
         UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData = false);
         UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
+        UNITS_EXPORT FormatUnitSet(BEU::UnitCP unit, Utf8CP formatName = nullptr);
         UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
         UNITS_EXPORT FormatUnitSet(FormatUnitSetCP other);
         UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);

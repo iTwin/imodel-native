@@ -45,7 +45,7 @@ struct UnitsTests : UnitsTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (UnitsTests, UnitsMapping)
+TEST_F(UnitsTests, UnitsMapping)
     {
     bmap<Utf8String, Utf8String> unitNameMap;
     bset<Utf8String> notMapped;

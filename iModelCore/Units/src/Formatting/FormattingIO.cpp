@@ -19,10 +19,10 @@ StdFormatSetP StdFormatSet::Set()
     if (nullptr == set)
         {
         set = new StdFormatSet();
-        set->StdInit(); 
+        set->StdInit();
         set->CustomInit();
         }
-    return set; 
+    return set;
     }
 
 //---------------------------------------------------------------------------------------

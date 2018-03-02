@@ -510,16 +510,16 @@ DecimalPrecision Utils::DecimalPrecisionByIndex(size_t num)
         return FormatConstant::DefaultDecimalPrecision();
     switch (num)
         {
-        case 0: return DecimalPrecision::Precision0;
-        case 1: return DecimalPrecision::Precision1;
-        case 2: return DecimalPrecision::Precision2;
-        case 3: return DecimalPrecision::Precision3;
-        case 4: return DecimalPrecision::Precision4;
-        case 5: return DecimalPrecision::Precision5;
-        case 6: return DecimalPrecision::Precision6;
-        case 7: return DecimalPrecision::Precision7;
-        case 8: return DecimalPrecision::Precision8;
-        case 9: return DecimalPrecision::Precision9;
+        case 0:  return DecimalPrecision::Precision0;
+        case 1:  return DecimalPrecision::Precision1;
+        case 2:  return DecimalPrecision::Precision2;
+        case 3:  return DecimalPrecision::Precision3;
+        case 4:  return DecimalPrecision::Precision4;
+        case 5:  return DecimalPrecision::Precision5;
+        case 6:  return DecimalPrecision::Precision6;
+        case 7:  return DecimalPrecision::Precision7;
+        case 8:  return DecimalPrecision::Precision8;
+        case 9:  return DecimalPrecision::Precision9;
         case 10: return DecimalPrecision::Precision10;
         case 11: return DecimalPrecision::Precision11;
         case 12: return DecimalPrecision::Precision12;
@@ -1434,6 +1434,31 @@ FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName,  bool cloneData
                 m_localCopy.Clone(m_formatSpec);
                 m_formatSpec = &m_localCopy;
                 }
+            m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
+            }
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                  Kyle.Abramowitz 03/2018
+//----------------------------------------------------------------------------------------
+FormatUnitSet::FormatUnitSet(BEU::UnitCP unit, Utf8CP formatName)
+    {
+    m_problem = FormatProblemDetail();
+    m_unit = unit;
+    if (Utils::IsNameNullOrEmpty(formatName))
+        formatName = FormatConstant::DefaultFormatName();
+
+    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
+    if (nullptr == m_formatSpec)
+        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
+    else
+        {
+        if (nullptr == m_unit)
+            m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+        else
+            {
+            m_unitName = m_unit->GetName();
             m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
             }
         }

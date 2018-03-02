@@ -22,7 +22,6 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                             David Fox-Rabinovitz 06/2017
 +===============+===============+===============+===============+===============+======*/
-
 struct TraitJsonKeyMap
     {
 private:
@@ -35,6 +34,9 @@ public:
     static bvector<TraitJsonKeyMap> TraitJsonKeySet();
     };
 
+/*=================================================================================**//**
+* @bsiclass                                             David Fox-Rabinovitz 06/2017
++===============+===============+===============+===============+===============+======*/
 struct FormattingTestFixture
     {
     private:
@@ -86,7 +88,6 @@ struct FormattingTestFixture
         static void UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName);
         static void UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym=nullptr);
         static void RegistryLookupUnitCITest(Utf8CP unitName);
-        static void CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP jsonCustomFormat);
         static void StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint = false);
         static void StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result);
         static void FormatDoubleTest(double dval, Utf8CP formatName, int prec=-1.0, double round=-1.0, Utf8CP expect=nullptr);

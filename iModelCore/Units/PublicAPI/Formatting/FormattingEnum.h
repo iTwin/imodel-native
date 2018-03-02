@@ -162,7 +162,7 @@ enum class FieldAlignment
 //=======================================================================================
 enum class ShowSignOption
     { 
-    NoSign = 0,              //indicates that sign should not be used at all (like absolute value) 
+    NoSign = 0,              // indicates that sign should not be used at all (like absolute value)
     OnlyNegative = 1,        // indicates that only "-" will be used for negative numbers
     SignAlways = 2,          // indicates that sign symbol should explicitly shown
     NegativeParentheses = 3  // indicates that negative numbers shoul be enclosed in parenthesis
@@ -186,19 +186,19 @@ enum class PresentationType
 //=======================================================================================
 enum class FormatTraits : int
     {
-    DefaultTraits = 0,        // No special traits. This value is being used only for initializing 
-    LeadingZeroes = 0x1,      // indicates that one or more insignificant zeroes are to be added in front of digital expression
-    TrailingZeroes = 0x2,     // indicates that one or more insignificant zeroes are to be added after the last digit of the fraction
-    KeepDecimalPoint = 0x4,   // indicates that the decimal point is required when the fraction is zero
-    KeepSingleZero = 0x8,     // indicates that the fractional part of the number is required when the fraction is zero
-    ExponentZero = 0x10,      // indicates that the exponent value must be prepended by zero
-    ZeroEmpty = 0x20,         // indicates that zero value should be presented by an empty string
-    Use1000Separator = 0x40,  // indicates that thousands in the integer part of the number should be separated by a special char (. or,)
-    ApplyRounding = 0x80,     // indicates that the rounding factor should be used
-    FractionDash = 0x100,     // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
-    UseFractSymbol = 0x200,   // indicates that a limited set of fractional values can be presented by a single glyph (1/2, 3/4... etc)
-    AppendUnitName = 0x400   // indicates that the numeric expression can be followed by the unit name
-	//UseLocale = 0x800         // indicates that separator char's should be obtained from the current locale
+    DefaultTraits    = 0x000, // No special traits. This value is being used only for initializing.
+    LeadingZeroes    = 0x001, // Indicates that one or more insignificant zeroes are to be added in front of digital expression.
+    TrailingZeroes   = 0x002, // Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
+    KeepDecimalPoint = 0x004, // Indicates that the decimal point is required when the fraction is zero.
+    KeepSingleZero   = 0x008, // Indicates that the fractional part of the number is required when the fraction is zero.
+    ExponentZero     = 0x010, // Indicates that the exponent value must be prepended by zero.
+    ZeroEmpty        = 0x020, // Indicates that zero value should be presented by an empty string.
+    Use1000Separator = 0x040, // Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
+    ApplyRounding    = 0x080, // Indicates that the rounding factor should be used.
+    FractionDash     = 0x100, // Some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4.
+    UseFractSymbol   = 0x200, // Indicates that a limited set of fractional values can be presented by a single glyph (1/2, 3/4... etc).
+    AppendUnitName   = 0x400  // Indicates that the numeric expression can be followed by the unit name.
+    //UseLocale        = 0x800  // Indicates that separator char's should be obtained from the current locale.
     };
 
 //=======================================================================================
@@ -538,189 +538,200 @@ struct Utils
 //=======================================================================================
 struct FormatConstant
     {
-    public:
-        // FPN prefix stands for FormatParameterName
-        static Utf8String FPN_FormatName() { return "FormatName"; }
-        static Utf8String FPN_Name() { return "name"; }
-        static Utf8String FPN_Alias() { return "alias"; }
+public:
+    static const double DefaultRoundingFactor() { return 0.0; }
+    static PresentationType const DefaultPresentaitonType() { return PresentationType::Decimal; }
+    static ShowSignOption const DefaultSignOption() { return ShowSignOption::OnlyNegative; }
+    static FormatTraits const DefaultFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero)); }
+    static DecimalPrecision const DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
+    static FractionalPrecision const DefaultFractionalPrecision() { return  FractionalPrecision::Over_64; }
+    static FractionBarType const DefaultFractionBarType() { return FractionBarType::Diagonal; }
+    static Utf8Char const DefaultDecimalSeparator() { return FormatConstant::FPV_DecimalSeparator(); }
+    static Utf8Char const DefaultThousandSeparator() { return FormatConstant::FPV_ThousandSeparator(); }
+    static Utf8String const DefaultUomSeparator() { return FormatConstant::BlankString(); };
+    static Utf8Char const DefaultStopSeparator() { return '+'; }
+    static int const DefaultMinWidth() { return 0; }
 
-        static Utf8String FPN_NoSign() { return "NoSign"; }
-        static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
-        static Utf8String FPN_SignAlways() { return "SignAlways"; }
-        static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
+    static const size_t MinDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision0); }
+    static const size_t MaxDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision12); }
 
-        static Utf8String FPN_Composite() { return "composite"; }
-        static Utf8String FPN_Numeric() { return "numeric"; }
-        static Utf8String FPN_Undefined() { return "undefined"; }
 
-        static Utf8String FPN_Decimal() { return "Decimal"; }
-        static Utf8String FPN_Fractional() { return "Fractional"; }
-        static Utf8String FPN_Scientific() { return "Scientific"; }
-        static Utf8String FPN_ScientificNorm() { return "ScientificNorm"; }
-        static Utf8String FPN_Stop100() { return "Stop100"; }
-        static Utf8String FPN_Stop1000() { return "Stop1000"; }
-        static Utf8String FPN_Binary() { return "Binary"; }
-        static Utf8String FPN_DefaultTraits() { return "DefaultTraits"; }
-        static Utf8String FPN_LeadingZeroes() { return "LeadingZeroes"; }
-        static Utf8String FPN_TrailingZeroes() { return "TrailingZeroes"; }
-        static Utf8String FPN_KeepDecimalPoint() { return "KeepDecimalPoint"; }
-        static Utf8String FPN_ZeroEmpty() { return "ZeroEmpty"; }
-        static Utf8String FPN_KeepSingleZero() { return "KeepSingleZero"; }
-        static Utf8String FPN_ExponentZero() { return "ExponentZero"; }
-        static Utf8String FPN_Precision0() { return "DecPrecision0"; }
-        static Utf8String FPN_Precision1() { return "DecPrecision1"; }
-        static Utf8String FPN_Precision2() { return "DecPrecision2"; }
-        static Utf8String FPN_Precision3() { return "DecPrecision3"; }
-        static Utf8String FPN_Precision4() { return "DecPrecision4"; }
-        static Utf8String FPN_Precision5() { return "DecPrecision5"; }
-        static Utf8String FPN_Precision6() { return "DecPrecision6"; }
-        static Utf8String FPN_Precision7() { return "DecPrecision7"; }
-        static Utf8String FPN_Precision8() { return "DecPrecision8"; }
-        static Utf8String FPN_Precision9() { return "DecPrecision9"; }
-        static Utf8String FPN_Precision10() { return "DecPrecision10"; }
-        static Utf8String FPN_Precision11() { return "DecPrecision11"; }
-        static Utf8String FPN_Precision12() { return "DecPrecision12"; }
-        static Utf8String FPN_FractPrec1() { return "FractPrec1"; }
-        static Utf8String FPN_FractPrec2() { return "FractPrec2"; }
-        static Utf8String FPN_FractPrec4() { return "FractPrec4"; }
-        static Utf8String FPN_FractPrec8() { return "FractPrec8"; }
-        static Utf8String FPN_FractPrec16() { return "FractPrec16"; }
-        static Utf8String FPN_FractPrec32() { return "FractPrec32"; }
-        static Utf8String FPN_FractPrec64() { return "FractPrec64"; }
-        static Utf8String FPN_FractPrec128() { return "FractPrec128"; }
-        static Utf8String FPN_FractPrec256() { return "FractPrec256"; }
-        static Utf8String FPN_DecimalComma() { return "DecimalComma"; }
-        static Utf8String FPN_DecimalPoint() { return "DecimalPoint"; }
-        static Utf8String FPN_DecimalSepar() { return "DecimalSepar"; }
-        static Utf8String FPN_ThousandSepComma() { return "ThousandSepComma"; }
-        static Utf8String FPN_ThousandSepPoint() { return "ThousandSepPoint"; }
-        static Utf8String FPN_ThousandsSepar() { return "ThousandsSepar"; }
-        static Utf8String FPN_Use1000Separ() { return "Use1000Separator"; }
-        static Utf8String FPN_RoundUp() { return "RoundUp"; }
-        static Utf8String FPN_RoundDown() { return "RoundDown"; }
-        static Utf8String FPN_RoundToward0() { return "RoundToward0"; }
-        static Utf8String FPN_RoundAwayFrom0() { return "RoundFrom0"; }
-        static Utf8String FPN_FractBarHoriz() { return "Horizontal"; }
-        static Utf8String FPN_FractBarOblique() { return "Oblique"; }
-        static Utf8String FPN_FractBarDiagonal() { return "Diagonal"; }
-        static Utf8String FPN_AngleRegular() { return "AngleRegular"; }
-        static Utf8String FPN_AngleDegMin() { return "AngleDegMin"; }
-        static Utf8String FPN_AngleDegMinSec() { return "AngleDegMinSec"; }
-        static Utf8String FPN_PaddingSymbol() { return "PaddingSymbol"; }
-        static Utf8String FPN_CenterAlign() { return "CenterAlign"; }
-        static Utf8String FPN_LeftAlign() { return "LeftAlign"; }
-        static Utf8String FPN_RightAlign() { return "RightAlign"; }
-        static Utf8String FPN_MapName() { return "MapName"; }
-        static const double FPV_MinTreshold() { return 1.0e-14; }  // format parameter default values
-        static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
-        static const Utf8Char FPV_DecimalSeparator() { return '.'; }
-        static const Utf8Char FPV_ThousandSeparator() { return ','; }
-        static const Utf8Char FPV_singleSpace() { return ' '; }
-        static const Utf8CP DefaultName() { return "*"; }
-        static const Utf8CP EmptyString() { return ""; }
-        static const Utf8CP BlankString() { return " "; }
-        static const Utf8Char EndOfLine() { return '\0'; }
-        static const bool IsEndOfLine(Utf8Char c) { return ('\0' == c); }
-        static const Utf8Char NumberSymbol() { return '0'; }
-        static const Utf8Char SpaceSymbol() { return 's'; }
-        static const Utf8Char WordSymbol() { return 'a'; }
-        static const Utf8Char ColonSymbol() { return ':'; }
-        static const Utf8Char SignSymbol() { return '-'; }
-        static const Utf8Char UOMLink() { return '_'; }
-        static const Utf8Char FractionSymbol() { return 'r'; }
-        static const Utf8CP FailedOperation() { return "Operation failed"; }
-        static const PresentationType DefaultPresentaitonType() { return PresentationType::Decimal; }
-        static const ShowSignOption DefaultSignOption() { return ShowSignOption::OnlyNegative; }
-        static const DecimalPrecision DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
-        static const size_t DefaultDecimalPrecisionIndex() { return static_cast<int>(DefaultDecimalPrecision()); }
-        static const size_t MaxDecimalPrecisionIndex() { return static_cast<int>(DecimalPrecision::Precision12); }
-        static const FractionalPrecision DefaultFractionalPrecision() { return  FractionalPrecision::Over_64; }
-        static const size_t DefaultFractionalDenominator() { return Utils::FractionalPrecisionDenominator(DefaultFractionalPrecision()); }
-        static const FormatTraits DefaultFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero)); }
-        static const FormatTraits UnitizedFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero) | static_cast<int>(FormatTraits::AppendUnitName)); }
-        static const double FPV_MaxTokenLength() { return 256; }
-        static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
-        static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
-        static const unsigned char UTF_3ByteMask() { return  0xF0; }    // 11110000  - complement will select 4 upper bits
-        static const unsigned char UTF_3ByteMark() { return  0xE0; }    // 11100000
-        static const unsigned char UTF_4ByteMask() { return   0xF8; }   // 11111000  - complement will select 3 upper bits 
-        static const unsigned char UTF_4ByteMark() { return  0xF0; }    // 11110000
-        static const size_t UTF_2ByteSelector() { return  0x1F; }  // 00011111
-        static const size_t UTF_3ByteSelector() { return  0xF; }   // 00001111
-        static const size_t UTF_4ByteSelector() { return  0x7; }   // 00000111
-        static const size_t UTF_5ByteSelector() { return  0x3; }   // 00000011
-        static const size_t UTF_6ByteSelector() { return  0x1; }   // 00000001
-        static const unsigned char UTF_TrailingByteMask() { return  0xC0; } // 11000000 - complement will select trailing bits
-        static const unsigned char UTF_TrailingByteMark() { return  0x80; } // 10000000 - indicator of the trailing bytes and also an ASCII char
-        static const unsigned char UTF_TrailingBitsMask() { return  0x3F; }    // 00111111
-        static const unsigned char UTF_NonASCIIMark() { return  0x80; }    // 10000000 - indicator of non ASCII symbol
-        static const unsigned char UTF_MultiByteMask() { return  0x40; }    // 01000000 - indicator of the first byte
-        static const unsigned char UTF_UpperBitShift() { return  6; }
-        static const unsigned char ASCIImask() { return  0x7F; }
-        static const bool IsASCII(size_t symbol) { return (symbol <= ASCIImask()); }
-        static const bool IsASCIIChar(Utf8Char c) { return (c & FormatConstant::UTF_NonASCIIMark()) == 0; }
-        static const Utf8Char ASCIIcode(size_t symbol) { return (Utf8Char)(symbol & ASCIImask()); }
-        static const int DigitValue(Utf8Char dig) { return (int)(dig - '0'); }
-        static const  int GetTrailingShift() { return UTF_UpperBitShift(); }
-        UNITS_EXPORT static const bool IsLittleEndian();
-        UNITS_EXPORT static const size_t GetSequenceLength(unsigned char c);
-        static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }     
+    // FPN prefix stands for FormatParameterName
+    static Utf8String FPN_FormatName() { return "FormatName"; }
+    static Utf8String FPN_Name() { return "name"; }
+    static Utf8String FPN_Alias() { return "alias"; }
+
+    static Utf8String FPN_NoSign() { return "NoSign"; }
+    static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
+    static Utf8String FPN_SignAlways() { return "SignAlways"; }
+    static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
+
+    static Utf8String FPN_Composite() { return "composite"; }
+    static Utf8String FPN_Numeric() { return "numeric"; }
+    static Utf8String FPN_Undefined() { return "undefined"; }
+
+    static Utf8String FPN_Decimal() { return "Decimal"; }
+    static Utf8String FPN_Fractional() { return "Fractional"; }
+    static Utf8String FPN_Scientific() { return "Scientific"; }
+    static Utf8String FPN_ScientificNorm() { return "ScientificNorm"; }
+    static Utf8String FPN_Stop100() { return "Stop100"; }
+    static Utf8String FPN_Stop1000() { return "Stop1000"; }
+    static Utf8String FPN_Binary() { return "Binary"; }
+    static Utf8String FPN_DefaultTraits() { return "DefaultTraits"; }
+    static Utf8String FPN_LeadingZeroes() { return "LeadingZeroes"; }
+    static Utf8String FPN_TrailingZeroes() { return "TrailingZeroes"; }
+    static Utf8String FPN_KeepDecimalPoint() { return "KeepDecimalPoint"; }
+    static Utf8String FPN_ZeroEmpty() { return "ZeroEmpty"; }
+    static Utf8String FPN_KeepSingleZero() { return "KeepSingleZero"; }
+    static Utf8String FPN_ExponentZero() { return "ExponentZero"; }
+    static Utf8String FPN_Precision0() { return "DecPrecision0"; }
+    static Utf8String FPN_Precision1() { return "DecPrecision1"; }
+    static Utf8String FPN_Precision2() { return "DecPrecision2"; }
+    static Utf8String FPN_Precision3() { return "DecPrecision3"; }
+    static Utf8String FPN_Precision4() { return "DecPrecision4"; }
+    static Utf8String FPN_Precision5() { return "DecPrecision5"; }
+    static Utf8String FPN_Precision6() { return "DecPrecision6"; }
+    static Utf8String FPN_Precision7() { return "DecPrecision7"; }
+    static Utf8String FPN_Precision8() { return "DecPrecision8"; }
+    static Utf8String FPN_Precision9() { return "DecPrecision9"; }
+    static Utf8String FPN_Precision10() { return "DecPrecision10"; }
+    static Utf8String FPN_Precision11() { return "DecPrecision11"; }
+    static Utf8String FPN_Precision12() { return "DecPrecision12"; }
+    static Utf8String FPN_FractPrec1() { return "FractPrec1"; }
+    static Utf8String FPN_FractPrec2() { return "FractPrec2"; }
+    static Utf8String FPN_FractPrec4() { return "FractPrec4"; }
+    static Utf8String FPN_FractPrec8() { return "FractPrec8"; }
+    static Utf8String FPN_FractPrec16() { return "FractPrec16"; }
+    static Utf8String FPN_FractPrec32() { return "FractPrec32"; }
+    static Utf8String FPN_FractPrec64() { return "FractPrec64"; }
+    static Utf8String FPN_FractPrec128() { return "FractPrec128"; }
+    static Utf8String FPN_FractPrec256() { return "FractPrec256"; }
+    static Utf8String FPN_DecimalComma() { return "DecimalComma"; }
+    static Utf8String FPN_DecimalPoint() { return "DecimalPoint"; }
+    static Utf8String FPN_DecimalSepar() { return "DecimalSepar"; }
+    static Utf8String FPN_ThousandSepComma() { return "ThousandSepComma"; }
+    static Utf8String FPN_ThousandSepPoint() { return "ThousandSepPoint"; }
+    static Utf8String FPN_ThousandsSepar() { return "ThousandsSepar"; }
+    static Utf8String FPN_Use1000Separ() { return "Use1000Separator"; }
+    static Utf8String FPN_RoundUp() { return "RoundUp"; }
+    static Utf8String FPN_RoundDown() { return "RoundDown"; }
+    static Utf8String FPN_RoundToward0() { return "RoundToward0"; }
+    static Utf8String FPN_RoundAwayFrom0() { return "RoundFrom0"; }
+    static Utf8String FPN_FractBarHoriz() { return "Horizontal"; }
+    static Utf8String FPN_FractBarOblique() { return "Oblique"; }
+    static Utf8String FPN_FractBarDiagonal() { return "Diagonal"; }
+    static Utf8String FPN_AngleRegular() { return "AngleRegular"; }
+    static Utf8String FPN_AngleDegMin() { return "AngleDegMin"; }
+    static Utf8String FPN_AngleDegMinSec() { return "AngleDegMinSec"; }
+    static Utf8String FPN_PaddingSymbol() { return "PaddingSymbol"; }
+    static Utf8String FPN_CenterAlign() { return "CenterAlign"; }
+    static Utf8String FPN_LeftAlign() { return "LeftAlign"; }
+    static Utf8String FPN_RightAlign() { return "RightAlign"; }
+    static Utf8String FPN_MapName() { return "MapName"; }
+    static const double FPV_MinTreshold() { return 1.0e-14; }  // format parameter default values
+    static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
+    static const Utf8Char FPV_DecimalSeparator() { return '.'; }
+    static const Utf8Char FPV_ThousandSeparator() { return ','; }
+    static const Utf8Char FPV_singleSpace() { return ' '; }
+    static const Utf8CP DefaultName() { return "*"; }
+    static const Utf8CP EmptyString() { return ""; }
+    static const Utf8CP BlankString() { return " "; }
+    static const Utf8Char EndOfLine() { return '\0'; }
+    static const bool IsEndOfLine(Utf8Char c) { return ('\0' == c); }
+    static const Utf8Char NumberSymbol() { return '0'; }
+    static const Utf8Char SpaceSymbol() { return 's'; }
+    static const Utf8Char WordSymbol() { return 'a'; }
+    static const Utf8Char ColonSymbol() { return ':'; }
+    static const Utf8Char SignSymbol() { return '-'; }
+    static const Utf8Char UOMLink() { return '_'; }
+    static const Utf8Char FractionSymbol() { return 'r'; }
+    static const Utf8CP FailedOperation() { return "Operation failed"; }
+    static const size_t DefaultDecimalPrecisionIndex() { return static_cast<int>(DefaultDecimalPrecision()); }
+    static const size_t DefaultFractionalDenominator() { return Utils::FractionalPrecisionDenominator(DefaultFractionalPrecision()); }
+    static const FormatTraits UnitizedFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero) | static_cast<int>(FormatTraits::AppendUnitName)); }
+    static const double FPV_MaxTokenLength() { return 256; }
+    static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
+    static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
+    static const unsigned char UTF_3ByteMask() { return  0xF0; }    // 11110000  - complement will select 4 upper bits
+    static const unsigned char UTF_3ByteMark() { return  0xE0; }    // 11100000
+    static const unsigned char UTF_4ByteMask() { return   0xF8; }   // 11111000  - complement will select 3 upper bits 
+    static const unsigned char UTF_4ByteMark() { return  0xF0; }    // 11110000
+    static const size_t UTF_2ByteSelector() { return  0x1F; }  // 00011111
+    static const size_t UTF_3ByteSelector() { return  0xF; }   // 00001111
+    static const size_t UTF_4ByteSelector() { return  0x7; }   // 00000111
+    static const size_t UTF_5ByteSelector() { return  0x3; }   // 00000011
+    static const size_t UTF_6ByteSelector() { return  0x1; }   // 00000001
+    static const unsigned char UTF_TrailingByteMask() { return  0xC0; } // 11000000 - complement will select trailing bits
+    static const unsigned char UTF_TrailingByteMark() { return  0x80; } // 10000000 - indicator of the trailing bytes and also an ASCII char
+    static const unsigned char UTF_TrailingBitsMask() { return  0x3F; }    // 00111111
+    static const unsigned char UTF_NonASCIIMark() { return  0x80; }    // 10000000 - indicator of non ASCII symbol
+    static const unsigned char UTF_MultiByteMask() { return  0x40; }    // 01000000 - indicator of the first byte
+    static const unsigned char UTF_UpperBitShift() { return  6; }
+    static const unsigned char ASCIImask() { return  0x7F; }
+    static const bool IsASCII(size_t symbol) { return (symbol <= ASCIImask()); }
+    static const bool IsASCIIChar(Utf8Char c) { return (c & FormatConstant::UTF_NonASCIIMark()) == 0; }
+    static const Utf8Char ASCIIcode(size_t symbol) { return (Utf8Char)(symbol & ASCIImask()); }
+    static const int DigitValue(Utf8Char dig) { return (int)(dig - '0'); }
+    static const  int GetTrailingShift() { return UTF_UpperBitShift(); }
+    UNITS_EXPORT static const bool IsLittleEndian();
+    UNITS_EXPORT static const size_t GetSequenceLength(unsigned char c);
+    static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }     
         
-        UNITS_EXPORT static bool GetTrailingBits(unsigned char c, Utf8P outBits);
-        UNITS_EXPORT static size_t ExtractTrailingBits(unsigned char c, size_t shift);
-        UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
-        static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
-        static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }
-        static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
-        UNITS_EXPORT static const unsigned char TriadBitMask(size_t threeBit);
-        static const Utf8CP BoolText(bool t) { return t ? "true" : "false"; }
-        static const Utf8CP AllocError() { return "AllocError"; }
-        static const Utf8CP HexSymbols() { return "0123456789ABCDEF"; }
-        static const Utf8CP FUSDividers() { return "()[]{}|"; }
-        static const Utf8CP FUSDividerMatch() { return ")(][}{|"; }
-        static const Utf8CP ASCIIprintable() { return " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
-        static const Utf8CP ASCIImap() { return "b!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
-        UNITS_EXPORT static const size_t* FractionCodes();
-        static const Utf8CP DefaultFormatName() { return "DefaultReal"; }
-        static const Utf8CP DefaultPresentationFormatName() { return "DefaultRealU"; }
-        static const Utf8CP DefaultFormatAlias() { return "real"; }
-        static const Utf8CP DefaultPresentationFormatAlias() { return "realu"; }
-        static const Utf8CP FUSJsonName() { return "name"; }
-        static const Utf8CP FUSJsonAlias() { return "alias"; }
-        static const Utf8CP FUSJsonUnit() { return "unit"; }
-        static const Utf8CP FUSJsonValue() { return "value"; }
-        static const Utf8CP FUSJsonDispValue() { return "displayValue"; }
-        static const Utf8CP FUSJsonPersist() { return "persistFUS"; }
-        static const Utf8CP FUSJsonDispaly() { return "displayFUS"; }
-        static const bool IsBoolEqual(bool val, bool ref) { return val == ref; }
-        static const bool IsIntEqual(int val, int ref) { return val == ref; }
-        static const bool IsRealEqual(double val, double ref, double resolution) { return fabs(val - ref) <= fabs(resolution); }
+    UNITS_EXPORT static bool GetTrailingBits(unsigned char c, Utf8P outBits);
+    UNITS_EXPORT static size_t ExtractTrailingBits(unsigned char c, size_t shift);
+    UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
+    static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
+    static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }
+    static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
+    UNITS_EXPORT static const unsigned char TriadBitMask(size_t threeBit);
+    static const Utf8CP BoolText(bool t) { return t ? "true" : "false"; }
+    static const Utf8CP AllocError() { return "AllocError"; }
+    static const Utf8CP HexSymbols() { return "0123456789ABCDEF"; }
+    static const Utf8CP FUSDividers() { return "()[]{}|"; }
+    static const Utf8CP FUSDividerMatch() { return ")(][}{|"; }
+    static const Utf8CP ASCIIprintable() { return " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
+    static const Utf8CP ASCIImap() { return "b!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"; }
+    UNITS_EXPORT static const size_t* FractionCodes();
+    static const Utf8CP DefaultFormatName() { return "DefaultReal"; }
+    static const Utf8CP DefaultPresentationFormatName() { return "DefaultRealU"; }
+    static const Utf8CP DefaultFormatAlias() { return "real"; }
+    static const Utf8CP DefaultPresentationFormatAlias() { return "realu"; }
+    static const Utf8CP FUSJsonName() { return "name"; }
+    static const Utf8CP FUSJsonAlias() { return "alias"; }
+    static const Utf8CP FUSJsonUnit() { return "unit"; }
+    static const Utf8CP FUSJsonValue() { return "value"; }
+    static const Utf8CP FUSJsonDispValue() { return "displayValue"; }
+    static const Utf8CP FUSJsonPersist() { return "persistFUS"; }
+    static const Utf8CP FUSJsonDispaly() { return "displayFUS"; }
+    static const bool IsBoolEqual(bool val, bool ref) { return val == ref; }
+    static const bool IsIntEqual(int val, int ref) { return val == ref; }
+    static const bool IsRealEqual(double val, double ref, double resolution) { return fabs(val - ref) <= fabs(resolution); }
 
 
-        static const size_t* SpecialUOM()
+    static const size_t* SpecialUOM()
+        {
+        // the array of codes holds integer codes of several special unicode characters that could be used in a specific
+        //   context for denoting units Of Measurement. two characters 'degC' and 'degF' are included for the future growth
+        //     they represent a special case of degrees of Celsius and degrees of Fahrenheit that could be used with Chinese characters
+        //                        "     $     %     '     ^    deg    degC    degF
+        static size_t cod[9] = { 0x22, 0x24, 0x25, 0x27, 0x5e, 0xB0, 0x2103, 0x2109, 0x0};
+        return cod;
+        }
+
+    static const bool IsFractionSymbol(size_t code)
+        {
+        const size_t* p = FractionCodes();
+        while (*p != FormatConstant::EndOfLine())
             {
-            // the array of codes holds integer codes of several special unicode characters that could be used in a specific
-            //   context for denoting units Of Measurement. two characters 'degC' and 'degF' are included for the future growth
-            //     they represent a special case of degrees of Celsius and degrees of Fahrenheit that could be used with Chinese characters
-            //                        "     $     %     '     ^    deg    degC    degF
-            static size_t cod[9] = { 0x22, 0x24, 0x25, 0x27, 0x5e, 0xB0, 0x2103, 0x2109, 0x0};
-            return cod;
+            if (*p == code)
+                return true;
+            p++;
             }
-
-        static const bool IsFractionSymbol(size_t code)
-            {
-            const size_t* p = FractionCodes();
-            while (*p != FormatConstant::EndOfLine())
-                {
-                if (*p == code)
-                    return true;
-                p++;
-                }
-            return false;
-            }
-        UNITS_EXPORT const static FormatSpecialCodes ParsingPatternCode(Utf8CP name);
-        UNITS_EXPORT const static Utf8CP SpecialAngleSymbol(Utf8String name);
-        UNITS_EXPORT const static Utf8CP SpecialLengthSymbol(Utf8String name);
+        return false;
+        }
+    UNITS_EXPORT const static FormatSpecialCodes ParsingPatternCode(Utf8CP name);
+    UNITS_EXPORT const static Utf8CP SpecialAngleSymbol(Utf8String name);
+    UNITS_EXPORT const static Utf8CP SpecialLengthSymbol(Utf8String name);
     };
 
 END_BENTLEY_FORMATTING_NAMESPACE

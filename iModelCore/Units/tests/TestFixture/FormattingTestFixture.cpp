@@ -1216,7 +1216,7 @@ void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int pr
     if(Utils::IsNameNullOrEmpty(expect))
        LOG.infov("%f formatted: %s (%d)", dval, txt.c_str(), txt.size());
     else
-        EXPECT_STREQ (expect, txt.c_str());
+        EXPECT_STREQ(expect, txt.c_str());
     }
 
 //----------------------------------------------------------------------------------------
