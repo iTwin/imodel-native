@@ -2167,6 +2167,16 @@ public:
         uint32_t GetExtraDataSize() const {return static_cast<uint32_t>(m_extraData.length());}
     };
 
+    //! Describes if/which sqlite integrity checking is done when opening a database.
+    //! Using 'Full' is recommended when opening databases from untrusted sources, and can help guard against corrupt files or fuzzing attacks.
+    //! Each level of checking adds performance overhead when initially opening a database.
+    enum class IntegrityCheckMode
+    {
+        None,   //!< no checking will be performed
+        Quick,  //!< sqlite is told to perform a "quick" check (https://www.sqlite.org/pragma.html#pragma_quick_check)
+        Full    //!< sqlite is told to perform a full "integrity" check (https://www.sqlite.org/pragma.html#pragma_integrity_check)
+    };
+
     //=======================================================================================
     //! Parameters for controlling aspects of the opening of a Db.
     // @bsiclass                                                    Keith.Bentley   11/10
@@ -2179,6 +2189,7 @@ public:
         bool          m_rawSQLite = false;
         BusyRetry*    m_busyRetry = nullptr;
         EncryptionParams m_encryption;
+        IntegrityCheckMode m_integrityCheckMode = IntegrityCheckMode::None;
 
         BE_SQLITE_EXPORT virtual bool _ReopenForProfileUpgrade(Db&) const;
 
@@ -2222,6 +2233,9 @@ public:
         EncryptionParams const& GetEncryptionParams() const {return m_encryption;}
         //! Get a writable reference to the encryption parameters
         EncryptionParams& GetEncryptionParamsR() {return m_encryption;}
+
+        //! Set the integrity check mode.
+        void SetIntegrityCheckMode(IntegrityCheckMode value) {m_integrityCheckMode = value;}
     };
 
     //=======================================================================================
