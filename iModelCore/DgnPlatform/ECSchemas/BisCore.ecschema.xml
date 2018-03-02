@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="BisCore" alias="bis" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" displayLabel="BIS Core" description="The BIS core classes that all other domain schemas extend.">
+<ECSchema schemaName="BisCore" alias="bis" version="1.0.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2" displayLabel="BIS Core" description="The BIS core classes that all other domain schemas extend.">
 
     <ECSchemaReference name="CoreCustomAttributes" version="1.0" alias="CoreCA"/>
     <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
@@ -751,7 +751,7 @@
                 </Indexes>
             </DbIndexList>
         </ECCustomAttributes>
-        <ECProperty propertyName="Url" displayLabel="URL" typeName="string">
+        <ECProperty propertyName="Url" displayLabel="URL" typeName="string" extendedTypeName="Url">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
@@ -1649,13 +1649,23 @@
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="PartitionOriginatesFromRepository" strength="referencing" modifier="Sealed">
-        <!-- deprecated - use ElementHasLinks -->
+        <!-- deprecated - use ElementHasLinks or InformationOriginatesFromDocument -->
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="originates from" polymorphic="true">
             <Class class="InformationPartitionElement"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is origin of" polymorphic="true">
             <Class class="RepositoryLink"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="InformationOriginatesFromDocument" strength="referencing" modifier="None">
+        <BaseClass>ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="originates from" polymorphic="true">
+            <Class class="InformationContentElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is origin of" polymorphic="true">
+            <Class class="Document"/>
         </Target>
     </ECRelationshipClass>
 
