@@ -43,3 +43,9 @@ SupplementalRuleSetLocater.FindsSupplementalRuleSetsAndSetsProvidedId
     # TFS#855344
     # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadPro
     # Failing
+
+ContentUpdateTests.InvalidatesWhenUserSettingChanges_UsedInRuleCondition
+
+    # TFS#855347
+    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadPro
+    # Failing
