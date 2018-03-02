@@ -532,6 +532,8 @@ MeshAnnotationVector &messages//!< [out] array of status messages
         return false;
     return enforcer.Go ();
     }
+#define INDEX_UNORDERED_FACET INT_MAX
+#define INDEX_NO_HALF_EDGE SIZE_MAX
 
 // context for choosing a facet order to eliminate long edges and excavate inlets into facets.
 // The objective is to produce a facet order so that the last facets are the first to be removed (e.g. from a convex hull)
@@ -547,8 +549,6 @@ MinimumValuePriorityQueue<size_t> m_heap;
 
 
 double m_maxEdgeLength;
-static const int UNORDERED = INT_MAX;
-static const size_t NO_HALF_EDGE = SIZE_MAX;
 LongEdgeExcavactionContext
 (
 PolyfaceHeaderR facets,
@@ -571,7 +571,7 @@ bool DoSetup ()
     auto numHalfEdge = m_halfEdges.size ();
     auto numReadIndex = m_facets.PointIndex().size ();
     for (size_t i = 0; i < numReadIndex; i++)
-        m_readIndexToHalfEdge.push_back (NO_HALF_EDGE);
+        m_readIndexToHalfEdge.push_back (INDEX_NO_HALF_EDGE);
     for (size_t i = 0; i < numHalfEdge; i++)
         m_readIndexToHalfEdge [m_halfEdges[i].m_readIndex] = i;
     return true;
@@ -591,7 +591,7 @@ void InsertHalfEdgeInHeap (size_t i)
 
 bool IsUnordered (size_t heIndex)
     {
-    return m_halfEdges[heIndex].m_nodeId == UNORDERED;
+    return m_halfEdges[heIndex].m_nodeId == INDEX_UNORDERED_FACET;
     }
 bool IsCrossableEdge (size_t he)
     {
@@ -662,7 +662,7 @@ bool Go ()
     m_readIndexSequence.clear ();
     // mark all as unordered ..
     for (auto &he : m_halfEdges)
-        he.m_nodeId = INT_MAX;
+        he.m_nodeId = INDEX_UNORDERED_FACET;
 
     // All non-paired halfedges are seeds .  .
     Size2 range (0);
