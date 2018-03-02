@@ -2615,14 +2615,20 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
         if (params.m_startDefaultTxn == DefaultTxn::No && !m_dbFile->m_defaultTxn.IsActive())
             m_dbFile->m_defaultTxn.Begin();
 
-        rc = _VerifyProfileVersion(params);
-
+        rc = _OnBeforeVerifyProfileVersion();
         if (rc == BE_SQLITE_OK)
-            rc = _OnDbOpened(params);
+            {
+            rc = _VerifyProfileVersion(params);
+            if (rc == BE_SQLITE_OK)
+                rc = _OnAfterVerifyProfileVersion();
 
-        //if DefaultTxn::No was passed, commit the txn as it was started by BeSQlite
-        if (params.m_startDefaultTxn == DefaultTxn::No && m_dbFile->m_defaultTxn.IsActive())
-            m_dbFile->m_defaultTxn.Commit(nullptr);
+            if (rc == BE_SQLITE_OK)
+                rc = _OnDbOpened(params);
+
+            //if DefaultTxn::No was passed, commit the txn as it was started by BeSQlite
+            if (params.m_startDefaultTxn == DefaultTxn::No && m_dbFile->m_defaultTxn.IsActive())
+                m_dbFile->m_defaultTxn.Commit(nullptr);
+            }
         }
 
     if (rc != BE_SQLITE_OK)
