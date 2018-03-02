@@ -219,6 +219,10 @@ bool RemoveStmFiles(BeFileName& inputFileName)
     while (0 != pTestNode)
         {
         status = pTestNode->GetAttributeStringValue(stmFileName, "stmFileName");
+    
+        if (status != BEXML_Success)
+            status = pTestNode->GetAttributeStringValue(stmFileName, "smFileName");        
+
         if (t == TEST_PARTIAL_UPDATE)
             {
             WString suffixPartialUpdate(L"_partialUpdate");
