@@ -2521,6 +2521,50 @@ DbResult Db::_VerifyProfileVersion(OpenParams const& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jeff.Marker                     02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static int integrityCheckCallback(void* callbackArg, int numColumns, CharP* columnValues, CharP* columnNames)
+    {
+    bool& anyFailures = *(bool*)callbackArg;
+    
+    // We only care if any failures were ever encountered.
+    if (anyFailures)
+        return 0;
+    
+    // According to docs, if the checks pass, a single row will be returned with a single column with the text "ok".
+    // Treat anything else as a failure.
+    
+    if ((1 != numColumns) || (nullptr == columnValues[0]) || (0 != strcmp("ok", columnValues[0])))
+        anyFailures = true;
+    
+    return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jeff.Marker                     02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult checkDbIntegrity(SqlDbP sqlDb, Db::IntegrityCheckMode checkMode)
+    {
+    CharCP checkQuery = nullptr;
+    switch (checkMode)
+        {
+        // Pass '1' as the maximum number of failures to detect... we don't currently need to know details, just whether /anything/ is wrong.
+        case Db::IntegrityCheckMode::Quick: checkQuery = "PRAGMA quick_check(1)";       break;
+        case Db::IntegrityCheckMode::Full:  checkQuery = "PRAGMA integrity_check(1)";   break;
+        }
+
+    if (nullptr == checkQuery)
+        return BE_SQLITE_OK;
+
+    bool anyFailures = false;
+    DbResult rc = (DbResult)sqlite3_exec(sqlDb, checkQuery, integrityCheckCallback, &anyFailures, nullptr);
+    if ((BE_SQLITE_OK != rc) || anyFailures)
+        return BE_SQLITE_CORRUPT;
+
+    return BE_SQLITE_OK;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
@@ -2546,6 +2590,13 @@ DbResult Db::DoOpenDb(Utf8CP dbName, OpenParams const& params)
     sqlite3_config(SQLITE_CONFIG_LOG, printLog, nullptr);
     sqlite3_trace(sqlDb, tracefunc, nullptr);
     #endif
+
+    // Do we want to perform integrity checking? If so, we want to do that very early to prevent crashes with corrupt files.
+    if ((IntegrityCheckMode::None != params.m_integrityCheckMode) && (BE_SQLITE_OK != checkDbIntegrity(sqlDb, params.m_integrityCheckMode)))
+        {
+        LOG.errorv("Integrity check failed for '%s'", dbName);
+        return BE_SQLITE_CORRUPT;
+        }
 
     m_dbFile = new DbFile(sqlDb, params.m_busyRetry, (BeSQLiteTxnMode) params.m_startDefaultTxn);
     m_dbFile->m_readonly = ((int) params.m_openMode & (int) OpenMode::Readonly)==(int)OpenMode::Readonly;
