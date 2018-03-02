@@ -166,7 +166,7 @@ TEST(Polyface,SortForLongEdgeRemovalA)
         5,6,8,0,
         5,8,7,0
         };
-    static bool s_print = false;
+    // unused - static bool s_print = false;
     auto polyface = PolyfaceHeader::CreateIndexedMesh (0, points, indices);
     bvector<size_t> smallToLargeReadIndices;
     polyface->ConstructOrderingForLongEdgeRemoval (smallToLargeReadIndices);
