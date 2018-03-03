@@ -887,44 +887,22 @@ bool Mesh::HasNonPlanarNormals() const
     }
      
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
+* @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Mesh::GetGraphics (bvector<Render::GraphicPtr>& graphics, Dgn::Render::SystemCR system, GetMeshGraphicsArgs& args, DgnDbR db) const
+GraphicPtr Mesh::GetGraphics(MeshGraphicArgs& args, SystemCR system, DgnDbR db) const
     {
-    bool haveMesh = !Triangles().Empty();
-    bool havePolyline = !haveMesh && !Polylines().empty();
-
-    if (!haveMesh && !havePolyline)
-        return;                                                                   
-
-    Render::GraphicPtr thisGraphic;
-
-    if (haveMesh)
+    GraphicPtr graphic;
+    if (!Triangles().Empty())
         {
-        if (args.m_meshArgs.Init(*this) &&
-            (thisGraphic = system._CreateTriMesh(args.m_meshArgs, db)).IsValid())
-            graphics.push_back (thisGraphic);
-
-        MeshEdgesPtr    edges = GetEdges();
-
-        if (args.m_visibleEdgesArgs.Init(*this) &&
-            (thisGraphic = system._CreateVisibleEdges(args.m_visibleEdgesArgs, db)).IsValid())
-            graphics.push_back(thisGraphic);
-
-        if (args.m_invisibleEdgesArgs.Init(*this) &&
-            (thisGraphic = system._CreateSilhouetteEdges(args.m_invisibleEdgesArgs, db)).IsValid())
-            graphics.push_back(thisGraphic);
-
-        if (args.m_polylineEdgesArgs.Init(*this) &&
-            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineEdgesArgs, db)).IsValid())
-            graphics.push_back(thisGraphic);
+        if (args.m_meshArgs.Init(*this))
+            graphic = system._CreateTriMesh(args.m_meshArgs, db);
         }
-    else                           
+    else if (!Polylines().empty() && args.m_polylineArgs.Init(*this))
         {
-        if (args.m_polylineArgs.Init(*this) &&
-            (thisGraphic = system._CreateIndexedPolylines(args.m_polylineArgs, db)).IsValid())
-            graphics.push_back(thisGraphic);
+        graphic = system._CreateIndexedPolylines(args.m_polylineArgs, db);
         }
+
+    return graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2040,11 +2018,15 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryAccumulator::SaveToGraphicList(bvector<GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance, ViewContextR context) const
     {
-    MeshList                meshes = ToMeshes(options, tolerance, context);
-    GetMeshGraphicsArgs     args;
+    MeshList            meshes = ToMeshes(options, tolerance, context);
+    MeshGraphicArgs     args;
 
     for (auto const& mesh : meshes)
-        mesh->GetGraphics (graphics, GetSystem(), args, GetDgnDb());
+        {
+        auto graphic = mesh->GetGraphics(args, GetSystem(), GetDgnDb());
+        if (graphic.IsValid())
+            graphics.push_back(graphic);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2404,10 +2386,30 @@ bool MeshArgs::Init(MeshCR mesh)
     m_material = mesh.GetDisplayParams().GetMaterial();
     m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
     m_isPlanar = mesh.IsPlanar();
-    m_edgeWidth = mesh.GetDisplayParams().GetLineWidth();
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
+    m_is2d = mesh.Is2d();
 
+    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
+
+    m_edges.m_width = mesh.GetDisplayParams().GetLineWidth();
+    m_edges.m_linePixels = mesh.GetDisplayParams().GetLinePixels();
+
+    MeshEdgesCP meshEdges = mesh.GetEdges().get();
+    if (nullptr == meshEdges)
+        return true;
+
+    m_edges.m_edges.Init(*meshEdges);
+    m_edges.m_silhouettes.Init(*meshEdges);
+
+    m_polylineEdges.reserve(meshEdges->m_polylines.size());
+    for (auto const& meshPolyline : meshEdges->m_polylines)
+        {
+        PolylineEdgeArgs::Polyline polyline;
+        if (polyline.Init(meshPolyline))
+            m_polylineEdges.push_back(polyline);
+        }
+
+    m_edges.m_polylines.Init(m_polylineEdges);
 
     return true;
     }
@@ -2425,100 +2427,14 @@ void MeshArgs::Clear()
     m_textureUV = nullptr;
     m_texture = nullptr;
     m_isPlanar = false;
+    m_is2d = false;
 
     m_colors.Reset();
     m_colorTable.clear();
     m_features.Reset();
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static void initLinearGraphicParams(T& args, MeshCR mesh)
-    {
-    args.m_linePixels = mesh.GetDisplayParams().GetLinePixels();
-    args.m_width = mesh.GetDisplayParams().GetLineWidth();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ElementMeshEdgeArgs::Init(MeshCR mesh)
-    {
-    MeshEdgesPtr    meshEdges = mesh.GetEdges();
-    m_pointParams = mesh.Points().GetParams();
-
-    initLinearGraphicParams(*this, mesh);
-
-    if (!meshEdges.IsValid() || meshEdges->m_visible.empty())
-        return false;
-
-    m_points    = mesh.Points().data();
-    m_edges     = meshEdges->m_visible.data();
-    m_numEdges  = meshEdges->m_visible.size();
-    m_isPlanar  = mesh.IsPlanar();
-    
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
-    mesh.ToFeatureIndex(m_features);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh)
-    {
-    MeshEdgesPtr    meshEdges = mesh.GetEdges();
-    m_pointParams = mesh.Points().GetParams();
-
-    initLinearGraphicParams(*this, mesh);
-
-    if (!meshEdges.IsValid() || meshEdges->m_silhouette.empty())
-        return false;
-
-    m_points    = mesh.Points().data();
-    m_normals   = meshEdges->m_silhouetteNormals.data();
-    m_edges     = meshEdges->m_silhouette.data();
-    m_numEdges  = meshEdges->m_silhouette.size();
-
-    mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
-    mesh.ToFeatureIndex(m_features);
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool  ElementPolylineEdgeArgs::Init(MeshCR mesh)
-    {
-    Reset();
-    MeshEdgesPtr    meshEdges = mesh.GetEdges();
-    m_pointParams = mesh.Points().GetParams();
-
-    initLinearGraphicParams(*this, mesh);
-
-    if (!meshEdges.IsValid() || meshEdges->m_polylines.empty())
-        return false;
-
-    m_disjoint = false;
-    m_isEdge = true;
-    m_is2d = mesh.Is2d();
-    m_isPlanar  = mesh.IsPlanar();
-
-    m_polylines.reserve(meshEdges->m_polylines.size());
-
-    for (auto& polyline : meshEdges->m_polylines)
-        {
-        IndexedPolyline indexedPolyline;
-
-        if (indexedPolyline.Init(polyline.GetIndices(), polyline.GetStartDistance(), polyline.GetRangeCenter()))
-            m_polylines.push_back(indexedPolyline);
-        }
-                                                
-    FinishInit(mesh);
-    return true;
+    m_polylineEdges.clear();
+    m_edges.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2544,21 +2460,22 @@ bool PolylineArgs::Init(MeshCR mesh)
     {
     Reset();
 
-    initLinearGraphicParams(*this, mesh);
+    m_width = mesh.GetDisplayParams().GetLineWidth();
+    m_linePixels = mesh.GetDisplayParams().GetLinePixels();
 
     m_is2d = mesh.Is2d();
     m_isPlanar = mesh.IsPlanar();
     m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
-    m_isEdge = mesh.GetDisplayParams().HasRegionOutline();
 
     m_polylines.reserve(mesh.Polylines().size());
 
     for (auto const& polyline : mesh.Polylines())
         {
-        IndexedPolyline indexedPolyline;
+        IndexedPolylineArgs::Polyline indexedPolyline;
         if (indexedPolyline.Init(polyline))
             m_polylines.push_back(indexedPolyline);
         }
+
     if (!IsValid())
         return false;
 
@@ -2599,19 +2516,25 @@ void GeometryListBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, Geome
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR db, GraphicParamsCR params, ClipVectorCP clip) const
+bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip, DRange3dR rangeOut) const
     {
-    bvector<GraphicPtr> sheetTileGraphics;
+    bvector<PolyfaceHeaderPtr> sheetTilePolys;
 
+    rangeOut.Init();
     if (nullptr != clip)
         {
-        TriMeshArgs clippedTile;
+        // need to order these strangely to account for the way TileCorners arranges vertices 
+        const double scaleAmt = 1.0; // placeholder
+        DPoint3d pt0 = DPoint3d::FromXYZ(corners.m_pts[0].x, corners.m_pts[0].y, corners.m_pts[0].z);  pt0.Scale(scaleAmt);
+        DPoint3d pt1 = DPoint3d::FromXYZ(corners.m_pts[1].x, corners.m_pts[1].y, corners.m_pts[1].z);  pt1.Scale(scaleAmt);
+        DPoint3d pt2 = DPoint3d::FromXYZ(corners.m_pts[3].x, corners.m_pts[3].y, corners.m_pts[3].z);  pt2.Scale(scaleAmt);
+        DPoint3d pt3 = DPoint3d::FromXYZ(corners.m_pts[2].x, corners.m_pts[2].y, corners.m_pts[2].z);  pt3.Scale(scaleAmt);
 
         bvector<DPoint3d> quadPts;
-        quadPts.push_back(corners.m_pts[0]); // need to order these strangely to account for the way TileCorners arranges vertices 
-        quadPts.push_back(corners.m_pts[1]);
-        quadPts.push_back(corners.m_pts[3]);
-        quadPts.push_back(corners.m_pts[2]);
+        quadPts.push_back(pt0);
+        quadPts.push_back(pt1);
+        quadPts.push_back(pt2);
+        quadPts.push_back(pt3);
 
         IFacetOptionsPtr facetOptions = IFacetOptions::Create();
         facetOptions->SetParamsRequired(true);
@@ -2627,55 +2550,80 @@ bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, GraphicBuilder::Til
 
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
                 {
-#if 0 // ###TODO: necessary? 
-                if (!clippedPolyfaceQuery->IsTriangulated())
-                    const_cast<PolyfaceHeaderP>(dynamic_cast<PolyfaceHeaderCP>(clippedPolyfaceQuery))->Triangulate();
-#endif
-
                 DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
                 uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
-
-                clippedTile.m_pointParams = QPoint3d::Params(DRange3d::From(pts, numPts)); // use these point params
-
-                bvector<QPoint3d> qVerts; // output these points to clippedTile
+                sheetTilePolys.push_back(clippedPolyfaceQuery->Clone());
                 for (uint32_t i = 0; i < numPts; i++)
                     {
-                    qVerts.push_back(QPoint3d(pts[i], clippedTile.m_pointParams));
+                    rangeOut.Extend(pts[i]);
                     }
-                clippedTile.m_points = &qVerts[0];
-                clippedTile.m_numPoints = numPts;
-
-                const DPoint2d* rawParams = clippedPolyfaceQuery->GetParamCP();
-                bvector<FPoint2d> uv; // output these uv coordinates to clippedTile
-                for (uint32_t i = 0; i < numPts; i++)
-                    {
-                    FPoint2d fpt;  fpt.x = rawParams[i].x;  fpt.y = rawParams[i].y;
-                    uv.push_back(fpt);
-                    }
-                clippedTile.m_textureUV = &uv[0];
-
-                bvector<uint32_t> indices;
-                PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*clippedPolyfaceQuery, true);
-                for (visitor->Reset(); visitor->AdvanceToNextFace();)
-                    {
-                    indices.push_back(visitor->GetClientPointIndexCP()[0]);
-                    indices.push_back(visitor->GetClientPointIndexCP()[1]);
-                    indices.push_back(visitor->GetClientPointIndexCP()[2]);
-                    }
-                clippedTile.m_numIndices = indices.size();
-                clippedTile.m_vertIndex = &indices[0];
-
-                clippedTile.m_texture = const_cast<Render::Texture*>(&tile);
-                clippedTile.m_material = params.GetMaterial();
-                clippedTile.m_isPlanar = true;
-
-                sheetTileGraphics.push_back(_CreateTriMesh(clippedTile, db));
                 }
             }
+        // else if no output, still will try to use _CreateTile, which is wrong.  Need to address this.
         }
-    else // not clipped
+    else // not clipped.  return empty vector which signifies a need to use _CreateTile.  range is still updated.
         {
-        sheetTileGraphics.push_back(_CreateTile(tile, corners, db, params));
+        for (int i = 0; i < 4; i++)
+            rangeOut.Extend(corners.m_pts[i]);
+        }
+
+    return sheetTilePolys;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, bvector<PolyfaceHeaderPtr>& polys, DgnDbR dgndb, GraphicParamsCR params) const
+    {
+    bvector<GraphicPtr> sheetTileGraphics;
+
+    for (auto& polyface : polys)
+        {
+        TriMeshArgs polyTile;
+
+#if 0 // ###TODO: necessary? 
+        if (!clippedPolyfaceQuery->IsTriangulated())
+            const_cast<PolyfaceHeaderP>(dynamic_cast<PolyfaceHeaderCP>(clippedPolyfaceQuery))->Triangulate();
+#endif
+
+        DPoint3dCP pts = polyface->GetPointCP();
+        uint32_t numPts = polyface->GetPointCount();
+
+        polyTile.m_pointParams = QPoint3d::Params(DRange3d::From(pts, numPts)); // use these point params
+
+        bvector<QPoint3d> qVerts; // output these points to clippedTile
+        for (uint32_t i = 0; i < numPts; i++)
+            {
+            qVerts.push_back(QPoint3d(pts[i], polyTile.m_pointParams));
+            }
+        polyTile.m_points = &qVerts[0];
+        polyTile.m_numPoints = numPts;
+
+        const DPoint2d* rawParams = polyface->GetParamCP();
+        bvector<FPoint2d> uv; // output these uv coordinates to clippedTile
+        for (uint32_t i = 0; i < numPts; i++)
+            {
+            FPoint2d fpt;  fpt.x = rawParams[i].x;  fpt.y = rawParams[i].y;
+            uv.push_back(fpt);
+            }
+        polyTile.m_textureUV = &uv[0];
+
+        bvector<uint32_t> indices;
+        PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface, true);
+        for (visitor->Reset(); visitor->AdvanceToNextFace();)
+            {
+            indices.push_back(visitor->GetClientPointIndexCP()[0]);
+            indices.push_back(visitor->GetClientPointIndexCP()[1]);
+            indices.push_back(visitor->GetClientPointIndexCP()[2]);
+            }
+        polyTile.m_numIndices = indices.size();
+        polyTile.m_vertIndex = &indices[0];
+
+        polyTile.m_texture = const_cast<Render::Texture*>(&tile);
+        polyTile.m_material = params.GetMaterial();
+        polyTile.m_isPlanar = true;
+
+        sheetTileGraphics.push_back(_CreateTriMesh(polyTile, dgndb));
         }
 
     return sheetTileGraphics;

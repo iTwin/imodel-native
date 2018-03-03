@@ -19,7 +19,7 @@ USING_NAMESPACE_TILETREE_IO
 
 // Vector classifiers are original implementation -- we'll continue to write them until
 // the batched model classifiers are functional and merged into master.
-static bool s_writeVectorClassifier = true;
+static bool s_writeVectorClassifier = false;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -3103,7 +3103,6 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                           basePoint ? colors0 : colors1,
                                           rangeCenter);
                     }
-            
                 if (jointAt0)
                     tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 2.0, rangeCenter);
 
@@ -3303,11 +3302,7 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
 
-#if defined(WIP_MESHTILE_3SM)
-    m_isEcef = true; // ###TODO: Remove after YII...
-#else
     m_isEcef = false;
-#endif
 
     // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
     DPoint3d        origin = m_projectExtents.GetCenter();
@@ -3345,10 +3340,27 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
         north.y += 100.0;
 
         dgnGCS->LatLongFromUors (originLatLong, origin);
-        dgnGCS->XYZFromLatLong(ecfOrigin, originLatLong);
-
         dgnGCS->LatLongFromUors (northLatLong, north);
-        dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
+
+
+        // If the current GCS does not use WGS84, need to convert as XYZFromLatLong expects WGS84 Lat/Long... (TFS# 799148). 
+        if (0 != wcscmp (dgnGCS->GetDatumName(), L"WGS84"))
+            {
+            auto        wgs84Datum = GeoCoordinates::Datum::CreateDatum (L"WGS84");
+            auto        thisDatum = GeoCoordinates::Datum::CreateDatum(dgnGCS->GetDatumName());
+            auto        datumConverter = GeoCoordinates::DatumConverter::Create (*thisDatum, *wgs84Datum);
+            GeoPoint    wgsOrigin, wgsNorth;
+
+            datumConverter->ConvertLatLong3D(wgsOrigin, originLatLong);
+            datumConverter->ConvertLatLong3D(wgsNorth, northLatLong);
+
+            originLatLong = wgsOrigin;
+            northLatLong  = wgsNorth;
+            }
+
+        /// Note we used to call dgnGCS->XYZFromLatLong to do the ECEF conversion - but that seems unreliable when datum is not WGS84 (TFS# 799148).
+        ecfOrigin = cartesianFromRadians (originLatLong.longitude * msGeomConst_radiansPerDegree, originLatLong.latitude * msGeomConst_radiansPerDegree);
+        ecfNorth  = cartesianFromRadians (northLatLong.longitude * msGeomConst_radiansPerDegree, 1.0E-4 + northLatLong.latitude * msGeomConst_radiansPerDegree);
         }
 
     RotMatrix   rMatrix;
@@ -3799,7 +3811,7 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter)
     {
-    DgnModelIdSet viewedModels, classifierModels;
+    DgnModelIdSet viewedModels;
 
     for (auto const& viewId : m_viewIds)
         GetViewedModelsFromView (viewedModels, viewId);

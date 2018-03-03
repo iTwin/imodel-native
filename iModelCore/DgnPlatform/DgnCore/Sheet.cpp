@@ -22,6 +22,8 @@ USING_NAMESPACE_TILETREE
 USING_NAMESPACE_SHEET
 using namespace Attachment;
 
+// #define WIP_POPULATE_GRAPHICS
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -463,7 +465,7 @@ void Sheet::Attachment::TTile::SetupRange()
     m_range.InitFrom(m_corners.m_pts, 4);
     }
 
-#define MAX_SHEET_REFINE_DEPTH 8
+#define MAX_SHEET_REFINE_DEPTH 6
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
@@ -489,10 +491,31 @@ TileTree::Tile::ChildTiles const* Sheet::Attachment::TTile::_GetChildren(bool lo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void repairSheetPolyUVs(bvector<PolyfaceHeaderPtr> polys, DRange3d polysRange)
+    {
+    double oldRangeX = polysRange.high.x - polysRange.low.x;
+    double oldRangeY = polysRange.high.y - polysRange.low.y;
+    double newRangeX = 1.0;
+    double newRangeY = 1.0;
+    for (auto& polyface : polys) // repair UVs in each poly so they are placed in 0 to 1 space based on polysRange (range of entire list of polys)
+        {
+        BlockedVectorDPoint2dR params = polyface->Param();
+        for (auto& uv : params)
+            {
+            uv.x = ((uv.x - polysRange.low.x) * newRangeX) / oldRangeX;
+            uv.y = ((uv.y - polysRange.low.y) * newRangeY) / oldRangeY;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 static uint32_t querySheetTileSize(uint32_t depth)
     {
     // ###TODO: can we base this on OpenGL capabilities so we don't rely on support for larger texture sizes if that's not reasonable?
-    static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024, 2048, 4096};
+    //static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024, 2048, 4096};
+    static const uint32_t s_texSizes[] = {32, 64, 128, 256, 512, 1024};
     return s_texSizes[depth < MAX_SHEET_REFINE_DEPTH ? depth : MAX_SHEET_REFINE_DEPTH - 1];
     }
 
@@ -508,18 +531,56 @@ static void populateSheetTile(TTile* tile, uint32_t depth, SceneContextR context
     Sheet::Attachment::Viewport* viewport = tree.m_viewport.get();
     UpdatePlan const& plan = context.GetUpdatePlan();
 
-    viewport->SetRect(BSIRect::From(0, 0, texSize, texSize));
+    // first create the polys for the tile so we can get the range (create graphics from polys later)
+    DRange3d polysRange;
+    bvector<PolyfaceHeaderPtr> polys = renderSys->_CreateSheetTilePolys(tile->m_corners, tree.m_graphicsClip.get(), polysRange);
+    //repairSheetPolyUVs(polys, polysRange);
+
+    viewport->SetRect(BSIRect::From(0, 0, texSize, texSize)); // ###TODO: Make actual prev ratio of view
     viewport->SetupFromViewController();
     viewport->m_renderSys = renderSys;
     viewport->m_db = &context.GetDgnDb();
     viewport->m_texSize = texSize;
+
+    polysRange.low.z  = 0.0;                // make sure entire z range.
+    polysRange.high.z = 1.0;
+
+    // Make the range lengths match (in order to make the aspect ratio square).  ###TODO: necessary if someday view ratio becomes equal to prev ratio?
+    double xLength = polysRange.XLength();
+    double yLength = polysRange.YLength();
+    if (xLength > yLength)
+        {
+        polysRange.high.y = polysRange.low.y + xLength;
+        }
+    else if (xLength < yLength)
+        {
+        polysRange.high.x = polysRange.low.x + yLength;
+        }
+
+    // scale the UVs into the new (clipped) space so they still are in 0 to 1 range
+    repairSheetPolyUVs(polys, polysRange);
+
+    // Change frustum so it looks at only the visible (after clipping) portion of the scene.
+    // Base this on polysRange calculated by _CreateSheetTilePolys().
+    Frustum frust = viewport->GetFrustum(DgnCoordSystem::Npc);
+    Frustum frustCopy = viewport->GetFrustum(DgnCoordSystem::World); // save original frustum
+    DPoint3dP frustPts = frust.GetPtsP();
+    polysRange.Get8Corners(frustPts);
+    DMap4dCP rootToNpc = viewport->GetWorldToNpcMap();
+    rootToNpc->M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
+    viewport->SetupFromFrustum(frust);
+
+    // Render the offscreen texture.
     viewport->_CreateScene(plan); // view controller for a drawing or spatial view, make a context in dgnview (renderthumbnail)
     // this will sit and wait; tile will be ready when here (RenderThumbnail path)
 
-    // add texture in the tree's viewport to a graphic
+    // create graphics from the polys and the rendered texture
+    // ###TODO: must determine whether to do this at all if there were no poly results
     GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
-    tile->m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, tile->m_corners, *viewport->m_db, gfParams, tree.GetClipVector());
+    tile->m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, polys, *viewport->m_db, gfParams);
     tile->SetIsReady();
+
+    viewport->SetupFromFrustum(frustCopy); // restore original frustum
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -558,9 +619,13 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
                     i++;
 
                 TTile& tile = static_cast<TTile&>(*attach.m_tree->GetRootTile());
+#ifdef WIP_POPULATE_GRAPHICS
+                tile.PopulateGraphics(0, context);
+#else
                 uint32_t texSize = s_texSize; // ###TODO: querySheetTileSize(tile->GetDepth());
                 tile.m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
                 tile.SetupRange(); // set up tile corners and range; uses biasDistance of tree
+#endif
                 }
             }
 
@@ -634,6 +699,18 @@ DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void TTile::PopulateGraphics(uint32_t depth, SceneContextR context)
+    {
+    uint32_t texSize = querySheetTileSize(depth);
+    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
+    SetupRange(); // set up tile corners and range; uses biasDistance of tree
+    if (!IsReady())
+        populateSheetTile(this, depth, context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
@@ -654,10 +731,14 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
     if (nullptr != childTiles && !childTiles->empty())
         {
         child = dynamic_cast<TTile*>((*childTiles)[0].get()); // there should only be a single child
+#ifdef WIP_POPULATE_GRAPHICS
+        child->PopulateGraphics(child->GetDepth(), args.m_context);
+#else
         uint32_t texSize = querySheetTileSize(child->GetDepth());
         child->m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(texSize, texSize));
         child->SetupRange(); // set up tile corners and range; uses biasDistance of tree
         // child graphic not actually rendered / created (will only do this when actually selected, if not already done)
+#endif
         }
 
     if (tooCoarse && nullptr != child)
@@ -666,14 +747,18 @@ Tile::SelectParent TTile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, Ti
         return SelectParent::No;
         }
 
+// #define DEBUG_PRINT_SHEET_TILE_SELECTION
 #if defined(DEBUG_PRINT_SHEET_TILE_SELECTION)
     DEBUG_PRINTF(" ** Selecting this tile, IsReady()=%d, depth=%d", IsReady(), GetDepth());
 #endif
 
+#ifdef WIP_POPULATE_GRAPHICS
+#else
     if (!IsReady())
         {
         populateSheetTile(const_cast<TTile*>(this), GetDepth(), args.m_context);
         }
+#endif
 
     selected.push_back(this);
     return SelectParent::No;
@@ -716,22 +801,40 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
     if (!view.IsValid())
         return;
 
-    // we use square tiles. If the view's aspect ratio isn't square, expand the short side in tile (NPC) space. We'll clip out the extra area below.
-    double aspect = view->GetViewDefinition().GetAspectRatio();
-    if (aspect<1.0)
-        m_scale.Init(1.0/aspect, 1.0);
-    else
-        m_scale.Init(1.0, aspect);
-
-    // now expand the frustum in one direction so that the view is square (so we can use square tiles)
-    m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
+    m_viewport->SetupFromViewController();
     m_viewport->ChangeViewController(*view);
 
     auto& def = view->GetViewDefinitionR();
     auto& style = def.GetDisplayStyle();
 
+    ColorDef bgColor;
+#if defined(DEBUG_SHEET_BACKGROUND)
+    static int sCount = 0;
+    ColorDef sCols[12] = {
+        ColorDef::Brown(),
+        ColorDef::LightGrey(),
+        ColorDef::MediumGrey(),
+        ColorDef::DarkGrey(),
+        ColorDef::DarkRed(),
+        ColorDef::DarkGreen(),
+        ColorDef::DarkBlue(),
+        ColorDef::DarkYellow(),
+        ColorDef::DarkOrange(),
+        ColorDef::DarkCyan(),
+        ColorDef::DarkMagenta(),
+        ColorDef::DarkBrown(),
+    };
+    bgColor = sCols[sCount++];
+    if (sCount > 11) sCount = 0;
+#else
     // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
-    style.SetBackgroundColor(sheetController.GetViewDefinitionR().GetDisplayStyle().GetBackgroundColor());
+    bgColor = sheetController.GetViewDefinitionR().GetDisplayStyle().GetBackgroundColor();
+
+    // Set fully-transparent so that we discard background pixels (probably no point to the above line any more...)
+    bgColor.SetAlpha(0xff);
+#endif
+
+    style.SetBackgroundColor(bgColor);
 
     SpatialViewDefinitionP spatial = def.ToSpatialViewP();
     if (spatial)
@@ -741,30 +844,31 @@ TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId att
         env.m_skybox.m_enabled = false;
         }
 
-    m_viewport->SetupFromViewController();
-    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
-    m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
-    m_viewport->SetupFromFrustum(frust);
+    m_viewport->SetupFromFrustum(m_viewport->GetFrustum(DgnCoordSystem::World));
 
     auto& box = attach->GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach->GetPlacement().CalculateRange();
 
+    int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
+    m_biasDistance = double(biasDistance);
     DPoint3d org = range.low;
-    org.z = 0.0;
+
+    org.z = 0.0; // ###TODO m_biasDistance;?
     Transform trans = Transform::From(org);
-    trans.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
+    trans.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
     SetLocation(trans);
 
     bsiTransform_initFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
-    m_viewport->m_toParent.ScaleMatrixColumns(m_scale.x, m_scale.y, 1.0);
 
     // set a clip volume around view, so we only show the original volume
     m_clip = attach->GetClip();
     if (!m_clip.IsValid())
         m_clip = new ClipVector(ClipPrimitive::CreateFromShape(RectanglePoints(range.low.x, range.low.y, range.high.x, range.high.y), 5, false, nullptr, nullptr, nullptr).get());
 
-	int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
-	m_biasDistance = double(biasDistance);
+    Transform fromParent;
+    fromParent.InverseOf(m_viewport->m_toParent);
+    m_graphicsClip = m_clip->Clone(&fromParent);
+
     m_viewport->m_clips = m_clip;
 
     SetExpirationTime(BeDuration::Seconds(5)); // only save unused sheet tiles for 5 seconds

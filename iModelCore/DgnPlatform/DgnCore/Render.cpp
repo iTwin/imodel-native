@@ -53,7 +53,8 @@ void Render::Queue::AddTask(Task& task)
     // see whether the new task should replace any existing tasks
     for (auto entry=m_tasks.begin(); entry != m_tasks.end();)
         {
-        if ((task.GetTarget() == (*entry)->GetTarget()) && task._Replaces(**entry))
+        // Any task always replaces an idle task...
+        if (Task::Operation::Idle == (*entry)->GetOperation() || ((task.GetTarget() == (*entry)->GetTarget()) && task._Replaces(**entry)))
             {
             (*entry)->m_outcome = Render::Task::Outcome::Abandoned;
             entry = m_tasks.erase(entry);
@@ -928,43 +929,22 @@ void FeatureSymbologyOverrides::ClearSubCategoryOverrides(DgnSubCategoryId id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshEdge::MeshEdge(uint32_t index0, uint32_t index1)
-    {
-    if (index0 < index1)
-        {
-        m_indices[0] = index0;
-        m_indices[1] = index1;
-        }
-    else
-        {
-        m_indices[0] = index1;
-        m_indices[1] = index0;
-        }
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool MeshEdge::operator < (MeshEdge const& rhs) const
+bool MeshEdge::operator<(MeshEdge const& rhs) const
     {
     return m_indices[0] == rhs.m_indices[0] ? (m_indices[1] < rhs.m_indices[1]) :  (m_indices[0] < rhs.m_indices[0]);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeshEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR qparams, bool isPlanar)
+bool EdgeArgs::Init(MeshEdgesCR meshEdges)
     {
-    if (meshEdges.m_visible.empty())
+    auto const& visible = meshEdges.m_visible;
+    if (visible.empty())
         return false;
 
-    m_points        = points;
-    m_pointParams   = qparams;
-    m_edges         = meshEdges.m_visible.data();
-    m_numEdges      = meshEdges.m_visible.size();
-    m_isPlanar      = isPlanar;
+    m_edges = visible.data();
+    m_numEdges = visible.size();
 
     return true;
     }
@@ -972,17 +952,15 @@ bool MeshEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::Para
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR params)
+bool SilhouetteEdgeArgs::Init(MeshEdgesCR meshEdges)
     {
-    if (meshEdges.m_silhouette.empty())
+    auto const& silhouette = meshEdges.m_silhouette;
+    if (silhouette.empty())
         return false;
 
-    m_points        = points;
-    m_pointParams   = params;
-    m_edges         = meshEdges.m_silhouette.data();
-    m_numEdges      = meshEdges.m_silhouette.size();
-    m_normals       = meshEdges.m_silhouetteNormals.data();
-    m_isPlanar      = false;
+    m_edges = silhouette.data();
+    m_numEdges = silhouette.size();
+    m_normals = meshEdges.m_silhouetteNormals.data();
 
     return true;
     }

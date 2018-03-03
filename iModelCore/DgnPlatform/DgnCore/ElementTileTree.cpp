@@ -1032,11 +1032,15 @@ BentleyStatus Loader::_LoadTile()
         return ERROR;
         }
 
-    GetMeshGraphicsArgs             args;
-    bvector<Render::GraphicPtr>     graphics;
+    MeshGraphicArgs args;
+    bvector<Render::GraphicPtr> graphics;
 
     for (auto const& mesh : geometry.Meshes())
-        mesh->GetGraphics (graphics, *system, args, root.GetDgnDb());
+        {
+        auto meshGraphic = mesh->GetGraphics(args, *system, root.GetDgnDb());
+        if (meshGraphic.IsValid())
+            graphics.push_back(meshGraphic);
+        }
 
     GraphicPtr batch;
     if (!graphics.empty())
@@ -2094,7 +2098,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     if (polyface.IsNull() || 0 == polyface->GetPointIndexCount())
         return;
 
-    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
+    bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount() && 0 == polyface->GetFaceCount();
 
     if (doDecimate)
         {

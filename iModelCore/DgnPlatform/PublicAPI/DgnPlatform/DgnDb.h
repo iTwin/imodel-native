@@ -203,6 +203,8 @@ protected:
     mutable std::unordered_map<uint64_t, std::unique_ptr<BeSQLite::EC::ECInstanceInserter>> m_cacheECInstanceInserter;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifyProfileVersion(BeSQLite::Db::OpenParams const& params) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeVerifyProfileVersion() override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterVerifyProfileVersion() override;
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;

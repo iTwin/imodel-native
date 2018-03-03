@@ -1326,7 +1326,7 @@ ColorDef DisplayStyle::GetBackgroundColor() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayStyle::SetBackgroundColor(ColorDef val)
     {
-    GetStylesR().SetOrRemoveInt(json_backgroundColor(), val.GetValue(), ColorDef::Black().GetValue());
+    GetStylesR().SetOrRemoveUInt(json_backgroundColor(), val.GetValue(), ColorDef::Black().GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**
