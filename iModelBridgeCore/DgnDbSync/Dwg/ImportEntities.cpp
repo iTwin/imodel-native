@@ -2202,20 +2202,54 @@ BentleyStatus   CreateGeometryPart (BuilderInfoR builderInfo, DRange3dR partRang
         geomPart->SetUserLabel (label.c_str());
         }
 
-    // insert the part to DgnDb, and append its ID to our output builder:
-    if (BSISUCCESS == geomBuilder->Finish(*geomPart) && db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
-        {
-        partRange = geomPart->GetBoundingBox ();
+    m_status = geomBuilder->Finish (*geomPart);
+    if (BSISUCCESS != m_status)
+        return  m_status;
 
-        builderInfo.m_partId = geomPart->GetId ();
+    m_status = BSIERROR;
+
+    builderInfo.m_partId = DgnGeometryPart::QueryGeometryPartId (db, partCode);
+    if (!builderInfo.m_partId.IsValid())
+        {
+        // insert the part to DgnDb, and append its ID to our output builder:
+        if (db.Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+            {
+            partRange = geomPart->GetBoundingBox ();
+            builderInfo.m_partId = geomPart->GetId ();
+            m_status = BSISUCCESS;
+            }
+        }
+    else
+        {
+        // update the part
+        DgnElementCPtr      existingElm = db.Elements().GetElement (builderInfo.m_partId);
+        DgnGeometryPartCP   partElm;
+        if (existingElm.IsValid() && nullptr != (partElm = dynamic_cast<DgnGeometryPartCP>(existingElm.get())))
+            {
+            // get an editable element
+            DgnElementPtr   writable = existingElm->CopyForEdit ();
+            if (writable.IsValid())
+                {
+                writable->CopyFrom (*geomPart);
+
+                DgnDbStatus status = DgnDbStatus::Success;
+                if (db.Elements().Update(*writable, &status).IsValid() && nullptr != (partElm = dynamic_cast<DgnGeometryPartCP>(writable.get())))
+                    {
+                    BeAssert (DgnDbStatus::Success == status);
+                    partRange = partElm->GetBoundingBox ();
+                    m_status = BSISUCCESS;
+                    }
+                }
+            }
+        }
+
+    if (BSISUCCESS == m_status)
+        {
         builderInfo.m_transform = m_worldToElement;
         builderInfo.m_partNamespace = nameSpace;
         builderInfo.m_geometryHashVal = m_geometryHash.GetHashVal ();
-
-        return  BSISUCCESS;
         }
 
-    m_status = BSIERROR;
     return  BSIERROR;
     }
 
