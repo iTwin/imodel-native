@@ -1258,6 +1258,8 @@ public:
     DGNDBSYNC_EXPORT V8NamedViewType GetV8NamedViewType(DgnAttachmentCR);
     DGNDBSYNC_EXPORT V8NamedViewType GetV8NamedViewTypeOfFirstAttachment(DgnV8ModelR);
 
+    static bool IsSimpleWireframeAttachment(DgnAttachmentCR ref);
+
     //! Compute the range of section-like proxy graphics from the section-like V8 NamedView that generated them.
     //!<p>A note on terminology: A "section-like NamedView" is a section, elevation, or plan cut. A "section-like attachment" 
     //! is a DgnAttachment that is based on a section-like NamedView. Section-like proxy graphics are the (mostly) planar

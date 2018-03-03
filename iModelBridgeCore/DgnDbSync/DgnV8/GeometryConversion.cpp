@@ -3257,12 +3257,25 @@ void CveConverter::DetectAttachment()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR v8curves, bool isFilled)
     {
-    if (nullptr == m_context->GetDisplayStyleHandler()) // If this is not from the proxy graphics cache, it's a normal element in the drawing. The converter already pulled that in.
-        return Bentley::SUCCESS;
+    DgnV8Api::ClipVolumePass        clipVolumePass      = DgnV8Api::ClipVolumePass::None;
+    DgnV8Api::ProxyGraphicsType     proxyGraphicsType   = DgnV8Api::ProxyGraphicsType_VisibleEdge;
 
-    auto proxyInfo = m_converter.GetProxyDisplayHitInfo(*m_context);
-    if (nullptr == proxyInfo)
-        return Bentley::SUCCESS;
+    if (nullptr == m_context->GetDisplayStyleHandler()) // If this is not from the proxy graphics cache, it's a normal element in the drawing. The converter already pulled that in.
+        {
+        auto model = m_context->GetCurrentModel();
+        DgnAttachmentCP attachment = model->AsDgnAttachmentCP();
+        if (nullptr == attachment || !Converter::IsSimpleWireframeAttachment(*attachment))
+            return Bentley::SUCCESS;
+        }
+    else
+        {
+        auto proxyInfo = m_converter.GetProxyDisplayHitInfo(*m_context);
+        if (nullptr == proxyInfo)
+            return Bentley::SUCCESS;
+
+        proxyGraphicsType = proxyInfo->m_graphicsType;
+        clipVolumePass    = proxyInfo->m_viewHandlerPass.m_pass;
+        }
 
     // Right off the bat, make sure that the type-100 itself is recorded in syncinfo and check if it is new or has changed. 
     // If the type 100 was seen before and has not changed, there's nothing to do.
@@ -3271,7 +3284,7 @@ Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR 
     if (!m_currentAttachmentInfo.m_hasChanged || m_currentAttachmentInfo.m_failed)
         {
         m_attachmentsUnchanged.insert(m_currentAttachmentInfo.m_mapping);
-        return Bentley::SUCCESS;
+            return Bentley::SUCCESS;
         }
 
     m_converter.ShowProgress();
@@ -3280,16 +3293,23 @@ Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR 
     CurveVectorPtr bimcurves;
     Converter::ConvertCurveVector(bimcurves, v8curves, &m_parentModelMapping.GetTransform());   
 
+    // CVE graphics are defined in 3-D coordinates. The ViewContext's "current transform" gets them into the parent V8 drawing or sheet model's coordinates.
+
     if (m_currentAttachment->IsCameraOn())
         {
-        Bentley::DMap4d      parentMap;
+        Bentley::DMap4d     parentMap, currentAndFromParent, composite;
+        Bentley::Transform  fromParentTransform;
 
+        m_currentAttachment->GetTransformFromParent (fromParentTransform, false);
+
+        currentAndFromParent.InitFromTransform(Bentley::Transform::FromProduct(fromParentTransform, m_currentTransform), false);
         m_currentAttachment->GetMapToParent(parentMap, false);
-        bimcurves = bimcurves->Clone ((DMatrix4dCR) parentMap.M0);
+
+        composite.InitProduct(parentMap, currentAndFromParent); 
+        bimcurves = bimcurves->Clone ((DMatrix4dCR) composite.M0);          
         } 
     else
         {
-        // CVE graphics are defined in 3-D coordinates. The ViewContext's "current transform" gets them into the parent V8 drawing or sheet model's coordinates.
         bimcurves->TransformInPlace(DoInterop(m_currentTransform));
         }
 
@@ -3303,7 +3323,7 @@ Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR 
     bimcurves->TransformInPlace(m_parentModelMapping.GetTransform());
 
     //  Remap the symbology, etc.
-    DgnSubCategoryId subCategoryId = m_converter.GetExtractionSubCategoryId(m_currentAttachmentInfo.m_categoryId, proxyInfo->m_viewHandlerPass.m_pass, proxyInfo->m_graphicsType);
+    DgnSubCategoryId subCategoryId = m_converter.GetExtractionSubCategoryId(m_currentAttachmentInfo.m_categoryId, clipVolumePass, proxyGraphicsType);
     if (!subCategoryId.IsValid())
         {
         BeAssert(false);
