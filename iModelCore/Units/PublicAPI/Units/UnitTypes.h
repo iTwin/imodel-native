@@ -85,15 +85,17 @@ friend struct UnitRegistry;
 private:
     Utf8String m_name;
 
-    IUnitsContextCP m_unitsContext;
-
     // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
     UnitSystem() = delete;
     UnitSystem(UnitSystemCR system) = delete;
     UnitSystemR operator=(UnitSystemCR unit) = delete;
 
 protected:
+    IUnitsContextCP m_unitsContext;
     static UnitSystemP _Create(Utf8CP name) {return new UnitSystem(name);}
+
+    //! Sets the UnitsContext if it has not been previously set.
+    BentleyStatus SetContext(IUnitsContextCP context) { if (nullptr != m_unitsContext) return ERROR; m_unitsContext = context; return SUCCESS; }
 
     UnitSystem(Utf8CP name) : m_name(name) {}
     virtual ~UnitSystem() {}
@@ -107,7 +109,6 @@ public:
 //=======================================================================================
 struct UnitsSymbol
 {
-friend struct UnitRegistry;
 friend struct ExpressionSymbol;
 friend struct Expression;
 friend struct Unit; // Needed for access to private members
@@ -133,11 +134,32 @@ protected:
     IUnitsContextCP m_unitsContext;
 
     // Creates a default invalid Symbol
-    UnitsSymbol() : m_isBaseSymbol(false), m_numerator(0.0), m_denominator(1.0), m_offset(0.0), m_isNumber(true), m_evaluated(false) {}
+    UnitsSymbol() : m_isBaseSymbol(false), m_numerator(0.0), m_denominator(1.0), m_offset(0.0), m_isNumber(true), m_evaluated(false), m_unitsContext(nullptr) {}
 
+    // Creates an invalid Symbol with the provided name.
+    UNITS_EXPORT UnitsSymbol(Utf8CP name);
+
+    //! Creates a valid Symbol
     UNITS_EXPORT UnitsSymbol(Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset);
-    ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
     UNITS_EXPORT virtual ~UnitsSymbol();
+
+    ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
+
+    //! Sets the definition of this UnitSymbol if a definition is not already defined.
+    UNITS_EXPORT BentleyStatus SetDefinition(Utf8CP definition);
+
+    //! Sets the numerator of this UnitSymbol if the current numerator is the default, 0.0.
+    UNITS_EXPORT BentleyStatus SetNumerator(double numerator);
+    
+    //! Sets the denominator of this UnitSymbol if the current denominator is the default, 1.0. The provided
+    //! denominator cannot be 0.0.
+    UNITS_EXPORT BentleyStatus SetDenominator(double denominator);
+
+    //! Sets the offset of this UnitSymbol if the current offset is the default, 0.0.
+    UNITS_EXPORT BentleyStatus SetOffset(double offset);
+
+    //! Sets the UnitsContext if it has not been previously set.
+    BentleyStatus SetContext(IUnitsContextCP context) {if (nullptr != m_unitsContext) return ERROR; m_unitsContext = context; return SUCCESS;}
 
 public:
     Utf8StringCR GetName() const {return m_name;}
@@ -167,7 +189,7 @@ private:
     // TODO: Should these be a reference because it must be set?
     UnitSystemCP    m_system;
     PhenomenonCP    m_phenomenon;
-    UnitCP          m_parent;
+    UnitCP          m_parent; // for an inverted Unit only.
     bool            m_isConstant;
     bool            m_dummyUnit;
     mutable Utf8String m_displayLabel;
@@ -201,16 +223,31 @@ protected:
 
     UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName);
 
+    Unit(Utf8CP name) : UnitsSymbol(name), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(false), m_dummyUnit(false) {}
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
 
+    //! Creates an inverted Unit.
     Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name)
         : Unit(system, *(parentUnit.GetPhenomenon()), name, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
         {
         m_parent = &parentUnit;
         m_isNumber = m_parent->IsNumber();
         }
+
+    //! @return Pointer to the parent of this Inverted Unit, if this is an Inverted Unit; otherwise, nullptr.
     UnitCP GetParent() const {return m_parent;}
-    void SetLabel(Utf8CP label) {m_displayLabel = label;}
+    
+    void SetLabel(Utf8CP label) {m_displayLabel = label;} //!< Sets the display label.
+
+    void SetConstant(bool isConstant) {m_isConstant = isConstant;}
+
+    //! Sets the UnitSystem of this Unit if it does not already have one.
+    BentleyStatus SetSystem(UnitSystemCR system) {if (nullptr != m_system) return ERROR; m_system = &system; return SUCCESS;}
+    //! Sets the Phenomenon of this Unit if it does not already have one.
+    BentleyStatus SetPhenomenon(PhenomenonCR phenom) {if (nullptr != m_phenomenon) return ERROR; m_phenomenon = &phenom; return SUCCESS;}
+
+    //! Sets the Parent Unit.
+    BentleyStatus SetParent(UnitCR parentUnit) {if (IsInvertedUnit() || nullptr != m_parent) return ERROR; m_parent = &parentUnit; return SUCCESS;}
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;

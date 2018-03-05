@@ -248,32 +248,6 @@ void FormattingTestFixture::ShowQuantityS(Utf8CP descr)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestFixture::CustomFormatAnalyzer(double dval, Utf8CP uom, Utf8CP jsonCustomFormat)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
-    if (nullptr == unit)
-        {
-        LOG.infov("Invalid UOM: >%s<", uom);
-        return;
-        }
-    BEU::Quantity const qty = BEU::Quantity(dval, *unit);
-     
-    // now we need to add a new format definition from the json string
-    FormatProblemDetail problem;
-    NamedFormatSpecCP nfs = StdFormatSet::AddFormat(jsonCustomFormat, problem);
-    if (problem.IsProblem())
-        {
-        LOG.infov("Invalid JSON definition. error code %d", problem.GetProblemCode());
-        return;
-        }
-    LOG.infov("Created custom format spec %s (%s)", nfs->GetName(), nfs->GetAlias());
-    Utf8String str = NumericFormatSpec::StdFormatQuantity(*nfs, qty);
-    LOG.infov("===CustomFormatAnalyzer: %f of %s = %s", dval, uom, str.c_str());
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
 NumericAccumulator* FormattingTestFixture::NumericAccState(NumericAccumulator* nacc, Utf8CP txt)

@@ -17,11 +17,17 @@ using namespace std;
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+UnitsSymbol::UnitsSymbol(Utf8CP name) : m_name(name), m_isBaseSymbol(false), m_numerator(0.0), m_denominator(1.0),
+    m_offset(0.0), m_isNumber(true), m_evaluated(false), m_symbolExpression(new Expression()) {}
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
 UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset) :
-    m_name(name), m_definition(definition), m_isBaseSymbol(false), m_numerator(numerator), m_denominator(denominator), m_offset(offset), m_evaluated(false), m_isNumber(false),
-    m_symbolExpression(new Expression())
+    m_name(name), m_definition(definition), m_isBaseSymbol(false), m_numerator(numerator), m_denominator(denominator),
+    m_offset(offset), m_evaluated(false), m_isNumber(false), m_symbolExpression(new Expression())
     {
     m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
     }
@@ -33,6 +39,52 @@ UnitsSymbol::~UnitsSymbol()
     {
     if (nullptr != m_symbolExpression)
         delete m_symbolExpression;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus UnitsSymbol::SetDefinition(Utf8CP definition)
+    {
+    if (!m_definition.empty() || nullptr == definition || Utf8String::IsNullOrEmpty(definition))
+        return ERROR;
+    m_definition = definition;
+
+    m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus UnitsSymbol::SetNumerator(double numerator)
+    {
+    if (0.0 != m_numerator)
+        return ERROR;
+    m_numerator = numerator;
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus UnitsSymbol::SetDenominator(double denominator)
+    {
+    if (1.0 != m_denominator || 0.0 == denominator)
+        return ERROR;
+    m_denominator = denominator;
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus UnitsSymbol::SetOffset(double offset)
+    {
+    if (0.0 != m_offset)
+        return ERROR;
+    m_offset = offset;
+    return SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------

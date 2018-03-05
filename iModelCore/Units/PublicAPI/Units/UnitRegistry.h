@@ -15,24 +15,36 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
-//! The UnitsContext is an abstact class to provide a way to look up Units, Phenomena, 
-//! and UnitSystems.
+//! The UnitsContext is an abstact class to provide a generic interface to look up Units, 
+//! Phenomena, and UnitSystems within a UnitsContext.
 // @bsistruct                                                    Caleb.Shafer       02/18
 //=======================================================================================
 struct IUnitsContext /* abstract */
 {
 protected:
-    virtual UnitP _LookupUnitP(Utf8CP name) const = 0;
-    virtual PhenomenonP _LookupPhenomenonP(Utf8CP name) const = 0;
-    virtual UnitSystemP _LookupUnitSystemP(Utf8CP name) const = 0;
+    virtual UnitP _LookupUnitP(Utf8CP name) = 0;
+    virtual PhenomenonP _LookupPhenomenonP(Utf8CP name) = 0;
+    virtual UnitSystemP _LookupUnitSystemP(Utf8CP name) = 0;
     virtual void _AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const = 0;
     virtual void _AllUnits(bvector<UnitCP>& allUnits) const = 0;
     virtual void _AllSystems(bvector<UnitSystemCP>& allUnitSystems) const = 0;
 
 public:
-    UnitCP LookupUnit(Utf8CP name) const {return _LookupUnitP(name);}
+    //! Gets the Unit from this context.
+    //! @param[in] name Name of the Unit to retrieve.
+    //! @return A Unit if it found in this context; otherwise, nullptr.
+    virtual UnitCP LookupUnit(Utf8CP name) const {return const_cast<IUnitsContextP>(this)->_LookupUnitP(name);}
 
-    PhenomenonCP LookupPhenomenon(Utf8CP name) const {return _LookupPhenomenonP(name);}
+    //! Gets the Phenomenon from this context.
+    //! @param[in] name Name of the Phenomenon to retrieve.
+    //! @return A Phenomenon if it found in this context; otherwise, nullptr.
+    virtual PhenomenonCP LookupPhenomenon(Utf8CP name) const {return const_cast<IUnitsContextP>(this)->_LookupPhenomenonP(name);}
+
+    //! Gets the UnitSystem from this context.
+    //! @param[in] name Name of the UnitSystem to retrieve.
+    //! @return A UnitSystem if it found in this registry; otherwise, nullptr.
+    virtual UnitSystemCP LookupUnitSystem(Utf8CP name) const {return const_cast<IUnitsContextP>(this)->_LookupUnitSystemP(name);}
+
     //! Populates the provided vector with all Phenomena in this context
     //! @param[out] allPhenomena The vector to populate with the phenomena
     void AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const {_AllPhenomena(allPhenomena);}
@@ -130,7 +142,7 @@ private:
 
         phenomena->m_unitsContext = this;
 
-        m_phenomena.insert(bpair<Utf8CP, PHENOM_TYPE*>(phenomena->m_name.c_str(), phenomena));
+        m_phenomena.insert(bpair<Utf8CP, PHENOM_TYPE*>(phenomena->GetName().c_str(), phenomena));
 
         return phenomena;
         }
@@ -182,7 +194,7 @@ private:
         unit->m_unitsContext = this;
         phenomenon->AddUnit(*unit);
 
-        m_units.insert(bpair<Utf8CP, UnitP>(unit->m_name.c_str(), (UnitP) unit));
+        m_units.insert(bpair<Utf8CP, UnitP>(unit->GetName().c_str(), (UnitP) unit));
 
         return unit;
         }
@@ -238,7 +250,7 @@ private:
         PhenomenonP phenomenon = _LookupPhenomenonP(parentUnit->GetPhenomenon()->GetName().c_str());
         phenomenon->AddUnit(*unit);
 
-        m_units.insert(bpair<Utf8CP, UnitP>(unit->m_name.c_str(), (UnitP) unit));
+        m_units.insert(bpair<Utf8CP, UnitP>(unit->GetName().c_str(), (UnitP) unit));
 
         return unit;
         }
@@ -261,20 +273,19 @@ private:
         auto unitSystem = SYSTEM_TYPE::_Create(name);
         unitSystem->m_unitsContext = this;
 
-        // Get the name directly to avoid calling any overrides of GetName defined in a derived class
-        m_systems.Insert(unitSystem->m_name.c_str(), unitSystem);
+        m_systems.Insert(unitSystem->GetName().c_str(), unitSystem);
 
         return unitSystem;
         }
 
 protected:
-    PhenomenonP _LookupPhenomenonP(Utf8CP name) const {auto val_iter = m_phenomena.find(name); return val_iter == m_phenomena.end() ? nullptr : (*val_iter).second;}
+    PhenomenonP _LookupPhenomenonP(Utf8CP name) override {auto val_iter = m_phenomena.find(name); return val_iter == m_phenomena.end() ? nullptr : (*val_iter).second;}
     void _AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const;
 
-    UnitP _LookupUnitP(Utf8CP name) const override {auto val_iter = m_units.find(name); return val_iter == m_units.end() ? nullptr : (*val_iter).second;}
+    UnitP _LookupUnitP(Utf8CP name) override {auto val_iter = m_units.find(name); return val_iter == m_units.end() ? nullptr : (*val_iter).second;}
     void _AllUnits(bvector<UnitCP>& allUnits) const;
 
-    UnitSystemP _LookupUnitSystemP(Utf8CP name) const {auto val_iter = m_systems.find(name); return val_iter == m_systems.end() ? nullptr : (*val_iter).second;}
+    UnitSystemP _LookupUnitSystemP(Utf8CP name) override {auto val_iter = m_systems.find(name); return val_iter == m_systems.end() ? nullptr : (*val_iter).second;}
     void _AllSystems(bvector<UnitSystemCP>& allUnitSystems) const;
 
     bool NamedItemExists(Utf8CP name) {return HasUnit(name) || HasPhenomenon(name) || HasSystem(name);}
@@ -393,25 +404,10 @@ public:
     //! @return A UnitSystem if successfully created and added to the registry, nullptr otherwise.
     UnitSystemCP AddSystem(Utf8CP name) {return AddSystem<UnitSystem>(name);}
 
-    //! Gets the Unit from this registry.
-    //! @param[in] name Name of the Unit to retrieve.
-    //! @return A Unit if it found in this registry, nullptr otherwise
-    UnitCP LookupUnit(Utf8CP name) const {return _LookupUnitP(name);}
-
     //! Gets the Constant from this registry.
     //! @param[in] name Name of the Constant to retrieve.
     //! @return A Constant Unit if it found in this registry, nullptr otherwise
     UNITS_EXPORT UnitCP LookupConstant(Utf8CP name) const;
-
-    //! Gets the Phenomenon from this registry.
-    //! @param[in] name Name of the Phenomenon to retrieve.
-    //! @return A Phenomenon if it found in this registry, nullptr otherwise
-    PhenomenonCP LookupPhenomenon(Utf8CP name) const {return _LookupPhenomenonP(name);}
-
-    //! Gets the UnitSystem from this registry.
-    //! @param[in] name Name of the UnitSystem to retrieve.
-    //! @return A UnitSystem if it found in this registry, nullptr otherwise
-    UnitSystemCP LookupUnitSystem(Utf8CP name) const {return _LookupUnitSystemP(name);}
 
     //! Indicates if the UnitSystem is in this registry.
     bool HasSystem(Utf8CP systemName) const {return m_systems.end() != m_systems.find(systemName);}

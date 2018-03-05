@@ -307,8 +307,8 @@ UnitCP UnitRegistry::LookupUnitUsingOldName(Utf8CP oldName) const
     {
     auto newName = UnitRegistry::TryGetNewName(oldName);
     if (nullptr == newName)
-        return nullptr;    
-    return _LookupUnitP(newName);
+        return nullptr;
+    return LookupUnit(newName);
     }
 
 //---------------------------------------------------------------------------------------
