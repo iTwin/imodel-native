@@ -1220,6 +1220,10 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         if (!accum.Accumulate(*model.GetRangeIndex()))
             range = DRange3d::From(DPoint3d::FromZero());
 
+
+        // Temp Fix to avoid endless subdivision as we are not subdividing in Z...
+        range.low.z = range.high.z = 0.0;
+
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }
 

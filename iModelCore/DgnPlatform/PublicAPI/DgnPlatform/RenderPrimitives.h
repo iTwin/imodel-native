@@ -66,9 +66,9 @@ enum class NormalMode
 //=======================================================================================
 struct GeometryOptions
 {
-    enum class SurfacesOnly { Yes, No }; //!< Yes indicates polylines will not be generated, only meshes.
-    enum class PreserveOrder { Yes, No }; //!< Yes indicates primitives will not be merged, and the order in which they were added to the GraphicBuilder will be preserved.
-    enum class GenerateEdges { Yes, No }; //!< Yes indicates edges will be generated for surfaces.
+    enum class SurfacesOnly { No, Yes }; //!< Yes indicates polylines will not be generated, only meshes.
+    enum class PreserveOrder { No, Yes }; //!< Yes indicates primitives will not be merged, and the order in which they were added to the GraphicBuilder will be preserved.
+    enum class GenerateEdges { No, Yes }; //!< Yes indicates edges will be generated for surfaces.
 
     NormalMode          m_normalMode;
     SurfacesOnly        m_surfaces;

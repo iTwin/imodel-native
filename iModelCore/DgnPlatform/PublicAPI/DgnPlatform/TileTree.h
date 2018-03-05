@@ -488,7 +488,7 @@ protected:
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
     BentleyStatus DoSaveToDb();
-    BentleyStatus DeleteRow(RealityData::CacheR, uint64_t rowId);
+    BentleyStatus DropFromDb(RealityData::CacheR);
 
     virtual uint64_t _GetCreateTime() const { return BeTimeUtilities::GetCurrentTimeAsUnixMillis(); }
 public:

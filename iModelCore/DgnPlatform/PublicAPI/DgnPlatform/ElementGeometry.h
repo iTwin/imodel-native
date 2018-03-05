@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementGeometry.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -182,11 +182,10 @@ struct GeometryStreamIO
     //=======================================================================================
     struct Header
     {
-        uint32_t    m_version:8;
-        uint32_t    m_reserved:24;
+        uint32_t    m_version;
         uint32_t    m_flags;
 
-        Header(uint8_t version = 1, uint32_t flags = 0) : m_version(version), m_reserved(0), m_flags(flags) {}
+        Header(uint8_t version = 1, uint32_t flags = 0) : m_version(version), m_flags(flags) {}
     };
 
     //=======================================================================================

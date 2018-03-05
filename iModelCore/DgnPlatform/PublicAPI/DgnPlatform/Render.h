@@ -273,7 +273,8 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeScene,
         DefineGeometryTexture,
         DestroyTarget,
-        Initialize,
+        Idle,
+        Initialize, // Invoked synchronously; return non-zero if initialization failed.
         OnResized,
         OverrideFeatureSymbology,
         ReadImage,
@@ -300,7 +301,7 @@ struct Task : RefCounted<NonCopyableClass>
     {
         uint32_t m_value;
         static Priority Highest() {return Priority(0);}
-        static Priority Lowest() {return Priority(0xffff);}
+        static Priority Lowest() {return Priority(0xffff);} // Reserved for the 'idle' task
         Priority& operator++() {++m_value; return *this;}
         explicit Priority(uint32_t val=0) : m_value(val) {}
     };
@@ -3244,7 +3245,7 @@ struct System
 
     virtual ~System() { }
     
-    //! Initialize the rendering system. Return a non-zero value in case of error.
+    //! Initialize the rendering system. Return a non-zero value in case of error. The client thread waits for the result.
     virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
 
     //! Create a render target.
@@ -3276,8 +3277,11 @@ struct System
     //! Create a point cloud primitive
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const = 0;
 
-    //! Create a sheet tile primitive
-    DGNPLATFORM_EXPORT bvector<GraphicPtr> _CreateSheetTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params, ClipVectorCP clip) const;
+    // ! Create polygons on a range for a sheet tile
+    DGNPLATFORM_EXPORT bvector<PolyfaceHeaderPtr> _CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip, DRange3dR rangeOut) const;
+
+    //! Create a sheet tile primitive from polys
+    DGNPLATFORM_EXPORT bvector<GraphicPtr> _CreateSheetTile(TextureCR tile, bvector<PolyfaceHeaderPtr>& polys, DgnDbR dgndb, GraphicParamsCR params) const;
 
     //! Create a tile primitive
     DGNPLATFORM_EXPORT GraphicPtr _CreateTile(TextureCR tile, GraphicBuilder::TileCorners const& corners, DgnDbR dgndb, GraphicParamsCR params) const;
@@ -3317,6 +3321,10 @@ struct System
 
     //! Create a Light from Light::Parameters
     virtual LightPtr _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const = 0;
+
+    //! Perform some small unit of work (or do nothing) during an idle frame.
+    //! An idle frame is classified one tick of the render loop during which no viewports are open and the render queue is empty.
+    virtual void _Idle() { }
 };
 
 //=======================================================================================
