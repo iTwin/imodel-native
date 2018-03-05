@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -11,6 +11,18 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                      10/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECDbInit, Initialize)
+    {
+    BeFileName applicationSchemaDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetOutputRoot(temporaryDir);
+    ECDb::Initialize(temporaryDir, &applicationSchemaDir);
+    ASSERT_EQ(true, ECDb::IsInitialized());
+    }
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  10/17
 //+---------------+---------------+---------------+---------------+---------------+------
