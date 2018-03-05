@@ -1271,6 +1271,7 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
         serializationOrder.CreateAlphabeticalOrder(m_ecSchema);
 
     // Serializes the Class and Enumerations in the given order...
+    SchemaWriteStatus writeChildStatus;
     for (auto schemaElementEntry : serializationOrder)
         {
         Utf8CP elementName = schemaElementEntry.first.c_str();
@@ -1279,43 +1280,50 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
             {
             ECClassCP ecClass = m_ecSchema.GetClassCP(elementName);
             if (nullptr != ecClass)
-                WriteClass(*ecClass);
+                if (SchemaWriteStatus::Success != (writeChildStatus = WriteClass(*ecClass)))
+                    return writeChildStatus;
             }
         else if (elementType == ECSchemaElementType::ECEnumeration)
             {
             ECEnumerationCP ecEnumeration = m_ecSchema.GetEnumerationCP(elementName);
             if (nullptr != ecEnumeration)
-                WriteSchemaChild<ECEnumeration>(*ecEnumeration);
+                if (SchemaWriteStatus::Success != (writeChildStatus = WriteSchemaChild<ECEnumeration>(*ecEnumeration)))
+                    return writeChildStatus;
             }
         else if (elementType == ECSchemaElementType::KindOfQuantity)
             {
             KindOfQuantityCP kindOfQuantity = m_ecSchema.GetKindOfQuantityCP(elementName);
             if (nullptr != kindOfQuantity)
-                WriteSchemaChild<KindOfQuantity>(*kindOfQuantity);
+                if (SchemaWriteStatus::Success != (writeChildStatus = WriteSchemaChild<KindOfQuantity>(*kindOfQuantity)))
+                    return writeChildStatus;
             }
         else if (elementType == ECSchemaElementType::PropertyCategory)
             {
             PropertyCategoryCP propertyCategory = m_ecSchema.GetPropertyCategoryCP(elementName);
             if (nullptr != propertyCategory)
-                WriteSchemaChild<PropertyCategory>(*propertyCategory);
+                if (SchemaWriteStatus::Success != (writeChildStatus = WriteSchemaChild<PropertyCategory>(*propertyCategory)))
+                    return writeChildStatus;
             }
         else if (ECSchemaElementType::UnitSystem == elementType)
             {
             UnitSystemCP system = m_ecSchema.GetUnitSystemCP(elementName);
             if (nullptr != system)
-                WriteSchemaChild<UnitSystem>(*system);
+                if (SchemaWriteStatus::Success != (writeChildStatus = WriteSchemaChild<UnitSystem>(*system)))
+                    return writeChildStatus;
             }
         else if (ECSchemaElementType::Phenomenon == elementType)
             {
             PhenomenonCP phenom = m_ecSchema.GetPhenomenonCP(elementName);
             if (nullptr != phenom)
-                WriteSchemaChild<Phenomenon>(*phenom);
+                if (SchemaWriteStatus::Success != (writeChildStatus = WriteSchemaChild<Phenomenon>(*phenom)))
+                    return writeChildStatus;
             }
         else if (ECSchemaElementType::Unit == elementType)
             {
             ECUnitCP unit = m_ecSchema.GetUnitCP(elementName);
             if(nullptr != unit)
-                WriteSchemaChild<ECUnit>(*unit);
+                if (SchemaWriteStatus::Success != (writeChildStatus = WriteSchemaChild<ECUnit>(*unit)))
+                    return writeChildStatus;
             }
         else if (ECSchemaElementType::InvertedUnit == elementType)
             {
