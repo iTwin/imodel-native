@@ -196,3 +196,19 @@ TEST_F(CurveVectorManipulationStrategyTestFixture, ReplaceKeyPoint_ContainsMulti
     ASSERT_TRUE(cv3.IsValid());
     ASSERT_TRUE(cv3->IsSameStructureAndGeometry(*expectedShape3));
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorManipulationStrategyTestFixture, PopKeyPoint_HadDynamicKeyPoint)
+    {
+    CurveVectorManipulationStrategyPtr sut = CurveVectorManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    ASSERT_TRUE(sut->GetKeyPoints().empty());
+    sut->AppendDynamicKeyPoint({0,0,0});
+    sut->ResetDynamicKeyPoint();
+    ASSERT_TRUE(sut->GetKeyPoints().empty());
+    sut->PopKeyPoint();
+    ASSERT_TRUE(sut->GetKeyPoints().empty());
+    }

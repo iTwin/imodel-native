@@ -416,11 +416,15 @@ void CurveVectorManipulationStrategy::_PopKeyPoint()
     if (m_primitiveStrategyContainer.IsEmpty())
         return;
 
-    DPoint3d firstKeyPoint = m_primitiveStrategyContainer.GetManipulationStrategies().back()->GetFirstKeyPoint();
     if (IsLastStrategyReadyForPop())
         {
+        DPoint3d firstKeyPoint;
+        bool wasEmpty = m_primitiveStrategyContainer.GetManipulationStrategies().back()->GetKeyPoints().empty();
+        if (!wasEmpty)
+            firstKeyPoint = m_primitiveStrategyContainer.GetManipulationStrategies().back()->GetFirstKeyPoint();
+
         m_primitiveStrategyContainer.Pop();
-        if (m_primitiveStrategyContainer.GetManipulationStrategies().back()->GetLastKeyPoint().AlmostEqual(firstKeyPoint))
+        if (!wasEmpty && m_primitiveStrategyContainer.GetManipulationStrategies().back()->GetLastKeyPoint().AlmostEqual(firstKeyPoint))
             m_primitiveStrategyContainer.GetPlacementStrategies().back()->PopKeyPoint();
         }
     else
