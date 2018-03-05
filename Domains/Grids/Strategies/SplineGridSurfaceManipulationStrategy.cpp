@@ -60,7 +60,7 @@ Dgn::DgnElementPtr SplineGridSurfaceManipulationStrategy::_FinishElement
             return nullptr;
 
         ICurvePrimitivePtr curvePrimitive = m_geometryManipulationStrategy->FinishPrimitive();
-        if (curvePrimitive.IsValid())
+        if (!curvePrimitive.IsValid())
             return nullptr;
 
         if (m_surface.IsValid())
