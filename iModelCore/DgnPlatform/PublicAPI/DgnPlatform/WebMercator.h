@@ -26,6 +26,7 @@ namespace WebMercator
 {
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MapTile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MapRoot)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(WebMercatorModel)
 
 DEFINE_REF_COUNTED_PTR(MapTile)
 DEFINE_REF_COUNTED_PTR(MapRoot)
@@ -99,7 +100,7 @@ struct MapRoot : TileTree::QuadTree::Root
     DPoint3d ToWorldPoint(GeoPoint);
     Utf8String _ConstructTileResource(TileTree::TileCR tile) const override;
     Utf8CP _GetName() const override {return "WebMercator";}
-    MapRoot(DgnDbR, TransformCR location, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, uint32_t maxSize);
+    MapRoot(WebMercatorModelCR, TransformCR location, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, uint32_t maxSize);
     ~MapRoot() {ClearAllTiles();}
 };
 

@@ -682,7 +682,17 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnDbR db, TransformCR location, Utf8CP rootResource, Render::SystemP system) : m_db(db), m_location(location), m_renderSystem(system)
+Root::Root(GeometricModelCR model, TransformCR location, Utf8CP rootResource, Render::SystemP system)
+    : Root(model.GetDgnDb(), model.GetModelId(), location, rootResource, system)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Root::Root(DgnDbR db, DgnModelId modelId, TransformCR location, Utf8CP rootResource, Render::SystemP system)
+    : m_db(db), m_location(location), m_renderSystem(system), m_modelId(modelId)
     {
     // unless a root directory is specified, we assume it's http.
     m_isHttp = true;
@@ -1249,8 +1259,8 @@ void QuadTree::Tile::_ValidateChildren() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
-    : T_Super::Root(db, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
+QuadTree::Root::Root(GeometricModelCR model, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
+    : T_Super::Root(model, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
     {
     m_tileColor = ColorDef::White();
     if (0.0 != transparency)
@@ -1260,8 +1270,8 @@ QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-OctTree::Root::Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
-    : T_Super(db, location, rootUrl, system)
+OctTree::Root::Root(GeometricModelCR model, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
+    : T_Super(model, location, rootUrl, system)
     {
     // 
     }
