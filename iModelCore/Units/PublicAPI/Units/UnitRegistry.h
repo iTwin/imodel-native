@@ -461,6 +461,11 @@ public:
     //! @return The new unit name if found, otherwise nullptr
     UNITS_EXPORT static Utf8CP TryGetNameFromECName(Utf8CP ecName);
 
+    //! Gets the old unit name for an EC compatible name
+    //! @see UnitNameMappings for information on the difference between an EC and a old unit name.
+    //! @return The old unit name if found, otherwise nullptr
+    UNITS_EXPORT static Utf8CP TryGetOldNameFromECName(Utf8CP ecName);
+
     //! Gets the Unit by the old name
     //! @see UnitNameMappings
     //! @return A Unit if it found in this registry, nullptr otherwise
