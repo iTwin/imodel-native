@@ -56,6 +56,7 @@ BE_JSON_NAME(roll)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+#if !defined(BENTLEYCONFIG_OS_LINUX)
 TEST(FormattingTest, Preliminary)
     {
     FormattingTestFixture::SetUpL10N();
@@ -213,6 +214,7 @@ TEST(FormattingTest, Preliminary)
     EXPECT_FALSE(Utils::IsJsonCandidate(" bbb}  "));
     FormattingTestFixture::TearDownL10N();
     }
+#endif
 
 //#ifdef _WIN32
 /*---------------------------------------------------------------------------------**//**
