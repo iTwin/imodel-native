@@ -1255,7 +1255,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             }
         OptimisticConcurrencyControl::Policy policy;
         policy.deleteVsUpdate = du;
-        policy.updateVsDelete = uu;
+        policy.updateVsUpdate = uu;
         policy.updateVsDelete = ud;
 
         return Napi::Number::New(Env(), (int)GetDgnDb().SetConcurrencyControl(new OptimisticConcurrencyControl(policy)));

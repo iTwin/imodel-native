@@ -198,17 +198,26 @@ struct AddonBriefcaseManager : IBriefcaseManager, TxnMonitor
 
     void _OnCommit(TxnManager& mgr) override
         {
+        // This event is invoked whenver any DgnDb is committed, not just mine.
+        if (&GetDgnDb() != &mgr.GetDgnDb())
+            return;
         BeAssert(!m_inBulkUpdate && "don't call SaveChanges while in a bulk op");
         }
 
     void _OnAppliedChanges(TxnManager& mgr) override
         {
+        // This event is invoked whenver any DgnDb is updated, not just mine.
+        if (&GetDgnDb() != &mgr.GetDgnDb())
+            return;
         m_inBulkUpdate = 0;
         m_req.Reset();
         }
 
     void _OnUndoRedo(TxnManager& mgr, TxnAction) override
         {
+        // This event is invoked whenver any DgnDb is updated, not just mine.
+        if (&GetDgnDb() != &mgr.GetDgnDb())
+            return;
         m_inBulkUpdate = 0;
         m_req.Reset();
         }
