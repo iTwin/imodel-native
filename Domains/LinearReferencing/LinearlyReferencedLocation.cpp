@@ -2,7 +2,7 @@
 |
 |     $Source: LinearlyReferencedLocation.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "LinearReferencingInternal.h"
@@ -139,7 +139,7 @@ DgnDbStatus LinearlyReferencedAtLocation::_UpdateProperties(DgnElementCR el, ECC
     auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " "
         "SET AtPosition.DistanceAlongFromStart = ?, AtPosition.LateralOffsetFromILinearElement = ?, AtPosition.VerticalOffsetFromILinearElement = ?, "
-        "   AtPosition.DistanceAlongFromReferent = ?, FromReferent = ? "
+        "   AtPosition.DistanceAlongFromReferent = ?, FromReferent.Id = ? "
         "WHERE ECInstanceId = ?;", writeToken);
     BeAssert(stmtPtr.IsValid());
 
@@ -180,7 +180,7 @@ DgnDbStatus LinearlyReferencedAtLocation::_LoadProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT AtPosition.DistanceAlongFromStart, AtPosition.LateralOffsetFromILinearElement, AtPosition.VerticalOffsetFromILinearElement,"
-        "   AtPosition.DistanceAlongFromReferent, FromReferent " 
+        "   AtPosition.DistanceAlongFromReferent, FromReferent.Id " 
         "FROM " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " "
         "WHERE ECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
@@ -269,9 +269,9 @@ DgnDbStatus LinearlyReferencedFromToLocation::_UpdateProperties(DgnElementCR el,
     auto stmtPtr = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " "
         "SET FromPosition.DistanceAlongFromStart = ?, FromPosition.LateralOffsetFromILinearElement = ?, FromPosition.VerticalOffsetFromILinearElement = ?, "
-        "   FromPosition.DistanceAlongFromReferent = ?, FromPositionFromReferent = ?, "
+        "   FromPosition.DistanceAlongFromReferent = ?, FromPositionFromReferent.Id = ?, "
         "   ToPosition.DistanceAlongFromStart = ?, ToPosition.LateralOffsetFromILinearElement = ?, ToPosition.VerticalOffsetFromILinearElement = ?, "
-        "   ToPosition.DistanceAlongFromReferent = ?, ToPositionFromReferent = ? "
+        "   ToPosition.DistanceAlongFromReferent = ?, ToPositionFromReferent.Id = ? "
         "WHERE ECInstanceId = ?;", writeToken);
     BeAssert(stmtPtr.IsValid());
 
@@ -334,9 +334,9 @@ DgnDbStatus LinearlyReferencedFromToLocation::_LoadProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "SELECT FromPosition.DistanceAlongFromStart, FromPosition.LateralOffsetFromILinearElement, FromPosition.VerticalOffsetFromILinearElement,"
-        "   FromPosition.DistanceAlongFromReferent, FromPositionFromReferent, "
+        "   FromPosition.DistanceAlongFromReferent, FromPositionFromReferent.Id, "
         "   ToPosition.DistanceAlongFromStart, ToPosition.LateralOffsetFromILinearElement, ToPosition.VerticalOffsetFromILinearElement,"
-        "   ToPosition.DistanceAlongFromReferent, ToPositionFromReferent "
+        "   ToPosition.DistanceAlongFromReferent, ToPositionFromReferent.Id "
         "FROM " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " "
         "WHERE ECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
