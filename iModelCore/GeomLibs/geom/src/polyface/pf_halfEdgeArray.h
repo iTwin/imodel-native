@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/pf_halfEdgeArray.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // This .h file is to be included in polyface files  . . . not independently.
@@ -172,7 +172,11 @@ void Add(size_t position, size_t faceSuccessorPosition, ptrdiff_t indexA, ptrdif
     {
     push_back (HalfEdge (position, faceSuccessorPosition, indexA, indexB, visible));
     }
-
+// input any index in the half edge array.
+// return a Size2 with:
+// * m_dataA = lowest half edge with same vertex indices
+// * m_dataB = one more than highest half edge with same vertex indices
+//         
 Size2 MateRange (size_t index)
     {
     Size2 range (index);
