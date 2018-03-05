@@ -257,42 +257,45 @@ TEST(Spiral,MixedRadiusConstructionsB)
     Check::ClearGeometry ("Spiral.MixedRadiusConstructionsB");
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                     Earlin.Lutz  01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(Spiral,ClothoidCosineApproximation)
+void testClothoidCosineApproximation (
+char const *name,
+double numSamples,
+double R,
+double L,
+double yFactor,
+double (*forwardMap)(double, double, double, double),
+ValidatedDouble (*inverseMap)(double, double, double, double),
+bvector<DPoint3d> &xyFromS
+)
     {
-    double R = 1000.0;
-    double L = 100.0;
-    double numSamples = 101;
     UsageSums positiveSums, negativeSums;
     UsageSums positiveRoundTripErrors, negativeRoundTripErrors;
     bvector<double> positiveFailures, negativeFailures;
-    bvector<DPoint3d> xyFromS;
-    for (double i = 0; i < numSamples; i++)
+
+    for (double i = 0; i <= numSamples; i++)
         {
         double u = DoubleOps::Interpolate (-L, i / numSamples, L);
-        auto fPositive = ClothoidCosineApproximation::Invert40R2L2Map (1.0, R, L, u);
-        if (fPositive)
+        auto fPositive = inverseMap (1.0, R, L, u);
+        if (fPositive.IsValid ())
             {
             positiveSums.Accumulate (ClothoidCosineApproximation::s_evaluationCount);
-            auto g = ClothoidCosineApproximation::Evaluate40R2L2Map (-1.0, R, L, fPositive.Value ());
+            auto g = forwardMap (-1.0, R, L, fPositive.Value ());
             positiveRoundTripErrors.Accumulate (u - g);
             }
         else
             positiveFailures.push_back (u);
-        auto fNegative = ClothoidCosineApproximation::Invert40R2L2Map (-1.0, R, L, u);
-        if (fNegative)
+        auto fNegative = inverseMap (-1.0, R, L, u);
+        if (fNegative.IsValid ())
             {
             negativeSums.Accumulate (ClothoidCosineApproximation::s_evaluationCount);
-            auto g = ClothoidCosineApproximation::Evaluate40R2L2Map (1.0, R, L, fNegative.Value ());
+            auto g = forwardMap (1.0, R, L, fNegative.Value ());
             negativeRoundTripErrors.Accumulate (u - g);
             }
         else
             negativeFailures.push_back (u);
         // Treat u as DISTANCE ALONG SPIRAL ..
-        double xFromS = ClothoidCosineApproximation::Evaluate40R2L2Map (-1.0, R, L, u);
-        double yFromS = u * u * u / (6.0 * R * L);
+        double xFromS = forwardMap (-1.0, R, L, u);
+        double yFromS = yFactor * u * u * u;
         xyFromS.push_back (DPoint3d::From (xFromS, yFromS, 0));
         }
     Check::Size (0, positiveFailures.size (), "Iterative failures with positive second term");
@@ -300,12 +303,56 @@ TEST(Spiral,ClothoidCosineApproximation)
     static double s_cosineSeriesRelTol = 1.0e-3;
     Check::LessThanOrEqual (positiveRoundTripErrors.MaxAbs (), s_cosineSeriesRelTol * L, "cosine series axis-curve-axis roundtrip relative error");
     Check::LessThanOrEqual (negativeRoundTripErrors.MaxAbs (), s_cosineSeriesRelTol * L, "cosine series curve-axis-curve roundtrip relative error");
-    GEOMAPI_PRINTF ("Positive Iterations: (max %g) (mean %g) (roundTrip Error Range %7.1le %7.1le)\n",
+    GEOMAPI_PRINTF ("Positive Iterations: %s (max %g) (mean %g) (roundTrip Error Range %7.1le %7.1le)\n",
+        name,
         positiveSums.Max (), positiveSums.Mean (), positiveRoundTripErrors.Min (), positiveRoundTripErrors.Max ()
         );
-    GEOMAPI_PRINTF ("Negative Iterations: (max %g) (mean %g) (roundTrip Error Range %7.1le %7.1le)\n",
+    GEOMAPI_PRINTF ("Negative Iterations: %s (max %g) (mean %g) (roundTrip Error Range %7.1le %7.1le)\n",
+        name,
         negativeSums.Max (), negativeSums.Mean (), negativeRoundTripErrors.Min (), negativeRoundTripErrors.Max ()
         );
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Spiral,ClothoidCosineApproximation)
+    {
+    double R = 1000.0;
+    double L = 100.0;
+    // verify some algebra . .
+    // constants in czech/italian code:
+    double lambda = asin(L / (2.0 * R));
+    double gamma = 1.0 / cos (lambda);
+    double gamma1 = 2.0 * R / sqrt ( 4.0 * R * R - L * L);
+    double gamma2 = ClothoidCosineApproximation::CzechGamma (R, L);
+    Check::Near (gamma, gamma1, "beta formulations");
+    Check::Near (gamma1, gamma2, "beta formulations");
+    double QQ = 4.0 * R * R - L * L;
+    double A0 = 40.0 * R * R * L * L;
+    double A1 = 10.0 * QQ * L * L;
+    Check::True (fabs (A1/A0 - 1.0) < 0.01, "factors are similar");
+
+    double numSamples = 100;
+    bvector<DPoint3d> xyFromS, xyFromSItalian;
+    testClothoidCosineApproximation (
+        "COSINE SERIES 40 RRLL",
+        numSamples,
+        R, L, 1.0 / (6.0 * R * L),
+        ClothoidCosineApproximation::Evaluate40R2L2Map,
+        ClothoidCosineApproximation::Invert40R2L2Map,
+        xyFromS);
     Check::SaveTransformed (xyFromS);
+
+    testClothoidCosineApproximation (
+        "ITALIAN COSINE SERIES 10(4 RR - LL) LL",
+        numSamples,
+        R, L, 1.0 / (6.0 * R * L),
+        ClothoidCosineApproximation::EvaluateItalianCzechR2L2Map,
+        ClothoidCosineApproximation::InvertItalianCzechR2L2Map,
+        xyFromSItalian);
+    Check::SaveTransformed (xyFromSItalian);
+
     Check::ClearGeometry ("Spiral.ClothoidCosineApproximation");
     }

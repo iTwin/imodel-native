@@ -30,6 +30,7 @@ int DSpiral2dNewSouthWales::GetTransitionTypeCode () const { return TransitionTy
 int DSpiral2dAustralian::GetTransitionTypeCode () const { return TransitionType_Australian;}
 
 int DSpiral2dMXCubic::GetTransitionTypeCode () const { return TransitionType_MXCubic;}
+int DSpiral2dItalian::GetTransitionTypeCode () const { return TransitionType_Italian;}
 
 
 
@@ -60,6 +61,8 @@ DSpiral2dBaseP DSpiral2dBase::Create (int transitionType)
     if (transitionType == TransitionType_Czech)
         return new DSpiral2dCzech ();
 #endif
+    if (transitionType == TransitionType_Italian)
+        return new DSpiral2dItalian ();
     if (transitionType == TransitionType_Australian)
         return new DSpiral2dAustralian ();
     if (transitionType == TransitionType_MXCubic)
