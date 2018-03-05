@@ -2663,7 +2663,8 @@ static bvector<LogMessage>* s_deferredLogging;
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void ThrowJsExceptionOnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
     {
-    Napi::Error::New(*s_env, Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str()).ThrowAsJavaScriptException();
+    if (BeThreadUtilities::GetCurrentThreadId() == s_mainThreadId)
+        Napi::Error::New(*s_env, Utf8PrintfString("Assertion Failure: %ls (%ls:%d)\n", msg, file, line).c_str()).ThrowAsJavaScriptException();
     }
 
 /*---------------------------------------------------------------------------------**//**
