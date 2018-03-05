@@ -10,31 +10,15 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
-// static
-UnitSystemP UnitSystem::_Create(Utf8CP name)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8StringCR UnitSystem::GetFullName() const
     {
-    // Deconstruct the name, the format should be {SchemaName}.{UnitSystemName}
-    Utf8String schemaName;
-    Utf8String systemName;
-    ECClass::ParseClassName(schemaName, systemName, name);
-    BeAssert(!schemaName.empty());
+    if (m_fullName.size() == 0)
+        m_fullName = GetSchema().GetName() + ":" + GetName();
 
-    // Check if it's a valid name here to avoid having to construct the UnitSystem unnecessarily.
-    if (!ECNameValidation::IsValidName(systemName.c_str()))
-        {
-        LOG.errorv("A UnitSystem cannot be created with the name '%s' because it is not a valid ECName", systemName.c_str());
-        return nullptr;
-        }
-
-    auto systemP = new UnitSystem(name);
-    if (nullptr == systemP)
-        return nullptr;
-
-    systemP->SetName(systemName);
-    return systemP;
+    return m_fullName;
     }
 
 //--------------------------------------------------------------------------------------
@@ -76,24 +60,11 @@ Utf8StringCR UnitSystem::GetDescription() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-SchemaReadStatus UnitSystem::ReadXml(UnitSystemP& system, BeXmlNodeR unitSystemNode, ECSchemaCR schema, ECSchemaReadContextR context)
+SchemaReadStatus UnitSystem::ReadXml(BeXmlNodeR unitSystemNode, ECSchemaReadContextR context)
     {
     Utf8String value;
-    if (BEXML_Success != unitSystemNode.GetAttributeStringValue(value, TYPE_NAME_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
-        {
-        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", unitSystemNode.GetName(), TYPE_NAME_ATTRIBUTE);
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    Utf8String fullName = schema.GetName() + ":" + value;
-    system = Units::UnitRegistry::Instance().AddSystem<UnitSystem>(fullName.c_str());
-    if (nullptr == system)
-        return SchemaReadStatus::InvalidECSchemaXml;
-
-    system->SetSchema(schema);
-
-    READ_OPTIONAL_XML_ATTRIBUTE(unitSystemNode, DESCRIPTION_ATTRIBUTE, system, Description)
-    READ_OPTIONAL_XML_ATTRIBUTE(unitSystemNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, system, DisplayLabel)
+    READ_OPTIONAL_XML_ATTRIBUTE(unitSystemNode, DESCRIPTION_ATTRIBUTE, this, Description)
+    READ_OPTIONAL_XML_ATTRIBUTE(unitSystemNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
 
     return SchemaReadStatus::Success;
     }

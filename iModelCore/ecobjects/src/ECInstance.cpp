@@ -480,7 +480,7 @@ ECObjectsStatus    IECInstance::SetQuantity(Utf8CP propertyAccessString, Units::
         return ECObjectsStatus::PropertyHasNoKindOfQuantity;
 
     Units::Quantity converted = q.ConvertTo(koq->GetPersistenceUnit().GetUnit());
-    if (!converted.ISValid())
+    if (!converted.IsValid())
         return ECObjectsStatus::KindOfQuantityNotCompatible;
 
     uint32_t propertyIndex = 0;
@@ -2868,7 +2868,8 @@ struct  InstanceXmlReader
 
             if (nullptr != koq && !Utf8String::IsNullOrEmpty(oldUnitName))
                 {
-                Units::UnitCP oldUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnitName);
+                // FIXME: This needs to use the nameMappings directly to get the new Units using the UnitsStandardSchemaHolder.
+                Units::UnitCP oldUnit = Units::UnitRegistry::Get().LookupUnitUsingOldName(oldUnitName);
                 double convertedValue;
                 oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
                 

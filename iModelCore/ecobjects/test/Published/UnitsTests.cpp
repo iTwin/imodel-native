@@ -46,9 +46,6 @@ TEST_F(UnitsTests, BasicECUnitCreation)
 
     auto testECUnit = schema->GetUnitCP("ExampleUnit");
     EXPECT_EQ(unit, testECUnit);
-
-    auto registryECUnit = Units::UnitRegistry::Instance().LookupUnit("TestSchema:ExampleUnit");
-    EXPECT_EQ(unit, registryECUnit);
     }
 
 //---------------------------------------------------------------------------------------
@@ -579,14 +576,12 @@ TEST_F(InvertedUnitsTests, BasicInvertedUnitCreation)
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
     schema->CreateUnitSystem(system, "ExampleUnitSystem");
     EC_EXPECT_SUCCESS(schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, 10.0, 1.0, 1.0, "ExampleUnitLabel", "ExampleUnitDescription")); 
-    ECUnitP InvertedUnit;
-    EC_EXPECT_SUCCESS(schema->CreateInvertedUnit(InvertedUnit, *unit, "ExampleInvertedUnit", *system, "ExampleInvertedUnitLabel", "ExampleInvertedUnitDescription"));
+    ECUnitP invertedUnit;
+    EC_EXPECT_SUCCESS(schema->CreateInvertedUnit(invertedUnit, *unit, "ExampleInvertedUnit", *system, "ExampleInvertedUnitLabel", "ExampleInvertedUnitDescription"));
     auto testECUnit = schema->GetUnitCP("ExampleUnit");
     EXPECT_EQ(unit, testECUnit);
     auto schemaInvertedUnit = schema->GetInvertedUnitCP("ExampleInvertedUnit");
-    EXPECT_EQ(InvertedUnit, schemaInvertedUnit);
-    auto registryInvertedUnit = Units::UnitRegistry::Instance().LookupUnit("TestSchema:ExampleInvertedUnit");
-    EXPECT_EQ(InvertedUnit, registryInvertedUnit);
+    EXPECT_EQ(invertedUnit, schemaInvertedUnit);
     }
 
 //---------------------------------------------------------------------------------------
@@ -765,6 +760,7 @@ TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithoutUnitSystemDefined)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <InvertedUnit typeName="TestInvertedUnit" invertsUnit="TestUnit" unitSystem="TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
         </ECSchema>)xml";
@@ -784,6 +780,7 @@ TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithoutUnitDefined)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
             <InvertedUnit typeName="TestInvertedUnit" invertsUnit="TestUnit" unitSystem="TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
         </ECSchema>)xml";

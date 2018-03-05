@@ -68,11 +68,11 @@ public:
     template<typename T>
     SchemaReadStatus ReadSchemaChildFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ECSchemaElementType childType);
 
-    SchemaReadStatus ReadUnitSystemFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
-    SchemaReadStatus ReadPhenomenonFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
-    SchemaReadStatus ReadUnitFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
-    SchemaReadStatus ReadInvertedUnitFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
-    SchemaReadStatus ReadConstantFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
+    // This method encompasses all Unit Type; Unit, Constant, InvertedUnit, Phenomenon and UnitSystem.
+    // Needed because the ReadSchemaChildFromXml does not pass a name to the constructor, which is required
+    // to construct any Unit type.
+    template<typename T>
+    SchemaReadStatus ReadUnitTypeFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ECSchemaElementType unitType);
     void PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode);
     virtual bool IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSchemaElementType childType) {return _IsSchemaChildElementNode(schemaNode, childType);}
 };

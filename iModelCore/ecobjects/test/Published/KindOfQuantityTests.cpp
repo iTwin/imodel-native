@@ -32,7 +32,7 @@ TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
     entityClass->CreatePrimitiveProperty(prop, "Property");
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
-    koq->SetPersistenceUnit("FT(real)");
+    koq->SetPersistenceUnit("Units:FT(real)");
     prop->SetKindOfQuantity(koq);
 
     Utf8String schemaXML;
@@ -52,7 +52,7 @@ TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
     auto resultKindOfQuantity = property->GetKindOfQuantity();
     ASSERT_NE(resultKindOfQuantity, nullptr);
     EXPECT_STREQ("MyKindOfQuantity", resultKindOfQuantity->GetName().c_str());
-    EXPECT_STREQ("FT(DefaultReal)", resultKindOfQuantity->GetPersistenceUnit().ToText(false).c_str());
+    EXPECT_STREQ("Units:FT(DefaultReal)", resultKindOfQuantity->GetPersistenceUnit().ToText(false).c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -191,6 +191,112 @@ TEST_F(KindOfQuantityTest, SerializeStandaloneChildKindOfQuantity)
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Victor.Cushman                          02/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(KindOfQuantityTest, TestKoQWriteXmlUsesProperUnitNameMappings)
+    {
+    // EC3.0
+    {
+    Utf8CP origSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+            <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="THOUSAND_SQ.FT" presentationUnits="THOUSAND_SQ.FT" />
+        </ECSchema>)xml";
+
+    ECSchemaPtr origSchema;
+    ECSchemaReadContextPtr origContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(origSchema, origSchemaXml, *origContext));
+
+    Utf8String outSchemaXmlString;
+    ASSERT_EQ(SchemaWriteStatus::Success, origSchema->WriteToXmlString(outSchemaXmlString, ECVersion::V3_0));
+
+    ECSchemaPtr secondSchema;
+    ECSchemaReadContextPtr secondContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(secondSchema, outSchemaXmlString.c_str(), *secondContext));
+    auto koq = secondSchema->GetKindOfQuantityCP("TestKoQ");
+    auto persist = koq->GetPersistenceUnit();
+    auto pres = koq->GetDefaultPresentationUnit();
+    ASSERT_STRCASEEQ("UNITS:THOUSAND_SQ_FT", persist.GetUnit()->GetName().c_str());
+    ASSERT_STRCASEEQ("UNITS:THOUSAND_SQ_FT", pres.GetUnit()->GetName().c_str());
+    ASSERT_STRCASEEQ("DefaultReal", persist.GetNamedFormatSpec()->GetName());
+    ASSERT_STRCASEEQ("DefaultReal", pres.GetNamedFormatSpec()->GetName());
+    }
+
+    // EC3.1
+    {
+    Utf8CP origSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="THOUSAND_SQ.FT" presentationUnits="THOUSAND_SQ.FT" />
+        </ECSchema>)xml";
+
+    ECSchemaPtr origSchema;
+    ECSchemaReadContextPtr origContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(origSchema, origSchemaXml, *origContext));
+
+    Utf8String outSchemaXmlString;
+    ASSERT_EQ(SchemaWriteStatus::Success, origSchema->WriteToXmlString(outSchemaXmlString, ECVersion::V3_1));
+
+    ECSchemaPtr secondSchema;
+    ECSchemaReadContextPtr secondContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(secondSchema, outSchemaXmlString.c_str(), *secondContext));
+    auto koq = secondSchema->GetKindOfQuantityCP("TestKoQ");
+    auto persist = koq->GetPersistenceUnit();
+    auto pres = koq->GetDefaultPresentationUnit();
+    ASSERT_STRCASEEQ("UNITS:THOUSAND_SQ_FT", persist.GetUnit()->GetName().c_str());
+    ASSERT_STRCASEEQ("UNITS:THOUSAND_SQ_FT", pres.GetUnit()->GetName().c_str());
+    ASSERT_STRCASEEQ("DefaultReal", persist.GetNamedFormatSpec()->GetName());
+    ASSERT_STRCASEEQ("DefaultReal", pres.GetNamedFormatSpec()->GetName());
+    }
+
+    // EC3.2
+    {
+    Utf8CP origSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="Units:THOUSAND_SQ_FT" presentationUnits="Units:THOUSAND_SQ_FT" />
+        </ECSchema>)xml";
+
+    ECSchemaPtr origSchema;
+    ECSchemaReadContextPtr origContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(origSchema, origSchemaXml, *origContext));
+
+    Utf8String outSchemaXmlString;
+    ASSERT_EQ(SchemaWriteStatus::Success, origSchema->WriteToXmlString(outSchemaXmlString, ECVersion::V3_2));
+
+    ECSchemaPtr secondSchema;
+    ECSchemaReadContextPtr secondContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(secondSchema, outSchemaXmlString.c_str(), *secondContext));
+    auto koq = secondSchema->GetKindOfQuantityCP("TestKoQ");
+    auto persist = koq->GetPersistenceUnit();
+    auto pres = koq->GetDefaultPresentationUnit();
+    ASSERT_STRCASEEQ("UNITS:THOUSAND_SQ_FT", persist.GetUnit()->GetName().c_str());
+    ASSERT_STRCASEEQ("UNITS:THOUSAND_SQ_FT", pres.GetUnit()->GetName().c_str());
+    ASSERT_STRCASEEQ("DefaultReal", persist.GetNamedFormatSpec()->GetName());
+    ASSERT_STRCASEEQ("DefaultReal", pres.GetNamedFormatSpec()->GetName());
+    }
+
+    // Latest EC Version
+    {
+    ECSchemaPtr origSchema;
+    ECSchema::CreateSchema(origSchema, "ExampleSchema", "ex", 5, 0, 5, ECVersion::Latest);
+    KindOfQuantityP koq;
+    EC_ASSERT_SUCCESS(origSchema->CreateKindOfQuantity(koq, "ExampleKoQ"));
+    ASSERT_TRUE(koq->SetPersistenceUnit("Units:M"));
+
+    Utf8String xmlString;
+    ASSERT_EQ(SchemaWriteStatus::Success, origSchema->WriteToXmlString(xmlString, ECVersion::Latest));
+
+    ECSchemaPtr readSchema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(readSchema, xmlString.c_str(), *context));
+    auto koq2 = readSchema->GetKindOfQuantityCP("ExampleKoQ");
+    auto persist = koq2->GetPersistenceUnit();
+    auto pres = koq2->GetDefaultPresentationUnit();
+    ASSERT_STRCASEEQ("UNITS:M", persist.GetUnit()->GetName().c_str());
+    ASSERT_STRCASEEQ("UNITS:M", pres.GetUnit()->GetName().c_str());
+    ASSERT_STRCASEEQ("DefaultReal", persist.GetNamedFormatSpec()->GetName());
+    ASSERT_STRCASEEQ("DefaultReal", pres.GetNamedFormatSpec()->GetName());
+    }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
@@ -546,11 +652,11 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     kindOfQuantity->SetDescription("DESC");
     kindOfQuantity->SetDisplayLabel("DL");
-    kindOfQuantity->SetPersistenceUnit("CM");
+    kindOfQuantity->SetPersistenceUnit("Units:CM");
     kindOfQuantity->SetRelativeError(10e-3);
-    kindOfQuantity->SetDefaultPresentationUnit("FT");
-    kindOfQuantity->AddPresentationUnit("IN");
-    kindOfQuantity->AddPresentationUnit("MILLIINCH");
+    kindOfQuantity->SetDefaultPresentationUnit("Units:FT");
+    kindOfQuantity->AddPresentationUnit("Units:IN");
+    kindOfQuantity->AddPresentationUnit("Units:MILLIINCH");
 
     ECEntityClassP entityClass;
     ASSERT_TRUE(schema->CreateEntityClass(entityClass, "EntityClass") == ECObjectsStatus::Success);
@@ -575,14 +681,14 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     ASSERT_TRUE(deserializedKindOfQuantity != nullptr);
     EXPECT_STREQ("DL", deserializedKindOfQuantity->GetDisplayLabel().c_str());
     EXPECT_STREQ("DESC", deserializedKindOfQuantity->GetDescription().c_str());
-    EXPECT_STREQ("CM", deserializedKindOfQuantity->GetPersistenceUnit().GetUnit()->GetName().c_str());
+    EXPECT_STREQ("Units:CM", deserializedKindOfQuantity->GetPersistenceUnit().GetUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, deserializedKindOfQuantity->GetRelativeError());
 
-    EXPECT_STREQ("FT", deserializedKindOfQuantity->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
+    EXPECT_STREQ("Units:FT", deserializedKindOfQuantity->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
     auto& resultAltUnits = deserializedKindOfQuantity->GetPresentationUnitList();
     EXPECT_EQ(3, resultAltUnits.size()); // Default presentation unit is included in list of presentation units
-    EXPECT_STREQ("IN", resultAltUnits[1].GetUnit()->GetName().c_str());
-    EXPECT_STREQ("MILLIINCH", resultAltUnits[2].GetUnit()->GetName().c_str());
+    EXPECT_STREQ("Units:IN", resultAltUnits[1].GetUnit()->GetName().c_str());
+    EXPECT_STREQ("Units:MILLIINCH", resultAltUnits[2].GetUnit()->GetName().c_str());
 
     ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
     ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("QuantifiedProperty");
@@ -685,8 +791,6 @@ TEST_F(KindOfQuantityDeserializationTest, SuccessfulWithUnknownUnitInNewerECVers
     ASSERT_FALSE(unit->IsValid()) << "Expect KOQ to have dummy unit because unit name is unknown";
     ASSERT_FALSE(koq->GetPersistenceUnit().HasProblem()) << "Expect no  problems because unknown units are not exposed as problems";
     ASSERT_STREQ("SILLYMETER(DefaultReal)", koq->GetPersistenceUnit().ToText(false).c_str()) << "Should be able to write FUS with dummy unit to text";
-
-    EXPECT_NE(nullptr, Units::UnitRegistry::Instance().LookupUnit("SILLYMETER"));
 
     // Check Presentation Units
     KindOfQuantityCP koq2 = schema->GetKindOfQuantityCP("KoQWithPres");

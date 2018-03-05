@@ -33,9 +33,6 @@ TEST_F(PhenomenonTests, BasicPhenomenonCreation)
 
     auto testPhenomenon = schema->GetPhenomenonCP("TestPhenomenon");
     EXPECT_EQ(Phenomenon, testPhenomenon);
-
-    auto registryPhenomenon = Units::UnitRegistry::Instance().LookupPhenomenon("TestSchema:TestPhenomenon");
-    EXPECT_EQ(Phenomenon, registryPhenomenon);
     }
 
 //---------------------------------------------------------------------------------------
