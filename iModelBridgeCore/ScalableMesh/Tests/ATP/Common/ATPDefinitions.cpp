@@ -1703,7 +1703,7 @@ struct DPoint3dComparer
             }
     };
 
-StatusInt DrapeOnScalableMesh(DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>& drapedPoints, std::vector<DPoint3d> origPoints)
+StatusInt DrapeOnScalableMesh(DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>& drapedPoints, bvector<DPoint3d>& origPoints)
     {
     DTMDrapedLinePtr drapedLine;
     auto draping = smPtr->GetDTMDraping();
@@ -1724,7 +1724,7 @@ StatusInt DrapeOnScalableMesh(DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>&
     return SUCCESS;
     }
 
-StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<vector<DPoint3d>>& drapeLines)
+StatusInt DoBatchDrape(bvector<bvector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<vector<DPoint3d>>& drapeLines)
     {
     bool aborded = false;
 
@@ -2110,23 +2110,10 @@ void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             return;
         }
 
-        std::wstring line;
-
-        std::wifstream infile(linesFileName.c_str());
-
+        bvector<bvector<DPoint3d>> lines;
         vector<vector<DPoint3d>> pts;
-        vector<vector<DPoint3d>> lines;
-        vector<DPoint3d> linePts(2);
 
-        while (std::getline(infile, line))
-        {
-            std::wistringstream iss(line);
-            wchar_t semiColon;
-            if (!(iss >> linePts[0].x >> linePts[0].y >> linePts[0].z >> semiColon)) { break; } // error
-            if (!(iss >> linePts[1].x >> linePts[1].y >> linePts[1].z >> semiColon)) { break; } // error
-
-            lines.push_back(linePts);
-        }
+        GetLinePointsFromLnsFile(lines, linesFileName);
 
         DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*stmFile->GetDTMInterface());
 
