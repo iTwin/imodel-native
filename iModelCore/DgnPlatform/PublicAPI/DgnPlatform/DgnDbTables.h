@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDbTables.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -454,6 +454,11 @@ public:
 //=======================================================================================
 struct DgnFonts : NonCopyableClass
 {
+    BE_JSON_NAME(fonts);
+    BE_JSON_NAME(name);
+    BE_JSON_NAME(type);
+    BE_JSON_NAME(id);
+    
     typedef bmap<DgnFontId,DgnFontPtr> T_FontMap;
 
     //=======================================================================================
@@ -635,6 +640,7 @@ public:
 
     DbFontMapDirect& DbFontMap() {return m_dbFontMap;}
     DbFaceDataDirect& DbFaceData() {return m_dbFaceData;}
+    T_FontMap const& FontMap() {return m_fontMap;}
     void Invalidate() {m_isFontMapLoaded = false; m_fontMap.clear();}
     DGNPLATFORM_EXPORT void Update();
     DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
