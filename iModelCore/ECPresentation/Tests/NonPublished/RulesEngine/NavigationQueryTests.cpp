@@ -58,7 +58,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_ForwardRelat
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true);
-    query->Join(RelatedClass(class1, class2, relationship1, true, "target_alias", ""), false);
+    query->Join(RelatedClass(class1, class2, relationship1, true, "target_alias", "", true, false));
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
@@ -81,7 +81,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_BackwardRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class2, true);
-    query->Join(RelatedClass(class2, class1, relationship1, false, "target_alias", ""), false);
+    query->Join(RelatedClass(class2, class1, relationship1, false, "target_alias", "", true, false));
 
     Utf8String expected(
         " FROM [sc2].[Class2]"
@@ -103,7 +103,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(entity, true, "source");
-    query->Join(RelatedClass(entity, entity, relationship, true, "target"), false);
+    query->Join(RelatedClass(entity, entity, relationship, true, "target", nullptr, true, false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] source"
@@ -125,7 +125,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_SingleClause_RespectsRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(entity, true, "target");
-    query->Join(RelatedClass(entity, entity, relationship, false, "source"), false);
+    query->Join(RelatedClass(entity, entity, relationship, false, "source", nullptr, true, false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] target"
@@ -212,7 +212,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerJoin_UsesAliases)
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class2, relationship1, true, "Class2Alias", ""), false);
+    query->Join(RelatedClass(class1, class2, relationship1, true, "Class2Alias", "", true, false));
 
     Utf8String expected(
         " FROM [sc2].[Class1] Class1Alias"
@@ -235,7 +235,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_BackwardNavigation
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class2, relationship, true, "Class2Alias"), false);
+    query->Join(RelatedClass(class1, class2, relationship, true, "Class2Alias", nullptr, true, false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] Class1Alias"
@@ -258,7 +258,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_BackwardNavigatio
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class2, true, "Class2Alias");
-    query->Join(RelatedClass(class2, class1, relationship, false, "Class1Alias"), false);
+    query->Join(RelatedClass(class2, class1, relationship, false, "Class1Alias", nullptr, true, false));
 
     Utf8String expected(
         " FROM [sc3].[Class2] Class2Alias"
@@ -281,7 +281,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerBackwardJoin_ForwardNavigation
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class3, relationship, false, "Class3Alias"), false);
+    query->Join(RelatedClass(class1, class3, relationship, false, "Class3Alias", nullptr, true, false));
 
     Utf8String expected(
         " FROM [sc3].[Class1] Class1Alias"
@@ -304,7 +304,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_InnerForwardJoin_ForwardNavigationP
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class3, true, "Class3Alias");
-    query->Join(RelatedClass(class3, class1, relationship, true, "Class1Alias"), false);
+    query->Join(RelatedClass(class3, class1, relationship, true, "Class1Alias", nullptr, true, false));
 
     Utf8String expected(
         " FROM [sc3].[Class3] Class3Alias"
@@ -327,7 +327,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_ForwardRelat
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true);
-    query->Join(RelatedClass(class1, class2, relationship1, true, "target_alias", ""), true);
+    query->Join(RelatedClass(class1, class2, relationship1, true, "target_alias", ""));
 
     Utf8String expected(
         " FROM [sc2].[Class1]"
@@ -350,7 +350,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_BackwardRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class2, true);
-    query->Join(RelatedClass(class2, class1, relationship1, false, "target_alias", ""), true);
+    query->Join(RelatedClass(class2, class1, relationship1, false, "target_alias", ""));
 
     Utf8String expected(
         " FROM [sc2].[Class2]"
@@ -372,7 +372,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(entity, true, "source");
-    query->Join(RelatedClass(entity, entity, relationship, true, "target"), true);
+    query->Join(RelatedClass(entity, entity, relationship, true, "target"));
 
     Utf8String expected(
         " FROM [sc3].[Class1] source"
@@ -394,7 +394,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_SingleClause_RespectsRela
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(entity, true, "target");
-    query->Join(RelatedClass(entity, entity, relationship, false, "source"), true);
+    query->Join(RelatedClass(entity, entity, relationship, false, "source"));
 
     Utf8String expected(
         " FROM [sc3].[Class1] target"
@@ -496,7 +496,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterJoin_UsesAliases)
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class2, relationship1, true, "Class2Alias", "RelationshipAlias"), true);
+    query->Join(RelatedClass(class1, class2, relationship1, true, "Class2Alias", "RelationshipAlias"));
 
     Utf8String expected(
         " FROM [sc2].[Class1] Class1Alias"
@@ -519,7 +519,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_BackwardNavigation
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class2, relationship, true, "Class2Alias"), true);
+    query->Join(RelatedClass(class1, class2, relationship, true, "Class2Alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class1] Class1Alias"
@@ -542,7 +542,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_BackwardNavigatio
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class2, true, "Class2Alias");
-    query->Join(RelatedClass(class2, class1, relationship, false, "Class1Alias"), true);
+    query->Join(RelatedClass(class2, class1, relationship, false, "Class1Alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class2] Class2Alias"
@@ -565,7 +565,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterBackwardJoin_ForwardNavigation
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class1, true, "Class1Alias");
-    query->Join(RelatedClass(class1, class3, relationship, false, "Class3Alias"), true);
+    query->Join(RelatedClass(class1, class3, relationship, false, "Class3Alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class1] Class1Alias"
@@ -588,7 +588,7 @@ TEST_F(ComplexNavigationQueryTests, ToString_OuterForwardJoin_ForwardNavigationP
 
     ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
     query->From(class3, true, "Class3Alias");
-    query->Join(RelatedClass(class3, class1, relationship, true, "Class1Alias"), true);
+    query->Join(RelatedClass(class3, class1, relationship, true, "Class1Alias"));
 
     Utf8String expected(
         " FROM [sc3].[Class3] Class3Alias"

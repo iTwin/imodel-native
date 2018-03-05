@@ -180,6 +180,7 @@
 #define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME                 "RelationshipName"
 #define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION            "RelationshipDirection"
 #define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS                            "Alias"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ISREQUIRED                       "IsRequired"
 
 //ContentSpecifications
 #define CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES                                "ShowImages"

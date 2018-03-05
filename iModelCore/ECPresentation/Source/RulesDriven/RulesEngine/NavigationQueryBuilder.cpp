@@ -745,7 +745,7 @@ protected:
                 {
                 RelatedClass relatedParent(*selectInfo.GetSelectClass(), *m_foreignKeyClass.GetTargetClass(), *m_foreignKeyClass.GetRelationship(),
                     !m_foreignKeyClass.IsForwardRelationship(), "parentInstance", relationshipAlias.c_str());
-                query->Join(relatedParent, true);
+                query->Join(relatedParent);
                 }
             else
                 {
@@ -1992,7 +1992,7 @@ private:
     void JoinRelatedClasses(ComplexNavigationQuery& query, bvector<RelatedClass> const& relatedClasses) const
         {
         for (RelatedClass const& relatedClass : relatedClasses)
-            query.Join(relatedClass, true);
+            query.Join(relatedClass);
         }
     
     /*---------------------------------------------------------------------------------**//**
@@ -2544,6 +2544,7 @@ static bvector<RelatedClass> GetRelatedInstanceClasses(ECSchemaHelper const& sch
         RelatedClass relatedClassInfo(selectClass, *relatedClass->GetEntityClassCP(), *relationshipClass->GetRelationshipClassCP(), isForward);
         relatedClassInfo.SetTargetClassAlias(spec->GetAlias().c_str());
         relatedClassInfo.SetRelationshipAlias(Utf8PrintfString("rel_%s_%s_%d", relationshipClass->GetSchema().GetAlias().c_str(), relationshipClass->GetName().c_str(), ctx.GetRelationshipUseCount(*relationshipClass->GetRelationshipClassCP())).c_str());
+        relatedClassInfo.SetIsOuterJoin(!spec->IsRequired());
         relatedClasses.push_back(relatedClassInfo);
         aliases.insert(spec->GetAlias());
         }

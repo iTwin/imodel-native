@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/Rules/RelatedInstanceSpecification.cpp $
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -26,6 +26,9 @@ bool RelatedInstanceSpecification::ReadXml(BeXmlNodeP xmlNode)
     
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_alias, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS))
         return false;
+
+    if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_isRequired, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ISREQUIRED))
+        m_isRequired = false;
     
     Utf8String requiredDirectionString;
     if (BEXML_Success != xmlNode->GetAttributeStringValue (requiredDirectionString, RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION))
@@ -45,6 +48,7 @@ void RelatedInstanceSpecification::WriteXml(BeXmlNodeP parentXmlNode) const
     node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME, m_relationshipName.c_str());
     node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION, CommonTools::FormatRequiredDirectionString(m_direction));
     node->AddAttributeStringValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS, m_alias.c_str());
+    node->AddAttributeBooleanValue(RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ISREQUIRED, m_isRequired);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -57,6 +61,7 @@ MD5 RelatedInstanceSpecification::_ComputeHash(Utf8CP parentHash) const
     md5.Add(m_relationshipName.c_str(), m_relationshipName.size());
     md5.Add(m_className.c_str(), m_className.size());
     md5.Add(m_alias.c_str(), m_alias.size());
+    md5.Add(&m_isRequired, sizeof(m_isRequired));
     if (nullptr != parentHash)
         md5.Add(parentHash, strlen(parentHash));
 

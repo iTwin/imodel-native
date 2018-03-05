@@ -216,3 +216,23 @@ TEST_F (NavigationQueryBuilderTests, FiltersByRelatedInstanceProperties)
         << "Expected: " << expected->ToString() << "\r\n"
         << "Actual:   " << query->ToString();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (NavigationQueryBuilderTests, InnerJoinsWithAdditionalRelatedInstances)
+    {
+    InstanceNodesOfSpecificClassesSpecification spec(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false);
+    spec.AddRelatedInstance(*new RelatedInstanceSpecification(RequiredRelationDirection_Backward, "RulesEngineTest:WidgetHasGadgets", "RulesEngineTest:Widget", "widget", true));
+
+    bvector<NavigationQueryPtr> queries = GetBuilder().GetQueries(*m_rootNodeRule, spec);
+    ASSERT_EQ(1, queries.size());
+
+    NavigationQueryPtr query = queries[0];
+    ASSERT_TRUE(query.IsValid());
+    
+    NavigationQueryCPtr expected = ExpectedQueries::GetInstance(BeTest::GetHost()).GetNavigationQuery("InnerJoinsWithAdditionalRelatedInstances", spec);
+    EXPECT_TRUE(expected->IsEqual(*query))
+        << "Expected: " << expected->ToString() << "\r\n"
+        << "Actual:   " << query->ToString();
+    }

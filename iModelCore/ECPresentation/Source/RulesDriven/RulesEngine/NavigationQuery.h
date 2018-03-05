@@ -396,7 +396,7 @@ public:
     ECPRESENTATION_EXPORT ThisType& From(ECClassCR fromClass, bool polymorphic, Utf8CP alias = nullptr, bool append = true);
     ECPRESENTATION_EXPORT ThisType& From(TBase& nestedQuery, Utf8CP alias = nullptr);
     ECPRESENTATION_EXPORT ThisType& Where(Utf8CP whereClause, BoundQueryValuesListCR, bool append = true);
-    ECPRESENTATION_EXPORT ThisType& Join(RelatedClass const& relatedClass, bool isOuter, bool append = true);
+    ECPRESENTATION_EXPORT ThisType& Join(RelatedClass const& relatedClass, bool append = true);
     ECPRESENTATION_EXPORT ThisType& Join(RelatedClassPath const& path, bool isOuter, bool append = true);
     ECPRESENTATION_EXPORT ThisType& OrderBy(Utf8CP orderByClause);
     ECPRESENTATION_EXPORT ThisType& GroupByContract(Contract const& contract);

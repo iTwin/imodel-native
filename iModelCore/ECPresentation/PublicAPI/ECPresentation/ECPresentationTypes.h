@@ -112,14 +112,15 @@ private:
     Utf8String m_relationshipAlias;
     bool m_isForwardRelationship;
     bool m_isPolymorphic;
+    bool m_isOuterJoin;
 
 public:
     //! Constructor. Creates an invalid instance.
-    RelatedClass() : m_source(nullptr), m_target(nullptr), m_relationship(nullptr), m_isForwardRelationship(false), m_isPolymorphic(true) {}
+    RelatedClass() : m_source(nullptr), m_target(nullptr), m_relationship(nullptr), m_isForwardRelationship(false), m_isPolymorphic(true), m_isOuterJoin(true) {}
 
     //! Constructor.
-    RelatedClass(ECN::ECClassCR source, ECN::ECClassCR target, ECN::ECRelationshipClassCR relationship, bool isForward, Utf8CP targetAlias = nullptr, Utf8CP relationshipAlias = nullptr, bool isPolymorphic = true)
-        : m_source(&source), m_target(&target), m_relationship(&relationship), m_isForwardRelationship(isForward), m_isPolymorphic(isPolymorphic), m_targetAlias(targetAlias), m_relationshipAlias(relationshipAlias)
+    RelatedClass(ECN::ECClassCR source, ECN::ECClassCR target, ECN::ECRelationshipClassCR relationship, bool isForward, Utf8CP targetAlias = nullptr, Utf8CP relationshipAlias = nullptr, bool isPolymorphic = true, bool isOuterJoin = true)
+        : m_source(&source), m_target(&target), m_relationship(&relationship), m_isForwardRelationship(isForward), m_isPolymorphic(isPolymorphic), m_targetAlias(targetAlias), m_relationshipAlias(relationshipAlias), m_isOuterJoin(isOuterJoin)
         {}
 
     //! Checks whether this object is equal to the supplied one.
@@ -181,6 +182,12 @@ public:
 
     //! Get the navigation property for this relationship.
     ECN::NavigationECPropertyCP GetNavigationProperty() const;
+
+    //! Is related class queried using outer join
+    bool IsOuterJoin() const {return m_isOuterJoin;}
+
+    //! Set whether the related class should be queried using outer join
+    void SetIsOuterJoin(bool value) {m_isOuterJoin = value;}
 };
 
 //! A stack of ECClass and ECRelationshipClass pairs representing a path of relationships.

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/RelatedInstanceSpecificationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PresentationRulesTests.h"
@@ -35,6 +35,28 @@ TEST_F(RelatedInstanceSpecificationTests, LoadsFromXml)
     EXPECT_STREQ("ClassA", spec.GetClassName().c_str());
     EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipDirection());
     EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
+    EXPECT_EQ(false, spec.IsRequired());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, LoadsFromXmlWithIsRequiredAttributeSet)
+    {
+    static Utf8CP xmlString = R"(
+        <RelatedInstance RelationshipName="ClassAHasClassB" ClassName="ClassA" Alias="TestAlias" IsRequired="true"/>
+        )";
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateAndReadFromString(xmlStatus, xmlString);
+    ASSERT_EQ(BEXML_Success, xmlStatus);
+    
+    RelatedInstanceSpecification spec;
+    EXPECT_TRUE(spec.ReadXml(xml->GetRootElement()));
+    EXPECT_STREQ("ClassAHasClassB", spec.GetRelationshipName().c_str());
+    EXPECT_STREQ("ClassA", spec.GetClassName().c_str());
+    EXPECT_EQ(RequiredRelationDirection::RequiredRelationDirection_Both, spec.GetRelationshipDirection());
+    EXPECT_STREQ("TestAlias", spec.GetAlias().c_str());
+    EXPECT_EQ(true, spec.IsRequired());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,7 +121,26 @@ TEST_F(RelatedInstanceSpecificationTests, WritesToXml)
 
     static Utf8CP expected = ""
         "<Root>"
-            R"(<RelatedInstance ClassName="ClassA" RelationshipName="ClassAHasClassB" RelationshipDirection="Backward" Alias="TestAlias"/>)"
+            R"(<RelatedInstance ClassName="ClassA" RelationshipName="ClassAHasClassB" RelationshipDirection="Backward" Alias="TestAlias" IsRequired="false"/>)"
+        "</Root>";
+    EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsiclass                                     Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RelatedInstanceSpecificationTests, WritesToXmlWithIsRequiredAttribute)
+    {
+    BeXmlStatus xmlStatus;
+    BeXmlDomPtr xml = BeXmlDom::CreateEmpty();
+    xml->AddNewElement("Root", nullptr, nullptr);
+
+    RelatedInstanceSpecification spec(RequiredRelationDirection::RequiredRelationDirection_Backward, "ClassAHasClassB", "ClassA", "TestAlias", true);
+    spec.WriteXml(xml->GetRootElement());
+
+    static Utf8CP expected = ""
+        "<Root>"
+            R"(<RelatedInstance ClassName="ClassA" RelationshipName="ClassAHasClassB" RelationshipDirection="Backward" Alias="TestAlias" IsRequired="true"/>)"
         "</Root>";
     EXPECT_STREQ(ToPrettyString(*BeXmlDom::CreateAndReadFromString(xmlStatus, expected)).c_str(), ToPrettyString(*xml).c_str());
     }

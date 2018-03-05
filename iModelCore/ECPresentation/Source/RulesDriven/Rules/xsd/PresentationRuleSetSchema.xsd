@@ -240,6 +240,7 @@
             </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="Alias" type="xs:string" use="required" />
+        <xs:attribute name="IsRequired" type="xs:boolean" default="false"/>
     </xs:complexType>
 
     <xs:complexType name="NavigationSpecificationDef" abstract="true">

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/Rules/RelatedInstanceSpecification.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,17 +22,18 @@ struct RelatedInstanceSpecification : HashableBase
         Utf8String                         m_relationshipName;
         Utf8String                         m_className;
         Utf8String                         m_alias;
+        bool                               m_isRequired;
         
     protected:
         ECPRESENTATION_EXPORT MD5 _ComputeHash(Utf8CP parentHash) const override;
 
     public:
         //! Constructor.
-        RelatedInstanceSpecification() {}
+        RelatedInstanceSpecification() : m_isRequired(false) {}
         
         //! Constructor.
-        RelatedInstanceSpecification(RequiredRelationDirection direction, Utf8String relationshipName, Utf8String className, Utf8String alias)
-            : m_direction(direction), m_relationshipName(relationshipName), m_className(className), m_alias(alias)
+        RelatedInstanceSpecification(RequiredRelationDirection direction, Utf8String relationshipName, Utf8String className, Utf8String alias, bool isRequired = false)
+            : m_direction(direction), m_relationshipName(relationshipName), m_className(className), m_alias(alias), m_isRequired(isRequired)
             {}
 
         //! Reads specification from XML.
@@ -58,6 +59,12 @@ struct RelatedInstanceSpecification : HashableBase
         
         //! @see GetAlias
         void SetAlias(Utf8String alias) {m_alias = alias;}
+
+        //! Get whether related instance is required
+        bool IsRequired() const {return m_isRequired;}
+
+        //! @see IsRequired
+        void SetIsRequired(bool value) {m_isRequired = value;}
     };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

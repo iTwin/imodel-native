@@ -534,25 +534,25 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Gadget, true, "this");
-        nestedQuery1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Gadget, true, "this");
-        nestedQuery2->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery2->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
         nestedQuery3->From(ret_Gadget, true, "this");
-        nestedQuery3->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
         nestedQuery4->From(ret_Gadget, true, "this");
-        nestedQuery4->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -576,22 +576,22 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
-        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
-        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
-        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -613,32 +613,32 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery5 = ComplexNavigationQuery::Create();
         nestedQuery5->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket), "this");
-        nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery5->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
     
         ComplexNavigationQueryPtr nestedQuery6 = ComplexNavigationQuery::Create();
         nestedQuery6->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket), "this");
-        nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery6->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -665,25 +665,25 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Gadget, true, "this");
-        nestedQuery1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Gadget, true, "this");
-        nestedQuery2->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery2->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
         nestedQuery3->From(ret_Gadget, true, "this");
-        nestedQuery3->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets, false, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
         nestedQuery4->From(ret_Gadget, true, "this");
-        nestedQuery4->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetsHaveGadgets2, false, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -705,32 +705,32 @@ void ExpectedQueries::RegisterExpectedQueries()
         {
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery5 = ComplexNavigationQuery::Create();
         nestedQuery5->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket, bvector<RelatedClass>(), {ret_Sprocket.GetPropertyP("MyID")}), "this");
-        nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0",  true, false));
         nestedQuery5->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
     
         ComplexNavigationQueryPtr nestedQuery6 = ComplexNavigationQuery::Create();
         nestedQuery6->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket, bvector<RelatedClass>(), {ret_Sprocket.GetPropertyP("MyID")}), "this");
-        nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery6->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -979,32 +979,32 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
-        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
-        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
-        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery5 = ComplexNavigationQuery::Create();
         nestedQuery5->SelectContract(*contract, "this");
-        nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery5->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
         
         ComplexNavigationQueryPtr nestedQuery6 = ComplexNavigationQuery::Create();
         nestedQuery6->SelectContract(*contract, "this");
-        nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery6->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
@@ -1036,22 +1036,22 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
-        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
-        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
-        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1075,7 +1075,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
-        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
+        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1094,12 +1094,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         {    
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_ClassB), "this");
-        nestedQuery1->From(ret_ClassB, true, "this").Join(RelatedClass(ret_ClassB, ret_ClassA, ret_ClassAHasBAndC, false, "related", "rel_RET_ClassAHasBAndC"), false);
+        nestedQuery1->From(ret_ClassB, true, "this").Join(RelatedClass(ret_ClassB, ret_ClassA, ret_ClassAHasBAndC, false, "related", "rel_RET_ClassAHasBAndC", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_ClassC), "this");
-        nestedQuery2->From(ret_ClassC, true, "this").Join(RelatedClass(ret_ClassC, ret_ClassA, ret_ClassAHasBAndC, false, "related", "rel_RET_ClassAHasBAndC"), false);
+        nestedQuery2->From(ret_ClassC, true, "this").Join(RelatedClass(ret_ClassC, ret_ClassA, ret_ClassAHasBAndC, false, "related", "rel_RET_ClassAHasBAndC", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1119,32 +1119,32 @@ void ExpectedQueries::RegisterExpectedQueries()
         {    
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery5 = ComplexNavigationQuery::Create();
         nestedQuery5->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create(&ret_Sprocket), "this");
-        nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery5->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery5->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
 
         ComplexNavigationQueryPtr nestedQuery6 = ComplexNavigationQuery::Create();
         nestedQuery6->SelectContract(*DisplayLabelGroupingNodesQueryContract::Create(&ret_Sprocket), "this");
-        nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery6->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery6->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1172,7 +1172,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
-        nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
         nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
@@ -1180,7 +1180,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
-        nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
@@ -1205,22 +1205,22 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
-        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
-        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
-        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1246,7 +1246,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery1->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
@@ -1254,7 +1254,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
-        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery2->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery2->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
@@ -1262,7 +1262,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         
         ComplexNavigationQueryPtr nestedQuery3 = ComplexNavigationQuery::Create();
         nestedQuery3->SelectContract(*contract, "this");
-        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0"), false);
+        nestedQuery3->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", true, false));
         nestedQuery3->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery3->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
@@ -1270,7 +1270,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         
         ComplexNavigationQueryPtr nestedQuery4 = ComplexNavigationQuery::Create();
         nestedQuery4->SelectContract(*contract, "this");
-        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0"), false);
+        nestedQuery4->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", true, false));
         nestedQuery4->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery4->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
@@ -1298,7 +1298,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
         nestedQuery->From(ret_Gadget, true, "this");
-        nestedQuery->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
+        nestedQuery->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
@@ -1324,7 +1324,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
-        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
+        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1345,7 +1345,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
-        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
+        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1368,7 +1368,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
-        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
+        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
@@ -1392,7 +1392,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
-        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget"), false);
+        nestedQuery->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery->Where("[this].[ECInstanceId] IN (?) AND "
             "GetECInstanceDisplayLabel([this].[ECClassId], [this].[ECInstanceId], '', '[]') = ?",
@@ -1414,12 +1414,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         {    
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget), "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket), "this");
-        nestedQuery2->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery2->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1441,7 +1441,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
-        nestedQuery->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1462,12 +1462,12 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
-        nestedQuery1->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery1->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
     
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
-        nestedQuery2->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery2->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1489,7 +1489,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
-        nestedQuery->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1510,7 +1510,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery = ComplexNavigationQuery::Create();
         nestedQuery->SelectContract(*contract, "this");
-        nestedQuery->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1531,22 +1531,22 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr includeQuery1 = ComplexNavigationQuery::Create();
         includeQuery1->SelectContract(*contract, "this");
-        includeQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        includeQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         includeQuery1->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
 
         ComplexNavigationQueryPtr excludeQuery1 = ComplexNavigationQuery::Create();
         excludeQuery1->SelectContract(*contract, "this");
-        excludeQuery1->From(ret_Gadget, false, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_1", false), false);
+        excludeQuery1->From(ret_Gadget, false, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_1", false, false));
         excludeQuery1->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
     
         ComplexNavigationQueryPtr includeQuery2 = ComplexNavigationQuery::Create();
         includeQuery2->SelectContract(*contract, "this");
-        includeQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        includeQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         includeQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr excludeQuery2 = ComplexNavigationQuery::Create();
         excludeQuery2->SelectContract(*contract, "this");
-        excludeQuery2->From(ret_Gadget, false, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_1", false), false);
+        excludeQuery2->From(ret_Gadget, false, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_1", false, false));
         excludeQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr orderedInclude = ComplexNavigationQuery::Create();
@@ -1572,22 +1572,22 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr nestedQuery11 = ComplexNavigationQuery::Create();
         nestedQuery11->SelectContract(*contract, "this");
-        nestedQuery11->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery11->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery11->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
 
         ComplexNavigationQueryPtr nestedQuery12 = ComplexNavigationQuery::Create();
         nestedQuery12->SelectContract(*contract, "this");
-        nestedQuery12->From(ret_Gadget, false, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_1", false), false);
+        nestedQuery12->From(ret_Gadget, false, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_1", false, false));
         nestedQuery12->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
     
         ComplexNavigationQueryPtr nestedQuery21 = ComplexNavigationQuery::Create();
         nestedQuery21->SelectContract(*contract, "this");
-        nestedQuery21->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery21->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery21->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr nestedQuery22 = ComplexNavigationQuery::Create();
         nestedQuery22->SelectContract(*contract, "this");
-        nestedQuery22->From(ret_Gadget, false, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_1", false), false);
+        nestedQuery22->From(ret_Gadget, false, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_1", false, false));
         nestedQuery22->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*nestedQuery11, *nestedQuery21);
@@ -1618,7 +1618,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr includeQuery = ComplexNavigationQuery::Create();
         includeQuery->SelectContract(*contract, "this");
-        includeQuery->From(ret_ClassE, true, "this").Join(RelatedClass(ret_ClassE, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0"), false);
+        includeQuery->From(ret_ClassE, true, "this").Join(RelatedClass(ret_ClassE, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", true, false));
         includeQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr orderedInclude = ComplexNavigationQuery::Create();
@@ -1628,12 +1628,12 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr excludeQuery1 = ComplexNavigationQuery::Create();
         excludeQuery1->SelectContract(*contract, "this");
-        excludeQuery1->From(ret_ClassF, true, "this").Join(RelatedClass(ret_ClassF, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_4"), false);
+        excludeQuery1->From(ret_ClassF, true, "this").Join(RelatedClass(ret_ClassF, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_4", true, false));
         excludeQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr excludeQuery2 = ComplexNavigationQuery::Create();
         excludeQuery2->SelectContract(*contract, "this");
-        excludeQuery2->From(ret_ClassG, false, "this").Join(RelatedClass(ret_ClassG, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_5", false), false);
+        excludeQuery2->From(ret_ClassG, false, "this").Join(RelatedClass(ret_ClassG, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_5", false, false));
         excludeQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ExceptNavigationQueryPtr excludes = ExceptNavigationQuery::Create(*excludeQuery1, *excludeQuery2);
@@ -1652,7 +1652,7 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr includeQuery = ComplexNavigationQuery::Create();
         includeQuery->SelectContract(*contract, "this");
-        includeQuery->From(ret_ClassE, false, "this").Join(RelatedClass(ret_ClassE, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0"), false);
+        includeQuery->From(ret_ClassE, false, "this").Join(RelatedClass(ret_ClassE, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", true, false));
         includeQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         includeQuery->OrderBy("[this].[IntProperty]");
 
@@ -1662,14 +1662,14 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr unorderedInclude = ComplexNavigationQuery::Create();
         unorderedInclude->SelectContract(*contract, "this");
-        unorderedInclude->From(ret_ClassG, true, "this").Join(RelatedClass(ret_ClassG, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0"), false);
+        unorderedInclude->From(ret_ClassG, true, "this").Join(RelatedClass(ret_ClassG, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", true, false));
         unorderedInclude->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         UnionNavigationQueryPtr includes = UnionNavigationQuery::Create(*wrappedInclude, *unorderedInclude);
 
         ComplexNavigationQueryPtr excludeQuery = ComplexNavigationQuery::Create();
         excludeQuery->SelectContract(*contract, "this");
-        excludeQuery->From(ret_ClassF, true, "this").Join(RelatedClass(ret_ClassF, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_4"), false);
+        excludeQuery->From(ret_ClassF, true, "this").Join(RelatedClass(ret_ClassF, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_4", true, false));
         excludeQuery->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ExceptNavigationQueryPtr expected = ExceptNavigationQuery::Create(*includes, *excludeQuery);
@@ -1686,13 +1686,13 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
-        nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery1->Where("[this].[Description] = '2'", BoundQueryValuesList(), true);
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
-        nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
         nestedQuery2->Where("[this].[Description] = '2'", BoundQueryValuesList(), true);
     
@@ -1715,13 +1715,13 @@ void ExpectedQueries::RegisterExpectedQueries()
     
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
-        nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery1->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery1->Where("CAST([this].[Description] AS TEXT) LIKE 'Test'", BoundQueryValuesList(), true);
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
-        nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery2->From(ret_Gadget, true, "this").Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
         nestedQuery2->Where("CAST([this].[Description] AS TEXT) LIKE 'Test'", BoundQueryValuesList(), true);
     
@@ -1745,14 +1745,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*contract, "this");
         nestedQuery1->From(ret_Gadget, true, "this");
-        nestedQuery1->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0"), false);
+        nestedQuery1->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "related", "rel_RET_GadgetHasSprocket_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", { new BoundQueryId(ECInstanceId((uint64_t)123)) });
         nestedQuery1->Where("IsOfClass([this].[ECClassId], 'ClassName', 'SchemaName')", BoundQueryValuesList(), true);
     
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*contract, "this");
         nestedQuery2->From(ret_Gadget, true, "this");
-        nestedQuery2->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery2->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         nestedQuery2->Where("IsOfClass([this].[ECClassId], 'ClassName', 'SchemaName')", BoundQueryValuesList(), true);
     
@@ -1773,7 +1773,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         {    
         ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
         query->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("Description"), ret_Widget.GetPropertyP("MyID")}), "this");
-        query->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        query->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         query->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -1792,12 +1792,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         {    
         ComplexNavigationQueryPtr nestedQuery1 = ComplexNavigationQuery::Create();
         nestedQuery1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Widget, bvector<RelatedClass>(), {ret_Widget.GetPropertyP("MyID")}), "this");
-        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0"), false);
+        nestedQuery1->From(ret_Widget, true, "this").Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", true, false));
         nestedQuery1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexNavigationQueryPtr nestedQuery2 = ComplexNavigationQuery::Create();
         nestedQuery2->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_Sprocket), "this");
-        nestedQuery2->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0"), false);
+        nestedQuery2->From(ret_Sprocket, true, "this").Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", true, false));
         nestedQuery2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
@@ -2525,7 +2525,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr expected = ComplexNavigationQuery::Create();
         expected->SelectContract(*contract, "this");
         expected->From(ret_Gadget, false, "this");
-        expected->Join(relatedInstanceClass, true);
+        expected->Join(relatedInstanceClass);
         expected->OrderBy("[widget].[IntProperty]");
         expected->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetHasGadgets.GetId());
         RegisterQuery("SortingRule_SortsUsingRelatedInstanceProperty", *expected);
@@ -2849,7 +2849,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested1 = ComplexNavigationQuery::Create();
         nested1->SelectContract(*contract1, "this");
         nested1->From(sc3_ChildClassWithNavigationProperty, false, "this");
-        nested1->Join(RelatedClass(sc3_ChildClassWithNavigationProperty, sc3_GroupingClass, sc3_NavigationGrouping, false, "parentInstance", "rel_sc3_NavigationGrouping"), true);
+        nested1->Join(RelatedClass(sc3_ChildClassWithNavigationProperty, sc3_GroupingClass, sc3_NavigationGrouping, false, "parentInstance", "rel_sc3_NavigationGrouping"));
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll().From(*nested1).GroupByContract(*contract1);
@@ -2891,13 +2891,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         PropertyGroupP spec = new PropertyGroup("", "", true, "IntProperty");
         RegisterForDelete(*spec);
 
-        RelatedClass relatedInstanceClass(ret_ClassF, ret_ClassD, ret_ClassDHasClassE, false, "d", "rel_RET_ClassDHasClassE_0", true);
+        RelatedClass relatedInstanceClass(ret_ClassF, ret_ClassD, ret_ClassDHasClassE, false, "d", "rel_RET_ClassDHasClassE_0");
         NavigationQueryContractPtr propertyGroupingContract = ECPropertyGroupingNodesQueryContract::Create(ret_ClassF, *ret_ClassE.GetPropertyP("IntProperty"), nullptr, *spec, nullptr);
         
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectContract(*propertyGroupingContract, "this");
         grouped->From(ret_ClassF, true, "this");
-        grouped->Join(relatedInstanceClass, false);
+        grouped->Join(relatedInstanceClass);
         
         ComplexNavigationQueryPtr grouping = ComplexNavigationQuery::Create();
         grouping->SelectAll();
@@ -2911,11 +2911,11 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested1 = ComplexNavigationQuery::Create();
         nested1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_ClassE, {relatedInstanceClass}), "this");
         nested1->From(ret_ClassE, false, "this");
-        nested1->Join(relatedInstanceClass, false);
+        nested1->Join(relatedInstanceClass);
         ComplexNavigationQueryPtr nested2 = ComplexNavigationQuery::Create();
         nested2->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_ClassG, {relatedInstanceClass}), "this");
         nested2->From(ret_ClassG, true, "this");
-        nested2->Join(relatedInstanceClass, false);
+        nested2->Join(relatedInstanceClass);
         ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
         sorted->SelectAll();
         sorted->From(*UnionNavigationQuery::Create(*nested1, *nested2));
@@ -2935,7 +2935,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectContract(*propertyGroupingContract, "this");
         grouped->From(ret_ClassD, true, "this");
-        grouped->Join(RelatedClass(ret_ClassD, ret_ClassF, ret_ClassDHasClassE, true, "e", "rel_RET_ClassDHasClassE_0"), false);
+        grouped->Join(RelatedClass(ret_ClassD, ret_ClassF, ret_ClassDHasClassE, true, "e", "rel_RET_ClassDHasClassE_0"));
 
         ComplexNavigationQueryPtr grouping = ComplexNavigationQuery::Create();
         grouping->SelectAll();
@@ -2946,17 +2946,17 @@ void ExpectedQueries::RegisterExpectedQueries()
         grouping->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_ClassDHasClassE.GetId());
         RegisterQuery("Grouping_PropertyGroup_GroupsRelatedSubclassNodesWhenPolymorphicallyReturningParentNodes_1", *grouping);
 
-        RelatedClass relatedInstanceClass1(ret_ClassD, ret_ClassE, ret_ClassDHasClassE, true, "e", "rel_RET_ClassDHasClassE_0", false);
+        RelatedClass relatedInstanceClass1(ret_ClassD, ret_ClassE, ret_ClassDHasClassE, true, "e", "rel_RET_ClassDHasClassE_0", false, true);
         ComplexNavigationQueryPtr nested1 = ComplexNavigationQuery::Create();
         nested1->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_ClassD, {relatedInstanceClass1}), "this");
         nested1->From(ret_ClassD, true, "this");
-        nested1->Join(relatedInstanceClass1, false);
+        nested1->Join(relatedInstanceClass1);
 
         RelatedClass relatedInstanceClass2(ret_ClassD, ret_ClassG, ret_ClassDHasClassE, true, "e", "rel_RET_ClassDHasClassE_0");
         ComplexNavigationQueryPtr nested2 = ComplexNavigationQuery::Create();
         nested2->SelectContract(*ECInstanceNodesQueryContract::Create(&ret_ClassD, {relatedInstanceClass2}), "this");
         nested2->From(ret_ClassD, true, "this");
-        nested2->Join(relatedInstanceClass2, false);
+        nested2->Join(relatedInstanceClass2);
 
         ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
         sorted->SelectAll();
@@ -3001,7 +3001,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
         query->SelectContract(*propertyGroupingContract, "this");
         query->From(ret_Gadget, false, "this");
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "widget", "rel_RET_WidgetHasGadgets_0"), false);
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "widget", "rel_RET_WidgetHasGadgets_0"));
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
@@ -3024,7 +3024,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr query = ComplexNavigationQuery::Create();
         query->SelectContract(*propertyGroupingContract, "this");
         query->From(ret_Gadget, true, "this");
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0"), false);
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "related", "rel_RET_WidgetHasGadget_0", true, false));
         query->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
@@ -3049,14 +3049,14 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr query1 = ComplexNavigationQuery::Create();
         query1->SelectContract(*contract1, "this");
         query1->From(ret_ClassF, true, "this");
-        query1->Join(RelatedClass(ret_ClassF, ret_ClassD, ret_ClassDReferencesClassE, false, "related", "rel_RET_ClassDReferencesClassE_0"), false);
+        query1->Join(RelatedClass(ret_ClassF, ret_ClassD, ret_ClassDReferencesClassE, false, "related", "rel_RET_ClassDReferencesClassE_0", true, false));
         query1->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         NavigationQueryContractPtr contract2 = ECPropertyGroupingNodesQueryContract::Create(ret_ClassDReferencesClassE, *ret_ClassDReferencesClassE.GetPropertyP("Priority"), "rel_RET_ClassDReferencesClassE_1", *spec, nullptr);
         ComplexNavigationQueryPtr query2 = ComplexNavigationQuery::Create();
         query2->SelectContract(*contract2, "this");
         query2->From(ret_ClassG, true, "this");
-        query2->Join(RelatedClass(ret_ClassG, ret_ClassD, ret_ClassDReferencesClassE, false, "related", "rel_RET_ClassDReferencesClassE_1"), false);
+        query2->Join(RelatedClass(ret_ClassG, ret_ClassD, ret_ClassDReferencesClassE, false, "related", "rel_RET_ClassDReferencesClassE_1", true, false));
         query2->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
@@ -3148,7 +3148,7 @@ void ExpectedQueries::RegisterExpectedQueries()
 
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
-        nested->From(b4_ClassC, true, "this").Join(RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "related", "rel_b4_ClassBHasClassC"), false);
+        nested->From(b4_ClassC, true, "this").Join(RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "related", "rel_b4_ClassBHasClassC", true, false));
         nested->Where("[related].[ECInstanceId] = ?", {new BoundQueryId(ECInstanceId((uint64_t)123))});
     
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
@@ -3265,7 +3265,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b4_ClassB, false, "this");
-        nested->Join(RelatedClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0"), false);
+        nested->Join(RelatedClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0"));
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
         grouped->SelectAll();
@@ -3287,7 +3287,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b4_ClassB, false, "this");
-        nested->Join(RelatedClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0"), false);
+        nested->Join(RelatedClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0"));
         nested->Where("[this].[SomeProperty] = ?", {new BoundQueryECValue(ECValue(9))});
 
         ComplexNavigationQueryPtr grouped = ComplexNavigationQuery::Create();
@@ -3310,7 +3310,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b4_ClassB, false, "this");
-        nested->Join(RelatedClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0"), false);
+        nested->Join(RelatedClass(b4_ClassB, b4_ClassC, b4_ClassBHasClassC, true, "c", "rel_b4_ClassBHasClassC_0"));
         nested->Where("[this].[Description] = ? AND [this].[SomeProperty] = ?", 
             {new BoundQueryECValue(ECValue("TestGroupingDescription")), new BoundQueryECValue(ECValue(9))});
 
@@ -3333,7 +3333,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b4_ClassB, false, "this");
-        nested->Join(relatedInstanceClass, false);
+        nested->Join(relatedInstanceClass);
         nested->Where("[c].[SomeProperty] = ? AND [this].[Description] = ? AND [this].[SomeProperty] = ?",
             {new BoundQueryECValue(ECValue(99)), new BoundQueryECValue(ECValue("TestGroupingDescription")), new BoundQueryECValue(ECValue(9))});
 
@@ -3363,7 +3363,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(b4_ClassB, false, "this");
-        nested->Join(relatedInstanceClass, true);
+        nested->Join(relatedInstanceClass);
         nested->Where(whereClause.c_str(),
             {
             new BoundQueryId(ECInstanceId((uint64_t)1)),
@@ -3393,7 +3393,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(ret_Gadget, false, "this");
-        nested->Join(relatedInstanceClass, false);
+        nested->Join(relatedInstanceClass);
 
         ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
         sorted->SelectAll();
@@ -3404,6 +3404,25 @@ void ExpectedQueries::RegisterExpectedQueries()
         RegisterQuery("JoinsWithAdditionalRelatedInstances", *sorted);
         }
 
+    // InnerJoinsWithAdditionalRelatedInstances
+        {
+        RelatedClass relatedInstanceClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "widget", "rel_RET_WidgetHasGadgets_0", true, false);
+        NavigationQueryContractPtr contract = ECInstanceNodesQueryContract::Create(&ret_Gadget, {relatedInstanceClass});
+    
+        ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
+        nested->SelectContract(*contract, "this");
+        nested->From(ret_Gadget, false, "this");
+        nested->Join(relatedInstanceClass);
+
+        ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
+        sorted->SelectAll();
+        sorted->From(*nested);
+        sorted->OrderBy(ecInstanceNodesQuerySortedDisplayLabel.c_str());
+        sorted->GetResultParametersR().GetMatchingRelationshipIds().insert(ret_WidgetHasGadgets.GetId());
+        
+        RegisterQuery("InnerJoinsWithAdditionalRelatedInstances", *sorted);
+        }
+
     // FiltersByRelatedInstanceProperties
         {
         RelatedClass relatedInstanceClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "widget", "rel_RET_WidgetHasGadgets_0");
@@ -3412,7 +3431,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexNavigationQueryPtr nested = ComplexNavigationQuery::Create();
         nested->SelectContract(*contract, "this");
         nested->From(ret_Gadget, false, "this");
-        nested->Join(relatedInstanceClass, false);
+        nested->Join(relatedInstanceClass);
         nested->Where("[widget].[IntProperty] > 5 AND [widget].[MyID] <> [this].[MyID]", BoundQueryValuesList());
 
         ComplexNavigationQueryPtr sorted = ComplexNavigationQuery::Create();
@@ -3519,7 +3538,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &b4_ClassC, *query2), "this");
         query2->From(b4_ClassC, false, "this");
-        query2->Join(RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "nav_b4_ClassB_0", "nav_b4_ClassBHasClassC_0"), true);
+        query2->Join(RelatedClass(b4_ClassC, b4_ClassB, b4_ClassBHasClassC, false, "nav_b4_ClassB_0", "nav_b4_ClassBHasClassC_0"));
         query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -3546,7 +3565,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class3, *query), "this");
         query->From(sc_Class3, false, "this");
-        query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
+        query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"));
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -3628,7 +3647,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class3, *query), "this");
         query->From(sc_Class3, false, "this");
-        query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
+        query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"));
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -3659,13 +3678,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class2, *query1), "this");
         query1->From(sc_Class2, false, "this");
-        query1->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
+        query1->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"));
         query1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &sc_Class3, *query2), "this");
         query2->From(sc_Class3, false, "this");
-        query2->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_1", "nav_sc_Class1HasClass2And3_1"), true);
+        query2->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_1", "nav_sc_Class1HasClass2And3_1"));
         query2->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -3704,8 +3723,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query), "this");
         query->From(ret_Gadget, false, "this");
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"), true);
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"));
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -3748,8 +3767,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query), "this");
         query->From(ret_Gadget, false, "this");
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"), true);
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"));
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -3800,12 +3819,12 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query), "this");
         query->From(ret_Sprocket, false, "this");
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"), true);
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"));
         query->Join({
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"),
             RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
             }, true);
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -3841,8 +3860,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &sc_Class2, *query), "this");
         query->From(sc_Class2, false, "this");
-        query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "rel_sc_Class1_1", "rel_sc_Class1HasClass2And3_0"), true);
-        query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"), true);
+        query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "rel_sc_Class1_1", "rel_sc_Class1HasClass2And3_0"));
+        query->Join(RelatedClass(sc_Class2, sc_Class1, sc_Class1HasClass2And3, false, "nav_sc_Class1_0", "nav_sc_Class1HasClass2And3_0"));
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -3892,15 +3911,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query), "this");
         query->From(ret_Gadget, false, "this");
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadget_0"), true);
-        query->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprocket_0"), true);
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadget_0"));
+        query->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprocket_0"));
         query->Join({
             RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprocket, true, "rel_RET_Sprocket_0", "rel_RET_GadgetHasSprocket_0"),
             RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_2", "nav_RET_GadgetHasSprockets_0"),
             }, true);
         query->Join({
             RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0")
-            }, true);
+            });
 
 
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
@@ -3944,9 +3963,9 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query), "this");
         query->From(ret_Gadget, false, "this");
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"), true);
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_2", "rel_RET_WidgetHasGadget_0"), true);
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_1", "rel_RET_WidgetHasGadgets_0"));
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadget, false, "rel_RET_Widget_2", "rel_RET_WidgetHasGadget_0"));
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4005,7 +4024,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(ret_Sprocket, false, "this");
         query->Join(path1, true);
         query->Join(path2, true);
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
 
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4051,7 +4070,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query), "this");
         query->From(ret_Sprocket, false, "this");
         query->Join(relationshipPath, true);
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
 
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4113,7 +4132,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         query->From(ret_Sprocket, false, "this");
         query->Join(gadgetRelationshipPath, true);
         query->Join(widgetRelationshipPath, true);
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
 
         query->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -4220,7 +4239,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
         q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
         q1->From(ret_Gadget, false, "this");
-        q1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
+        q1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
         q1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)1))});
 
         ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
@@ -4596,7 +4615,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query), "this");
         query->From(ret_Gadget, false, "this");
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);       
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
         RegisterQuery("ContentInstancesOfSpecificClasses_InstanceLabelOverride_OverrideNavigationProperty", *query);
         }
 
@@ -4627,15 +4646,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query1), "this");
         query1->From(ret_Sprocket, true, "this");
-        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
-        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false, false));
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
         query2->From(ret_Sprocket, true, "this");
-        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
-        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false, false));
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -4678,25 +4697,25 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query1), "this");
         query1->From(ret_Widget, true, "this");
-        query1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false), false);
+        query1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false, false));
         query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *query2), "this");
         query2->From(ret_Widget, true, "this");
-        query2->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", false), false);
+        query2->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", false, false));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query3 = ComplexContentQuery::Create();
         query3->SelectContract(*ContentQueryContract::Create(3, *descriptor, &ret_Widget, *query3), "this");
         query3->From(ret_Widget, true, "this");
-        query3->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", false), false);
+        query3->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", false, false));
         query3->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query4 = ComplexContentQuery::Create();
         query4->SelectContract(*ContentQueryContract::Create(4, *descriptor, &ret_Widget, *query4), "this");
         query4->From(ret_Widget, true, "this");
-        query4->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false), false);
+        query4->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false, false));
         query4->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*query1, *query2), *query3), *query4);
@@ -4761,39 +4780,39 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *query1), "this");
         query1->From(ret_Widget, true, "this");
-        query1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false), false);
+        query1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadgets, true, "related", "rel_RET_WidgetHasGadgets_0", false, false));
         query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Widget, *query2), "this");
         query2->From(ret_Widget, true, "this");
-        query2->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", false), false);
+        query2->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "related", "rel_RET_WidgetHasGadget_0", false, false));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query3 = ComplexContentQuery::Create();
         query3->SelectContract(*ContentQueryContract::Create(3, *descriptor, &ret_Widget, *query3), "this");
         query3->From(ret_Widget, true, "this");
-        query3->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", false), false);
+        query3->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets, true, "related", "rel_RET_WidgetsHaveGadgets_0", false, false));
         query3->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query4 = ComplexContentQuery::Create();
         query4->SelectContract(*ContentQueryContract::Create(4, *descriptor, &ret_Widget, *query4), "this");
         query4->From(ret_Widget, true, "this");
-        query4->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false), false);
+        query4->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetsHaveGadgets2, true, "related", "rel_RET_WidgetsHaveGadgets2_0", false, false));
         query4->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query5 = ComplexContentQuery::Create();
         query5->SelectContract(*ContentQueryContract::Create(5, *descriptor, &ret_Sprocket, *query5), "this");
         query5->From(ret_Sprocket, true, "this");
-        query5->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
-        query5->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query5->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false, false));
+        query5->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query5->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query6 = ComplexContentQuery::Create();
         query6->SelectContract(*ContentQueryContract::Create(6, *descriptor, &ret_Sprocket, *query6), "this");
         query6->From(ret_Sprocket, true, "this");
-        query6->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
-        query6->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query6->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false, false));
+        query6->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query6->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*query1, *query2), *query3), *query4), *query5), *query6);
@@ -4831,15 +4850,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query1), "this");
         query1->From(ret_Sprocket, true, "this");
-        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
-        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false, false));
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query1->Where("[related].[ECInstanceId] IN (?,?)", {new BoundQueryId(ECInstanceId((uint64_t)123)), new BoundQueryId(ECInstanceId((uint64_t)125))});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
         query2->From(ret_Sprocket, true, "this");
-        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
-        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false, false));
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query2->Where("[related].[ECInstanceId] IN (?,?)", {new BoundQueryId(ECInstanceId((uint64_t)123)), new BoundQueryId(ECInstanceId((uint64_t)125))});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -4877,15 +4896,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query1), "this");
         query1->From(ret_Gadget, true, "this");
-        query1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", false), false);
-        query1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
+        query1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "related", "rel_RET_WidgetHasGadgets_0", false, false));
+        query1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
         query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Gadget, *query2), "this");
         query2->From(ret_Gadget, true, "this");
-        query2->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true , "related", "rel_RET_GadgetHasSprockets_0", false), false);
-        query2->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
+        query2->Join(RelatedClass(ret_Gadget, ret_Sprocket, ret_GadgetHasSprockets, true , "related", "rel_RET_GadgetHasSprockets_0", false, false));
+        query2->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)125)})});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -4923,16 +4942,16 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query1), "this");
         query1->From(ret_Sprocket, true, "this");
-        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
-        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), false);
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false, false));
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query1->Where("[this].[MyID] = 'Sprocket MyID'", BoundQueryValuesList());
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
         query2->From(ret_Sprocket, true, "this");
-        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
-        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), false);
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false, false));
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         query2->Where("[this].[MyID] = 'Sprocket MyID'", BoundQueryValuesList());
 
@@ -5031,56 +5050,56 @@ void ExpectedQueries::RegisterExpectedQueries()
         query11->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query11), "this");
         query11->From(ret_Sprocket, true, "this");
         query11->Join(relationshipPath11, false);
-        query11->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query11->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query11->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query12 = ComplexContentQuery::Create();
         query12->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query12), "this");
         query12->From(ret_Sprocket, true, "this");
         query12->Join(relationshipPath12, false);
-        query12->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query12->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query12->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query13 = ComplexContentQuery::Create();
         query13->SelectContract(*ContentQueryContract::Create(3, *descriptor, &ret_Sprocket, *query13), "this");
         query13->From(ret_Sprocket, true, "this");
         query13->Join(relationshipPath13, false);
-        query13->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query13->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query13->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query14 = ComplexContentQuery::Create();
         query14->SelectContract(*ContentQueryContract::Create(4, *descriptor, &ret_Sprocket, *query14), "this");
         query14->From(ret_Sprocket, true, "this");
         query14->Join(relationshipPath14, false);
-        query14->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query14->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query14->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
 
         ComplexContentQueryPtr query21 = ComplexContentQuery::Create();
         query21->SelectContract(*ContentQueryContract::Create(5, *descriptor, &ret_Sprocket, *query21), "this");
         query21->From(ret_Sprocket, true, "this");
         query21->Join(relationshipPath21, false);
-        query21->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query21->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query21->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query22 = ComplexContentQuery::Create();
         query22->SelectContract(*ContentQueryContract::Create(6, *descriptor, &ret_Sprocket, *query22), "this");
         query22->From(ret_Sprocket, true, "this");
         query22->Join(relationshipPath22, false);
-        query22->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query22->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query22->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query23 = ComplexContentQuery::Create();
         query23->SelectContract(*ContentQueryContract::Create(7, *descriptor, &ret_Sprocket, *query23), "this");
         query23->From(ret_Sprocket, true, "this");
         query23->Join(relationshipPath23, false);
-        query23->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query23->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query23->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         ComplexContentQueryPtr query24 = ComplexContentQuery::Create();
         query24->SelectContract(*ContentQueryContract::Create(8, *descriptor, &ret_Sprocket, *query24), "this");
         query24->From(ret_Sprocket, true, "this");
         query24->Join(relationshipPath24, false);
-        query24->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query24->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query24->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)123)})});
         
         UnionContentQueryPtr query = UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(*UnionContentQuery::Create(
@@ -5165,7 +5184,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
-        query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
+        query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)));
         query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -5212,7 +5231,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
-        query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
+        query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)));
         query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -5259,7 +5278,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &class_Element, *query), "this");
         query->From(class_Element, true, "this");
-        query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)), true);
+        query->Join(RelatedClass(class_Element, class_Element, class_ElementOwnsChildElements, false, TABLE_ALIAS("nav", class_Element, 0), TABLE_ALIAS("nav", class_ElementOwnsChildElements, 0)));
         query->Where("FALSE", BoundQueryValuesList()); // note: filtering by recursive children ids (there're no children in the dataset, so the result is just "FALSE"
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(Utf8PrintfString("[this].[%s]", ContentQueryContract::ECInstanceIdFieldName).c_str());
@@ -5316,7 +5335,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ContentQueryContractPtr contract = ContentQueryContract::Create(1, *descriptor, &ret_ClassH, *query);
         query->SelectContract(*contract, "this");
         query->From(ret_ClassH, true, "this");
-        query->Join(RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false), false);
+        query->Join(RelatedClass(ret_ClassH, ret_ClassD, ret_ClassDHasClassE, false, "related", "rel_RET_ClassDHasClassE_0", false, false));
         query->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
         query->GroupByContract(*contract);
 
@@ -5347,13 +5366,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query1), "this");
         query1->From(ret_Sprocket, false, "this");
-        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false, false));
         query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
         query2->From(ret_Sprocket, false, "this");
-        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false, false));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -5390,15 +5409,15 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
         query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query1), "this");
         query1->From(ret_Sprocket, true, "this");
-        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false), false);
-        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprocket, false, "related", "rel_RET_GadgetHasSprocket_0", false, false));
+        query1->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query1->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
         query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *query2), "this");
         query2->From(ret_Sprocket, true, "this");
-        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false), false);
-        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "related", "rel_RET_GadgetHasSprockets_0", false, false));
+        query2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         query2->Where("[related].[ECInstanceId] IN (?)", {new BoundQueryId(ECInstanceId((uint64_t)123))});
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*query1, *query2);
@@ -5416,7 +5435,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query), "sprocket");
         query->From(ret_Sprocket, true, "sprocket");
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "primary_instance", "rel"), false);
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "primary_instance", "rel", true, false));
 
         RegisterQuery("NestedContentField_WithSingleStepRelationshipPath", *query);
         }
@@ -5462,7 +5481,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query), "gadget");
         query->From(ret_Gadget, true, "gadget");
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "widget_instance", "rel_wg"), false);
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "widget_instance", "rel_wg", true, false));
 
         RegisterQuery("NestedContentField_WithNestedContentFields", *query);
         }
@@ -5493,7 +5512,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
         q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *q1), "this");
         q1->From(ret_Gadget, false, "this");
-        q1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadgets_0"), true);
+        q1->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "rel_RET_Widget_0", "rel_RET_WidgetHasGadgets_0"));
         q1->Where("[this].[ECInstanceId] IN (?)", {new BoundQueryId({ECInstanceId((uint64_t)1)})});
         
         ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
@@ -5556,13 +5575,13 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr q1 = ComplexContentQuery::Create();
         q1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Widget, *q1), "this");
         q1->From(ret_Widget, false, "this");
-        q1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadget_0"), true);
+        q1->Join(RelatedClass(ret_Widget, ret_Gadget, ret_WidgetHasGadget, true, "rel_RET_Gadget_0", "rel_RET_WidgetHasGadget_0"));
         
         ComplexContentQueryPtr q2 = ComplexContentQuery::Create();
         q2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &ret_Sprocket, *q2), "this");
         q2->From(ret_Sprocket, false, "this");
-        q2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_2", "rel_RET_GadgetHasSprockets_0"), true);
-        q2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_1", "nav_RET_GadgetHasSprockets_0"), true);
+        q2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_2", "rel_RET_GadgetHasSprockets_0"));
+        q2->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_1", "nav_RET_GadgetHasSprockets_0"));
 
         UnionContentQueryPtr query = UnionContentQuery::Create(*q1, *q2);
 #ifdef WIP_SORTING_GRID_CONTENT
@@ -5599,8 +5618,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query), "this");
         query->From(ret_Sprocket, false, "this");
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"), true);
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"));
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
@@ -5636,8 +5655,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query), "this");
         query->From(ret_Sprocket, false, "this");
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"), true);
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"));
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
@@ -5673,8 +5692,8 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Sprocket, *query), "this");
         query->From(ret_Sprocket, false, "this");
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"), true);
-        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"), true);
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "rel_RET_Gadget_1", "rel_RET_GadgetHasSprockets_0"));
+        query->Join(RelatedClass(ret_Sprocket, ret_Gadget, ret_GadgetHasSprockets, false, "nav_RET_Gadget_0", "nav_RET_GadgetHasSprockets_0"));
         
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);
@@ -5708,7 +5727,7 @@ void ExpectedQueries::RegisterExpectedQueries()
         ComplexContentQueryPtr query = ComplexContentQuery::Create();
         query->SelectContract(*ContentQueryContract::Create(1, *descriptor, &ret_Gadget, *query), "this");
         query->From(ret_Gadget, false, "this");
-        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"), true);
+        query->Join(RelatedClass(ret_Gadget, ret_Widget, ret_WidgetHasGadgets, false, "nav_RET_Widget_0", "nav_RET_WidgetHasGadgets_0"));
 
 #ifdef WIP_SORTING_GRID_CONTENT
         query->OrderBy(ContentQueryContract::ECInstanceIdFieldName);

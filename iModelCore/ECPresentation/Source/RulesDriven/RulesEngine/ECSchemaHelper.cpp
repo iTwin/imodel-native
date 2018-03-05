@@ -1306,7 +1306,9 @@ bvector<RelatedClassPath> ECSchemaHelper::GetPolymorphicallyRelatedClassesWithIn
             vec.push_back(RelatedClass(sourceClass, *targetClass, *relationship, 
                 ECRelatedInstanceDirection::Forward == direction, 
                 Utf8String("target_").append(std::to_string(vec.size()).c_str()).c_str(),
-                Utf8String("rel_").append(std::to_string(vec.size()).c_str()).c_str()));
+                Utf8String("rel_").append(std::to_string(vec.size()).c_str()).c_str(),
+                true,
+                false));
             }
         polymorphicallyRelatedClasses = &m_polymorphicallyRelatedClassesCache->Add(key, std::move(vec));
         }

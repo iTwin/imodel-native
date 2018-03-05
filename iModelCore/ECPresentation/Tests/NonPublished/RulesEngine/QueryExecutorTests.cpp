@@ -1354,7 +1354,7 @@ TEST_F(NavigationQueryExecutorTests, SetsRelatedInstanceKeysForECInstanceNodes)
     gadgetRelatedClasses.push_back(widgetRelatedToGadgetInfo);
 
     ComplexNavigationQueryPtr gadgetsQuery = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(*m_gadgetClass, true, "this", gadgetRelatedClasses);
-    gadgetsQuery->Join(RelatedClass(*m_gadgetClass, *m_widgetClass, *m_widgetHasGadgetsClass, false, "w"), false);
+    gadgetsQuery->Join(RelatedClass(*m_gadgetClass, *m_widgetClass, *m_widgetHasGadgetsClass, false, "w", nullptr, true, false));
     ComplexNavigationQueryPtr sprocketsQuery = RulesEngineTestHelpers::CreateECInstanceNodesQueryForClass(*m_sprocketClass, true, "this");
     UnionNavigationQueryPtr unionQuery = UnionNavigationQuery::Create(*gadgetsQuery, *sprocketsQuery);
     unionQuery->GetResultParametersR().SetResultType(NavigationQueryResultType::ECInstanceNodes);
@@ -1674,7 +1674,7 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedProperties)
     ComplexContentQueryPtr query = ComplexContentQuery::Create();
     query->SelectContract(*ContentQueryContract::Create(1, *descriptor, m_gadgetClass, *query), "this");
     query->From(*m_gadgetClass, false, "this");
-    query->Join(RelatedClass(*m_gadgetClass, *m_widgetClass, *widgetHasGadgetsRelationship, false, "rel_RET_Widget_0"), true);
+    query->Join(RelatedClass(*m_gadgetClass, *m_widgetClass, *widgetHasGadgetsRelationship, false, "rel_RET_Widget_0"));
     
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, &query->GetExtendedData());
     ContentQueryExecutor executor(*m_connection, m_statementCache, *query);
@@ -1722,7 +1722,7 @@ TEST_F(ContentQueryExecutorTests, SelectsRelatedPropertiesFromOnlySingleClassWhe
     ComplexContentQueryPtr query1 = ComplexContentQuery::Create();
     query1->SelectContract(*ContentQueryContract::Create(1, *descriptor, &classE, *query1), "this");
     query1->From(classE, false, "this");
-    query1->Join(RelatedClass(classE, classD, classDHasClassERelationship, false, "rel_RET_ClassD_0"), true);
+    query1->Join(RelatedClass(classE, classD, classDHasClassERelationship, false, "rel_RET_ClassD_0"));
     
     ComplexContentQueryPtr query2 = ComplexContentQuery::Create();
     query2->SelectContract(*ContentQueryContract::Create(2, *descriptor, &classF, *query2), "this");

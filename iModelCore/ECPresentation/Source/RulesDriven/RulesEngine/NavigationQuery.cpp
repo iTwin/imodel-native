@@ -650,12 +650,12 @@ ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Where(Utf8CP w
 // @bsimethod                                    Grigas.Petraitis                06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename TBase>
-ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClass const& relatedClass, bool isOuter, bool append)
+ComplexPresentationQuery<TBase>& ComplexPresentationQuery<TBase>::Join(RelatedClass const& relatedClass, bool append)
     {
     TBase::InvalidateQueryString();
     RelatedClassPath path;
     path.push_back(relatedClass);
-    return Join(path, isOuter, append);
+    return Join(path, relatedClass.IsOuterJoin(), append);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1277,7 +1277,7 @@ bool ComplexPresentationQuery<TBase>::_IsEqual(TBase const& otherBase) const
                     {
                     if (0 == strcmp(clause.m_join->GetFullName(), otherClause.m_join->GetFullName()) && clause.m_joinAlias.Equals(otherClause.m_joinAlias)
                         && 0 == strcmp(clause.m_using->GetFullName(), otherClause.m_using->GetFullName()) && clause.m_usingAlias.Equals(otherClause.m_usingAlias)
-                        && clause.m_isForward == otherClause.m_isForward && clause.m_isPolymorphic == otherClause.m_isPolymorphic)
+                        && clause.m_isForward == otherClause.m_isForward && clause.m_isPolymorphic == otherClause.m_isPolymorphic && clause.m_isOuterJoin == otherClause.m_isOuterJoin)
                         {
                         foundClause = true;
                         break;
