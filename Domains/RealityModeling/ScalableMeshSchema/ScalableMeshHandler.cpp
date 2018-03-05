@@ -882,6 +882,15 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SMScene::SMScene(ScalableMeshModelCR model, IScalableMeshPtr& smPtr, TransformCR location, TransformCR toFloatTransform, Utf8CP sceneFile, Dgn::Render::SystemP system)
+    : T_Super(model, location, sceneFile, system), m_smPtr(smPtr), m_toFloatTransform(toFloatTransform)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
@@ -1133,7 +1142,7 @@ TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
         toFloatTransform = Transform::FromIdentity();
         }
 
-    SMScenePtr scene = new SMScene(m_dgndb, m_smPtr, toLocationTransform, toFloatTransform, sceneFile.c_str(), system);
+    SMScenePtr scene = new SMScene(*this, m_smPtr, toLocationTransform, toFloatTransform, sceneFile.c_str(), system);
     scene->m_3smModel = this;
     scene->SetPickable(true);
     if (SUCCESS != scene->LoadScene())

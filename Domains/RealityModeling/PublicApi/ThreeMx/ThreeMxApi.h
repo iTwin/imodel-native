@@ -123,7 +123,8 @@ private:
     Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 
 public:
-    Scene(Dgn::DgnDbR db, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system) : T_Super (db, location, sceneFile, system), m_sceneFile (sceneFile) {}
+    THREEMX_EXPORT Scene(ThreeMxModelR model, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system);
+    THREEMX_EXPORT Scene(Dgn::DgnDbR db, Dgn::DgnModelId modelId, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system);
 
     ~Scene() {ClearAllTiles();}
 

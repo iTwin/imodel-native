@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterTileTree.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterInternal.h"
@@ -22,7 +22,7 @@ USING_NAMESPACE_TILETREE
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
 RasterRoot::RasterRoot(RasterModel& model, Utf8CP rootUrl, Dgn::Render::SystemP system)
-    :TileTree::TriMeshTree::Root(model.GetDgnDb(), Transform::FromIdentity(), rootUrl, system),
+    :TileTree::TriMeshTree::Root(model, Transform::FromIdentity(), rootUrl, system),
      m_model(model)
     {
     }
