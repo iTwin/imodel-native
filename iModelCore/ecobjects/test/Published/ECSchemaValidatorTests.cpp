@@ -1506,51 +1506,6 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                       Colin.Kerr                      09/2017
 //+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(SchemaValidatorTests, PropertyOverridesCannotChangePersistenceUnit)
-    {
-    {
-    Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-        "    <ECSchemaReference name='BisCore' version='1.0' alias='bis'/>"
-        "    <ECEntityClass typeName='BaseClass'>"
-        "        <BaseClass>bis:IParentElement</BaseClass>"
-        "        <ECProperty propertyName='Length' typeName='double' kindOfQuantity='Length' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='DerivedClass'>"
-        "        <BaseClass>BaseClass</BaseClass>"
-        "        <ECProperty propertyName='Length' typeName='double' kindOfQuantity='OtherLength' />"
-        "    </ECEntityClass>"
-        "    <KindOfQuantity typeName='Length' persistenceUnit='M' relativeError='1e-1' />"
-        "    <KindOfQuantity typeName='OtherLength' persistenceUnit='M' relativeError='1e-1' />"
-        "</ECSchema>";
-    InitBisContextWithSchemaXml(goodSchemaXml.c_str());
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation since persistence unit is unchanged";
-    }
-    {
-    Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
-        "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
-        "    <ECSchemaReference name='BisCore' version='1.0' alias='bis'/>"
-        "    <ECEntityClass typeName='BaseClass'>"
-        "        <BaseClass>bis:IParentElement</BaseClass>"
-        "        <ECProperty propertyName='Length' typeName='double' kindOfQuantity='Length' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='DerivedClass'>"
-        "        <BaseClass>BaseClass</BaseClass>"
-        "        <ECProperty propertyName='Length' typeName='double' kindOfQuantity='OtherLength' />"
-        "    </ECEntityClass>"
-        "    <KindOfQuantity typeName='Length' persistenceUnit='M' relativeError='1e-1' />"
-        "    <KindOfQuantity typeName='OtherLength' persistenceUnit='FT' relativeError='1e-1' />"
-        "</ECSchema>";
-    InitBisContextWithSchemaXml(badSchemaXml.c_str());
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as persistence unit is changed";
-    }
-    }
-
-//---------------------------------------------------------------------------------------//
-// @bsimethod                                       Colin.Kerr                      09/2017
-//+---------------+---------------+---------------+---------------+---------------+------//
 TEST_F(SchemaValidatorTests, StructsShouldNotHaveBaseClasses)
     {
     {

@@ -375,7 +375,7 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
                     prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetBaseProperty()->GetClass().GetFullName(), prop->GetBaseProperty()->GetName().c_str());
                 status = ECObjectsStatus::Error;
                 }
-            // RULE: Property overrides must not change the persistence unit.
+            // RULE: Property overrides must not change the persistence unit. -- no longer possible because of changes to make this invalid directly in EC API
             else if (!Units::Unit::AreEqual(propKOQ->GetPersistenceUnit().GetUnit(), basePropKOQ->GetPersistenceUnit().GetUnit()))
                 {
                 LOG.errorv("Property '%s.%s' specifies a KindOfQuantity '%s' which has a different persistence unit than the KindOfQuantity '%s' specified on the base property '%s.%s'",

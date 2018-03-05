@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/PropertyTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1626,7 +1626,8 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     c->AddBaseClass(*a);
     c->CreatePrimitiveProperty(primPropOverride2, "PrimProp");
     EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primPropOverride2->SetKindOfQuantity(temperature));
-    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride2->SetKindOfQuantity(inch));
+    EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primPropOverride2->SetKindOfQuantity(inch));
+    EXPECT_EQ(ECObjectsStatus::Success, primPropOverride2->SetKindOfQuantity(feet));
 
     a->RemoveProperty("PrimProp");
     EXPECT_EQ(0, a->GetPropertyCount()) << "All properties were not successfully removed from class 'A'";
@@ -1651,7 +1652,8 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     c->AddBaseClass(*a);
     c->CreatePrimitiveArrayProperty(primArrPropOverride2, "PrimArrProp");
     EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primArrPropOverride2->SetKindOfQuantity(temperature));
-    EXPECT_EQ(ECObjectsStatus::Success, primArrPropOverride2->SetKindOfQuantity(inch));
+    EXPECT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, primArrPropOverride2->SetKindOfQuantity(inch));
+    EXPECT_EQ(ECObjectsStatus::Success, primArrPropOverride2->SetKindOfQuantity(feet));
     }
 
 //---------------------------------------------------------------------------------------
