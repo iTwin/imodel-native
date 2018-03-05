@@ -235,6 +235,10 @@ public:
     //! @return ::BE_SQLITE_OK in case of success, error code otherwise, e.g. if @p ecdbTempDir does not exist
     ECDB_EXPORT static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir = nullptr, BeSQLiteLib::LogErrors logSqliteErrors=BeSQLiteLib::LogErrors::No);
 
+    //! Check if the ECDb::Initialize() method was successfully called for current process or not.
+    //! @return return true if ECDb::Initialize() method was successfully called.
+    ECDB_EXPORT static bool IsInitialized();
+
     //! Initializes a new instance of the ECDb class.
     ECDB_EXPORT ECDb();
     ECDB_EXPORT virtual ~ECDb();
