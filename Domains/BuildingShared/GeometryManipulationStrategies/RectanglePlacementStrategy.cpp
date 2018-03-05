@@ -181,6 +181,8 @@ void RectanglePlacementStrategy::_PopKeyPoint()
     else
         {
         T_Super::_PopKeyPoint();
+        T_Super::_PopKeyPoint();
+        T_Super::_PopKeyPoint();
         }
     }
 
@@ -213,4 +215,16 @@ bvector<DPoint3d> RectanglePlacementStrategy::_GetKeyPoints() const
         points.push_back(m_dynamicRotationPoint);
 
     return points;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2017
+//---------------+---------------+---------------+---------------+---------------+------
+IGeometryPtr RectanglePlacementStrategy::_FinishGeometry() const
+    {
+    CurveVectorPtr geometry = m_manipulationStrategy->Finish(true);
+    if (geometry.IsNull())
+        return nullptr;
+
+    return IGeometry::Create(geometry);
     }

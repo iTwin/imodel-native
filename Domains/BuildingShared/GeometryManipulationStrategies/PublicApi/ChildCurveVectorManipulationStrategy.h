@@ -17,13 +17,14 @@ struct ChildCurveVectorManipulationStrategy : public CurvePrimitiveManipulationS
     DEFINE_T_SUPER(CurvePrimitiveManipulationStrategy)
 
     private:
+        CurveVector::BoundaryType m_boundaryType;
         CurveVectorManipulationStrategyPtr m_cvManipulationStrategy;
 
         ChildCurveVectorManipulationStrategy();
 
     protected:
         virtual ICurvePrimitivePtr _FinishPrimitive() const override;
-        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override { BeAssert(false && "Not implemented"); return nullptr; }
+        virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
 
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override;
@@ -34,6 +35,7 @@ struct ChildCurveVectorManipulationStrategy : public CurvePrimitiveManipulationS
 
     public:
         static ChildCurveVectorManipulationStrategyPtr Create() { return new ChildCurveVectorManipulationStrategy(); }
+        static ChildCurveVectorManipulationStrategyPtr Create(CurveVectorCR cv);
     };
 
 END_BUILDING_SHARED_NAMESPACE

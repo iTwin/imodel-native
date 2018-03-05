@@ -42,6 +42,7 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override;
 
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement();
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model);
 
         EPS_PROPERTY_OVERRIDE(bool)
@@ -58,6 +59,7 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         EPS_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
 
     public:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement();
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model);
     };
 

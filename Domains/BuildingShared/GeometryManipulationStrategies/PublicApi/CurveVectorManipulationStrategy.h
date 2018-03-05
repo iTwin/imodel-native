@@ -95,7 +95,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         virtual bool _IsDynamicKeyPointSet() const override;
         virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
-        virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
+        virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
         virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override { BeAssert(false && "Not implemented"); }
         virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
@@ -135,6 +135,8 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         static CurveVectorManipulationStrategyPtr Create() { return new CurveVectorManipulationStrategy(); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static CurveVectorManipulationStrategyPtr Create(CurveVectorCR cv);
+
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void Init(CurveVectorCR cv);
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void ChangeDefaultNewGeometryType(DefaultNewGeometryType newGeometryType);
 

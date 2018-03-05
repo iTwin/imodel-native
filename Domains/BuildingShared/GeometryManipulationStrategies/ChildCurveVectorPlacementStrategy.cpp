@@ -14,10 +14,21 @@ USING_NAMESPACE_BUILDING_SHARED
 //---------------+---------------+---------------+---------------+---------------+------
 ChildCurveVectorPlacementStrategy::ChildCurveVectorPlacementStrategy
 (
-    ChildCurveVectorManipulationStrategyP manipulationStrategy
+    ChildCurveVectorManipulationStrategyR manipulationStrategy
 )
     : T_Super()
-    , m_manipulationStrategy(manipulationStrategy)
+    , m_manipulationStrategy(&manipulationStrategy)
     {
     BeAssert(m_manipulationStrategy.IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ChildCurveVectorPlacementStrategyPtr ChildCurveVectorPlacementStrategy::Create
+(
+    ChildCurveVectorManipulationStrategyR manipulationStrategy
+)
+    {
+    return new ChildCurveVectorPlacementStrategy(manipulationStrategy);
     }

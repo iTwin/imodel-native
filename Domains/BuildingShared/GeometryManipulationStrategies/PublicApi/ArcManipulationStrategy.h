@@ -74,6 +74,7 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         static constexpr Utf8CP prop_Radius() { return "Radius"; }
 
         static ArcManipulationStrategyPtr Create() { return new ArcManipulationStrategy(); }
+        static ArcManipulationStrategyPtr Create(ICurvePrimitiveCR arc);
 
         KEY_POINT_ACCESSOR_DECL(Start, s_startIndex)
         KEY_POINT_ACCESSOR_DECL(Center, s_centerIndex)

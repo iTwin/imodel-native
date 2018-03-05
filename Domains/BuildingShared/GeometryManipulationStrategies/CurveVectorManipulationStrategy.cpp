@@ -234,25 +234,7 @@ CurveVectorManipulationStrategyPtr CurveVectorManipulationStrategy::Create
 )
     {
     CurveVectorManipulationStrategyPtr strategy = Create();
-
-    for (ICurvePrimitivePtr const& primitive : cv)
-        {
-        if (primitive.IsNull())
-            continue;
-
-        switch (primitive->GetCurvePrimitiveType())
-            {
-            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-                {
-                LineStringManipulationStrategyPtr primitiveStrategy = LineStringManipulationStrategy::Create(*primitive);
-                strategy->m_primitiveStrategyContainer.Append(*primitiveStrategy);
-                break;
-                }
-            default:
-                BeAssert(false && "Not implemented");
-                break;
-            }
-        }
+    strategy->Init(cv);
 
     if (cv.GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer)
         {
@@ -492,6 +474,22 @@ void CurveVectorManipulationStrategy::_AppendDynamicKeyPoint
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::_AppendDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    bvector<DPoint3d> adjusted(newDynamicKeyPoints.size());
+    std::transform(newDynamicKeyPoints.begin(),
+                   newDynamicKeyPoints.end(),
+                   adjusted.begin(),
+                   [&] (DPoint3d point) { return AdjustPoint(point); });
+    GetStrategyForAppend().AddDynamicKeyPoints(adjusted);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 void CurveVectorManipulationStrategy::_Clear()
@@ -710,6 +708,48 @@ IGeometryPtr CurveVectorManipulationStrategy::_FinishGeometry() const
         return nullptr;
 
     return IGeometry::Create(geometry);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::Init
+(
+    CurveVectorCR cv
+)
+    {
+    Clear();
+
+    for (ICurvePrimitivePtr const& primitive : cv)
+        {
+        if (primitive.IsNull())
+            continue;
+
+        switch (primitive->GetCurvePrimitiveType())
+            {
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
+                {
+                LineStringManipulationStrategyPtr primitiveStrategy = LineStringManipulationStrategy::Create(*primitive);
+                m_primitiveStrategyContainer.Append(*primitiveStrategy);
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector:
+                {
+                ChildCurveVectorManipulationStrategyPtr primitiveStrategy = ChildCurveVectorManipulationStrategy::Create(*primitive->GetChildCurveVectorCP());
+                m_primitiveStrategyContainer.Append(*primitiveStrategy);
+                break;
+                }
+            case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
+                {
+                ArcManipulationStrategyPtr primitiveStrategy = ArcManipulationStrategy::Create(*primitive);
+                m_primitiveStrategyContainer.Append(*primitiveStrategy);
+                break;
+                }
+            default:
+                BeAssert(false && "Not implemented");
+                break;
+            }
+        }
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \

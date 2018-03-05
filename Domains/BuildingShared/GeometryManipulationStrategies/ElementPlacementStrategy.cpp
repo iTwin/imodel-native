@@ -22,6 +22,14 @@ DgnElementPtr ElementPlacementStrategy::_FinishElement
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnElementPtr ElementPlacementStrategy::_FinishElement()
+    {
+    return _GetElementManipulationStrategyForEdit().FinishElement();
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 DgnElementPtr ElementPlacementStrategy::FinishElement
@@ -30,6 +38,14 @@ DgnElementPtr ElementPlacementStrategy::FinishElement
 )
     {
     return _FinishElement(model);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnElementPtr ElementPlacementStrategy::FinishElement()
+    {
+    return _FinishElement();
     }
 
 //--------------------------------------------------------------------------------------

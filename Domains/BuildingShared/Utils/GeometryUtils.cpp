@@ -2529,8 +2529,19 @@ bool GeometryUtils::IsSameGeometry
     switch (geomType)
         {
         case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc:
-            if (!geom1.GetArcCP()->IsAlmostEqual(*geom2.GetArcCP(), tolerance))
+            DEllipse3d arc1 = *geom1.GetArcCP();
+            DEllipse3d arc2 = *geom2.GetArcCP();
+
+            if (arc1.IsAlmostEqual(arc2, tolerance))
+                return true;
+
+            if (!arc1.FractionToPoint(0).AlmostEqual(arc2.FractionToPoint(0), tolerance))
                 return false;
+            if (!arc1.FractionToPoint(0.5).AlmostEqual(arc2.FractionToPoint(0.5), tolerance))
+                return false;
+            if (!arc1.FractionToPoint(1).AlmostEqual(arc2.FractionToPoint(1), tolerance))
+                return false;
+
             break;
         case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_CurveVector:
             if (!IsSameSingleLoopGeometry(*geom1.GetChildCurveVectorCP(), *geom2.GetChildCurveVectorCP(), tolerance))

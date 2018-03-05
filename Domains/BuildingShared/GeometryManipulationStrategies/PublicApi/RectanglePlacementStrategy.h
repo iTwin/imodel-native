@@ -40,13 +40,14 @@ struct RectanglePlacementStrategy : public GeometryPlacementStrategy
         virtual bool _IsComplete() const override;
         virtual bool _CanAcceptMorePoints() const override;
         virtual bvector<DPoint3d> _GetKeyPoints() const override;
+        virtual IGeometryPtr _FinishGeometry() const override;
 
         virtual BentleyStatus _TryGetProperty(Utf8CP key, RotMatrix& value) const override;
 
     public:
         static constexpr Utf8CP prop_Rotation() { return "Rotation"; }
 
-        static RectanglePlacementStrategyPtr Create();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static RectanglePlacementStrategyPtr Create();
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static RectanglePlacementStrategyPtr Create(CurveVectorManipulationStrategyR manipulationStrategy);
     };
 

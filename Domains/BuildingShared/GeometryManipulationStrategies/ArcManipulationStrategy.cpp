@@ -38,6 +38,27 @@ KEY_POINT_ACCESSOR_IMPL(Mid, s_midPointIndex)
 KEY_POINT_ACCESSOR_IMPL(End, s_endIndex)
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcManipulationStrategyPtr ArcManipulationStrategy::Create
+(
+    ICurvePrimitiveCR arcPrimitive
+)
+    {
+    DEllipse3d arc;
+    if (!arcPrimitive.TryGetArc(arc))
+        return nullptr;
+
+    ArcManipulationStrategyPtr strategy = Create();
+    strategy->SetCenter(arc.center);
+    strategy->SetStart(arc.FractionToPoint(0));
+    strategy->SetMid(arc.FractionToPoint(0.5));
+    strategy->SetEnd(arc.FractionToPoint(1));
+
+    return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
@@ -66,6 +87,7 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
         DEllipse3d arc = DEllipse3d::FromPointsOnArc(GetStart(), GetMid(), GetEnd());
         if (m_useSweep)
             arc.sweep = m_sweep;
+
         return ICurvePrimitive::CreateArc(arc);
         }
 
