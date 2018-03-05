@@ -181,8 +181,6 @@ void RectanglePlacementStrategy::_PopKeyPoint()
     else
         {
         T_Super::_PopKeyPoint();
-        T_Super::_PopKeyPoint();
-        T_Super::_PopKeyPoint();
         }
     }
 

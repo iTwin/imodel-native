@@ -62,3 +62,18 @@ TEST_F(RectanglePlacementStrategyTestFixture, FinishGeometry)
     actualShape->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer); // needed for comparison
     ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*actualShape, *expectedShape));
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RectanglePlacementStrategyTestFixture, PopKeyPoint)
+    {
+    RectanglePlacementStrategyPtr sut = RectanglePlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    ASSERT_TRUE(sut->GetKeyPoints().empty());
+    sut->AddKeyPoint({0,0,0});
+    ASSERT_FALSE(sut->GetKeyPoints().empty());
+    sut->PopKeyPoint();
+    ASSERT_TRUE(sut->GetKeyPoints().empty());
+    }
