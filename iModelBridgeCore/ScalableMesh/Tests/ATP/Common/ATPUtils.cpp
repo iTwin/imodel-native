@@ -50,8 +50,8 @@ WString GetHeaderForTestType(TestType t)
         case TEST_LOADING:
             return L"File Name, Time To Load (s), Max depth To Load (if 0 all nodes are loaded), Nb of loaded nodes\n";
             break;
-        case TEST_DC_GROUND_DETECTION:
-            return L"File Name, Time To Find Seed (s), Time To Do Ground\n";
+        case TEST_GROUND_EXTRACTION:                       
+            return L"InputFileName, Nb Ground Regions, Result, Duration (minutes)\n";
             break;            
         case TEST_DRAPE_BASELINE:
             return L"Test Case,  Pass/Fail, Baseline, Nb of Lines, Nb of Lines Draped (baseline), Nb of Lines Draped(test), Nb Of Different Lines, %% unmatched points, Time to drape (1st load) (baseline), Time to drape (1st load) (test), Time taken (1st load) variation, Time to drape (cached) (baseline), Time to drape (cached) (test), Time taken (cached) variation\n";
@@ -92,7 +92,7 @@ WString GetHeaderForTestType(TestType t)
         case TEST_3MX_TO_3SM_CONVERSION:
             return L"InputFileName, OutputFileName, Result, Duration (minutes)\n";
             break;
-
+            
         default: break;
         }
     return L"";
@@ -169,8 +169,8 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
             t = TEST_LOADING;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"groupNodeHeaders"))
             t = TEST_GROUP_NODE_HEADERS;
-        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"dcGroundDetection"))
-            t = TEST_DC_GROUND_DETECTION;        
+        else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"groundExtraction"))
+            t = TEST_GROUND_EXTRACTION;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"addTextures"))
             t = ADD_TEXTURES_TO_MESH;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"exportToUnity"))
@@ -182,7 +182,7 @@ bool ParseTestType(BeXmlNodeP pRootNode, TestType& t)
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"drapeTestlnsFileCreation"))
             t = DRAPE_TEST_LNS_FILE_CREATION;
         else if (0 == BeStringUtilities::Wcsicmp(testType.c_str(), L"3mxTo3smConversion"))
-            t = TEST_3MX_TO_3SM_CONVERSION;        
+            t = TEST_3MX_TO_3SM_CONVERSION;               
         else return false;
         }
     else return false;
@@ -349,8 +349,8 @@ bool RunTestPlan(BeFileName& testPlanPath)
             case TEST_GROUP_NODE_HEADERS:
                 PerformGroupNodeHeaders(pTestNode, pResultFile);
                 break;
-            case TEST_DC_GROUND_DETECTION:
-                PerformDcGroundDetectionTest(pTestNode, pResultFile);
+            case TEST_GROUND_EXTRACTION:
+                PerformGroundExtractionTest(pTestNode, pResultFile);
                 break;            
             case ADD_TEXTURES_TO_MESH:
                 AddTexturesToMesh(pTestNode, pResultFile);
@@ -369,7 +369,8 @@ bool RunTestPlan(BeFileName& testPlanPath)
                 break;                
             case TEST_3MX_TO_3SM_CONVERSION:
                 Perform3MxTo3SmTest(pTestNode, pResultFile);
-                break;                              
+                break;     
+            
             default: break;
             }
         pTestNode = pTestNode->GetNextSibling();
@@ -550,4 +551,105 @@ void ReadFeatureFile(std::ifstream& file, std::vector<std::pair<std::vector<DPoi
             }
         }
     if (currentFeaturePoints.size() > 0) features.push_back(std::make_pair(currentFeaturePoints, currentFeatureType));
+    }
+
+void SetReprojectionMatrixForMeterData(IScalableMeshPtr& stmFile)
+    {
+    double ratioToMeter = stmFile->GetGCS().GetHorizontalUnit().GetRatioToBase();
+
+    if (ratioToMeter != 1.0)
+        {
+        GeoCoordinates::BaseGCSPtr targetGcs(GeoCoordinates::BaseGCS::CreateGCS());
+        Transform approximateTransform(Transform::FromIdentity());
+        approximateTransform.form3d[0][0] = approximateTransform.form3d[1][1] = approximateTransform.form3d[2][2] = ratioToMeter;
+        BentleyStatus status = stmFile->SetReprojection(*targetGcs, approximateTransform);
+        assert(status == SUCCESS);
+        }
+    }
+
+bool GetLinePointsFromLnsFile(bvector<bvector<DPoint3d>>& lines, WString& lnsFileName)
+    {
+    std::wstring line;
+    std::wifstream infile(lnsFileName.c_str());
+        
+    while (std::getline(infile, line))
+        {
+        bvector<DPoint3d> linePts;
+        std::wistringstream iss(line);
+        wchar_t semiColon;
+
+        while (true)
+            {
+            DPoint3d pts;
+
+            if (!(iss >> pts.x >> pts.y >> pts.z >> semiColon)) { break; } // error    
+            linePts.push_back(pts);
+            }
+    
+        lines.push_back(linePts);
+        }
+
+    return true;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Daniel.McKenzie                05/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConvertUorPointsToDestUnit(bvector<DPoint3d>& regionPointsMeter, const bvector<DPoint3d>& regionPoints, Transform trans)
+    {
+    for (int i = 0; i< regionPoints.size(); i++)
+        {
+        DPoint3d temp;
+        trans.Multiply(temp, regionPoints[i]);
+        regionPointsMeter.push_back(temp);
+        }
+    }
+
+
+void CreateBreaklines(BeFileNameCR extraLinearFeatureAbsFileName, bvector<DPoint3d> const& closedPolygonPoints, ScalableMesh::IScalableMeshPtr& scalableMeshModel, Transform& uorToDestUnits)
+    {
+    TerrainModel::DTMPtr dtm(scalableMeshModel->GetDTMInterface(DTMAnalysisType::RawDataOnly));
+
+    TerrainModel::BcDTMPtr bcDtmPtr(TerrainModel::BcDTM::Create());
+    TerrainModel::DTMDrapedLinePtr drapedLine;
+    TerrainModel::IDTMDraping* draping = dtm->GetDTMDraping();
+    bool hasAddedBreaklines = false;
+
+    for (size_t segmentInd = 0; segmentInd < closedPolygonPoints.size() - 1; segmentInd++)
+        {
+        DTMStatusInt status = draping->DrapeLinear(drapedLine, &closedPolygonPoints[segmentInd], 2);
+        assert(status == DTMStatusInt::DTM_SUCCESS);
+
+        bvector<DPoint3d> breaklinePts;
+
+        for (size_t ptInd = 0; ptInd < drapedLine->GetPointCount(); ptInd++)
+            {
+            DPoint3d pt;
+            double distance;
+            DTMDrapedLineCode code;
+
+            status = drapedLine->GetPointByIndex(pt, &distance, &code, (int)ptInd);
+            assert(status == SUCCESS);
+            breaklinePts.push_back(pt);
+            }
+
+        if (breaklinePts.empty())
+            continue;
+
+        DTMFeatureId featureId;
+
+        bvector<DPoint3d> breaklinePtsMeter;
+        ConvertUorPointsToDestUnit(breaklinePtsMeter, breaklinePts, uorToDestUnits);
+
+        status = bcDtmPtr->AddLinearFeature(DTMFeatureType::Breakline, &breaklinePtsMeter[0], (int)breaklinePtsMeter.size(), &featureId);
+        assert(status == DTMStatusInt::DTM_SUCCESS);
+        hasAddedBreaklines = true;
+        }
+
+    if (hasAddedBreaklines)
+        {
+        DTMStatusInt status = bcDtmPtr->SaveAsGeopakDat(extraLinearFeatureAbsFileName.c_str());
+        assert(status == DTMStatusInt::DTM_SUCCESS);
+        }
     }

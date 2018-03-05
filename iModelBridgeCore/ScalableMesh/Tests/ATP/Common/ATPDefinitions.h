@@ -30,4 +30,8 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile);
 void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile);
 void PerformDrapeTestLnsFileCreation(BeXmlNodeP pTestNode, FILE* pResultFile);
 void Perform3MxTo3SmTest(BeXmlNodeP pTestNode, FILE* pResultFile);
+void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile);
+
+
+
 
