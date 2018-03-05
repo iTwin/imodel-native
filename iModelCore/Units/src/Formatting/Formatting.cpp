@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
+#include <locale>
+#include <BeSQLite/L10N.h>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
