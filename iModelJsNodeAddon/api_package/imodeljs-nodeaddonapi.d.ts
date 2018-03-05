@@ -1,11 +1,9 @@
 /*---------------------------------------------------------------------------------------------
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
-import { IModelStatus, StatusCodeWithMessage, RepositoryStatus } from "@bentley/bentleyjs-core/lib/BentleyError";
-import { BentleyStatus, ChangeSetProcessOption } from "@bentley/bentleyjs-core/lib/Bentley";
-import { DbResult, DbOpcode } from "@bentley/bentleyjs-core/lib/BeSQLite";
-import { OpenMode } from "@bentley/bentleyjs-core/lib/BeSQLite";
-import { IDisposable } from "@bentley/bentleyjs-core/lib/Disposable";
+import {
+    IModelStatus, StatusCodeWithMessage, RepositoryStatus, BentleyStatus, ChangeSetProcessOption, DbResult, DbOpcode, OpenMode, IDisposable,
+} from "@bentley/bentleyjs-core";
 
 /* The primary key for the DGN_TABLE_Txns table. */
 interface AddonTxnId {
@@ -15,21 +13,21 @@ interface AddonTxnId {
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
 returned in a successful outcome. */
 interface IModelJsAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
-  /**
-   * The signature of a callback.
-   * @param error A description of th error, in case of failure.
-   * @param result The result of the operation, in case of success.
-   */
-  (error: ERROR_TYPE, result: SUCCESS_TYPE): void;
+    /**
+     * The signature of a callback.
+     * @param error A description of th error, in case of failure.
+     * @param result The result of the operation, in case of success.
+     */
+    (error: ERROR_TYPE, result: SUCCESS_TYPE): void;
 }
 
 /* The signature of a callback that expects a single argument, a status code. */
 interface IModelJsAddonStatusOnlyCallback<STATUS_TYPE> {
-  /**
-   * The signature of a callback.
-   * @param error A description of th error, in case of failure.
-   */
-  (error: STATUS_TYPE): void;
+    /**
+     * The signature of a callback.
+     * @param error A description of th error, in case of failure.
+     */
+    (error: STATUS_TYPE): void;
 }
 
 /**
@@ -86,248 +84,248 @@ export interface AddonBriefcaseManagerOnConflictPolicy {
  * The AddonDgnDb class that is projected by the iModelJs node addon. 
  */
 declare class AddonDgnDb {
-  constructor();
+    constructor();
 
-  /**
-   * Get information on all briefcases cached on disk
-   * @param cachePath Path to the root of the disk cache
-   */
-  getCachedBriefcaseInfos(cachePath: string): ErrorStatusOrResult<DbResult, string>;
+    /**
+     * Get information on all briefcases cached on disk
+     * @param cachePath Path to the root of the disk cache
+     */
+    getCachedBriefcaseInfos(cachePath: string): ErrorStatusOrResult<DbResult, string>;
 
-  /** Get the IModelProps of this iModel. */
-  getIModelProps(): string;
+    /** Get the IModelProps of this iModel. */
+    getIModelProps(): string;
 
-  /** 
-   * Create a local iModel. 
-   * @param dbName The full path to the iModel in the local file system
-   * @param rootSubjectName Name of the root subject
-   * param rootSubjectDescription Description of the root subject
-   */
-  createDgnDb(dbName: string, rootSubjectName: string, rootSubjectDescription?: string): DbResult;
- 
-  /**
-   * Open a local iModel.
-   * @param dbName The full path to the iModel in the local file system
-   * @param mode The open mode
-   * @return non-zero error status if operation failed.
-   */
-  openDgnDb(dbName: string, mode: OpenMode): DbResult;
+    /** 
+     * Create a local iModel. 
+     * @param dbName The full path to the iModel in the local file system
+     * @param rootSubjectName Name of the root subject
+     * param rootSubjectDescription Description of the root subject
+     */
+    createDgnDb(dbName: string, rootSubjectName: string, rootSubjectDescription?: string): DbResult;
 
-  /** Close this iModel. */
-  closeDgnDb(): void;
+    /**
+     * Open a local iModel.
+     * @param dbName The full path to the iModel in the local file system
+     * @param mode The open mode
+     * @return non-zero error status if operation failed.
+     */
+    openDgnDb(dbName: string, mode: OpenMode): DbResult;
 
-  /**
-   * Process change sets
-   * @param cachePath Path to the root of the disk cache
-   */
-  processChangeSets(changeSets: string, processOptions: ChangeSetProcessOption, containsSchemaChanges: boolean): DbResult;
+    /** Close this iModel. */
+    closeDgnDb(): void;
 
-  /**
-   * Start creating a new change set with local changes
-   */
-  startCreateChangeSet(): ErrorStatusOrResult<DbResult, string>;
+    /**
+     * Process change sets
+     * @param cachePath Path to the root of the disk cache
+     */
+    processChangeSets(changeSets: string, processOptions: ChangeSetProcessOption, containsSchemaChanges: boolean): DbResult;
 
-  /**
-   * Start creating a new change set with local changes
-   */
-  finishCreateChangeSet(): DbResult;
+    /**
+     * Start creating a new change set with local changes
+     */
+    startCreateChangeSet(): ErrorStatusOrResult<DbResult, string>;
 
-  /** Creates an EC change cache for this iModel (but does not attach it). 
-   * @param changeCacheFile The created change cache ECDb file
-   * @param changeCachePath The full path to the EC change cache file in the local file system
-   * @return non-zero error status if operation failed.
-  */
-  createChangeCache(changeCacheFile: AddonECDb, changeCachePath: string) : DbResult;
+    /**
+     * Start creating a new change set with local changes
+     */
+    finishCreateChangeSet(): DbResult;
 
-  /** Attaches an EC change cache file to this iModel. 
-   * @param changeCachePath The full path to the EC change cache file in the local file system
-   * @return non-zero error status if operation failed.
-  */
-  attachChangeCache(changeCachePath: string) : DbResult;
+    /** Creates an EC change cache for this iModel (but does not attach it). 
+     * @param changeCacheFile The created change cache ECDb file
+     * @param changeCachePath The full path to the EC change cache file in the local file system
+     * @return non-zero error status if operation failed.
+    */
+    createChangeCache(changeCacheFile: AddonECDb, changeCachePath: string): DbResult;
 
-  /** Determines whether the EC Changes cache file is attached to this iModel. 
-   * @return true if the changes cache is attached. false otherwise
-  */
-  isChangeCacheAttached() : boolean;
+    /** Attaches an EC change cache file to this iModel. 
+     * @param changeCachePath The full path to the EC change cache file in the local file system
+     * @return non-zero error status if operation failed.
+    */
+    attachChangeCache(changeCachePath: string): DbResult;
 
-  /** Extracts a change summary from the specified Changeset file
-   * @param changeCacheFile The change cache ECDb file where the extracted change summary will be persisted
-   * @param changesetFilePath The full path to the SQLite changeset file in the local file system
-   * @return The ChangeSummary ECInstanceId as hex string or error codes in case of failure
-  */
-  extractChangeSummary(changeCacheFile: AddonECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
-  
-  /**
-   * Set the briefcase Id of this iModel.
-   * @param idvalue The briefcase Id value.
-   */
-  setBriefcaseId(idvalue: number): DbResult;
+    /** Determines whether the EC Changes cache file is attached to this iModel. 
+     * @return true if the changes cache is attached. false otherwise
+    */
+    isChangeCacheAttached(): boolean;
 
-  /** Get the briefcase Id of this iModel. */
-  getBriefcaseId(): number;
+    /** Extracts a change summary from the specified Changeset file
+     * @param changeCacheFile The change cache ECDb file where the extracted change summary will be persisted
+     * @param changesetFilePath The full path to the SQLite changeset file in the local file system
+     * @return The ChangeSummary ECInstanceId as hex string or error codes in case of failure
+    */
+    extractChangeSummary(changeCacheFile: AddonECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
 
-  /**
-   * Get the change set the iModel was reversed to
-   * @return Returns the change set id if the iModel was reversed, or undefined if the iModel was not reversed.
-   */
-  getReversedChangeSetId(): string|undefined;
+    /**
+     * Set the briefcase Id of this iModel.
+     * @param idvalue The briefcase Id value.
+     */
+    setBriefcaseId(idvalue: number): DbResult;
 
-  /**
-   * Get the Id of the last change set that was merged into or created from the Db. This is the parent for any new change sets that will be created from the iModel.
-   * @return Returns an empty string if the iModel is in it's initial state (with no change sets), or if it's a standalone briefcase disconnected from the Hub.
-   */
-  getParentChangeSetId(): string;
+    /** Get the briefcase Id of this iModel. */
+    getBriefcaseId(): number;
 
-  /* Get the GUID of this iModel */
-  getDbGuid(): string;
+    /**
+     * Get the change set the iModel was reversed to
+     * @return Returns the change set id if the iModel was reversed, or undefined if the iModel was not reversed.
+     */
+    getReversedChangeSetId(): string | undefined;
 
-  /* Set the GUID of this iModel */
-  setDbGuid(guid: string): DbResult;
+    /**
+     * Get the Id of the last change set that was merged into or created from the Db. This is the parent for any new change sets that will be created from the iModel.
+     * @return Returns an empty string if the iModel is in it's initial state (with no change sets), or if it's a standalone briefcase disconnected from the Hub.
+     */
+    getParentChangeSetId(): string;
 
-  /**
-   * Sets up a briefcase
-   * @param briefcaseToken Token identifying a briefcase
-   */
-  setupBriefcase(briefcaseToken: string): DbResult;
+    /* Get the GUID of this iModel */
+    getDbGuid(): string;
 
-  /** 
-   * Save any pending changes to this iModel.  
-   * @param description optional description of changes
-   * @return non-zero error status if save failed. 
-   */
-  saveChanges(description?: string): DbResult;
+    /* Set the GUID of this iModel */
+    setDbGuid(guid: string): DbResult;
 
-  /** Abandon changes
-  * @return non-zero error status if operation failed.
-  */
-  abandonChanges(): DbResult;
+    /**
+     * Sets up a briefcase
+     * @param briefcaseToken Token identifying a briefcase
+     */
+    setupBriefcase(briefcaseToken: string): DbResult;
 
-  /**
-   * Import an EC schema.
-   * There are a number of restrictions when importing schemas into a briefcase. 
-   * When importing into a briefcase, this function will acquire the schema lock. That means that that briefcase must be at the tip of the revision
-   * history in iModelHub. If not, this function will return SchemaLockFailed.
-   * Importing or upgrading a schema into a briefcase must be done in isolation from all other kinds of changes. That means two things:
-   * there must be no pending local changes. All local changes must be pushed to iModelHub. This function will return SchemaImportFailed if that is not true.
-   * Also, the caller must push the results of this function to iModelHub before making other changes to the briefcase.
-   * @param schemaPathname The full path to the .xml file in the local file system.
-   * @return non-zero error status if the operation failed, including SchemaImportFailed if the schema is invalid.
-   */
-  importSchema(schemaPathname: string): DbResult;
+    /** 
+     * Save any pending changes to this iModel.  
+     * @param description optional description of changes
+     * @return non-zero error status if save failed. 
+     */
+    saveChanges(description?: string): DbResult;
 
-  /**
-   * Get an element's properties
-   * @param opts Identifies the element
-   * @param In case of success, the result property of the returned object will be the element's properties in stringified JSON format.
-   */
-  getElement(opts: string): ErrorStatusOrResult<IModelStatus, string>;
+    /** Abandon changes
+    * @return non-zero error status if operation failed.
+    */
+    abandonChanges(): DbResult;
 
-  /**
-   * Get the properties of a Model
-   * @param opts Identifies the model
-   * @param In case of success, the result property of the returned object will be the model's properties in stringified JSON format.
-   */
-  getModel(opts: string): ErrorStatusOrResult<IModelStatus, string>;
+    /**
+     * Import an EC schema.
+     * There are a number of restrictions when importing schemas into a briefcase. 
+     * When importing into a briefcase, this function will acquire the schema lock. That means that that briefcase must be at the tip of the revision
+     * history in iModelHub. If not, this function will return SchemaLockFailed.
+     * Importing or upgrading a schema into a briefcase must be done in isolation from all other kinds of changes. That means two things:
+     * there must be no pending local changes. All local changes must be pushed to iModelHub. This function will return SchemaImportFailed if that is not true.
+     * Also, the caller must push the results of this function to iModelHub before making other changes to the briefcase.
+     * @param schemaPathname The full path to the .xml file in the local file system.
+     * @return non-zero error status if the operation failed, including SchemaImportFailed if the schema is invalid.
+     */
+    importSchema(schemaPathname: string): DbResult;
 
-  /**
-   * Insert an element.
-   * @param elemProps The element's properties, in stringified JSON format.
-   * @return In case of success, the result property of the returned object will be the element's ID (as a hex string)
-   */
-  insertElement(elemProps: string): ErrorStatusOrResult<IModelStatus, string>;
+    /**
+     * Get an element's properties
+     * @param opts Identifies the element
+     * @param In case of success, the result property of the returned object will be the element's properties in stringified JSON format.
+     */
+    getElement(opts: string): ErrorStatusOrResult<IModelStatus, string>;
 
-  /**
-   * Update an element.
-   * @param elemProps The element's properties, in stringified JSON format.
-   * @return non-zero error status if the operation failed.
-   */
-  updateElement(elemProps: string): IModelStatus;
+    /**
+     * Get the properties of a Model
+     * @param opts Identifies the model
+     * @param In case of success, the result property of the returned object will be the model's properties in stringified JSON format.
+     */
+    getModel(opts: string): ErrorStatusOrResult<IModelStatus, string>;
 
-  /**
-   * Delete an element from this iModel.
-   * @param elemIdJson The element's Id, in stringified JSON format
-   * @return non-zero error status if the operation failed.
-   */
-  deleteElement(elemIdJson: string): IModelStatus;
+    /**
+     * Insert an element.
+     * @param elemProps The element's properties, in stringified JSON format.
+     * @return In case of success, the result property of the returned object will be the element's ID (as a hex string)
+     */
+    insertElement(elemProps: string): ErrorStatusOrResult<IModelStatus, string>;
 
-  /**
-   * Insert a LinkTableRelationship.
-   * @param props The linkTableRelationship's properties, in stringified JSON format.
-   * @return In case of success, the result property of the returned object will be the ID of the new LinkTableRelationship instance (as a hex string)
-   */
-  insertLinkTableRelationship(props: string): ErrorStatusOrResult<DbResult, string>;
+    /**
+     * Update an element.
+     * @param elemProps The element's properties, in stringified JSON format.
+     * @return non-zero error status if the operation failed.
+     */
+    updateElement(elemProps: string): IModelStatus;
 
-  /**
-   * Update a LinkTableRelationship.
-   * @param props The LinkTableRelationship's properties, in stringified JSON format.
-   * @return non-zero error status if the operation failed.
-   */
-  updateLinkTableRelationship(props: string): DbResult;
+    /**
+     * Delete an element from this iModel.
+     * @param elemIdJson The element's Id, in stringified JSON format
+     * @return non-zero error status if the operation failed.
+     */
+    deleteElement(elemIdJson: string): IModelStatus;
 
-  /**
-   * Delete a LinkTableRelationship.
-   * @param props The LinkTableRelationship's properties, in stringified JSON format. Only classFullName and id are required.
-   * @return non-zero error status if the operation failed.
-   */
-  deleteLinkTableRelationship(props: string): DbResult;
+    /**
+     * Insert a LinkTableRelationship.
+     * @param props The linkTableRelationship's properties, in stringified JSON format.
+     * @return In case of success, the result property of the returned object will be the ID of the new LinkTableRelationship instance (as a hex string)
+     */
+    insertLinkTableRelationship(props: string): ErrorStatusOrResult<DbResult, string>;
 
-  /**
-   * Insert a new CodeSpec
-   * @param name name of the CodeSpec
-   * @param specType must be one of CodeScopeSpec::Type
-   * @param scopeReq must be one of CodeScopeSpec::ScopeRequirement
-   * @return In case of success, the result property of the returned object will be the ID of the new CodeSpec instance (as a hex string)
-   */
-  insertCodeSpec(name: string, specType: number, scopeReq: number): ErrorStatusOrResult<IModelStatus, string>;
+    /**
+     * Update a LinkTableRelationship.
+     * @param props The LinkTableRelationship's properties, in stringified JSON format.
+     * @return non-zero error status if the operation failed.
+     */
+    updateLinkTableRelationship(props: string): DbResult;
 
-  /**
-   * Insert a model.
-   * @param modelProps The model's properties, in stringified JSON format.
-   * @return In case of success, the result property of the returned object will be the ID of the new Model (as a hex string)
-   */
-  insertModel(modelProps: string): ErrorStatusOrResult<IModelStatus, string>;
+    /**
+     * Delete a LinkTableRelationship.
+     * @param props The LinkTableRelationship's properties, in stringified JSON format. Only classFullName and id are required.
+     * @return non-zero error status if the operation failed.
+     */
+    deleteLinkTableRelationship(props: string): DbResult;
 
-  /**
-   * Update a model.
-   * @param modelProps The model's properties, in stringified JSON format.
-   * @return non-zero error status if the operation failed.
-   */
-  updateModel(modelProps: string): IModelStatus;
+    /**
+     * Insert a new CodeSpec
+     * @param name name of the CodeSpec
+     * @param specType must be one of CodeScopeSpec::Type
+     * @param scopeReq must be one of CodeScopeSpec::ScopeRequirement
+     * @return In case of success, the result property of the returned object will be the ID of the new CodeSpec instance (as a hex string)
+     */
+    insertCodeSpec(name: string, specType: number, scopeReq: number): ErrorStatusOrResult<IModelStatus, string>;
 
-  /**
-   * Delete a model.
-   * @param modelIdJson The model's Id, in stringified JSON format
-   * @return non-zero error status if the operation failed.
-   */
-  deleteModel(modelIdJson: string): IModelStatus;
+    /**
+     * Insert a model.
+     * @param modelProps The model's properties, in stringified JSON format.
+     * @return In case of success, the result property of the returned object will be the ID of the new Model (as a hex string)
+     */
+    insertModel(modelProps: string): ErrorStatusOrResult<IModelStatus, string>;
 
-  /**
-   * Update the imodel project extents.
-   * @param newExtentsJson The new project extents in stringified JSON format
-   */
-  updateProjectExtents(newExtentsJson: string): void;
+    /**
+     * Update a model.
+     * @param modelProps The model's properties, in stringified JSON format.
+     * @return non-zero error status if the operation failed.
+     */
+    updateModel(modelProps: string): IModelStatus;
 
-  /**
-   * Format an element's properties, suitable for display to the user.
-   * @param id The element's Id, in stringified JSON format
-   * @param on success, the result property of the returned object will be the object's properties, in stringified JSON format.
-   */
-  getElementPropertiesForDisplay(id: string): ErrorStatusOrResult<IModelStatus, string>;
+    /**
+     * Delete a model.
+     * @param modelIdJson The model's Id, in stringified JSON format
+     * @return non-zero error status if the operation failed.
+     */
+    deleteModel(modelIdJson: string): IModelStatus;
 
-  /**
-   * Get information about an ECClass
-   * @param schema The name of the ECSchema
-   * @param className The name of the ECClass
-   * @param on success, the result property of the returned object will be an object containing the properties of the class, in stringified JSON format.
-   */
-  getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
+    /**
+     * Update the imodel project extents.
+     * @param newExtentsJson The new project extents in stringified JSON format
+     */
+    updateProjectExtents(newExtentsJson: string): void;
+
+    /**
+     * Format an element's properties, suitable for display to the user.
+     * @param id The element's Id, in stringified JSON format
+     * @param on success, the result property of the returned object will be the object's properties, in stringified JSON format.
+     */
+    getElementPropertiesForDisplay(id: string): ErrorStatusOrResult<IModelStatus, string>;
+
+    /**
+     * Get information about an ECClass
+     * @param schema The name of the ECSchema
+     * @param className The name of the ECClass
+     * @param on success, the result property of the returned object will be an object containing the properties of the class, in stringified JSON format.
+     */
+    getECClassMetaData(schema: string, className: string): ErrorStatusOrResult<IModelStatus, string>;
 
     /**
     * Add the lock, code, and other resource request that would be needed in order to carry out the specified operation.
     * @param req The request object, which accumulates requests.
     * @param elemId The ID of an existing element or the {modelid, code} properties that specify a new element.
     * @param opcode The operation that will be performed on the element.
-    */  
+    */
     buildBriefcaseManagerResourcesRequestForElement(req: AddonBriefcaseManagerResourcesRequest, elemId: string, opcode: DbOpcode): RepositoryStatus;
 
     /**
@@ -389,7 +387,7 @@ declare class AddonDgnDb {
      * @return non-zero if the policy could not be set
      */
     setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: AddonBriefcaseManagerOnConflictPolicy): RepositoryStatus;
-    
+
     /** Query the ID of the first entry in the local Txn table, if any. */
     txnManagerQueryFirstTxnId(): AddonTxnId;
     /** Query the ID of the entry in the local Txn table that comes after the specified Txn, if any. */
@@ -405,60 +403,63 @@ declare class AddonDgnDb {
     /** Check if there are un-saved changes in memory. */
     txnManagerHasUnsavedChanges(): boolean;
 
-  /**
-   * Execute a test by name
-   * @param testName The name of the test to execute
-   * @param params A JSON string with the parameters for the test
-   */
-  executeTest(testName: string, params: string): any;
+    /** read the font map. */
+    readFontMap(): string;
+
+    /**
+     * Execute a test by name
+     * @param testName The name of the test to execute
+     * @param params A JSON string with the parameters for the test
+     */
+    executeTest(testName: string, params: string): any;
 }
 
 /* The AddonECDb class that is projected by the iModelJs node addon. */
 declare class AddonECDb implements IDisposable {
     constructor();
-     /**
-     * Create a new ECDb.
-     * @param dbname The full path to the ECDb in the local file system
-     * @return non-zero error status if operation failed.
-     */
-    createDb(dbname : string): DbResult;
+    /**
+    * Create a new ECDb.
+    * @param dbname The full path to the ECDb in the local file system
+    * @return non-zero error status if operation failed.
+    */
+    createDb(dbname: string): DbResult;
 
-     /** Open a existing ECDb.
-     * @param dbname The full path to the ECDb in the local file system
-     * @param mode The open mode
-     * @return non-zero error status if operation failed.
-     */
-    openDb(dbname : string, mode:OpenMode): DbResult;
+    /** Open a existing ECDb.
+    * @param dbname The full path to the ECDb in the local file system
+    * @param mode The open mode
+    * @return non-zero error status if operation failed.
+    */
+    openDb(dbname: string, mode: OpenMode): DbResult;
 
-     /** Check to see if connection to ECDb is open or not.
-     * @return true if connection is open otherwise false.
-     */
+    /** Check to see if connection to ECDb is open or not.
+    * @return true if connection is open otherwise false.
+    */
     isOpen(): boolean;
-    
-     /** Check to see if connection to ECDb is open or not.
-     * @return true if connection is open otherwise false.
-     */
+
+    /** Check to see if connection to ECDb is open or not.
+    * @return true if connection is open otherwise false.
+    */
     closeDb(): void;
 
     /** Dispose of the native ECDb object. */
     dispose(): void;
 
-     /** Save changes to ecdb
-     * @param changesetName The name of the operation that generated these changes. If transaction tracking is enabled.
-     * @return non-zero error status if operation failed.
-     */
-    saveChanges(changesetName?:string): DbResult;
+    /** Save changes to ecdb
+    * @param changesetName The name of the operation that generated these changes. If transaction tracking is enabled.
+    * @return non-zero error status if operation failed.
+    */
+    saveChanges(changesetName?: string): DbResult;
 
-     /** Abandon changes
-     * @return non-zero error status if operation failed.
-     */
+    /** Abandon changes
+    * @return non-zero error status if operation failed.
+    */
     abandonChanges(): DbResult;
 
-     /** Import ECSchema into ECDb
-     * @param schemaPathName Path to ECSchema file on disk. All reference schema should also be present on same path. 
-     * @return non-zero error status if operation failed.
-     */
-    importSchema(schemaPathName:string): DbResult;
+    /** Import ECSchema into ECDb
+    * @param schemaPathName Path to ECSchema file on disk. All reference schema should also be present on same path. 
+    * @return non-zero error status if operation failed.
+    */
+    importSchema(schemaPathName: string): DbResult;
 }
 
 /* The AddonECSqlStatement class that is projected by the iModelJs node addon. */
@@ -590,14 +591,14 @@ declare class AddonECSqlBinder implements IDisposable {
      */
     bindNavigation(navIdHexStr: string, relClassName?: string, relClassTableSpace?: string): DbResult;
 
-     /** Gets a binder for the specified member of a struct parameter
-     * @return Struct member binder.
-     */
+    /** Gets a binder for the specified member of a struct parameter
+    * @return Struct member binder.
+    */
     bindMember(memberName: string): AddonECSqlBinder;
 
-     /** Adds a new array element to the array parameter and returns the binder for the new array element
-     * @return Binder for the new array element.
-     */
+    /** Adds a new array element to the array parameter and returns the binder for the new array element
+    * @return Binder for the new array element.
+    */
     addArrayElement(): AddonECSqlBinder;
 }
 
@@ -682,7 +683,7 @@ declare class AddonECSqlValue implements IDisposable {
     /** Get value as Point2d. */
     getPoint2d(): { x: number, y: number };
     /** Get value as Point3d. */
-    getPoint3d(): { x: number, y: number, z: number};
+    getPoint3d(): { x: number, y: number, z: number };
     /** Get value as string. */
     getString(): string;
     /** Get value as Navigation property value. */
