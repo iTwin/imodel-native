@@ -470,6 +470,7 @@ TEST_F (InstanceTests, TestIsNullArray)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
+#if !defined(BENTLEYCONFIG_OS_LINUX)
 TEST_F(InstanceTests, TestGetNullPropertyValues)
     {
     CreateSchema();
@@ -599,6 +600,7 @@ TEST_F(InstanceTests, TestGetNullPropertyValues)
     EXPECT_EQ(nullptr, testValue.GetUtf8CP());
     EXPECT_EQ(nullptr, testValue.GetWCharCP());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
