@@ -139,4 +139,12 @@ ECObjectsStatus StandardUnitsHelper::GetUnitSystem(UnitSystemCP& system, Utf8CP 
     return ECObjectsStatus::NotFound;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 03/2018
+//--------------------------------------------------------------------------------------
+ECSchemaPtr StandardUnitsHelper::GetSchema()
+    {
+    return StandardUnitsSchemaHolder::GetSchema();
+    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

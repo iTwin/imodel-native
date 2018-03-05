@@ -1453,6 +1453,7 @@ private:
 
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
+    ECSchemaR GetSchemaR() const {return const_cast<ECSchemaR>(m_schema);}
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 

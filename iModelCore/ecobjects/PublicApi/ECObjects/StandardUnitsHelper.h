@@ -53,6 +53,9 @@ public:
     //! @param[in]  systemName Name of the system to be retrieved
     //! @return ECObjectsStatus::Success in case of success, ECObjectsStatus::NotFound if not found
     ECOBJECTS_EXPORT static ECObjectsStatus GetUnitSystem(UnitSystemCP& system, Utf8CP systemName);
+    //! Retrieves the held schema
+    //! @return The held schema
+    ECOBJECTS_EXPORT static ECSchemaPtr GetSchema();
     };
 /** @endGroup */
 END_BENTLEY_ECOBJECT_NAMESPACE
