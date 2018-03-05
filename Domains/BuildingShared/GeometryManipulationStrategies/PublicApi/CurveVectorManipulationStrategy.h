@@ -123,6 +123,7 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
         CV_PROPERTY_OVERRIDE(RotMatrix)
         CV_PROPERTY_OVERRIDE(Dgn::DgnElementId)
         CV_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
+        CV_PROPERTY_OVERRIDE(Dgn::ColorDef)
         CV_PROPERTY_OVERRIDE(Utf8String)
         CV_PROPERTY_OVERRIDE(bvector<double>)
         CV_PROPERTY_OVERRIDE(bvector<Utf8String>)

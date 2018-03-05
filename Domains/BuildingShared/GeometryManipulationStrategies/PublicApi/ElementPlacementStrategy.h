@@ -53,6 +53,7 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         EPS_PROPERTY_OVERRIDE(RotMatrix)
         EPS_PROPERTY_OVERRIDE(Dgn::DgnElementId)
         EPS_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
+        EPS_PROPERTY_OVERRIDE(Dgn::ColorDef)
         EPS_PROPERTY_OVERRIDE(Utf8String)
         EPS_PROPERTY_OVERRIDE(bvector<double>)
         EPS_PROPERTY_OVERRIDE(bvector<Utf8String>)
