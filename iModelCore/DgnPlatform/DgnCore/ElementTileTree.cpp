@@ -1177,8 +1177,8 @@ TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model.GetDgnDb(), transform, "", &system),
-    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()),
+Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, "", &system),
+    m_name(model.GetName()), m_is3d(model.Is3dModel()),
 #if defined(CACHE_LARGE_GEOMETRY)
     m_cacheGeometry(m_is3d)
 #else
@@ -1219,6 +1219,10 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         RangeAccumulator accum(range, model.Is2dModel());
         if (!accum.Accumulate(*model.GetRangeIndex()))
             range = DRange3d::From(DPoint3d::FromZero());
+
+
+        // Temp Fix to avoid endless subdivision as we are not subdividing in Z...
+        range.low.z = range.high.z = 0.0;
 
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }

@@ -224,9 +224,10 @@ Utf8String MapRoot::_ConstructTileResource(TileCR tile) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-MapRoot::MapRoot(DgnDbR db, TransformCR trans, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
-        uint32_t maxSize) : QuadTree::Root(db, trans, nullptr, system, imageryProvider._GetMaximumZoomLevel(false), maxSize, transparency), m_format(format), m_imageryProvider(&imageryProvider)
+MapRoot::MapRoot(WebMercatorModelCR model, TransformCR trans, ImageryProviderR imageryProvider, Dgn::Render::SystemP system, Render::ImageSource::Format format, double transparency,
+        uint32_t maxSize) : QuadTree::Root(model, trans, nullptr, system, imageryProvider._GetMaximumZoomLevel(false), maxSize, transparency), m_format(format), m_imageryProvider(&imageryProvider)
     {
+    auto& db = model.GetDgnDb();
     AxisAlignedBox3d extents = db.GeoLocation().GetProjectExtents();
     DPoint3d center = extents.GetCenter();
     center.z = 0.0;
@@ -356,7 +357,7 @@ TileTree::RootPtr WebMercatorModel::Load(SystemP renderSys) const
     biasTrans.InitFrom(DPoint3d::From(0.0, 0.0, m_groundBias));
 
     uint32_t maxSize = 362; // the maximum pixel size for a tile. Approximately sqrt(256^2 + 256^2).
-    return new MapRoot(m_dgndb, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
+    return new MapRoot(*this, biasTrans, *m_provider.get(), renderSys, ImageSource::Format::Jpeg, m_transparency, maxSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
