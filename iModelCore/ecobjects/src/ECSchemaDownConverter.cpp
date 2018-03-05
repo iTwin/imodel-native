@@ -37,7 +37,7 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
     {
     schema.AddReferencedSchema(unitAttributesSchema);
     Utf8CP perUnitName = ecProperty->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName().c_str();
-    Utf8CP oldPerUnitName = Units::UnitRegistry::Instance().TryGetOldName(perUnitName);
+    Utf8CP oldPerUnitName = Units::UnitNameMappings::TryGetOldNameFromNewName(perUnitName);
     if(nullptr == oldPerUnitName)
         {
         LOG.warningv("Failed to find old  unit name for the persistence unit '%s' used on property '%s.%s.%s'", 
@@ -55,7 +55,7 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
     if (ecProperty->GetKindOfQuantity()->HasPresentationUnits())
         {
         Utf8CP presUnitName = ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName().c_str();
-        Utf8CP oldPresUnitName = Units::UnitRegistry::Instance().TryGetOldName(presUnitName);
+        Utf8CP oldPresUnitName = Units::UnitNameMappings::TryGetOldNameFromNewName(presUnitName);
         if (nullptr == oldPresUnitName)
             {
             LOG.warningv("Failed to find old  unit name for the presentation unit '%s' used on property '%s.%s.%s'",

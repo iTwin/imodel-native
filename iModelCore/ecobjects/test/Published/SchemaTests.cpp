@@ -218,15 +218,9 @@ TEST_F(SchemaTest, DeleteUnitSystem)
     ASSERT_NE(nullptr, system);
     EXPECT_EQ(1, schema->GetUnitSystemCount());
     EXPECT_EQ(system, schema->GetUnitSystemCP("TestUnitSystem"));
-
-    Units::UnitSystemCP unitSystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestSchema:TestUnitSystem");
-    EXPECT_EQ(system, unitSystem);
-
     EC_EXPECT_SUCCESS(schema->DeleteUnitSystem(*system));
-
-    Units::UnitSystemCP deletedUnitSystem = Units::UnitRegistry::Instance().LookupUnitSystem("TestSchema:TestUnitSystem");
-    EXPECT_EQ(nullptr, deletedUnitSystem);
     EXPECT_EQ(nullptr, schema->GetUnitSystemCP("TestUnitSystem"));
+    EXPECT_EQ(0, schema->GetUnitSystemCount());
     }
 
 //--------------------------------------------------------------------------------------
@@ -241,15 +235,9 @@ TEST_F(SchemaTest, DeletePhenomenon)
     ASSERT_NE(nullptr, phenom);
     EXPECT_EQ(1, schema->GetPhenomenonCount());
     EXPECT_EQ(phenom, schema->GetPhenomenonCP("TestPhenomenon"));
-
-    Units::PhenomenonCP uPhenom = Units::UnitRegistry::Instance().LookupPhenomenon("TestSchema:TestPhenomenon");
-    EXPECT_EQ(phenom, uPhenom);
-
     EC_EXPECT_SUCCESS(schema->DeletePhenomenon(*phenom));
-
-    Units::PhenomenonCP deletedUPhenom = Units::UnitRegistry::Instance().LookupPhenomenon("TestSchema:TestPhenomenon");
-    EXPECT_EQ(nullptr, deletedUPhenom);
     EXPECT_EQ(nullptr, schema->GetPhenomenonCP("TestPhenomenon"));
+    EXPECT_EQ(0, schema->GetPhenomenonCount());
     }
 
 //---------------------------------------------------------------------------------**//**

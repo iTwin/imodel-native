@@ -11,30 +11,14 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
+// @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-// static
-PhenomenonP Phenomenon::_Create(Utf8CP name, Utf8CP definition, uint32_t id)
+Utf8StringCR Phenomenon::GetFullName() const
     {
-    // Deconstruct the name. The format should be {SchemaName}.{PhenomenonName}
-    Utf8String schemaName;
-    Utf8String phenomName;
-    ECClass::ParseClassName(schemaName, phenomName, name);
-    BeAssert(!schemaName.empty());
+    if (m_fullName.size() == 0)
+        m_fullName = GetSchema().GetName() + ":" + GetName();
 
-    // Check if it's a valid name here to avoid having to construct the Phenomenon Unnecessarily
-    if (!ECNameValidation::IsValidName(phenomName.c_str()))
-        {
-        LOG.errorv("A Phenomenon cannot be created with the name '%s' because it is not a valid ECName", phenomName.c_str());
-        return nullptr;
-        }
-
-    auto ptrPhenomenon = new Phenomenon(name, definition, id);
-    if (nullptr == ptrPhenomenon)
-        return nullptr;
-
-    ptrPhenomenon->SetName(phenomName.c_str());
-    return ptrPhenomenon;
+    return m_fullName;
     }
 
 //--------------------------------------------------------------------------------------
@@ -87,41 +71,23 @@ Utf8StringCR Phenomenon::GetDescription() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus Phenomenon::SetName(Utf8StringCR name) 
-    {
-    if(!ECNameValidation::IsValidName(name.c_str()))
-        return ECObjectsStatus::InvalidName;
-
-    m_unqualifiedName = name.c_str();
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-SchemaReadStatus Phenomenon::ReadXml(PhenomenonP& phenomenon, BeXmlNodeR PhenomenonNode, ECSchemaCR schema, ECSchemaReadContextR context)
+SchemaReadStatus Phenomenon::ReadXml(BeXmlNodeR PhenomenonNode, ECSchemaReadContextR context)
     {
     Utf8String value;
-    if (BEXML_Success != PhenomenonNode.GetAttributeStringValue(value, TYPE_NAME_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
+    if (BEXML_Success != PhenomenonNode.GetAttributeStringValue(value, DEFINITION_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
         {
-        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", PhenomenonNode.GetName(), TYPE_NAME_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", GetName().c_str(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-    Utf8String definition;
-    if (BEXML_Success != PhenomenonNode.GetAttributeStringValue(definition, DEFINITION_ATTRIBUTE) || Utf8String::IsNullOrEmpty(definition.c_str()))
+
+    if (SUCCESS != SetDefinition(value.c_str()))
         {
-        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", PhenomenonNode.GetName(), DEFINITION_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: The Phenomenon %s contains an invalid %s attribute", GetName().c_str(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-    Utf8String fullName = schema.GetName()+ ":" + value;
-    phenomenon = Units::UnitRegistry::Instance().AddPhenomenon<Phenomenon>(fullName.c_str(), definition.c_str());
-    if (nullptr == phenomenon)
-        return SchemaReadStatus::InvalidECSchemaXml;
 
-    phenomenon->SetSchema(schema);
-
-    READ_OPTIONAL_XML_ATTRIBUTE(PhenomenonNode, DESCRIPTION_ATTRIBUTE, phenomenon, Description)
-    READ_OPTIONAL_XML_ATTRIBUTE(PhenomenonNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, phenomenon, DisplayLabel)
+    READ_OPTIONAL_XML_ATTRIBUTE(PhenomenonNode, DESCRIPTION_ATTRIBUTE, this, Description)
+    READ_OPTIONAL_XML_ATTRIBUTE(PhenomenonNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
 
     return SchemaReadStatus::Success;
     }

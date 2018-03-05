@@ -317,12 +317,6 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     READ_OPTIONAL_XML_ATTRIBUTE(kindOfQuantityNode, ECXML_DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
     READ_OPTIONAL_XML_ATTRIBUTE(kindOfQuantityNode, DESCRIPTION_ATTRIBUTE, this, Description)
 
-    if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
-        {
-        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), PERSISTENCE_UNIT_ATTRIBUTE);
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
     double relError;
     if (BEXML_Success != kindOfQuantityNode.GetAttributeDoubleValue(relError, ECXML_RELATIVE_ERROR_ATTRIBUTE))
         {
@@ -333,6 +327,12 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     SetRelativeError(relError);
 
     // Read Persistence FUS
+
+    if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
+        {
+        LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), PERSISTENCE_UNIT_ATTRIBUTE);
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
 
     Formatting::FormatUnitSet persistenceFUS;
     bool hasInvalidUnit = false;
@@ -415,8 +415,8 @@ static void getResolvedName(Utf8String& unitName, Utf8String& formatName, ECSche
     if (!unitName.empty())
         return;
 
-    // HACK because we don't have base units in a schema yet, can't fully qualify them
-    if (Units::UnitRegistry::Instance().HasUnit(unit.c_str()))
+    // FIXME HACK because we don't have base units in a schema yet, can't fully qualify them
+    if (Units::UnitRegistry::Get().HasUnit(unit.c_str()))
         unitName = unit.c_str();
     }
 
@@ -457,7 +457,7 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fu
             }
         }
 
-    Units::UnitCP unit = Units::UnitRegistry::Instance().LookupUnit(unitName.c_str());
+    Units::UnitCP unit = Units::UnitRegistry::Get().LookupUnit(unitName.c_str());
     if (nullptr == unit)
         {
         if (strictUnit)
@@ -467,7 +467,8 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fu
             return ECObjectsStatus::Error;
             }
 
-        unit = Units::UnitRegistry::Instance().AddDummyUnit(unitName.c_str());
+        // FIXME need to find in the current schema
+        unit = Units::UnitRegistry::Get().AddDummyUnit(unitName.c_str());
         if (nullptr == unit)
             return ECObjectsStatus::Error;
 

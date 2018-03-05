@@ -299,22 +299,8 @@ ECSchema::~ECSchema ()
 
     for (auto entry : m_unitSystemMap)
         {
-        // Check the registry to ensure it is the correct UnitSystem one to remove.
-        auto systemCP = Units::UnitRegistry::Instance().LookupUnitSystem(entry.second->GetFullName().c_str());
-        BeAssert(nullptr != systemCP);
-        BeAssert(entry.second == systemCP);
-        if (entry.second != systemCP)
-            {
-            LOG.warningv("Cannot remove UnitSystem '%s' from the schema because the UnitSystem found in the UnitRegistry is not the same as the one located in this schema.", systemCP->GetName().c_str());
-            continue;
-            }
-
-        auto returnedSystem = Units::UnitRegistry::Instance().RemoveSystem(entry.second->GetFullName().c_str());
-        BeAssert(nullptr != returnedSystem);
-        BeAssert(entry.second == returnedSystem);
-        
-        if (returnedSystem == entry.second)
-            delete entry.second;
+        auto unitSystem = entry.second;
+        delete unitSystem;
         }
 
     m_unitSystemMap.clear();
@@ -322,23 +308,8 @@ ECSchema::~ECSchema ()
 
     for (auto entry : m_phenomenonMap)
         {
-        // Check the registry to ensure it is the correct Phenomenon one to remove.
-        auto phenomCP = Units::UnitRegistry::Instance().LookupPhenomenon(entry.second->GetFullName().c_str());
-        BeAssert(nullptr != phenomCP);
-        BeAssert(entry.second == phenomCP);
-        if (entry.second != phenomCP)
-            {
-            LOG.warningv("Cannot remove Phenomenon '%s' from the schema because the Phenomenon found in the UnitRegistry is not the same as the one located in this schema.", phenomCP->GetName().c_str());
-            continue;
-            }
-
-        // Remove from the registry before removing from ECSchema
-        auto returnedPhenom = Units::UnitRegistry::Instance().RemovePhenomenon(entry.second->GetFullName().c_str());
-        BeAssert(nullptr != returnedPhenom);
-        // This should be the same pointer as the UnitRegistry has, so it should not matter which one is deleted.
-        BeAssert(returnedPhenom == entry.second);
-        if (returnedPhenom == entry.second)
-            delete entry.second;
+        auto phenomenon = entry.second;
+        delete phenomenon;
         }
 
     m_phenomenonMap.clear();
@@ -346,23 +317,8 @@ ECSchema::~ECSchema ()
 
     for (auto entry : m_unitMap)
         {
-        // Check the registry to ensure it is the correct one to remove.
-        auto unitCP = Units::UnitRegistry::Instance().LookupUnit(entry.second->GetFullName().c_str());
-        BeAssert(nullptr != unitCP);
-        BeAssert(entry.second == unitCP);
-        if (entry.second != unitCP)
-            {
-            LOG.warningv("Cannot remove Unit '%s' from the schema because the Unit found in the UnitRegistry is not the same as the one located in this schema.", unitCP->GetName().c_str());
-            continue;
-            }
-
-        // Remove from the registry before removing from ECSchema
-        auto returnedUnit = Units::UnitRegistry::Instance().RemoveUnit(entry.second->GetFullName().c_str());
-        BeAssert(nullptr != returnedUnit);
-        // This should be the same pointer as the UnitRegistry has, so it should not matter which one is deleted.
-        BeAssert(returnedUnit == entry.second);
-        if (returnedUnit == entry.second)
-            delete entry.second;
+        auto unit = entry.second;
+        delete unit;
         }
 
     m_unitMap.clear();
@@ -1110,17 +1066,13 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    Utf8String fullName = GetName() + ":" + name;
-    system = Units::UnitRegistry::Instance().AddSystem<UnitSystem>(fullName.c_str());
+    system = new UnitSystem(*this, name);
     if (nullptr == system)
         return ECObjectsStatus::Error;
-
-    system->SetSchema(*this);
 
     ECObjectsStatus status = system->SetDisplayLabel(displayLabel);
     if (ECObjectsStatus::Success != status)
         {
-        Units::UnitRegistry::Instance().RemoveSystem(system->GetName().c_str());
         delete system;
         system = nullptr;
         return status;
@@ -1129,7 +1081,6 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
     status = system->SetDescription(description);
     if (ECObjectsStatus::Success != status)
         {
-        Units::UnitRegistry::Instance().RemoveSystem(system->GetName().c_str());
         delete system;
         system = nullptr;
         return status;
@@ -1138,7 +1089,6 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
     status = AddSchemaChildToMap<UnitSystem, UnitSystemMap>(system, &m_unitSystemMap, ECSchemaElementType::UnitSystem);
     if (ECObjectsStatus::Success != status)
         {
-        Units::UnitRegistry::Instance().RemoveSystem(system->GetName().c_str());
         delete system;
         system = nullptr;
         }
@@ -1152,17 +1102,12 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
 ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name, Utf8CP definition, Utf8CP displayLabel, Utf8CP description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-    Utf8String fullName = GetName() + ":" + name;
-    phenomenon = Units::UnitRegistry::Instance().AddPhenomenon<Phenomenon>(fullName.c_str(), definition);
-    if (nullptr == phenomenon)
-        return ECObjectsStatus::Error;
-
-    phenomenon->SetSchema(*this);
+    
+    phenomenon = new Phenomenon(*this, name, definition);
 
     ECObjectsStatus status = phenomenon->SetDisplayLabel(displayLabel);
     if (ECObjectsStatus::Success != status)
         {
-        Units::UnitRegistry::Instance().RemovePhenomenon(phenomenon->GetName().c_str());
         delete phenomenon;
         phenomenon = nullptr;
         return status;
@@ -1171,7 +1116,6 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
     status = phenomenon->SetDescription(description);
     if (ECObjectsStatus::Success != status)
         {
-        Units::UnitRegistry::Instance().RemovePhenomenon(phenomenon->GetName().c_str());
         delete phenomenon;
         phenomenon = nullptr;
         return status;
@@ -1180,7 +1124,6 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
     status = AddSchemaChildToMap<Phenomenon, PhenomenonMap>(phenomenon, &m_phenomenonMap, ECSchemaElementType::Phenomenon);
     if (ECObjectsStatus::Success != status)
         {
-        Units::UnitRegistry::Instance().RemovePhenomenon(phenomenon->GetName().c_str());
         delete phenomenon;
         phenomenon = nullptr;
         }
@@ -1194,39 +1137,39 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
 ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Nullable<double> denominator, Nullable<double> offset, Utf8CP label, Utf8CP description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-    ECObjectsStatus status;
-    const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
-        {
-        if (ECObjectsStatus::Success != status)
-            {
-            Units::UnitRegistry::Instance().RemoveUnit(unit->GetFullName().c_str());
-            delete unit;
-            unit = nullptr;
-            }
-        };
 
-    Utf8String fullName = GetName() + ":" + name;
     const auto* phenomSchema = &phenom.GetSchema();
-    const auto* systemSchema = &unitSystem.GetSchema();
-
     if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema))
         {
         LOG.errorv("Phenomenon %s with schema %s is not in this or any schema referenced by schema %s", phenom.GetName().c_str(), phenomSchema->GetName().c_str(), this->GetName().c_str());
         return ECObjectsStatus::NotFound;
         }
 
+    const auto* systemSchema = &unitSystem.GetSchema();
     if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema))
         {
         LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
         return ECObjectsStatus::NotFound;
         }
+
     double localNumerator = numerator.IsValid() ? numerator.Value() : 1.0;
     double localDenominator = denominator.IsValid() ? denominator.Value() : 1.0;
     double localOffset = offset.IsValid() ? offset.Value() : 0.0;
-    unit = Units::UnitRegistry::Instance().AddUnit<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(), definition, localNumerator, localDenominator, localOffset);
-    if(nullptr == unit)
+    
+    unit = new ECUnit(*this, unitSystem, phenom, name, definition, localNumerator, localDenominator, localOffset, false);
+    if (nullptr == unit)
         return ECObjectsStatus::Error;
-    unit->SetSchema(*this);
+
+    ECObjectsStatus status;
+    const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
+        {
+        if (ECObjectsStatus::Success != status)
+            {
+            delete unit;
+            unit = nullptr;
+            }
+        };
+    
     if(nullptr != label)
         {
         status = unit->SetDisplayLabel(label);
@@ -1259,13 +1202,11 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
         {
         if (ECObjectsStatus::Success != status)
             {
-            Units::UnitRegistry::Instance().RemoveInvertedUnit(unit->GetFullName().c_str());
             delete unit;
             unit = nullptr;
             }
         };
 
-    Utf8String fullName = GetName() + ":" + name;
     const auto* systemSchema = &unitSystem.GetSchema();
     const auto* parentSchema = &parent.GetSchema();
 
@@ -1280,10 +1221,7 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
         return ECObjectsStatus::NotFound;
         }
 
-    unit = Units::UnitRegistry::Instance().AddInvertedUnit<ECUnit>(parent.GetFullName().c_str(), fullName.c_str(), unitSystem.GetFullName().c_str());
-    if(nullptr == unit)
-        return ECObjectsStatus::Error;
-    unit->SetSchema(*this);
+    unit =  new ECUnit(*this, parent, unitSystem, name);
 
     status = unit->SetDisplayLabel(label);
     cleanupIfNecessary();
@@ -1310,7 +1248,6 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
         {
         if (ECObjectsStatus::Success != status)
             {
-            Units::UnitRegistry::Instance().RemoveConstant(constant->GetFullName().c_str());
             delete constant;
             constant = nullptr;
             }
@@ -1332,10 +1269,8 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
         }
 
     double localDenominator = denominator.IsValid() ? denominator.Value() : 1.0;
-    constant = Units::UnitRegistry::Instance().AddConstant<ECUnit>(phenom.GetFullName().c_str(), unitSystem.GetFullName().c_str(), fullName.c_str(), definition, numerator, localDenominator);
-    if(nullptr == constant)
-        return ECObjectsStatus::Error;
-    constant->SetSchema(*this);
+
+    constant = new ECUnit(*this, unitSystem, phenom, name, definition, numerator, localDenominator, 0, true);
 
     if (nullptr != label)
         { 
@@ -1389,117 +1324,6 @@ template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuanti
 template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) {return AddSchemaChildToMap<UnitSystem, UnitSystemMap>(child, &m_unitSystemMap, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP child, ECSchemaElementType childType) {return AddSchemaChildToMap<Phenomenon, PhenomenonMap>(child, &m_phenomenonMap, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<ECUnit>(ECUnitP child, ECSchemaElementType childType) {return AddSchemaChildToMap<ECUnit, UnitMap>(child, &m_unitMap, childType);}
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem)
-    {
-    auto systemCP = Units::UnitRegistry::Instance().LookupUnitSystem(unitSystem.GetFullName().c_str());
-    BeAssert(nullptr != systemCP);
-    BeAssert(&unitSystem == systemCP);
-    if (&unitSystem != systemCP)
-        {
-        LOG.warningv("Cannot remove UnitSystem '%s' from the schema because the UnitSystem found in the UnitRegistry is not the same as the one located in this schema.", unitSystem.GetName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    auto returnedSystem = Units::UnitRegistry::Instance().RemoveSystem(unitSystem.GetFullName().c_str());
-    BeAssert(nullptr != returnedSystem);
-    BeAssert(&unitSystem == returnedSystem);
-
-    return DeleteSchemaChild<UnitSystem, UnitSystemMap>(unitSystem, &m_unitSystemMap);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::DeletePhenomenon(PhenomenonR phenom)
-    {
-    auto phenomCP = Units::UnitRegistry::Instance().LookupPhenomenon(phenom.GetFullName().c_str());
-    BeAssert(nullptr != phenomCP);
-    BeAssert(&phenom == phenomCP); // This only happens if a second Phenomenon made its way into the registry.
-    if (&phenom != phenomCP)
-        {
-        LOG.warningv("Cannot remove Phenomenon '%s' from the schema because the Phenomenon found in the UnitRegistry is not the same as the one located in this schema.", phenomCP->GetName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    auto returnedPhenom = Units::UnitRegistry::Instance().RemovePhenomenon(phenom.GetFullName().c_str());
-    BeAssert(nullptr != returnedPhenom);
-    BeAssert(&phenom == returnedPhenom);
-
-    return DeleteSchemaChild<Phenomenon, PhenomenonMap>(phenom, &m_phenomenonMap);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::DeleteUnit(ECUnitR unit)
-    {
-    auto unitCP = Units::UnitRegistry::Instance().LookupUnit(unit.GetFullName().c_str());
-    BeAssert(nullptr != unitCP);
-    BeAssert(&unit == unitCP); // This only happens if a second unit made its way into the registry.
-    if (&unit != unitCP)
-        {
-        LOG.warningv("Cannot remove Unit '%s' from the schema because the Unit found in the UnitRegistry is not the same as the one located in this schema.", unitCP->GetName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    auto returnedUnit = Units::UnitRegistry::Instance().RemoveUnit(unit.GetFullName().c_str());
-    BeAssert(nullptr != returnedUnit);
-    BeAssert(&unit == returnedUnit);
-
-    return DeleteSchemaChild<ECUnit, UnitMap>(unit, &m_unitMap);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::DeleteInvertedUnit(ECUnitR unit)
-    {
-    if(!unit.IsInvertedUnit())
-        return ECObjectsStatus::Error;
-
-    auto unitCP = Units::UnitRegistry::Instance().LookupUnit(unit.GetFullName().c_str());
-    BeAssert(nullptr != unitCP);
-    BeAssert(&unit == unitCP); // This only happens if a second unit made its way into the registry.
-    if (&unit != unitCP)
-        {
-        LOG.warningv("Cannot remove Unit '%s' from the schema because the Unit found in the UnitRegistry is not the same as the one located in this schema.", unitCP->GetName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    auto returnedUnit = Units::UnitRegistry::Instance().RemoveInvertedUnit(unit.GetFullName().c_str());
-    BeAssert(nullptr != returnedUnit);
-    BeAssert(&unit == returnedUnit);
-
-    return DeleteSchemaChild<ECUnit, UnitMap>(unit, &m_unitMap);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::DeleteConstant(ECUnitR unit)
-    {
-    if(!unit.IsConstant())
-        return ECObjectsStatus::Error;
-
-    auto unitCP = Units::UnitRegistry::Instance().LookupUnit(unit.GetFullName().c_str());
-    BeAssert(nullptr != unitCP);
-    BeAssert(&unit == unitCP); // This only happens if a second unit made its way into the registry.
-    if (&unit != unitCP)
-        {
-        LOG.warningv("Cannot remove Constant '%s' from the schema because the Constant found in the UnitRegistry is not the same as the one located in this schema.", unitCP->GetName().c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    auto returnedUnit = Units::UnitRegistry::Instance().RemoveConstant(unit.GetFullName().c_str());
-    BeAssert(nullptr != returnedUnit);
-    BeAssert(&unit == returnedUnit);
-
-    return DeleteSchemaChild<ECUnit, UnitMap>(unit, &m_unitMap);
-    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -1870,6 +1694,108 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
         }
 
     return ECObjectsStatus::SchemaNotFound;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECUnitP ECSchema::_LookupUnitP(Utf8CP name)
+    {
+    Utf8String unitAlias;
+    Utf8String unitName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(unitAlias, unitName, name))
+        return nullptr;
+
+    ECUnitP unit = nullptr;
+    if (unitAlias.empty())
+        unit = GetUnitP(unitName.c_str());
+    else
+        {
+        ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(unitAlias);
+        if (nullptr == resolvedUnitSchema)
+            return nullptr;
+
+        unit = const_cast<ECSchemaP>(resolvedUnitSchema)->GetUnitP(unitName.c_str());
+        }
+
+    return unit;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+PhenomenonP ECSchema::_LookupPhenomenonP(Utf8CP name)
+    {
+    Utf8String phenomAlias;
+    Utf8String phenomName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(phenomAlias, phenomName, name))
+        return nullptr;
+
+    PhenomenonP phenom = nullptr;
+    if (phenomAlias.empty())
+        phenom = GetPhenomenonP(phenomName.c_str());
+    else
+        {
+        ECSchemaCP resolvedPhenomSchema = GetSchemaByAliasP(phenomAlias);
+        if (nullptr == resolvedPhenomSchema)
+            return nullptr;
+
+        phenom = const_cast<ECSchemaP>(resolvedPhenomSchema)->GetPhenomenonP(phenomName.c_str());
+        }
+
+    return phenom;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+UnitSystemP ECSchema::_LookupUnitSystemP(Utf8CP name)
+    {
+    Utf8String systemAlias;
+    Utf8String systemName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(systemAlias, systemName, name))
+        return nullptr;
+
+    UnitSystemP system = nullptr;
+    if (systemAlias.empty())
+        system = GetUnitSystemP(systemName.c_str());
+    else
+        {
+        ECSchemaCP resolvedSchema = GetSchemaByAliasP(systemAlias);
+        if (nullptr == resolvedSchema)
+            return nullptr;
+
+        system = const_cast<ECSchemaP>(resolvedSchema)->GetUnitSystemP(systemName.c_str());
+        }
+
+    return system;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+void ECSchema::_AllPhenomena(bvector<Units::PhenomenonCP>& allPhenomena) const
+    {
+    for (auto phen : GetPhenomena())
+        allPhenomena.push_back(phen);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+void ECSchema::_AllUnits(bvector<Units::UnitCP>& allUnits) const
+    {
+    for (auto unit : GetUnits())
+        allUnits.push_back(unit);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+void ECSchema::_AllSystems(bvector<Units::UnitSystemCP>& allUnitSystems) const
+    {
+    for (auto system : GetUnitSystems())
+        allUnitSystems.push_back(system);
     }
 
 /*---------------------------------------------------------------------------------**//**

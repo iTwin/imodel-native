@@ -1132,7 +1132,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         return ECObjectsStatus::Success;
         }
 
-    Units::UnitCP newUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnit.GetName());
+    // FIXME This needs to locate the unit in the new Units Standard schema and add it as a reference
+    Units::UnitCP newUnit = Units::UnitRegistry::Get().LookupUnitUsingOldName(oldUnit.GetName());
     if (nullptr == newUnit)
         {
         Utf8String fullName = schema.GetFullSchemaName();
@@ -1151,7 +1152,8 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     Utf8String oldFormatString;
     if (Unit::GetDisplayUnitAndFormatForECProperty(oldDisplayUnit, oldFormatString, oldUnit, *prop) && (0 != strcmp(oldDisplayUnit.GetName(), oldUnit.GetName())))
         {
-        newDisplayUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldDisplayUnit.GetName());
+        // FIXME This needs to locate the unit in the new Units Standard schema and add it as a reference
+        newDisplayUnit = Units::UnitRegistry::Get().LookupUnitUsingOldName(oldDisplayUnit.GetName());
         if (nullptr == newDisplayUnit)
             LOG.warningv("The property %s:%s.%s has an old display unit '%s' that does not resolve to a new unit.", schema.GetFullSchemaName().c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldDisplayUnit.GetName());
         }

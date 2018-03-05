@@ -13,6 +13,7 @@
 #include <ECObjects/ECName.h>
 #include <ECObjects/CalculatedProperty.h>
 #include <ECObjects/SchemaLocalizedStrings.h>
+#include <ECObjects/ECUnit.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
@@ -3208,7 +3209,7 @@ public:
 //! For information about schema versioning please check SchemaKey class documentation.
 //! @bsiclass
 //=======================================================================================
-struct ECSchema : RefCountedBase, IECCustomAttributeContainer
+struct ECSchema : RefCountedBase, IECCustomAttributeContainer, Units::IUnitsContext
 {
 private:
     ECSchema (ECSchema const&);
@@ -3319,6 +3320,14 @@ protected:
     Utf8CP _GetContainerName() const override {return GetName().c_str();}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::Schema;}
 
+    // Following methods fulfill IUnitsContext requirements
+    ECUnitP _LookupUnitP(Utf8CP name) override;
+    PhenomenonP _LookupPhenomenonP(Utf8CP name) override;
+    UnitSystemP _LookupUnitSystemP(Utf8CP name) override;
+    void _AllUnits(bvector<Units::UnitCP>& allUnits) const override;
+    void _AllPhenomena(bvector<Units::PhenomenonCP>& allPhenomena) const override;
+    void _AllSystems(bvector<Units::UnitSystemCP>& allUnitSystems) const override;
+
 public:
     ECOBJECTS_EXPORT void ReComputeCheckSum ();
     //! Intended to be called by ECDb or a similar system
@@ -3403,17 +3412,17 @@ public:
 
     UnitSystemContainerCR GetUnitSystems() const {return m_unitSystemContainer;} //!< Returns an iterable container of UnitSystems sorted by name.
     uint32_t GetUnitSystemCount() const {return (uint32_t)m_unitSystemMap.size();} //!< Gets the number of UnitSystems in the schema.
-    ECOBJECTS_EXPORT ECObjectsStatus DeleteUnitSystem(UnitSystemR unitSystem); //!< Removes a UnitSystem from this schema.
+    ECObjectsStatus DeleteUnitSystem(UnitSystemR unitSystem) {return DeleteSchemaChild<UnitSystem, UnitSystemMap>(unitSystem, &m_unitSystemMap);} //!< Removes a UnitSystem from this schema.
 
     PhenomenonContainerCR GetPhenomena() const {return m_phenomenonContainer;} //!< Returns an iterable container of Phenomena sorted by name.
     uint32_t GetPhenomenonCount() const {return (uint32_t)m_phenomenonMap.size();} //!< Gets the number of Phenomena in the schema.
-    ECOBJECTS_EXPORT ECObjectsStatus DeletePhenomenon(PhenomenonR phenomenon); //!< Removes a Phenomenon from this schema.
+    ECObjectsStatus DeletePhenomenon(PhenomenonR phenomenon) {return DeleteSchemaChild<Phenomenon, PhenomenonMap>(phenomenon, &m_phenomenonMap);}//!< Removes a Phenomenon from this schema.
 
     UnitContainerCR GetUnits() const {return m_unitContainer;} //!< Returns an iterable container of ECUnits sorted by name.
     uint32_t GetUnitCount() const {return (uint32_t)m_unitMap.size();} //!< Gets the number of ECUnit in the schema.
-    ECOBJECTS_EXPORT ECObjectsStatus DeleteUnit(ECUnitR unit); //!< Removes a ECUnit from this schema.
-    ECOBJECTS_EXPORT ECObjectsStatus DeleteInvertedUnit(ECUnitR unit); //!< Removes an inverted ECUnit from this schema.
-    ECOBJECTS_EXPORT ECObjectsStatus DeleteConstant(ECUnitR constant); //!< Removes a constant from this schema.
+    ECObjectsStatus DeleteUnit(ECUnitR unit) {return DeleteSchemaChild<ECUnit, UnitMap>(unit, &m_unitMap);} //!< Removes a ECUnit from this schema.
+    ECObjectsStatus DeleteInvertedUnit(ECUnitR unit) {return DeleteUnit(unit);} //!< Removes an inverted ECUnit from this schema.
+    ECObjectsStatus DeleteConstant(ECUnitR constant) {return DeleteUnit(constant);} //!< Removes a constant from this schema.
 
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b CoreCustomAttributes

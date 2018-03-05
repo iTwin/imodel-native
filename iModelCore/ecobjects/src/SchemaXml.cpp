@@ -334,173 +334,53 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaChildFromXml(ECSchemaPtr& schema
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                     01/2018
-//---------------------------------------------------------------------------------------
-SchemaReadStatus SchemaXmlReaderImpl::ReadUnitSystemFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
-    {
-    SchemaReadStatus status = SchemaReadStatus::Success;
-
-    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
-        {
-        if (!IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::UnitSystem))
-            continue;
-
-        UnitSystemP unitSystem;
-        status = UnitSystem::ReadXml(unitSystem, *candidateNode, *schemaOut, m_schemaContext);
-        if (SchemaReadStatus::Success != status)
-            {
-            // The object should never be constructed, no need to delete it.
-            unitSystem = nullptr;
-            return status;
-            }
-
-        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<UnitSystem>(unitSystem, ECSchemaElementType::UnitSystem);
-        if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
-            {
-            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::UnitSystem), unitSystem->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
-            Units::UnitRegistry::Instance().RemoveSystem(unitSystem->GetFullName().c_str());
-            delete unitSystem;
-            unitSystem = nullptr;
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-        }
-        
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
 //---------------------------------------------------------------------------------------
-SchemaReadStatus SchemaXmlReaderImpl::ReadPhenomenonFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+template<typename T>
+SchemaReadStatus SchemaXmlReaderImpl::ReadUnitTypeFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ECSchemaElementType unitType)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
 
     for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
         {
-        if (!IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Phenomenon))
+        if (!IsSchemaChildElementNode(*candidateNode, unitType))
             continue;
 
-        PhenomenonP phenom;
-        status = Phenomenon::ReadXml(phenom, *candidateNode, *schemaOut, m_schemaContext);
-        if (SchemaReadStatus::Success != status)
+        // All Schema Children are required to have a typeName.
+        Utf8String name;
+        if (BEXML_Success != candidateNode->GetAttributeStringValue(name, TYPE_NAME_ATTRIBUTE))
             {
-            // The object should never be constructed, no need to delete it.
-            phenom = nullptr;
-            return status;
-            }
-
-        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<Phenomenon>(phenom, ECSchemaElementType::Phenomenon);
-        if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
-            {
-            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::Phenomenon), phenom->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
-            Units::UnitRegistry::Instance().RemovePhenomenon(phenom->GetFullName().c_str());
-            delete phenom;
-            phenom = nullptr;
+            LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", candidateNode->GetName(), TYPE_NAME_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        }
-        
-    return status;
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                  02/2018
-//---------------------------------------------------------------------------------------
-SchemaReadStatus SchemaXmlReaderImpl::ReadUnitFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
-    {
-    SchemaReadStatus status = SchemaReadStatus::Success;
-
-    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
-        {
-        if (!IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Unit))
-            continue;
-
-        ECUnitP unit;
-        status = ECUnit::ReadXml(unit, *candidateNode, *schemaOut, m_schemaContext);
-        if (SchemaReadStatus::Success != status)
+        if (!ECNameValidation::IsValidName(name.c_str()))
             {
-            // The object should never be constructed, no need to delete it.
-            unit = nullptr;
-            return status;
-            }
-
-        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<ECUnit>(unit, ECSchemaElementType::Unit);
-        if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
-            {
-            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::Unit), unit->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
-            Units::UnitRegistry::Instance().RemoveUnit(unit->GetFullName().c_str());
-            delete unit;
-            unit = nullptr;
+            LOG.errorv("Invalid ECSchemaXml: The %s element must contain a valid EC %s", candidateNode->GetName(), TYPE_NAME_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        }
-        
-    return status;
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                  02/2018
-//---------------------------------------------------------------------------------------
-SchemaReadStatus SchemaXmlReaderImpl::ReadInvertedUnitFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
-    {
-    SchemaReadStatus status = SchemaReadStatus::Success;
-
-    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
-        {
-        if (!IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::InvertedUnit))
-            continue;
-
-        ECUnitP unit;
-        status = ECUnit::ReadInvertedUnitXml(unit, *candidateNode, *schemaOut, m_schemaContext);
+        T* unitChild = new T(*schemaOut, name.c_str());
+        status = unitChild->ReadXml(*candidateNode, m_schemaContext);
         if (SchemaReadStatus::Success != status)
             {
-            // The object should never be constructed, no need to delete it.
-            unit = nullptr;
+            delete unitChild;
             return status;
             }
-        
-        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<ECUnit>(unit, ECSchemaElementType::InvertedUnit);
+
+        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<T>(unitChild, unitType);
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
-            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::InvertedUnit), unit->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
-            Units::UnitRegistry::Instance().RemoveInvertedUnit(unit->GetFullName().c_str());
-            delete unit;
-            unit = nullptr;
+            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(unitType), unitChild->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            delete unitChild;
+            unitChild = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        }
-        
-    return status;
-    }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                  02/2018
-//---------------------------------------------------------------------------------------
-SchemaReadStatus SchemaXmlReaderImpl::ReadConstantFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
-    {
-    SchemaReadStatus status = SchemaReadStatus::Success;
-
-    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
-        {
-        if (!IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Constant))
-            continue;
-
-        ECUnitP unit;
-        status = ECUnit::ReadConstantXml(unit, *candidateNode, *schemaOut, m_schemaContext);
-        if (SchemaReadStatus::Success != status)
+        if (ECObjectsStatus::Success != addStatus)
             {
-            // The object should never be constructed, no need to delete it.
-            unit = nullptr;
-            return status;
-            }
-        
-        ECObjectsStatus addStatus = schemaOut->AddSchemaChild<ECUnit>(unit, ECSchemaElementType::Constant);
-        if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
-            {
-            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(ECSchemaElementType::Constant), unit->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
-            Units::UnitRegistry::Instance().RemoveConstant(unit->GetFullName().c_str());
-            delete unit;
-            unit = nullptr;
+            delete unitChild;
+            unitChild = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
@@ -983,7 +863,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // UnitSystems
     StopWatch readingUnitSystems("Reading unit systems", true);
-    status = reader->ReadUnitSystemFromXml(schemaOut, *schemaNode);
+    status = reader->ReadUnitTypeFromXml<UnitSystem>(schemaOut, *schemaNode, ECSchemaElementType::UnitSystem);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -996,7 +876,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // Phenomena
     StopWatch readingPhenomena("Reading Phenomena", true);
-    status = reader->ReadPhenomenonFromXml(schemaOut, *schemaNode);
+    status = reader->ReadUnitTypeFromXml<Phenomenon>(schemaOut, *schemaNode, ECSchemaElementType::Phenomenon);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -1009,7 +889,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // ECUnits
     StopWatch readingUnits("Reading Units", true);
-    status = reader->ReadUnitFromXml(schemaOut, *schemaNode);
+    status = reader->ReadUnitTypeFromXml<ECUnit>(schemaOut, *schemaNode, ECSchemaElementType::Unit);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -1022,7 +902,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // Inverted Units
     StopWatch readingInvertedUnit("Reading InvertedUnits", true);
-    status = reader->ReadInvertedUnitFromXml(schemaOut, *schemaNode);
+    status = reader->ReadUnitTypeFromXml<ECUnit>(schemaOut, *schemaNode, ECSchemaElementType::InvertedUnit);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -1035,7 +915,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // Constants
     StopWatch readConstants("Reading constants", true);
-    status = reader->ReadConstantFromXml(schemaOut, *schemaNode);
+    status = reader->ReadUnitTypeFromXml<ECUnit>(schemaOut, *schemaNode, ECSchemaElementType::Constant);
 
     if (SchemaReadStatus::Success != status)
         {

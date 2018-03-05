@@ -115,7 +115,8 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
                 ECPropertyP convertedProp = convertedClass->GetPropertyP(ecProp->GetName().c_str());
                 KindOfQuantityCP koq = convertedProp->GetKindOfQuantity();
                 ASSERT_NE(nullptr, koq) << "Could not find KOQ for property " << ecClass->GetName().c_str() << ":" << ecProp->GetName().c_str();
-                Units::UnitCP originalUnitInNewSystem = Units::UnitRegistry::Instance().LookupUnitUsingOldName(originalUnit.GetName());
+                // FIXME
+                Units::UnitCP originalUnitInNewSystem = Units::UnitRegistry::Get().LookupUnitUsingOldName(originalUnit.GetName());
                 ASSERT_NE(nullptr, originalUnitInNewSystem) << "Could not find converted unit for old unit " << originalUnit.GetName();
 
                 bool unitShouldBeConvertedToSI = !originalUnitInNewSystem->IsSI();
@@ -1068,7 +1069,10 @@ TEST_F(UnitInstanceConversionTest, BasicTest)
     Units::Quantity lengthQ;
     ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(lengthQ, "Length"));
     EXPECT_STREQ("M", lengthQ.GetUnitName());
-    EXPECT_EQ(50, lengthQ.ConvertTo(Units::UnitRegistry::Instance().LookupUnit("FT")).GetMagnitude());
+    ECUnitCP unit;
+    EC_EXPECT_SUCCESS(StandardUnitsHelper::GetUnit(unit, "FT"));
+    ASSERT_NE(nullptr, unit);
+    EXPECT_EQ(50, lengthQ.ConvertTo(unit).GetMagnitude());
     }
     {
     Utf8CP instanceXml = R"xml(

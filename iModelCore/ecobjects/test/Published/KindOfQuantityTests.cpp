@@ -686,8 +686,6 @@ TEST_F(KindOfQuantityDeserializationTest, SuccessfulWithUnknownUnitInNewerECVers
     ASSERT_FALSE(koq->GetPersistenceUnit().HasProblem()) << "Expect no  problems because unknown units are not exposed as problems";
     ASSERT_STREQ("SILLYMETER(DefaultReal)", koq->GetPersistenceUnit().ToText(false).c_str()) << "Should be able to write FUS with dummy unit to text";
 
-    EXPECT_NE(nullptr, Units::UnitRegistry::Instance().LookupUnit("SILLYMETER"));
-
     // Check Presentation Units
     KindOfQuantityCP koq2 = schema->GetKindOfQuantityCP("KoQWithPres");
     ASSERT_NE(nullptr, koq2);
