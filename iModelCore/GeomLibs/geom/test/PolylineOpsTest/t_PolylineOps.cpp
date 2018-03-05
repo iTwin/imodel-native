@@ -983,6 +983,9 @@ TEST (Polyline, GreedyTriangleB)
     Check::ClearGeometry ("Polyline.GreedyTriangleB");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Jean-Paul.Wenger     03/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Dpoint3dOps, CompressAll)
     {
     size_t const nPts = (size_t)1e2;
@@ -1013,6 +1016,9 @@ TEST (Dpoint3dOps, CompressAll)
     Check::ClearGeometry ("Dpoint3dOps.CompressAll");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Jean-Paul.Wenger     03/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Dpoint3dOps, CompressKeep)
     {
     size_t const nPts = (size_t)1e3;
@@ -1050,6 +1056,9 @@ TEST (Dpoint3dOps, CompressKeep)
     Check::ClearGeometry ("Dpoint3dOps.CompressKeep");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Jean-Paul.Wenger     03/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Dpoint3dOps, CompressBspline)
     {
     bvector<DPoint3d> pole0
@@ -1085,6 +1094,9 @@ TEST (Dpoint3dOps, CompressBspline)
     Check::ClearGeometry ("Dpoint3dOps.CompressBSpline");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                Jean-Paul.Wenger     03/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (Dpoint3dOps, CompressLoop)
     {
     //This curve is a loop (endPt = startPt)
