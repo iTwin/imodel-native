@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Disk/DiskRepositoryClient.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -39,8 +39,7 @@ bool Sha1Calc(const bvector<Byte>& input, unsigned char *binaryHash, unsigned in
     if (!EVP_DigestFinal_ex(mdctx, binaryHash, hashLen))
         return false;
 
-    EVP_MD_CTX_cleanup(mdctx);
-    EVP_MD_CTX_destroy(mdctx);
+    EVP_MD_CTX_free(mdctx);
     return true;
     }
 
