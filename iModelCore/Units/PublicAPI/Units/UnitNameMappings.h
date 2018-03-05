@@ -8,9 +8,23 @@
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
-#include <Units/Units.h>
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
+
+//=======================================================================================
+//! Comparison function that is used within various schema related data structures
+//! for string comparison in STL collections.
+// @bsistruct
+//=======================================================================================
+struct less_str
+{
+bool operator()(Utf8String s1, Utf8String s2) const
+    {
+    if (BeStringUtilities::Stricmp(s1.c_str(), s2.c_str()) < 0)
+        return true;
+    return false;
+    }
+};
 
 //=======================================================================================
 //! There are 3 different sets of names:
@@ -28,10 +42,10 @@ struct UnitNameMappings
 private:
     static UnitNameMappings * s_mappings;
 
-    bmap<Utf8String, Utf8String> m_oldNameNewNameMapping; // key: oldName value: newName
-    bmap<Utf8String, Utf8String> m_newNameOldNameMapping; // key: newName value: oldName
-    bmap<Utf8String, Utf8String> m_newNameECNameMapping; // key: newName value: ECName
-    bmap<Utf8String, Utf8String> m_ecNamenewNameMapping; // key: ECName value: newName
+    bmap<Utf8String, Utf8String, less_str> m_oldNameNewNameMapping; // key: oldName value: newName
+    bmap<Utf8String, Utf8String, less_str> m_newNameOldNameMapping; // key: newName value: oldName
+    bmap<Utf8String, Utf8String, less_str> m_newNameECNameMapping; // key: newName value: ECName
+    bmap<Utf8String, Utf8String, less_str> m_ecNamenewNameMapping; // key: ECName value: newName
 
     UnitNameMappings();
     void AddMapping(Utf8CP oldName, Utf8CP newName);
@@ -49,6 +63,8 @@ public:
     UNITS_EXPORT static Utf8CP TryGetNewNameFromOldName(Utf8CP name);
     //! Returns the newName corresponding to the given ECName.
     UNITS_EXPORT static Utf8CP TryGetNewNameFromECName(Utf8CP name);
+    //! Returns the oldName corresponding to the given ECName.
+    UNITS_EXPORT static Utf8CP TryGetOldNameFromECName(Utf8CP name);
 };
 
 END_BENTLEY_UNITS_NAMESPACE

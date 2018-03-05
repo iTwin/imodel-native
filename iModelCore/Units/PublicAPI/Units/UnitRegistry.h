@@ -15,21 +15,6 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
-//! Comparison function that is used within various schema related data structures
-//! for string comparison in STL collections.
-// @bsistruct
-//=======================================================================================
-struct less_str
-{
-bool operator()(Utf8String s1, Utf8String s2) const
-    {
-    if (BeStringUtilities::Stricmp(s1.c_str(), s2.c_str()) < 0)
-        return true;
-    return false;
-    }
-};
-
-//=======================================================================================
 //! A central place to store registered units with the system.  Users interact
 //! with the units system here.
 // @bsiclass                                                    Chris.Tartamella   02/16
@@ -443,6 +428,11 @@ public:
     //! @see UnitNameMappings for information on the difference between an EC and a new unit name.
     //! @return The new unit name if found, otherwise nullptr
     UNITS_EXPORT static Utf8CP TryGetNameFromECName(Utf8CP ecName);
+
+    //! Gets the old unit name for an EC compatible name
+    //! @see UnitNameMappings for information on the difference between an EC and a old unit name.
+    //! @return The old unit name if found, otherwise nullptr
+    UNITS_EXPORT static Utf8CP TryGetOldNameFromECName(Utf8CP ecName);
 
     //! Gets the Unit by the old name
     //! @see UnitNameMappings

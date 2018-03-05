@@ -119,7 +119,7 @@ void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeS
     {
     for (auto const& unitAndName : m_units)
         {
-        if (includeSynonyms)
+        if (includeSynonyms || unitAndName.second->GetName().Equals(unitAndName.first))
             allUnitNames.push_back(unitAndName.first);
         }
     }
@@ -312,6 +312,15 @@ Utf8CP UnitRegistry::TryGetECName(Utf8CP name)
 Utf8CP UnitRegistry::TryGetNameFromECName(Utf8CP ecName)
     {
     return UnitNameMappings::TryGetNewNameFromECName(ecName);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                        Kyle.Abramowitz        03/2018
+//--------------------------------------------------------------------------------------
+// static
+Utf8CP UnitRegistry::TryGetOldNameFromECName(Utf8CP ecName)
+    {
+    return UnitNameMappings::TryGetOldNameFromECName(ecName);
     }
 
 /*--------------------------------------------------------------------------------**//**
