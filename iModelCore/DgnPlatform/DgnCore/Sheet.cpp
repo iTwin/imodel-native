@@ -782,7 +782,7 @@ void TRoot::CreatePolys(SceneContextR context)
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TRoot::TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context) : 
-                T_Super(db, DgnModelId(), Transform::FromIdentity(), nullptr, nullptr), m_attachmentId(attachmentId), m_pixels(tileSize)
+                T_Super(db, DgnModelId(), Transform::FromIdentity(), nullptr, nullptr), m_attachmentId(attachmentId)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
