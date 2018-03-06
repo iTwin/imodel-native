@@ -840,25 +840,6 @@ TEST_F(CompositeValueSpecTest, Constructors)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeValueSpecTest, FormatValue)
-    {
-    CompositeValueSpec cvs("MILE", "YRD", "FOOT", "INCH");
-    ASSERT_EQ(CompositeSpecType::Quatro, cvs.GetType());
-
-    NumericFormatSpec nfs;
-    nfs.SetPresentationType(PresentationType::Decimal);
-    nfs.SetSignOption(ShowSignOption::OnlyNegative);
-
-    // Yes putting the TODO in the expect stmt is bad style, but it's an easy way to show that this test is jank.
-    EXPECT_STREQ("TODO: FormatValue always returns empty string. Figure out what's up", cvs.FormatValue(100.0, &nfs, "MILE").c_str());
-    EXPECT_STREQ("TODO: FormatValue always returns empty string. Figure out what's up", cvs.FormatValue(100.0, &nfs, "YRD").c_str());
-    EXPECT_STREQ("TODO: FormatValue always returns empty string. Figure out what's up", cvs.FormatValue(100.0, &nfs, "FOOT").c_str());
-    EXPECT_STREQ("TODO: FormatValue always returns empty string. Figure out what's up", cvs.FormatValue(100.0, &nfs, "INCH").c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueTest, Constructors)
     {
     CompositeValue cv;

@@ -1031,23 +1031,6 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
-    if (nullptr == unit)
-        {
-        LOG.infov("Unit Name %s is not defined", unitName);
-        return;
-        }
-    int diff = BeStringUtilities::StricmpAscii(unitName, unit->GetName().c_str());
-    EXPECT_TRUE(diff == 0);
-    if(!diff)
-        LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName().c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
 void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
     {
     NamedFormatSpec nfs = NamedFormatSpec(jsonFormat);
