@@ -354,11 +354,7 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
             if (BentleyStatus::SUCCESS != geomBuilder->Finish(*bimAlignmentPtr))
                 return BentleyStatus::ERROR;
             }
-        else
-            bimAlignmentPtr->GenerateAprox3dGeom();
         }
-    else
-        bimAlignmentPtr->GenerateAprox3dGeom();
 
     auto cifStationingPtr = cifAlignment.GetStationing();
     if (cifStationingPtr.IsValid())
@@ -540,6 +536,13 @@ BentleyStatus ORDAlignmentsConverter::ConvertProfiles(AlignmentCR cifAlignment, 
             if (verticalAlignmCPtr.IsValid())
                 AlignmentBim::Alignment::SetMainVertical(alignment, *verticalAlignmCPtr);
             }
+        }
+
+    if (!alignment.HasGeometry())
+        {
+        auto alignmentPtr = AlignmentBim::Alignment::GetForEdit(alignment.GetDgnDb(), alignment.GetElementId());
+        if (DgnDbStatus::Success == alignmentPtr->GenerateAprox3dGeom())
+            alignmentPtr->Update();
         }
 
     return BentleyStatus::SUCCESS;
