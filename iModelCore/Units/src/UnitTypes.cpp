@@ -17,29 +17,19 @@ using namespace std;
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      03/2016
+// @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, uint32_t id, double numerator, double denominator, double offset) :
-    m_name(name), m_definition(definition), m_id(id), m_isBaseSymbol(false), m_numerator(numerator), m_denominator(denominator), m_offset(offset), m_evaluated(false), m_isNumber(false),
-    m_symbolExpression(new Expression())
-    {
-    m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
-    }
+UnitsSymbol::UnitsSymbol(Utf8CP name) : m_name(name), m_isBaseSymbol(false), m_numerator(0.0), m_denominator(1.0),
+    m_offset(0.0), m_isNumber(true), m_evaluated(false), m_symbolExpression(new Expression()) {}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
-UnitsSymbol::UnitsSymbol() // creates a default - invalid - Symbol
+UnitsSymbol::UnitsSymbol(Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset) :
+    m_name(name), m_definition(definition), m_isBaseSymbol(false), m_numerator(numerator), m_denominator(denominator),
+    m_offset(offset), m_evaluated(false), m_isNumber(false), m_symbolExpression(new Expression())
     {
-    m_name = nullptr;
-    m_definition = nullptr;
-    m_id = 0;
-    m_isBaseSymbol = false;
-    m_numerator = 0.0;
-    m_denominator = 1.0;
-    m_offset = 0.0;
-    m_isNumber = true;
-    m_evaluated = false;
+    m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
     }
 
 //--------------------------------------------------------------------------------------
@@ -49,6 +39,52 @@ UnitsSymbol::~UnitsSymbol()
     {
     if (nullptr != m_symbolExpression)
         delete m_symbolExpression;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus UnitsSymbol::SetDefinition(Utf8CP definition)
+    {
+    if (!m_definition.empty() || nullptr == definition || Utf8String::IsNullOrEmpty(definition))
+        return ERROR;
+    m_definition = definition;
+
+    m_isBaseSymbol = m_name.EqualsI(m_definition.c_str());
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus UnitsSymbol::SetNumerator(double numerator)
+    {
+    if (0.0 != m_numerator)
+        return ERROR;
+    m_numerator = numerator;
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus UnitsSymbol::SetDenominator(double denominator)
+    {
+    if (1.0 != m_denominator || 0.0 == denominator)
+        return ERROR;
+    m_denominator = denominator;
+    return SUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus UnitsSymbol::SetOffset(double offset)
+    {
+    if (0.0 != m_offset)
+        return ERROR;
+    m_offset = offset;
+    return SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
@@ -65,10 +101,23 @@ ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP
     return *m_symbolExpression;
     }
 
+//=======================================================================================
+//! Unit
+//=======================================================================================
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
-UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName, uint32_t id)
+Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double nominator, double denominator, double offset, bool isConstant)
+    : UnitsSymbol(name, definition, nominator, denominator, offset), m_system(&system), m_phenomenon(&phenomenon), m_parent(nullptr), m_isConstant(isConstant)
+    {
+    m_isNumber = phenomenon.IsNumber();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                      03/2016
+//--------------------------------------------------------------------------------------
+UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName)
     {
     if (parentUnit.HasOffset())
         {
@@ -82,29 +131,7 @@ UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName, uin
         }
 
     LOG.debugv("Creating inverted unit %s with parent unit %s", unitName, parentUnit.GetName().c_str());
-    return new Unit(parentUnit, system, unitName, id);
-    }
-
-Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double nominator, double denominator, double offset, bool isConstant)
-    : UnitsSymbol(name, definition, id, nominator, denominator, offset), m_system(&system), m_phenomenon(&phenomenon), m_parent(nullptr), m_isConstant(isConstant)
-    {
-    m_isNumber = phenomenon.IsNumber();
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool Unit::IsRegistered() const
-    {
-    return UnitRegistry::Instance().HasUnit(GetName().c_str());
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                      03/2016
-//--------------------------------------------------------------------------------------
-uint32_t Unit::GetPhenomenonId() const
-    {
-    return GetPhenomenon()->GetId();
+    return new Unit(parentUnit, system, unitName);
     }
 
 //--------------------------------------------------------------------------------------
@@ -115,7 +142,8 @@ ExpressionCR Unit::Evaluate() const
     if (IsInvertedUnit())
         return m_parent->Evaluate();
 
-    return T_Super::Evaluate(0, [] (Utf8CP unitName) { return UnitRegistry::Instance().LookupUnit(unitName); });
+    IUnitsContextCP context = m_unitsContext;
+    return T_Super::Evaluate(0, [&context](Utf8CP unitName) {return context->LookupUnit(unitName);});
     }
 
 //---------------------------------------------------------------------------------------
@@ -291,17 +319,13 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
 //--------------------------------------------------------------------------------------
 UnitsProblemCode Unit::DoNumericConversion(double& converted, double value, UnitCR toUnit) const
     {
-    uint64_t index = GetId();
-    index = index << 32;
-    index |= toUnit.GetId();
-
     converted = 0.0;
     Conversion conversion;
-    if (!UnitRegistry::Instance().TryGetConversion(index, conversion))
-        {
-        GenerateConversion(toUnit, conversion);
-        UnitRegistry::Instance().AddConversion(index, conversion);
-        }
+    GenerateConversion(toUnit, conversion);
+
+    // Conversion caching not supported
+    // if (!m_phenomenon->TryGetConversion(conversion, *this, toUnit))
+    //    m_phenomenon->AddConversion(index, conversion);
 
     if (conversion.Factor == 0.0)
         {
@@ -347,7 +371,7 @@ UnitCP Unit::CombineWithUnit(UnitCR rhs, int factor) const
 
     bvector<PhenomenonCP> phenomList;
     PhenomenonCP matchingPhenom = nullptr;
-    UnitRegistry::Instance().AllPhenomena(phenomList);
+    m_unitsContext->AllPhenomena(phenomList);
     for (const auto p : phenomList)
         {
         if (!Expression::ShareSignatures(*p, expression))
@@ -411,9 +435,8 @@ bool Unit::AreCompatible(UnitCP unitA, UnitCP unitB)
 void Unit::AddSynonym(Utf8CP synonym) const
     {
     PhenomenonCP ph = GetPhenomenon();
-    UnitCP const un = this;
     if (nullptr != ph)
-        ph->AddSynonym(un, synonym);
+        ph->AddSynonym(this, synonym);
     }
 
 //----------------------------------------------------------------------------------------
@@ -449,7 +472,8 @@ Utf8String Phenomenon::GetPhenomenonSignature() const
 //--------------------------------------------------------------------------------------
 ExpressionCR Phenomenon::Evaluate() const
     {
-    return T_Super::Evaluate(0, [] (Utf8CP phenomenonName) { return UnitRegistry::Instance().LookupPhenomenon(phenomenonName); });
+    IUnitsContextCP context = m_unitsContext;
+    return T_Super::Evaluate(0, [&context](Utf8CP unitName) {return context->LookupPhenomenon(unitName);});
     }
 
 //--------------------------------------------------------------------------------------
@@ -466,16 +490,16 @@ bool Phenomenon::IsAngle() const { return m_name.Equals(ANGLE); }
 
 //===================================================
 //
-// UnitSynonymMap Methods
+// UnitSynonymMap
 //
 //===================================================
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void UnitSynonymMap::Init(Utf8CP unitName, Utf8CP synonym)
+void UnitSynonymMap::Init(UnitCP unit, Utf8CP synonym)
     {
-    m_unit = (nullptr == unitName)? nullptr : UnitRegistry::Instance().LookupUnit(unitName);
+    m_unit = unit;
     if (nullptr == m_unit)
         m_synonym.clear();
     else
@@ -483,67 +507,46 @@ void UnitSynonymMap::Init(Utf8CP unitName, Utf8CP synonym)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-UnitSynonymMap::UnitSynonymMap(Utf8CP unitName, Utf8CP synonym)
-    {
-    Init(nullptr, nullptr);
-    if (!Utf8String::IsNullOrEmpty(unitName))  //if first argument is empty the map will be empty as well
-        {
-        if (Utf8String::IsNullOrEmpty(synonym)) // only first argument is passed
-            {
-            while (isspace(*unitName)) unitName++; // skip blanks
-            if ('{' == *unitName) // indicator of the Json string
-                {
-                Json::Value jval (Json::objectValue);
-                Json::Reader::Parse(unitName, jval);
-                LoadJson(jval);
-                }
-            else
-                {
-                bvector<Utf8String> tokens;
-                BeStringUtilities::Split(unitName, ", ", nullptr, tokens);
-                if (tokens.size() == 2)
-                    Init(tokens[0].c_str(), tokens[1].c_str());
-                }
-            }
-        else
-            Init(unitName, synonym);
-        }
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
 // The description of the map could be either a plain text string <UnitName>,<synonym>
 //   or a Json text string that starts and ends by the "curvy brackets". If this is the case
 //    this function attempts to parse the string into a Json-object that will be used for
 //     populating the instance
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-//UnitSynonymMap::UnitSynonymMap(Utf8CP descr)
-//    {
-//    Init(nullptr, nullptr);
-//    if (nullptr != descr && *descr != '\0')
-//        {
-//        while (isspace(*descr)) descr++; // skip blanks
-//        if ('{' == *descr) // indicator of the Json string
-//            {
-//            Json::Value jval (Json::objectValue);
-//            Json::Reader::Parse(descr, jval);
-//            LoadJson(jval);
-//            }
-//        else
-//            {
-//            bvector<Utf8String> tokens;
-//            BeStringUtilities::Split(descr, ", ", nullptr, tokens);
-//            if (tokens.size() == 2)
-//                Init(tokens[0].c_str(), tokens[1].c_str());
-//            }
-//        }
-//    }
+UnitSynonymMap::UnitSynonymMap(IUnitsContextCP context, Utf8CP descr)
+    {
+    Init(nullptr, nullptr);
+    if (nullptr != descr && *descr != '\0')
+        {
+        while (isspace(*descr)) descr++; // skip blanks
+        if ('{' == *descr) // indicator of the Json string
+            {
+            Json::Value jval (Json::objectValue);
+            Json::Reader::Parse(descr, jval);
+            LoadJson(context, jval);
+            }
+        else
+            {
+            bvector<Utf8String> tokens;
+            BeStringUtilities::Split(descr, ", ", nullptr, tokens);
+            if (tokens.size() == 2)
+                Init(context->LookupUnit(tokens[0].c_str()), tokens[1].c_str());
+            }
+        }
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void UnitSynonymMap::LoadJson(Json::Value jval)
+UnitSynonymMap::UnitSynonymMap(IUnitsContextCP context, Json::Value jval)
+    {
+    LoadJson(context, jval);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
+void UnitSynonymMap::LoadJson(IUnitsContextCP context, Json::Value jval)
     {
     m_unit = nullptr;
     m_synonym.clear();
@@ -562,15 +565,7 @@ void UnitSynonymMap::LoadJson(Json::Value jval)
         else if (BeStringUtilities::StricmpAscii(paramName, json_synonym()) == 0)
             synonym = val.asString();
         }
-    Init(unitName.c_str(), synonym.c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-UnitSynonymMap::UnitSynonymMap(Json::Value jval)
-    {
-    LoadJson(jval);
+    Init(context->LookupUnit(unitName.c_str()), synonym.c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -600,6 +595,7 @@ bool UnitSynonymMap::IsIdentical(UnitSynonymMapCR other)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
+// static
 bool UnitSynonymMap::AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<UnitSynonymMap>& v2)
     {
     if (v1.size() != v2.size()) return false;
@@ -613,7 +609,8 @@ bool UnitSynonymMap::AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<Un
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------
-bvector<UnitSynonymMap> UnitSynonymMap::MakeUnitSynonymVector(Json::Value jval)
+// static
+bvector<UnitSynonymMap> UnitSynonymMap::MakeUnitSynonymVector(IUnitsContextCP context, Json::Value jval)
     {
     UnitSynonymMap map;
     Json::Value val;
@@ -621,7 +618,7 @@ bvector<UnitSynonymMap> UnitSynonymMap::MakeUnitSynonymVector(Json::Value jval)
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         val = *iter;
-        map = UnitSynonymMap(val);
+        map = UnitSynonymMap(context, val);
         mapV.push_back(map);
         }
     return mapV;
@@ -630,9 +627,14 @@ bvector<UnitSynonymMap> UnitSynonymMap::MakeUnitSynonymVector(Json::Value jval)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------
-size_t UnitSynonymMap::AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, Utf8CP unitName, Utf8CP synonym)
+// static
+size_t UnitSynonymMap::AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, IUnitsContextCP context, Utf8CP unitName, Utf8CP synonym)
     {
-    UnitSynonymMap map(unitName, synonym);
+    UnitCP unit = context->LookupUnit(unitName);
+    if (nullptr != unit)
+        return mapV.size();
+
+    UnitSynonymMap map(unit, synonym);
     mapV.push_back(map);
     return mapV.size();
     }
@@ -640,6 +642,7 @@ size_t UnitSynonymMap::AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, U
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 09/17
 //----------------------------------------------------------------------------------------
+// static
 bool UnitSynonymMap::CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR map2)
     {
     PhenomenonCP p1 = map1.GetPhenomenon();
@@ -666,20 +669,18 @@ bool UnitSynonymMap::CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR m
     return false;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-UnitCP Phenomenon::FindSynonym(Utf8CP synonym) const
+//===================================================
+//
+// Phenomenon
+//
+//===================================================
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+Phenomenon::Phenomenon(Utf8CP name, Utf8CP definition) : UnitsSymbol(name, definition, 0.0, 0.0, 0) 
     {
-    if (m_altNames.size() > 0)  // there are some alternative names
-        {
-        for (const UnitSynonymMap* syn = m_altNames.begin(); syn != m_altNames.end(); syn++)
-            {
-            if (0 == BeStringUtilities::StricmpAscii(synonym, syn->GetSynonym()))
-                return syn->GetUnit();
-            }
-        }
-    return nullptr;
+    m_isNumber = m_definition.Equals(NUMBER);
     }
 
 //----------------------------------------------------------------------------------------
@@ -691,18 +692,25 @@ UnitCP Phenomenon::LookupUnit(Utf8CP unitName) const
     if (nullptr != un)
         return un;
 
-    for (const UnitCP* up = m_units.begin(); up != m_units.end(); up++)
+    auto it = std::find_if(m_units.begin(), m_units.end(), [&unitName](UnitCP unit) {return unit->GetName().EqualsI(unitName);});
+    if (nullptr == it)
+        return nullptr;
+    return *it;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
+UnitCP Phenomenon::FindSynonym(Utf8CP synonym) const
+    {
+    if (0 == m_altNames.size())  // there are some alternative names
+        return nullptr;
+
+    for (const UnitSynonymMap* syn = m_altNames.begin(); syn != m_altNames.end(); syn++)
         {
-        UnitCP const u = *up;
-        if (0 == BeStringUtilities::StricmpAscii(unitName, u->GetName().c_str()))
-            return u;
+        if (0 == BeStringUtilities::StricmpAscii(synonym, syn->GetSynonym()))
+            return syn->GetUnit();
         }
-
-    /*un = UnitRegistry::Instance().LookupUnitCI(unitName);
-    PhenomenonCP ph = (nullptr == un)? nullptr : un->GetPhenomenon();
-    if (this == ph)
-        return un;*/
-
     return nullptr;
     }
 
@@ -711,25 +719,25 @@ UnitCP Phenomenon::LookupUnit(Utf8CP unitName) const
 //----------------------------------------------------------------------------------------
 void Phenomenon::AddSynonym(Utf8CP unitName, Utf8CP synonym)
     {
-    UnitSynonymMap map = UnitSynonymMap(unitName, synonym);
-    UnitCP un = FindSynonym(map.GetSynonym());
-
-    if (nullptr != un) // synonym is found - we don't add duplicate
+    UnitCP unit = LookupUnit(unitName);
+    if (nullptr == unit)
         return;
-    m_altNames.push_back(map);
+
+    return AddSynonym(unit, synonym);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/18
 //----------------------------------------------------------------------------------------
-void Phenomenon::AddSynonym(UnitCP unitP, Utf8CP synonym) const
+void Phenomenon::AddSynonym(UnitCP unit, Utf8CP synonym) const
     {
-    if (unitP->GetPhenomenon() != this)
+    if (unit->GetPhenomenon() != this)
         return;
-    UnitCP un = FindSynonym(synonym);
-    if (nullptr != un) // synonym is found - we don't add duplicate
+    
+    if (nullptr != FindSynonym(synonym)) // synonym is found - we don't add duplicate
         return;
-    UnitSynonymMap map = UnitSynonymMap(unitP, synonym);
+
+    UnitSynonymMap map = UnitSynonymMap(unit, synonym);
     m_altNames.push_back(map);
     }
 
@@ -755,7 +763,7 @@ void Phenomenon::AddSynonymMaps(Json::Value jval) const // this value could be a
         val = *iter;
         for (Json::Value::iterator iter = val.begin(); iter != val.end(); iter++)
             {
-            map = UnitSynonymMap(val);
+            map = UnitSynonymMap(m_unitsContext, val);
             AddSynonymMap(map);
             }
         }
@@ -769,23 +777,20 @@ Json::Value Phenomenon::SynonymMapToJson() const
     Json::Value jval;
 
     for (size_t i = 0; i < m_altNames.size(); i++)
-        {
         jval.append(m_altNames[i].ToJson());
-        }
     return jval;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
+// static
 Json::Value Phenomenon::SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV)
     {
     Json::Value jval;
 
     for (size_t i = 0; i < mapV.size(); i++)
-        {
         jval.append(mapV[i].ToJson());
-        }
     return jval;
     }
 

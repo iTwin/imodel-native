@@ -8,8 +8,6 @@
 
 #include "UnitsPCH.h"
 
-#include <Bentley/RefCounted.h>
-
 using namespace std;
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
@@ -20,7 +18,7 @@ UnitRegistry * UnitRegistry::s_instance = nullptr;
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
-UnitRegistry& UnitRegistry::Instance()
+UnitRegistry& UnitRegistry::Get()
     {
     if (nullptr == s_instance)
         {
@@ -66,20 +64,6 @@ void UnitRegistry::InsertUnique (Utf8Vector &vec, Utf8String &str)
     }
 
 //---------------------------------------------------------------------------------------//
-// @bsimethod                                              Colin.Kerr           03/16
-//+---------------+---------------+---------------+---------------+---------------+------//
-bool UnitRegistry::TryGetConversion(uint64_t index, Conversion& conversion)
-    {
-    auto it = m_conversions.find(index);
-    if (it != m_conversions.end())
-        {
-        conversion = it->second;
-        return true;
-        }
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------//
 // @bsimethod                                              Colin.Kerr           11/17
 //+---------------+---------------+---------------+---------------+---------------+------//
 UnitCP UnitRegistry::CreateDummyUnit(Utf8CP unitName)
@@ -90,7 +74,7 @@ UnitCP UnitRegistry::CreateDummyUnit(Utf8CP unitName)
     if (NamedItemExists(unitName))
         {
         LOG.errorv("Could not create dummy unit '%s' because that name is already in use", unitName);
-        return nullptr;
+        return _LookupUnitP(unitName);
         }
 
     LOG.warningv("Creating Dummy unit with name '%s'", unitName);
@@ -119,7 +103,7 @@ void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeS
     {
     for (auto const& unitAndName : m_units)
         {
-        if (includeSynonyms)
+        if (includeSynonyms || unitAndName.second->GetName().Equals(unitAndName.first))
             allUnitNames.push_back(unitAndName.first);
         }
     }
@@ -127,7 +111,7 @@ void UnitRegistry::AllUnitNames(bvector<Utf8String>& allUnitNames, bool includeS
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      02/2016
 //--------------------------------------------------------------------------------------
-void UnitRegistry::AllUnits(bvector<UnitCP>& allUnits) const
+void UnitRegistry::_AllUnits(bvector<UnitCP>& allUnits) const
     {
     for (auto const& unitAndName : m_units)
         allUnits.push_back(unitAndName.second);
@@ -164,7 +148,7 @@ UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8CP basePhenom
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      02/2016
 //--------------------------------------------------------------------------------------
-void UnitRegistry::AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const
+void UnitRegistry::_AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const
     {
     for (auto const& phenomenonAndName : m_phenomena)
         allPhenomena.push_back(phenomenonAndName.second);
@@ -180,6 +164,8 @@ void UnitRegistry::AddSystem(UnitSystemR unitSystem)
         LOG.errorv("Cannot create UnitSystem '%s' because that name is already in use.", unitSystem.GetName().c_str());
         return;
         }
+
+    unitSystem.m_unitsContext = this;
 
     m_systems.Insert(unitSystem.GetName().c_str(), &unitSystem);
     }
@@ -272,7 +258,7 @@ UnitP UnitRegistry::RemoveConstant(Utf8CP name)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      02/2016
 //--------------------------------------------------------------------------------------
-void UnitRegistry::AllSystems(bvector<UnitSystemCP>& allUnitSystems) const
+void UnitRegistry::_AllSystems(bvector<UnitSystemCP>& allUnitSystems) const
     {
     for (auto const& unitSystemAndName : m_systems)
         allUnitSystems.push_back(unitSystemAndName.second);
@@ -314,6 +300,15 @@ Utf8CP UnitRegistry::TryGetNameFromECName(Utf8CP ecName)
     return UnitNameMappings::TryGetNewNameFromECName(ecName);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                        Kyle.Abramowitz        03/2018
+//--------------------------------------------------------------------------------------
+// static
+Utf8CP UnitRegistry::TryGetOldNameFromECName(Utf8CP ecName)
+    {
+    return UnitNameMappings::TryGetOldNameFromECName(ecName);
+    }
+
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Robert.Schili     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -321,23 +316,22 @@ UnitCP UnitRegistry::LookupUnitUsingOldName(Utf8CP oldName) const
     {
     auto newName = UnitRegistry::TryGetNewName(oldName);
     if (nullptr == newName)
-        return nullptr;    
-    return LookupUnitP(newName);
+        return nullptr;
+    return LookupUnit(newName);
     }
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              David Fox-Rabinovitz     09/17
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              David.Fox-Rabinovitz    09/17
+//---------------------------------------------------------------------------------------
 size_t UnitRegistry::LoadSynonyms(Json::Value jval) const
     {
     size_t num = 0;
     UnitSynonymMap map;
-    //UnitSynonymMapCR mapP = map;
     PhenomenonCP phP;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         JsonValueCR val = *iter;
-        map = UnitSynonymMap(val);
+        map = UnitSynonymMap(this, val);
         if (!map.IsMapEmpty())
             {
             phP = map.GetPhenomenon();
@@ -358,18 +352,8 @@ PhenomenonCP UnitRegistry::LoadSynonym(Utf8CP unitName, Utf8CP synonym) const
     {
     if (Utf8String::IsNullOrEmpty(unitName) || Utf8String::IsNullOrEmpty(synonym))
         return nullptr;
-    UnitCP unit = UnitRegistry::Instance().LookupUnit(unitName);
-    PhenomenonCP ph = (nullptr == unit)? nullptr : unit->GetPhenomenon();
-    if (nullptr != ph)
-        {
-        UnitCP un = ph->FindSynonym(synonym);
-        if (un == nullptr)  // a new synonym
-            {
-
-            }
-        }
-
-    return ph;
+    UnitCP unit = LookupUnit(unitName);
+    return (nullptr == unit) ? nullptr : unit->GetPhenomenon();
     }
 
 //---------------------------------------------------------------------------------------

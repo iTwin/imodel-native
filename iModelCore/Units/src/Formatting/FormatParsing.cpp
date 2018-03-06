@@ -1072,7 +1072,7 @@ UnitProxy::UnitProxy(Utf8CP name, Utf8CP label)
     {
     m_unitLabel = nullptr;
     m_unitName = nullptr;
-    m_unit = BEU::UnitRegistry::Instance().LookupUnit(name);
+    m_unit = BEU::UnitRegistry::Get().LookupUnit(name);
     if (nullptr != m_unit)
         {
         m_unitName = Utf8String(name);
@@ -1085,7 +1085,7 @@ UnitProxy::UnitProxy(Utf8CP name, Utf8CP label)
 //----------------------------------------------------------------------------------------
 bool UnitProxy::SetName(Utf8CP name)
     {
-    m_unit = BEU::UnitRegistry::Instance().LookupUnit(name);
+    m_unit = BEU::UnitRegistry::Get().LookupUnit(name);
     if (nullptr != m_unit)
         {
         m_unitName = Utf8String(name);
@@ -1113,7 +1113,7 @@ bool UnitProxy::Reset() const
     {
     if (m_unitName.empty())
         return false;
-    m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
+    m_unit = BEU::UnitRegistry::Get().LookupUnit(m_unitName.c_str());
     return !(nullptr == m_unit);
     }
 
@@ -1151,7 +1151,7 @@ bool UnitProxySet::IsConsistent()
 //----------------------------------------------------------------------------------------
 int UnitProxySet::Validate() const
     {
-    BEU::UnitRegistry* reg = &BEU::UnitRegistry::Instance();
+    BEU::UnitRegistry* reg = &BEU::UnitRegistry::Get();
     if (m_unitReg == reg) // there is a new instance
         return m_resetCount;
     for (int i = 0; i < m_proxys.size(); m_proxys[i++].Reset());
@@ -1871,7 +1871,7 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
             m_unit = ph->LookupUnit(m_name.c_str());
             }
         if(nullptr == m_unit)
-            m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_name.c_str());
+            m_unit = BEU::UnitRegistry::Get().LookupUnit(m_name.c_str());
 
         //if (nullptr == m_unit && nullptr != refUnit)  // last attempt to resolve the unit name
         //    {
@@ -1956,7 +1956,6 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
     m_unit = unit;
     m_problem.Reset();
     FormatParsingSegment fps;
-    //Utf8CP tail = input;
     NumberGrabber ng;
     bvector<CursorScanPoint> m_symbs;
     bool revs = false;
@@ -2029,7 +2028,7 @@ FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit)
 //----------------------------------------------------------------------------------------
 FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName)
     {
-    BEU::UnitCP unit = (nullptr == unitName) ? nullptr : BEU::UnitRegistry::Instance().LookupUnit(unitName);
+    BEU::UnitCP unit = (nullptr == unitName) ? nullptr : BEU::UnitRegistry::Get().LookupUnit(unitName);
     Init(input, start, unit);     
     }
 PUSH_MSVC_IGNORE(6385 6386)
@@ -2128,97 +2127,7 @@ bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP
 
     return true;
     }
-//BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode)
-//    {
-//    BEU::Quantity qty = BEU::Quantity();
-//    BEU::Quantity tmp = BEU::Quantity();
-//    Utf8String sig = GetSignature(false);
-//    // only a limited number of signatures will be recognized in this particular context
-//    // reduced version: NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
-//    //   3 FT - NU
-//    //  1/3 FT  FU
-//    BEU::UnitCP majP, midP;
-//    FormatProblemCode locCode;
-//    double sign = 1.0;
-//    if (nullptr == probCode)
-//        probCode = &locCode;
-//
-//    *probCode = FormatProblemCode::NoProblems;
-//    //double mu, su;
-//    Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
-//    switch (cod)
-//        {
-//        case Formatting::FormatSpecialCodes::SignatureN:
-//        case Formatting::FormatSpecialCodes::SignatureF:
-//            qty = BEU::Quantity(m_segs[0].GetReal(), *m_unit);
-//            break;
-//        case Formatting::FormatSpecialCodes::SignatureNF:
-//            sign = m_segs[0].GetSign();
-//            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *m_unit);
-//            qty.Scale(sign);
-//            break;
-//        case Formatting::FormatSpecialCodes::SignatureNU:
-//            majP = m_segs[1].GetUnit();
-//            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
-//            break;
-//        case Formatting::FormatSpecialCodes::SignatureNFU:
-//            sign = m_segs[0].GetSign();
-//            majP = m_segs[2].GetUnit();
-//            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *majP);
-//            break;
-//        case Formatting::FormatSpecialCodes::SignatureNUNU:
-//            sign = m_segs[0].GetSign();
-//            majP = m_segs[1].GetUnit();
-//            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
-//            midP = m_segs[3].GetUnit();
-//            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
-//            qty = qty.Add(tmp);
-//            qty.Scale(sign);
-//            break;
-//        case Formatting::FormatSpecialCodes::SignatureNUNFU:
-//            sign = m_segs[0].GetSign();
-//            majP = m_segs[1].GetUnit();
-//            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
-//            midP = m_segs[4].GetUnit();
-//            tmp = BEU::Quantity(m_segs[2].GetAbsReal() + m_segs[3].GetAbsReal(), *midP);
-//            qty = qty.Add(tmp);
-//            qty.Scale(sign);
-//            break;
-//        case Formatting::FormatSpecialCodes::SignatureNUNUNU:
-//            sign = m_segs[0].GetSign();
-//            majP = m_segs[1].GetUnit();
-//            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
-//            midP = m_segs[3].GetUnit();
-//            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
-//            qty = qty.Add(tmp);
-//            midP = m_segs[5].GetUnit();
-//            tmp = BEU::Quantity(m_segs[4].GetAbsReal(), *midP);
-//            qty = qty.Add(tmp);
-//            qty.Scale(sign);
-//            break;
-//        case Formatting::FormatSpecialCodes::SignatureNUNUNFU:
-//            sign = m_segs[0].GetSign();
-//            majP = m_segs[1].GetUnit();
-//            qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
-//            midP = m_segs[3].GetUnit();
-//            tmp = BEU::Quantity(m_segs[2].GetAbsReal(), *midP);
-//            qty = qty.Add(tmp);
-//            midP = m_segs[6].GetUnit();
-//            tmp = BEU::Quantity(m_segs[4].GetAbsReal() + m_segs[5].GetAbsReal(), *midP);
-//            qty = qty.Add(tmp);
-//            qty.Scale(sign);
-//            break;
-//
-//
-//        default:
-//            *probCode = FormatProblemCode::QT_InvalidSyntax;
-//            break;
-//        }
-//
-//    if ((*probCode == FormatProblemCode::NoProblems) && nullptr != m_unit)
-//        qty = qty.ConvertTo(m_unit);
-//    return qty;
-//    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //----------------------------------------------------------------------------------------
@@ -2535,7 +2444,7 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
 NamedQuantity::NamedQuantity(Utf8CP quantName, double dval, Utf8CP uom)
     {
     Init(quantName, NamedQuantityType::Quantity);
-    BEU::UnitCP unit = BEU::UnitRegistry::Instance().LookupUnit(uom);
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
     if (nullptr == unit)
         {
         LOG.infov("Invalid UOM: >%s<", uom);

@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
+#include <locale>
+#include <BeSQLite/L10N.h>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -937,92 +939,6 @@ Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int p
     return fmtP->FormatDouble(dval, prec, round);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 03/17
-//---------------------------------------------------------------------------------------
-//Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
-//    {
-//    NamedFormatSpecP namF = StdFormatSet::FindFormatSpec(stdName);
-//    // there are two major options here: the format is a pure Numeric or it has a composite specification
-//    NumericFormatSpecP fmtP = (nullptr == namF)? nullptr: namF->GetNumericSpec();
-//    bool composite = (nullptr == namF) ? false : namF->HasComposite();
-//    BEU::Quantity temp = qty.ConvertTo(useUnit); 
-//    Utf8CP uomName = Utils::IsNameNullOrEmpty(useLabel)? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetName()): useLabel;
-//    Utf8String majT, midT, minT, subT;
-//
-//
-//    if (composite)  // procesing composite parts
-//        {
-//        CompositeValueSpecP compS = namF->GetCompositeSpec();
-//        CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(),temp.GetUnit());
-//        Utf8CP spacer = Utils::IsNameNullOrEmpty(space)? compS->GetSpacer().c_str() : space;
-//        // for all parts but the last one we need to format an integer 
-//        NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(), 
-//                                                  FormatConstant::DefaultFormatTraits(), 0);
-//        fmtI.SetKeepSingleZero(false);
-//
-//        switch (compS->GetType())
-//            {
-//            case CompositeSpecType::Single: // there is only one value to report
-//                majT = fmtP->FormatDouble(dval.GetMajor(), prec, round);
-//                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
-//                break;
-//
-//            case CompositeSpecType::Double: 
-//                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
-//                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
-//                midT = fmtP->FormatDouble(dval.GetMiddle(), prec, round);
-//                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
-//                majT += " " + midT;
-//                break;
-//
-//            case CompositeSpecType::Triple:
-//                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
-//                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
-//                midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
-//                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
-//                minT = fmtP->FormatDouble(dval.GetMinor(), prec, round);
-//                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
-//                majT += " " + midT + " " + minT;
-//                break;
-//
-//            case CompositeSpecType::Quatro:
-//                majT = fmtI.FormatDouble(dval.GetMajor(), prec, round);
-//                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
-//                midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
-//                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
-//                minT = fmtI.FormatDouble(dval.GetMinor(), prec, round);
-//                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
-//                subT = fmtP->FormatDouble(dval.GetSub(), prec, round);
-//                subT = Utils::AppendUnitName(subT.c_str(), compS->GetSubLabel(nullptr).c_str(), spacer);
-//                majT += midT + " " + minT + " " + subT;
-//                break;
-//            }
-//        }
-//    else
-//        {
-//        if (nullptr == fmtP)  // invalid name
-//            fmtP = StdFormatSet::DefaultDecimal();
-//        if (nullptr == fmtP)
-//            return "";
-//        majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
-//        majT = Utils::AppendUnitName(majT.c_str(), uomName, space);
-//        /*if (nullptr != uomName)
-//            {
-//            if (!Utils::IsNameNullOrEmpty(space))
-//                majT += Utf8String(space);
-//            majT += Utf8String(uomName);
-//            }*/
-//        }
-//    return majT;
-//    }
-
-Utf8String NumericFormatSpec::StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
-    {
-    NamedFormatSpecCP namF = StdFormatSet::FindFormatSpec(stdName);
-    return StdFormatQuantity(*namF, qty, useUnit, space, useLabel, prec, round);
-    }
-
 Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
     {
     // there are two major options here: the format is a pure Numeric or it has a composite specification
@@ -1094,48 +1010,8 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
         majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
         if(fmtP->IsAppendUnit())
            majT = Utils::AppendUnitName(majT.c_str(), uomLabel, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
-        /*if (nullptr != uomName)
-        {
-        if (!Utils::IsNameNullOrEmpty(space))
-        majT += Utf8String(space);
-        majT += Utf8String(uomName);
-        }*/
         }
     return majT;
-    }
-
-
-//---------------------------------------------------------------------------------------
-//  arg 'space' contains a separator between value and the unit name It also is an indicator
-//   that the caller needs to append the unit name to the value
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec, double round)
-    {
-    BEU::UnitCP fromUnit = BEU::UnitRegistry::Instance().LookupUnit(fromUOM);
-    BEU::Quantity qty = BEU::Quantity(dval, *fromUnit);
-    BEU::UnitCP toUnit = BEU::UnitRegistry::Instance().LookupUnit(toUOM);
-     // UnitCP fromUnit = qty.GetUnit();
-    BEU::PhenomenonCP phTo = toUnit->GetPhenomenon();
-    BEU::PhenomenonCP phFrom = fromUnit->GetPhenomenon();
-    if (phTo != phFrom)
-        {
-        Utf8String txt = "Impossible conversion from ";
-        txt += fromUnit->GetName();
-        txt += " to ";
-        txt +=toUnit->GetName();
-        return txt;
-        }
-    Utf8String str = StdFormatQuantity(stdName, qty, toUnit, space, toLabel, prec, round);
-    /*if (nullptr != space)
-        {
-        str += space;
-        if (nullptr == toLabel)
-            str += toUnit->GetName();
-        }
-    if (nullptr != toLabel)
-        str += toLabel;*/
-    return str;
     }
 
 const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
@@ -1143,17 +1019,6 @@ const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
     static NumericFormatSpec nfs = NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatConstant::DefaultFormatTraits(), FormatConstant::DefaultDecimalPrecisionIndex());
     return &nfs;
     }
-
-Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr, Utf8CP space, int prec, double round)
-    {
-    NumericFormatSpecCP fmtP = StdFormatSet::GetNumericFormat(stdName);
-    if (nullptr == fmtP)  // invalid name
-        fmtP = StdFormatSet::DefaultDecimal();
-    if (nullptr == fmtP)
-        return "";
-    return qtr->FormatQuantTriad(space, prec, fmtP->IsFractional(), qtr->GetIncludeZero());
-    }
-//ormatQuantTriad(Utf8CP space, int prec, bool fract=false, bool includeZero = false);
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -1165,40 +1030,41 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
         return Utf8String(buf);
     }
 
-
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- int NumericFormatSpec::FormatBinaryByte(unsigned char n, Utf8P bufOut, int bufLen)
- {
-     char binBuf[8];
-     unsigned char mask = 0x80;
-     int i = 0;
-     while (mask != 0)
-     {
-         binBuf[i++] = (n & mask) ? '1' : '0';
-         mask >>= 1;
-     }
+ // the caller provided buffer must be at least 9 byte long with the 9th byte for the terminating 0
+ // this function returns the number of bytes that was not populated - in case of success it will 0
+ int NumericFormatSpec::FormatBinaryByte (unsigned char n, Utf8P bufOut, int bufLen)
+    {
+    char binBuf[8];
+    unsigned char mask = 0x80;
+    int i = 0;
+    while (mask != 0)
+        {
+        binBuf[i++] = (n & mask) ? '1' : '0';
+        mask >>= 1;
+        }
 
-     return RightAlignedCopy(bufOut, bufLen, true, binBuf, sizeof(binBuf));
- }
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, sizeof(binBuf));
+    }
 
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
  int NumericFormatSpec::FormatBinaryShort(short int n, Utf8P bufOut, int bufLen, bool useSeparator)
- {
-     char binBuf[64];
+    {
+    char binBuf[64];
 
-     unsigned char c = (n & 0xFF00) >> 8;
-     FormatBinaryByte (c, binBuf, 9);
-     int ind = 8;
-     if (IsInsertSeparator(useSeparator))
-         binBuf[ind++] = m_thousandsSeparator;
-     c = n & 0xFF;
-     FormatBinaryByte (c, &binBuf[ind], 9);
-     return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
- }
+    unsigned char c = (n & 0xFF00) >> 8;
+    FormatBinaryByte (c, binBuf, 9);
+    int ind = 8;
+    if (IsInsertSeparator(useSeparator))
+        binBuf[ind++] = m_thousandsSeparator;
+    c = n & 0xFF;
+    FormatBinaryByte (c, &binBuf[ind], 9);
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
+    }
 
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -1311,127 +1177,6 @@ Utf8String NumericFormatSpec::StdFormatQuantityTriad(Utf8CP stdName, QuantityTri
          }
      return nullptr;
      }
-
-
-
- // Json Formatting
- 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-FormatParameterP FormatDictionary::GetParameterByIndex(int index)
-    {
-    FormatParameterP par = nullptr;
-    if (0 <= index && (int)GetCount() > index)
-        {
-        par = &m_paramList[index];
-        }
-    return par;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-FormatParameterP FormatDictionary::FindParameterByName(Utf8StringCR paramName)
-    {
-    for (FormatParameterP par = m_paramList.begin(), end = m_paramList.end(); par != end; ++par)
-        {
-        if (0 == par->CompareName(paramName))
-            return par;
-        }
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-FormatParameterP FormatDictionary::FindParameterByCode(ParameterCode paramCode)
-    {
-    for (FormatParameterP par = m_paramList.begin(), end = m_paramList.end(); par != end; ++par)
-        {
-        if (paramCode == par->GetParameterCode())
-            return par;
-        }
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-Utf8StringCR FormatDictionary::CodeToName(ParameterCode paramCode)
-    {
-    FormatParameterP par = FindParameterByCode(paramCode);
-    return (nullptr == par)? static_cast<Utf8StringCR>(nullptr) : par->GetName();
-    }
-
-Utf8StringP FormatDictionary::ParameterValuePair(Utf8StringCR name, Utf8StringCR value, char quote, Utf8StringCR prefix)
-    {
-    Utf8StringP str = new Utf8String();
-    if (!name.empty())
-        {
-        str->append( prefix + name);
-        if (!value.empty())
-            {
-            str->push_back('=');
-            if (0 != quote)
-                str->push_back(quote);
-            str->append(value);
-            if (0 != quote)
-                str->push_back(quote);
-            }
-        }
-    return str;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-Utf8String FormatDictionary::SerializeFormatDefinition(NamedFormatSpecCP namedFormat)
-    {
-    Utf8String str;
-
-    //str.append(*ParameterValuePair(FormatConstant::FPN_FormatName(), namedFormat.GetNameAndAlias(), '\"', ""));
-    // Names section
-    Utf8StringR strnew0 = *ParameterValuePair(FormatConstant::FPN_Name(), namedFormat->GetName(), '\"', "");
-    str.append(strnew0);
-    delete &strnew0;
-    Utf8StringR strnew1 = *ParameterValuePair(FormatConstant::FPN_Alias(), namedFormat->GetAlias(), '\"', "");
-    str.append(" " + strnew1);
-    delete &strnew1;
-    NumericFormatSpecCP format = namedFormat->GetNumericSpec();
-    // formating type/mode
-    str.append(" " + Utils::PresentationTypeName(format->GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
-    // precision
-    if (format->IsFractional())
-        {
-        str.append(" " + Utils::FractionallPrecisionName(format->GetFractionalPrecision()));
-        if (FractionBarType::None != format->GetFractionalBarType())
-            str.append(" " + Utils::FractionBarName(format->GetFractionalBarType()));
-        }
-    else
-        str.append(" " + Utils::DecimalPrecisionName(format->GetDecimalPrecision()));
-    // sign options
-    str.append(" " + Utils::SignOptionName(format->GetSignOption()));  // NoSign, OnlyNegative, SignAlways, NegativeParenths
-    // zero options
-    if (format->IsKeepTrailingZeroes()) str.append(" " + FormatConstant::FPN_TrailingZeroes());
-    if (format->IsUseLeadingZeroes()) str.append(" " + FormatConstant::FPN_LeadingZeroes());
-    if (format->IsKeepSingleZero()) str.append(" " + FormatConstant::FPN_KeepSingleZero());
-    if (format->IsKeepDecimalPoint()) str.append(" " + FormatConstant::FPN_KeepDecimalPoint());
-    if (format->IsZeroEmpty()) str.append(" " + FormatConstant::FPN_ZeroEmpty());
-    if (format->IsScientific())
-        {
-        if (format->IsExponentZero()) str.append(" " + FormatConstant::FPN_ExponentZero());
-        }
-    //  separators section
-    if(format->IsUse1000Separator()) str.append(" " + FormatConstant::FPN_Use1000Separ());
-    Utf8Char symb = format->GetThousandSeparator();
-    if(symb != FormatConstant::FPV_ThousandSeparator()) 
-        str.append(*ParameterValuePair(FormatConstant::FPN_ThousandsSepar(), Utf8String(symb, 1), '\'', ""));
-    symb = format->GetDecimalSeparator();
-    if (symb != FormatConstant::FPV_DecimalSeparator())
-        str.append(*ParameterValuePair(FormatConstant::FPN_DecimalSepar(), Utf8String(symb, 1), '\'', ""));
-    return str;
-    }
 
 //===================================================
 //

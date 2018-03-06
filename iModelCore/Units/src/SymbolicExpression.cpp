@@ -20,20 +20,22 @@ static const Utf8Char OpenBracket = '[';
 static const Utf8Char CloseBracket = ']';
 static const int maxRecursionDepth = 42;
 
-bool Expression::IdsMatch(UnitsSymbolCR a, UnitsSymbolCR b)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
+bool Expression::Match(UnitsSymbolCR a, UnitsSymbolCR b)
     {
-    return a.GetId() == b.GetId();
+    return a.GetName().EqualsI(b.GetName().c_str());
     }
 
-bool Expression::PhenomenonIdsMatch(UnitsSymbolCR a, UnitsSymbolCR b)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
+bool Expression::PhenomenonMatch(UnitsSymbolCR a, UnitsSymbolCR b)
     {
-    return a.GetPhenomenonId() == b.GetPhenomenonId();
-    }
-
-void Token::Clear()
-    {
-    m_token.clear();
-    m_exponent = 1;
+    return a.GetPhenomenon()->GetName().EqualsI(b.GetPhenomenon()->GetName().c_str());
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -47,6 +49,9 @@ int Exponent::GetExponent()
     return value;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
 void Expression::LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name) const
     {
     if (!LOG.isSeverityEnabled(loggingLevel))
@@ -56,6 +61,9 @@ void Expression::LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name
     LOG.message(loggingLevel, ToString().c_str());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
 Utf8String Expression::ToString(bool includeFactors) const
     {
     bvector <Utf8String> result;
@@ -68,22 +76,26 @@ Utf8String Expression::ToString(bool includeFactors) const
     return BeStringUtilities::Join(result, " * ");
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 void Expression::CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target)
     {
     for (auto symbolExp : source)
-        {
         if (symbolExp.GetSymbol()->IsBase() && !symbolExp.GetSymbol()->IsNumber())
-            {
             target.Add(symbolExp);
-            }
-        }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression)
     {
     // TODO: Now that we are not checking if they are dimensionally compatible we will need to add some dimensionality checking 
     // somewhere in the API when adding dynamic units.
-    if (from.GetPhenomenonId() != to.GetPhenomenonId())
+    if (!from.GetPhenomenon()->GetName().EqualsI(to.GetPhenomenon()->GetName().c_str()))
         {
         LOG.errorv("Cannot convert from %s: (%s) to %s: (%s) because they are not belong to the same Phenomenon.",
                    from.GetName().c_str(), from.GetDefinition().c_str(), to.GetName().c_str(), to.GetDefinition().c_str());
@@ -114,21 +126,37 @@ BentleyStatus Expression::GenerateConversionExpression(UnitCR from, UnitCR to, E
     return BentleyStatus::SUCCESS;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 bool Expression::ShareSignatures(PhenomenonCR phenomenon, UnitCR unit)
     {
-    return SignaturesCompatible(phenomenon.Evaluate(), unit.Evaluate(), PhenomenonIdsMatch);
+    return SignaturesCompatible(phenomenon.Evaluate(), unit.Evaluate(), PhenomenonMatch);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 bool Expression::ShareSignatures(PhenomenonCR phenomenon, ExpressionCR expression)
     {
-    return SignaturesCompatible(phenomenon.Evaluate(), expression, PhenomenonIdsMatch);
+    return SignaturesCompatible(phenomenon.Evaluate(), expression, PhenomenonMatch);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 bool Expression::SignaturesCompatible(ExpressionCR fromExpression, ExpressionCR toExpression)
     {
-    return SignaturesCompatible(fromExpression, toExpression, IdsMatch);
+    return SignaturesCompatible(fromExpression, toExpression, Match);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 // TODO: Consider how this could be combined with the merge step so we don't have to make two copies of the from expression
 bool Expression::SignaturesCompatible(ExpressionCR fromExpression, ExpressionCR toExpression, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
     {
@@ -154,28 +182,38 @@ bool Expression::SignaturesCompatible(ExpressionCR fromExpression, ExpressionCR 
     return true;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 void Expression::MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, UnitsSymbolCP symbol, int symbolExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
     {
     auto it = find_if(targetExpression.begin(), targetExpression.end(), [&symbol, &areEqual] (ExpressionSymbolCR a) { return areEqual(*a.GetSymbol(), *symbol); });
-    if (it != targetExpression.end())
-        {
-        LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it).GetName(), symbolExponent);
-        (*it).AddToExponent(symbolExponent);
-        }
-    else
+    if (it == targetExpression.end())
         {
         // TODO: We should ensure we are not adding an inverted unit in an expression because this will fail to generate a conversion
         LOG.debugv("%s --> %s - Adding Unit for %s with Exponent: %d", sourceDefinition, targetDefinition, symbol->GetName().c_str(), symbolExponent);
         targetExpression.Add(symbol, symbolExponent);
+        return;
         }
 
+    LOG.debugv("%s --> %s - Merging existing Unit %s. with Exponent: %d", sourceDefinition, targetDefinition, (*it).GetName(), symbolExponent);
+    (*it).AddToExponent(symbolExponent);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent)
     {
-    MergeExpressions(targetDefinition, targetExpression, sourceDefinition, sourceExpression, startingExponent, IdsMatch);
+    MergeExpressions(targetDefinition, targetExpression, sourceDefinition, sourceExpression, startingExponent, Match);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual)
     {
     LOG.debugv("Merging Expressions %s --> %s", sourceDefinition, targetDefinition);
@@ -186,6 +224,10 @@ void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExp
         }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression, 
     Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName)
     {
@@ -199,12 +241,12 @@ BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, Expressio
         return BentleyStatus::ERROR;
         }
 
-    if (owner.GetId() == symbol->GetId())
+    if (owner.GetName().EqualsI(symbol->GetName().c_str()))
         return BentleyStatus::SUCCESS;
 
     if (symbol->IsBase())
         {
-        MergeSymbol(definition, expression, symbol->GetDefinition().c_str(), symbol, mergedExponent, IdsMatch);
+        MergeSymbol(definition, expression, symbol->GetDefinition().c_str(), symbol, mergedExponent, Match);
         }
     else
         {
@@ -225,6 +267,7 @@ BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, Expressio
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Colin.Kerr         02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+// static
 BentleyStatus Expression::ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8CP definition,
     ExpressionR expression, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName)
     {
@@ -305,26 +348,39 @@ BentleyStatus Expression::ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8C
     return expression.size() > 0 ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;
     }
 
-bool Expression::Contains(ExpressionSymbolCR symbol) const
-    {
-    auto it = find_if(begin(), end(), [&symbol] (ExpressionSymbolCR a) { return a.GetSymbol()->GetId() == symbol.GetSymbol()->GetId(); });
-    if (it == end() || 0 == (*it).GetExponent())
-        return false;
-
-    return true;
-    }
-
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
 void Expression::Add(UnitsSymbolCP symbol, int exponent)
     {
     m_symbolExpression.push_back(ExpressionSymbol(symbol, exponent));
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+// static
 void Expression::Copy(ExpressionR source, ExpressionR target)
     {
     for (auto const& sourceSymbol : source)
         target.Add(sourceSymbol);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
+bool Expression::Contains(ExpressionSymbolCR symbol) const
+    {
+    auto it = find_if(begin(), end(), [&symbol] (ExpressionSymbolCR a) { return a.GetSymbol()->GetName().EqualsI(symbol.GetSymbol()->GetName().c_str()); });
+    if (it == end() || 0 == (*it).GetExponent())
+        return false;
+
+    return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                              Colin.Kerr         02/16
+//--------------------------------------------------------------------------------------
 Utf8String ExpressionSymbol::ToString(bool includeFactors) const
     {
     if (!includeFactors)

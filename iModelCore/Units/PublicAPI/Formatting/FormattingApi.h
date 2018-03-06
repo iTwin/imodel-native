@@ -19,16 +19,10 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 struct StdFormatSet;
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormatSpec)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameterSet)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericTriad)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(QuantityTriadSpec)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParameter)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValue)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatDictionary)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatUnitGroup)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxySet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
@@ -485,13 +479,8 @@ public:
     // TODO: vvv test StdFormatDouble
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
 
-    UNITS_EXPORT static Utf8String StdFormatQuantity(Utf8CP stdName, BEU::QuantityCR qty, BEU::UnitCP useUnit=nullptr, Utf8CP space = "", Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0); 
     UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
-    // UNITS_EXPORT static Utf8String StdFormatQuantity(FormatUnitSetCR fus, BEU::QuantityCR qty);
-    UNITS_EXPORT static Utf8String StdFormatQuantityTriad(Utf8CP stdName, QuantityTriadSpecP qtr,Utf8CP space, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
-
-    UNITS_EXPORT static Utf8String StdFormatPhysValue(Utf8CP stdName, double dval, Utf8CP fromUOM, Utf8CP toUOM, Utf8CP toLabel, Utf8CP space, int prec = -1, double round = -1.0);
 
     UNITS_EXPORT Utf8String ByteToBinaryText(unsigned char n);
     UNITS_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
@@ -556,7 +545,7 @@ struct UnitProxySet
 {
 private:
     bvector<UnitProxy> mutable m_proxys;
-    BEU::UnitRegistry* m_unitReg = &BEU::UnitRegistry::Instance();
+    BEU::UnitRegistry* m_unitReg = &BEU::UnitRegistry::Get();
     int mutable m_resetCount;
 
     UNITS_EXPORT int Validate() const;
@@ -599,7 +588,7 @@ public:
             {
             m_proxys[i].Clear();
             }
-        m_unitReg = &BEU::UnitRegistry::Instance(); 
+        m_unitReg = &BEU::UnitRegistry::Get(); 
         }
     BEU::UnitCP GetUnit(size_t indx) const { Validate();  return IsIndexCorrect(indx) ? m_proxys[indx].GetUnit() : nullptr; }
     Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return  IsIndexCorrect(indx) ? m_proxys[indx].GetName() : subst; }
@@ -1020,198 +1009,5 @@ public:
     //! @return true if the Set has a problem; false, otherwise.
     UNITS_EXPORT static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
     };
-
-//=======================================================================================
-//! A class for breaking a given double precision number into 2 or 3 sub-parts defined 
-//! by their ratios. Can be used for presenting angular measurement in the form of 
-//! Degrees, Minutes and Seconds or length in a form of yards, feet and inches. The parts 
-//! are called top, middle and low and two ratios between top and middle and middle and low 
-//! define the breakup details. The top is always supposed to be an integer represented as 
-//! double precision number. Both ratios are assumed to be positive integer numbers for avoiding 
-//! incorrect results. If a negative number is provided for either of two ratios its sign 
-//! will be dropped. 
-//!
-// @bsiclass                                                    David.Fox-Rabinovitz  10/2016
-//=======================================================================================
-struct NumericTriad
-    {
-    protected:
-        double m_dval;            // we keep the originally submitted value for its sign and possible reverse operations
-        double m_topValue;
-        double m_midValue;
-        double m_lowValue;
-        //DecimalPrecision m_decPrecision;
-        size_t    m_topToMid;
-        size_t    m_midToLow;
-        bool   m_init;
-        bool   m_midAssigned;
-        bool   m_lowAssigned;
-        bool   m_negative;
-        UNITS_EXPORT void Convert();
-        UNITS_EXPORT void SetValue(double dval);
-        UNITS_EXPORT NumericTriad();
-        UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
-        size_t SetTopToMid(size_t value) { return  m_topToMid = value; }
-        size_t SetMidToLow(size_t value) { return  m_midToLow = value; }
-        void SetInit() { m_init = true; }
-    public:
-        UNITS_EXPORT NumericTriad(double dval, size_t topMid, size_t midLow);
-
-        double GetWhole() { return m_negative ? -m_dval : m_dval; }
-        void ProcessValue(double dval) { SetValue(dval);  Convert(); }
-        void SetRatio(int topToMid, int midToLow) { m_topToMid = topToMid; m_midToLow = midToLow; }
-        //void SetPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
-        double GetTopValue() { return m_topValue; }
-        double GetMidValue() { return m_midValue; }
-        double GetlowValue() { return m_lowValue; }
-        UNITS_EXPORT Utf8String FormatWhole(DecimalPrecision prec);
-        UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, int prec, bool fract = false, bool includeZero = false);
-    };
-
-//=======================================================================================
-//! @bsistruct
-//=======================================================================================
-struct QuantityTriadSpec : NumericTriad
-    {
-    private:
-        BEU::QuantityCP m_quant;
-        BEU::UnitCP m_topUnit;
-        BEU::UnitCP m_midUnit;
-        BEU::UnitCP m_lowUnit;
-        Utf8CP m_topUnitLabel;
-        Utf8CP m_midUnitLabel;
-        Utf8CP m_lowUnitLabel;
-        bool m_includeZero;
-        FormatProblemDetail m_problem;
-
-        void Init(bool incl0);
-        QuantityTriadSpec();
-        bool ValidatePhenomenaPair(BEU::PhenomenonCP srcPhen, BEU::PhenomenonCP targPhen);
-        // UNITS_EXPORT static size_t UnitRatio(BEU::UnitCP un1, BEU::UnitCP un2);
-    public:
-
-        Utf8CP SetTopUnitLabel(Utf8CP symbol) { return m_topUnitLabel = symbol; }
-        Utf8CP GetTopUnitLabel() { return m_topUnitLabel; }
-        Utf8CP SetMidUnitLabel(Utf8CP symbol) { return m_midUnitLabel = symbol; }
-        Utf8CP GetMidUnitLabel() { return m_midUnitLabel; }
-        Utf8CP SetLowUnitLabel(Utf8CP symbol) { return m_lowUnitLabel = symbol; }
-        Utf8CP GetLowUnitLabel() { return m_lowUnitLabel; }
-        bool SetIncludeZero(bool val) { return m_includeZero = val; }
-        bool GetIncludeZero() const { return m_includeZero; }
-        UNITS_EXPORT static size_t UnitRatio(BEU::UnitCP un1, BEU::UnitCP un2);
-        UNITS_EXPORT QuantityTriadSpec(BEU::QuantityCR qty, BEU::UnitCP topUnit, BEU::UnitCP midUnit = nullptr, BEU::UnitCP lowUnit = nullptr, bool incl0 = false);
-
-        bool IsProblem() { return m_problem.IsProblem(); }
-        FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
-        bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
-        UNITS_EXPORT Utf8String FormatQuantTriad(Utf8CP space, int prec, bool fract = false, bool includeZero = false);
-        Utf8CP GetTopUOM() { return (nullptr == m_topUnit) ? FormatConstant::EmptyString() : m_topUnit->GetName().c_str(); }
-        Utf8CP GetMidUOM() { return (nullptr == m_midUnit) ? FormatConstant::EmptyString() : m_midUnit->GetName().c_str(); }
-        Utf8CP GetLowUOM() { return (nullptr == m_lowUnit) ? FormatConstant::EmptyString() : m_lowUnit->GetName().c_str(); }
-        BEU::UnitCP GetTopUnit() { return m_topUnit; }
-        BEU::UnitCP GetMidUnit() { return m_midUnit; }
-        BEU::UnitCP GetLowUnit() { return m_lowUnit; }
-    };
-
-// Format parameter traits
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct FormatParameter
-{
-private:
-    Utf8String m_paramName;
-    ParameterCategory m_category;
-    ParameterCode m_paramCode;
-    ParameterDataType m_paramType;
-    int m_intValue;            // for binary flags and other integer values
-
-public:
-    FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, ParameterDataType type) :
-        m_paramName(name), m_category(cat), m_paramCode(code), m_paramType(type), m_intValue(0) {}
-
-    FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, int bitFlag):
-        m_paramName(name), m_category(cat), m_paramCode(code), m_paramType(ParameterDataType::BitFlag), m_intValue(bitFlag) {}
-
-    Utf8StringCR GetName() { return m_paramName; }
-    int CompareName(Utf8StringCR other) { return strcmp(m_paramName.c_str(), other.c_str()); }
-    ParameterCategory GetCategory() { return m_category; }
-    CharCP GetCategoryName() { return Utils::GetParameterCategoryName(m_category); }
-    ParameterCode GetParameterCode() { return m_paramCode; }
-    size_t GetParameterCodeValue() { return (size_t)m_paramCode; }
-};
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct FormatDictionary //: FormatConstant
-    {
-private:
-    bvector<FormatParameter> m_paramList;
-
-    UNITS_EXPORT void InitLoad();
-    Utf8StringP ParameterValuePair(Utf8StringCR name, Utf8StringCR value, char quote, Utf8StringCR prefix);
-
-public:
-
-    FormatDictionary() { InitLoad(); }
-    int GetCount() { return (int)m_paramList.size(); }
-    void AddParameter(FormatParameterCR par) { m_paramList.push_back(par); return; }
-    UNITS_EXPORT FormatParameterP FindParameterByName(Utf8StringCR paramName);
-    UNITS_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
-    UNITS_EXPORT FormatParameterP GetParameterByIndex(int index);
-    UNITS_EXPORT Utf8StringCR CodeToName(ParameterCode paramCode);
-    UNITS_EXPORT Utf8String SerializeFormatDefinition(NamedFormatSpecCP format);
-    };
-
-//QuantityFraction
-//struct QuantityFraction 
-//    {
-//private:
-//    NumSequenceTraits m_traits;
-//    double m_dval;    // collected value
-//    int m_ival;
-//    int m_startIndx;  // indicates the location of the first char in the numeric sequence (after skipping blanks)
-//    int m_len;        // the length of the inspected numeric sequence
-//    Utf8String m_uomName;
-//    BEU::UnitCP m_unit;
-//    FormatProblemDetail m_problem;
-//    void Init()
-//        {
-//        m_traits = NumSequenceTraits::None;
-//        m_dval = 0.0;
-//        m_ival = 0;
-//        m_startIndx = -1;
-//        m_len = 0;
-//        m_uomName = "";
-//        m_unit = nullptr;
-//        m_problem = FormatProblemDetail();
-//        }
-//
-//public:
-//    QuantityFraction() { Init();  }
-//    UNITS_EXPORT void SetSigned(bool use);
-//    bool IsSigned() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Signed)) != 0); }
-//    UNITS_EXPORT void SetDecPoint(bool use);
-//    bool HasDecPoint() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::DecPoint)) != 0); }
-//    UNITS_EXPORT void SetExponent(bool use);
-//    bool HasExponent() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Exponent)) != 0); }
-//    UNITS_EXPORT void SetUom(bool use);
-//    bool HasUom() const { return ((static_cast<int>(m_traits) & static_cast<int>(NumSequenceTraits::Uom)) != 0); }
-//    Utf8String SetUomName(Utf8String name) { return m_uomName = name; }
-//    Utf8String GetUomName() { return m_uomName; }
-//    BEU::UnitCP GetUnit() { return BEU::UnitRegistry::Instance().LookupUnit(m_uomName.c_str()); }
-//    UNITS_EXPORT void Detect(Utf8CP txt);
-//    bool IsProblem() { return m_problem.IsProblem(); }
-//    FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
-//    bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
-//    Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
-//    double GetRealValue() { return m_dval; }
-//    int GetIntValue() { return m_ival; }
-//    int GetStartIndex() { return m_startIndx; }
-//    int GetLength() { return m_len; }
-//    int GetNextindex() { return m_startIndx + m_len; }
-//
-//    };
 
 END_BENTLEY_FORMATTING_NAMESPACE

@@ -12,15 +12,6 @@
 #include <Units/Units.h>
 #include <type_traits>
 
-UNITS_TYPEDEFS(UnitsSymbol)
-UNITS_TYPEDEFS(Unit)
-UNITS_TYPEDEFS(InverseUnit)
-UNITS_TYPEDEFS(Phenomenon)
-UNITS_TYPEDEFS(Expression)
-UNITS_TYPEDEFS(SpecificAccuracy)
-UNITS_TYPEDEFS(UnitSynonymMap)
-UNITS_TYPEDEFS(UnitSystem)
-
 BEGIN_BENTLEY_UNITS_NAMESPACE
 //! @addtogroup UnitsGroup
 //! @beginGroup
@@ -48,6 +39,9 @@ enum class ComparisonCode
 
 typedef bvector<Utf8String> Utf8Vector;
 
+//=======================================================================================
+// @bsistruct
+//=======================================================================================
 struct SpecificAccuracy
 {
 private:
@@ -62,12 +56,6 @@ public:
     double GetMinErrorMargin() {return m_minErrorMargin;}
     UnitCP GetResolutionUnit() {return m_minResolutionUnit;}
     size_t GetMaxDecimalPrecision() {return m_maxDecimalPrecision;}
-
-    //UNITS_EXPORT Quantity GetResolutionQuantity(){ return Quantity(m_minResoluton, m_minResolutionUnit); }
-
-    //UNITS_EXPORT static bool IsIndistinguishable(QuantityCR q1, QuantityCR q2);
-    //UNITS_EXPORT static ComparisonCode Compare(QuantityCR q1, QuantityCR q2);
-
 };
 
 struct UnitRegistry;
@@ -103,7 +91,11 @@ private:
     UnitSystemR operator=(UnitSystemCR unit) = delete;
 
 protected:
+    IUnitsContextCP m_unitsContext;
     static UnitSystemP _Create(Utf8CP name) {return new UnitSystem(name);}
+
+    //! Sets the UnitsContext if it has not been previously set.
+    BentleyStatus SetContext(IUnitsContextCP context) { if (nullptr != m_unitsContext) return ERROR; m_unitsContext = context; return SUCCESS; }
 
     UnitSystem(Utf8CP name) : m_name(name) {}
     virtual ~UnitSystem() {}
@@ -117,16 +109,14 @@ public:
 //=======================================================================================
 struct UnitsSymbol
 {
-friend struct UnitRegistry;
 friend struct ExpressionSymbol;
 friend struct Expression;
-friend struct Unit;
-friend struct Phenomenon;
+friend struct Unit; // Needed for access to private members
+friend struct Phenomenon; // Needed for access to private members
 
 private:
     Utf8String  m_name;
     Utf8String  m_definition;
-    uint32_t    m_id;
     bool        m_isBaseSymbol;
     double      m_numerator;
     double      m_denominator;
@@ -136,20 +126,43 @@ private:
     mutable bool m_evaluated;
     Expression* m_symbolExpression;
 
-    uint32_t GetId()   const {return m_id;}
     bool    IsNumber() const {return m_isNumber;}
 
-    virtual uint32_t GetPhenomenonId() const = 0;
+    virtual PhenomenonCP GetPhenomenon() const = 0;
 
 protected:
-    UNITS_EXPORT UnitsSymbol();
-    UNITS_EXPORT UnitsSymbol(Utf8CP name, Utf8CP definition, uint32_t id, double numerator, double denominator, double offset);
-    ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
+    IUnitsContextCP m_unitsContext;
+
+    // Creates a default invalid Symbol
+    UnitsSymbol() : m_isBaseSymbol(false), m_numerator(0.0), m_denominator(1.0), m_offset(0.0), m_isNumber(true), m_evaluated(false), m_unitsContext(nullptr) {}
+
+    // Creates an invalid Symbol with the provided name.
+    UNITS_EXPORT UnitsSymbol(Utf8CP name);
+
+    //! Creates a valid Symbol
+    UNITS_EXPORT UnitsSymbol(Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset);
     UNITS_EXPORT virtual ~UnitsSymbol();
+
+    ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
+
+    //! Sets the definition of this UnitSymbol if a definition is not already defined.
+    UNITS_EXPORT BentleyStatus SetDefinition(Utf8CP definition);
+
+    //! Sets the numerator of this UnitSymbol if the current numerator is the default, 0.0.
+    UNITS_EXPORT BentleyStatus SetNumerator(double numerator);
+    
+    //! Sets the denominator of this UnitSymbol if the current denominator is the default, 1.0. The provided
+    //! denominator cannot be 0.0.
+    UNITS_EXPORT BentleyStatus SetDenominator(double denominator);
+
+    //! Sets the offset of this UnitSymbol if the current offset is the default, 0.0.
+    UNITS_EXPORT BentleyStatus SetOffset(double offset);
+
+    //! Sets the UnitsContext if it has not been previously set.
+    BentleyStatus SetContext(IUnitsContextCP context) {if (nullptr != m_unitsContext) return ERROR; m_unitsContext = context; return SUCCESS;}
 
 public:
     Utf8StringCR GetName() const {return m_name;}
-    Utf8StringCP GetNameSP() const {return &m_name;}
     Utf8StringCR GetDefinition() const {return m_definition;}
     bool HasNumerator() const {return 1.0 != m_numerator;}
     double GetNumerator() const {return m_numerator;}
@@ -158,7 +171,7 @@ public:
     bool HasOffset() const {return 0.0 != m_offset;}
     double GetOffset() const {return m_offset;}
     void SetName(Utf8CP name) {m_name = name;}
-    bool    IsBase() const {return m_isBaseSymbol;}
+    bool IsBase() const {return m_isBaseSymbol;}
 };
 
 //=======================================================================================
@@ -176,14 +189,11 @@ private:
     // TODO: Should these be a reference because it must be set?
     UnitSystemCP    m_system;
     PhenomenonCP    m_phenomenon;
-
-    UnitCP          m_parent;
+    UnitCP          m_parent; // for an inverted Unit only.
     bool            m_isConstant;
     bool            m_dummyUnit;
     mutable Utf8String m_displayLabel;
     mutable Utf8String m_displayDescription;
-
-    
 
     Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true), m_dummyUnit(false) {}
 
@@ -193,7 +203,6 @@ private:
 
     ExpressionCR Evaluate() const;
 
-    UNITS_EXPORT uint32_t GetPhenomenonId() const override;
     UnitCP CombineWithUnit(UnitCR rhs, int factor) const;
 
     UnitsProblemCode DoNumericConversion(double& converted, double value, UnitCR toUnit) const;
@@ -201,7 +210,7 @@ private:
 
 protected:
     // Needs to be overriden by any sub class
-    static UnitP _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant)
+    static UnitP _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant)
         {
         if (0.0 == numerator || 0.0 == denominator)
             {
@@ -209,21 +218,36 @@ protected:
             return nullptr;
             }
         NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->debugv("Creating unit %s  Factor: %.17g / %.17g  Offset: %d", unitName, numerator, denominator, offset);
-        return new Unit(sysName, phenomenon, unitName, id, definition, numerator, denominator, offset, isConstant);
+        return new Unit(sysName, phenomenon, unitName, definition, numerator, denominator, offset, isConstant);
         }
 
-    UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName, uint32_t id);
+    UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName);
 
-    UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
+    Unit(Utf8CP name) : UnitsSymbol(name), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(false), m_dummyUnit(false) {}
+    UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
 
-    Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name, uint32_t id)
-        : Unit(system, *(parentUnit.GetPhenomenon()), name, id, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
+    //! Creates an inverted Unit.
+    Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name)
+        : Unit(system, *(parentUnit.GetPhenomenon()), name, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
         {
         m_parent = &parentUnit;
         m_isNumber = m_parent->IsNumber();
         }
+
+    //! @return Pointer to the parent of this Inverted Unit, if this is an Inverted Unit; otherwise, nullptr.
     UnitCP GetParent() const {return m_parent;}
-    void SetLabel(Utf8CP label) {m_displayLabel = label;}
+    
+    void SetLabel(Utf8CP label) {m_displayLabel = label;} //!< Sets the display label.
+
+    void SetConstant(bool isConstant) {m_isConstant = isConstant;}
+
+    //! Sets the UnitSystem of this Unit if it does not already have one.
+    BentleyStatus SetSystem(UnitSystemCR system) {if (nullptr != m_system) return ERROR; m_system = &system; return SUCCESS;}
+    //! Sets the Phenomenon of this Unit if it does not already have one.
+    BentleyStatus SetPhenomenon(PhenomenonCR phenom) {if (nullptr != m_phenomenon) return ERROR; m_phenomenon = &phenom; return SUCCESS;}
+
+    //! Sets the Parent Unit.
+    BentleyStatus SetParent(UnitCR parentUnit) {if (IsInvertedUnit() || nullptr != m_parent) return ERROR; m_parent = &parentUnit; return SUCCESS;}
 
 public:
     UNITS_EXPORT Utf8String GetUnitSignature() const;
@@ -236,7 +260,6 @@ public:
     bool IsSI() const {return 0 == strcmp(m_system->GetName().c_str(), "SI");} // TODO: Replace with something better ... SI is a known system
 
     bool IsInvertedUnit() const {return nullptr != m_parent;} //!< Indicates if this unit is an InverseUnit or not
-    bool IsRegistered() const; //!< Indicates if this Unit is in the UnitRegistry singleton
     bool IsConstant() const {return m_isConstant;} //!< Indicates if this Unit is constant.
     UnitSystemCP GetUnitSystem() const {return m_system;} //!< Gets the UnitSystem for this Unit.
     //! Returns true if the unit is just a place holder for a real unit, invalid units are not convertible into any other unit.
@@ -250,8 +273,8 @@ public:
     UNITS_EXPORT size_t GetSynonymList(bvector<Utf8CP>& synonyms) const;
 
     static bool IsNegligible(double dval) {return (1.0e-16 > dval);}
-    //! Returns true if the input units have the same id, false if not or if one or both are null.
-    static bool AreEqual(UnitCP unitA, UnitCP unitB) {return nullptr == unitA || nullptr == unitB ? false : unitA->GetId() == unitB->GetId();}
+    //! Returns true if the input units are the same; otherwise, false or if one or both are null.
+    static bool AreEqual(UnitCP unitA, UnitCP unitB) {return nullptr == unitA || nullptr == unitB ? false : unitA->GetName().EqualsI(unitB->GetName().c_str());}
     //! Returns true if the input units belong to the same phenomenon, false if not or one or both are null.
     UNITS_EXPORT static bool AreCompatible(UnitCP unitA, UnitCP unitB);
 };
@@ -270,8 +293,8 @@ private:
     UnitCP m_unit;
     Utf8String m_synonym;
 
-    UNITS_EXPORT void Init(Utf8CP unitName, Utf8CP synonym);
-    UNITS_EXPORT void LoadJson(Json::Value jval);
+    UNITS_EXPORT void Init(UnitCP unit, Utf8CP synonym);
+    UNITS_EXPORT void LoadJson(IUnitsContextCP context, Json::Value jval);
 public:
     UnitSynonymMap() {m_unit = nullptr; m_synonym.clear();}
     
@@ -282,11 +305,11 @@ public:
     //!   a Json string that containts a canonical Unit name and its synonym: {"synonym":"^","unitName":"ARC_DEG"}
     //! When the first argument contains only the name of the unit, the second argument must be a synonym
     //! Invalide names or their invalid combination will result in the empty Map
-    UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym = nullptr);
+    // UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym = nullptr);
     UNITS_EXPORT UnitSynonymMap(UnitCP unit, Utf8CP synonym) :m_unit(unit), m_synonym(synonym) {}
 
-    //UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor);
-    UNITS_EXPORT UnitSynonymMap(Json::Value jval);
+    UNITS_EXPORT UnitSynonymMap(IUnitsContextCP context, Utf8CP descriptor);
+    UNITS_EXPORT UnitSynonymMap(IUnitsContextCP context, Json::Value jval);
 
     bool IsMapEmpty() {return (nullptr == m_unit) && m_synonym.empty();}
     Utf8CP GetSynonym() const {return m_synonym.c_str();}
@@ -296,8 +319,8 @@ public:
     UNITS_EXPORT Json::Value ToJson();
     UNITS_EXPORT bool IsIdentical(UnitSynonymMapCR other);
     UNITS_EXPORT static bool AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<UnitSynonymMap>& v2);
-    UNITS_EXPORT static bvector<UnitSynonymMap> MakeUnitSynonymVector(Json::Value jval);
-    UNITS_EXPORT static size_t AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, Utf8CP unitName, Utf8CP synonym);
+    UNITS_EXPORT static bvector<UnitSynonymMap> MakeUnitSynonymVector(IUnitsContextCP context, Json::Value jval);
+    UNITS_EXPORT static size_t AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, IUnitsContextCP context, Utf8CP unitName, Utf8CP synonym);
     UNITS_EXPORT static bool CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR map2);
 };
 
@@ -316,27 +339,30 @@ private:
     mutable bvector<UnitSynonymMap> m_altNames;
     mutable Utf8String m_displayLabel;
 
+    // Conversion caching currently not supported
+    // bmap<Utf8CP, Conversion> m_conversions;
+
     void AddUnit(UnitCR unit) 
         {
-        auto it = std::find_if(m_units.begin(), m_units.end(), [&unit](UnitCP existingUnit) {return existingUnit->GetId() == unit.GetId();});
+        auto it = std::find_if(m_units.begin(), m_units.end(), [&unit](UnitCP existingUnit) {return existingUnit->GetName().EqualsI(unit.GetName().c_str());});
         if (it == m_units.end())
             m_units.push_back(&unit);
         }
-    void AddMap(UnitSynonymMapCR map);
+
     Phenomenon() = delete;
     Phenomenon(PhenomenonCR phenomenon) = delete;
     PhenomenonR operator=(PhenomenonCR phenomenon) = delete;
 
     ExpressionCR Evaluate() const;
 
-    UNITS_EXPORT uint32_t GetPhenomenonId() const override {return GetId();}
-
 protected:
-    UNITS_EXPORT static PhenomenonP _Create(Utf8CP name, Utf8CP definition, uint32_t id) {return new Phenomenon(name, definition, id);}
-    UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition, uint32_t id) : UnitsSymbol(name, definition, id, 0.0, 0.0, 0) { m_isNumber = m_definition.Equals("NUMBER"); }
-    UNITS_EXPORT void SetLabel(Utf8CP label) {m_displayLabel = label;}
+    static PhenomenonP _Create(Utf8CP name, Utf8CP definition) {return new Phenomenon(name, definition);}
+    UNITS_EXPORT Phenomenon(Utf8CP name, Utf8CP definition);
+    void SetLabel(Utf8CP label) {m_displayLabel = label;}
 
 public:
+    PhenomenonCP GetPhenomenon() const {return this;} //!< Returns this Phenomenon.
+
     UNITS_EXPORT Utf8String GetPhenomenonSignature() const;
 
     bool HasUnits() const {return m_units.size() > 0;}
@@ -345,15 +371,15 @@ public:
     UnitCP GetSIUnit() const {auto it = std::find_if(m_units.begin(), m_units.end(), [](UnitCP unit) {return unit->IsSI();});  return m_units.end() == it ? nullptr : *it;}
 
     UNITS_EXPORT bool IsCompatible(UnitCR unit) const;
-    bool Equals(PhenomenonCR comparePhenomenon) const {return GetPhenomenonId() == comparePhenomenon.GetPhenomenonId();}
-    static bool AreEqual(PhenomenonCP phenA, PhenomenonCP phenB)
-        {return nullptr == phenA || nullptr == phenB ? false : phenA->GetId() == phenB->GetId();}
+    bool Equals(PhenomenonCR comparePhenomenon) const {return 0 == GetName().CompareToI(comparePhenomenon.GetName().c_str());}
+    static bool AreEqual(PhenomenonCP phenA, PhenomenonCP phenB) {return nullptr == phenA || nullptr == phenB ? false : phenA->Equals(*phenB);}
 
     UNITS_EXPORT bool IsLength() const;
     UNITS_EXPORT bool IsTime() const;
     UNITS_EXPORT bool IsAngle() const;
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP unitName) const;
     UNITS_EXPORT UnitCP FindSynonym(Utf8CP synonym) const;
+
     UNITS_EXPORT void AddSynonym(Utf8CP unitName, Utf8CP synonym);
     UNITS_EXPORT void AddSynonym(UnitCP unitP, Utf8CP synonym) const;
     UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map) const;
@@ -364,6 +390,11 @@ public:
     UNITS_EXPORT size_t GetSynonymCount() const {return m_altNames.size();}
     UNITS_EXPORT Utf8StringCR GetLabel() const;
     UNITS_EXPORT Utf8StringCR GetInvariantLabel() const;
+
+    // Conversion caching currently not supported
+    // bool TryGetConversion(Conversion& conversion, Utf8CP fromUnit, Utf8CP toUnit) const;
+    // bool TryGetConversion(Conversion& conversion, UnitCR fromUnit, UnitCR toUnit) const;
+    // void AddConversion(uint64_t index, Conversion& conversion) { m_conversions.Insert(index, conversion); }
 };
 
 /** @endGroup */

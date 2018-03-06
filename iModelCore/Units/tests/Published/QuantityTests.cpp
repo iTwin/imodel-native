@@ -15,9 +15,9 @@ BEGIN_UNITS_UNITTESTS_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, Conversion)
     {
-    UnitCP mphUnit = UnitRegistry::Instance().LookupUnit("MPH");
-    UnitCP msecUnit = UnitRegistry::Instance().LookupUnit("M/SEC");
-    UnitCP newtUnit = UnitRegistry::Instance().LookupUnit("N");
+    UnitCP mphUnit = UnitRegistry::Get().LookupUnit("MPH");
+    UnitCP msecUnit = UnitRegistry::Get().LookupUnit("M/SEC");
+    UnitCP newtUnit = UnitRegistry::Get().LookupUnit("N");
     Quantity q1 = Quantity(22.7, *mphUnit);
     Quantity q2 = q1.ConvertTo(msecUnit);
     Quantity q3 = q1.ConvertTo(newtUnit);
@@ -31,8 +31,8 @@ TEST_F(QuantityTestFixture, Conversion)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, InvalidAddition)
     {
-    UnitCP mphUnit = UnitRegistry::Instance().LookupUnit("MPH");
-    UnitCP newtUnit = UnitRegistry::Instance().LookupUnit("N");
+    UnitCP mphUnit = UnitRegistry::Get().LookupUnit("MPH");
+    UnitCP newtUnit = UnitRegistry::Get().LookupUnit("N");
     Quantity q1 = Quantity(22.7, *mphUnit);
     Quantity q2 = Quantity(13.4112, *newtUnit);
 
@@ -45,8 +45,8 @@ TEST_F(QuantityTestFixture, InvalidAddition)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, InvalidSubtract)
     {
-    UnitCP mphUnit = UnitRegistry::Instance().LookupUnit("MPH");
-    UnitCP newtUnit = UnitRegistry::Instance().LookupUnit("N");
+    UnitCP mphUnit = UnitRegistry::Get().LookupUnit("MPH");
+    UnitCP newtUnit = UnitRegistry::Get().LookupUnit("N");
     Quantity q1 = Quantity(22.7, *mphUnit);
     Quantity q2 = Quantity(13.4112, *newtUnit);
 
@@ -59,7 +59,7 @@ TEST_F(QuantityTestFixture, InvalidSubtract)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, SimpleAddition)
     {
-    UnitCP msecUnit = UnitRegistry::Instance().LookupUnit("M/SEC");
+    UnitCP msecUnit = UnitRegistry::Get().LookupUnit("M/SEC");
     Quantity q1 =  Quantity(7.5, *msecUnit);
     Quantity q2 =  Quantity(10.2, *msecUnit);
     Quantity ans = Quantity(17.7, *msecUnit);
@@ -73,8 +73,8 @@ TEST_F(QuantityTestFixture, SimpleAddition)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, ComplexAddition)
     {
-    UnitCP mphUnit = UnitRegistry::Instance().LookupUnit("MPH");
-    UnitCP msecUnit = UnitRegistry::Instance().LookupUnit("M/SEC");
+    UnitCP mphUnit = UnitRegistry::Get().LookupUnit("MPH");
+    UnitCP msecUnit = UnitRegistry::Get().LookupUnit("M/SEC");
     Quantity q1 = Quantity(22.7, *mphUnit);
     Quantity q2 = Quantity(13.4112, *msecUnit);
     Quantity ans1 = Quantity(52.7, *mphUnit);
@@ -94,7 +94,7 @@ TEST_F(QuantityTestFixture, ComplexAddition)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, SimpleSubtraction)
     {
-    UnitCP msecUnit = UnitRegistry::Instance().LookupUnit("M/SEC");
+    UnitCP msecUnit = UnitRegistry::Get().LookupUnit("M/SEC");
     Quantity q1 = Quantity(7.5, *msecUnit);
     Quantity q2 = Quantity(10.2, *msecUnit);
     Quantity ans = Quantity(2.7, *msecUnit);
@@ -108,8 +108,8 @@ TEST_F(QuantityTestFixture, SimpleSubtraction)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, ComplexSubtraction)
     {
-    UnitCP mphUnit = UnitRegistry::Instance().LookupUnit("MPH");
-    UnitCP msecUnit = UnitRegistry::Instance().LookupUnit("M/SEC");
+    UnitCP mphUnit = UnitRegistry::Get().LookupUnit("MPH");
+    UnitCP msecUnit = UnitRegistry::Get().LookupUnit("M/SEC");
     Quantity q1 = Quantity(22.7, *mphUnit);
     Quantity q2 = Quantity(13.4112, *msecUnit);
     Quantity ans1 = Quantity(7.3, *mphUnit);
@@ -129,9 +129,9 @@ TEST_F(QuantityTestFixture, ComplexSubtraction)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, SimpleMultiplication)
     {
-    UnitCP metrUnit = UnitRegistry::Instance().LookupUnit("M");
-    UnitCP newtUnit = UnitRegistry::Instance().LookupUnit("N");
-    UnitCP joultUnit = UnitRegistry::Instance().LookupUnit("J");
+    UnitCP metrUnit = UnitRegistry::Get().LookupUnit("M");
+    UnitCP newtUnit = UnitRegistry::Get().LookupUnit("N");
+    UnitCP joultUnit = UnitRegistry::Get().LookupUnit("J");
     Quantity a = Quantity(2.5, *newtUnit);
     Quantity b = Quantity(2.0, *metrUnit);
     Quantity c = Quantity(5.0, *joultUnit);
@@ -153,9 +153,9 @@ TEST_F(QuantityTestFixture, ComplexMultiplication)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, SimpleDivision)
     {
-    UnitCP metrUnit = UnitRegistry::Instance().LookupUnit("M");
-    UnitCP newtUnit = UnitRegistry::Instance().LookupUnit("N");
-    UnitCP joultUnit = UnitRegistry::Instance().LookupUnit("J");
+    UnitCP metrUnit = UnitRegistry::Get().LookupUnit("M");
+    UnitCP newtUnit = UnitRegistry::Get().LookupUnit("N");
+    UnitCP joultUnit = UnitRegistry::Get().LookupUnit("J");
     Quantity a = Quantity(5.0, *joultUnit);
     Quantity b = Quantity(2.0, *newtUnit);
     Quantity c = Quantity(2.5, *metrUnit);
@@ -177,8 +177,8 @@ TEST_F(QuantityTestFixture, ComplexDivision)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(QuantityTestFixture, QuantityComparison)
     {
-    UnitCP msecUnit = UnitRegistry::Instance().LookupUnit("M/SEC");
-    UnitCP mphUnit = UnitRegistry::Instance().LookupUnit("MPH");
+    UnitCP msecUnit = UnitRegistry::Get().LookupUnit("M/SEC");
+    UnitCP mphUnit = UnitRegistry::Get().LookupUnit("MPH");
     Quantity a = Quantity(1.0, *msecUnit);
     double delta = 1.0 + 5.0*a.GetTolerance()*std::numeric_limits<double>::epsilon();
     Quantity aprime = Quantity(delta, *msecUnit);

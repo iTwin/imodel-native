@@ -19,35 +19,35 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 // @bsiclass                                                    Colin.Kerr  02/16
 //=======================================================================================
 struct Token
-    {
+{
 private:
-    Utf8String  m_token;
     int         m_exponent = 1;
+    Utf8String  m_token;
 
 public:
-    bool    IsValid() const { return !Utf8String::IsNullOrEmpty(m_token.c_str()) && abs(m_exponent) >= 1; }
-    void    AddChar(Utf8Char character) { m_token.append(1, character); }
-    void    SetExponent(int exponent) { m_exponent = exponent; }
-    Utf8CP  GetName() const { return m_token.c_str(); }
-    int     GetExponent() const { return m_exponent; }
+    bool IsValid() const {return !Utf8String::IsNullOrEmpty(m_token.c_str()) && abs(m_exponent) >= 1;}
+    void AddChar(Utf8Char character) {m_token.append(1, character);}
+    void SetExponent(int exponent) {m_exponent = exponent; }
+    Utf8CP GetName() const {return m_token.c_str();}
+    int GetExponent() const {return m_exponent;}
 
-    void Clear();
-    };
+    void Clear() {m_token.clear(); m_exponent = 1;}
+};
 
 //=======================================================================================
 // @bsiclass                                                    Colin.Kerr  02/16
 //=======================================================================================
 struct Expression
-    {
-    typedef bvector<ExpressionSymbol> SymbolList;
-    typedef SymbolList::iterator iterator;
-    typedef SymbolList::const_iterator const_iterator;
-    typedef SymbolList::reverse_iterator reverse_iterator;
-    typedef SymbolList::const_reverse_iterator const_reverse_iterator;
+{
+typedef bvector<ExpressionSymbol> SymbolList;
+typedef SymbolList::iterator iterator;
+typedef SymbolList::const_iterator const_iterator;
+typedef SymbolList::reverse_iterator reverse_iterator;
+typedef SymbolList::const_reverse_iterator const_reverse_iterator;
 
-    friend struct UnitsSymbol;
-    friend struct Unit;
-    friend struct Phenomenon;
+friend struct UnitsSymbol;
+friend struct Unit;
+friend struct Phenomenon;
 
 private:
     SymbolList m_symbolExpression;
@@ -69,11 +69,12 @@ private:
 
     void Add(UnitsSymbolCP symbol, int exponent);
     void Add(ExpressionSymbolCR sWE) { m_symbolExpression.push_back(sWE); }
-    static void Copy(ExpressionR source, ExpressionR target);
 
     void LogExpression(NativeLogging::SEVERITY loggingLevel, Utf8CP name) const;
     Utf8String ToString(bool includeFactors = true) const;
     bool Contains(ExpressionSymbolCR symbol) const;
+
+    static void Copy(ExpressionR source, ExpressionR target);
 
     static BentleyStatus ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName);
     static BentleyStatus HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName);
@@ -89,15 +90,15 @@ private:
     static BentleyStatus GenerateConversionExpression(UnitCR from, UnitCR to, ExpressionR conversionExpression);
     static void CreateExpressionWithOnlyBaseSymbols(ExpressionCR source, ExpressionR target);
 
-    static bool IdsMatch(UnitsSymbolCR a, UnitsSymbolCR b);
-    static bool PhenomenonIdsMatch(UnitsSymbolCR a, UnitsSymbolCR b);
-    };
+    static bool Match(UnitsSymbolCR a, UnitsSymbolCR b);
+    static bool PhenomenonMatch(UnitsSymbolCR a, UnitsSymbolCR b);
+};
 
 //=======================================================================================
 // @bsiclass                                                    Colin.Kerr  02/16
 //=======================================================================================
 struct ExpressionSymbol
-    {
+{
 private:
     UnitsSymbolCP m_symbol;
     int m_exponent;
@@ -114,13 +115,13 @@ public:
     void AddToExponent(int toAdd) {m_exponent += toAdd;}
     void SetExponent(int exponent) {m_exponent = exponent;}
     Utf8String ToString(bool includeFactors = true) const;
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Colin.Kerr  02/16
 //=======================================================================================
 struct Exponent
-    {
+{
 private:
     Utf8String m_exponentChars;
 
@@ -128,6 +129,6 @@ public:
     bool IsValid() {return !Utf8String::IsNullOrEmpty(m_exponentChars.c_str());}
     void AddChar(Utf8Char character) {m_exponentChars.append(1, character);}
     int GetExponent();
-    };
+};
 
 END_BENTLEY_UNITS_NAMESPACE
