@@ -130,8 +130,8 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     {
-    // ###TODO: TFS#806669: iModelHub team needs thumbnails fixed pronto...revisit.
-    if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose())
+    // ###TODO: TFS#806669: iModelHub team needs thumbnails fixed pronto...revisit and consolidate.
+    if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose() && context.GetUpdatePlan().WantWait())
         return CreateThumbnailScene(context);
 
     DgnDb::VerifyClientThread();
@@ -154,10 +154,10 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
             if (m_roots.end() == iter)
                 {
                 auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
-                TileTree::RootP modelRoot = nullptr;
+                TileTree::RootPtr modelRoot = nullptr;
                 if (model.IsValid())
                     {
-                    modelRoot = model->GetTileTree(&context.GetTargetR().GetSystem());
+                    modelRoot = model->GetTileTree(context);
                     Utf8String message = model->GetCopyrightMessage();
                     if (!message.empty()) // skip emptry strings.
                         m_copyrightMsgs.insert(message);
@@ -182,24 +182,24 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     if (!plan.WantWait())
         {
         for (auto pair : m_roots)
-            if (nullptr != pair.second)
+            if (pair.second.IsValid())
                 pair.second->DrawInView(context);
         }
     else
         {
         // Enqueue any requests for missing tiles...
         for (auto pair : m_roots)
-            if (nullptr != pair.second)
+            if (pair.second.IsValid())
                 pair.second->SelectTiles(context);
 
         uint32_t waitMillis = static_cast<uint32_t>(waitForAllLoadsMillis / static_cast<double>(m_roots.size()));
 
         // Wait for requests to complete
         // Note we are ignoring any time spent creating tile trees above...
-        context.m_requests.RequestMissing(BeTimePoint::Now() - plan.GetQuitTime());
+        context.m_requests.RequestMissing(plan.GetQuitTime() - BeTimePoint::Now());
         for (auto pair : m_roots)
             {
-            if (nullptr != pair.second)
+            if (pair.second.IsValid())
                 {
                 pair.second->WaitForAllLoadsFor(waitMillis);
                 pair.second->CancelAllTileLoads();
@@ -219,8 +219,8 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 BentleyStatus SpatialViewController::CreateThumbnailScene(SceneContextR context)
     {
     auto const& plan = context.GetUpdatePlan();
-    BeAssert(plan.WantWait());
     uint32_t timeLimitMillis = 0;
+    BeAssert(plan.WantWait());
     BeDuration timeLimit;
     if (plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
         {
@@ -229,7 +229,6 @@ BentleyStatus SpatialViewController::CreateThumbnailScene(SceneContextR context)
         }
 
     // Load all the roots. Do not count time required toward our time limit.
-    bset<TileTree::RootPtr> roots;
     for (auto modelId : GetViewedModels())
         {
         auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
@@ -238,22 +237,28 @@ BentleyStatus SpatialViewController::CreateThumbnailScene(SceneContextR context)
             auto root = model->GetTileTree(context);
             if (root.IsValid())
                 {
-                roots.insert(root);
+                m_roots.Insert(model->GetModelId(), root);
                 root->SelectTiles(context);
                 }
             }
         }
 
-    if (roots.empty())
+    if (m_roots.empty())
         return ERROR;
+
+    m_allRootsLoaded = true;
 
     // Allow tiles to load...note we are again ignoring the time limit - could request partial tiles, but we don't want an incomplete scene...
     context.m_requests.RequestMissing(BeDuration());
 
     // Divvy up the time limit evenly among the models. Again, pretty hokey and possibly imbalanced.
-    uint32_t waitMillis = static_cast<uint32_t>(timeLimitMillis / static_cast<double>(roots.size()));
-    for (auto const& root : roots)
+    uint32_t waitMillis = static_cast<uint32_t>(timeLimitMillis / static_cast<double>(m_roots.size()));
+    for (auto const& kvp : m_roots)
         {
+        auto& root = kvp.second;
+        if (root.IsNull())
+            continue;
+
         if (0 != waitMillis)
             {
             root->WaitForAllLoadsFor(waitMillis);
@@ -1038,5 +1043,31 @@ GeometricModelP SpatialViewController::_GetTargetModel() const
 #endif
     DgnModelId model = *GetViewedModels().begin();
     return GetDgnDb().Models().Get<GeometricModel>(model).get();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewController::_CancelAllTileLoads(bool wait)
+    {
+    DgnDb::VerifyClientThread();
+
+    // Cancel them all first, asynchronously, so one Root's tiles don't continue to load while we
+    // wait for another's to receive the 'cancel' notification...
+    for (auto& kvp : m_roots)
+        {
+        auto& root = kvp.second;
+        if (root.IsValid())
+            root->CancelAllTileLoads();
+        }
+
+    if (!wait)
+        return;
+
+    for (auto& kvp : m_roots)
+        {
+        auto& root = kvp.second;
+        if (root.IsValid())
+            root->WaitForAllLoads();
+        }
     }
 
