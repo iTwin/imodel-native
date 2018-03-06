@@ -358,6 +358,26 @@ Json::Value     GetChanges(DgnElementIdSet& addedOrModifiedIds, DgnElementIdSet&
     return revisionElementsJson;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbPtr RollDb(DgnDbPtr inDb, DgnRevisionPtr changeset)
+    {
+    // Close db
+    BeFileName filename = m_tempDb->GetFileName();
+    inDb->CloseDb();
+    // Re-open to apply changesets that contain schema changes
+    BeSQLite::DbResult result;
+    DgnDb::OpenParams params (Db::OpenMode::ReadWrite);
+    bvector<DgnRevisionCP> toApply;
+    toApply.push_back(changeset.get());
+    params.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(toApply, RevisionProcessOption::Reverse);
+    inDb = DgnDb::OpenDgnDb(&result, filename, params);
+    BeAssert(result == BE_SQLITE_OK && inDb.IsValid());
+    return inDb;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -388,16 +408,31 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
         // Don't recreate revision if it already exists.
         if (BeFileName::DoesPathExist(outputFileName.c_str()) ||
             HistoryMode::OmitHistory == m_params.GetHistoryMode())
+            {
+            // Roll the db anyway
+            if (! (m_tempDb = RollDb(m_tempDb, m_changeSets.at(i))).IsValid())
+                return TilesetPublisher::Status::CantOpenBriefcase;
+
             continue;
+            }
 
         VersionCompareChangeSummaryPtr      changeSummary = VersionCompareChangeSummary::Generate(*m_tempDb, thisRevisions, true);
 
         if (!changeSummary.IsValid())
+            {
+            // Even if something goes wrong, we must try to apply schema changes
+            if (! (m_tempDb = RollDb(m_tempDb, m_changeSets.at(i))).IsValid())
+                return TilesetPublisher::Status::CantOpenBriefcase;
+
             continue;
+            }
 
         DgnElementIdSet                     addedOrModifiedIds, deletedOrModifiedIds;
         Json::Value                         revisionElementsJson = GetChanges (addedOrModifiedIds, deletedOrModifiedIds, *changeSummary);
         DgnModelIdSet                       prevModelIds, postModelIds;
+        bool                                shouldContinue = false;
+
+        { // Need iterators to be released to be able to close db, as they generate ECSqlStatements
         auto                                prevModelIterator = changeSummary->GetTargetDb()->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
         auto                                postModelIterator = m_tempDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
 
@@ -408,8 +443,7 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
             postModelIds.insert(model.GetModelId());
 
         if (addedOrModifiedIds.empty() && deletedOrModifiedIds.empty() && prevModelIds == postModelIds)
-            continue;           // Skip empty revisions.
-
+            shouldContinue = true; // moved continue below to ensure we roll the db
 
         if (!addedOrModifiedIds.empty())
             {
@@ -425,10 +459,16 @@ TilesetPublisher::Status PublishChangeSets(Json::Value& revisionsJson, TilesetPu
 
             revisionJson["postModels"] = revisionPublisher.GetModelsJson(modelIds);
             }
+        } // End of scope for iterators
 
-        // Roll to previous revision.
-        Utf8String          rollTo = (i == m_changeSets.size() - 1) ? "MasterFile" : m_changeSets.at(i+1)->GetId();
-        VersionSelector::RollTemporaryDb(m_client, m_tempDb.get(), m_tempDb.get(), rollTo, Utf8String(m_tempDbName));
+        // Release ECSqlStatements in change summary before closing/opening the db
+        changeSummary = nullptr;
+        // Roll to previous version
+        if (! (m_tempDb = RollDb(m_tempDb, m_changeSets.at(i))).IsValid())
+            return TilesetPublisher::Status::CantOpenBriefcase;
+
+        if (shouldContinue)
+            continue; // Skip empty revisions.
 
         if (!deletedOrModifiedIds.empty())
             {
