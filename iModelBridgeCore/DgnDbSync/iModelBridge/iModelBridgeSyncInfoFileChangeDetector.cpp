@@ -2,7 +2,7 @@
 |
 |     $Source: iModelBridge/iModelBridgeSyncInfoFileChangeDetector.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeSyncInfoFile.h>
@@ -245,10 +245,25 @@ BentleyStatus iModelBridgeSyncInfoFile::ChangeDetector::_UpdateBimAndSyncInfo(Co
         {
         DgnDbStatus status;
         
-        if (!changeDetectorResults.GetSyncInfoRecord().IsValid())
+        DgnElementId eid;
+        if (changeDetectorResults.GetSyncInfoRecord().IsValid())
+            eid = changeDetectorResults.GetSyncInfoRecord().GetDgnElementId();
+
+        if (!eid.IsValid())
+            {
+            // The element is not recorded in syncinfo, and so this would normally be handled as an insert.
+            // But double-check. It could be that the element already exists in the BIM. (That happens in hybrid
+            // bridges that use multiple converters at once. One converter will insert an element, such as a 
+            // RepositoryLink, and then another converter within the same bridge will try to do the same.)
+            // If so, this is really an update.
+            if (conversionResults.m_element->GetElementId().IsValid() && GetDgnDb().Elements().GetElement(conversionResults.m_element->GetElementId()).IsValid())
+                eid = conversionResults.m_element->GetElementId();
+            }
+
+        if (!eid.IsValid())
             status = InsertResultsIntoBIM(conversionResults);
         else
-            status = UpdateResultsInBIM(conversionResults, changeDetectorResults.GetSyncInfoRecord().GetDgnElementId());
+            status = UpdateResultsInBIM(conversionResults, eid);
 
         if (DgnDbStatus::Success != status)
             return BentleyStatus::ERROR;
