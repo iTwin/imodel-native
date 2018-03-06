@@ -761,69 +761,6 @@ void FormatUnitSet::LoadJsonData(Json::Value jval)
 
 //===================================================
 //
-// FormatUnitGroup Methods
-//
-//===================================================
-Json::Value FormatUnitGroup::ToJson(bool useAlias)
-    {
-    Json::Value jval;
-    FormatUnitSetCP fus = GetPersistenceFUS();
-    if (nullptr == fus)
-        return jval;
-    jval[json_KOQName()] = m_name.c_str();
-    jval[json_persistFUS()] = fus->ToJson(useAlias);
-    size_t num = GetPresentationFUSCount();
-    if (num == 0)
-        return jval;
-    Json::Value jarr;
-    for (size_t i = 0; i < num; i++)
-        {
-        fus = GetPresentationFUS(i);
-        jarr.append(fus->ToJson(useAlias));
-        }
-    if(!jarr.empty())
-       jval[json_presentFUS()] = jarr;
-    return jval;
-    }
-
-FormatUnitGroup::FormatUnitGroup(JsonValueCR jval)
-    {
-    m_problem = FormatProblemDetail();
-    if (!jval.empty())
-        {
-        Utf8CP paramName;
-        Utf8String formatName;
-        FormatUnitSet fus;
-        for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-            {
-            paramName = iter.memberName();
-            JsonValueCR val = *iter;
-            if (BeStringUtilities::StricmpAscii(paramName, json_KOQName()) == 0)
-                {
-                m_name = val.asString();
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_persistFUS()) == 0)
-                {
-                fus.Init();
-                fus.LoadJsonData(val);
-                m_group.push_back(fus);
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_presentFUS()) == 0)
-                {
-                for (Json::Value::iterator iter = val.begin(); iter != val.end(); iter++)
-                    {
-                    fus.Init();
-                    JsonValueCR val = *iter;
-                    fus.LoadJsonData(val);
-                    m_group.push_back(fus);
-                    }
-                }
-            }
-        }
-    }
-
-//===================================================
-//
 // FormatDictionary Methods
 //
 //===================================================

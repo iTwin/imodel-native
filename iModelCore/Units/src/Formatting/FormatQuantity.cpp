@@ -808,6 +808,4 @@ Utf8String QuantityTriadSpec::FormatQuantTriad(Utf8CP space, int prec, bool frac
     return FormatTriad(topUOM, midUOM, lowUOM, space, prec, fract, includeZero);
     }
 
-
-
 END_BENTLEY_FORMATTING_NAMESPACE

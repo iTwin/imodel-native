@@ -156,16 +156,6 @@ void FormattingTestFixture::CrossValidateFUS(Utf8CP descr1, Utf8CP descr2)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowFUG(Utf8CP name, Utf8CP fugText)
-    {
-    FormatUnitGroup fug = FormatUnitGroup(name, fugText);
-    Json::Value jval = fug.ToJson(true);
-    LOG.infov("FUS Group: %s JSON: >%s<", name, jval.ToString().c_str());
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
@@ -177,21 +167,6 @@ void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
     FormatUnitSet fus1;
     fus1.LoadJsonData(jval);
     EXPECT_TRUE(fus.IsIdentical(fus1));
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestFixture::TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
-    {
-    FormatUnitGroup fug = FormatUnitGroup(name, fusText);
-    Json::Value jval = fug.ToJson(true);
-    //LOG.infov("FUS Group: %s JSON: >%s<", name, jval.ToString().c_str());
-    EXPECT_STREQ (norm, fug.ToText(false).c_str());
-    EXPECT_STREQ (aliased, fug.ToText(true).c_str());
-    FormatUnitGroup fug1 = FormatUnitGroup::FormatUnitGroup(jval);
-    EXPECT_TRUE(fug.IsIdentical(fug1));
-    //LOG.infov("restored FUS Group: %s identical: %s", fug1.ToText(true).c_str(), FormatConstant::BoolText(fug.IsIdentical(fug1)));
     }
 
 //----------------------------------------------------------------------------------------
@@ -628,35 +603,6 @@ void FormattingTestFixture::TestScanTriplets(Utf8CP str)
     LOG.info("============= Triplet Scan complete =================\n");
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-Utf8CP FormattingTestFixture::TestGrabber(Utf8CP input, size_t start)
-    {
-    LOG.infov("=========== Numeric Grabber test |%s| from %d", input, start);
-    NumberGrabber ng = NumberGrabber(input, start);
-    int repet = 100000;
-    FormatStopWatch wat = FormatStopWatch();
-    size_t len = ng.Grab();
-    for (int i = 0; i < repet; i++)
-        {
-         len = ng.Grab();
-        }
-    LOG.info(wat.LastIntervalMetrics(repet).c_str());
-    size_t ti = ng.GetNextIndex();
-    if (ng.GetType() == ParsingSegmentType::Real)
-        {
-        LOG.infov("Real %.6f Integer %d  Tail |%s| nextInd %d", ng.GetReal(), ng.GetInteger(), ng.GetTail(), ti);
-        }
-    else if (ng.GetType() == ParsingSegmentType::Integer)
-        {
-        LOG.infov("Integer %d Real %.6f Tail |%s| nextInd %d", ng.GetInteger(), ng.GetReal(), ng.GetTail(), ng.GetNextIndex());
-        }
-    else
-        LOG.infov("Cannot interpret input. Tail |%s| nextInd %d", ng.GetTail(), ng.GetNextIndex());
-    input = ng.GetTail();
-    return input;
-    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------

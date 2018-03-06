@@ -216,6 +216,12 @@ enum class NumSequenceTraits
 //=======================================================================================
 // @bsienum
 //=======================================================================================
+// Number of points after decimal point given significance in the scientific notation
+// representation of floating point numbers.
+// TODO: The double 100101.125 with Precision3 will be formatted as 1.001e+5, in line
+// with the current implimentation. @Caleb.Shafer mentioned that we may want to have that
+// same double/DecimalPrecision should concider the three points of decimal precision to
+// be the .125 before scientific normalization.
 enum class DecimalPrecision
     {
     Precision0 = 0,
@@ -230,7 +236,8 @@ enum class DecimalPrecision
     Precision9 = 9,
     Precision10 = 10,
     Precision11 = 11,
-    Precision12 = 12
+    Precision12 = 12,
+    Max = Precision12
     };
 
 //=======================================================================================
