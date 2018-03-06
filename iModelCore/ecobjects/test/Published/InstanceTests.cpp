@@ -470,7 +470,7 @@ TEST_F (InstanceTests, TestIsNullArray)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-#if !defined(BENTLEYCONFIG_OS_LINUX)
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
 TEST_F(InstanceTests, TestGetNullPropertyValues)
     {
     CreateSchema();
