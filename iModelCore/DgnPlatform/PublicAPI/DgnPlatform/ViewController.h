@@ -223,8 +223,8 @@ protected:
     void ChangeSubCategoryDisplay(DgnSubCategoryId, bool onOff);
     void ToggleAllSubCategories(DgnCategoryId, bool onOff);
 
-    BentleyStatus CreateScene(SceneContextR context);
 public:
+    BentleyStatus CreateScene(SceneContextR context);
     Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
     BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
     void RequestScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);

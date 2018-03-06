@@ -1735,6 +1735,18 @@ void TileRequests::RequestMissing(BeDuration partialTimeout) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileRequests::HasMissingTiles() const
+    {
+    for (auto const& kvp : m_map)
+        if (!kvp.second.empty())
+            return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip)

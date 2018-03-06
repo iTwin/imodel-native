@@ -229,16 +229,24 @@ BentleyStatus SpatialViewController::CreateThumbnailScene(SceneContextR context)
         }
 
     // Load all the roots. Do not count time required toward our time limit.
-    for (auto modelId : GetViewedModels())
+    // ###TODO: For view attachment tiles, we need to respect the time limit...
+    if (!m_allRootsLoaded)
         {
-        auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
-        if (model.IsValid())
+        for (auto modelId : GetViewedModels())
             {
-            auto root = model->GetTileTree(context);
-            if (root.IsValid())
+            auto iter = m_roots.find(modelId);
+            if (m_roots.end() != iter)
+                continue;
+
+            auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
+            if (model.IsValid())
                 {
-                m_roots.Insert(model->GetModelId(), root);
-                root->SelectTiles(context);
+                auto root = model->GetTileTree(context);
+                if (root.IsValid())
+                    {
+                    m_roots.Insert(model->GetModelId(), root);
+                    root->SelectTiles(context);
+                    }
                 }
             }
         }

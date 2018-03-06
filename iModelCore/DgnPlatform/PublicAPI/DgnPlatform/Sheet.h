@@ -232,6 +232,19 @@ namespace Attachment
     DEFINE_REF_COUNTED_PTR(Tile);
 
     //=======================================================================================
+    // Describes the state of the scene for a given level of the tile tree.
+    // All tiles on a given level use the same scene to generate their graphics.
+    // @bsistruct                                                   Paul.Connelly   03/18
+    //=======================================================================================
+    enum class State
+    {
+        NotLoaded,  // We haven't tried to create the scene for this level of the tree
+        Empty,      // This level of the tree has an empty scene
+        Loading,    // All of the Roots for this level of the tree have been created and we are loading their tiles
+        Ready,      // All of the tiles required for this level of the tree are ready for rendering
+    };
+
+    //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   11/16
     //=======================================================================================
     struct Viewport : OffscreenViewport
@@ -247,7 +260,7 @@ namespace Attachment
         Render::GraphicListPtr m_terrain;
         ClipVectorCPtr m_clips;
 
-        DGNVIEW_EXPORT virtual void _CreateScene(UpdatePlan const& updatePlan);
+        DGNVIEW_EXPORT virtual State _CreateScene(UpdatePlan const& updatePlan, State currentState);
         void QueueScene(SceneContextR);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
         void _AdjustAspectRatio(DPoint3dR, DVec3dR) override {}
@@ -281,6 +294,7 @@ namespace Attachment
         bvector<PolyfaceHeaderPtr> m_tilePolys;
         DRange3d m_polysRangeUnclipped;
         DRange3d m_polysRange;
+        Sheet::ViewController& m_sheetController;
     private:
         Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view);
     public:
@@ -298,6 +312,8 @@ namespace Attachment
         void CreatePolys(SceneContextR context);
         void Draw(SceneContextR);
         TileR GetRootAttachmentTile();
+        State GetState(uint32_t depth) const;
+        void SetState(uint32_t depth, State state);
     };
 
     //=======================================================================================
@@ -325,8 +341,10 @@ namespace Attachment
         double _GetMaximumSize() const override {return m_maxPixelSize;}
 
         void SetupRange();
-        void CreateGraphics(uint32_t depth, SceneContextR context);
+        void CreateGraphics(SceneContextR context);
         RootR GetTree() const {return static_cast<RootR>(m_root);}
+        State GetState() const { return GetTree().GetState(GetDepth()); }
+        void SetState(State state) { GetTree().SetState(GetDepth(), state); }
 
         Tile(RootR root, TileCP parent);
     };
@@ -345,17 +363,8 @@ protected:
     struct Attachments;
     struct Attachment
     {
-        // Describes the state of the scene for a given level of the tile tree.
-        // All tiles on a given level use the same scene to generate their graphics.
-        enum class State
-        {
-            NotLoaded,  // We haven't tried to create the scene for this level of the tree
-            Empty,      // This level of the tree has an empty scene
-            Loading,    // All of the Roots for this level of the tree have been created and we are loading their tiles
-            Ready,      // All of the tiles required for this level of the tree are ready for rendering
-        };
-
         friend struct Attachments;
+        using State = Sheet::Attachment::State;
     private:
         DgnElementId                m_id;
         Sheet::Attachment::RootPtr  m_tree = nullptr;
@@ -370,7 +379,7 @@ protected:
         DgnElementId GetId() const { return m_id; }
         Sheet::Attachment::RootP GetTree() { return m_tree.get(); }
         Sheet::Attachment::RootCP GetTree() const { return m_tree.get(); }
-        State GetState(uint32_t depth) const { BeAssert(depth < m_states.size()); return depth < m_states.size() ? m_states[depth] : State::NotLoaded; }
+        State GetState(uint32_t depth) const { return depth < m_states.size() ? m_states[depth] : State::NotLoaded; }
         void SetState(uint32_t depth, State state);
         void CancelAllTileLoads() { if (nullptr != GetTree()) GetTree()->CancelAllTileLoads(); }
         void WaitForAllLoads() { if (nullptr != GetTree()) GetTree()->WaitForAllLoads(); }
@@ -414,9 +423,11 @@ protected:
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachments);
 
     DPoint2d m_size;
     Attachments m_attachments;
+    bool m_allAttachmentTilesReady = true;
 
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;
@@ -424,6 +435,7 @@ protected:
     BentleyStatus _CreateScene(SceneContextR) override;
     FitComplete _ComputeFitRange(FitContextR context) override;
     void _DrawDecorations(DecorateContextR context) override;
+    void _OnRenderFrame() override;
 
     void DrawBorder(ViewContextR context) const;
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}  //!< Construct a new SheetViewController.
@@ -433,6 +445,10 @@ protected:
 
     DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
     DGNPLATFORM_EXPORT void _UnloadAllTileTrees() override;
+public:
+    AttachmentsCR GetAttachments() const { return m_attachments; }
+    AttachmentsR GetAttachments() { return m_attachments; }
+    void MarkAttachmentSceneIncomplete() { m_allAttachmentTilesReady = false; }
 };
 
 //=======================================================================================

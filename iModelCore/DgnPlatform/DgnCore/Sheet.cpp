@@ -452,6 +452,16 @@ void Sheet::ViewController::_LoadState()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewController::_OnRenderFrame()
+    {
+    BeAssert(nullptr != m_vp); // invoked by DgnViewport::RenderFrame()...
+    if (!m_allAttachmentTilesReady || !m_attachments.AllLoaded())
+        m_vp->InvalidateScene();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr Sheet::Model::CreateBorder(DecorateContextR context, DPoint2dCR size)
@@ -578,43 +588,81 @@ void Sheet::Attachment::Viewport::SetSceneDepth(uint32_t depth)
         }
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/18
+//=======================================================================================
+struct AutoRestoreFrustum
+{
+    Frustum m_frustum;
+    DgnViewportR m_vp;
+
+    explicit AutoRestoreFrustum(DgnViewportR vp) : m_frustum(vp.GetFrustum(DgnCoordSystem::World)), m_vp(vp) { }
+    ~AutoRestoreFrustum() { m_vp.SetupFromFrustum(m_frustum); }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Tile::CreateGraphics(uint32_t depth, SceneContextR context)
+void Sheet::Attachment::Tile::CreateGraphics(SceneContextR context)
     {
+    Root& tree = GetTree();
+    auto currentState = GetState();
+
+    // CreateGraphics() should only be called if the tile is not yet ready. An empty or ready state means tile should be considered ready.
+    BeAssert(State::Empty != currentState && State::Ready != currentState);
+    switch (currentState)
+        {
+        case State::Ready:
+            SetIsReady();
+            return;
+        case State::Empty:
+            SetNotFound();
+            return;
+        }
+
     UpdatePlan const& plan = context.GetUpdatePlan();
 
     auto renderSys = context.GetRenderSystem();
-    Root& tree = GetTree();
 
     Sheet::Attachment::Viewport* viewport = tree.m_viewport.get();
-    viewport->SetSceneDepth(depth);
+    viewport->SetSceneDepth(GetDepth());
     viewport->SetupFromViewController();
     viewport->m_renderSys = renderSys;
     viewport->m_db = &context.GetDgnDb();
 
     // Change frustum so it looks at only the visible (after clipping) portion of the scene.
     // Base this on tree.m_polysRange calculated by _CreateSheetTilePolys().
+    AutoRestoreFrustum autoRestore(*viewport);
+
     Frustum frust = viewport->GetFrustum(DgnCoordSystem::Npc);
-    Frustum frustCopy = viewport->GetFrustum(DgnCoordSystem::World); // save original frustum
     DPoint3dP frustPts = frust.GetPtsP();
     tree.m_polysRange.Get8Corners(frustPts);
     DMap4dCP rootToNpc = viewport->GetWorldToNpcMap();
     rootToNpc->M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
     viewport->SetupFromFrustum(frust);
 
-    // Render the offscreen texture.
-    viewport->_CreateScene(plan); // view controller for a drawing or spatial view, make a context in dgnview (renderthumbnail)
-    // this will sit and wait; tile will be ready when here (RenderThumbnail path)
+    // Create the scene, and if the scene is complete, render the offscreen texture
+    auto newState = viewport->_CreateScene(plan, currentState);
+    SetState(newState);
 
-    // create graphics from the polys and the rendered texture
-    // ###TODO: must determine whether to do this at all if there were no poly results
-    GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
-    m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, tree.m_tilePolys, *viewport->m_db, gfParams);
-    SetIsReady();
-
-    viewport->SetupFromFrustum(frustCopy); // restore original frustum
+    switch (newState)
+        {
+        case State::NotLoaded:
+        case State::Loading:
+            return;
+        case State::Ready:
+            {
+            // create graphics from the polys and the rendered texture
+            // ###TODO: must determine whether to do this at all if there were no poly results
+            GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
+            m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, tree.m_tilePolys, *viewport->m_db, gfParams);
+            SetIsReady();
+            break;
+            }
+        case State::Empty:
+            SetNotFound();
+            break;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -630,6 +678,9 @@ bool Sheet::ViewController::WantRenderAttachments()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
     {
+    // This will be reset to false by the end of this function if any attachments are waiting on tiles...
+    m_allAttachmentTilesReady = true;
+
     auto stat = T_Super::_CreateScene(context);
     if (SUCCESS != stat || !WantRenderAttachments())
         return stat;
@@ -752,11 +803,15 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile::_SelectTiles(bvector<TileT
     {
     BeAssert(selected.empty());
 
-    Visibility vis = GetVisibility(args);
-    if (Visibility::OutsideFrustum == vis)
+    if (IsNotFound())
         {
+        // Indicates no elements in this tile's range (or some unexpected error occurred during scene creation)
         return SelectParent::No;
         }
+
+    Visibility vis = GetVisibility(args);
+    if (Visibility::OutsideFrustum == vis)
+        return SelectParent::No;
 
     bool tooCoarse = Visibility::TooCoarse == vis;
     TileTree::Tile::ChildTiles const* childTiles = tooCoarse ? _GetChildren(true) : nullptr;
@@ -774,9 +829,51 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile::_SelectTiles(bvector<TileT
 #endif
 
     if (!IsReady())
-        const_cast<Tile*>(this)->CreateGraphics(GetDepth(), args.m_context);
+        const_cast<Tile*>(this)->CreateGraphics(args.m_context);
 
-    selected.push_back(this);
+    if (IsReady())
+        {
+        selected.push_back(this);
+        }
+    else
+        {
+        // Inform the sheet controller that it needs to recreate its scene next frame
+        GetTree().m_sheetController.MarkAttachmentSceneIncomplete();
+
+        // Select a tile to temporarily draw in its place. Note this logic will need to change when we start subdividing.
+        TileTree::TilePtr sub;
+        auto children = _GetChildren(false);
+        while (nullptr != children && !children->empty())
+            {
+            auto child = (*children)[0];
+            if (child->IsReady())
+                {
+                sub = child;
+                break;
+                }
+
+            children = child->_GetChildren(false);
+            }
+
+        if (sub.IsNull())
+            {
+            auto parent = GetParent();
+            while (nullptr != parent)
+                {
+                if (parent->IsReady())
+                    {
+                    sub = const_cast<TileTree::TileP>(parent);
+                    break;
+                    }
+
+                parent = parent->GetParent();
+                }
+            }
+
+        if (sub.IsValid())
+            selected.push_back(sub);
+        }
+
     return SelectParent::No;
     }
 
@@ -787,12 +884,8 @@ void Sheet::Attachment::Tile::_DrawGraphics(DrawArgsR args) const
     {
     BeAssert(IsReady());
     for (auto& graphic : m_graphics)
-        {
         if (graphic.IsValid())
-            {
             args.m_graphics.Add(*graphic);
-            }
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -878,11 +971,33 @@ Sheet::Attachment::Tile& Sheet::Attachment::Root::GetRootAttachmentTile()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Sheet::Attachment::State Sheet::Attachment::Root::GetState(uint32_t depth) const
+    {
+    // ###TODO: Fix this silly lookup, called from an iterator over the Attachment list...
+    auto attach = m_sheetController.GetAttachments().Find(m_attachmentId);
+    BeAssert(nullptr != attach);
+    return attach->GetState(depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::Attachment::Root::SetState(uint32_t depth, State state)
+    {
+    // ###TODO: Fix this silly lookup, called from an iterator over the Attachment list...
+    auto attach = m_sheetController.GetAttachments().Find(m_attachmentId);
+    BeAssert(nullptr != attach);
+    attach->SetState(depth, state);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view)
   : T_Super(db, DgnModelId(), Transform::FromIdentity(), nullptr, nullptr),
-    m_attachmentId(attach.GetElementId()), m_viewport(&viewport)
+    m_attachmentId(attach.GetElementId()), m_viewport(&viewport), m_sheetController(sheetController)
     {
     m_viewport->SetupFromViewController();
     m_viewport->ChangeViewController(view);
