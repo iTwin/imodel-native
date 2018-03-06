@@ -32,6 +32,8 @@ struct LineStringPlacementStrategy : public CurvePrimitivePlacementStrategy
         virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         LineStringManipulationStrategyCR GetLineStringManipulationStrategy() const { return *m_manipulationStrategy; }
         LineStringManipulationStrategyR GetLineStringManipulationStrategyForEdit() { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
 
     public:
         static LineStringPlacementStrategyPtr Create(LineStringPlacementStrategyType strategyType);

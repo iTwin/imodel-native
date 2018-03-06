@@ -33,6 +33,8 @@ struct LinePlacementStrategy : CurvePrimitivePlacementStrategy
         virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         LineManipulationStrategyCR GetLineManipulationStrategy() const { return *m_manipulationStrategy; }
         LineManipulationStrategyR GetLineManipulationStrategyForEdit() { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
 
     public:
         static constexpr Utf8CP prop_Length() { return "Length"; }

@@ -90,6 +90,8 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacem
         virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         ArcManipulationStrategyCR GetArcManipulationStrategy() const { return *m_manipulationStrategy; }
         ArcManipulationStrategyR GetArcManipulationStrategyForEdit() { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
 
         virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         virtual void _PopKeyPoint() override;

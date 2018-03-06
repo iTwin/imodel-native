@@ -212,3 +212,24 @@ TEST_F(CurveVectorManipulationStrategyTestFixture, PopKeyPoint_HadDynamicKeyPoin
     sut->PopKeyPoint();
     ASSERT_TRUE(sut->GetKeyPoints().empty());
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorManipulationStrategyTestFixture, PopKeyPoint_ArcHadMultipleDynamicPoints_DoesNotCrash)
+    {
+    CurveVectorManipulationStrategyPtr sut = CurveVectorManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
+    sut->ChangeDefaultPlacementStrategy(ArcPlacementMethod::CenterStart);
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), DVec3d::From(0, 0, 1));
+
+    ASSERT_FALSE(sut->Finish().IsValid());
+    sut->AppendDynamicKeyPoints({{0,0,0},{1,0,0}});
+    ASSERT_TRUE(sut->Finish().IsValid());
+
+    sut->PopKeyPoint();
+    }

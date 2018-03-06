@@ -385,7 +385,7 @@ void CurveVectorManipulationStrategy::_ResetDynamicKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 bool CurveVectorManipulationStrategy::IsLastStrategyReadyForPop() const
     {
-    bvector<CurvePrimitiveManipulationStrategyPtr> const& primitiveStrategies = m_primitiveStrategyContainer.GetManipulationStrategies();
+    bvector<CurvePrimitivePlacementStrategyPtr> const& primitiveStrategies = m_primitiveStrategyContainer.GetPlacementStrategies();
 
     if (primitiveStrategies.empty())
         return false;
@@ -395,13 +395,13 @@ bool CurveVectorManipulationStrategy::IsLastStrategyReadyForPop() const
 
     if (primitiveStrategies.size() > 1)
         {
-        CurvePrimitiveManipulationStrategyR lastStrategy = *primitiveStrategies.back();
+        CurvePrimitivePlacementStrategyR lastStrategy = *primitiveStrategies.back();
         if (lastStrategy.IsEmpty())
             return true;
 
-        CurvePrimitiveManipulationStrategyR secondToLastStrategy = *primitiveStrategies[primitiveStrategies.size() - 2];
-        if (lastStrategy.IsSingleKeyPointLeft() &&
-            lastStrategy.GetFirstKeyPoint().AlmostEqual(secondToLastStrategy.GetLastKeyPoint()))
+        CurvePrimitivePlacementStrategyR secondToLastStrategy = *primitiveStrategies[primitiveStrategies.size() - 2];
+        if (lastStrategy.GetKeyPoints().size() == 1 &&
+            lastStrategy.GetKeyPoints().front().AlmostEqual(secondToLastStrategy.GetKeyPoints().back()))
             return true;
         }
 
@@ -419,12 +419,12 @@ void CurveVectorManipulationStrategy::_PopKeyPoint()
     if (IsLastStrategyReadyForPop())
         {
         DPoint3d firstKeyPoint;
-        bool wasEmpty = m_primitiveStrategyContainer.GetManipulationStrategies().back()->GetKeyPoints().empty();
+        bool wasEmpty = m_primitiveStrategyContainer.GetPlacementStrategies().back()->GetKeyPoints().empty();
         if (!wasEmpty)
-            firstKeyPoint = m_primitiveStrategyContainer.GetManipulationStrategies().back()->GetFirstKeyPoint();
+            firstKeyPoint = m_primitiveStrategyContainer.GetPlacementStrategies().back()->GetKeyPoints().front();
 
         m_primitiveStrategyContainer.Pop();
-        if (!wasEmpty && m_primitiveStrategyContainer.GetManipulationStrategies().back()->GetLastKeyPoint().AlmostEqual(firstKeyPoint))
+        if (!wasEmpty && m_primitiveStrategyContainer.GetPlacementStrategies().back()->GetKeyPoints().back().AlmostEqual(firstKeyPoint))
             m_primitiveStrategyContainer.GetPlacementStrategies().back()->PopKeyPoint();
         }
     else

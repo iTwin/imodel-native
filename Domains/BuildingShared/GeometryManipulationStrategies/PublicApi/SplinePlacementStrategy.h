@@ -35,6 +35,8 @@ struct SplineControlPointsPlacementStrategy : SplinePlacementStrategy
         virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         SplineControlPointsManipulationStrategyCR GetSplineControlPointsManipulationStrategy() const { return *m_manipulationStrategy; }
         SplineControlPointsManipulationStrategyR GetSplineControlPointsManipulationStrategyForEdit() { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
 
         virtual void _SetProperty(Utf8CP key, const int & value) override;
         virtual BentleyStatus _TryGetProperty(Utf8CP key, int & value) const override;
@@ -67,6 +69,8 @@ struct SplineThroughPointsPlacementStrategy : SplinePlacementStrategy
         virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
         SplineThroughPointsManipulationStrategyCR GetSplineThroughPointsManipulationStrategy() const { return *m_manipulationStrategy; }
         SplineThroughPointsManipulationStrategyR GetSplineThroughPointsManipulationStrategyForEdit() { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyCR _GetCurvePrimitiveManipulationStrategy() const override { return *m_manipulationStrategy; }
+        virtual CurvePrimitiveManipulationStrategyR _GetCurvePrimitiveManipulationStrategyForEdit() override { return *m_manipulationStrategy; }
 
         virtual void _SetStartTangent(DVec3d tangent);
         virtual void _RemoveStartTangent();

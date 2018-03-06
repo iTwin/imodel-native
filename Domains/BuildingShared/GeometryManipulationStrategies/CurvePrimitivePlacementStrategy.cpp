@@ -31,6 +31,21 @@ ICurvePrimitivePtr CurvePrimitivePlacementStrategy::FinishPrimitive() const
 //---------------+---------------+---------------+---------------+---------------+------
 bool CurvePrimitivePlacementStrategy::_IsContinious() const
     {
-    CurvePrimitiveManipulationStrategyCR strategy = dynamic_cast<CurvePrimitiveManipulationStrategyCR>(GetManipulationStrategy());
-    return strategy.IsContinious();
+    return _GetCurvePrimitiveManipulationStrategy().IsContinious();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurvePrimitivePlacementStrategy::IsEmpty() const
+    {
+    return _IsEmpty();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool CurvePrimitivePlacementStrategy::_IsEmpty() const
+    {
+    return _GetCurvePrimitiveManipulationStrategy().IsEmpty();
     }
