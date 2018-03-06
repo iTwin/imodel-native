@@ -197,8 +197,9 @@ public:
 
     //! Generates a Json object in the ECJSON Unit Format from a FormatUnitSet.
     //! @param [in] fus FormatUnitSet
+    //! @param [in] koq KindOfQuantity to generate Unit format for.
     //! @return Json object for a FormatUnitSet in the ECJSON Unit Format 
-    static Json::Value FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus);
+    static Json::Value FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus, KindOfQuantityCR koq);
 
     //! Lowers the first char of the specified string.
     //! @remarks Use this method to make a name, e.g. an ECProperty name a JSON member name.

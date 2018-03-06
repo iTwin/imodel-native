@@ -1049,6 +1049,8 @@ TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+    ECSchemaR unitsSchema = *StandardUnitsHelper::GetSchema();
+    schema->AddReferencedSchema(unitsSchema);
 
     ECEntityClassP entity;
     EC_EXPECT_SUCCESS(schema->CreateEntityClass(entity, "TestEntity"));
@@ -1056,7 +1058,10 @@ TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "KoQ"));
     koq->SetRelativeError(5);
-    EXPECT_TRUE(koq->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultReal", "MM")));
+    
+    ECUnitCP mmUnit = unitsSchema.GetUnitCP("MM");
+    EXPECT_NE(nullptr, mmUnit);
+    EXPECT_TRUE(koq->SetPersistenceUnit(*mmUnit, "DefaultReal"));
 
     PrimitiveECPropertyP primProp;
     EC_EXPECT_SUCCESS(entity->CreatePrimitiveProperty(primProp, "TestPrimProp"));

@@ -2,11 +2,6 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 
-# Currently ignored until proper KindOfQuantity deserialization is in place
-KindOfQuantityDeserializationTest.SuccessfulWithUnknownUnitInNewerECVersion
-KindOfQuantityDeserializationTest.UseDefaultFormatInNewerECVersion
-KindOfQuantityDeserializationTest.SameDummyUnitUsedInBothPersistenceAndPresentationUnit
-
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------

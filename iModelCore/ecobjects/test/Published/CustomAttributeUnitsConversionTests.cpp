@@ -115,8 +115,15 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
                 ECPropertyP convertedProp = convertedClass->GetPropertyP(ecProp->GetName().c_str());
                 KindOfQuantityCP koq = convertedProp->GetKindOfQuantity();
                 ASSERT_NE(nullptr, koq) << "Could not find KOQ for property " << ecClass->GetName().c_str() << ":" << ecProp->GetName().c_str();
-                // FIXME
-                Units::UnitCP originalUnitInNewSystem = Units::UnitRegistry::Get().LookupUnitUsingOldName(originalUnit.GetName());
+
+                Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(originalUnit.GetName());
+                ASSERT_NE(nullptr, ecName) << "Mapping for original unit '" << originalUnit.GetName() << "' to ECName does not exist.";
+
+                Utf8String alias;
+                Utf8String unitName;
+                ECClass::ParseClassName(alias, unitName, ecName);
+
+                ECUnitCP originalUnitInNewSystem = StandardUnitsHelper::GetUnit(unitName.c_str());
                 ASSERT_NE(nullptr, originalUnitInNewSystem) << "Could not find converted unit for old unit " << originalUnit.GetName();
 
                 bool unitShouldBeConvertedToSI = !originalUnitInNewSystem->IsSI();
@@ -311,10 +318,12 @@ TEST_F(UnitSpecificationConversionTest, PersistenceAndPresentationUnitsNotCompat
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
 
     auto koq = schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity();
-    ASSERT_STREQ("KG/CUB.M", koq->GetPersistenceUnit().GetUnit()->GetName().c_str());
-    ASSERT_FALSE(koq->HasPresentationUnits());
+    EXPECT_STREQ("KG_PER_CUB_M", koq->GetPersistenceUnit().GetUnit()->GetName().c_str());
+    EXPECT_FALSE(koq->HasPresentationUnits());
 
-    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
+    ASSERT_EQ(1, schema->GetReferencedSchemas().size()) << "Expected a single schema references after conversion because the standard Units schema ia added";
+
+    ECSchema::IsSchemaReferenced(*schema, *StandardUnitsHelper::GetSchema());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1069,8 +1078,7 @@ TEST_F(UnitInstanceConversionTest, BasicTest)
     Units::Quantity lengthQ;
     ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(lengthQ, "Length"));
     EXPECT_STREQ("M", lengthQ.GetUnitName());
-    ECUnitCP unit;
-    EC_EXPECT_SUCCESS(StandardUnitsHelper::GetUnit(unit, "FT"));
+    ECUnitCP unit = StandardUnitsHelper::GetUnit("FT");
     ASSERT_NE(nullptr, unit);
     EXPECT_EQ(50, lengthQ.ConvertTo(unit).GetMagnitude());
     }
