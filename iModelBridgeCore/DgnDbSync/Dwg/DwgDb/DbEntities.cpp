@@ -40,9 +40,11 @@ DWGDB_ENTITY_DEFINE_MEMBERS(MText)
 DWGDB_ENTITY_DEFINE_MEMBERS(Attribute)
 DWGDB_ENTITY_DEFINE_MEMBERS(AttributeDefinition)
 DWGDB_ENTITY_DEFINE_MEMBERS(BlockReference)
+DWGDB_ENTITY_DEFINE_MEMBERS(ViewRepBlockReference)
 DWGDB_ENTITY_DEFINE_MEMBERS(RasterImage)
 DWGDB_ENTITY_DEFINE_MEMBERS(PointCloudEx)
 DWGDB_ENTITY_DEFINE_MEMBERS(Viewport)
+DWGDB_ENTITY_DEFINE_MEMBERS(ViewBorder)
 
 
 
@@ -1331,6 +1333,18 @@ DwgDbStatus DwgDbViewport::SetCustomScale (double s) { RETURNVOIDORSTATUS(T_Supe
 DwgDbStatus DwgDbViewport::SetBrightness (double b) { RETURNVOIDORSTATUS(T_Super::setBrightness(b)); }
 DwgDbStatus DwgDbViewport::SetAmbientLightColor (DwgCmColorCR c) { RETURNVOIDORSTATUS(T_Super::setAmbientLightColor(c)); }
 
+DwgDbViewBorder::Source DwgDbViewBorder::GetSourceType () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return Source::NotDefined;}, {return static_cast<Source>(T_Super::sourceType());}) }
+DwgDbViewBorder::ViewStyle DwgDbViewBorder::GetViewStyle () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return ViewStyle::FromBase;}, {return static_cast<ViewStyle>(T_Super::viewStyleType());}) }
+DwgDbObjectId DwgDbViewBorder::GetViewportId () const { return T_Super::viewportId(); }
+double      DwgDbViewBorder::GetHeight () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return 0.0;}, {return T_Super::height();}) }
+double      DwgDbViewBorder::GetWidth () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return 0.0;}, {return T_Super::width();}) }
+DPoint3d    DwgDbViewBorder::GetInsertionPoint () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return DPoint3d::FromZero();}, {return Util::DPoint3dFrom(T_Super::insertionPoint());}) }
+DwgString   DwgDbViewBorder::GetInventorFileReference () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return DwgString();}, {return T_Super::inventorFileReference();}) }
+bool        DwgDbViewBorder::IsFirstAngleProjection () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return false;}, {return T_Super::isFirstAngleProjection();}) }
+double      DwgDbViewBorder::GetRotationAngle () const { return T_Super::rotationAngle(); }
+double      DwgDbViewBorder::GetScale () const { return T_Super::scale(); }
+uint32_t    DwgDbViewBorder::GetShadedDPI () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return 0;}, {return T_Super::shadedDPI();}) }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1413,6 +1427,88 @@ DwgDbStatus     DwgDbBlockReference::OpenSpatialFilter (DwgDbSpatialFilterPtr& f
 
     return  status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d        DwgDbViewRepBlockReference::GetScaleFactors () const
+    {
+    DWGGE_Type(Scale3d) scale = T_Super::scaleFactors ();
+    return DPoint3d::From (scale.sx, scale.sy, scale.sz);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbViewRepBlockReference::GetExtentsBestFit (DRange3dR out, TransformCR parentXform) const
+    {
+    DWGGE_Type(Matrix3d) matrix;
+    Util::GetGeMatrix (matrix, parentXform);
+
+    DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents)    extents;
+
+    DwgDbStatus status = ToDwgDbStatus (T_Super::geomExtentsBestFit(extents, matrix));
+
+    if (DwgDbStatus::Success == status)
+        out = Util::DRange3dFrom (extents);
+    else
+        out.Init ();
+
+    return  status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgDbViewRepBlockReference::IsXAttachment (WStringP blockName, WStringP path) const
+    {
+    DwgDbBlockTableRecordPtr    block(T_Super::blockTableRecord(), DwgDbOpenMode::ForRead);
+    if (!block.IsNull() && block->isFromExternalReference())
+        {
+        if (nullptr != blockName)
+            blockName->assign (block->GetName ());
+        if (nullptr != path)
+            path->assign (block->GetPath ());
+        return  true;
+        }
+    return  false;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbViewRepBlockReference::OpenSpatialFilter (DwgDbSpatialFilterPtr& filterOut, DwgDbOpenMode mode) const
+    {
+    DwgDbStatus status = DwgDbStatus::ObjectNotOpenYet;
+
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbFilterPtr   odFilter = OdDbIndexFilterManager::getFilter (this, OdDbSpatialFilter::desc(), FromDwgDbOpenMode(mode));
+    if (odFilter.isNull() || !(filterOut = DwgDbSpatialFilter::Cast(odFilter.get())).isNull())
+        status = DwgDbStatus::Success;
+
+#elif DWGTOOLKIT_RealDwg
+    AcDbFilter*         acFilter = nullptr;
+    Acad::ErrorStatus   es = AcDbIndexFilterManager::getFilter (this, AcDbSpatialFilter::desc(), FromDwgDbOpenMode(mode), acFilter);
+    if (Acad::eOk == es && nullptr != acFilter)
+        {
+        DwgDbSpatialFilterP spatial = DwgDbSpatialFilter::Cast (acFilter);
+        if (nullptr == spatial || Acad::eOk != (es = filterOut.acquire(spatial)))
+            {
+            acFilter->close ();
+            if (Acad::eOk == es)
+                es = Acad::eNullObjectPointer;
+            }
+        }
+    status = ToDwgDbStatus (es);
+#endif  // DWGTOOLKIT_
+
+    return  status;
+    }
+DwgDbObjectId   DwgDbViewRepBlockReference::GetBlockTableRecordId () const { return T_Super::blockTableRecord(); }
+DPoint3d        DwgDbViewRepBlockReference::GetPosition () const { return Util::DPoint3dFrom(T_Super::position()); }
+void            DwgDbViewRepBlockReference::GetBlockTransform (TransformR out) const { return Util::GetTransform(out, T_Super::blockTransform()); }
+DVec3d          DwgDbViewRepBlockReference::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
+DwgDbStatus     DwgDbViewRepBlockReference::ExplodeToOwnerSpace () const { return ToDwgDbStatus(T_Super::explodeToOwnerSpace()); }
+DwgDbObjectIterator DwgDbViewRepBlockReference::GetAttributeIterator () const { return DwgDbObjectIterator(T_Super::attributeIterator()); }
+DwgDbObjectId   DwgDbViewRepBlockReference::GetOwnerViewportId () const { return T_Super::ownerViewportId(); }
+void            DwgDbViewRepBlockReference::SetOwnerViewportId (DwgDbObjectId id) { T_Super::setOwnerViewportId(id); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16

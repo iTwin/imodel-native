@@ -609,6 +609,48 @@ DWGDB_DEFINE_OBJECTPTR (Viewport)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
+class DwgDbViewBorder : public DWGDB_EXTENDCLASS(ViewBorder)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(ViewBorder)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    //! Same as T_Super::SourceType
+    enum class Source
+        {
+        NotDefined      = T_Super::kSourceNotDefined,
+        FromInventor    = T_Super::kInventorSource,
+        FromFusion      = T_Super::kFusionSource,
+        FromModelSpace  = T_Super::kModelSpaceSource,
+        };  // Source
+    
+    //! Same as T_Super::ViewStyleType
+    enum class ViewStyle
+        {
+        FromBase                = T_Super::kFromBase,
+        WireframeVisibleEdges   = T_Super::kWireframeVisibleEdges,
+        WireframeHiddenEdges    = T_Super::kWireframeHiddenEdges,
+        ShadedVisibleEdges      = T_Super::kShadedVisibleEdges,
+        ShadedHiddenEdges       = T_Super::kShadedHiddenEdges,
+        };  // ViewStyle
+    
+    DWGDB_EXPORT DwgDbObjectId  GetViewportId () const;
+    DWGDB_EXPORT Source         GetSourceType () const;
+    DWGDB_EXPORT ViewStyle      GetViewStyle () const;
+    DWGDB_EXPORT double         GetHeight () const;
+    DWGDB_EXPORT double         GetWidth () const;
+    DWGDB_EXPORT DPoint3d       GetInsertionPoint () const;
+    DWGDB_EXPORT DwgString      GetInventorFileReference () const;
+    DWGDB_EXPORT bool           IsFirstAngleProjection () const;
+    DWGDB_EXPORT double         GetRotationAngle () const;
+    DWGDB_EXPORT double         GetScale () const;
+    DWGDB_EXPORT uint32_t       GetShadedDPI () const;
+    };  // DwgDbViewBorder
+DWGDB_DEFINE_OBJECTPTR (ViewBorder)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
 class DwgDbBlockReference : public DWGDB_EXTENDCLASS(BlockReference)
     {
 public:
@@ -627,6 +669,31 @@ public:
     DWGDB_EXPORT DwgDbObjectIterator    GetAttributeIterator () const;
     };  // DwgDbBlockReference
 DWGDB_DEFINE_OBJECTPTR (BlockReference)
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbViewRepBlockReference : public DWGDB_EXTENDCLASS(ViewRepBlockReference)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(ViewRepBlockReference)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    DWGDB_EXPORT DwgDbObjectId  GetBlockTableRecordId () const;
+    DWGDB_EXPORT DPoint3d       GetPosition () const;
+    DWGDB_EXPORT void           GetBlockTransform (TransformR tranform) const;
+    DWGDB_EXPORT DPoint3d       GetScaleFactors () const;
+    DWGDB_EXPORT DVec3d         GetNormal () const;
+    DWGDB_EXPORT DwgDbStatus    ExplodeToOwnerSpace () const;
+    DWGDB_EXPORT DwgDbStatus    GetExtentsBestFit (DRange3dR extents, TransformCR parentXform = Transform::FromIdentity()) const;
+    DWGDB_EXPORT bool           IsXAttachment (WStringP blockName = nullptr, WStringP path = nullptr) const;
+    DWGDB_EXPORT DwgDbStatus    OpenSpatialFilter (DwgDbSpatialFilterPtr& filterOut, DwgDbOpenMode mode) const;
+    DWGDB_EXPORT DwgDbObjectIterator    GetAttributeIterator () const;
+    DWGDB_EXPORT DwgDbObjectId  GetOwnerViewportId () const;
+    DWGDB_EXPORT void           SetOwnerViewportId (DwgDbObjectId viewportId);
+    };  // DwgDbViewRepBlockReference
+DWGDB_DEFINE_OBJECTPTR (ViewRepBlockReference)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
