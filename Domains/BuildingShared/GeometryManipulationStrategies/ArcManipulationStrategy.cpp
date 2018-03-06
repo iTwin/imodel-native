@@ -29,7 +29,7 @@ ArcManipulationStrategy::ArcManipulationStrategy()
     DPoint3d ArcManipulationStrategy::Get##name() const {BeAssert(Is##name##Set()); return GetKeyPoints()[index];} \
     void ArcManipulationStrategy::Set##name(DPoint3dCR newValue) {ReplaceKeyPoint(newValue, index);} \
     void ArcManipulationStrategy::Reset##name() {ReplaceKeyPoint(INVALID_POINT, index);} \
-    void ArcManipulationStrategy::SetDynamic##name(DPoint3dCR newValue) {UpdateDynamicKeyPoint(newValue, index);} \
+    void ArcManipulationStrategy::SetDynamic##name(DPoint3dCR newValue) {_UpdateDynamicKeyPoint(newValue, index);_OnKeyPointsChanged();} \
     bool ArcManipulationStrategy::Is##name##Dynamic() const {return !GetAcceptedKeyPoints()[index].AlmostEqual(GetKeyPoints()[index]);}
 
 KEY_POINT_ACCESSOR_IMPL(Start, s_startIndex)

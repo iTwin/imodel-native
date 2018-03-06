@@ -40,6 +40,17 @@ void IArcPlacementMethod::AddDynamicKeyPoint
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementMethod::AddDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    _AddDynamicKeyPoints(newDynamicKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementMethod IArcPlacementMethod::GetMethod() const
@@ -187,6 +198,17 @@ void ArcPlacementStrategy::_AddDynamicKeyPoint
 )
     {
     m_placementMethod->AddDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_AddDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    m_placementMethod->AddDynamicKeyPoints(newDynamicKeyPoints);
     }
 
 //--------------------------------------------------------------------------------------

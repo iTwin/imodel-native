@@ -37,6 +37,7 @@ struct IArcPlacementMethod : IRefCounted
         virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) = 0;
         virtual void _PopKeyPoint() = 0;
         virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) = 0;
+        virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) = 0;
         virtual ArcPlacementMethod _GetMethod() const = 0;
         virtual bvector<DPoint3d> _GetKeyPoints() const = 0;
 
@@ -44,6 +45,7 @@ struct IArcPlacementMethod : IRefCounted
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddKeyPoint(DPoint3dCR newKeyPoint);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint();
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementMethod GetMethod() const;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> GetKeyPoints() const;
     };
@@ -92,6 +94,7 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacem
         virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         virtual void _PopKeyPoint() override;
         virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
 
         virtual bvector<DPoint3d> _GetKeyPoints() const override;
 

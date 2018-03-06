@@ -74,6 +74,50 @@ void ArcCenterStartPlacementMethod::_AddDynamicKeyPoint
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcCenterStartPlacementMethod::_AddDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    if (newDynamicKeyPoints.empty())
+        return;
+
+    if (newDynamicKeyPoints.size() == 1)
+        {
+        _AddDynamicKeyPoint(newDynamicKeyPoints.front());
+        return;
+        }
+
+    BeAssert(!GetArcManipulationStrategy().IsDynamicKeyPointSet());
+    ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
+
+    if (strategy.IsEndSet())
+        {
+        return;
+        }
+
+    if (strategy.IsStartSet())
+        {
+        strategy.SetDynamicEnd(newDynamicKeyPoints[0]);
+        return;
+        }
+
+    if (strategy.IsCenterSet())
+        {
+        strategy.SetDynamicStart(newDynamicKeyPoints[0]);
+        strategy.SetDynamicEnd(newDynamicKeyPoints[1]);
+        return;
+        }
+
+    strategy.SetDynamicCenter(newDynamicKeyPoints[0]);
+    strategy.SetDynamicStart(newDynamicKeyPoints[1]);
+    if (newDynamicKeyPoints.size() >= 3)
+        strategy.SetDynamicEnd(newDynamicKeyPoints[2]);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 void ArcCenterStartPlacementMethod::_PopKeyPoint()

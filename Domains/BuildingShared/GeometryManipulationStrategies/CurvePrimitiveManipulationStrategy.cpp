@@ -272,7 +272,6 @@ void CurvePrimitiveManipulationStrategy::_UpdateDynamicKeyPoint
         return;
         }
 
-    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     m_keyPointsWithDynamicKeyPoint[index] = newDynamicKeyPoint;
     m_dynamicKeyPointSet = true;
     }
@@ -307,6 +306,7 @@ void CurvePrimitiveManipulationStrategy::_UpdateDynamicKeyPoints
 void CurvePrimitiveManipulationStrategy::_ResetDynamicKeyPoint()
     {
     m_dynamicKeyPointSet = false;
+    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     }
 
 //--------------------------------------------------------------------------------------

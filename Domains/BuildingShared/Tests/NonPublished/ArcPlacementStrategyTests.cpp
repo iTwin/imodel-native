@@ -515,6 +515,39 @@ TEST_F(ArcCenterStartPlacementStrategyTests, FixedSweep)
     ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, AddDynamicKeyPoints_FixedSweep)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+
+    ASSERT_FALSE(sut->IsComplete());
+    sut->AddDynamicKeyPoints({{0,0,0},{1,0,0}});
+    ASSERT_TRUE(sut->IsComplete());
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+
+    ASSERT_TRUE(arc.center.AlmostEqual({0,0,0}));
+    ASSERT_TRUE(arc.IsCircular());
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 1);
+    DVec3d actualNormal = DVec3d::FromCrossProduct(arc.vector0, arc.vector90);
+    actualNormal.Normalize();
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
+    }
+
 #pragma endregion
 
 #pragma region Arc_StartMidEnd_PlacementStrategy

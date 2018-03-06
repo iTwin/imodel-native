@@ -25,6 +25,7 @@ struct ArcStartEndMidPlacementMethod : RefCounted<IArcPlacementMethod>
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ArcPlacementMethod _GetMethod() const { return ArcPlacementMethod::StartEndMid; }
         virtual bvector<DPoint3d> _GetKeyPoints() const override;
 
