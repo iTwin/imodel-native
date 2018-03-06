@@ -12,7 +12,6 @@
 USING_BENTLEY_FORMATTING
 
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
-static UnitProxySetCP upx = nullptr;
 static int repc = 0;
 BE_JSON_NAME(degrees)
 BE_JSON_NAME(low)
@@ -58,6 +57,10 @@ struct FormatIntegerTest : public NumericFormatSpecTest
     };
 
 struct FormatDoubleTest : public NumericFormatSpecTest
+    {
+    };
+
+struct FormatStationOffSetTest : public NumericFormatSpecTest
     {
     };
 
@@ -482,6 +485,13 @@ TEST_F(FormatDoubleTest, FormatDoubleFailsWhenBufferIsTooSmall)
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Colin.Kerr                     03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatStationOffSetTest, FormatDoubleFailsWhenBufferIsTooSmall)
+    {
+    NumericFormatSpec nfs;
+    }
 
 
 
