@@ -8,7 +8,7 @@
 
 #include "../UnitsTestsPch.h"
 #include "../TestFixture/UnitsTestFixture.h"
-
+#include <fstream>
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
 struct UnitRegistryTests : UnitsTestFixture 
@@ -451,6 +451,53 @@ TEST_F(UnitRegistryTests, TestCaseInsensitiveLookup)
     EXPECT_EQ(retrievedInverseSmootPerSmoot, inverseSmootPerSmoot);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
+    {
+    Utf8String path = UnitsTestFixture::GetConversionDataPath(L"All3_1Names.csv");
+    std::ifstream ifs(path.begin(), std::ifstream::in);
+    std::string line;
+    bvector<Utf8String> ignoredNames = {"CM/REVOLUTION", "FT/REVOLUTION", "IN/DEGREE", "IN/RAD", "IN/REVOLUTION", "M/DEGREE", "M/RAD", "M/REVOLUTION", "MM/RAD", "MM/REVOLUTION"};
+    
+    bool ignore = false;
+    while (std::getline(ifs, line))
+        {
+        for(auto const& name : ignoredNames)
+            {
+            if(name.EqualsI(line.c_str()))
+                ignore=true;
+            }
+        if(!ignore)
+            { 
+            auto mapped = UnitRegistry::TryGetECName(line.c_str());
+            EXPECT_NE(nullptr, mapped) << "Unit with new Name " << line << " not mapped to an ec Name";
+            if(0 == strcmpi(mapped, "UNITS:DECA"))
+                line = "DECA";
+            if (0 == strcmpi(mapped, "UNITS:MEGAPASCAL"))
+                line = "MEGAPASCAL";
+            if (0 == strcmpi(mapped, "UNITS:KPF"))
+                line = "KPF";
+            if (0 == strcmpi(mapped, "UNITS:PERSON"))
+                line = "PERSON";
+            auto newUnit = UnitRegistry::Get().LookupUnit(line.c_str());
+            auto roundtrippedName = UnitRegistry::TryGetNameFromECName(mapped);
+            EXPECT_NE(nullptr, roundtrippedName) << "Can't get name from ecname for unit " << mapped;
+            if(0 == strcmpi(roundtrippedName, "DEKA"))
+                roundtrippedName = "DECA";
+            if (0 == strcmpi(roundtrippedName, "N/SQ.MM"))
+                roundtrippedName = "MEGAPASCAL";
+            if (0 == strcmpi(roundtrippedName, "KIPF"))
+                roundtrippedName = "KPF";
+            if (0 == strcmpi(roundtrippedName, "CAPITA"))
+                roundtrippedName = "PERSON";
+            auto ecUnit = UnitRegistry::Get().LookupUnit(roundtrippedName);
+            EXPECT_EQ(newUnit, ecUnit) << "Failed to find " << roundtrippedName;
+            }
+        ignore=false;
+        }
+    }
 
 // TODO: find a way to test compile time assertions.. Interesting talk on it, https://www.youtube.com/watch?time_continue=2105&v=zxDzMjfsgjg. Maybe try to use this style? 
 #if 0
