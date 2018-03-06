@@ -60,6 +60,7 @@
     </Part>
 
     <Product Name="ORDBridge" PrgOutputDir="ORDBridge" BuildInstallSet="true" SaveProduct="true">
+        <SubProduct ProductName="PublishORDToBIM"/>
         <SubPart PartName="ORDBridgeInstallerFiles"/>
         <SubPart PartName="ORDBridgeLibrary" />
         <SubPart PartName="iModelBridgeFwkExe-Windows" PartFile="iModelBridge" Repository="DgnDbSync" />
