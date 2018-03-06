@@ -34,6 +34,18 @@ UnitNameMappings* UnitNameMappings::GetMappings()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+// static
+Utf8CP UnitNameMappings::TryGetECNameFromOldName(Utf8CP name)
+    {
+    auto newName = TryGetNewNameFromOldName(name);
+    if(nullptr == newName)
+        return nullptr;
+    return TryGetECNameFromNewName(newName);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
 // static

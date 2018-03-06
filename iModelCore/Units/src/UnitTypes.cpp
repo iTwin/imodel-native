@@ -59,7 +59,7 @@ BentleyStatus UnitsSymbol::SetDefinition(Utf8CP definition)
 //--------------------------------------------------------------------------------------
 BentleyStatus UnitsSymbol::SetNumerator(double numerator)
     {
-    if (0.0 != m_numerator)
+    if (1.0 != m_numerator || 0.0 == numerator)
         return ERROR;
     m_numerator = numerator;
     return SUCCESS;
@@ -81,8 +81,6 @@ BentleyStatus UnitsSymbol::SetDenominator(double denominator)
 //--------------------------------------------------------------------------------------
 BentleyStatus UnitsSymbol::SetOffset(double offset)
     {
-    if (0.0 != m_offset)
-        return ERROR;
     m_offset = offset;
     return SUCCESS;
     }
@@ -133,6 +131,20 @@ UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName)
     LOG.debugv("Creating inverted unit %s with parent unit %s", unitName, parentUnit.GetName().c_str());
     return new Unit(parentUnit, system, unitName);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus Unit::SetPhenomenon(PhenomenonR phenom)
+        {
+        if (nullptr != m_phenomenon)
+            return ERROR; 
+
+        phenom.AddUnit(*this);
+
+        m_phenomenon = &phenom;
+        return SUCCESS;
+        }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
