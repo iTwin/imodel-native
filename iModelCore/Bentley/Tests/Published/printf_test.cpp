@@ -162,7 +162,7 @@ EXPECT_TRUE( strcmp (buf, "abc") == 0 );
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if !defined(BENTLEYCONFIG_OS_APPLE)
 TEST(printf_test, Numbers)
 {
   char buf[8];
