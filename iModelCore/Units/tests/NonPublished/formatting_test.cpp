@@ -56,7 +56,7 @@ BE_JSON_NAME(roll)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
 TEST(FormattingTest, Preliminary)
     {
     FormattingTestFixture::SetUpL10N();
