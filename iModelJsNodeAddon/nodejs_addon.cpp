@@ -2727,9 +2727,10 @@ static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev
     auto catJS = Napi::String::New(env, category);
 
     int llevel = (sev <= NativeLogging::LOG_TRACE)?   0: 
+                 (sev <= NativeLogging::LOG_DEBUG)?   0:        // Logger does not distinguish between trace and debug
                  (sev == NativeLogging::LOG_INFO)?    1:
                  (sev == NativeLogging::LOG_WARNING)? 2:
-                                                      3;
+                                                      3;        // Logger does not distinguish between error and fatal
 
     auto levelJS = Napi::Number::New(env, llevel);
 
