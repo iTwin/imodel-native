@@ -348,15 +348,14 @@ public:
     ~NumericFormatSpec() = default;
     UNITS_EXPORT static const NumericFormatSpecCP DefaultFormat();
     UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
-
-
+    
     UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
     UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
 
     //======================================
     // Data Member Setters/Getters
     //======================================
-    double SetRoundingFactor(double round) { return m_roundFactor = round; }
+    void SetRoundingFactor(double roundingFactor) { m_roundFactor = roundingFactor; }
     double GetRoundingFactor() const { return m_roundFactor; }
 
     void SetPresentationType(PresentationType type) { m_presentationType = type; }
@@ -365,32 +364,32 @@ public:
     void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
     ShowSignOption GetSignOption() const { return m_signOption; }
 
-    void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
+    void SetFormatTraits(FormatTraits traits) { m_formatTraits = traits; }
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
 
-    void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
+    void SetDecimalPrecision(DecimalPrecision precision) { m_decPrecision = precision; }
     DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
 
-    FractionalPrecision SetFractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
+    void SetFractionaPrecision(FractionalPrecision precision) { m_fractPrecision = precision; }
     FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
 
-    // SetFractionalBarType missing?
+    void SetFractionalBarType(FractionBarType barType) { m_barType = barType; }
     FractionBarType GetFractionalBarType() const { return m_barType; }
 
-    Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
+    void SetDecimalSeparator(Utf8Char sep) { m_decimalSeparator = sep; }
     Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
 
-    Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
+    void SetThousandSeparator(char sep) { m_thousandsSeparator = sep; }
     Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
     size_t GetThousandSeparatorSize() const { return sizeof(m_thousandsSeparator); }
 
-    Utf8CP SetUomSeparator(Utf8CP sep) { m_uomSeparator = Utf8String(sep); return m_uomSeparator.c_str(); }
+    void SetUomSeparator(Utf8CP sep) { m_uomSeparator = Utf8String(sep); }
     Utf8CP GetUomSeparator(Utf8CP def = nullptr) const { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
 
-    int SetMinWidth(int wid) { return m_minWidth = wid; }
+    void SetMinWidth(int wid) { m_minWidth = wid; }
     int GetMinWidth() { return m_minWidth; }
 
-    Utf8Char SetStopSeparator(Utf8Char sep) { return m_statSeparator = sep; }
+    void SetStopSeparator(Utf8Char sep) { m_statSeparator = sep; }
     Utf8Char GetStopSeparator() const { return m_statSeparator; }
 
     //======================================
