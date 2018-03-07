@@ -31,6 +31,19 @@ public:
     
     BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d>   ExtractSingleCurvePoints (CurveVectorPtr curve);
     
+
+    //! transforms a curvevector onto zero plane
+    //! @param[in] planar curvevector
+    //! @return profile transformed on zero plane
+    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr    GetProfileOnZeroPlane (CurveVectorCR profile);
+
+    //! transforms a curvevector onto zero plane
+    //! @param[in]  solid  solid to extract top/bottom profiles from
+    //! @param[out] bottomProfile bottom profile transformed onto zero plane
+    //! @param[out] topProfile top profile transformed onto zero plane
+    //! @return BSISUCCESS if profiles were computed
+    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus     GetTopBottomProfilesOnZeroPlane(Dgn::IBRepEntityCR solid, CurveVectorPtr& bottomProfile, CurveVectorPtr& topProfile);
+
     //! Forms points into a rectangle by a bounding point
     //! @params[out] point1, point2, point3, point4 points forming a rectangle
     //! @param[in] boundingPoint point in rectangle width line center that rectangle should adjust to

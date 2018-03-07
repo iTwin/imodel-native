@@ -158,6 +158,39 @@ CurveVectorPtr GeometryUtils::GetXYCrossSection(IBRepEntityCR solid, double z)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurveVectorPtr GeometryUtils::GetProfileOnZeroPlane
+(
+CurveVectorCR profile
+)
+    {
+    Transform localToWorld, worldToLocal;
+    DRange3d range;
+    profile.IsPlanar(localToWorld, worldToLocal, range);
+    DPlane3d surfacePlane;
+    bsiTransform_getOriginAndVectors(&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
+    Transform transToZeroPlane = Transform::From(0.0, 0.0, -surfacePlane.origin.z);
+    return profile.Clone(transToZeroPlane);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jonas.Valiunas                 03/2018
+//--------------+---------------+---------------+---------------+---------------+------
+BentleyStatus   GeometryUtils::GetTopBottomProfilesOnZeroPlane
+(
+Dgn::IBRepEntityCR solid,
+CurveVectorPtr& bottomProfile,
+CurveVectorPtr& topProfile
+)
+    {
+    bottomProfile = ExtractXYProfileFromSolid(solid, &topProfile);
+    bottomProfile = GetProfileOnZeroPlane(*bottomProfile);
+    topProfile = GetProfileOnZeroPlane(*topProfile);
+    return BSISUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Nerijus.Jakeliunas              06/2017
 //---------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr GeometryUtils::ExtractXYProfileFromSolid(IBRepEntityCR solid, CurveVectorPtr* pTopProfile)
