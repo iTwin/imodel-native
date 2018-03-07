@@ -563,7 +563,7 @@ TEST_F(KindOfQuantityDeserializationTest, SuccessfulWithUnknownUnitInNewerECVers
                displayLabel="best quantity of all time" persistenceUnit="SILLYMETER" relativeError="10e-3" />
 
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
-               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="MM;ANOTHERSILLYMETER" relativeError="10e-3" />
+               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="u:MM;ANOTHERSILLYMETER" relativeError="10e-3" />
         </ECSchema>)xml";
 
     ECSchemaPtr schema;

@@ -377,8 +377,26 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fu
                 }
             }
         }
-
-    Units::UnitCP unit = Units::UnitRegistry::Instance().LookupUnit(unitName.c_str());
+    Utf8String name;
+    Utf8String unqualifiedName;
+    Utf8String alias;
+    if(unitName.Contains(":"))
+        {
+        bvector<Utf8String> split;
+        BeStringUtilities::Split(unitName.c_str(), ":", split);
+        if(split.size() > 1)
+            { 
+            unqualifiedName = split[1];
+            alias = split[0].EqualsI("u") ? "UNITS" : "";
+            }
+        }
+    // HACK we dont' have the units schema yet to resolve the alias but want to support looking up qualified ec names
+    // If the alias is u we just assume that it's for the Units schema.
+    if(!Units::UnitRegistry::Instance().TryGetNewNameFromECName((alias + ":" + unqualifiedName).c_str(), name))
+        name = unitName;
+    
+    Units::UnitCP unit;
+    unit = Units::UnitRegistry::Instance().LookupUnit(name.c_str());
     if (nullptr == unit)
         {
         if (strictUnit)
