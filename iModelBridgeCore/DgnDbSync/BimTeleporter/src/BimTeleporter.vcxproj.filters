@@ -10,5 +10,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BimTeleporter.cpp" />
+    <ClCompile Include="DgnDbToBimConverter.cpp" />
   </ItemGroup>
 </Project>

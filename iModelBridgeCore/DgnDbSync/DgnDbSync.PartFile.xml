@@ -411,6 +411,7 @@
     <Part Name="BimTeleporterExe" BentleyBuildMakeFile="BimTeleporter/src/BimTeleporter.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="BisJson1Importer"/>
         <SubPart PartName="BisJson1Exporter0601" PartFile="BimTeleporter" />
+        <SubPart PartName="DgnDb0601ToBimConverter" />
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\BimTeleporter.exe</Files>
             <!--

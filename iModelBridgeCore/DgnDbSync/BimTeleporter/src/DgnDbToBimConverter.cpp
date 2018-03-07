@@ -46,7 +46,7 @@ bool DgnDbToBimConverter::Convert(WCharCP inputPath, WCharCP outputPath)
 
     auto perfLogFunc = [] (const char* message)
         {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter.Performance")->info(message);
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter.Performance")->info(message);
         };
     exporter.SetPerformanceLogger(perfLogFunc);
 
@@ -64,7 +64,7 @@ bool DgnDbToBimConverter::Convert(WCharCP inputPath, WCharCP outputPath)
     consumer.join();
     totalTimer.Stop();
     Utf8PrintfString message("Total teleportation|%.0f millisecs", totalTimer.GetElapsedSeconds() * 1000.0);
-    BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter.Performance")->info(message.c_str());
+    BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter.Performance")->info(message.c_str());
 
     return true;
     }
