@@ -173,9 +173,9 @@ public:
         }
     template<typename Function>
     SMNodeDistributor(Function function
-                      , unsigned int concurrency = std::thread::hardware_concurrency()
+                      , unsigned int concurrency 
                       //, unsigned int concurrency = 2
-                      , typename Queue::size_type max_items_per_thread = 5000
+                      , typename Queue::size_type max_items_per_thread
     )
         : capacity{ concurrency * max_items_per_thread }
         {
@@ -195,9 +195,9 @@ public:
 template<typename Function, typename PredicateFunc>
 SMNodeDistributor(Function function
 	, PredicateFunc can_run_function
-	, unsigned int concurrency = std::thread::hardware_concurrency()
+	, unsigned int concurrency
 	//, unsigned int concurrency = 2
-	, typename Queue::size_type max_items_per_thread = 5000
+	, typename Queue::size_type max_items_per_thread
 )
 	: capacity{ concurrency * max_items_per_thread }
 {

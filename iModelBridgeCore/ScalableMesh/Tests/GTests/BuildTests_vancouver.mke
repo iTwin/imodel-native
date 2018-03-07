@@ -54,6 +54,7 @@ GUNITTEST_OBJS      = $(PCHHeaderObject) $(MultiCompileObjectList)
 GUNITTEST_PATH      = $(o) 
 GUNITTEST_SYMB      = $(o)
 #GTEST_MAIN_IS_SUPPLIED = 1
+DLM_PROFILE  = 1
 GUnitTestDir = $(BuildContext)SubParts/google_gtest/
 GUNIT_TEST_VERSION = 1.3
 GUNITTEST_NOEXEC = 1
