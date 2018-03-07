@@ -40,7 +40,6 @@
     <ClInclude Include="PublicAPI\Formatting\FormattingApi.h" />
     <ClInclude Include="PublicAPI\Formatting\FormattingDefinitions.h" />
     <ClInclude Include="PublicAPI\Formatting\FormattingEnum.h" />
-    <ClInclude Include="PublicAPI\Formatting\FormattingParsing.h" />
     <ClInclude Include="src\UnitsPCH.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

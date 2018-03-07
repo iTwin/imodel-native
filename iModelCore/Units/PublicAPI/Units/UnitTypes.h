@@ -134,7 +134,7 @@ protected:
     IUnitsContextCP m_unitsContext;
 
     // Creates a default invalid Symbol
-    UnitsSymbol() : m_isBaseSymbol(false), m_numerator(0.0), m_denominator(1.0), m_offset(0.0), m_isNumber(true), m_evaluated(false), m_unitsContext(nullptr) {}
+    UnitsSymbol() : m_isBaseSymbol(false), m_numerator(1.0), m_denominator(1.0), m_offset(0.0), m_isNumber(true), m_evaluated(false), m_unitsContext(nullptr) {}
 
     // Creates an invalid Symbol with the provided name.
     UNITS_EXPORT UnitsSymbol(Utf8CP name);
@@ -148,7 +148,8 @@ protected:
     //! Sets the definition of this UnitSymbol if a definition is not already defined.
     UNITS_EXPORT BentleyStatus SetDefinition(Utf8CP definition);
 
-    //! Sets the numerator of this UnitSymbol if the current numerator is the default, 0.0.
+    //! Sets the numerator of this UnitSymbol if the current numerator is the default, 1.0. The provided
+    //! numerator cannot be 0.0.
     UNITS_EXPORT BentleyStatus SetNumerator(double numerator);
     
     //! Sets the denominator of this UnitSymbol if the current denominator is the default, 1.0. The provided
@@ -243,8 +244,8 @@ protected:
 
     //! Sets the UnitSystem of this Unit if it does not already have one.
     BentleyStatus SetSystem(UnitSystemCR system) {if (nullptr != m_system) return ERROR; m_system = &system; return SUCCESS;}
-    //! Sets the Phenomenon of this Unit if it does not already have one.
-    BentleyStatus SetPhenomenon(PhenomenonCR phenom) {if (nullptr != m_phenomenon) return ERROR; m_phenomenon = &phenom; return SUCCESS;}
+    //! Sets the Phenomenon of this Unit if it does not already have one. If it is set this Unit will be added to the phenomenon.
+    UNITS_EXPORT BentleyStatus SetPhenomenon(PhenomenonR phenom);
 
     //! Sets the Parent Unit.
     BentleyStatus SetParent(UnitCR parentUnit) {if (IsInvertedUnit() || nullptr != m_parent) return ERROR; m_parent = &parentUnit; return SUCCESS;}
@@ -342,7 +343,7 @@ private:
     // Conversion caching currently not supported
     // bmap<Utf8CP, Conversion> m_conversions;
 
-    void AddUnit(UnitCR unit) 
+    void AddUnit(UnitCR unit)
         {
         auto it = std::find_if(m_units.begin(), m_units.end(), [&unit](UnitCP existingUnit) {return existingUnit->GetName().EqualsI(unit.GetName().c_str());});
         if (it == m_units.end())

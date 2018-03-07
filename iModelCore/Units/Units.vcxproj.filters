@@ -84,9 +84,6 @@
     <ClInclude Include="PublicAPI\Formatting\FormattingEnum.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\Formatting\FormattingParsing.h">
-      <Filter>Header Files\Formatting</Filter>
-    </ClInclude>
     <ClInclude Include="PublicAPI\Units\Units.h">
       <Filter>Header Files\Units</Filter>
     </ClInclude>

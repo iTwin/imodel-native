@@ -12,6 +12,7 @@
 #include <locale>
 #include "../../Localization/xliffs/Units.xliff.h"
 #include <BeSQLite/L10N.h>
+#include "../../PrivateAPI/Formatting/FormattingParsing.h"
 
 USING_NAMESPACE_BENTLEY_UNITS
 

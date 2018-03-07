@@ -10,7 +10,6 @@
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <Formatting/FormattingDefinitions.h>
 #include <Formatting/FormattingEnum.h>
-#include <Formatting/FormattingParsing.h>
 #include <Units/Units.h>
 
 namespace BEU = BentleyApi::Units;
@@ -1006,6 +1005,12 @@ public:
     //! Whether or not the StdFormatSet has a problem.
     //! @return true if the Set has a problem; false, otherwise.
     UNITS_EXPORT static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
+    };
+
+struct QuantityFormatting
+    {
+    UNITS_EXPORT static Units::Quantity CreateQuantity(Utf8CP input, size_t start, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
+    UNITS_EXPORT static Units::Quantity CreateQuantity(Utf8CP input, size_t start, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
     };
 
 END_BENTLEY_FORMATTING_NAMESPACE

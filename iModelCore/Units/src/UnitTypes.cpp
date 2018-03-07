@@ -19,7 +19,7 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-UnitsSymbol::UnitsSymbol(Utf8CP name) : m_name(name), m_isBaseSymbol(false), m_numerator(0.0), m_denominator(1.0),
+UnitsSymbol::UnitsSymbol(Utf8CP name) : m_name(name), m_isBaseSymbol(false), m_numerator(1.0), m_denominator(1.0),
     m_offset(0.0), m_isNumber(true), m_evaluated(false), m_symbolExpression(new Expression()) {}
 
 //--------------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ BentleyStatus UnitsSymbol::SetDefinition(Utf8CP definition)
 //--------------------------------------------------------------------------------------
 BentleyStatus UnitsSymbol::SetNumerator(double numerator)
     {
-    if (0.0 != m_numerator)
+    if (1.0 != m_numerator || 0.0 == numerator)
         return ERROR;
     m_numerator = numerator;
     return SUCCESS;
@@ -81,8 +81,6 @@ BentleyStatus UnitsSymbol::SetDenominator(double denominator)
 //--------------------------------------------------------------------------------------
 BentleyStatus UnitsSymbol::SetOffset(double offset)
     {
-    if (0.0 != m_offset)
-        return ERROR;
     m_offset = offset;
     return SUCCESS;
     }
@@ -135,6 +133,20 @@ UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+BentleyStatus Unit::SetPhenomenon(PhenomenonR phenom)
+        {
+        if (nullptr != m_phenomenon)
+            return ERROR; 
+
+        phenom.AddUnit(*this);
+
+        m_phenomenon = &phenom;
+        return SUCCESS;
+        }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
 ExpressionCR Unit::Evaluate() const
@@ -142,8 +154,10 @@ ExpressionCR Unit::Evaluate() const
     if (IsInvertedUnit())
         return m_parent->Evaluate();
 
-    IUnitsContextCP context = m_unitsContext;
-    return T_Super::Evaluate(0, [&context](Utf8CP unitName) {return context->LookupUnit(unitName);});
+    return T_Super::Evaluate(0, [=](Utf8CP unitName) 
+        {
+        return m_unitsContext->LookupUnit(unitName);
+        });
     }
 
 //---------------------------------------------------------------------------------------

@@ -13,6 +13,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
 #include <Formatting/FormattingApi.h>
+#include "../../PrivateAPI/Formatting/FormattingParsing.h"
 #include "UnitsTestsPch.h"
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))

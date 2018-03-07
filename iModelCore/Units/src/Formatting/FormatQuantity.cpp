@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
+#include "../../PrivateAPI/Formatting/FormattingParsing.h"
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -373,5 +374,35 @@ CompositeValue::CompositeValue()
     {
     Init();
     }
+
+Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, size_t start, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
+    {
+    BEU::UnitCP persUnit = outputFUS.GetUnit();
+    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, inputFUS.GetUnit());
+    Formatting::FormatProblemCode locCode;
+    if (nullptr == problemCode) problemCode = &locCode;
+    *problemCode = Formatting::FormatProblemCode::NoProblems;
+    BEU::Quantity qty = fps.GetQuantity(problemCode, &inputFUS);
+    if (*problemCode == Formatting::FormatProblemCode::NoProblems)
+        {
+        if (nullptr != persist)
+            {
+            BEU::Quantity persQty = qty.ConvertTo(persUnit);
+            *persist = persQty.GetMagnitude();
+            }
+        }
+    else if (nullptr != persist)
+        *persist = 0.0;
+
+    return qty;
+    }
+
+Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, size_t start, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
+    {
+    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, inputFUS.GetUnit());
+    BEU::Quantity qty = fps.GetQuantity(problemCode, &inputFUS);
+    return qty;
+    }
+
 
 END_BENTLEY_FORMATTING_NAMESPACE
