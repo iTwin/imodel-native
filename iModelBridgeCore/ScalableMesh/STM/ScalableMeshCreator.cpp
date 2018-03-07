@@ -659,7 +659,7 @@ void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<Point
 {
 
 }
-
+   
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011

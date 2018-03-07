@@ -41,6 +41,7 @@ using namespace std;
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/ScalableMeshFrom3MX.h>
+#include <ScalableMesh/IScalableMeshDetectGround.h>
 
 #include <GeomSerialization\GeomLibsFlatBufferApi.h>
 
@@ -79,6 +80,9 @@ using namespace std;
 #include <CloudDataSource/DataSourceManager.h>
 #include <CloudDataSource/DataSourceAccount.h>
 #include <CloudDataSource/DataSourceBuffered.h>
+
+
+
 
 #pragma warning( disable : 4456 ) 
 
@@ -433,11 +437,10 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         IScalableMeshGroundPreviewerPtr pSmQuickGroundPreviewer;
         BaseGCSCPtr destinationGcs;
-        BeFileName groundOutputFileName(groundOutputName.c_str());
+        BeFileName groundOutputFileName(BeFileName::GetFileNameWithoutExtension(groundOutputName.c_str()).c_str());
         BeFileName outputDirName(outputDir.c_str());
-            
-        
-        SMStatus status = scalableMeshPtr->DetectGroundForRegion(groundOutputFileName, outputDirName, areas[areaInd], areaInd, pSmQuickGroundPreviewer, destinationGcs, true);
+                            
+        SMStatus status = IScalableMeshDetectGround::DetectGroundForRegion(scalableMeshPtr, groundOutputFileName, outputDirName, areas[areaInd], areaInd, pSmQuickGroundPreviewer, destinationGcs, true);
         if (status != S_SUCCESS)
             {
             errorInfo += WPrintfString(L"Error returned by DetectGroundForRegion for area %i    ", areaInd);
