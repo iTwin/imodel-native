@@ -484,20 +484,21 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Alignment::GenerateAprox3dGeom()
     {
-    auto mainPairPtr = QueryMainPair();
-    if (mainPairPtr.IsNull())
-        return DgnDbStatus::MissingId;
-
     DPoint3d origin = { 0, 0, 0 };
     auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
 
-    if (!mainPairPtr->IsValidVertical())
+    if (!QueryMainVerticalId().IsValid())
         {
-        if (!geomBuilderPtr->Append(*mainPairPtr->GetHorizontalCurveVector(), GeometryBuilder::CoordSystem::World))
+        auto horizontalCPtr = QueryHorizontal();
+        if (horizontalCPtr.IsNull() || !geomBuilderPtr->Append(horizontalCPtr->GetGeometry(), GeometryBuilder::CoordSystem::World))
             return DgnDbStatus::NoGeometry;
         }
     else
         {
+        auto mainPairPtr = QueryMainPair();
+        if (mainPairPtr.IsNull())
+            return DgnDbStatus::MissingId;
+
         bvector<DPoint3d> strokedPoints = mainPairPtr->GetStrokedAlignment();        
 
         if (!geomBuilderPtr->Append(*CurveVector::CreateLinear(strokedPoints), GeometryBuilder::CoordSystem::World))

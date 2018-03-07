@@ -98,7 +98,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     auto koqCP = projectPtr->Schemas().GetKindOfQuantity(BRRA_SCHEMA_NAME, "STATION");
     auto presentationUnitList = koqCP->GetPresentationUnitList();
 
-    auto mUnitP = UnitRegistry::Instance().LookupUnitCI("M");
+    auto mUnitP = UnitRegistry::Instance().LookupUnit("M");
     Quantity qty(stationTranslatorPtr->ToStation(71).Value(), *mUnitP);
     auto fusP = std::find_if(presentationUnitList.begin(), presentationUnitList.end(), 
         [](FormatUnitSet& fus) { return 0 == fus.GetUnitName().CompareTo("M"); });
