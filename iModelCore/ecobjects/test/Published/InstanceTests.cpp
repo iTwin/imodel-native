@@ -468,6 +468,141 @@ TEST_F (InstanceTests, TestIsNullArray)
     EXPECT_TRUE (isNull);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
+TEST_F(InstanceTests, TestGetNullPropertyValues)
+    {
+    CreateSchema();
+    CreateProperty("GeomProp", PrimitiveType::PRIMITIVETYPE_IGeometry);
+    CreateProperty("BinaryProp", PrimitiveType::PRIMITIVETYPE_Binary);
+    CreateProperty("BoolProp", PrimitiveType::PRIMITIVETYPE_Boolean);
+    CreateProperty("DateProp", PrimitiveType::PRIMITIVETYPE_DateTime);
+    CreateProperty("DoubleProp", PrimitiveType::PRIMITIVETYPE_Double);
+    CreateProperty("IntProp", PrimitiveType::PRIMITIVETYPE_Integer);
+    CreateProperty("LongProp", PrimitiveType::PRIMITIVETYPE_Long);
+    CreateProperty("Point2dProp", PrimitiveType::PRIMITIVETYPE_Point2d);
+    CreateProperty("Point3dProp", PrimitiveType::PRIMITIVETYPE_Point3d);
+    CreateProperty("StringProp", PrimitiveType::PRIMITIVETYPE_String);
+
+    CreateInstance();
+
+    ECValue testValue;
+
+    // IGeometry
+    m_instance->GetValue(testValue, "GeomProp");
+    EXPECT_TRUE(testValue.IsNull());
+    IGeometryPtr storedGeometryPtr = testValue.GetIGeometry();
+    EXPECT_TRUE(storedGeometryPtr.IsNull());
+    EXPECT_FALSE(storedGeometryPtr.IsValid());
+
+    size_t size = 0;
+    const Byte * igeom = testValue.GetIGeometry(size);
+    EXPECT_EQ(nullptr, igeom);
+    EXPECT_EQ(0, size);
+
+    size = 0;
+    const Byte* igeomBlob = testValue.GetBinary(size);
+    EXPECT_EQ(nullptr, igeomBlob);
+    EXPECT_EQ(0, size);
+
+    testValue.Clear();
+
+    // Binary
+    m_instance->GetValue(testValue, "BinaryProp");
+    EXPECT_TRUE(testValue.IsNull());
+    size = 0;
+    const Byte* binaryBlob = testValue.GetBinary(size);
+    EXPECT_EQ(nullptr, binaryBlob);
+    EXPECT_EQ(0, size);
+
+    testValue.Clear();
+
+    // Bool
+
+    m_instance->GetValue(testValue, "BoolProp");
+    EXPECT_TRUE(testValue.IsNull());
+    { // Precondition within the GetBoolean to assert if null.
+    DISABLE_ASSERTS
+    EXPECT_FALSE(testValue.GetBoolean());
+    }
+    
+    testValue.Clear();
+
+    // Date
+    m_instance->GetValue(testValue, "DateProp");
+    EXPECT_TRUE(testValue.IsNull());
+    { // Precondition within the GetBoolean to assert if null.
+    DISABLE_ASSERTS
+    DateTime time = testValue.GetDateTime();
+    EXPECT_FALSE(time.IsValid());
+
+    int64_t test = testValue.GetDateTimeTicks();
+    EXPECT_EQ(0, test);
+
+    int64_t test2 = testValue.GetDateTimeUnixMillis();
+    EXPECT_EQ(0, test2);
+    }
+
+    testValue.Clear();
+
+    // Double
+    m_instance->GetValue(testValue, "DoubleProp");
+    { // Precondition within the GetBoolean to assert if null.
+    DISABLE_ASSERTS
+    EXPECT_EQ(std::numeric_limits<double>::quiet_NaN(), testValue.GetDouble());
+    }
+
+    testValue.Clear();
+
+    // Integer
+    m_instance->GetValue(testValue, "IntProp");
+    { // Precondition within the GetBoolean to assert if null.
+    DISABLE_ASSERTS
+    EXPECT_EQ(0, testValue.GetInteger());
+    }
+
+    testValue.Clear();
+
+    // Long
+    m_instance->GetValue(testValue, "LongProp");
+    { // Precondition within the GetBoolean to assert if null.
+    DISABLE_ASSERTS
+    EXPECT_EQ(0, testValue.GetLong());
+    }
+
+    testValue.Clear();
+
+    // Point2dProp
+    m_instance->GetValue(testValue, "Point2dProp");
+    { // Precondition within the GetBoolean to assert if null.
+    DISABLE_ASSERTS
+    DPoint2d pt2 = testValue.GetPoint2d();
+    EXPECT_EQ(DPoint2d::FromZero(), pt2);
+    }
+
+    testValue.Clear();
+
+    // Point3dProp
+    m_instance->GetValue(testValue, "Point3dProp");
+    { // Precondition within the GetBoolean to assert if null.
+    DISABLE_ASSERTS
+    DPoint3d pt3 = testValue.GetPoint3d();
+    EXPECT_EQ(DPoint3d::FromZero(), pt3);
+    }
+
+    testValue.Clear();
+
+    // String
+    m_instance->GetValue(testValue, "StringProp");
+    EXPECT_TRUE(testValue.IsNull());
+    EXPECT_EQ(nullptr, testValue.GetUtf16CP());
+    EXPECT_EQ(nullptr, testValue.GetUtf8CP());
+    EXPECT_EQ(nullptr, testValue.GetWCharCP());
+    }
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
