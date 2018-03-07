@@ -962,6 +962,7 @@ protected:
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
+    DgnModelId                  m_geometryPartsModelId;
     T_GeometryBuilderList       m_sharedGeometryPartList;
     T_PresentationRuleContents  m_presentationRuleContents;
 
@@ -1026,7 +1027,7 @@ protected:
     ResolvedImportJob GetResolvedImportJob (DwgSyncInfo::ImportJob const& job);
     ResolvedImportJob FindSoleImportJobForFile (DwgDbDatabaseR dwg);
     // model subjects
-    enum class ModelSubjectType {Hierarchy, References};
+    enum class ModelSubjectType {Hierarchy, References, GeometryParts};
     SubjectCPtr GetOrCreateModelSubject(SubjectCR parent, Utf8StringCR, ModelSubjectType);
     bool        IsUpdating () const { return GetOptions().IsUpdating(); }
     bool        IsCreatingNewDgnDb () { return GetOptions().IsCreatingNewDgnDb(); }
@@ -1049,6 +1050,8 @@ protected:
     ResolvedModelMapping                GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
     //! Create the root model from the modelspace block if importing, or retrieve it from the syncInfo if updating.
     ResolvedModelMapping                GetOrCreateRootModel (bool updating);
+    //! Partition the spatial subject and create a PhysicalModel dedicated for GeometryParts
+    BentleyStatus                       GetOrCreateGeometryPartsModel ();
     ResolvedModelMapping                GetRootModel () const { return  m_rootDwgModelMap; }
     ResolvedModelMapping                GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
     //! Find a cached DgnModel mapped from a DWG "model".  Only search the cached map, no attempt to search in the syncInfo.
