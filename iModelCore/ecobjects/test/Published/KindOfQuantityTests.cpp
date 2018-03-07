@@ -741,7 +741,7 @@ TEST_F(KindOfQuantityDeserializationTest, FailToDeserializeWithUnknownPersistenc
 TEST_F(KindOfQuantityDeserializationTest, FailToDeserializeWithUnknownPersistenceFormat)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                displayLabel="best quantity of all time" persistenceUnit="M(SILLYFORMAT)" relativeError="10e-3" />
         </ECSchema>)xml";
@@ -757,7 +757,7 @@ TEST_F(KindOfQuantityDeserializationTest, FailToDeserializeWithUnknownPersistenc
 TEST_F(KindOfQuantityDeserializationTest, FailToDeserializeWithUnknownPresentationUnit)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="SILLYMETER;ANOTHERSILLYMETER" relativeError="10e-3" />
         </ECSchema>)xml";
@@ -773,7 +773,7 @@ TEST_F(KindOfQuantityDeserializationTest, FailToDeserializeWithUnknownPresentati
 TEST_F(KindOfQuantityDeserializationTest, FailToDeserializeWithUnknownPresentationFormat)
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
            <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
                displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="MM;CM(SILLYFORMAT)" relativeError="10e-3" />
         </ECSchema>)xml";

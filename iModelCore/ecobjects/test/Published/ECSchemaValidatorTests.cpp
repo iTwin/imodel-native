@@ -1440,10 +1440,11 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BadSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0' alias='bis'/>"
+        "    <ECSchemaReference name='Units' version='01.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:IParentElement</BaseClass>"
         "    </ECEntityClass>"
-        "    <KindOfQuantity typeName='BadKOQ' displayLabel='OFFSET' persistenceUnit='IN' relativeError='1e-2' />"
+        "    <KindOfQuantity typeName='BadKOQ' displayLabel='OFFSET' persistenceUnit='u:IN' relativeError='1e-2' />"
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -1453,10 +1454,11 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BadSchema2' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0' alias='bis'/>"
+        "    <ECSchemaReference name='Units' version='01.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:IParentElement</BaseClass>"
         "    </ECEntityClass>"
-        "    <KindOfQuantity typeName='BadKOQ2' displayLabel='LENGTH' persistenceUnit='US_SURVEY_IN' relativeError='1e-3' />"
+        "    <KindOfQuantity typeName='BadKOQ2' displayLabel='LENGTH' persistenceUnit='u:US_SURVEY_IN' relativeError='1e-3' />"
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -1466,10 +1468,11 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     Utf8String badSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='BadSchema3' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0' alias='bis'/>"
+        "    <ECSchemaReference name='Units' version='01.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:IParentElement</BaseClass>"
         "    </ECEntityClass>"
-        "    <KindOfQuantity typeName='BadKOQ3' displayLabel='DEPTH' persistenceUnit='NAUT_MILE' relativeError='1e-3' />"
+        "    <KindOfQuantity typeName='BadKOQ3' displayLabel='DEPTH' persistenceUnit='u:NAUT_MILE' relativeError='1e-3' />"
         "</ECSchema>";
     InitBisContextWithSchemaXml(badSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -1479,10 +1482,11 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='GoodSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0' alias='bis'/>"
+        "    <ECSchemaReference name='Units' version='01.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:IParentElement</BaseClass>"
         "    </ECEntityClass>"
-        "    <KindOfQuantity typeName='GoodKOQ' displayLabel='LENGTH' persistenceUnit='M' relativeError='1e-1' />"
+        "    <KindOfQuantity typeName='GoodKOQ' displayLabel='LENGTH' persistenceUnit='u:M' relativeError='1e-1' />"
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());
@@ -1492,10 +1496,11 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     Utf8String goodSchemaXml = Utf8String("<?xml version='1.0' encoding='UTF-8'?>") +
         "<ECSchema schemaName='GoodSchema2' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML." + ECSchema::GetECVersionString(ECVersion::Latest) + "'>"
         "    <ECSchemaReference name='BisCore' version='1.0' alias='bis'/>"
+        "    <ECSchemaReference name='Units' version='01.00' alias='u'/>"
         "    <ECEntityClass typeName='TestClass'>"
         "        <BaseClass>bis:IParentElement</BaseClass>"
         "    </ECEntityClass>"
-        "    <KindOfQuantity typeName='GoodKOQ2' displayLabel='OFFSET' persistenceUnit='CM' relativeError='1e-4' />"
+        "    <KindOfQuantity typeName='GoodKOQ2' displayLabel='OFFSET' persistenceUnit='u:CM' relativeError='1e-4' />"
         "</ECSchema>";
     InitBisContextWithSchemaXml(goodSchemaXml.c_str());
     ASSERT_TRUE(schema.IsValid());

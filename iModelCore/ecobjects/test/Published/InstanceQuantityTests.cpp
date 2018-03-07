@@ -39,24 +39,24 @@ TEST_F(InstanceQuantityTests, GetQuantityFromDoubleWithKoqDefined)
     Units::Quantity q;
     ASSERT_EQ(ECObjectsStatus::PropertyValueNull, instance->GetQuantity(q, "Length"));
     ASSERT_EQ(0.0, q.GetMagnitude()) << "Getting Quantity for null value outputs quantity with 0 magnitude";
-    ASSERT_STREQ("Units:CM", q.GetUnit()->GetName().c_str()) << "Getting Quantity for null value outputs quantity with correct unit";
+    ASSERT_STREQ("CM", q.GetUnit()->GetName().c_str()) << "Getting Quantity for null value outputs quantity with correct unit";
     q = Units::Quantity(42, *q.GetUnit());
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetQuantity("Length", q));
     Units::Quantity oq;
     ASSERT_EQ(ECObjectsStatus::Success, instance->GetQuantity(oq, "Length"));
     ASSERT_EQ(42, oq.GetMagnitude()) << "Length";
-    ASSERT_STREQ("Units:CM", oq.GetUnitName()) << "Length";
+    ASSERT_STREQ("CM", oq.GetUnitName()) << "Length";
 
     ASSERT_EQ(ECObjectsStatus::IndexOutOfRange, instance->GetQuantity(q, "LengthArray", 0));
     ASSERT_EQ(ECObjectsStatus::Success, instance->AddArrayElements("LengthArray", 1));
     ASSERT_EQ(ECObjectsStatus::PropertyValueNull, instance->GetQuantity(q, "LengthArray", 0));
     ASSERT_EQ(0.0, q.GetMagnitude()) << "Getting Quantity for null value outputs quantity with 0 magnitude";
-    ASSERT_STREQ("Units:CM", q.GetUnit()->GetName().c_str()) << "Getting Quantity for null value outputs quantity with correct unit";
+    ASSERT_STREQ("CM", q.GetUnit()->GetName().c_str()) << "Getting Quantity for null value outputs quantity with correct unit";
     q = Units::Quantity(42, *q.GetUnit());
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetQuantity("LengthArray", q, 0));
     ASSERT_EQ(ECObjectsStatus::Success, instance->GetQuantity(oq, "LengthArray", 0));
     ASSERT_EQ(42, oq.GetMagnitude()) << "LengthArray";
-    ASSERT_STREQ("Units:CM", oq.GetUnitName()) << "LengthArray";
+    ASSERT_STREQ("CM", oq.GetUnitName()) << "LengthArray";
 
     }
 

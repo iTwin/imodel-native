@@ -3318,15 +3318,24 @@ private:
         return nullptr;
         }
 
+    template<typename T, typename T_MAP>
+    T* GetSchemaChildConst(Utf8CP name, T_MAP const* map) const
+        {
+        auto iter = map->find(name);
+        if (iter != map->end())
+            return iter->second;
+        return nullptr;
+        }
+
 protected:
     ECSchemaCP _GetContainerSchema() const override {return this;}
     Utf8CP _GetContainerName() const override {return GetName().c_str();}
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::Schema;}
 
     // Following methods fulfill IUnitsContext requirements
-    ECUnitP _LookupUnitP(Utf8CP name) override;
-    PhenomenonP _LookupPhenomenonP(Utf8CP name) override;
-    UnitSystemP _LookupUnitSystemP(Utf8CP name) override;
+    ECUnitP _LookupUnitP(Utf8CP name) const override;
+    PhenomenonP _LookupPhenomenonP(Utf8CP name) const override;
+    UnitSystemP _LookupUnitSystemP(Utf8CP name) const override;
     void _AllUnits(bvector<Units::UnitCP>& allUnits) const override;
     void _AllPhenomena(bvector<Units::PhenomenonCP>& allPhenomena) const override;
     void _AllSystems(bvector<Units::UnitSystemCP>& allUnitSystems) const override;
@@ -3582,7 +3591,7 @@ public:
     //! @param[in] unitSystem   Name of the unit system this unit is associated with
     //! @param[in] label        Display label of the unit
     //! @param[in] description  Description of the unit
-    ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr) 
+    ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Utf8CP label = nullptr, Utf8CP description = nullptr) 
         {return CreateUnit(unit, name, definition, phenom, unitSystem, nullptr, nullptr, nullptr, label, description);}
 
     //! Creates a new ECUnit and adds it to the schema.
@@ -3594,7 +3603,7 @@ public:
     //! @param[in] numerator    Numerator for unit factor
     //! @param[in] label        Display label of the unit
     //! @param[in] description  Description of the unit
-    ECOBJECTS_EXPORT ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Utf8CP label = nullptr, Utf8CP description = nullptr) 
+    ECObjectsStatus CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, Nullable<double> numerator, Utf8CP label = nullptr, Utf8CP description = nullptr) 
         {return CreateUnit(unit, name, definition, phenom, unitSystem, numerator, nullptr, nullptr, label, description);}
     
     //! Creates a new inverted ECUnit and adds it to the schema.
@@ -3690,7 +3699,7 @@ public:
     //! Get a unit system by name within the context of this schema.
     //! @param[in]  name     The name of the unit system to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::UnitSystem if the named unit system exists in within the current schema; otherwise, nullptr
-    UnitSystemP GetUnitSystemP(Utf8CP name) {return GetSchemaChild<UnitSystem, UnitSystemMap>(name, &m_unitSystemMap);}
+    UnitSystemP GetUnitSystemP(Utf8CP name) const {return GetSchemaChildConst<UnitSystem, UnitSystemMap>(name, &m_unitSystemMap);}
 
     //! Get a Phenomenon by name within the context of this schema.
     //! @param[in]  name     The name of the phenomenon to lookup.  This must be an unqualified (short) name.
@@ -3700,7 +3709,7 @@ public:
     //! Get a Phenomenon by name within the context of this schema.
     //! @param[in]  name     The name of the phenomenon to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::Phenomenon if the named phenomenon exists in within the current schema; otherwise, nullptr
-    PhenomenonP GetPhenomenonP(Utf8CP name) {return GetSchemaChild<Phenomenon, PhenomenonMap>(name, &m_phenomenonMap);}
+    PhenomenonP GetPhenomenonP(Utf8CP name) const {return GetSchemaChildConst<Phenomenon, PhenomenonMap>(name, &m_phenomenonMap);}
 
     //! Looks up an ECUnit by within the context of this schema. If the name is fully qualified it will search reference
     //! schemas.
@@ -3716,7 +3725,7 @@ public:
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT ECUnitP GetUnitP(Utf8CP name) {return GetSchemaChild<ECUnit, UnitMap>(name, &m_unitMap);}
+    ECUnitP GetUnitP(Utf8CP name) const {return GetSchemaChildConst<ECUnit, UnitMap>(name, &m_unitMap);}
 
     //! Get an inverted ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.

@@ -280,6 +280,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecifications)
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    expectedRefSchemas.push_back("Units.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -323,7 +324,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceAndPresentationUnitsNotCompat
 
     ASSERT_EQ(1, schema->GetReferencedSchemas().size()) << "Expected a single schema references after conversion because the standard Units schema ia added";
 
-    ECSchema::IsSchemaReferenced(*schema, *StandardUnitsHelper::GetSchema());
+    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *StandardUnitsHelper::GetSchema()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -870,6 +871,7 @@ TEST_F(UnitsCustomAttributesConversionTests, OldUnitsWithKoqNameConflicts)
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    expectedRefSchemas.push_back("Units.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -910,6 +912,7 @@ TEST_F(UnitsCustomAttributesConversionTests, SchemaWithIsUnitSystemSchema_Attrib
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    expectedRefSchemas.push_back("Units.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 

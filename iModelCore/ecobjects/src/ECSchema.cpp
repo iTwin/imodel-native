@@ -1718,7 +1718,7 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECUnitP ECSchema::_LookupUnitP(Utf8CP name)
+ECUnitP ECSchema::_LookupUnitP(Utf8CP name) const
     {
     Utf8String unitAlias;
     Utf8String unitName;
@@ -1730,7 +1730,7 @@ ECUnitP ECSchema::_LookupUnitP(Utf8CP name)
         unit = GetUnitP(unitName.c_str());
     else
         {
-        ECSchemaP resolvedUnitSchema = GetSchemaPByAlias(unitAlias);
+        ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(unitAlias);
         if (nullptr == resolvedUnitSchema)
             return nullptr;
 
@@ -1743,7 +1743,7 @@ ECUnitP ECSchema::_LookupUnitP(Utf8CP name)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-PhenomenonP ECSchema::_LookupPhenomenonP(Utf8CP name)
+PhenomenonP ECSchema::_LookupPhenomenonP(Utf8CP name) const
     {
     Utf8String phenomAlias;
     Utf8String phenomName;
@@ -1755,7 +1755,7 @@ PhenomenonP ECSchema::_LookupPhenomenonP(Utf8CP name)
         phenom = GetPhenomenonP(phenomName.c_str());
     else
         {
-        ECSchemaP resolvedPhenomSchema = GetSchemaPByAlias(phenomAlias);
+        ECSchemaCP resolvedPhenomSchema = GetSchemaByAliasP(phenomAlias);
         if (nullptr == resolvedPhenomSchema)
             return nullptr;
 
@@ -1768,7 +1768,7 @@ PhenomenonP ECSchema::_LookupPhenomenonP(Utf8CP name)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-UnitSystemP ECSchema::_LookupUnitSystemP(Utf8CP name)
+UnitSystemP ECSchema::_LookupUnitSystemP(Utf8CP name) const
     {
     Utf8String systemAlias;
     Utf8String systemName;
@@ -1780,7 +1780,7 @@ UnitSystemP ECSchema::_LookupUnitSystemP(Utf8CP name)
         system = GetUnitSystemP(systemName.c_str());
     else
         {
-        ECSchemaP resolvedSchema = GetSchemaPByAlias(systemAlias);
+        ECSchemaCP resolvedSchema = GetSchemaByAliasP(systemAlias);
         if (nullptr == resolvedSchema)
             return nullptr;
 

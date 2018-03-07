@@ -11,6 +11,10 @@
       "version" : "01.00.00"
     },
     {
+      "name": "Units",
+      "version": "01.00.00"
+    },
+    {
       "name": "refSchemaA",
       "version": "03.01.00"
     },
@@ -103,22 +107,22 @@
     "ExampleKoQ": {
       "schemaChildType": "KindOfQuantity",
       "persistenceUnit": {
-        "unit": "MM",
-        "format": "DefaultReal"
+        "unit": "u:MM",
+        "format": "DefaultRealU"
       },
       "precision": 3.0,
       "presentationUnits": [
         {
-          "unit": "IN",
-          "format": "DefaultReal"
+          "unit": "u:IN",
+          "format": "DefaultRealU"
         },
         {
-          "unit": "MM",
-          "format": "DefaultReal"
+          "unit": "u:MM",
+          "format": "DefaultRealU"
         },
         {
-          "unit": "CM",
-          "format": "DefaultReal"
+          "unit": "u:CM",
+          "format": "DefaultRealU"
         }
       ]
     },

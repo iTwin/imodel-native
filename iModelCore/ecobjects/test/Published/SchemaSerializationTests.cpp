@@ -152,6 +152,7 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     schema->SetDescription("Comprehensive Schema to demonstrate use of all ECSchema concepts.");
     schema->SetDisplayLabel("Comprehensive Schema");
     schema->AddReferencedSchema(*standardCASchema);
+    schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
 
     ECEntityClassP baseEntityClass;
     ECEntityClassP entityClass;
@@ -268,11 +269,11 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     kindOfQuantity->SetDescription("Kind of a Description here");
     kindOfQuantity->SetDisplayLabel("best quantity of all times");
-    kindOfQuantity->SetPersistenceUnit("CM");
+    kindOfQuantity->SetPersistenceUnit("u:CM");
     kindOfQuantity->SetRelativeError(10e-3);
-    kindOfQuantity->SetDefaultPresentationUnit("FT");
-    kindOfQuantity->AddPresentationUnit("IN");
-    kindOfQuantity->AddPresentationUnit("MILLIINCH");
+    kindOfQuantity->SetDefaultPresentationUnit("u:FT");
+    kindOfQuantity->AddPresentationUnit("u:IN");
+    kindOfQuantity->AddPresentationUnit("u:MILLIINCH");
 
     WString fullSchemaName;
     fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
@@ -302,6 +303,7 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
     schema->SetDescription("Schema to test Kind of Quantity Inheritance serialization.");
     schema->SetDisplayLabel("KOQ Inheritance Test Schema");
+    schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
 
     ECEntityClassP parentEntityClass;
     ECEntityClassP derivedEntityClass1;
@@ -313,20 +315,20 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     kindOfQuantity->SetDescription("Kind of a Description here");
     kindOfQuantity->SetDisplayLabel("best quantity of all times");
-    kindOfQuantity->SetPersistenceUnit("CM");
+    kindOfQuantity->SetPersistenceUnit("u:CM");
     kindOfQuantity->SetRelativeError(10e-3);
-    kindOfQuantity->SetDefaultPresentationUnit("FT");
-    kindOfQuantity->AddPresentationUnit("IN");
-    kindOfQuantity->AddPresentationUnit("MILLIINCH");
+    kindOfQuantity->SetDefaultPresentationUnit("u:FT");
+    kindOfQuantity->AddPresentationUnit("u:IN");
+    kindOfQuantity->AddPresentationUnit("u:MILLIINCH");
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity2, "OverrideKindOfQuantity"));
     kindOfQuantity2->SetDescription("Kind of a Description here");
     kindOfQuantity2->SetDisplayLabel("best quantity of all times");
-    kindOfQuantity2->SetPersistenceUnit("CM");
+    kindOfQuantity2->SetPersistenceUnit("u:CM");
     kindOfQuantity2->SetRelativeError(10e-4);
-    kindOfQuantity2->SetDefaultPresentationUnit("FT");
-    kindOfQuantity2->AddPresentationUnit("IN");
-    kindOfQuantity2->AddPresentationUnit("MILLIINCH");
+    kindOfQuantity2->SetDefaultPresentationUnit("u:FT");
+    kindOfQuantity2->AddPresentationUnit("u:IN");
+    kindOfQuantity2->AddPresentationUnit("u:MILLIINCH");
 
     schema->CreateEntityClass(parentEntityClass, "ParentEntity");
     parentEntityClass->SetClassModifier(ECClassModifier::Abstract);
@@ -418,6 +420,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithNoChildren)
 TEST_F(SchemaJsonSerializationTest, SchemaWithChildren)
     {
     ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoChildren();
+    schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
 
     // Entity Class / Mixin Classes
     ECEntityClassP baseEntityClass;
@@ -479,10 +482,10 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithChildren)
     // Kind of Quantity
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "ExampleKoQ");
-    koq->SetPersistenceUnit("MM");
-    koq->SetDefaultPresentationUnit("IN");
-    koq->AddPresentationUnit("MM");
-    koq->AddPresentationUnit("CM");
+    koq->SetPersistenceUnit("u:MM");
+    koq->SetDefaultPresentationUnit("u:IN");
+    koq->AddPresentationUnit("u:MM");
+    koq->AddPresentationUnit("u:CM");
     koq->SetRelativeError(3);
 
     UnitSystemP unitSystem;

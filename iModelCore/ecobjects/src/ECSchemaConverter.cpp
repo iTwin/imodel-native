@@ -1138,8 +1138,6 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     Utf8String name;
     ECClass::ParseClassName(alias, name, ecName);
 
-    BeAssert(StandardUnitsHelper::GetSchema()->GetName().EqualsI(alias));
-
     ECUnitCP newUnit = StandardUnitsHelper::GetUnit(name.c_str());
     if (nullptr == newUnit)
         {
@@ -1165,7 +1163,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     Utf8String oldFormatString;
     if (Unit::GetDisplayUnitAndFormatForECProperty(oldDisplayUnit, oldFormatString, oldUnit, *prop) && (0 != strcmp(oldDisplayUnit.GetName(), oldUnit.GetName())))
         {
-        Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromNewName(oldDisplayUnit.GetName());
+        Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldDisplayUnit.GetName());
 
         if (nullptr != ecName)
             {
@@ -1173,9 +1171,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
             Utf8String name;
             ECClass::ParseClassName(alias, name, ecName);
 
-            BeAssert(StandardUnitsHelper::GetSchema()->GetName().EqualsI(alias));
-
-            newDisplayUnit = StandardUnitsHelper::GetUnit(ecName);
+            newDisplayUnit = StandardUnitsHelper::GetUnit(name.c_str());
             if (nullptr != newDisplayUnit)
                 {
                 if (!ECSchema::IsSchemaReferenced(schema, *StandardUnitsHelper::GetSchema()) && ECObjectsStatus::Success != schema.AddReferencedSchema(*StandardUnitsHelper::GetSchema()))
