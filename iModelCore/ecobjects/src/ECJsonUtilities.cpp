@@ -1446,7 +1446,7 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
             {
             if (koq)
                 {
-                Utf8String formattedVal = ECQuantityFormatting::FormatPersistedValue(ecValue.GetDouble(), koq, 0, &status);
+                Utf8String formattedVal = ECQuantityFormatting::FormatPersistedValue(ecValue.GetDouble(), koq, &status);
                 if (ECQuantityFormattingStatus::Success == status)
                     {
                     Json::Value quantityValue(Json::objectValue);

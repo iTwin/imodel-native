@@ -28,8 +28,9 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
     if (fus.HasProblem())
         return;
 
+    Formatting::FormatProblemCode code;
     BEF::FormatUnitSet fus0 = BEF::FormatUnitSet("real4u", fusUnit);
-    BEU::Quantity qty = ECQuantityFormatting::CreateQuantity(input, 0, fus);
+    BEU::Quantity qty = ECQuantityFormatting::CreateQuantity(input, 0, fus, &code);
     Utf8String qtyT = fus.FormatQuantity(qty, spacer);
     Utf8String qtyT0 = fus0.FormatQuantity(qty, spacer);
 
