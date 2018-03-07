@@ -267,13 +267,15 @@ namespace Attachment
         ColorDef m_tileColor = ColorDef::White();
         DgnElementId m_attachmentId;
         RefCountedPtr<Viewport> m_viewport;
-        DPoint2d m_scale; // scale factors to make square tiles
-        uint32_t m_pixels;
         double m_biasDistance;
         ClipVectorPtr m_clip;      //! clip volume applied to tiles, in root coordinates
         ClipVectorPtr m_graphicsClip;
+        Render::GraphicBuilder::TileCorners m_corners; 
+        bvector<PolyfaceHeaderPtr> m_tilePolys;
+        DRange3d m_polysRangeUnclipped;
+        DRange3d m_polysRange;
 
-        TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
+        TRoot(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context);
 
         void _OnAddToRangeIndex(DRange3dCR, DgnElementId) override { }
         void _OnRemoveFromRangeIndex(DRange3dCR, DgnElementId) override { }
@@ -282,6 +284,7 @@ namespace Attachment
         Utf8CP _GetName() const override {return "SheetTile";}
         ClipVectorCP _GetClipVector() const override { return m_clip.get(); } // clip vector used by DrawArgs when rendering
 
+        void CreatePolys(SceneContextR context);
         void LoadRootTile(DRange3dCR tileRange, GeometricModelR model);
         void Draw(SceneContextR);
 
@@ -298,7 +301,6 @@ namespace Attachment
         DEFINE_T_SUPER(Tile);
 
         uint32_t m_maxPixelSize;
-        Render::GraphicBuilder::TileCorners m_corners; 
         bvector<Render::GraphicPtr> m_graphics;
 
         void _Invalidate() override { }
@@ -316,6 +318,7 @@ namespace Attachment
         double _GetMaximumSize() const override {return m_maxPixelSize;}
 
         void SetupRange();
+        void CreateGraphics(uint32_t depth, SceneContextR context);
         TRoot& GetTree() const {return (TRoot&) m_root;}
 
         TTile(TRoot& root, TTile* parent) : T_Super(root, parent) { }

@@ -14,8 +14,24 @@
 
 USING_NAMESPACE_TILETREE
 
-#define TABLE_NAME_TileTree "TileTree3" // Moved 'Created' to a separate table
-#define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime"
+// Obsolete versions of table storing tile data
+#define TABLE_NAME_TileTree1 "TileTree"
+#define TABLE_NAME_TileTree2 "TileTree2"
+
+// 3rd version of this table: Moved 'Created' to a separate table to avoid sqlite potentially having to copy the
+// big data blob when updating only the create time
+#define TABLE_NAME_TileTree "TileTree3"
+
+// Obsolete first version of this table: No primary key - expect rowid to match corresponding row in TileTree3.
+// That failed because the tables could be updated in multiple threads simultaneously.
+#define TABLE_NAME_TileTreeCreateTime1 "TileTreeCreateTime"
+
+// Second version: Same primary key as tile data table.
+#define TABLE_NAME_TileTreeCreateTime "TileTreeCreateTime2"
+
+#define COLUMN_TileTree_FileName TABLE_NAME_TileTree ".FileName"
+#define COLUMN_TileTreeCreateTime_FileName TABLE_NAME_TileTreeCreateTime ".FileName"
+#define JOIN_TileTreeTables TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON " COLUMN_TileTree_FileName "=" COLUMN_TileTreeCreateTime_FileName
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/15
@@ -151,19 +167,19 @@ folly::Future<BentleyStatus> TileLoader::_ReadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoader::DeleteRow(RealityData::CacheR cache, uint64_t rowId)
+BentleyStatus TileLoader::DropFromDb(RealityData::CacheR cache)
     {
     CachedStatementPtr stmt;
-    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID=?");
-    stmt->BindInt64(1, rowId);
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE FileName=?");
+    stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
     if (BE_SQLITE_DONE != stmt->Step())
         {
         BeAssert(false);
         return ERROR;
         }
 
-    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE ROWID=?");
-    stmt->BindInt64(1, rowId);
+    cache.GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE FileName=?");
+    stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
     if (BE_SQLITE_DONE != stmt->Step())
         {
         BeAssert(false);
@@ -187,11 +203,10 @@ BentleyStatus TileLoader::DoReadFromDb()
         {
         RealityData::Cache::AccessLock lock(*cache); // block writes to cache Db while we're reading
 
-        enum Column : int {Data=0,DataSize=1,ContentType=2,Expires=3,Rowid=4,Created=5};
-        CachedStatementPtr stmt;    
-        constexpr Utf8CP selectSql = "SELECT Data,DataSize,ContentType,Expires," TABLE_NAME_TileTree ".ROWID as TileRowId,"
-            "Created," TABLE_NAME_TileTreeCreateTime ".ROWID as CreatedRowId FROM " TABLE_NAME_TileTree
-            " JOIN " TABLE_NAME_TileTreeCreateTime " ON TileRowId=CreatedRowId WHERE Filename=?";
+        enum Column : int {Data,DataSize,ContentType,Expires,Created,Rowid};
+        CachedStatementPtr stmt;
+        constexpr Utf8CP selectSql = "SELECT Data,DataSize,ContentType,Expires,Created," TABLE_NAME_TileTree ".ROWID as TileRowId"
+            " FROM " JOIN_TileTreeTables " WHERE " COLUMN_TileTree_FileName "=?";
 
         if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, selectSql))
             {
@@ -208,7 +223,7 @@ BentleyStatus TileLoader::DoReadFromDb()
         uint64_t createTime = stmt->GetValueInt64(Column::Created);
         if (_IsExpired(createTime))
             {
-            DeleteRow(*cache, rowId);
+            DropFromDb(*cache);
             return ERROR;
             }
 
@@ -218,7 +233,7 @@ BentleyStatus TileLoader::DoReadFromDb()
             }
         else
             {
-            if (ZIP_SUCCESS != m_snappyFrom.Init(cache->GetDb(), TABLE_NAME_TileTree, "Data", stmt->GetValueInt64(Column::Rowid)))
+            if (ZIP_SUCCESS != m_snappyFrom.Init(cache->GetDb(), TABLE_NAME_TileTree, "Data", rowId))
                 {
                 BeAssert(false);
                 return ERROR;
@@ -246,7 +261,7 @@ BentleyStatus TileLoader::DoReadFromDb()
             if (!_IsValidData())
                 {
                 m_tileBytes.clear();
-                DeleteRow(*cache, rowId);
+                DropFromDb(*cache);
                 return ERROR;
                 }
             }
@@ -257,10 +272,10 @@ BentleyStatus TileLoader::DoReadFromDb()
         
         m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
-        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?"))
+        if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE FileName=?"))
             {
             stmt->BindInt64(1, _GetCreateTime());
-            stmt->BindInt64(2, rowId);
+            stmt->BindText(2, m_cacheKey, Statement::MakeCopy::No);
             if (BE_SQLITE_DONE != stmt->Step())
                 {
                 BeAssert(false);
@@ -335,6 +350,7 @@ BentleyStatus TileLoader::DoSaveToDb()
         stmt->BindZeroBlob(2, zipSize); 
         stmt->BindInt64(3, (int64_t) zipSize);
         }
+
     stmt->BindText(4, m_contentType, Statement::MakeCopy::No);
     stmt->BindInt64(5, m_expirationDate);
 
@@ -345,8 +361,7 @@ BentleyStatus TileLoader::DoSaveToDb()
         return ERROR;
         }
 
-    // Write the tile creation time into separate table so that when we update it on next use of this tile, sqlite doesn't have to copy the potentially-huge data column
-    // We don't know if we did an INSERT or UPDATE above...
+    // Compress and save the data
     rc = cache->GetDb().GetCachedStatement(stmt, "SELECT ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?");
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
@@ -369,25 +384,16 @@ BentleyStatus TileLoader::DoSaveToDb()
             }
         }
 
-    // Try update existing row...
-    rc = cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?");
+    // Write the tile creation time into separate table so that when we update it on next use of this tile, sqlite doesn't have to copy the potentially-huge data column
+    rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTreeCreateTime " (FileName,Created) VALUES (?,?)");
     BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
 
-    stmt->BindInt64(1, _GetCreateTime());
-    stmt->BindInt64(2, rowId);
-    if (BE_SQLITE_ROW != stmt->Step())
+    stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
+    stmt->BindInt64(2, _GetCreateTime());
+    if (BE_SQLITE_DONE != stmt->Step())
         {
-        // We must have done an INSERT on tile tree table...
-        rc = cache->GetDb().GetCachedStatement(stmt, "INSERT INTO " TABLE_NAME_TileTreeCreateTime " (Created) VALUES (?)");
-        BeAssert(BE_SQLITE_OK == rc && stmt.IsValid());
-
-        stmt->BindInt64(1, _GetCreateTime());
-        rc = stmt->Step();
-        if (BE_SQLITE_DONE != rc)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
+        BeAssert(false);
+        return ERROR;
         }
 
     return SUCCESS;
@@ -491,16 +497,25 @@ folly::Future<ByteStream> FileDataQuery::Perform()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileCache::_Prepare() const 
     {
-    if (m_db.TableExists(TABLE_NAME_TileTree))
+    // The 'create time' table was the most recently modified - 'tile data' table was not modified at that time.
+    // If new 'create time' table exists, this db is up to date.
+    if (m_db.TableExists(TABLE_NAME_TileTreeCreateTime))
         {
-        BeAssert(m_db.TableExists(TABLE_NAME_TileTreeCreateTime));
+        BeAssert(m_db.TableExists(TABLE_NAME_TileTree));
         return SUCCESS;
         }
         
-    if (BE_SQLITE_OK != m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "Created BIGINT"))
-        return ERROR;
+    // Drop leftover tables from previous versions
+    m_db.DropTableIfExists(TABLE_NAME_TileTree1);
+    m_db.DropTableIfExists(TABLE_NAME_TileTree2);
+    m_db.DropTableIfExists(TABLE_NAME_TileTreeCreateTime1);
 
-    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
+    // Drop leftover 'tile data' table - otherwise the existing rows will lack corresponding 'create time' rows
+    m_db.DropTableIfExists(TABLE_NAME_TileTree);
+
+    // Create the tables
+    return BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTreeCreateTime, "Filename CHAR PRIMARY KEY,Created BIGINT")
+        && BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree,
         "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,ContentType TEXT,Expires BIGINT") ? SUCCESS : ERROR;
     }
 
@@ -527,8 +542,7 @@ BentleyStatus TileCache::_Cleanup() const
     uint64_t garbageSize = sum - (m_allowedSize * .95); // 5% slack to avoid purging often
 
     CachedStatementPtr selectStatement;
-    constexpr Utf8CP selectSql = "SELECT DataSize,Created," TABLE_NAME_TileTree ".ROWID as TileRowId," TABLE_NAME_TileTreeCreateTime ".ROWID as CreatedRowId "
-        " FROM " TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON TileRowId=CreatedRowId ORDER BY Created ASC";
+    constexpr Utf8CP selectSql = "SELECT DataSize,Created FROM " JOIN_TileTreeTables "ORDER BY Created ASC";
 
     m_db.GetCachedStatement(selectStatement, selectSql);
     BeAssert(selectStatement.IsValid());
@@ -549,14 +563,31 @@ BentleyStatus TileCache::_Cleanup() const
     uint64_t creationDate = selectStatement->GetValueInt64(1);
     BeAssert(creationDate > 0);
 
-    CachedStatementPtr deleteStatement;
-    constexpr Utf8CP deleteSql = "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID IN (SELECT ROWID FROM " TABLE_NAME_TileTreeCreateTime " WHERE Created <= ?)";
-    m_db.GetCachedStatement(deleteStatement, deleteSql);
-    BeAssert(deleteStatement.IsValid());
+    // ###TODO: We should be using foreign key + cascading delete here...
+    CachedStatementPtr deleteDataStatement;
+    constexpr Utf8CP deleteDataSql = "DELETE FROM " TABLE_NAME_TileTree " WHERE FileName IN"
+        " (SELECT FileName FROM " TABLE_NAME_TileTreeCreateTime " WHERE Created <= ?)";
+    m_db.GetCachedStatement(deleteDataStatement, deleteDataSql);
+    BeAssert(deleteDataStatement.IsValid());
+    deleteDataStatement->BindInt64(1, creationDate);
+    if (BE_SQLITE_DONE != deleteDataStatement->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
 
-    deleteStatement->BindInt64(1, creationDate);
+    CachedStatementPtr deleteCreatedStatement;
+    constexpr Utf8CP deleteCreatedSql = "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE Created <= ?";
+    m_db.GetCachedStatement(deleteCreatedStatement, deleteCreatedSql);
+    BeAssert(deleteCreatedStatement.IsValid());
+    deleteCreatedStatement->BindInt64(1, creationDate);
+    if (BE_SQLITE_DONE != deleteCreatedStatement->Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
 
-    return BE_SQLITE_DONE == deleteStatement->Step() ? SUCCESS : ERROR;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -651,7 +682,17 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnDbR db, TransformCR location, Utf8CP rootResource, Render::SystemP system) : m_db(db), m_location(location), m_renderSystem(system)
+Root::Root(GeometricModelCR model, TransformCR location, Utf8CP rootResource, Render::SystemP system)
+    : Root(model.GetDgnDb(), model.GetModelId(), location, rootResource, system)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Root::Root(DgnDbR db, DgnModelId modelId, TransformCR location, Utf8CP rootResource, Render::SystemP system)
+    : m_db(db), m_location(location), m_renderSystem(system), m_modelId(modelId)
     {
     // unless a root directory is specified, we assume it's http.
     m_isHttp = true;
@@ -1218,8 +1259,8 @@ void QuadTree::Tile::_ValidateChildren() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
-    : T_Super::Root(db, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
+QuadTree::Root::Root(GeometricModelCR model, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
+    : T_Super::Root(model, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
     {
     m_tileColor = ColorDef::White();
     if (0.0 != transparency)
@@ -1229,8 +1270,8 @@ QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-OctTree::Root::Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
-    : T_Super(db, location, rootUrl, system)
+OctTree::Root::Root(GeometricModelCR model, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
+    : T_Super(model, location, rootUrl, system)
     {
     // 
     }

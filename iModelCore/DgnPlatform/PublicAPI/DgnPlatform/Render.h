@@ -274,7 +274,7 @@ struct Task : RefCounted<NonCopyableClass>
         DefineGeometryTexture,
         DestroyTarget,
         Idle,
-        Initialize,
+        Initialize, // Invoked synchronously; return non-zero if initialization failed.
         OnResized,
         OverrideFeatureSymbology,
         ReadImage,
@@ -3245,7 +3245,7 @@ struct System
 
     virtual ~System() { }
     
-    //! Initialize the rendering system. Return a non-zero value in case of error.
+    //! Initialize the rendering system. Return a non-zero value in case of error. The client thread waits for the result.
     virtual int _Initialize(void* systemWindow, bool swRendering) = 0;
 
     //! Create a render target.

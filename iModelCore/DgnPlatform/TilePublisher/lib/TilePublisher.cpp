@@ -965,7 +965,6 @@ struct ClassifierTileWriter
     ModelSpatialClassifierCR        m_classifier;
     bmap<DgnElementId, uint32_t>    m_elementColors;
     PublisherContext&               m_context;
-    DRange3d                        m_range;
 
 
     static constexpr double         s_pointTolerance = 1.0E-6;
@@ -977,7 +976,7 @@ struct ClassifierTileWriter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier, PublisherContext& context) : m_context(context), m_range(range), m_classifier(classifier) 
+ClassifierTileWriter( ModelSpatialClassifierCR classifier, PublisherContext& context) : m_context(context),  m_classifier(classifier) 
     { 
     }
 
@@ -1375,7 +1374,7 @@ struct VectorClassifierTileWriter : ClassifierTileWriter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-VectorClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier, PublisherContext& context) : ClassifierTileWriter(range, classifier, context), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
+VectorClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier, PublisherContext& context) : ClassifierTileWriter(classifier, context), m_range(range), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
     {
     m_featureTable["RTC_CENTER"][0] = 0.0; m_featureTable["RTC_CENTER"][1] = 0.0; m_featureTable["RTC_CENTER"][2] = 0.0;
     m_featureTable["MINIMUM_HEIGHT"] = -1000.0;
@@ -1464,12 +1463,13 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
 +===============+===============+===============+===============+===============+======*/
 struct BatchedClassifierTileWriter : ClassifierTileWriter
 {
-    TileMeshPtr     m_mesh;
+    TileMeshPtr         m_mesh;
+    DRange3dR           m_outputContentRange;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BatchedClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier, PublisherContext& context) : ClassifierTileWriter(range, classifier, context)
+BatchedClassifierTileWriter(DRange3dR outputContentRange,  ModelSpatialClassifierCR classifier, PublisherContext& context) : ClassifierTileWriter(classifier, context), m_outputContentRange(outputContentRange)
     {
     }
 
@@ -1481,6 +1481,7 @@ virtual void _AddClosedMesh(PolyfaceHeaderR polyface, uint16_t batchId, TileDisp
     if (!m_mesh.IsValid())
         m_mesh = TileMesh::Create(displayParams);
     
+    m_outputContentRange.Extend (polyface.GetPointCP(), polyface.GetPointCount());
     uint32_t      pointCount = m_mesh->Points().size();
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
@@ -1504,15 +1505,16 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
     {
     DRange3d        contentRange = DRange3d::NullRange();
 
-    for (auto& mesh : geometry.Meshes())
-        contentRange.Extend(mesh->Points());
-
     if (s_writeVectorClassifier)
         {
         VectorClassifierTileWriter      writer(contentRange, classifier, m_context);
 
         writer.AddGeometry(geometry, classifiedRange, m_tile.GetAttributes());
         writer.Write(outputFile, m_tile, m_context.GetDgnDb());
+
+        for (auto& mesh : geometry.Meshes())
+            contentRange.Extend(mesh->Points());
+
         }
     else
         {
@@ -1526,7 +1528,7 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
             WriteBatched3dModel (outputFile, meshes, writer.GetBatchTableString(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d()));
             }
         }
-
+    (const_cast<TileNodeR> (m_tile)).SetTileRange(contentRange);      // Need to account for expansion by height.
     m_tile.SetPublishedRange (contentRange);
     } 
 
@@ -3103,7 +3105,6 @@ void TilePublisher::AddTesselatedPolylinePrimitive(Json::Value& primitivesNode, 
                                           basePoint ? colors0 : colors1,
                                           rangeCenter);
                     }
-            
                 if (jointAt0)
                     tesselation.AddJointTriangles(baseIndex, length0, p0, prevDir0, nextDir0, attributes0, colors0, 2.0, rangeCenter);
 
@@ -3303,11 +3304,7 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
 
-#if defined(WIP_MESHTILE_3SM)
-    m_isEcef = true; // ###TODO: Remove after YII...
-#else
     m_isEcef = false;
-#endif
 
     // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
     DPoint3d        origin = m_projectExtents.GetCenter();
@@ -3345,10 +3342,27 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
         north.y += 100.0;
 
         dgnGCS->LatLongFromUors (originLatLong, origin);
-        dgnGCS->XYZFromLatLong(ecfOrigin, originLatLong);
-
         dgnGCS->LatLongFromUors (northLatLong, north);
-        dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
+
+
+        // If the current GCS does not use WGS84, need to convert as XYZFromLatLong expects WGS84 Lat/Long... (TFS# 799148). 
+        if (0 != wcscmp (dgnGCS->GetDatumName(), L"WGS84"))
+            {
+            auto        wgs84Datum = GeoCoordinates::Datum::CreateDatum (L"WGS84");
+            auto        thisDatum = GeoCoordinates::Datum::CreateDatum(dgnGCS->GetDatumName());
+            auto        datumConverter = GeoCoordinates::DatumConverter::Create (*thisDatum, *wgs84Datum);
+            GeoPoint    wgsOrigin, wgsNorth;
+
+            datumConverter->ConvertLatLong3D(wgsOrigin, originLatLong);
+            datumConverter->ConvertLatLong3D(wgsNorth, northLatLong);
+
+            originLatLong = wgsOrigin;
+            northLatLong  = wgsNorth;
+            }
+
+        /// Note we used to call dgnGCS->XYZFromLatLong to do the ECEF conversion - but that seems unreliable when datum is not WGS84 (TFS# 799148).
+        ecfOrigin = cartesianFromRadians (originLatLong.longitude * msGeomConst_radiansPerDegree, originLatLong.latitude * msGeomConst_radiansPerDegree);
+        ecfNorth  = cartesianFromRadians (northLatLong.longitude * msGeomConst_radiansPerDegree, 1.0E-4 + northLatLong.latitude * msGeomConst_radiansPerDegree);
         }
 
     RotMatrix   rMatrix;
