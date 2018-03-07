@@ -306,13 +306,28 @@ CurveVectorPtr CurveVectorManipulationStrategy::_Finish
         if (primitive.IsNull())
             continue;
 
+        if (primitive->GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_CurveVector)
+            {
+            if (!cv->empty() && cv->GetBoundaryType() != CurveVector::BOUNDARY_TYPE_ParityRegion)
+                {
+                CurveVectorPtr child = cv->Clone();
+                cv = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+                cv->Add(child);
+                }
+            else
+                {
+                cv->SetBoundaryType(CurveVector::BOUNDARY_TYPE_ParityRegion);
+                primitive->GetChildCurveVectorP()->SetBoundaryType(CurveVector::BOUNDARY_TYPE_Outer);
+                }
+            }
+
         cv->Add(primitive);
         }
 
     if (cv->empty())
         return nullptr;
 
-    if (connectEndStart)
+    if (cv->GetBoundaryType() != CurveVector::BOUNDARY_TYPE_ParityRegion && connectEndStart)
         ConnectStartEnd(*cv);
 
     return cv;

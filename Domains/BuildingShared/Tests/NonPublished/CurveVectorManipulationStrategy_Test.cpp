@@ -233,3 +233,19 @@ TEST_F(CurveVectorManipulationStrategyTestFixture, PopKeyPoint_ArcHadMultipleDyn
 
     sut->PopKeyPoint();
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorManipulationStrategyTestFixture, Finish_InitializedFromParityRegion)
+    {
+    CurveVectorPtr expectedShape = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+    expectedShape->Add(CurveVector::CreateLinear({{0,0,0},{10,0,0},{10,10,0},{0,10,0},{0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer));
+    expectedShape->Add(CurveVector::CreateLinear({{1,1,0},{9,1,0},{9,9,0},{1,9,0},{1,1,0}}, CurveVector::BOUNDARY_TYPE_Outer));
+
+    CurveVectorManipulationStrategyPtr sut = CurveVectorManipulationStrategy::Create(*expectedShape);
+    ASSERT_TRUE(sut.IsValid());
+    CurveVectorPtr actualShape = sut->Finish();
+    ASSERT_TRUE(actualShape.IsValid());
+    ASSERT_TRUE(actualShape->IsSameStructureAndGeometry(*expectedShape));
+    }
