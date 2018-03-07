@@ -3122,6 +3122,7 @@ static int fts3WriteSegment(
     sqlite3_bind_blob(pStmt, 2, z, n, SQLITE_STATIC);
     sqlite3_step(pStmt);
     rc = sqlite3_reset(pStmt);
+    sqlite3_bind_null(pStmt, 2);
   }
   return rc;
 }
@@ -3178,6 +3179,7 @@ static int fts3WriteSegdir(
     sqlite3_bind_blob(pStmt, 6, zRoot, nRoot, SQLITE_STATIC);
     sqlite3_step(pStmt);
     rc = sqlite3_reset(pStmt);
+    sqlite3_bind_null(pStmt, 6);
   }
   return rc;
 }
@@ -4657,6 +4659,7 @@ static void fts3UpdateDocTotals(
   sqlite3_bind_blob(pStmt, 2, pBlob, nBlob, SQLITE_STATIC);
   sqlite3_step(pStmt);
   *pRC = sqlite3_reset(pStmt);
+  sqlite3_bind_null(pStmt, 2);
   sqlite3_free(a);
 }
 
@@ -5845,6 +5848,7 @@ static int fts3TruncateSegment(
       sqlite3_bind_int(pChomp, 4, iIdx);
       sqlite3_step(pChomp);
       rc = sqlite3_reset(pChomp);
+      sqlite3_bind_null(pChomp, 2);
     }
   }
 
@@ -5924,6 +5928,7 @@ static int fts3IncrmergeHintStore(Fts3Table *p, Blob *pHint){
     sqlite3_bind_blob(pReplace, 2, pHint->a, pHint->n, SQLITE_STATIC);
     sqlite3_step(pReplace);
     rc = sqlite3_reset(pReplace);
+    sqlite3_bind_null(pReplace, 2);
   }
 
   return rc;
@@ -6738,7 +6743,6 @@ SQLITE_PRIVATE int sqlite3Fts3UpdateMethod(
 ){
   Fts3Table *p = (Fts3Table *)pVtab;
   int rc = SQLITE_OK;             /* Return Code */
-  int isRemove = 0;               /* True for an UPDATE or DELETE */
   u32 *aSzIns = 0;                /* Sizes of inserted documents */
   u32 *aSzDel = 0;                /* Sizes of deleted documents */
   int nChng = 0;                  /* Net change in number of documents */
@@ -6836,7 +6840,6 @@ SQLITE_PRIVATE int sqlite3Fts3UpdateMethod(
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
     assert( sqlite3_value_type(apVal[0])==SQLITE_INTEGER );
     rc = fts3DeleteByRowid(p, apVal[0], &nChng, aSzDel);
-    isRemove = 1;
   }
   
   /* If this is an INSERT or UPDATE operation, insert the new record. */
@@ -6848,7 +6851,7 @@ SQLITE_PRIVATE int sqlite3Fts3UpdateMethod(
         rc = FTS_CORRUPT_VTAB;
       }
     }
-    if( rc==SQLITE_OK && (!isRemove || *pRowid!=p->iPrevDocid ) ){
+    if( rc==SQLITE_OK ){
       rc = fts3PendingTermsDocid(p, 0, iLangid, *pRowid);
     }
     if( rc==SQLITE_OK ){
@@ -9423,7 +9426,8 @@ SQLITE_PRIVATE int sqlite3FtsUnicodeFold(int c, int bRemoveDiacritic){
 **      child page.
 */
 
-#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
+#if !defined(SQLITE_CORE) \
+  || (defined(SQLITE_ENABLE_RTREE) && !defined(SQLITE_OMIT_VIRTUALTABLE))
 
 #ifndef SQLITE_CORE
 /*   #include "sqlite3ext.h" */
@@ -10155,6 +10159,7 @@ static int nodeWrite(Rtree *pRtree, RtreeNode *pNode){
     sqlite3_step(p);
     pNode->isDirty = 0;
     rc = sqlite3_reset(p);
+    sqlite3_bind_null(p, 2);
     if( pNode->iNode==0 && rc==SQLITE_OK ){
       pNode->iNode = sqlite3_last_insert_rowid(pRtree->db);
       nodeHashInsert(pRtree, pNode);
@@ -22150,7 +22155,7 @@ static void sessionPreupdateOneChange(
   int iHash; 
   int bNull = 0; 
   int rc = SQLITE_OK;
-  SessionStat1Ctx stat1;
+  SessionStat1Ctx stat1 = {0};
 
   if( pSession->rc ) return;
 
@@ -23755,13 +23760,16 @@ static int sessionReadRecord(
     if( abPK && abPK[i]==0 ) continue;
     rc = sessionInputBuffer(pIn, 9);
     if( rc==SQLITE_OK ){
-      eType = pIn->aData[pIn->iNext++];
-    }
-
-    assert( apOut[i]==0 );
-    if( eType ){
-      apOut[i] = sqlite3ValueNew(0);
-      if( !apOut[i] ) rc = SQLITE_NOMEM;
+      if( pIn->iNext>=pIn->nData ){
+        rc = SQLITE_CORRUPT_BKPT;
+      }else{
+        eType = pIn->aData[pIn->iNext++];
+        assert( apOut[i]==0 );
+        if( eType ){
+          apOut[i] = sqlite3ValueNew(0);
+          if( !apOut[i] ) rc = SQLITE_NOMEM;
+        }
+      }
     }
 
     if( rc==SQLITE_OK ){
@@ -23771,10 +23779,14 @@ static int sessionReadRecord(
         pIn->iNext += sessionVarintGet(aVal, &nByte);
         rc = sessionInputBuffer(pIn, nByte);
         if( rc==SQLITE_OK ){
-          u8 enc = (eType==SQLITE_TEXT ? SQLITE_UTF8 : 0);
-          rc = sessionValueSetStr(apOut[i],&pIn->aData[pIn->iNext],nByte,enc);
+          if( nByte<0 || nByte>pIn->nData-pIn->iNext ){
+            rc = SQLITE_CORRUPT_BKPT;
+          }else{
+            u8 enc = (eType==SQLITE_TEXT ? SQLITE_UTF8 : 0);
+            rc = sessionValueSetStr(apOut[i],&pIn->aData[pIn->iNext],nByte,enc);
+            pIn->iNext += nByte;
+          }
         }
-        pIn->iNext += nByte;
       }
       if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
         sqlite3_int64 v = sessionGetI64(aVal);
@@ -23814,8 +23826,19 @@ static int sessionChangesetBufferTblhdr(SessionInput *pIn, int *pnByte){
   rc = sessionInputBuffer(pIn, 9);
   if( rc==SQLITE_OK ){
     nRead += sessionVarintGet(&pIn->aData[pIn->iNext + nRead], &nCol);
-    rc = sessionInputBuffer(pIn, nRead+nCol+100);
-    nRead += nCol;
+    /* The hard upper limit for the number of columns in an SQLite
+    ** database table is, according to sqliteLimit.h, 32676. So 
+    ** consider any table-header that purports to have more than 65536 
+    ** columns to be corrupt. This is convenient because otherwise, 
+    ** if the (nCol>65536) condition below were omitted, a sufficiently 
+    ** large value for nCol may cause nRead to wrap around and become 
+    ** negative. Leading to a crash. */
+    if( nCol<0 || nCol>65536 ){
+      rc = SQLITE_CORRUPT_BKPT;
+    }else{
+      rc = sessionInputBuffer(pIn, nRead+nCol+100);
+      nRead += nCol;
+    }
   }
 
   while( rc==SQLITE_OK ){
@@ -23892,11 +23915,15 @@ static int sessionChangesetReadTblhdr(sqlite3_changeset_iter *p){
     int nByte;
     int nVarint;
     nVarint = sessionVarintGet(&p->in.aData[p->in.iNext], &p->nCol);
-    nCopy -= nVarint;
-    p->in.iNext += nVarint;
-    nByte = p->nCol * sizeof(sqlite3_value*) * 2 + nCopy;
-    p->tblhdr.nBuf = 0;
-    sessionBufferGrow(&p->tblhdr, nByte, &rc);
+    if( p->nCol>0 ){
+      nCopy -= nVarint;
+      p->in.iNext += nVarint;
+      nByte = p->nCol * sizeof(sqlite3_value*) * 2 + nCopy;
+      p->tblhdr.nBuf = 0;
+      sessionBufferGrow(&p->tblhdr, nByte, &rc);
+    }else{
+      rc = SQLITE_CORRUPT_BKPT;
+    }
   }
 
   if( rc==SQLITE_OK ){
@@ -23974,6 +24001,13 @@ static int sessionChangesetNext(
     op = p->in.aData[p->in.iNext++];
   }
 
+  if( p->zTab==0 ){
+    /* The first record in the changeset is not a table header. Must be a
+    ** corrupt changeset. */
+    assert( p->in.iNext==1 );
+    return (p->rc = SQLITE_CORRUPT_BKPT);
+  }
+
   p->op = op;
   p->bIndirect = p->in.aData[p->in.iNext++];
   if( p->op!=SQLITE_UPDATE && p->op!=SQLITE_DELETE && p->op!=SQLITE_INSERT ){
@@ -24016,9 +24050,9 @@ static int sessionChangesetNext(
       ** new.* to old.*, to accommodate the code that reads these arrays.  */
       for(i=0; i<p->nCol; i++){
         assert( p->apValue[i]==0 );
-        assert( p->abPK[i]==0 || p->apValue[i+p->nCol] );
         if( p->abPK[i] ){
           p->apValue[i] = p->apValue[i+p->nCol];
+          if( p->apValue[i]==0 ) return (p->rc = SQLITE_CORRUPT_BKPT);
           p->apValue[i+p->nCol] = 0;
         }
       }
@@ -24743,7 +24777,13 @@ static int sessionBindRow(
     if( !abPK || abPK[i] ){
       sqlite3_value *pVal;
       (void)xValue(pIter, i, &pVal);
-      rc = sessionBindValue(pStmt, i+1, pVal);
+      if( pVal==0 ){
+        /* The value in the changeset was "undefined". This indicates a
+        ** corrupt changeset blob.  */
+        rc = SQLITE_CORRUPT_BKPT;
+      }else{
+        rc = sessionBindValue(pStmt, i+1, pVal);
+      }
     }
   }
   return rc;

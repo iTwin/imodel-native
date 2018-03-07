@@ -659,15 +659,15 @@ static void heightOfExprList(ExprList *p, int *pnHeight){
     }
   }
 }
-static void heightOfSelect(Select *p, int *pnHeight){
-  if( p ){
+static void heightOfSelect(Select *pSelect, int *pnHeight){
+  Select *p;
+  for(p=pSelect; p; p=p->pPrior){
     heightOfExpr(p->pWhere, pnHeight);
     heightOfExpr(p->pHaving, pnHeight);
     heightOfExpr(p->pLimit, pnHeight);
     heightOfExprList(p->pEList, pnHeight);
     heightOfExprList(p->pGroupBy, pnHeight);
     heightOfExprList(p->pOrderBy, pnHeight);
-    heightOfSelect(p->pPrior, pnHeight);
   }
 }
 
@@ -1734,6 +1734,34 @@ SQLITE_PRIVATE int sqlite3SelectWalkFail(Walker *pWalker, Select *NotUsed){
 }
 
 /*
+** If the input expression is an ID with the name "true" or "false"
+** then convert it into an TK_TRUEFALSE term.  Return non-zero if
+** the conversion happened, and zero if the expression is unaltered.
+*/
+SQLITE_PRIVATE int sqlite3ExprIdToTrueFalse(Expr *pExpr){
+  assert( pExpr->op==TK_ID || pExpr->op==TK_STRING );
+  if( sqlite3StrICmp(pExpr->u.zToken, "true")==0
+   || sqlite3StrICmp(pExpr->u.zToken, "false")==0
+  ){
+    pExpr->op = TK_TRUEFALSE;
+    return 1;
+  }
+  return 0;
+}
+
+/*
+** The argument must be a TK_TRUEFALSE Expr node.  Return 1 if it is TRUE
+** and 0 if it is FALSE.
+*/
+SQLITE_PRIVATE int sqlite3ExprTruthValue(const Expr *pExpr){
+  assert( pExpr->op==TK_TRUEFALSE );
+  assert( sqlite3StrICmp(pExpr->u.zToken,"true")==0
+       || sqlite3StrICmp(pExpr->u.zToken,"false")==0 );
+  return pExpr->u.zToken[4]==0;
+}
+
+
+/*
 ** These routines are Walker callbacks used to check expressions to
 ** see if they are "constant" for some definition of constant.  The
 ** Walker.eCode value determines the type of "constant" we are looking
@@ -1780,6 +1808,12 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
         return WRC_Abort;
       }
     case TK_ID:
+      /* Convert "true" or "false" in a DEFAULT clause into the
+      ** appropriate TK_TRUEFALSE operator */
+      if( sqlite3ExprIdToTrueFalse(pExpr) ){
+        return WRC_Prune;
+      }
+      /* Fall thru */
     case TK_COLUMN:
     case TK_AGG_FUNCTION:
     case TK_AGG_COLUMN:
@@ -3544,6 +3578,10 @@ SQLITE_PRIVATE int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target)
       codeInteger(pParse, pExpr, 0, target);
       return target;
     }
+    case TK_TRUEFALSE: {
+      sqlite3VdbeAddOp2(v, OP_Integer, sqlite3ExprTruthValue(pExpr), target);
+      return target;
+    }
 #ifndef SQLITE_OMIT_FLOATING_POINT
     case TK_FLOAT: {
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
@@ -3697,6 +3735,18 @@ SQLITE_PRIVATE int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target)
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       testcase( regFree1==0 );
       sqlite3VdbeAddOp2(v, op, r1, inReg);
+      break;
+    }
+    case TK_TRUTH: {
+      int isTrue;    /* IS TRUE or IS NOT TRUE */
+      int bNormal;   /* IS TRUE or IS FALSE */
+      r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
+      testcase( regFree1==0 );
+      isTrue = sqlite3ExprTruthValue(pExpr->pRight);
+      bNormal = pExpr->op2==TK_IS;
+      testcase( isTrue && bNormal);
+      testcase( !isTrue && bNormal);
+      sqlite3VdbeAddOp4Int(v, OP_IsTrue, r1, inReg, !isTrue, isTrue ^ bNormal);
       break;
     }
     case TK_ISNULL:
@@ -4474,6 +4524,23 @@ SQLITE_PRIVATE void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int 
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
       break;
     }
+    case TK_TRUTH: {
+      int isNot;      /* IS NOT TRUE or IS NOT FALSE */
+      int isTrue;     /* IS TRUE or IS NOT TRUE */
+      testcase( jumpIfNull==0 );
+      isNot = pExpr->op2==TK_ISNOT;
+      isTrue = sqlite3ExprTruthValue(pExpr->pRight);
+      testcase( isTrue && isNot );
+      testcase( !isTrue && isNot );
+      if( isTrue ^ isNot ){
+        sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest,
+                          isNot ? SQLITE_JUMPIFNULL : 0);
+      }else{
+        sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest,
+                           isNot ? SQLITE_JUMPIFNULL : 0);
+      }
+      break;
+    }
     case TK_IS:
     case TK_ISNOT:
       testcase( op==TK_IS );
@@ -4626,6 +4693,26 @@ SQLITE_PRIVATE void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int
     case TK_NOT: {
       testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
+      break;
+    }
+    case TK_TRUTH: {
+      int isNot;   /* IS NOT TRUE or IS NOT FALSE */
+      int isTrue;  /* IS TRUE or IS NOT TRUE */
+      testcase( jumpIfNull==0 );
+      isNot = pExpr->op2==TK_ISNOT;
+      isTrue = sqlite3ExprTruthValue(pExpr->pRight);
+      testcase( isTrue && isNot );
+      testcase( !isTrue && isNot );
+      if( isTrue ^ isNot ){
+        /* IS TRUE and IS NOT FALSE */
+        sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest,
+                           isNot ? 0 : SQLITE_JUMPIFNULL);
+
+      }else{
+        /* IS FALSE and IS NOT TRUE */
+        sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest,
+                          isNot ? 0 : SQLITE_JUMPIFNULL);
+      }
       break;
     }
     case TK_IS:
@@ -8138,6 +8225,10 @@ static int resolveAttachExpr(NameContext *pName, Expr *pExpr)
 **
 ** If the optional "KEY z" syntax is omitted, an SQL NULL is passed as the
 ** third argument.
+**
+** If the db->init.reopenMemdb flags is set, then instead of attaching a
+** new database, close the database on db->init.iDb and reopen it as an
+** empty MemDB.
 */
 static void attachFunc(
   sqlite3_context *context,
@@ -8158,65 +8249,85 @@ static void attachFunc(
   sqlite3_vfs *pVfs;
 
   UNUSED_PARAMETER(NotUsed);
-
   zFile = (const char *)sqlite3_value_text(argv[0]);
   zName = (const char *)sqlite3_value_text(argv[1]);
   if( zFile==0 ) zFile = "";
   if( zName==0 ) zName = "";
 
-  /* Check for the following errors:
-  **
-  **     * Too many attached databases,
-  **     * Transaction currently open
-  **     * Specified database name already being used.
-  */
-  if( db->nDb>=db->aLimit[SQLITE_LIMIT_ATTACHED]+2 ){
-    zErrDyn = sqlite3MPrintf(db, "too many attached databases - max %d", 
-      db->aLimit[SQLITE_LIMIT_ATTACHED]
-    );
-    goto attach_error;
-  }
-  for(i=0; i<db->nDb; i++){
-    char *z = db->aDb[i].zDbSName;
-    assert( z && zName );
-    if( sqlite3StrICmp(z, zName)==0 ){
-      zErrDyn = sqlite3MPrintf(db, "database %s is already in use", zName);
+#ifdef SQLITE_ENABLE_DESERIALIZE
+# define REOPEN_AS_MEMDB(db)  (db->init.reopenMemdb)
+#else
+# define REOPEN_AS_MEMDB(db)  (0)
+#endif
+
+  if( REOPEN_AS_MEMDB(db) ){
+    /* This is not a real ATTACH.  Instead, this routine is being called
+    ** from sqlite3_deserialize() to close database db->init.iDb and
+    ** reopen it as a MemDB */
+    pVfs = sqlite3_vfs_find("memdb");
+    if( pVfs==0 ) return;
+    pNew = &db->aDb[db->init.iDb];
+    if( pNew->pBt ) sqlite3BtreeClose(pNew->pBt);
+    pNew->pBt = 0;
+    pNew->pSchema = 0;
+    rc = sqlite3BtreeOpen(pVfs, "x", db, &pNew->pBt, 0, SQLITE_OPEN_MAIN_DB);
+  }else{
+    /* This is a real ATTACH
+    **
+    ** Check for the following errors:
+    **
+    **     * Too many attached databases,
+    **     * Transaction currently open
+    **     * Specified database name already being used.
+    */
+    if( db->nDb>=db->aLimit[SQLITE_LIMIT_ATTACHED]+2 ){
+      zErrDyn = sqlite3MPrintf(db, "too many attached databases - max %d", 
+        db->aLimit[SQLITE_LIMIT_ATTACHED]
+      );
       goto attach_error;
     }
+    for(i=0; i<db->nDb; i++){
+      char *z = db->aDb[i].zDbSName;
+      assert( z && zName );
+      if( sqlite3StrICmp(z, zName)==0 ){
+        zErrDyn = sqlite3MPrintf(db, "database %s is already in use", zName);
+        goto attach_error;
+      }
+    }
+  
+    /* Allocate the new entry in the db->aDb[] array and initialize the schema
+    ** hash tables.
+    */
+    if( db->aDb==db->aDbStatic ){
+      aNew = sqlite3DbMallocRawNN(db, sizeof(db->aDb[0])*3 );
+      if( aNew==0 ) return;
+      memcpy(aNew, db->aDb, sizeof(db->aDb[0])*2);
+    }else{
+      aNew = sqlite3DbRealloc(db, db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
+      if( aNew==0 ) return;
+    }
+    db->aDb = aNew;
+    pNew = &db->aDb[db->nDb];
+    memset(pNew, 0, sizeof(*pNew));
+  
+    /* Open the database file. If the btree is successfully opened, use
+    ** it to obtain the database schema. At this point the schema may
+    ** or may not be initialized.
+    */
+    flags = db->openFlags;
+    rc = sqlite3ParseUri(db->pVfs->zName, zFile, &flags, &pVfs, &zPath, &zErr);
+    if( rc!=SQLITE_OK ){
+      if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
+      sqlite3_result_error(context, zErr, -1);
+      sqlite3_free(zErr);
+      return;
+    }
+    assert( pVfs );
+    flags |= SQLITE_OPEN_MAIN_DB;
+    rc = sqlite3BtreeOpen(pVfs, zPath, db, &pNew->pBt, 0, flags);
+    sqlite3_free( zPath );
+    db->nDb++;
   }
-
-  /* Allocate the new entry in the db->aDb[] array and initialize the schema
-  ** hash tables.
-  */
-  if( db->aDb==db->aDbStatic ){
-    aNew = sqlite3DbMallocRawNN(db, sizeof(db->aDb[0])*3 );
-    if( aNew==0 ) return;
-    memcpy(aNew, db->aDb, sizeof(db->aDb[0])*2);
-  }else{
-    aNew = sqlite3DbRealloc(db, db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
-    if( aNew==0 ) return;
-  }
-  db->aDb = aNew;
-  pNew = &db->aDb[db->nDb];
-  memset(pNew, 0, sizeof(*pNew));
-
-  /* Open the database file. If the btree is successfully opened, use
-  ** it to obtain the database schema. At this point the schema may
-  ** or may not be initialized.
-  */
-  flags = db->openFlags;
-  rc = sqlite3ParseUri(db->pVfs->zName, zFile, &flags, &pVfs, &zPath, &zErr);
-  if( rc!=SQLITE_OK ){
-    if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
-    sqlite3_result_error(context, zErr, -1);
-    sqlite3_free(zErr);
-    return;
-  }
-  assert( pVfs );
-  flags |= SQLITE_OPEN_MAIN_DB;
-  rc = sqlite3BtreeOpen(pVfs, zPath, db, &pNew->pBt, 0, flags);
-  sqlite3_free( zPath );
-  db->nDb++;
   db->skipBtreeMutex = 0;
   if( rc==SQLITE_CONSTRAINT ){
     rc = SQLITE_ERROR;
@@ -8243,7 +8354,7 @@ static void attachFunc(
     sqlite3BtreeLeave(pNew->pBt);
   }
   pNew->safety_level = SQLITE_DEFAULT_SYNCHRONOUS+1;
-  pNew->zDbSName = sqlite3DbStrDup(db, zName);
+  if( !REOPEN_AS_MEMDB(db) ) pNew->zDbSName = sqlite3DbStrDup(db, zName);
   if( rc==SQLITE_OK && pNew->zDbSName==0 ){
     rc = SQLITE_NOMEM_BKPT;
   }
@@ -8283,13 +8394,15 @@ static void attachFunc(
 
   /* If the file was opened successfully, read the schema for the new database.
   ** If this fails, or if opening the file failed, then close the file and 
-  ** remove the entry from the db->aDb[] array. i.e. put everything back the way
-  ** we found it.
+  ** remove the entry from the db->aDb[] array. i.e. put everything back the
+  ** way we found it.
   */
   if( rc==SQLITE_OK ){
     sqlite3BtreeEnterAll(db);
+    db->init.iDb = 0;
     rc = sqlite3Init(db, &zErrDyn);
     sqlite3BtreeLeaveAll(db);
+    assert( zErrDyn==0 || rc!=SQLITE_OK );
   }
 #ifdef SQLITE_USER_AUTHENTICATION
   if( rc==SQLITE_OK ){
@@ -8301,21 +8414,23 @@ static void attachFunc(
   }
 #endif
   if( rc ){
-    int iDb = db->nDb - 1;
-    assert( iDb>=2 );
-    if( db->aDb[iDb].pBt ){
-      sqlite3BtreeClose(db->aDb[iDb].pBt);
-      db->aDb[iDb].pBt = 0;
-      db->aDb[iDb].pSchema = 0;
-    }
-    sqlite3ResetAllSchemasOfConnection(db);
-    db->nDb = iDb;
-    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
-      sqlite3OomFault(db);
-      sqlite3DbFree(db, zErrDyn);
-      zErrDyn = sqlite3MPrintf(db, "out of memory");
-    }else if( zErrDyn==0 ){
-      zErrDyn = sqlite3MPrintf(db, "unable to open database: %s", zFile);
+    if( !REOPEN_AS_MEMDB(db) ){
+      int iDb = db->nDb - 1;
+      assert( iDb>=2 );
+      if( db->aDb[iDb].pBt ){
+        sqlite3BtreeClose(db->aDb[iDb].pBt);
+        db->aDb[iDb].pBt = 0;
+        db->aDb[iDb].pSchema = 0;
+      }
+      sqlite3ResetAllSchemasOfConnection(db);
+      db->nDb = iDb;
+      if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
+        sqlite3OomFault(db);
+        sqlite3DbFree(db, zErrDyn);
+        zErrDyn = sqlite3MPrintf(db, "out of memory");
+      }else if( zErrDyn==0 ){
+        zErrDyn = sqlite3MPrintf(db, "unable to open database: %s", zFile);
+      }
     }
     goto attach_error;
   }
@@ -8586,6 +8701,14 @@ SQLITE_PRIVATE int sqlite3FixSelect(
     }
     if( sqlite3FixExpr(pFix, pSelect->pLimit) ){
       return 1;
+    }
+    if( pSelect->pWith ){
+      int i;
+      for(i=0; i<pSelect->pWith->nCte; i++){
+        if( sqlite3FixSelect(pFix, pSelect->pWith->a[i].pSelect) ){
+          return 1;
+        }
+      }
     }
     pSelect = pSelect->pPrior;
   }
@@ -10050,10 +10173,24 @@ SQLITE_PRIVATE void sqlite3AddColumn(Parse *pParse, Token *pName, Token *pType){
 */
 SQLITE_PRIVATE void sqlite3AddNotNull(Parse *pParse, int onError){
   Table *p;
+  Column *pCol;
   p = pParse->pNewTable;
   if( p==0 || NEVER(p->nCol<1) ) return;
-  p->aCol[p->nCol-1].notNull = (u8)onError;
+  pCol = &p->aCol[p->nCol-1];
+  pCol->notNull = (u8)onError;
   p->tabFlags |= TF_HasNotNull;
+
+  /* Set the uniqNotNull flag on any UNIQUE or PK indexes already created
+  ** on this column.  */
+  if( pCol->colFlags & COLFLAG_UNIQUE ){
+    Index *pIdx;
+    for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
+      assert( pIdx->nKeyCol==1 && pIdx->onError!=OE_None );
+      if( pIdx->aiColumn[0]==p->nCol-1 ){
+        pIdx->uniqNotNull = 1;
+      }
+    }
+  }
 }
 
 /*
@@ -12017,7 +12154,9 @@ SQLITE_PRIVATE void sqlite3CreateIndex(
   */
   if( pList==0 ){
     Token prevCol;
-    sqlite3TokenInit(&prevCol, pTab->aCol[pTab->nCol-1].zName);
+    Column *pCol = &pTab->aCol[pTab->nCol-1];
+    pCol->colFlags |= COLFLAG_UNIQUE;
+    sqlite3TokenInit(&prevCol, pCol->zName);
     pList = sqlite3ExprListAppend(pParse, 0,
               sqlite3ExprAlloc(db, TK_ID, &prevCol, 0));
     if( pList==0 ) goto exit_create_index;
@@ -14862,6 +15001,8 @@ static CollSeq *sqlite3GetFuncCollSeq(sqlite3_context *context){
 ** iteration of the aggregate loop.
 */
 static void sqlite3SkipAccumulatorLoad(sqlite3_context *context){
+  assert( context->isError<=0 );
+  context->isError = -1;
   context->skipFlag = 1;
 }
 
@@ -14928,8 +15069,6 @@ static void lengthFunc(
   int argc,
   sqlite3_value **argv
 ){
-  int len;
-
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
@@ -14941,13 +15080,17 @@ static void lengthFunc(
     }
     case SQLITE_TEXT: {
       const unsigned char *z = sqlite3_value_text(argv[0]);
+      const unsigned char *z0;
+      unsigned char c;
       if( z==0 ) return;
-      len = 0;
-      while( *z ){
-        len++;
-        SQLITE_SKIP_UTF8(z);
+      z0 = z;
+      while( (c = *z)!=0 ){
+        z++;
+        if( c>=0xc0 ){
+          while( (*z & 0xc0)==0x80 ){ z++; z0++; }
+        }
       }
-      sqlite3_result_int(context, len);
+      sqlite3_result_int(context, (int)(z-z0));
       break;
     }
     default: {
@@ -16022,6 +16165,8 @@ static void replaceFunc(
   i64 nOut;                /* Maximum size of zOut */
   int loopLimit;           /* Last zStr[] that might match zPattern[] */
   int i, j;                /* Loop counters */
+  unsigned cntExpand;      /* Number zOut expansions */
+  sqlite3 *db = sqlite3_context_db_handle(context);
 
   assert( argc==3 );
   UNUSED_PARAMETER(argc);
@@ -16053,33 +16198,40 @@ static void replaceFunc(
     return;
   }
   loopLimit = nStr - nPattern;  
+  cntExpand = 0;
   for(i=j=0; i<=loopLimit; i++){
     if( zStr[i]!=zPattern[0] || memcmp(&zStr[i], zPattern, nPattern) ){
       zOut[j++] = zStr[i];
     }else{
-      u8 *zOld;
-      sqlite3 *db = sqlite3_context_db_handle(context);
-      nOut += nRep - nPattern;
-      testcase( nOut-1==db->aLimit[SQLITE_LIMIT_LENGTH] );
-      testcase( nOut-2==db->aLimit[SQLITE_LIMIT_LENGTH] );
-      if( nOut-1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
-        sqlite3_result_error_toobig(context);
-        sqlite3_free(zOut);
-        return;
-      }
-      zOld = zOut;
-      zOut = sqlite3_realloc64(zOut, (int)nOut);
-      if( zOut==0 ){
-        sqlite3_result_error_nomem(context);
-        sqlite3_free(zOld);
-        return;
+      if( nRep>nPattern ){
+        nOut += nRep - nPattern;
+        testcase( nOut-1==db->aLimit[SQLITE_LIMIT_LENGTH] );
+        testcase( nOut-2==db->aLimit[SQLITE_LIMIT_LENGTH] );
+        if( nOut-1>db->aLimit[SQLITE_LIMIT_LENGTH] ){
+          sqlite3_result_error_toobig(context);
+          sqlite3_free(zOut);
+          return;
+        }
+        cntExpand++;
+        if( (cntExpand&(cntExpand-1))==0 ){
+          /* Grow the size of the output buffer only on substitutions
+          ** whose index is a power of two: 1, 2, 4, 8, 16, 32, ... */
+          u8 *zOld;
+          zOld = zOut;
+          zOut = sqlite3_realloc64(zOut, (int)nOut + (nOut - nStr - 1));
+          if( zOut==0 ){
+            sqlite3_result_error_nomem(context);
+            sqlite3_free(zOld);
+            return;
+          }
+        }
       }
       memcpy(&zOut[j], zRep, nRep);
       j += nRep;
       i += nPattern-1;
     }
   }
-  assert( j+nStr-i+1==nOut );
+  assert( j+nStr-i+1<=nOut );
   memcpy(&zOut[j], &zStr[i], nStr-i);
   j += nStr - i;
   assert( j<=nOut );
@@ -21142,8 +21294,8 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_value_pointer          sqlite3_api->value_pointer
 /* Version 3.22.0 and later */
 #define sqlite3_vtab_nochange          sqlite3_api->vtab_nochange
-#define sqlite3_value_nochange         sqltie3_api->value_nochange
-#define sqlite3_vtab_collation         sqltie3_api->vtab_collation
+#define sqlite3_value_nochange         sqlite3_api->value_nochange
+#define sqlite3_vtab_collation         sqlite3_api->vtab_collation
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
@@ -27266,12 +27418,15 @@ static void generateSortTail(
     iSortTab = iTab;
     bSeq = 1;
   }
-  for(i=0, iCol=nKey+bSeq; i<nSortData; i++){
+  for(i=0, iCol=nKey+bSeq-1; i<nSortData; i++){
+    if( aOutEx[i].u.x.iOrderByCol==0 ) iCol++;
+  }
+  for(i=nSortData-1; i>=0; i--){
     int iRead;
     if( aOutEx[i].u.x.iOrderByCol ){
       iRead = aOutEx[i].u.x.iOrderByCol-1;
     }else{
-      iRead = iCol++;
+      iRead = iCol--;
     }
     sqlite3VdbeAddOp3(v, OP_Column, iSortTab, iRead, regRow+i);
     VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
