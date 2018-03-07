@@ -9,6 +9,7 @@
 #include <Formatting/FormattingApi.h>
 #include <locale>
 #include <BeSQLite/L10N.h>
+#include "../../PrivateAPI/Formatting/FormattingParsing.h"
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -1488,40 +1489,5 @@ void FormattingToken::Init()
     m_tokenBytes = 0;
     m_isASCII = true;
     }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-//FormattingToken::FormattingToken(FormattingScannerCursorP cursor)
-//    {
-//    m_cursor = cursor;
-//    Init();
-//    }
-//
-//WString FormattingToken::GetNextToken()
-//    {
-//    /*bvector<size_t> m_word;
-//    bvector<size_t> m_delim;*/
-//    
-//    Init();
-//    //size_t skip = m_cursor->SkipBlanks();
-//    size_t code = m_cursor->GetNextSymbol();
-//    while (!m_cursor->IsDivider())
-//        {
-//        if (!m_cursor->IsASCII())
-//            m_isASCII = false;
-//        m_word.push_back(code);
-//        code = m_cursor->GetNextSymbol();
-//        }
-//    m_delim.push_back(code);
-//    WString ws;
-//    return ws;
-//    }
-
-//CharCP FormattingToken::GetASCII()
-//    {
-//    if()
-//    }
-
-
 
 END_BENTLEY_FORMATTING_NAMESPACE
