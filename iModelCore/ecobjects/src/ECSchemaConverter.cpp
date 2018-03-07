@@ -1149,7 +1149,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
 
     if (!ECSchema::IsSchemaReferenced(schema, *StandardUnitsHelper::GetSchema()) && ECObjectsStatus::Success != schema.AddReferencedSchema(*StandardUnitsHelper::GetSchema()))
         {
-        LOG.errorv("Unable to add the %s schema as a reference to %s.", StandardUnitsHelper::GetSchema()->GetFullSchemaName(), schema.GetName());
+        LOG.errorv("Unable to add the %s schema as a reference to %s.", StandardUnitsHelper::GetSchema()->GetFullSchemaName().c_str(), schema.GetName().c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
 
@@ -1176,7 +1176,7 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
                 {
                 if (!ECSchema::IsSchemaReferenced(schema, *StandardUnitsHelper::GetSchema()) && ECObjectsStatus::Success != schema.AddReferencedSchema(*StandardUnitsHelper::GetSchema()))
                     {
-                    LOG.errorv("Unable to add the %s schema as a reference to %s.", StandardUnitsHelper::GetSchema()->GetFullSchemaName(), schema.GetName());
+                    LOG.errorv("Unable to add the %s schema as a reference to %s.", StandardUnitsHelper::GetSchema()->GetFullSchemaName().c_str(), schema.GetName().c_str());
                     return ECObjectsStatus::SchemaNotFound;
                     }
                 }

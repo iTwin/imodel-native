@@ -298,18 +298,6 @@ SchemaReadStatus ECUnit::ReadInvertedUnitXml(BeXmlNodeR unitNode, ECSchemaReadCo
 //--------------------------------------------------------------------------------------
 SchemaReadStatus ECUnit::ReadConstantXml(BeXmlNodeR unitNode, ECSchemaReadContextR context)
     {
-    SchemaReadStatus status;
-    auto checkRequiredAttribute = [&unitNode, &status](Utf8StringR value, Utf8CP attribute) -> decltype(auto)
-        {
-        if(BEXML_Success != unitNode.GetAttributeStringValue(value, attribute) || Utf8String::IsNullOrEmpty(value.c_str()))
-            {
-            LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", unitNode.GetName(), attribute);
-            status = SchemaReadStatus::InvalidECSchemaXml;
-            }
-        else
-            status = SchemaReadStatus::Success;
-        };
-
     Utf8String definition;
     if(BEXML_Success != unitNode.GetAttributeStringValue(definition, DEFINITION_ATTRIBUTE) || Utf8String::IsNullOrEmpty(definition.c_str()))
         {

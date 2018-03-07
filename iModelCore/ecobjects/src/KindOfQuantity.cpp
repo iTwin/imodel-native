@@ -446,7 +446,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
     if (m_persistenceFUS.HasProblem())
         LOG.warningv("Persistence FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                     value.c_str(), GetName(), m_persistenceFUS.GetProblemDescription().c_str());
+                     value.c_str(), GetName().c_str(), m_persistenceFUS.GetProblemDescription().c_str());
 
     // Read Presentation FUS'
 
@@ -473,7 +473,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
             if (presFUS.HasProblem())
                 LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                    value.c_str(), GetName(), presFUS.GetProblemDescription().c_str());
+                    value.c_str(), GetName().c_str(), presFUS.GetProblemDescription().c_str());
 
             m_presentationFUS.push_back(presFUS);
             }
