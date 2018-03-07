@@ -64,7 +64,8 @@ bool Converter::HasProxyGraphicsCache(DgnV8ModelR v8Model, ViewportP vp)
 
     for (DgnV8Api::DgnAttachment* attachment : *attachments)
         {
-        if (HasProxyGraphicsCache(*attachment, vp))
+        if (HasProxyGraphicsCache(*attachment, vp) ||
+            IsSimpleWireframeAttachment(*attachment))
             return true;
         }
     return false;
@@ -422,6 +423,10 @@ DgnAttachmentP Converter::GetFirstNeedingCve(ResolvedModelMapping const& parentM
             continue;
         if (!proxyDetector._UseProxyGraphicsFor(*attachment, *this))
             continue;
+
+        if (IsSimpleWireframeAttachment(*attachment))
+            continue;
+
         if (!attachment->Is3d() || attachment->IsTemporary())
             {
             // DgnPlatform will only generate proxy graphics for attached 3d models.
@@ -498,6 +503,29 @@ DgnV8Api::ProxyDisplayHitInfo const* Converter::GetProxyDisplayHitInfo(DgnV8Api:
 
     BeAssert(false);
     return nullptr;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Converter::IsSimpleWireframeAttachment(DgnAttachmentCR ref)
+    {
+    static bool s_forceDisable = false;
+
+    if (s_forceDisable)
+        return false;
+
+    if (!ref.Is3d() || ref.IsTemporary())
+        return false;
+
+    if (nullptr != ref.GetDynamicViewSettingsCR().GetClipBoundElementRef(ref.GetDgnModelP()) ||
+        nullptr != ref.GetDynamicViewSettingsCR().GetClipMaskElementRef(ref.GetDgnModelP()))
+        return false;
+
+    for (int i=0; i<8; i++)
+        if (ref.GetViewFlags(i).renderMode != (UInt32) DgnV8Api::MSRenderMode::Wireframe)
+            return false;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**

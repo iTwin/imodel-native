@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgSyncInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DwgImportInternal.h"
@@ -1168,6 +1168,14 @@ DwgSyncInfo::DwgObjectProvenance::DwgObjectProvenance (DwgDbObjectCR obj, DwgSyn
         {
         // the primary hash is from the object data itself.
         obj.DxfOut (filer);
+        // Aec objects do not dxfOut actual data - add range for now - TFS 853852:
+        if (obj.GetDwgClassName().StartsWithI(L"AecDb"))
+            {
+            DwgDbEntityCP   ent = DwgDbEntity::Cast(&obj);
+            DRange3d        range;
+            if (nullptr != ent && ent->GetRange(range) == DwgDbStatus::Success)
+                m_hasher.Add(&range, sizeof(range));
+            }
         m_primaryHash = m_hasher.GetHashVal ();
 
         if (hash2nd)

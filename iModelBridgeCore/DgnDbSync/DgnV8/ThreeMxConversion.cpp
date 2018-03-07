@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/ThreeMxConversion.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -300,7 +300,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
 
     if (true)
         {
-        ThreeMx::Scene scene(converter.GetDgnDb(), location, rootUrl.c_str(), nullptr);
+        ThreeMx::Scene scene(converter.GetDgnDb(), DgnModelId(), location, rootUrl.c_str(), nullptr);
         if (SUCCESS == scene.ReadSceneFile())
             linkName = scene.GetSceneInfo().m_sceneName;
         }

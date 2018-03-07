@@ -1243,6 +1243,7 @@ void            DwgImporter::_PostProcessViewports ()
             for (ElementIteratorEntry entry : DrawingCategory::MakeIterator(*m_dgndb))
                 {
                 DgnCategoryId   categoryId = entry.GetId <DgnCategoryId> ();
+                bool isCategoryViewed = categorySelector.IsCategoryViewed (categoryId);
 
                 if (numFrozenLayers > 0)
                     {
@@ -1250,15 +1251,27 @@ void            DwgImporter::_PostProcessViewports ()
                     DwgDbHandle     objHandle = m_syncInfo.FindLayerHandle (categoryId, fileId);
                     if (!objHandle.IsNull() && (layerId = m_dwgdb->GetObjectId(objHandle)).IsValid())
                         {
-                        // skip viewport frozen layer for this view:
+                        // check viewport frozen layer for this view:
                         auto found = std::find_if (frozenLayers.begin(), frozenLayers.end(), [&](DwgDbObjectId id){ return id == layerId; });
                         if (found != frozenLayers.end())
+                            {
+                            // if the category is in this view, drop it:
+                            if (isCategoryViewed)
+                                {
+                                categorySelector.DropCategory (categoryId);
+                                changed = true;
+                                }
                             continue;
+                            }
                         }
                     }
 
-                categorySelector.AddCategory (categoryId);
-                changed = true;
+                // this category should be viewed - if not add it:
+                if (!isCategoryViewed)
+                    {
+                    categorySelector.AddCategory (categoryId);
+                    changed = true;
+                    }
                 }
 
 #ifdef WIP_ADD_XREFMODELS_INSHEETVIEW

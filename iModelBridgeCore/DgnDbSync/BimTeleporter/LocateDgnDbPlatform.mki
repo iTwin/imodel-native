@@ -2,7 +2,7 @@
 #
 #     $Source: BimTeleporter/LocateDgnDbPlatform.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 DGNDB_VER=DgnDb06
@@ -10,14 +10,14 @@ DGNDB_VER=DgnDb06
 # -----------------------------------------------------------------------------------------------------------------------
 # Allow the developer to work from a live build of Dgndb, instead of LKGs
 # -----------------------------------------------------------------------------------------------------------------------
-%ifdef DGNCLIENT_SDK_PRODUCT
-    DgnDbDgnPlatformBase = $(DGNCLIENT_SDK_PRODUCT)
+%ifdef DGNDB0601_DGNPLATFORM_NUGET
+    DgnDbDgnPlatformBase = $(DGNDB0601_DGNPLATFORM_NUGET)
     %ifnofile ${DgnDbDgnPlatformBase}
-        %error $(DgnDbDgnPlatformBase) not found. Make sure DGNCLIENT_SDK_PRODUCT points to Product\DgnClientSdk-$(TARGET_PROCESSOR_DIRECTORY) in your DgnDb output tree.
+        %error $(DgnDbDgnPlatformBase) not found. Make sure DGNDB0601_DGNPLATFORM_NUGET points to Product\DgnDb_1_6_ForTeleporterNuget\native\ in your DgnDb output tree.
     %endif
 %else
-    DgnDbDgnPlatformBase = $(BuildContext)SdkSources/DgnClientSdk-Minimal-$(TARGET_PROCESSOR_DIRECTORY)-DgnDb/
+    DgnDbDgnPlatformBase = $(BuildContext)nuget/native/DgnDb_1_6_ForTeleporterNuget/native/
 %endif
 
-DgndbDgnPlatformLibDir = $(DgnDbDgnPlatformBase)lib/$(TARGET_PROCESSOR_DIRECTORY)/
+DgndbDgnPlatformLibDir = $(DgnDbDgnPlatformBase)lib/$(TARGET_PROCESSOR_ARCHITECTURE)/
 DgndbDgnPlatformIncludeDir = $(DgnDbDgnPlatformBase)include/

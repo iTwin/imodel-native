@@ -2,13 +2,14 @@
 |
 |     $Source: BimTeleporter/BimExporter0601/lib/BisJson1ExporterImpl0601.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/Base64Utilities.h>
 #include "BisJson1ExporterImpl0601.h"
 #include <limits>
+#include <DgnDb06Api/DgnPlatform/WebMercator.h>
 
 DGNDB06_USING_NAMESPACE_BENTLEY
 DGNDB06_USING_NAMESPACE_BENTLEY_SQLITE
@@ -242,7 +243,7 @@ L10N::SqlangFiles BisJson1ExporterImpl::_SupplySqlangFiles()
     {
     BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     sqlangFile.AppendToPath(L"sqlang");
-    sqlangFile.AppendToPath(L"DgnClientFx_en.sqlang.db3");
+    sqlangFile.AppendToPath(L"DgnPlatform_en.sqlang.db3");
 
     return L10N::SqlangFiles(sqlangFile);
     }
@@ -1207,6 +1208,9 @@ BentleyStatus BisJson1ExporterImpl::ExportModel(Json::Value& out, Utf8CP schemaN
         obj.clear();
         jsonAdapter.GetRowInstance(obj);
 
+        if (nullptr != dynamic_cast<WebMercator::WebMercatorModel*>(model.get()))
+            continue;
+
         // Certain classes are now abstract in BisCore, so they need to be converted to the derived concrete classes
         if (model->IsGroupInformationModel())
             obj[JSON_CLASSNAME] = "Generic.GroupModel";
@@ -1445,10 +1449,8 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             if (geom.HasData())
                 {
                 Utf8String encode;
-                if (SUCCESS != Base64Utilities::Encode(encode, geom.GetData(), geom.GetSize()))
-                    obj.removeMember("GeometryStream");
-                else
-                    obj["GeometryStream"] = encode.c_str();
+                Base64Utilities::Encode(encode, geom.GetData(), geom.GetSize());
+                obj["GeometryStream"] = encode.c_str();
                 }
             }
         else if (nullptr != element->ToGeometryPart())
@@ -1456,10 +1458,8 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             entry[JSON_TYPE_KEY] = JSON_TYPE_GeometryPart;
             GeometryStreamCR geom = element->ToGeometryPart()->GetGeometryStream();
             Utf8String encode;
-            if (SUCCESS != Base64Utilities::Encode(encode, geom.GetData(), geom.GetSize()))
-                obj.removeMember("GeometryStream");
-            else
-                obj["GeometryStream"] = encode.c_str();
+            Base64Utilities::Encode(encode, geom.GetData(), geom.GetSize());
+            obj["GeometryStream"] = encode.c_str();
             }
         else if (element->IsGroupInformationElement())
             {
@@ -1474,10 +1474,8 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             Render::ImageSourceCR data = texture->GetImageSource();
             ByteStream const& stream = data.GetByteStream();
             Utf8String encode;
-            if (SUCCESS != Base64Utilities::Encode(encode, stream.GetData(), stream.GetSize()))
-                obj.removeMember("Data");
-            else
-                obj["Data"] = encode.c_str();
+            Base64Utilities::Encode(encode, stream.GetData(), stream.GetSize());
+            obj["Data"] = encode.c_str();
             entry[JSON_TYPE_KEY] = JSON_TYPE_Texture;
             obj["Height"] = texture->GetHeight();
             obj["Width"] = texture->GetWidth();
