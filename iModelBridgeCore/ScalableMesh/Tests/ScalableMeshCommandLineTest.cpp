@@ -693,6 +693,66 @@ void RunIntersectRay()
     ray.Intersect(rayOut, param, plane);
     }
 
+void RunEnumerateTest()
+{
+
+	BC_DTM_OBJ* bcDtmP = 0;
+
+	bcdtmRead_fromFileDtmObject(&bcDtmP, L"C:\\work\\2017q3\\tmp\\testm.tin");
+	TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*bcDtmP);
+	BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtm);
+	//en->SetUseRealPointIndexes(true);
+	en->SetExcludeAllRegions();
+	en->SetMaxTriangles(2000000);
+	bmap<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
+	/*std::ofstream stats;
+	stats.open("E:\\makeTM\\stats.txt", std::ios_base::trunc);
+	for (size_t i = 0; i < (size_t)mesh->GetBcDTM()->GetPointCount(); ++i)
+	{
+		DPoint3d pt;
+		mesh->GetBcDTM()->GetPoint((int)i, pt);
+		mapOfPoints[pt] = (int)i;
+
+		stats << "INDEX " + std::to_string(i) + " IS VERTEX: ";
+		std::string s;
+		print_polygonarray(s, "", &pt, 1);
+		stats << s;
+	}
+	stats.close();*/
+
+	bvector<DPoint3d> newVertices;
+	bvector<int32_t> newIndices;
+	std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints2(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
+	for (PolyfaceQueryP pf : *en)
+	{
+		PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+		vec->CopyFrom(*pf);
+		for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+		{
+			DPoint3d face[3];
+			int32_t idx[3] = { -1, -1, -1 };
+			for (size_t i = 0; i < 3; ++i)
+			{
+				face[i] = addedFacets->GetPointCP()[i];
+				idx[i] = mapOfPoints2.count(face[i]) != 0 ? mapOfPoints2[face[i]] : -1;
+			}
+			for (size_t i = 0; i < 3; ++i)
+			{
+				if (idx[i] == -1)
+				{
+					newVertices.push_back(face[i]);
+					idx[i] = (int)newVertices.size();
+					mapOfPoints2[face[i]] = idx[i] - 1;
+				}
+				else idx[i]++;
+			}
+			newIndices.push_back(idx[0]);
+			newIndices.push_back(idx[1]);
+			newIndices.push_back(idx[2]);
+		}
+	}
+}
+
 void RunWriteTileTest(WString& stmFileName, const wchar_t* tileID)
     {
  /*   LOG_SET_PATH_W("E:\\output\\scmesh\\2016-04-15\\")
@@ -1804,7 +1864,8 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     //DarylsTestFunction();
    // RunDTMClipTest();
    // RunDTMTriangulateTest2();
-	RunCompareLineTest();
+	//RunCompareLineTest();
+	RunEnumerateTest();
 	//RunMergePolygons();
    //RunDTMSTMTriangulateTest();
    // RunSelectPointsTest();
