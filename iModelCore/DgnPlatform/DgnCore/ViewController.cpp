@@ -1127,14 +1127,14 @@ AxisAlignedBox3d TemplateViewController3d::_GetViewedExtents(DgnViewportCR vp) c
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
     {
-    if (m_viewedModelId == viewedModelId)
+    if (GetViewedModelId() == viewedModelId)
         return DgnDbStatus::Success;
 
-    m_viewedModelId = viewedModelId;
+    GetTemplateViewDefinition3dR().SetViewedModel(viewedModelId);
     GeometricModel3dP model = GetViewedModel();
     if (!model || !model->IsTemplate())
         {
-        m_viewedModelId.Invalidate();
+        GetTemplateViewDefinition3dR().SetViewedModel(DgnModelId());
         return DgnDbStatus::WrongModel;
         }
 
