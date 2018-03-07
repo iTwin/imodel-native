@@ -9,9 +9,46 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
+#define DEFAULT_ORDER 3
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplineManipulationStrategyPtr SplineManipulationStrategy::Create
+(
+    SplinePlacementStrategyType placementStrategy
+)
+    {
+    switch (placementStrategy)
+        {
+        case SplinePlacementStrategyType::ControlPoints:
+            return SplineControlPointsManipulationStrategy::Create(DEFAULT_ORDER);
+        case SplinePlacementStrategyType::ThroughPoints:
+            return SplineThroughPointsManipulationStrategy::Create();
+        default:
+            BeAssert(false);
+            return nullptr;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr SplineManipulationStrategy::CreatePlacement()
+    {
+    return _CreatePlacement();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyType SplineManipulationStrategy::GetType() const 
+    {
+        return _GetType();
+    }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsManipulationStrategy
@@ -56,6 +93,14 @@ ICurvePrimitivePtr SplineControlPointsManipulationStrategy::_FinishPrimitive() c
 CurvePrimitivePlacementStrategyPtr SplineControlPointsManipulationStrategy::_CreateDefaultPlacementStrategy() 
     {
     return SplineControlPointsPlacementStrategy::Create(*this); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr SplineControlPointsManipulationStrategy::_CreatePlacement()
+    {
+    return SplineControlPointsPlacementStrategy::Create(*this);
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -114,4 +159,12 @@ void SplineThroughPointsManipulationStrategy::SetEndTangent(DVec3d endTangent)
     { 
     endTangent.Normalize();
     _SetEndTangent(endTangent); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr SplineThroughPointsManipulationStrategy::_CreatePlacement()
+    {
+    return SplineThroughPointsPlacementStrategy::Create(*this);
     }

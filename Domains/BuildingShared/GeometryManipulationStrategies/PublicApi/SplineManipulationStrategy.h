@@ -12,6 +12,12 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 // @bsiclass                                     Haroldas.Vitunskas             01/2018
 //=======================================================================================
+enum class SplinePlacementStrategyType
+{
+    ControlPoints = 0,
+    ThroughPoints
+};
+
 struct SplineManipulationStrategy : public CurvePrimitiveManipulationStrategy
     {
     DEFINE_T_SUPER(CurvePrimitiveManipulationStrategy)
@@ -22,6 +28,14 @@ struct SplineManipulationStrategy : public CurvePrimitiveManipulationStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override { return true; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsContinious() const override { return true; }
+
+        virtual SplinePlacementStrategyType _GetType() const = 0;
+        virtual SplinePlacementStrategyPtr _CreatePlacement() = 0;
+
+    public:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static SplineManipulationStrategyPtr Create(SplinePlacementStrategyType placementStrategy);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT SplinePlacementStrategyPtr CreatePlacement();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT SplinePlacementStrategyType GetType() const;
     };
 
 //=======================================================================================
@@ -45,12 +59,16 @@ struct SplineControlPointsManipulationStrategy : public SplineManipulationStrate
         int _GetOrder() const { return m_order; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineControlPointsManipulationStrategy(*this); };
+
+        virtual SplinePlacementStrategyType _GetType() const override {return SplinePlacementStrategyType::ControlPoints;}
+
+        virtual SplinePlacementStrategyPtr _CreatePlacement() override;
     public:
         static SplineControlPointsManipulationStrategyPtr Create(int order) { return new SplineControlPointsManipulationStrategy(order); }
 
         void SetOrder(int order) { _SetOrder(order); }
         int GetOrder() const { return _GetOrder(); }
-
+        
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static const int default_Order;
     };
 
@@ -81,6 +99,10 @@ struct SplineThroughPointsManipulationStrategy : public SplineManipulationStrate
         DVec3d _GetEndTangent() const { return m_endTangent; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT CurvePrimitiveManipulationStrategyPtr _Clone() const override { return new SplineThroughPointsManipulationStrategy(*this); };
+
+        virtual SplinePlacementStrategyType _GetType() const override { return SplinePlacementStrategyType::ThroughPoints; }
+
+        virtual SplinePlacementStrategyPtr _CreatePlacement() override;
 
     public:
         static SplineThroughPointsManipulationStrategyPtr Create() { return new SplineThroughPointsManipulationStrategy(); }

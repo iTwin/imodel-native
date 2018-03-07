@@ -498,3 +498,24 @@ TEST_F(CurveStrategyTests, SplineControlPointsStrategyTests)
     expectedCurve = TestUtils::CreateSpline({ { 0, 0, 0 },{ 1, 0, 0 },{ 5, 6, 7 } }, order);
     TestUtils::CompareCurves(expectedCurve, strategy->FinishPrimitive());
     }
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveStrategyTests, SplineStrategiesCreationTest) 
+    {
+    SplinePlacementStrategyType typeC = SplinePlacementStrategyType::ControlPoints;
+    SplineManipulationStrategyPtr controlStrategy = SplineManipulationStrategy::Create(typeC);
+    ASSERT_TRUE(controlStrategy.IsValid()) << "control points strategy creation should not fail";
+    ASSERT_EQ(SplinePlacementStrategyType::ControlPoints, controlStrategy->GetType()) << "Failed to get Control points Type";
+    SplinePlacementStrategyPtr cPlacement = controlStrategy->CreatePlacement();
+    ASSERT_TRUE(cPlacement.IsValid()) << "control points strategy failed to create";
+    ASSERT_EQ(SplinePlacementStrategyType::ControlPoints, cPlacement->GetType()) << "Placement Strategy type should be Control Points";
+
+    SplinePlacementStrategyType typeP = SplinePlacementStrategyType::ThroughPoints;
+    SplineManipulationStrategyPtr pointsStrategy = SplineManipulationStrategy::Create(typeP);
+    ASSERT_TRUE(pointsStrategy.IsValid()) << "through points strategy creation should not fail";
+    ASSERT_EQ(SplinePlacementStrategyType::ThroughPoints, pointsStrategy->GetType()) << "Failed to get Through points Type";
+    SplinePlacementStrategyPtr pPlacement = pointsStrategy->CreatePlacement();
+    ASSERT_TRUE(pPlacement.IsValid()) << "through points strategy failed to create";
+    ASSERT_EQ(SplinePlacementStrategyType::ThroughPoints, pPlacement->GetType()) << "Placement Strategy type should be Through Points";
+    }
