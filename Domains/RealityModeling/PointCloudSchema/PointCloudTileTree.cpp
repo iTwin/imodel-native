@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudTileTree.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
@@ -335,7 +335,7 @@ PointCloudQueryHandlePtr  Root::InitQuery (bool& colorsPresent, DRange3dCR tileR
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(PointCloudModelR model, TransformCR transform, Render::SystemR system)
-    : T_Super(model.GetDgnDb(), transform, "", &system), m_model(model), m_name(model.GetName())
+    : T_Super(model, transform, "", &system), m_model(model), m_name(model.GetName())
     {
     CreateCache(model.GetName().c_str(), 1024*1024*1024, false); // 1 GB
     }

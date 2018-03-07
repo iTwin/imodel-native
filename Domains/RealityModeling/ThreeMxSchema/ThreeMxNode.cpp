@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMxNode.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
@@ -38,5 +38,24 @@ bool Node::_WantDebugRangeGraphics() const
     {
     static bool s_debugRange = false;
     return s_debugRange;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Scene::Scene(ThreeMxModelR model, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system)
+    : Scene(model.GetDgnDb(), model.GetModelId(), location, sceneFile, system)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Used by DgnV8Converter simply to extract the scene name...
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Scene::Scene(DgnDbR db, DgnModelId modelId, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system)
+    : T_Super(db, modelId, location, sceneFile, system), m_sceneFile(sceneFile)
+    {
+    //
     }
 

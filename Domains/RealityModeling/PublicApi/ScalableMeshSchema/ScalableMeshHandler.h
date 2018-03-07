@@ -232,7 +232,7 @@ public:
 
     ScalableMeshModel* m_3smModel = nullptr;
 
-    SMScene(Dgn::DgnDbR db, IScalableMeshPtr& smPtr, TransformCR location, TransformCR toFloatTransform, Utf8CP sceneFile, Dgn::Render::SystemP system) : T_Super(db, location, sceneFile, system), m_smPtr(smPtr), m_toFloatTransform(toFloatTransform) {}
+    SCALABLEMESH_SCHEMA_EXPORT SMScene(ScalableMeshModelCR model, IScalableMeshPtr& smPtr, TransformCR location, TransformCR toFloatTransform, Utf8CP sceneFile, Dgn::Render::SystemP system);
 
     ~SMScene() { ClearAllTiles(); }
 

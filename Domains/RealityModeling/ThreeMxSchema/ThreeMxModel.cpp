@@ -210,7 +210,7 @@ void ThreeMxModel::SetClip(Dgn::ClipVectorCP clip)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootPtr ThreeMxModel::_CreateTileTree(Render::SystemP system)
     {
-    ScenePtr scene = new Scene(m_dgndb, m_location, m_sceneFile.c_str(), system);
+    ScenePtr scene = new Scene(*this, m_location, m_sceneFile.c_str(), system);
     scene->SetPickable(true);
     if (SUCCESS != scene->LoadScene())
         return nullptr;

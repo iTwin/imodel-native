@@ -816,7 +816,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     trimesh.m_numIndices = polyfaceQuery->GetPointIndexCount();
     int* vertIndex = new int[trimesh.m_numIndices];
 
-    for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
+    for (int faceVerticeInd = 0; faceVerticeInd < trimesh.m_numIndices; faceVerticeInd++)
         {
         vertIndex[faceVerticeInd] = faceVerticeInd;
         }
@@ -835,7 +835,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
             textureUv = new _fPoint2d[trimesh.m_numIndices];
 
-            for (size_t paramInd = 0; paramInd < polyfaceQuery->GetPointIndexCount(); paramInd++)
+            for (size_t paramInd = 0; paramInd < trimesh.m_numIndices; paramInd++)
                 {
                 const DPoint2d* uv = &polyfaceQuery->GetParamCP()[polyfaceQuery->GetParamIndexCP()[paramInd] - 1];
                 textureUv[paramInd].x = uv->x;
@@ -880,6 +880,15 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         delete [] trimesh.m_textureUV;
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+SMScene::SMScene(ScalableMeshModelCR model, IScalableMeshPtr& smPtr, TransformCR location, TransformCR toFloatTransform, Utf8CP sceneFile, Dgn::Render::SystemP system)
+    : T_Super(model, location, sceneFile, system), m_smPtr(smPtr), m_toFloatTransform(toFloatTransform)
+    {
+    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1134,7 +1143,7 @@ TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
         toFloatTransform = Transform::FromIdentity();
         }
 
-    SMScenePtr scene = new SMScene(m_dgndb, m_smPtr, toLocationTransform, toFloatTransform, sceneFile.c_str(), system);
+    SMScenePtr scene = new SMScene(*this, m_smPtr, toLocationTransform, toFloatTransform, sceneFile.c_str(), system);
     scene->m_3smModel = this;
     scene->SetPickable(true);
     if (SUCCESS != scene->LoadScene())

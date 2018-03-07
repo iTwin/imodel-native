@@ -100,7 +100,7 @@
     </Part>
 
     <!-- ////////////////////////////   Use to convert 3MX to 3SM /////////////////////////////////// -->
-    <Part Name="ThreeMxReaderLegacy" BMakeFile="ThreeMxSchema/ThreeMxReaderLegacy.mke">
+    <Part Name="ThreeMxReaderLegacy" BentleyBuildMakeFile="ThreeMxSchema/ThreeMxReaderLegacy.mke">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <Bindings>
 	    <PublicAPI Domain="ThreeMxReader"/>
