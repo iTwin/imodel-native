@@ -482,6 +482,96 @@ TEST_F(FormatIntegerTest, FormatIntegerPresentationTypeTests)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatIntegerTest, FormatIntegerFormatTraitsTests)
+    {
+    NumericFormatSpec nfs;
+    Utf8String string;
+    int const testValPos = 100501;
+    int const testValNeg = -100501;
+
+    nfs.SetFormatTraits(FormatTraits::DefaultTraits);
+    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+
+    // TODO: Documentation refers to leading zeros for "digital expression" but never
+    // defines what a digital expression means. So I don't actually know if this testing
+    // is correct.
+    nfs.SetMinWidth(10);
+    nfs.SetFormatTraits(FormatTraits::LeadingZeroes);
+    EXPECT_STREQ("0000000000", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("0000100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-0000100501", nfs.FormatInteger(testValNeg).c_str());
+    nfs.SetMinWidth(0);
+
+    // TODO: It isn't defined in the spec what the behavior of trailing zeros should
+    // be for integer formatting. This testing is likely also incorrect.
+    nfs.SetMinWidth(10);
+    nfs.SetFormatTraits(FormatTraits::TrailingZeroes);
+    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+    nfs.SetMinWidth(0);
+
+    // Should only affect doubles.
+    nfs.SetFormatTraits(FormatTraits::KeepDecimalPoint);
+    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+
+    // Should only affect doubles.
+    nfs.SetFormatTraits(FormatTraits::KeepSingleZero);
+    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+
+    nfs.SetPresentationType(PresentationType::Scientific);
+    nfs.SetFormatTraits(FormatTraits::ExponentZero);
+    EXPECT_STREQ("0e+00", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("1.00501e+05", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-1.00501e+05", nfs.FormatInteger(testValNeg).c_str());
+    nfs.SetPresentationType(PresentationType::Decimal);
+
+    nfs.SetFormatTraits(FormatTraits::ZeroEmpty);
+    EXPECT_STREQ("", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+
+    nfs.SetFormatTraits(FormatTraits::Use1000Separator);
+    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100,501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100,501", nfs.FormatInteger(testValNeg).c_str());
+
+    // Should only affect doubles.
+    nfs.SetFormatTraits(FormatTraits::ApplyRounding);
+    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+
+    // Should only affect doubles.
+    nfs.SetFormatTraits(FormatTraits::FractionDash);
+    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+
+    // Should only affect doubles.
+    nfs.SetFormatTraits(FormatTraits::UseFractSymbol);
+    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+
+    // AppendUnitName should have no effect on the unitless NamedFormatSpec.
+    nfs.SetFormatTraits(FormatTraits::AppendUnitName);
+    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+
+    FAIL() << "TODO: Test with the buffer version.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatDoubleTest, FormatDoubleFailsWhenBufferIsTooSmall)
     {
     NumericFormatSpec nfs;
@@ -713,6 +803,124 @@ TEST_F(FormatDoubleTest, FormatDoubleWithDifferentMinWidths)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatDoubleTest, FormatDoubleFormatTraitsTests)
+    {
+    NumericFormatSpec nfs;
+    Utf8String string;
+    double const testValPos = 100501.125;
+    double const testValNeg = -100501.125;
+    double const testValPosZeroFracComp = 100501.0;
+    double const testValNegZeroFracComp = -100501.0;
+
+    nfs.SetFormatTraits(FormatTraits::DefaultTraits);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501.125", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100501.125", nfs.FormatDouble(testValNeg).c_str());
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatDouble(testValPosZeroFracComp).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatDouble(testValNegZeroFracComp).c_str());
+
+    // TODO: Documentation refers to leading zeros for "digital expression" but never
+    // defines what a digital expression means. So I don't actually know if this testing
+    // is correct.
+    nfs.SetMinWidth(15);
+    nfs.SetFormatTraits(FormatTraits::LeadingZeroes);
+    EXPECT_STREQ("000000000000000", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("00000100501.125", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-0000100501.125", nfs.FormatDouble(testValNeg).c_str());
+    nfs.SetMinWidth(0);
+
+    nfs.SetMinWidth(15);
+    nfs.SetFormatTraits(FormatTraits::TrailingZeroes);
+    EXPECT_STREQ("0000000000000000", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501.125000000", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100501.12500000", nfs.FormatDouble(testValNeg).c_str());
+    nfs.SetMinWidth(0);
+
+    nfs.SetFormatTraits(FormatTraits::KeepDecimalPoint);
+    EXPECT_STREQ("0.", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501.", nfs.FormatDouble(testValPosZeroFracComp).c_str());
+    EXPECT_STREQ("-100501.", nfs.FormatDouble(testValNegZeroFracComp).c_str());
+
+    nfs.SetFormatTraits(FormatTraits::KeepSingleZero);
+    EXPECT_STREQ("0.0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501.0", nfs.FormatDouble(testValPosZeroFracComp).c_str());
+    EXPECT_STREQ("-100501.0", nfs.FormatDouble(testValNegZeroFracComp).c_str());
+
+    nfs.SetPresentationType(PresentationType::Scientific);
+    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetFormatTraits(FormatTraits::ExponentZero);
+    EXPECT_STREQ("0e+00", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("1.00501125e+05", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-1.00501125e+05", nfs.FormatDouble(testValNeg).c_str());
+    nfs.SetPresentationType(PresentationType::Decimal);
+
+    nfs.SetFormatTraits(FormatTraits::ZeroEmpty);
+    EXPECT_STREQ("", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501.125", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100501.125", nfs.FormatDouble(testValNeg).c_str());
+
+    nfs.SetFormatTraits(FormatTraits::Use1000Separator);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100,501.125", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100,501.125", nfs.FormatDouble(testValNeg).c_str());
+
+    // FormatDouble with a rounding factor X should produce formatted string
+    // output O such that that X "fits" into the double representation of
+    // O evenly.
+    nfs.SetFormatTraits(FormatTraits::ApplyRounding);
+    nfs.SetRoundingFactor(2);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100502", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100502", nfs.FormatDouble(testValNeg).c_str());
+    nfs.SetRoundingFactor(500);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100500", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100500", nfs.FormatDouble(testValNeg).c_str());
+    nfs.SetRoundingFactor(0.5);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatDouble(testValNeg).c_str());
+    nfs.SetRoundingFactor(0.25);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501.25", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100501.25", nfs.FormatDouble(testValNeg).c_str());
+    DecimalPrecision savePrecision = nfs.GetDecimalPrecision();
+    nfs.SetDecimalPrecision(DecimalPrecision::Precision6);
+    nfs.SetRoundingFactor(0.1);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501.1", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100501.1", nfs.FormatDouble(testValNeg).c_str());
+    nfs.SetRoundingFactor(0.1);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("0.5", nfs.FormatDouble(0.54).c_str());
+    EXPECT_STREQ("-0.5", nfs.FormatDouble(-0.54).c_str());
+    nfs.SetDecimalPrecision(savePrecision); // Restore the precision for the rest of the test.
+
+    nfs.SetPresentationType(PresentationType::Fractional);
+    nfs.SetFormatTraits(FormatTraits::FractionDash);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501-1/8", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100501-1/8", nfs.FormatDouble(testValNeg).c_str());
+    nfs.SetPresentationType(PresentationType::Decimal);
+
+    nfs.SetFormatTraits(FormatTraits::UseFractSymbol);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501 \x21\x5B", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100501 \x21\x5B", nfs.FormatDouble(testValNeg).c_str());
+
+    // AppendUnitName should have no effect on the unitless NamedFormatSpec.
+    nfs.SetFormatTraits(FormatTraits::AppendUnitName);
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501.125", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("-100501.125", nfs.FormatDouble(testValNeg).c_str());
+
+    FAIL() << "TODO: Test with the buffer/round version.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     {
     {
@@ -793,9 +1001,9 @@ TEST_F(CompositeValueSpecTest, Constructors)
     ASSERT_EQ(CompositeSpecType::Single, cvs1unit.GetType());
     ASSERT_FALSE(cvs1unit.IsProblem());
     EXPECT_STREQ("mi", cvs1unit.GetMajorUnit()->GetLabel().c_str());
-    // TODO: This causes a segfault >> EXPECT_STREQ("", cvs1unit.GetMiddleUnit()->GetLabel().c_str());
-    // TODO: This causes a segfault >> EXPECT_STREQ("", cvs1unit.GetMinorUnit()->GetLabel().c_str());
-    // TODO: This causes a segfault >> EXPECT_STREQ("", cvs1unit.GetSubUnit()->GetLabel().c_str());
+    EXPECT_EQ(nullptr, cvs1unit.GetMiddleUnit());
+    EXPECT_EQ(nullptr, cvs1unit.GetMinorUnit());
+    EXPECT_EQ(nullptr, cvs1unit.GetSubUnit());
 
     // Two Units
     CompositeValueSpec cvs2unit("MILE", "YRD");
@@ -804,8 +1012,8 @@ TEST_F(CompositeValueSpecTest, Constructors)
     ASSERT_FALSE(cvs2unit.IsProblem());
     EXPECT_STREQ("mi", cvs2unit.GetMajorUnit()->GetLabel().c_str());
     EXPECT_STREQ("yd", cvs2unit.GetMiddleUnit()->GetLabel().c_str());
-    // TODO: This causes a segfault >> EXPECT_STREQ("", cvs2unit.GetMinorUnit()->GetLabel().c_str());
-    // TODO: This causes a segfault >> EXPECT_STREQ("", cvs2unit.GetSubUnit()->GetLabel().c_str());
+    EXPECT_EQ(nullptr, cvs2unit.GetMinorUnit());
+    EXPECT_EQ(nullptr, cvs2unit.GetSubUnit());
     EXPECT_EQ(1760, cvs2unit.GetMajorToMiddleRatio());
 
     // Three Units
@@ -816,7 +1024,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_STREQ("mi", cvs3unit.GetMajorUnit()->GetLabel().c_str());
     EXPECT_STREQ("yd", cvs3unit.GetMiddleUnit()->GetLabel().c_str());
     EXPECT_STREQ("ft", cvs3unit.GetMinorUnit()->GetLabel().c_str());
-    // TODO: This causes a segfault >> EXPECT_STREQ("", cvs3unit.GetSubUnit()->GetLabel().c_str());
+    EXPECT_EQ(nullptr, cvs3unit.GetSubUnit());
     EXPECT_EQ(1760, cvs3unit.GetMajorToMiddleRatio());
     EXPECT_EQ(3, cvs3unit.GetMiddleToMinorRatio());
 
@@ -833,8 +1041,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_EQ(3, cvs4unit.GetMiddleToMinorRatio());
     EXPECT_EQ(12, cvs4unit.GetMinorToSubRatio());
 
-    FAIL() << "Until the above commented out segfaulting code is investigated, this test should not be concidered passing. Maybe I'm accessing the public API wrong???";
-    // TODO: Test the rest of the constructors.
+    FAIL() << "TODO: Test the rest of the constructors";
     }
 
 //---------------------------------------------------------------------------------------
@@ -863,7 +1070,7 @@ TEST_F(CompositeValueTest, DataMemberSettersAndGetters)
     EXPECT_EQ(3.0, cv.GetMinor());
     EXPECT_EQ(4.0, cv.GetSub());
     EXPECT_EQ(5.0, cv.GetInput());
-    
+
     cv.SetPositive();
     EXPECT_STREQ("", cv.GetSignPrefix().c_str());
     EXPECT_STREQ("", cv.GetSignPrefix(true).c_str());
