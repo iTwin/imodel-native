@@ -394,11 +394,12 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : coverageIds should not exist prior to doing ground extraction\r\n");
         return;
         }
-           
-    //return L"InputFileName, Nb Ground Regions, Result, Duration (minutes)\n";
+               
+    //return L"InputFileName, Nb Ground Regions, Nb Successful Ground Regions, Result, Duration (minutes)\n";
     fwprintf(pResultFile, L"%s,%zi", smFileName.c_str(), areas.size());
 
     WString errorInfo;
+    int nbSuccessGroundRegion = 0;
 
     clock_t totalTime = clock();
 
@@ -461,7 +462,11 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             //mdlOutput_rscvMessageCenter(OutputMessagePriority::Error, NULLRSC, MSGLISTIDS_SMErrors, MSGError_ErrorWhileGroundExtact, 0, OutputMessageAlert::Balloon, NULL);
             //return ERROR;
             }
+
+        nbSuccessGroundRegion++;
         }
+
+    fwprintf(pResultFile, L",%i", nbSuccessGroundRegion);
     
     totalTime = clock() - totalTime;
 
