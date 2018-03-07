@@ -65,7 +65,7 @@ std::function<size_t()> getTestedCount
 
     bvector<bvector<std::tuple<double, size_t>>> allRuns;
 
-    for (int run = 0; run < runs; run++)
+    for (size_t run = 0; run < runs; run++)
         {
         TESTLOG.infov("------ Run %d -----", run);
 
@@ -101,7 +101,7 @@ std::function<size_t()> getTestedCount
         {
         double timeSum = 0;
         size_t testedCount = 0;
-        for (int run = 0; run < runs; run++)
+        for (size_t run = 0; run < runs; run++)
             {
             double time = std::get<0>(allRuns[run][i]);
             timeSum += time;
