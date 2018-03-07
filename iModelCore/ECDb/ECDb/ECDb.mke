@@ -476,6 +476,6 @@ $(BuildContext)Delivery/openoffice-license.txt : $(baseDir)ECSql/Parser/LICENSE
 always:
     ~linkdir "$(BuildContext)Dox/Pages/ECDb=$(baseDir)docs/source"
     ~linkdir "$(BuildContext)Dox/Images/ECDb=$(baseDir)docs/images"
-    @CreateSymLinks.py -m"$(BuildContext)Dox/Files/ECDb=$(baseDir)docs/files"
-    @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml"
+    ~linkmultifile "$(BuildContext)Dox/Files/ECDb=$(baseDir)docs/files"
+    ~linkfile "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml"
 

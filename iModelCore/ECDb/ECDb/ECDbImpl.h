@@ -77,7 +77,7 @@ private:
     StatementCache m_sqliteStatementCache;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
-
+    static bool s_isInitalized;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
     mutable ClearCacheCounter m_clearCacheCounter;
@@ -130,10 +130,10 @@ private:
     void UnregisterBuiltinFunctions() const;
 
     static DbResult InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
-
+    static bool IsInitialized() { return s_isInitalized; }
 public:
     ~Impl() { m_sqliteStatementCache.Empty(); }
-
+   
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
     ECDb::SettingsManager const& GetSettingsManager() const { return m_settingsManager; }
 
