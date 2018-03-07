@@ -17,7 +17,7 @@
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct IScalableMeshDetectGround
 {
-    static SMStatus DetectGroundForRegion( IScalableMeshPtr& source, BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& destinationGcs, bool limitResolution);
+    static BENTLEY_SM_EXPORT SMStatus DetectGroundForRegion( IScalableMeshPtr& source, BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& destinationGcs, bool limitResolution);
 
 };
 END_BENTLEY_SCALABLEMESH_NAMESPACE
