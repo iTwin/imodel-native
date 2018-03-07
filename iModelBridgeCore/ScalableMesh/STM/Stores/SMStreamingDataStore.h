@@ -206,7 +206,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         BENTLEY_SM_EXPORT static void SerializeHeaderToCesium3DTileJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& tile);
 
-        static void SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block);
+        BENTLEY_SM_EXPORT static void SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block);
                    
         //Inherited from ISMDataStore
         virtual uint64_t GetNextID() const override;
@@ -222,6 +222,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;            
 
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
+
+        virtual bool SetUseTempPath(bool useTempPath) override;
 
         virtual void SaveProjectFiles() override;
 

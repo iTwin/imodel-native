@@ -70,19 +70,19 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
 
 #ifdef SCALABLE_MESH_ATP
 
-        BENTLEY_SM_EXPORT static unsigned __int64 GetNbImportedPoints();
+        BENTLEY_SM_IMPORT_EXPORT static unsigned __int64 GetNbImportedPoints();
 
-        BENTLEY_SM_EXPORT static double GetImportPointsDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetImportPointsDuration();
 
-        BENTLEY_SM_EXPORT static double GetLastBalancingDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastBalancingDuration();
 
-        BENTLEY_SM_EXPORT static double GetLastMeshingDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastMeshingDuration();
 
-        BENTLEY_SM_EXPORT static double GetLastFilteringDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastFilteringDuration();
 
-        BENTLEY_SM_EXPORT static double GetLastStitchingDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastStitchingDuration();
 
-        BENTLEY_SM_EXPORT        void   ImportRastersTo(const IScalableMeshPtr& scmPtr);
+        BENTLEY_SM_IMPORT_EXPORT        void   ImportRastersTo(const IScalableMeshPtr& scmPtr);
 #endif   
 
         BENTLEY_SM_IMPORT_EXPORT void SetUserFilterCallback(MeshUserFilterCallback callback);

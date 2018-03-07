@@ -120,7 +120,7 @@ public:
 
     bool GetSource();
     bool GetGCS();
-    bool GetWkt(WString& wktStr);
+    BENTLEY_SM_EXPORT bool GetWkt(WString& wktStr);
     bool GetMasterHeader(SQLiteIndexHeader& header);
     bool GetNodeHeader(SQLiteNodeHeader& nodeHeader);
     bool GetAccessMode() { return m_database->IsReadonly(); }

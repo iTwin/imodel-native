@@ -18,8 +18,8 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 struct IScalableMeshSaveAs
 {
 public:
-    static StatusInt DoSaveAs(const IScalableMeshPtr& source, const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress);
-    static StatusInt Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId);
+    BENTLEY_SM_IMPORT_EXPORT static StatusInt DoSaveAs(const IScalableMeshPtr& source, const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress);
+    BENTLEY_SM_IMPORT_EXPORT static StatusInt Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId);
 
 };
 END_BENTLEY_SCALABLEMESH_NAMESPACE

@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Includes">
+      <UniqueIdentifier>{215ce148-ddac-4fa3-a4a5-05c9794a6c13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="PublicAPI">
+      <UniqueIdentifier>{eca8e505-8226-461c-8acd-3d8865dac031}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources">
+      <UniqueIdentifier>{381d4875-2cb6-4838-83b3-fe783a1fa163}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Sources\ScalableMeshAtpUtilities.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ScalableMeshAtpUtilities.mke" />
+    <None Include="ScalableMeshAtpUtilities.mki" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\ScalableMesh.PartFile.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="PublicAPI\ScalableMeshAtpUtilities\IScalableMeshAtpUtilities.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

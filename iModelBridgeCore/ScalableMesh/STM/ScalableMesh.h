@@ -90,15 +90,16 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
 
     SMSQLiteFilePtr                     m_smSQLitePtr;
     bool                                m_isDgnDB;
-
+    
     size_t                              m_workingLayer;
 
     GeoCoords::GCS                      m_sourceGCS;
     DRange3d                            m_contentExtent;
 
     WString                             m_baseExtraFilesPath;
-
-    DataSourceAccount               *   m_dataSourceAccount;
+    bool                                m_useTempPath;
+    
+    DataSourceAccount*                  m_dataSourceAccount;
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
@@ -116,16 +117,17 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     bool                                LoadGCSFrom(WString wktStr);
     bool                                LoadGCSFrom();
 
-
 public:
 
-    const SMSQLiteFilePtr&              GetDbFile() const;
+    BENTLEY_SM_EXPORT const SMSQLiteFilePtr&              GetDbFile() const;
 
     BENTLEY_SM_EXPORT const WChar*                        GetPath                 () const;
 
     static DataSourceManager &          GetDataSourceManager    (void)                                  {return *DataSourceManager::Get();}
     void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
     DataSourceAccount *                 GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
+
+    void                                SetUseTempPath(bool useTempPath)                                {m_useTempPath = useTempPath;}
    
     };
 
@@ -227,11 +229,12 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual                         ~ScalableMesh                         ();
 
 
-        static IScalableMeshPtr       Open                           (SMSQLiteFilePtr& smSQLiteFile,
-                                                                        const WString&             filePath,
-                                                                        const Utf8String&     baseEditsFilePath,
-                                                                      bool                    needsNeighbors,
-                                                                      StatusInt&                      status);
+        static IScalableMeshPtr       Open                           (SMSQLiteFilePtr&  smSQLiteFile,
+                                                                      const WString&    filePath,
+                                                                      const Utf8String& baseEditsFilePath,
+                                                                      bool              useTempFolderForEditFiles,
+                                                                      bool              needsNeighbors,
+                                                                      StatusInt&        status);
 
 
         int                             Open                           ();                
