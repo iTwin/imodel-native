@@ -1127,23 +1127,35 @@ bool UnitProxy::IsIdentical(UnitProxyCR other) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-bool UnitProxySet::IsConsistent()
+bool UnitProxySet::IsConsistent(BEU::PhenomenonCP* phenP)
     {
-    BEU::UnitCP un1;
-    BEU::UnitCP un2;
-    bool consist = true;
+   /* BEU::UnitCP un1;
+    BEU::UnitCP un2;*/
+    //bool consist = true;
     Validate();
+	BEU::PhenomenonCP phenLoc = nullptr;
+	if (nullptr == phenP)
+		phenP = &phenLoc;
+	if (m_proxys.size() == 0)
+		return false;    // consistency nmeans that at least one unit is present
+	*phenP = m_proxys[0].GetPhenomenon();
+	if (nullptr == *phenP)
+		return false;    // the top unit must have a valid reference to its Phenomenon
+
     if (UnitCount() < 2)
         return true;
-    for (int i = 0, j = 1; j < m_proxys.size() && consist; i++, j++)
+
+    for (int j = 1; j < m_proxys.size(); j++)
         {
-        un1 = m_proxys[i].GetUnit();
+		if (m_proxys[j].GetPhenomenon() != *phenP)
+			return false;
+       /* un1 = m_proxys[i].GetUnit();
         un2 = m_proxys[j].GetUnit();
         if (nullptr != un2)
             if (un1->GetPhenomenon() != un2->GetPhenomenon())
-                consist = false;
+                consist = false;*/
         }
-    return consist;
+    return true;
     }
 
 //----------------------------------------------------------------------------------------

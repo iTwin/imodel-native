@@ -27,6 +27,7 @@ void CompositeValueSpec::Init()
     m_type = CompositeSpecType::Undefined;
     m_includeZero = true;
     m_spacer = "";
+	m_phenP = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -66,6 +67,14 @@ size_t CompositeValueSpec::UnitRatio(size_t uppIndx, size_t lowIndx)
     BEU::UnitCP subunit = m_unitProx.GetUnit(lowIndx);
     return  UnitRatio(unit, subunit);
     }
+
+bool CompositeValueSpec::ValidatePhenomenon()
+{
+	bool consist = m_unitProx.IsConsistent(&m_phenP);
+	if (!consist)
+		UpdateProblemCode(FormatProblemCode::CNS_InconsistentUnitSet);
+   return consist;
+}
 
 //---------------------------------------------------------------------------------------
 // Checks comparability and calculates ratios between UOM of the parts and checks their consistency

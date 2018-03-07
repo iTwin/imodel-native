@@ -486,6 +486,25 @@ void NumericFormatSpec::TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex,
     outValue[bitIndex] = FormatConstant::BoolText((static_cast<int>(traits) & static_cast<int>(bit)) != 0);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//---------------------------------------------------------------------------------------
+BEU::PhenomenonCP NamedFormatSpec::GetPhenomenon() const
+{
+	if (FormatSpecType::Composite == m_specType)
+		return m_compositeSpec.GetPhenomenon();
+	return nullptr;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//---------------------------------------------------------------------------------------
+Utf8CP NamedFormatSpec::GetPhenomenonName() const
+{
+	if (FormatSpecType::Composite == m_specType)
+		return m_compositeSpec.GetPhenomenonName();
+	return nullptr;
+}
+
 Json::Value NumericFormatSpec::JsonFormatTraits(bool verbose) const
     {
     Json::Value jTraits;

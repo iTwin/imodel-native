@@ -1232,7 +1232,15 @@ TEST(FormattingTest, LocaleTest)
 	LOG.infov("================  Locale Test (end) ===========================\n");
 
 
-	LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
+	LOG.infov("\n================  String Decomposition ===========================");
+
+
+	FormattingTestFixture::DecomposeString("-3.1415926 FT", false);
+	FormattingTestFixture::DecomposeString("-3,141,592.6 FT", false);
+	FormattingTestFixture::DecomposeString("-3.141.592,6 FT", false);
+	FormattingTestFixture::DecomposeString("-3.141.592 2/3 FT", false);
+
+	LOG.infov("================  End of String Decomposition ===========================\n");
 }
 
 
@@ -1250,7 +1258,7 @@ TEST(FormattingTest, PhenomenaTest)
     FormattingTestFixture::ShowSynonyms();
     LOG.infov("================  Synonyms Test (end) ===========================\n");
 
-
+	LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
     }
 
 

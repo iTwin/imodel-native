@@ -494,6 +494,7 @@ public:
     UNITS_EXPORT Json::Value ToJson() const;
     bool IsEmpty() const { return m_unitName.empty(); }
     UNITS_EXPORT bool IsIdentical(UnitProxyCR other) const;
+	UNITS_EXPORT BEU::PhenomenonCP GetPhenomenon() const {return (m_unit == nullptr) ? nullptr : m_unit->GetPhenomenon();	}
     };
 
 
@@ -508,7 +509,6 @@ private:
     int mutable m_resetCount;
 
     UNITS_EXPORT int Validate() const;
-    bool IsConsistent();
     
     size_t GetSize() const { return m_proxys.size(); }
 
@@ -549,6 +549,7 @@ public:
             }
         m_unitReg = &BEU::UnitRegistry::Instance(); 
         }
+	bool IsConsistent(BEU::PhenomenonCP* phenP = nullptr);
     BEU::UnitCP GetUnit(size_t indx) const { Validate();  return IsIndexCorrect(indx) ? m_proxys[indx].GetUnit() : nullptr; }
     Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return  IsIndexCorrect(indx) ? m_proxys[indx].GetName() : subst; }
     Utf8CP GetUnitLabel(size_t indx, Utf8CP subst = nullptr) const { return IsIndexCorrect(indx) ? m_proxys[indx].GetLabel() : subst; }
@@ -585,9 +586,8 @@ protected:
     static const size_t  indxInput  = 4;
     static const size_t  indxLimit  = 5;   
     size_t m_ratio[indxSub];
-    //BEU::UnitCP m_units[indxLimit];
     UnitProxySet m_unitProx = UnitProxySet(indxLimit);
-    //Utf8CP m_unitLabel[indxLimit];
+	BEU::PhenomenonCP m_phenP;
     FormatProblemDetail m_problem;
     CompositeSpecType m_type;
     bool m_includeZero;
@@ -607,7 +607,7 @@ protected:
         }
     //size_t GetRightmostRatioIndex();
     BEU::UnitCP GetSmallestUnit() const;
-    
+	bool ValidatePhenomenon();
 
 public:
     UNITS_EXPORT void Init();
@@ -645,6 +645,8 @@ public:
     UNITS_EXPORT Json::Value ToJson() const;
     UNITS_EXPORT void LoadJsonData(JsonValueCR jval);
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
+	BEU::PhenomenonCP GetPhenomenon() const { return m_phenP; }
+	Utf8CP GetPhenomenonName() const { return (nullptr == m_phenP) ? nullptr : m_phenP->GetLabel(); }
     };
 
 struct CompositeValue
@@ -739,6 +741,8 @@ public:
         BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_compositeSpec.GetMiddleUnit() : nullptr; }
         BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_compositeSpec.GetMinorUnit() : nullptr; }
         BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
+		BEU::PhenomenonCP GetPhenomenon() const;
+		UNITS_EXPORT Utf8CP GetPhenomenonName() const;
     };
 
 //=======================================================================================

@@ -478,6 +478,8 @@ void FormattingTestFixture::DecomposeString(Utf8CP str, bool revers)
     {
     size_t n = strlen(str);
     CursorScanPoint csp(str, revers? n:0, revers);
+
+	LOG.infov("\n Decomposed String: %s =============", str);
     LOG.infov("CSP: |%s|", csp.ToText().c_str());
 
     while (!csp.IsEndOfLine() && n > 0)
@@ -486,7 +488,35 @@ void FormattingTestFixture::DecomposeString(Utf8CP str, bool revers)
         LOG.infov("CSP: |%s|", csp.ToText().c_str());
         --n;
         }
+	LOG.infov("=================================\n", str);
     }
+
+size_t FormattingTestFixture::AddSignatureSymbol(Utf8CP outBuf, size_t bufLen, size_t* bufIndex)
+{
+	return 0;
+}
+
+Utf8String FormattingTestFixture::GetStringSignature(Utf8CP str)
+{
+#define GSS_BUFSIZE 128
+	Utf8String sig;
+	size_t n = strlen(str);
+	//Utf8Char buf[GSS_BUFSIZE + 2];
+
+	CursorScanPoint csp(str, n, false);
+
+	while (!csp.IsEndOfLine() && n > 0)
+	{
+		csp.Iterate(str,  false);
+
+		LOG.infov("CSP: |%s|", csp.ToText().c_str());
+		--n;
+	}
+
+	return sig;
+}
+
+
 
 Utf8String FormattingTestFixture::ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim)
     {
@@ -649,6 +679,7 @@ void FormattingTestFixture::TestScanPointVector(Utf8CP str)
 
     FormatParseVector forw(str, false);
     bvector<CursorScanPoint> fvect = forw.GetArray();
+	LOG.infov("========ScanPointVector for %s=================", str);
     LOG.info("============= Forward Vector scan =================");
     for (CursorScanPointP csp = fvect.begin(); csp != fvect.end(); csp++)
         {
