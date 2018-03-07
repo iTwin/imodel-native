@@ -22,12 +22,14 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 struct IUnitsContext /* abstract */
 {
 protected:
-    virtual UnitP _LookupUnitP(Utf8CP name) = 0;
-    virtual PhenomenonP _LookupPhenomenonP(Utf8CP name) = 0;
-    virtual UnitSystemP _LookupUnitSystemP(Utf8CP name) = 0;
+    virtual UnitP _LookupUnitP(Utf8CP name) const = 0;
+    virtual PhenomenonP _LookupPhenomenonP(Utf8CP name) const = 0;
+    virtual UnitSystemP _LookupUnitSystemP(Utf8CP name) const = 0;
     virtual void _AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const = 0;
     virtual void _AllUnits(bvector<UnitCP>& allUnits) const = 0;
     virtual void _AllSystems(bvector<UnitSystemCP>& allUnitSystems) const = 0;
+
+    virtual ~IUnitsContext() {}
 
 public:
     //! Gets the Unit from this context.
@@ -264,14 +266,14 @@ private:
         }
 
 protected:
-    PhenomenonP _LookupPhenomenonP(Utf8CP name) override {auto val_iter = m_phenomena.find(name); return val_iter == m_phenomena.end() ? nullptr : (*val_iter).second;}
-    void _AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const;
+    PhenomenonP _LookupPhenomenonP(Utf8CP name) const override {auto val_iter = m_phenomena.find(name); return val_iter == m_phenomena.end() ? nullptr : (*val_iter).second;}
+    void _AllPhenomena(bvector<PhenomenonCP>& allPhenomena) const override;
 
-    UnitP _LookupUnitP(Utf8CP name) override {auto val_iter = m_units.find(name); return val_iter == m_units.end() ? nullptr : (*val_iter).second;}
-    void _AllUnits(bvector<UnitCP>& allUnits) const;
+    UnitP _LookupUnitP(Utf8CP name) const override {auto val_iter = m_units.find(name); return val_iter == m_units.end() ? nullptr : (*val_iter).second;}
+    void _AllUnits(bvector<UnitCP>& allUnits) const override;
 
-    UnitSystemP _LookupUnitSystemP(Utf8CP name) override {auto val_iter = m_systems.find(name); return val_iter == m_systems.end() ? nullptr : (*val_iter).second;}
-    void _AllSystems(bvector<UnitSystemCP>& allUnitSystems) const;
+    UnitSystemP _LookupUnitSystemP(Utf8CP name) const override {auto val_iter = m_systems.find(name); return val_iter == m_systems.end() ? nullptr : (*val_iter).second;}
+    void _AllSystems(bvector<UnitSystemCP>& allUnitSystems) const override;
 
     bool NamedItemExists(Utf8CP name) {return HasUnit(name) || HasPhenomenon(name) || HasSystem(name);}
 

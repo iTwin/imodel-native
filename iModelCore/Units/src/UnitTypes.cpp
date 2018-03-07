@@ -19,7 +19,7 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-UnitsSymbol::UnitsSymbol(Utf8CP name) : m_name(name), m_isBaseSymbol(false), m_numerator(0.0), m_denominator(1.0),
+UnitsSymbol::UnitsSymbol(Utf8CP name) : m_name(name), m_isBaseSymbol(false), m_numerator(1.0), m_denominator(1.0),
     m_offset(0.0), m_isNumber(true), m_evaluated(false), m_symbolExpression(new Expression()) {}
 
 //--------------------------------------------------------------------------------------
@@ -154,8 +154,10 @@ ExpressionCR Unit::Evaluate() const
     if (IsInvertedUnit())
         return m_parent->Evaluate();
 
-    IUnitsContextCP context = m_unitsContext;
-    return T_Super::Evaluate(0, [&context](Utf8CP unitName) {return context->LookupUnit(unitName);});
+    return T_Super::Evaluate(0, [=](Utf8CP unitName) 
+        {
+        return m_unitsContext->LookupUnit(unitName);
+        });
     }
 
 //---------------------------------------------------------------------------------------
