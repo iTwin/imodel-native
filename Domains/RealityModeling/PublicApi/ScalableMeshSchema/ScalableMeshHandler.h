@@ -407,7 +407,7 @@ private:
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
-    bool _AllowPublishing() const override { return !m_smPtr->IsCesium3DTiles(); }
+    bool _AllowPublishing() const override;
 
     Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo();
 

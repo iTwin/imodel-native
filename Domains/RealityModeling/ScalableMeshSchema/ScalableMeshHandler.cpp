@@ -20,6 +20,7 @@
 #include <DgnPlatform\TextString.h>
 #include <DgnPlatform\DgnGeoCoord.h>
 #include <DgnView\ViewManager.h>
+#include <DgnView\DgnViewLib.h>
 
 
 #define SCALABLEMESH_MODEL_PROP_Clips           "SmModelClips"
@@ -1822,15 +1823,25 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         {
         SetDisplayTexture(false);
         }
-
+    
     if (m_textureInfo->IsTextureAvailable() && m_textureInfo->IsUsingBingMap())
         {         
-        ViewManager::GetManager().AddViewDecoration(&s_viewDecoration);        
+        if (&DgnViewLib::GetHost() != nullptr)
+            ViewManager::GetManager().AddViewDecoration(&s_viewDecoration);
         }
     else
         { 
-        ViewManager::GetManager().DropViewDecoration(&s_viewDecoration);
+        if (&DgnViewLib::GetHost() != nullptr)
+            ViewManager::GetManager().DropViewDecoration(&s_viewDecoration);
         }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre     3/2018
+//----------------------------------------------------------------------------------------
+bool ScalableMeshModel::_AllowPublishing() const 
+    { 
+    return !m_smPtr->IsCesium3DTiles() && !m_textureInfo->IsUsingBingMap();
     }
 
 //----------------------------------------------------------------------------------------
