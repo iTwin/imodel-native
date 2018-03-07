@@ -906,8 +906,8 @@ TEST_F(FormatDoubleTest, FormatDoubleFormatTraitsTests)
 
     nfs.SetFormatTraits(FormatTraits::UseFractSymbol);
     EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
-    EXPECT_STREQ("100501 \x21\x5B", nfs.FormatDouble(testValPos).c_str());
-    EXPECT_STREQ("-100501 \x21\x5B", nfs.FormatDouble(testValNeg).c_str());
+    EXPECT_STREQ(u8"100501 \x21\x5B", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ(u8"-100501 \x21\x5B", nfs.FormatDouble(testValNeg).c_str());
 
     // AppendUnitName should have no effect on the unitless NamedFormatSpec.
     nfs.SetFormatTraits(FormatTraits::AppendUnitName);

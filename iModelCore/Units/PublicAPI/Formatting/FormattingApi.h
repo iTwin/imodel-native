@@ -306,33 +306,49 @@ private:
     size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
     void LoadJson(Json::Value jval);
 
+    // TODO: Attempt to remove these methods from the private API
+    // Nothing yet.
+    // !TODO
+
 public:
-    NumericFormatSpec() { DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex()); }
-    NumericFormatSpec(NumericFormatSpecCR other) = default;
-    NumericFormatSpec(NumericFormatSpecCP other) : NumericFormatSpec(*other) {};
+    // TODO: Attempt to remove these methods from the public API
     NumericFormatSpec(size_t precision) { DefaultInit(precision); }
-    ~NumericFormatSpec() = default;
-    UNITS_EXPORT static const NumericFormatSpecCP DefaultFormat();
-
-    NumericFormatSpec& operator=(NumericFormatSpecCR other) = default;
-    UNITS_EXPORT void Clone(NumericFormatSpecCR other) { *this = other; }
-
-    UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
-
-    /* TODO: These are untested. */
-    UNITS_EXPORT void DefaultInit(size_t precision);
-    UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     UNITS_EXPORT NumericFormatSpec(Utf8CP jsonString);
-    /* !TODO */
-
+    UNITS_EXPORT void DefaultInit(size_t precision);
+    NumericFormatSpec(NumericFormatSpecCP other) : NumericFormatSpec(*other) {};
+    NumericFormatSpec& operator=(NumericFormatSpecCR other) = default;
+    UNITS_EXPORT void Clone(NumericFormatSpecCR other) { *this = other; }
+    UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
+    UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
     UNITS_EXPORT static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
     UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff);
-    UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
-
     UNITS_EXPORT int GetDecimalPrecisionIndex(int prec) const;
     UNITS_EXPORT double GetDecimalPrecisionFactor(int prec) const;
     UNITS_EXPORT void SetPrecisionByValue(int prec);
+    
+    // Returns the number of bytes written.
+    UNITS_EXPORT int FormatInteger(int n, Utf8P bufOut, int bufLen);
+    UNITS_EXPORT Utf8String FormatIntegerToString(int n, int minSize) const;
+    UNITS_EXPORT int static FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
+
+    UNITS_EXPORT Utf8String FormatRoundedDouble(double dval, double round);
+    UNITS_EXPORT size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
+
+    UNITS_EXPORT int FormatBinaryByte(unsigned char n, Utf8P bufOut, int bufLen);
+    UNITS_EXPORT int FormatBinaryShort(short int n, Utf8P bufOut, int bufLen, bool useSeparator);
+    UNITS_EXPORT int FormatBinaryInt(int n, Utf8P bufOut, int bufLen, bool useSeparator);
+    UNITS_EXPORT int FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bool useSeparator);
+
+    UNITS_EXPORT int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
+    // !TODO
+
+    NumericFormatSpec() { DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex()); }
+    NumericFormatSpec(NumericFormatSpecCR other) = default;
+    ~NumericFormatSpec() = default;
+    UNITS_EXPORT static const NumericFormatSpecCP DefaultFormat();
+    UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
+
 
     UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
     UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
@@ -454,37 +470,19 @@ public:
     //======================================
     // Formatting Methods
     //======================================
-    // The caller provided buffer must be at least 9 byte long with the 9th byte for the null
-    // terminator.Returns the number of bytes that were not populated; in case of success
-    // the function will return 0.
-    UNITS_EXPORT int FormatBinaryByte(unsigned char n, Utf8P bufOut, int bufLen);
-    UNITS_EXPORT int FormatBinaryShort(short int n, Utf8P bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT int FormatBinaryInt(int n, Utf8P bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT int FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bool useSeparator);
+    UNITS_EXPORT Utf8String ByteToBinaryText(unsigned char n);
+    UNITS_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
+    UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
+    UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
 
-    UNITS_EXPORT int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
-
-    // Returns the number of bytes written.
-    UNITS_EXPORT int FormatInteger(int n, Utf8P bufOut, int bufLen);
     UNITS_EXPORT Utf8String FormatInteger(int ival);
-    // Formats an integer and zero pads the formatted string with zeros up to length == minSize.
-    UNITS_EXPORT Utf8String FormatIntegerToString(int n, int minSize) const;
-    UNITS_EXPORT int static FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
-
-    // Returns the number of bytes written.
-    UNITS_EXPORT size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
-    UNITS_EXPORT Utf8String FormatRoundedDouble(double dval, double round);
+
     // TODO: vvv test StdFormatDouble
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
 
     UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
-
-    UNITS_EXPORT Utf8String ByteToBinaryText(unsigned char n);
-    UNITS_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
-    UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
-    UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
 
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
     UNITS_EXPORT Json::Value JsonFormatTraits(bool verbose) const;
