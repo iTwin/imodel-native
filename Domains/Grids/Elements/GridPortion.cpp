@@ -19,10 +19,9 @@ USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (Grid)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (ElevationGrid)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid)
-
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(Grid)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(ElevationGrid)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanGrid)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2017
