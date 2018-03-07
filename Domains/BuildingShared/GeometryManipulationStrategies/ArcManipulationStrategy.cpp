@@ -70,6 +70,9 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
             return nullptr;
 
         DVec3d centerToStart = GetStart() - GetCenter();
+        if (DoubleOps::AlmostEqual(centerToStart.Magnitude(), 0))
+            return nullptr;
+
         DVec3d centerToMid = DVec3d::FromRotateVectorAroundVector(centerToStart, normal, Angle::FromRadians(m_sweep / 4));
         DVec3d centerToEnd = DVec3d::FromRotateVectorAroundVector(centerToStart, normal, Angle::FromRadians(m_sweep / 2));
 

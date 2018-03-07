@@ -548,6 +548,23 @@ TEST_F(ArcCenterStartPlacementStrategyTests, AddDynamicKeyPoints_FixedSweep)
     ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
     }
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, FinishGeometry_IsNullWhen0Radius)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), DVec3d::From(0, 0, 1));
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddDynamicKeyPoint({0,0,0});
+    ASSERT_TRUE(sut->FinishGeometry().IsNull());
+    }
+
 #pragma endregion
 
 #pragma region Arc_StartMidEnd_PlacementStrategy

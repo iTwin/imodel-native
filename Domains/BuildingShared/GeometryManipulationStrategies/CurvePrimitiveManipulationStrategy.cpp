@@ -457,5 +457,9 @@ bool CurvePrimitiveManipulationStrategy::IsContinious() const
 //---------------+---------------+---------------+---------------+---------------+------
 IGeometryPtr CurvePrimitiveManipulationStrategy::_FinishGeometry() const
     {
-    return IGeometry::Create(_FinishPrimitive());
+    ICurvePrimitivePtr primitive = _FinishPrimitive();
+    if (primitive.IsNull())
+        return nullptr;
+
+    return IGeometry::Create(primitive);
     }
