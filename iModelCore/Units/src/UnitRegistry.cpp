@@ -28,6 +28,7 @@ UnitRegistry& UnitRegistry::Instance()
         s_instance->AddDefaultUnits();
         s_instance->AddDefaultConstants();
         s_instance->AddDefaultMappings();
+        s_instance->AddDefaultECMappings();
         }
 
     return *s_instance;
@@ -540,6 +541,16 @@ void UnitRegistry::AddMapping(Utf8CP oldName, Utf8CP newName)
     }
 
 /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                           Kyle.Abramowitz     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitRegistry::AddECMapping(Utf8CP newName, Utf8CP ecName)
+    {
+    // NOTE: New mappings overwrite previously added mappings
+    m_ecNameNewNameMapping[ecName] = newName;
+    m_newNameEcNameMapping[newName] = ecName;
+    }
+
+/*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Robert.Schili     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitRegistry::TryGetNewName(Utf8CP oldName, Utf8StringR newName) const
@@ -563,6 +574,36 @@ bool UnitRegistry::TryGetOldName(Utf8CP newName, Utf8StringR oldName) const
     if (p != m_newNameOldNameMapping.end())
         {
         oldName = p->second;
+        return true;
+        }
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                            Kyle.Abramowitz     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::TryGetECNameFromNewName(Utf8CP newName, Utf8StringR ecName) const
+    {
+    auto p = m_newNameEcNameMapping.find(newName);
+    if (p != m_newNameEcNameMapping.end())
+        {
+        ecName = p->second;
+        return true;
+        }
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                            Kyle.Abramowitz     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::TryGetNewNameFromECName(Utf8CP ecName, Utf8StringR newName) const
+    {
+    auto p = m_ecNameNewNameMapping.find(ecName);
+    if (p != m_ecNameNewNameMapping.end())
+        {
+        newName = p->second;
         return true;
         }
 

@@ -1520,6 +1520,45 @@ TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
     file.Close();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitsTests, AllNewNamesMapToECNames)
+    {
+    UnitRegistry::Instance().Clear();
+    bvector<Utf8String> ignoredNames = {"CM/REVOLUTION", "FT/REVOLUTION", "IN/DEGREE", "IN/RAD", "IN/REVOLUTION", "M/DEGREE", "M/RAD", "M/REVOLUTION", "MM/RAD", "MM/REVOLUTION"};
+    bvector<Utf8String> names;
+    UnitRegistry::Instance().AllUnitNames(names, false);
+
+    bool ignore = false;
+    for(auto const& name: names)
+        {
+        for(auto const& i : ignoredNames)
+            {
+            if(i.EqualsI(name))
+                { 
+                ignore=true;
+                break;
+                }
+            }
+        if(!ignore)
+            { 
+            Utf8String mapped;
+            UnitRegistry::Instance().TryGetECNameFromNewName(name.c_str(),mapped);
+            EXPECT_FALSE(mapped.empty()) << "Unit with new Name " << name.c_str() << " not mapped to an ec Name";
+            auto newUnit = UnitRegistry::Instance().LookupUnit(name.c_str());
+            Utf8String roundtrippedName;
+            UnitRegistry::Instance().TryGetNewNameFromECName(mapped.c_str(), roundtrippedName);
+            EXPECT_FALSE(roundtrippedName.empty()) << "Can't get name from ecname for unit " << mapped.c_str();
+            auto ecUnit = UnitRegistry::Instance().LookupUnit(roundtrippedName.c_str());
+            EXPECT_NE(nullptr, ecUnit) << "Failed to look up unit with roundtripped name " << roundtrippedName.c_str();
+            if(roundtrippedName.EqualsI("CAPITA") || roundtrippedName.EqualsI("KIPF") || roundtrippedName.EqualsI("N/SQ.MM"))
+                continue;
+            EXPECT_EQ(newUnit, ecUnit) << "Failed to find " << roundtrippedName.c_str();
+            }
+        ignore=false;
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                               07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

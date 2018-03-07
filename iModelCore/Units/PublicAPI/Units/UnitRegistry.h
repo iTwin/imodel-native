@@ -44,8 +44,10 @@ private:
     bmap<Utf8String, UnitP, less_str> m_units;
     bmap<uint64_t, Conversion> m_conversions;
     uint32_t m_nextId = 0;
-    bmap<Utf8String, Utf8String> m_oldNameNewNameMapping;
-    bmap<Utf8String, Utf8String> m_newNameOldNameMapping;
+    bmap<Utf8String, Utf8String, less_str> m_oldNameNewNameMapping;
+    bmap<Utf8String, Utf8String, less_str> m_newNameOldNameMapping;
+    bmap<Utf8String, Utf8String, less_str> m_ecNameNewNameMapping;
+    bmap<Utf8String, Utf8String, less_str> m_newNameEcNameMapping;
 
     UnitRegistry();
     UnitRegistry(const UnitRegistry& rhs) = delete;
@@ -56,6 +58,7 @@ private:
     void AddDefaultUnits ();
     void AddDefaultConstants();
     void AddDefaultMappings();
+    void AddDefaultECMappings();
 
     void InsertUnique (Utf8Vector &vec, Utf8String &str);
     void AddSystem(Utf8CP systemName);
@@ -75,6 +78,7 @@ private:
     void AddConversion(uint64_t index, Conversion& conversion) { m_conversions.Insert(index, conversion); }
 
     void AddMapping(Utf8CP oldName, Utf8CP newName);
+    void AddECMapping(Utf8CP newName, Utf8CP ecName);
     bool HasConstant (Utf8CP constantName) const;
     UnitCP CreateDummyUnit(Utf8CP unitName);
 public:
@@ -109,6 +113,8 @@ public:
     //Mapping methods
     UNITS_EXPORT bool TryGetNewName(Utf8CP oldName, Utf8StringR newName) const;
     UNITS_EXPORT bool TryGetOldName(Utf8CP newName, Utf8StringR oldName) const;
+    UNITS_EXPORT bool TryGetNewNameFromECName(Utf8CP ecName, Utf8StringR newName) const;
+    UNITS_EXPORT bool TryGetECNameFromNewName(Utf8CP ecName, Utf8StringR newName) const;
     UNITS_EXPORT UnitCP LookupUnitUsingOldName(Utf8CP oldName) const;
     UnitCP GetPlatformLengthUnit() { return LookupUnit("M"); }
     UNITS_EXPORT size_t LoadSynonyms(Json::Value jval) const;
