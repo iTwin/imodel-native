@@ -1000,7 +1000,7 @@ bool unitIsAcceptable (Units::UnitCP unit)
     return unit->IsSI() || 0 == strcmp(unit->GetPhenomenon()->GetName().c_str(), "PERCENTAGE");
     }
 
-ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
+ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKOQ, KindOfQuantityCP baseKOQ, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
     {
     ECObjectsStatus status = schema.CreateKindOfQuantity(newKOQ, newKoqName);
     if (ECObjectsStatus::Success != status)
@@ -1010,7 +1010,7 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
         return status;
         }
 
-    Units::UnitCP originalUnit = newUnit;
+    ECUnitCP originalUnit = newUnit;
     if (!unitIsAcceptable(newUnit)) 
         {
         newUnit = newUnit->GetPhenomenon()->GetSIUnit();
@@ -1025,32 +1025,32 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
 
     if (kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newUnit))
         {
-        newKOQ->SetPersistenceUnit(Formatting::FormatUnitSet("DefaultRealU", newUnit->GetName().c_str()));
+        newKOQ->SetPersistenceUnit(*newUnit, "DefaultRealU");
         newKOQ->SetRelativeError(1e-4);
         }
     else
         {
-        newKOQ->SetPersistenceUnit(baseKOQ->GetPersistenceUnit());
+        newKOQ->SetPersistenceUnit((ECUnitCR) *baseKOQ->GetPersistenceUnit().GetUnit(), baseKOQ->GetPersistenceUnit().GetNamedFormatSpec());
         newKOQ->SetRelativeError(baseKOQ->GetRelativeError());
         persistenceUnitChanged = true;
         }
 
     if (nullptr != newDisplayUnit)
-        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", newDisplayUnit->GetName().c_str()));
+        newKOQ->AddPresentationUnit(*newDisplayUnit, "DefaultRealU");
     else if (persistenceUnitChanged)
-        newKOQ->AddPresentationUnit(Formatting::FormatUnitSet("DefaultRealU", originalUnit->GetName().c_str()));
+        newKOQ->AddPresentationUnit(*originalUnit, "DefaultRealU");
 
     return ECObjectsStatus::Success;
     }
 
-bool baseAndNewUnitAreIncompatible(KindOfQuantityCP baseKOQ, Units::UnitCP newUnit)
+bool baseAndNewUnitAreIncompatible(KindOfQuantityCP baseKOQ, ECUnitCP newUnit)
     {
     if (nullptr == baseKOQ)
         return false;
     return !Units::Unit::AreCompatible(baseKOQ->GetPersistenceUnit().GetUnit(), newUnit);
     }
 
-bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKOQ, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged)
+bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKOQ, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged)
     {
     if (!kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newKOQ->GetPersistenceUnit().GetUnit()))
         return false;
@@ -1067,7 +1067,7 @@ bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKO
     return kindOfQuantityHasMatchingPresentationUnit(newKOQ, newDisplayUnit, newUnit);
     }
 
-ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, Units::UnitCP newUnit, Units::UnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
+ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQuantityP& newKOQ, IECInstanceR unitSpecCA, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged, Utf8CP newKoqName)
     {
     persistenceUnitChanged = false;
     KindOfQuantityCP baseKOQ = prop->GetKindOfQuantity();
@@ -1132,8 +1132,15 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         return ECObjectsStatus::Success;
         }
 
-    // FIXME This needs to locate the unit in the new Units Standard schema and add it as a reference
-    Units::UnitCP newUnit = Units::UnitRegistry::Get().LookupUnitUsingOldName(oldUnit.GetName());
+    Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnit.GetName());
+
+    Utf8String alias;
+    Utf8String name;
+    ECClass::ParseClassName(alias, name, ecName);
+
+    BeAssert(StandardUnitsHelper::GetSchema()->GetName().EqualsI(alias));
+
+    ECUnitCP newUnit = StandardUnitsHelper::GetUnit(name.c_str());
     if (nullptr == newUnit)
         {
         Utf8String fullName = schema.GetFullSchemaName();
@@ -1142,18 +1149,43 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
         return ECObjectsStatus::Success;
         }
 
+    if (!ECSchema::IsSchemaReferenced(schema, *StandardUnitsHelper::GetSchema()) && ECObjectsStatus::Success != schema.AddReferencedSchema(*StandardUnitsHelper::GetSchema()))
+        {
+        LOG.errorv("Unable to add the %s schema as a reference to %s.", StandardUnitsHelper::GetSchema()->GetFullSchemaName(), schema.GetName());
+        return ECObjectsStatus::SchemaNotFound;
+        }
+
     KindOfQuantityP newKOQ;
     Utf8String newKOQName;
     if (!UnitSpecification::TryGetNewKOQName(instance, newKOQName))
         newKOQName = newUnit->GetPhenomenon()->GetName();
 
-    Units::UnitCP newDisplayUnit = nullptr;
+    ECUnitCP newDisplayUnit = nullptr;
     Unit oldDisplayUnit;
     Utf8String oldFormatString;
     if (Unit::GetDisplayUnitAndFormatForECProperty(oldDisplayUnit, oldFormatString, oldUnit, *prop) && (0 != strcmp(oldDisplayUnit.GetName(), oldUnit.GetName())))
         {
-        // FIXME This needs to locate the unit in the new Units Standard schema and add it as a reference
-        newDisplayUnit = Units::UnitRegistry::Get().LookupUnitUsingOldName(oldDisplayUnit.GetName());
+        Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromNewName(oldDisplayUnit.GetName());
+
+        if (nullptr != ecName)
+            {
+            Utf8String alias;
+            Utf8String name;
+            ECClass::ParseClassName(alias, name, ecName);
+
+            BeAssert(StandardUnitsHelper::GetSchema()->GetName().EqualsI(alias));
+
+            newDisplayUnit = StandardUnitsHelper::GetUnit(ecName);
+            if (nullptr != newDisplayUnit)
+                {
+                if (!ECSchema::IsSchemaReferenced(schema, *StandardUnitsHelper::GetSchema()) && ECObjectsStatus::Success != schema.AddReferencedSchema(*StandardUnitsHelper::GetSchema()))
+                    {
+                    LOG.errorv("Unable to add the %s schema as a reference to %s.", StandardUnitsHelper::GetSchema()->GetFullSchemaName(), schema.GetName());
+                    return ECObjectsStatus::SchemaNotFound;
+                    }
+                }
+            }
+
         if (nullptr == newDisplayUnit)
             LOG.warningv("The property %s:%s.%s has an old display unit '%s' that does not resolve to a new unit.", schema.GetFullSchemaName().c_str(), prop->GetClass().GetName().c_str(), prop->GetName().c_str(), oldDisplayUnit.GetName());
         }

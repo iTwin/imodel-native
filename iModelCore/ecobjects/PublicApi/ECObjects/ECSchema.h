@@ -1433,7 +1433,7 @@ private:
     Formatting::FormatUnitSet m_persistenceFUS;
     //! Absolute Error divided by the measured value.
     double m_relativeError;
-    //! Units which can be used for presentation.  First FSU is default.
+    //! Units which can be used for presentation.  First FUS is default.
     bvector<Formatting::FormatUnitSet> m_presentationFUS;
 
     mutable KindOfQuantityId m_kindOfQuantityId;
@@ -1489,10 +1489,11 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Get the description of this KindOfQuantity
 
     //! Sets the Unit of measurement used for persisting the information
-    //! @param[in]  value  The new value to apply
+    //! @param[in]  fusDescriptor  The new value to apply
     //! @returns true if the persistence FormatUnitSet is valid, false if not
-    ECOBJECTS_EXPORT bool SetPersistenceUnit(Formatting::FormatUnitSet value);
-    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCP unit, Utf8CP format = nullptr);
+    ECOBJECTS_EXPORT bool SetPersistenceUnit(Utf8StringCR fusDescriptor);
+    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Utf8CP format = nullptr);
+    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format);
     //! Gets the Unit of measurement used for persisting the information
     Formatting::FormatUnitSetCR GetPersistenceUnit() const {return m_persistenceFUS;}
 
@@ -1504,28 +1505,25 @@ public:
     //! Sets the default presentation Unit of this KindOfQuantity
     //! @param[in]  value  The new value to apply
     //! @return true if the presentation FormatUnitSet is valid, false if not.
-    bool SetDefaultPresentationUnit(Formatting::FormatUnitSet value) {m_presentationFUS.insert(m_presentationFUS.begin(), value); return !value.HasProblem();}
+    ECOBJECTS_EXPORT bool SetDefaultPresentationUnit(Utf8StringCR fusDescriptor);
     //! Gets the default presentation FormatUnitSet of this KindOfQuantity.
-    Formatting::FormatUnitSet GetDefaultPresentationUnit() const {return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS;}
+    Formatting::FormatUnitSetCR GetDefaultPresentationUnit() const {return 0 < m_presentationFUS.size() ? *(&m_presentationFUS[0]) : GetPersistenceUnit();}
     //! Gets a specific presentation FormatUnitSet from this.
-    //! @param[in] indx The indx of the 
+    //! @param[in] indx The index of the presentation FUS to get.
     //! @return A const pointer to the FormatUnitSet at the specified index if it exists; otherwise, nullptr.
     ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(size_t indx) const;
-
-    //! Gets the specified FormatUnitSet to use to format the Quantity.
-    //! @param[in]  fusId  The name(or alias) of the FUS to return.
-    //! @param[in]  useAlias  If true the fusId specifies an alias, else it defines FUS name.
-    //! @return pointer to FormatUnitSet if found else nullptr is returned.
-    ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(Utf8CP fusId, bool useAlias) const;
 
     Utf8String GetPresentationFUSDescriptor(size_t indx, bool useAlias) const {return GetPresentationFUS(indx)->ToText(useAlias);}
 
     //! Adds the FormatUnitSet to the list of presentation Units.
     //! @param[in]  value  The new FormatUnitSet to add to the list of presentation units
     //! @return ECObjectsStatus::InvalidFormatUnitSet if there is a problem detected, otherwise ECObjectsStatus::Success.
-    ECOBJECTS_EXPORT bool AddPresentationUnit(Formatting::FormatUnitSet value);
+    ECOBJECTS_EXPORT bool AddPresentationUnit(Utf8StringCR fusDescriptor);
+
+    ECOBJECTS_EXPORT bool AddPresentationUnit(ECUnitCR unit, Utf8CP format = nullptr);
+
     //! Removes the specified presentation Unit from this KindOfQuantity
-    ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSet value);
+    ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSetCR fus);
     //! Removes all presentation Units from this KindOfQuantity
     void RemoveAllPresentationUnits() {m_presentationFUS.clear();}
     //! Gets a list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
@@ -1552,25 +1550,25 @@ public:
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
 
-    //! Given a FUS descriptor string, with format {unitName}({formatName}), it will be parsed and populate the FormatUnitSet (FUS) with a Unit and NamedFormatSpec found
-    //! in the UnitRegistry. The formatName is an optional part of the FUS descriptor and will use "DefaultRealU" if not provided.
+    //! Given a FUS descriptor string, with format {unitName}({formatName}), it will be parsed and used to populate the unit and format. 
     //!
-    //! When strictUnit,
-    //! - True, if the Unit is not found in the registry it will fail to populate the FUS and return an error,
-    //! - False, if the Unit is not found in the registry, a "dummy" unit will be created with the provided name.
+    //! The Unit is populated within the context of the kind of quantity's schema. If the EC xml version is,
+    //! - less than EC3.2, it will attempt to locate the unit within the standard Units schema. If found the Units schema will be added as a reference schema of the KindOfQuantity's schema.
+    //! - greater than or equal to EC3.2, it will attempt to be located within the kind of quantity's schema or one of its referenced schemas. 
     //!
-    //! When strictFUS,
-    //! - True, if a format is provided and not found it will fail to populate the FUS and return an error.
-    //! - False, if a format is provided and not found, the default "DefaultRealU" will be used.
+    //! The format is populated using the StdFormatSet. Sice the format is an optional part of the FUS descriptor, if formatName is empty the format "DefaultRealU" will be used. 
+    //! If a format is provided and not found within the StdFormatSet then if the EC xml version is,
+    //! - less than or equal to EC3.2, will return an error and both unit and format will be nullptr.
+    //! - greater than EC3.2, will be set to the default, "DefaultRealU".
     //! 
-    //! @param[out] fus The FUS to create from the given descriptor
-    //! @param[out] hasInvalidUnit Set to true if the Unit set to the FUS has an invalid unit.
-    //! @param[in] descriptor String describing the FUS.
-    //! @param[in] koq The KoQ to the descriptor originated from.
-    //! @param[in] strictUnit See above comment for information.
-    //! @param[in] strictFUS See above comment for information.
+    //! @param[out] unit The Unit found from the given descriptor.
+    //! @param[out] format The NamedFormatSpec found from the given descriptor.
+    //! @param[in] descriptor String describing the FUS. @see Formatting::FormatUnitSet for more information.
+    //! @param[in] koq The KoQ to use as context for locating the unit and format.
+    //! @param[in] ecXmlMajorVersion The major version of ECXml to parse the descriptor in the context of.
+    //! @param[in] ecXmlMinorVersion The minor version of ECXml to parse the descriptor in the context of.
     //! @return ECObjectsStatus::Success if the FUS is successfully created; otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseFUSDescriptor(Formatting::FormatUnitSet& fus, bool& hasInvalidUnit, Utf8CP descriptor, KindOfQuantityCR koq, bool strictUnit, bool strictFUS);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseFUSDescriptor(ECUnitCP& unit, Formatting::NamedFormatSpecCP& format, Utf8CP descriptor, KindOfQuantityR koq, Nullable<uint32_t> ecXmlMajorVersion = nullptr, Nullable<uint32_t> ecXmlMinorVersion = nullptr);
 };
 
 //=======================================================================================
@@ -3284,6 +3282,10 @@ private:
     ECObjectsStatus AddReferencedSchema(ECSchemaR refSchema, Utf8StringCR alias, ECSchemaReadContextR readContext);
     void CollectAllSchemasInGraph(bvector<ECN::ECSchemaCP>& allSchemas, bool includeRootSchema) const;
 
+    // This is an awful name for this method. There is however a public method called GetSchemaByAliasP which returns
+    // a const-pointer. So for now we are not breaking the API to fix the issue.
+    ECSchemaP GetSchemaPByAlias(Utf8StringCR alias);
+
     static Utf8CP SchemaElementTypeToString(ECSchemaElementType childType);
 
     template<typename T, typename T_MAP>
@@ -3700,6 +3702,12 @@ public:
     //! @return   A pointer to an ECN::Phenomenon if the named phenomenon exists in within the current schema; otherwise, nullptr
     PhenomenonP GetPhenomenonP(Utf8CP name) {return GetSchemaChild<Phenomenon, PhenomenonMap>(name, &m_phenomenonMap);}
 
+    //! Looks up an ECUnit by within the context of this schema. If the name is fully qualified it will search reference
+    //! schemas.
+    //! @param[in]  name     The name of the unit to lookup.  Can be either an unqualified (short) name or a qualified name.
+    //! @return   A pointer to the an ECUnit if the named unit exists within the current schema or one of its reference schemas; otherwise, nullptr.
+    ECUnitCP LookupUnit(Utf8CP name) const override {return const_cast<ECSchemaP> (this)->_LookupUnitP(name);}
+
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
@@ -3708,7 +3716,7 @@ public:
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
-    ECOBJECTS_EXPORT ECUnitP GetUnitP(Utf8CP name);
+    ECOBJECTS_EXPORT ECUnitP GetUnitP(Utf8CP name) {return GetSchemaChild<ECUnit, UnitMap>(name, &m_unitMap);}
 
     //! Get an inverted ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.

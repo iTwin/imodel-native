@@ -44,10 +44,10 @@ ECClassCP ECJsonUtilities::GetClassFromClassNameJson(JsonValueCR json, IECClassL
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Json::Value ECJsonUtilities::FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus)
+Json::Value ECJsonUtilities::FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus, KindOfQuantityCR koq)
     {
     Json::Value val(Json::objectValue);
-    val[ECJSON_UNIT_FORMAT_UNIT] = fus.GetUnitName();
+    val[ECJSON_UNIT_FORMAT_UNIT] = ((ECUnitCP)fus.GetUnit())->GetQualifiedName(koq.GetSchema());
     val[ECJSON_UNIT_FORMAT_FORMAT] = fus.GetNamedFormatSpec()->GetName();
     return val;
     }

@@ -6,21 +6,21 @@
   "name": "ExampleKoQ",
   "precision": 3.0,
   "persistenceUnit": {
-    "unit": "MM",
-    "format": "DefaultReal"
+    "unit": "u:MM",
+    "format": "DefaultRealU"
   },
   "presentationUnits": [
     {
-      "unit": "IN",
-      "format": "DefaultReal"
+      "unit": "u:IN",
+      "format": "DefaultRealU"
     },
     {
-      "unit": "MM",
-      "format": "DefaultReal"
+      "unit": "u:MM",
+      "format": "DefaultRealU"
     },
     {
-      "unit": "CM",
-      "format": "DefaultReal"
+      "unit": "u:CM",
+      "format": "DefaultRealU"
     }
   ]
 }

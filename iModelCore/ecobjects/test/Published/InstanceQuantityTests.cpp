@@ -140,8 +140,8 @@ TEST_F(InstanceQuantityTests, SetQuantityToDoubleWithKoqDefined)
     IECInstancePtr instance = pipeClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     Units::Quantity q;
-    ECUnitCP ftUnit;
-    EC_ASSERT_SUCCESS(StandardUnitsHelper::GetUnit(ftUnit, "FT"));
+    ECUnitCP ftUnit = StandardUnitsHelper::GetUnit("FT");
+    ASSERT_NE(nullptr, ftUnit);
     q = Units::Quantity(42, *ftUnit);
     ASSERT_EQ(ECObjectsStatus::Success, instance->SetQuantity("Length", q));
     Units::Quantity oq;
@@ -149,8 +149,8 @@ TEST_F(InstanceQuantityTests, SetQuantityToDoubleWithKoqDefined)
     ASSERT_EQ(1280.16, oq.GetMagnitude());
     ASSERT_STREQ("CM", oq.GetUnitName());
 
-    ECUnitCP acreUnit;
-    EC_ASSERT_SUCCESS(StandardUnitsHelper::GetUnit(acreUnit, "ACRE"));
+    ECUnitCP acreUnit = StandardUnitsHelper::GetUnit("ACRE");
+    ASSERT_NE(nullptr, acreUnit);
     ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("Length", Units::Quantity(42, *acreUnit)));
     ASSERT_EQ(ECObjectsStatus::KindOfQuantityNotCompatible, instance->SetQuantity("Length", Units::Quantity()));
 
@@ -191,8 +191,8 @@ TEST_F(InstanceQuantityTests, SetQuantityToUnsupportedProperties)
     IECInstancePtr instance = pipeClass->GetDefaultStandaloneEnabler()->CreateInstance();
 
     Units::Quantity q;
-    ECUnitCP ftUnit;
-    EC_ASSERT_SUCCESS(StandardUnitsHelper::GetUnit(ftUnit, "FT"));
+    ECUnitCP ftUnit = StandardUnitsHelper::GetUnit("FT");
+    ASSERT_NE(nullptr, ftUnit);
     q = Units::Quantity(42, *ftUnit);
     ASSERT_EQ(ECObjectsStatus::PropertyNotFound, instance->SetQuantity("NotAPropertyName", q));
     ASSERT_EQ(ECObjectsStatus::PropertyHasNoKindOfQuantity, instance->SetQuantity("DoubleNoKOQ", q));

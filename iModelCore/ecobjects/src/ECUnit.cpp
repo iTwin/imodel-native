@@ -108,12 +108,12 @@ SchemaReadStatus ECUnit::ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR conte
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-        PhenomenonCP phenom;
+        PhenomenonP phenom;
         if (phenomAlias.empty())
-            phenom = GetSchema().GetPhenomenonCP(phenomName.c_str());
+            phenom = GetSchemaR().GetPhenomenonP(phenomName.c_str());
         else
             {
-            ECSchemaCP resolvedPhenomSchema = GetSchema().GetSchemaByAliasP(phenomAlias);
+            ECSchemaP resolvedPhenomSchema = const_cast<ECSchemaP> (GetSchemaR().GetSchemaByAliasP(phenomAlias.c_str()));
             if (nullptr == resolvedPhenomSchema)
                 {
                 LOG.errorv("Invalid ECSchemaXML: The ECUnit '%s' contains a %s element with the alias '%s' that can not be resolved to a referenced schema.",
@@ -121,7 +121,7 @@ SchemaReadStatus ECUnit::ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR conte
                 return SchemaReadStatus::InvalidECSchemaXml;
                 }
 
-            phenom = resolvedPhenomSchema->GetPhenomenonCP(phenomName.c_str());
+            phenom = resolvedPhenomSchema->GetPhenomenonP(phenomName.c_str());
             }
 
         if (nullptr == phenom)
@@ -288,7 +288,7 @@ SchemaReadStatus ECUnit::ReadInvertedUnitXml(BeXmlNodeR unitNode, ECSchemaReadCo
 
     SetParent(*ptrUnit);
 
-    SetPhenomenon(*ptrUnit->GetPhenomenon());
+    SetPhenomenon(const_cast<PhenomenonR> (*ptrUnit->GetPhenomenon()));
 
     return SchemaReadStatus::Success;
     }

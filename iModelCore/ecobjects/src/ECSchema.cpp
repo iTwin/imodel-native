@@ -1142,14 +1142,14 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
     if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema))
         {
         LOG.errorv("Phenomenon %s with schema %s is not in this or any schema referenced by schema %s", phenom.GetName().c_str(), phenomSchema->GetName().c_str(), this->GetName().c_str());
-        return ECObjectsStatus::NotFound;
+        return ECObjectsStatus::SchemaNotFound;
         }
 
     const auto* systemSchema = &unitSystem.GetSchema();
     if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema))
         {
         LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
-        return ECObjectsStatus::NotFound;
+        return ECObjectsStatus::SchemaNotFound;
         }
 
     double localNumerator = numerator.IsValid() ? numerator.Value() : 1.0;
@@ -1213,12 +1213,12 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
     if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema))
         {
         LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
-        return ECObjectsStatus::NotFound;
+        return ECObjectsStatus::SchemaNotFound;
         }
     if ((this != parentSchema) && !ECSchema::IsSchemaReferenced(*this, *parentSchema))
         {
         LOG.errorv("Unit %s with schema %s is not in this or any schema referenced by schema %s", parent.GetName().c_str(), parentSchema->GetName().c_str(), this->GetName().c_str());
-        return ECObjectsStatus::NotFound;
+        return ECObjectsStatus::SchemaNotFound;
         }
 
     unit =  new ECUnit(*this, parent, unitSystem, name);
@@ -1260,12 +1260,12 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
     if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema))
         {
         LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
-        return ECObjectsStatus::NotFound;
+        return ECObjectsStatus::SchemaNotFound;
         }
     if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema))
         {
         LOG.errorv("Phenomenon %s with schema %s is not in this or any schema referenced by schema %s", phenom.GetName().c_str(), phenomSchema->GetName().c_str(), this->GetName().c_str());
-        return ECObjectsStatus::NotFound;
+        return ECObjectsStatus::SchemaNotFound;
         }
 
     double localDenominator = denominator.IsValid() ? denominator.Value() : 1.0;
@@ -1569,12 +1569,12 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
 
     targetKOQ->SetDescription(sourceKOQ.GetInvariantDescription().c_str());
 
-    targetKOQ->SetPersistenceUnit(sourceKOQ.GetPersistenceUnit());
-    if (sourceKOQ.HasPresentationUnits())
+    // targetKOQ->SetPersistenceUnit();
+    /*if (sourceKOQ.HasPresentationUnits())
         {
         for (const auto& fus : sourceKOQ.GetPresentationUnitList())
             targetKOQ->AddPresentationUnit(fus);
-        }
+        }*/
     
     targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
 
@@ -1655,9 +1655,28 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
     return CopyCustomAttributesTo(*schemaOut);
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECSchemaP ECSchema::GetSchemaPByAlias(Utf8StringCR alias)
+    {
+    if (alias.length() == 0)
+        return this;
+
+    // lookup referenced schema by alias
+    bmap<ECSchemaP, Utf8String>::const_iterator schemaIterator;
+    for (schemaIterator = m_referencedSchemaAliasMap.begin(); schemaIterator != m_referencedSchemaAliasMap.end(); schemaIterator++)
+        {
+        if (0 == alias.compare (schemaIterator->second))
+            return schemaIterator->first;
+        }
+
+    return nullptr;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
 ECSchemaCP ECSchema::GetSchemaByAliasP(Utf8StringCR alias) const
     {
     if (alias.length() == 0)
@@ -1711,11 +1730,11 @@ ECUnitP ECSchema::_LookupUnitP(Utf8CP name)
         unit = GetUnitP(unitName.c_str());
     else
         {
-        ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(unitAlias);
+        ECSchemaP resolvedUnitSchema = GetSchemaPByAlias(unitAlias);
         if (nullptr == resolvedUnitSchema)
             return nullptr;
 
-        unit = const_cast<ECSchemaP>(resolvedUnitSchema)->GetUnitP(unitName.c_str());
+        unit = resolvedUnitSchema->GetUnitP(unitName.c_str());
         }
 
     return unit;
@@ -1736,11 +1755,11 @@ PhenomenonP ECSchema::_LookupPhenomenonP(Utf8CP name)
         phenom = GetPhenomenonP(phenomName.c_str());
     else
         {
-        ECSchemaCP resolvedPhenomSchema = GetSchemaByAliasP(phenomAlias);
+        ECSchemaP resolvedPhenomSchema = GetSchemaPByAlias(phenomAlias);
         if (nullptr == resolvedPhenomSchema)
             return nullptr;
 
-        phenom = const_cast<ECSchemaP>(resolvedPhenomSchema)->GetPhenomenonP(phenomName.c_str());
+        phenom = resolvedPhenomSchema->GetPhenomenonP(phenomName.c_str());
         }
 
     return phenom;
@@ -1761,11 +1780,11 @@ UnitSystemP ECSchema::_LookupUnitSystemP(Utf8CP name)
         system = GetUnitSystemP(systemName.c_str());
     else
         {
-        ECSchemaCP resolvedSchema = GetSchemaByAliasP(systemAlias);
+        ECSchemaP resolvedSchema = GetSchemaPByAlias(systemAlias);
         if (nullptr == resolvedSchema)
             return nullptr;
 
-        system = const_cast<ECSchemaP>(resolvedSchema)->GetUnitSystemP(systemName.c_str());
+        system = resolvedSchema->GetUnitSystemP(systemName.c_str());
         }
 
     return system;
@@ -1796,17 +1815,6 @@ void ECSchema::_AllSystems(bvector<Units::UnitSystemCP>& allUnitSystems) const
     {
     for (auto system : GetUnitSystems())
         allUnitSystems.push_back(system);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Kyle.Abramowitz                 02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECUnitP ECSchema::GetUnitP(Utf8CP name)
-    {
-    auto u = GetSchemaChild<ECUnit, UnitMap>(name, &m_unitMap); 
-    if((nullptr != u) && !u->IsInvertedUnit()) 
-        return u; 
-    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2075,6 +2083,28 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
                 return ECObjectsStatus::SchemaInUse;
             }
         }
+
+        for (auto koq : GetKindOfQuantities())
+            {
+            ECUnitCP persUnit = (ECUnitCP)koq->GetPersistenceUnit().GetUnit();
+            if (nullptr != persUnit && persUnit->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+                return ECObjectsStatus::SchemaInUse;
+
+            for (auto presUnit : koq->GetPresentationUnitList())
+                {
+                if (persUnit->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
+                    return ECObjectsStatus::SchemaInUse;
+                }
+            }
+
+        for (auto unit : GetUnits())
+            {
+            if ((nullptr != unit->GetPhenomenon()) && (unit->GetPhenomenon()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey()))
+                return ECObjectsStatus::SchemaInUse;
+
+            if ((nullptr != unit->GetUnitSystem()) && (unit->GetUnitSystem()->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey()))
+                return ECObjectsStatus::SchemaInUse;
+            }
 
     m_refSchemaList.erase(schemaIterator);
     bmap<ECSchemaP, Utf8String>::iterator iterator = m_referencedSchemaAliasMap.find(&refSchema);

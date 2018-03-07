@@ -137,6 +137,8 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+
+    ECUnitCP GetSIUnit() const {return (ECUnitCP) T_Super::GetSIUnit();}
 };
 
 //=======================================================================================
@@ -186,6 +188,8 @@ private:
         {
         m_unitsContext = (Units::IUnitsContextCP) &schema;
         }
+
+    ECSchemaR GetSchemaR() const {return const_cast<ECSchemaR>(m_schema);}
 
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this Unit is defined in.

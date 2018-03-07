@@ -9,48 +9,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman              02/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-// Assumes <fromUnitNameCStr> is valid for the provided <fromVersion>.
-static ECObjectsStatus ConvertUnitNameBetweenECVersions(Utf8StringR outUnitNameString, Utf8CP fromUnitNameCStr, ECVersion fromVersion, ECVersion toVersion)
-    {
-    BeAssert(nullptr != fromUnitNameCStr);
-    if (fromVersion == toVersion)
-        {
-        outUnitNameString = fromUnitNameCStr;
-        return ECObjectsStatus::Success;
-        }
-
-    Utf8CP convertedName = nullptr;
-    switch (fromVersion)
-        {
-        case ECVersion::V3_2:
-            convertedName = Units::UnitNameMappings::TryGetNewNameFromECName(fromUnitNameCStr);
-            if(nullptr == convertedName)
-                return ECObjectsStatus::InvalidName;
-            break;
-        case ECVersion::V3_1: /* intentional fallthough */
-        case ECVersion::V3_0:
-            convertedName = Units::UnitNameMappings::TryGetECNameFromNewName(fromUnitNameCStr);
-            if(nullptr == convertedName)
-                return ECObjectsStatus::InvalidName;
-            break;
-        default:
-            return ECObjectsStatus::InvalidECVersion;
-        }
-
-    // If a name mapping was found from one version name to the other then convertedName will point to the correct cstring.
-    // If the name could not be properly mapped then convertedName will be nullptr.
-    if (nullptr != convertedName)
-        {
-        outUnitNameString = convertedName;
-        return ECObjectsStatus::Success;
-        }
-    LOG.errorv("Failed to convert unit name %s. Mappings did not exist", fromUnitNameCStr);
-    return ECObjectsStatus::InvalidName;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -189,49 +147,124 @@ Utf8StringCR KindOfQuantity::GetDescription() const
     return GetSchema().GetLocalizedStrings().GetKindOfQuantityDescription(*this, m_description); 
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                08/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-bool KindOfQuantity::SetPersistenceUnit(Formatting::FormatUnitSet persistenceFUS)
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+bool KindOfQuantity::SetPersistenceUnit(Utf8StringCR fusDescriptor)
     {
-    if (persistenceFUS.HasProblem() ||
-        ((nullptr != persistenceFUS.GetUnit()) && persistenceFUS.GetUnit()->IsConstant()) ||
-        (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(persistenceFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+    ECUnitCP unit;
+    Formatting::NamedFormatSpecCP nfs;
+    auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
+    if (ECObjectsStatus::Success != status)
         return false;
 
-    m_persistenceFUS = persistenceFUS;
+    Formatting::FormatUnitSet persFUS(nfs, unit);
+
+    if (persFUS.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(persFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+        return false;
+
+    m_persistenceFUS = persFUS;
+
     return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-bool KindOfQuantity::SetPersistenceUnit(ECUnitCP unit, Utf8CP format)
+bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Utf8CP format)
     {
-    auto fus = Formatting::FormatUnitSet(unit, format);
-
-    return SetPersistenceUnit(fus);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                06/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-bool KindOfQuantity::AddPresentationUnit(Formatting::FormatUnitSet presentationFUS)
-    {
-    if (presentationFUS.HasProblem() ||
-        ((nullptr != presentationFUS.GetUnit()) && presentationFUS.GetUnit()->IsConstant()) ||
-        (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), m_persistenceFUS.GetUnit())) ||
-        (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+    if (unit.IsConstant())
         return false;
 
-    m_presentationFUS.push_back(presentationFUS);
+    auto fus = Formatting::FormatUnitSet(&unit, format);
+    if (fus.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+        return false;
+    
+    m_persistenceFUS = fus;
+    return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format)
+    {
+    if (unit.IsConstant())
+        return false;
+
+    auto fus = Formatting::FormatUnitSet(format, &unit);
+    if (fus.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+        return false;
+    
+    m_persistenceFUS = fus;
+    return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+bool KindOfQuantity::SetDefaultPresentationUnit(Utf8StringCR fusDescriptor)
+    {
+    ECUnitCP unit;
+    Formatting::NamedFormatSpecCP nfs;
+    auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
+    if (ECObjectsStatus::Success != status)
+        return false;
+
+    Formatting::FormatUnitSet presFUS(nfs, unit);
+
+    if (presFUS.HasProblem() ||
+        ((nullptr != presFUS.GetUnit()) && presFUS.GetUnit()->IsConstant()))
+        return false;
+    m_presentationFUS.insert(m_presentationFUS.begin(), presFUS);
     return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-void KindOfQuantity::RemovePresentationUnit(Formatting::FormatUnitSet presentationFUS)
+bool KindOfQuantity::AddPresentationUnit(Utf8StringCR fusDescriptor)
+    {
+    ECUnitCP unit;
+    Formatting::NamedFormatSpecCP nfs;
+    auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
+    if (ECObjectsStatus::Success != status)
+        return false;
+
+    Formatting::FormatUnitSet presFUS(nfs, unit);
+
+    if (presFUS.HasProblem() ||
+        ((nullptr != presFUS.GetUnit()) && presFUS.GetUnit()->IsConstant()) ||
+        (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presFUS.GetUnit(), m_persistenceFUS.GetUnit())) ||
+        (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(presFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+        return false;
+
+    m_presentationFUS.push_back(presFUS);
+    return true;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+bool KindOfQuantity::AddPresentationUnit(ECUnitCR unit, Utf8CP format)
+    {
+    if (unit.IsConstant())
+        return false;
+
+    Formatting::FormatUnitSet fus(&unit, format);
+    if (fus.HasProblem() ||
+        (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), m_persistenceFUS.GetUnit())) ||
+        (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+        return false;
+
+    m_presentationFUS.push_back(fus);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void KindOfQuantity::RemovePresentationUnit(Formatting::FormatUnitSetCR presentationFUS)
     {
     for (auto itor = m_presentationFUS.begin(); itor != m_presentationFUS.end(); itor++)
         if (Units::Unit::AreEqual(itor->GetUnit(), presentationFUS.GetUnit()))
@@ -259,9 +292,20 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
         return SchemaWriteStatus::FailedToSaveXml;
         }
 
-    Utf8String persistenceUnitString;
-    if (ECObjectsStatus::Success != ConvertUnitNameBetweenECVersions(persistenceUnitString, GetPersistenceUnit().GetUnit()->GetName().c_str(), ECVersion::Latest, ecXmlVersion))
+    auto getUnitNameFromVersion = [this, &ecXmlVersion](ECUnitCP unit) -> Utf8String {
+        if (GetSchema().GetECVersion() == ecXmlVersion)
+            return unit->GetQualifiedName(GetSchema());
+
+        // EC3.0 and EC3.1
+        return Units::UnitNameMappings::TryGetNewNameFromECName(unit->GetFullName().c_str());
+    };
+
+    Utf8String persistenceUnitString = getUnitNameFromVersion((ECUnitCP)GetPersistenceUnit().GetUnit());
+    if (persistenceUnitString.empty())
+        {
+        // LOG.errorv("", );
         return SchemaWriteStatus::FailedToSaveXml;
+        }
 
     xmlWriter.WriteAttribute(PERSISTENCE_UNIT_ATTRIBUTE, persistenceUnitString.c_str());
 
@@ -278,11 +322,17 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
             {
             if (fus.HasProblem())
                 {
-                LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), fus.GetProblemDescription().c_str());
+                LOG.errorv("Failed to write schema because presentation FUS for KindOfQuantity '%s' has problem: '%s'.", GetName().c_str(), fus.GetProblemDescription().c_str());
                 return SchemaWriteStatus::FailedToSaveXml;
                 }
-            if (ECObjectsStatus::Success != ConvertUnitNameBetweenECVersions(presUnit, fus.GetUnit()->GetName().c_str(), ECVersion::Latest, ecXmlVersion))
+
+            presUnit = getUnitNameFromVersion((ECUnitCP)fus.GetUnit());
+            if (presUnit.empty())
+                {
+                // LOG.errorv("Failed to write schema becasue presentation FUS for KindOfQuantity '%s' has problem: '%s'.", );
                 return SchemaWriteStatus::FailedToSaveXml;
+                }
+
             if (!first)
                 presentationUnitString += ";";
             presentationUnitString += presUnit;
@@ -327,7 +377,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
         return SchemaWriteStatus::FailedToCreateJson;
         }
 
-    outValue[PERSISTENCE_UNIT_ATTRIBUTE] = ECJsonUtilities::FormatUnitSetToUnitFormatJson(GetPersistenceUnit());
+    outValue[PERSISTENCE_UNIT_ATTRIBUTE] = ECJsonUtilities::FormatUnitSetToUnitFormatJson(GetPersistenceUnit(), *this);
 
     outValue[ECJSON_RELATIVE_ERROR_ATTRIBUTE] = GetRelativeError();
 
@@ -342,7 +392,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
                 LOG.errorv("Failed to write schema because persistance FUS for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), fus.GetProblemDescription().c_str());
                 return SchemaWriteStatus::FailedToCreateJson;
                 }
-            presentationUnitArr.append(ECJsonUtilities::FormatUnitSetToUnitFormatJson(fus));
+            presentationUnitArr.append(ECJsonUtilities::FormatUnitSetToUnitFormatJson(fus, *this));
             }
         outValue[PRESENTATION_UNITS_ATTRIBUTE] = presentationUnitArr;
         }
@@ -380,21 +430,23 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    Formatting::FormatUnitSet persistenceFUS;
-    bool hasInvalidUnit = false;
-    ParseFUSDescriptor(persistenceFUS, hasInvalidUnit, value.c_str(), *this, true, true);
+    ECUnitCP persUnit;
+    Formatting::NamedFormatSpecCP persNFS;
+    ECObjectsStatus status = ParseFUSDescriptor(persUnit, persNFS, value.c_str(), *this, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
+    if (ECObjectsStatus::Success != status)
+        return SchemaReadStatus::InvalidECSchemaXml; // log messages are in the ParseFUSDescriptor
 
-    if (persistenceFUS.HasProblem())
-        LOG.warningv("Persistence FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                     value.c_str(), kindOfQuantityNode.GetName(), persistenceFUS.GetProblemDescription().c_str());
-
-    if ((nullptr != persistenceFUS.GetUnit()) && persistenceFUS.GetUnit()->IsConstant())
+    if ((nullptr != persUnit) && persUnit->IsConstant())
         { 
-        LOG.errorv("Persistence FormatUnitSet: '%s' on KindOfQuanity '%s' has a Constant as a persistence unit", value.c_str(), kindOfQuantityNode.GetName());
+        LOG.errorv("Persistence FormatUnitSet: '%s' on KindOfQuanity '%s' has a Constant as a persistence unit", value.c_str(), GetName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    SetPersistenceUnit(persistenceFUS);
+    m_persistenceFUS = Formatting::FormatUnitSet(persNFS, persUnit);
+
+    if (m_persistenceFUS.HasProblem())
+        LOG.warningv("Persistence FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
+                     value.c_str(), GetName(), m_persistenceFUS.GetProblemDescription().c_str());
 
     // Read Presentation FUS'
 
@@ -404,18 +456,24 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         BeStringUtilities::Split(value.c_str(), ";", presentationUnits);
         for(auto const& presValue : presentationUnits)
             {
-            Formatting::FormatUnitSet presFUS;
-            bool invalidUnit = false;
-            ECObjectsStatus status = ParseFUSDescriptor(presFUS, invalidUnit, presValue.c_str(), *this, true, true);
-            if (ECObjectsStatus::Success != status || invalidUnit)
-                LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                    presValue.c_str(), GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
+            ECUnitCP presUnit;
+            Formatting::NamedFormatSpecCP presNFS;
+            status = ParseFUSDescriptor(presUnit, presNFS, presValue.c_str(), *this, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
+            
+            if (ECObjectsStatus::Success != status)
+                return SchemaReadStatus::InvalidECSchemaXml;
 
-            if (nullptr != presFUS.GetUnit() && presFUS.GetUnit()->IsConstant())
+            if (nullptr != presUnit && presUnit->IsConstant())
                 { 
                 LOG.errorv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has constant as a presentation unit", presValue.c_str(), GetFullName().c_str());
                 return SchemaReadStatus::InvalidECSchemaXml;
                 }
+
+            Formatting::FormatUnitSet presFUS(presNFS, presUnit);
+
+            if (presFUS.HasProblem())
+                LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
+                    value.c_str(), GetName(), presFUS.GetProblemDescription().c_str());
 
             m_presentationFUS.push_back(presFUS);
             }
@@ -423,119 +481,99 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     return SchemaReadStatus::Success;
     }
 
-// Given a fus Descriptor and an ECSchema will parse the 
-static void getResolvedName(Utf8String& unitName, Utf8String& formatName, ECSchemaR schema, Utf8StringCR descriptor)
-    {
-    Utf8String unit;
-    Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unit, formatName, descriptor.c_str());
-    if (schema.OriginalECXmlVersionLessThan(ECVersion::V3_2))
-        {
-        auto unitsSchema = StandardUnitsHelper::GetSchema();
-        unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unit.c_str());
-        //Can't find the name mapping. Check to see if it's in the Standard Units schema
-        if(unitName.empty())
-            {
-            auto foundUnit = StandardUnitsHelper::GetSchema()->GetUnitCP(unit.c_str());
-            if(nullptr != foundUnit)
-                {
-                schema.AddReferencedSchema(*unitsSchema);
-                unitName = foundUnit->GetFullName();
-                }
-            }
-        }
-    else // > EC3.2
-        {
-        Utf8String alias;
-        Utf8String name;
-        ECClass::ParseClassName(alias, name, unit);
-        if (alias.empty() || alias.EqualsI(schema.GetAlias()))
-            {
-            if (nullptr != schema.GetUnitCP(name.c_str()))
-                unitName = schema.GetName() + ":" + name;
-            }
-        else
-            {
-            for (const auto& s : schema.GetReferencedSchemas())
-                {
-                auto const& refSchema = s.second;
-                if ((refSchema->GetAlias().EqualsI(alias)) && (nullptr != refSchema->GetUnitCP(name.c_str())))
-                    {
-                    unitName = refSchema->GetName() + ":" + name;
-                    break;
-                    }
-                }
-            }
-        }
-    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fus, bool& hasInvalidUnit, Utf8CP descriptor, KindOfQuantityCR koq, bool strictUnit, bool strictFUS)
+ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::NamedFormatSpecCP& nfs, Utf8CP descriptor, KindOfQuantityR koq, Nullable<uint32_t> ecXmlMajorVersion, Nullable<uint32_t> ecXmlMinorVersion)
     {
+    if (ecXmlMajorVersion.IsNull())
+        ecXmlMajorVersion = 3;
+
+    if (ecXmlMinorVersion.IsNull())
+        ecXmlMinorVersion = 2;
+
+    bool xmlLessThan32 = (3 == ecXmlMajorVersion.Value() && 2 > ecXmlMinorVersion.Value());
+    bool xmlLessThanOrEqual32 = (3 == ecXmlMajorVersion.Value() && 2 <= ecXmlMinorVersion.Value());
+
     Utf8String unitName;
     Utf8String format;
     Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, descriptor);
 
-    getResolvedName(unitName, format, koq.GetSchemaR(), descriptor);
-
-    Formatting::NamedFormatSpecCP nfs = nullptr;
+    nfs = nullptr;
     if (Utf8String::IsNullOrEmpty(format.c_str()))
         // Need to keep the default without a Unit for backwards compatibility.
-        nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultReal");
+        nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
     else
         {
         nfs = Formatting::StdFormatSet::FindFormatSpec(format.c_str());
         if (nullptr == nfs)
             {
-            if (strictFUS)
+            if (xmlLessThanOrEqual32)
                 {
-                LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid FUS, '%s'.",
+                LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid format, '%s'.",
                     descriptor, koq.GetFullName().c_str(), format.c_str());
                 return ECObjectsStatus::Error;
                 }
-            else
-                {
-                // Assuming since there was previously a format that it should contain the Unit with it.
-                nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
-                LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.",
-                    descriptor, koq.GetFullName().c_str());
-                }
+            
+            // Assuming since there was previously a format that it should contain the Unit with it.
+            nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
+            LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.",
+                descriptor, koq.GetFullName().c_str());
             }
         }
 
-    Units::UnitCP unit = Units::UnitRegistry::Get().LookupUnit(unitName.c_str());
-    if (nullptr == unit)
+    unit = nullptr;
+    if (xmlLessThan32)
         {
-        if (strictUnit)
+        // unitName should be a newName at this point. Update it to ecName.
+        unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
+        if (unitName.empty())
             {
-            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid Unit, '%s'.",
+            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
                 descriptor, koq.GetFullName().c_str(), unitName.c_str());
             return ECObjectsStatus::Error;
             }
 
-        // FIXME need to find in the current schema
-        unit = Units::UnitRegistry::Get().AddDummyUnit(unitName.c_str());
+        Utf8String alias;
+        Utf8String name;
+        ECClass::ParseClassName(alias, name, unitName);
+
+        auto unitsSchema = StandardUnitsHelper::GetSchema();
+        // The alias should be the Units schema name from the ECName Mappings
+        BeAssert(unitsSchema->GetName().EqualsI(alias));
+
+        unit = unitsSchema->GetUnitCP(name.c_str());
         if (nullptr == unit)
+            {
+            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located in the standard Units schema.",
+                descriptor, koq.GetFullName().c_str(), unitName.c_str());
             return ECObjectsStatus::Error;
+            }
 
-        LOG.warningv("Adding dummy unit %s for FormatUnitSet '%s' on KindOfQuantity '%s'.",
-            unitName.c_str(), descriptor, koq.GetFullName().c_str());
-        hasInvalidUnit = true;
+        if (ECSchema::IsSchemaReferenced(koq.GetSchema(), *unitsSchema))
+            return ECObjectsStatus::Success;
+
+        LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve unit '%s'.",
+            unitsSchema->GetName().c_str(), koq.GetSchema().GetName().c_str(), unitName.c_str());
+        
+        if (ECObjectsStatus::Success != koq.GetSchemaR().AddReferencedSchema(*unitsSchema))
+            {
+            LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), koq.GetSchema().GetName().c_str());
+            return ECObjectsStatus::Error;
+            }
+
+        return ECObjectsStatus::Success;
         }
-    else if (!unit->IsValid())
+
+    unit = koq.GetSchema().LookupUnit(unitName.c_str());
+
+    if (nullptr == unit)
         {
-        LOG.warningv("FormatUnitSet '%s' on KindOfQuantity '%s' has a dummy unit, %s.",
+        LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid Unit, '%s'.",
             descriptor, koq.GetFullName().c_str(), unitName.c_str());
-        hasInvalidUnit = true;
+        return ECObjectsStatus::Error;
         }
-
-    fus = Formatting::FormatUnitSet(nfs, unit);
-
-    if (fus.HasProblem())
-        LOG.warningv("FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-            descriptor, koq.GetFullName().c_str(), fus.GetProblemDescription().c_str());
 
     return ECObjectsStatus::Success;
     }
@@ -544,35 +582,12 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fu
 @bsimethod                                David.Fox-Rabinovitz      05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) const
-    { 
-    if (m_presentationFUS.size() > 0)
-        return (indx < m_presentationFUS.size())? &m_presentationFUS[indx] :  m_presentationFUS.begin();
-    else
-        return &m_persistenceFUS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  12/2017
-//---------------------------------------------------------------------------------------
-Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(Utf8CP inFusId, bool useAlias) const
     {
-    if (!inFusId)
+    BeAssert(indx >= m_presentationFUS.size());
+    if (indx >= m_presentationFUS.size())
         return nullptr;
-    Utf8String fusId(inFusId);
 
-    for (Formatting::FormatUnitSetCR fus : m_presentationFUS)
-        {
-        if (fus.HasProblem())
-            continue;
-
-        if (fusId.Equals(fus.ToText(useAlias)))
-            return &fus;
-        }
-
-    if (fusId.Equals(m_persistenceFUS.ToText(useAlias)))
-        return &m_persistenceFUS;
-
-    return nullptr;
+    return &m_presentationFUS[indx];
     }
 
 /*---------------------------------------------------------------------------------**//**

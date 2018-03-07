@@ -29,12 +29,12 @@ struct StandardUnitsSchemaHolder : RefCountedBase
         static StandardUnitsSchemaHolderPtr s_schemaHolder;
 
         StandardUnitsSchemaHolder();
-        ECSchemaPtr _GetSchema();
+        ECSchemaPtr _GetSchema() {return m_schema;}
 
     public:
 
         static StandardUnitsSchemaHolderPtr GetHolder();
-        static ECSchemaPtr GetSchema();
+        static ECSchemaPtr GetSchema() {return GetHolder()->_GetSchema();}
     };
 
 StandardUnitsSchemaHolderPtr StandardUnitsSchemaHolder::s_schemaHolder;
@@ -65,78 +65,46 @@ StandardUnitsSchemaHolderPtr StandardUnitsSchemaHolder::GetHolder()
     return s_schemaHolder;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 03/2018
-//--------------------------------------------------------------------------------------
-ECSchemaPtr StandardUnitsSchemaHolder::_GetSchema()
-    {
-    return m_schema;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 03/2018
-//--------------------------------------------------------------------------------------
-// static
-ECSchemaPtr StandardUnitsSchemaHolder::GetSchema()
-    {
-    return GetHolder()->_GetSchema();
-    }
-
 //*********************** StandardUnitsHelper *************************************
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 03/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus StandardUnitsHelper::GetUnit (ECUnitCP& unit, Utf8CP unitName) 
+ECUnitCP StandardUnitsHelper::GetUnit(Utf8CP unitName)
     {
-    unit = StandardUnitsSchemaHolder::GetSchema()->GetUnitCP(unitName);
-    if(nullptr != unit)
-        return ECObjectsStatus::Success;
-    return ECObjectsStatus::NotFound;
+    return StandardUnitsSchemaHolder::GetSchema()->GetUnitCP(unitName);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 03/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus StandardUnitsHelper::GetInvertedUnit (ECUnitCP& unit, Utf8CP unitName) 
+ECUnitCP StandardUnitsHelper::GetInvertedUnit(Utf8CP unitName)
     {
-    unit = StandardUnitsSchemaHolder::GetSchema()->GetInvertedUnitCP(unitName);
-    if(nullptr != unit)
-        return ECObjectsStatus::Success;
-    return ECObjectsStatus::NotFound;
+    return StandardUnitsSchemaHolder::GetSchema()->GetInvertedUnitCP(unitName);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 03/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus StandardUnitsHelper::GetConstant (ECUnitCP& unit, Utf8CP unitName) 
+ECUnitCP StandardUnitsHelper::GetConstant(Utf8CP unitName) 
     {
-    unit = StandardUnitsSchemaHolder::GetSchema()->GetConstantCP(unitName);
-    if(nullptr != unit)
-        return ECObjectsStatus::Success;
-    return ECObjectsStatus::NotFound;
+    return StandardUnitsSchemaHolder::GetSchema()->GetConstantCP(unitName);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 03/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus StandardUnitsHelper::GetPhenomenon(PhenomenonCP& phenom, Utf8CP phenomName) 
+PhenomenonCP StandardUnitsHelper::GetPhenomenon(Utf8CP phenomName)
     {
-    phenom = StandardUnitsSchemaHolder::GetSchema()->GetPhenomenonCP(phenomName);
-    if(nullptr != phenom)
-        return ECObjectsStatus::Success;
-    return ECObjectsStatus::NotFound;
+    return StandardUnitsSchemaHolder::GetSchema()->GetPhenomenonCP(phenomName);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 03/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus StandardUnitsHelper::GetUnitSystem(UnitSystemCP& system, Utf8CP systemName) 
+UnitSystemCP StandardUnitsHelper::GetUnitSystem(Utf8CP systemName)
     {
-    system = StandardUnitsSchemaHolder::GetSchema()->GetUnitSystemCP(systemName);
-    if(nullptr != system)
-        return ECObjectsStatus::Success;
-    return ECObjectsStatus::NotFound;
+    return StandardUnitsSchemaHolder::GetSchema()->GetUnitSystemCP(systemName);
     }
 
 //--------------------------------------------------------------------------------------
