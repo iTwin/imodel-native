@@ -52,6 +52,14 @@ $(o)ArcGridSurfacePlacementStrategy$(oext) : $(_MakeFilePath)ArcGridSurfacePlace
                                              $(_MakeFilePath)PublicApi/ArcGridSurfacePlacementStrategy.h \
                                              ${MultiCompileDepends}
 
+$(o)SplineGridSurfaceManipulationStrategy$(oext)        : $(_MakeFilePath)SplineGridSurfaceManipulationStrategy.cpp \
+                                          $(_MakeFilePath)PublicApi/SplineGridSurfaceManipulationStrategy.h \
+                                          ${MultiCompileDepends}
+
+$(o)SplineGridSurfacePlacementStrategy$(oext)        : $(_MakeFilePath)SplineGridSurfacePlacementStrategy.cpp \
+                                          $(_MakeFilePath)PublicApi/SplineGridSurfacePlacementStrategy.h \
+                                          ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
 
