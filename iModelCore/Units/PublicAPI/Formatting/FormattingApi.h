@@ -251,7 +251,7 @@ public:
 
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  02/2018
-// implemented in Formatting.cpp      
+// implemented in Formatting.cpp
 //=======================================================================================
 struct LocaleProperties
 {
@@ -471,9 +471,11 @@ public:
     UNITS_EXPORT Utf8String FormatIntegerToString(int n, int minSize) const;
     UNITS_EXPORT int static FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
 
+    // Returns the number of bytes written.
     UNITS_EXPORT size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
     UNITS_EXPORT Utf8String FormatRoundedDouble(double dval, double round);
+    // TODO: vvv test StdFormatDouble
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
 
     UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
@@ -488,6 +490,7 @@ public:
     UNITS_EXPORT Json::Value JsonFormatTraits(bool verbose) const;
     UNITS_EXPORT FormatTraits TraitsFromJson(JsonValueCR jval);
     };
+
 
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  06/2017
@@ -533,7 +536,6 @@ public:
     bool IsEmpty() const { return m_unitName.empty(); }
     UNITS_EXPORT bool IsIdentical(UnitProxyCR other) const;
     };
-
 
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  06/2017
@@ -651,19 +653,23 @@ public:
     UNITS_EXPORT void Clone(CompositeValueSpecCR other);
    // UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
     CompositeValueSpec() { Init(); };
+
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCP other);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP MajorUnit, BEU::UnitCP MiddleUnit=nullptr, BEU::UnitCP MinorUnit=nullptr, BEU::UnitCP subUnit = nullptr);
     UNITS_EXPORT CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit = nullptr, Utf8CP MinorUni = nullptr, Utf8CP subUnit = nullptr);
+
+    BEU::UnitCP GetMajorUnit() const { return m_unitProx.GetUnit(indxMajor); }
+    BEU::UnitCP GetMiddleUnit() const { return m_unitProx.GetUnit(indxMiddle); }
+    BEU::UnitCP GetMinorUnit() const { return m_unitProx.GetUnit(indxMinor); }
+    BEU::UnitCP GetSubUnit() const { return m_unitProx.GetUnit(indxSub); }
+
     UNITS_EXPORT void SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab = nullptr, Utf8CP MinorLab = nullptr, Utf8CP SubLab = nullptr);
     UNITS_EXPORT Utf8String GetMajorLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMajor, substitute); }
     UNITS_EXPORT Utf8String GetMiddleLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMiddle, substitute); }
     UNITS_EXPORT Utf8String GetMinorLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMinor, substitute); }
     UNITS_EXPORT Utf8String GetSubLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxSub, substitute); }
-    BEU::UnitCP GetMajorUnit() const { return m_unitProx.GetUnit(indxMajor); }
-    BEU::UnitCP GetMiddleUnit() const { return m_unitProx.GetUnit(indxMiddle); }
-    BEU::UnitCP GetMinorUnit() const { return m_unitProx.GetUnit(indxMinor); }
-    BEU::UnitCP GetSubUnit() const { return m_unitProx.GetUnit(indxSub); }
+
     bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
     bool IsProblem() const { return m_problem.IsProblem(); }
     bool NoProblem() const { return m_problem.NoProblem(); }
@@ -696,10 +702,13 @@ private:
     void Init();
 public:
     UNITS_EXPORT CompositeValue();
+
     void SetNegative() { m_negative = true; }
     void SetPositive() { m_negative = false; }
+
     Utf8String GetSignPrefix(bool useParenth = false) { return m_negative?  (useParenth ? "(" : "-") : ""; }
     Utf8String GetSignSuffix(bool useParenth = false) { return m_negative ? (useParenth ? ")" : "") : ""; }
+
     double SetMajor(double dval)  { return m_parts[CompositeValueSpec::indxMajor] = dval; }
     double SetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle] = dval; }
     double SetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor] = dval; }
@@ -711,6 +720,7 @@ public:
     double GetMinor()  { return m_parts[CompositeValueSpec::indxMinor]; }
     double GetSub()    { return m_parts[CompositeValueSpec::indxSub]; }
     double GetInput()  { return m_parts[CompositeValueSpec::indxInput]; }
+
     bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
     bool IsProblem() { return m_problem.IsProblem(); }
     };
@@ -821,21 +831,21 @@ struct FormatUnitSet
 
         UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
 
-        //!The 'descriptor' argument is a text string in several formats as follows:
-        //! for compatibility with the obsolete KOQ def's it may consist of only a unit name, e.g. FT
-        //!    since FUS consists of two components: the reference to the Unit and a reference to a format specification,
-        //!      the DefaultReal format will be used in this case
-        //! the most commont descriptor consists of two names: the Unit Name and the Format Name, e.g. FT(real6)
-        //! For supporting the usgae of comples Unit Names a "vertical bar" can be used as a separator
-        //!   between the Unit Name and the Format Name as in FT|real6 The closing vertical bar delimiting
-        //!    the Format Name is not required if the Format Name is terminated with the "end-of-line"
-        //!     However, the Fomat Name can be also delimited by the "vertical bar" as in: FT|real6|
-        //! The descriptor can be also a JSON-string enclosed in the "curvy brackets"
-        //! There are two types of this JSON-string which are currently supported:
-        //!  A short one consists of the unitName and formatName. The optional cloneData boolean value 
-        //!    indicates that the format spec should be cloned into the newly created FUS. The default 
-        //!      value of the cloneData parameter if "false"
-        //! the long one consists of the unitName and formatSpec that contains the full description of this Spec
+        //! The 'descriptor' argument is a text string in one of several formats as follows:
+        //! For compatibility with the obsolete KOQ def's it may consist of only a unit name, e.g.
+        //! FT. Since FUS consists of two components: the reference to the Unit and a reference to
+        //! a format specification, the DefaultReal format will be used in this case. The most
+        //! common descriptor consists of two names: the Unit Name and the Format Name, e.g.
+        //! FT(real6). For supporting the usage of comples Unit Names a "vertical bar" can be used
+        //! as a separator between the Unit Name and the Format Name as in "FT|real6" The closing
+        //! vertical bar delimiting the Format Name is not required if the Format Name is
+        //! terminated with the "end-of-line". However, the Fomat Name can be also delimited by
+        //! the "vertical bar" as in: "FT|real6|". The descriptor can be also a JSON-string enclosed
+        //! in the "curvy brackets". There are two types of this JSON-string which are currently
+        //! supported: A short one consists of the unitName and formatName. The optional cloneData
+        //! boolean value indicates that the format spec should be cloned into the newly created
+        //! FUS. The default value of the cloneData parameter if "false" the long one consists of
+        //! the unitName and formatSpec that contains the full description of this Spec.
         UNITS_EXPORT FormatUnitSet(Utf8CP descriptor);
 
         //! Resets this FUS to its initial state and populates it will the json value.

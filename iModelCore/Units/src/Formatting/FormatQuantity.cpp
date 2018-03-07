@@ -130,7 +130,6 @@ void CompositeValueSpec::SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab, Utf8CP
     m_unitProx.SetUnitLabel(indxSub,SubLab);
 }
 
-
 //---------------------------------------------------------------------------------------
 // returns the smallest partial unit or null if no units were defined
 // @bsimethod                                                   David Fox-Rabinovitz 02/17

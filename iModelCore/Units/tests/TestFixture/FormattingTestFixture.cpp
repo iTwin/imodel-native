@@ -622,34 +622,7 @@ void FormattingTestFixture::TestScanTriplets(Utf8CP str)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-Utf8CP FormattingTestFixture::TestGrabber(Utf8CP input, size_t start)
-    {
-    LOG.infov("=========== Numeric Grabber test |%s| from %d", input, start);
-    NumberGrabber ng = NumberGrabber(input, start);
-    int repet = 100000;
-    size_t len = ng.Grab();
-    for (int i = 0; i < repet; i++)
-        {
-         len = ng.Grab();
-        }
-    size_t ti = ng.GetNextIndex();
-    if (ng.GetType() == ParsingSegmentType::Real)
-        {
-        LOG.infov("Real %.6f Integer %d  Tail |%s| nextInd %d", ng.GetReal(), ng.GetInteger(), ng.GetTail(), ti);
-        }
-    else if (ng.GetType() == ParsingSegmentType::Integer)
-        {
-        LOG.infov("Integer %d Real %.6f Tail |%s| nextInd %d", ng.GetInteger(), ng.GetReal(), ng.GetTail(), ng.GetNextIndex());
-        }
-    else
-        LOG.infov("Cannot interpret input. Tail |%s| nextInd %d", ng.GetTail(), ng.GetNextIndex());
-    input = ng.GetTail();
-    return input;
-    }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
 void FormattingTestFixture::TestSegments(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP expectReduced)
     {
     FormatParsingSet fps = FormatParsingSet(input, start, unitName);
@@ -1053,23 +1026,6 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
     WString wJson(jval.ToString().c_str(), true);
     WString wBool(FormatConstant::BoolText(ident), true);
     LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestFixture::RegistryLookupUnitCITest(Utf8CP unitName)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
-    if (nullptr == unit)
-        {
-        LOG.infov("Unit Name %s is not defined", unitName);
-        return;
-        }
-    int diff = BeStringUtilities::StricmpAscii(unitName, unit->GetName().c_str());
-    EXPECT_TRUE(diff == 0);
-    if(!diff)
-        LOG.infov("Unit Name %s is not canonical %s", unitName, unit->GetName().c_str());
     }
 
 //----------------------------------------------------------------------------------------

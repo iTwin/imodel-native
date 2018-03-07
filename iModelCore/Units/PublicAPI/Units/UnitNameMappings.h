@@ -56,6 +56,8 @@ private:
 
 public:
     //! Returns an ECName corresponding to the given newName.
+    UNITS_EXPORT static Utf8CP TryGetECNameFromOldName(Utf8CP name);
+    //! Returns an ECName corresponding to the given newName.
     UNITS_EXPORT static Utf8CP TryGetECNameFromNewName(Utf8CP name);
     //! Returns the oldName corresponding to the given newName.
     UNITS_EXPORT static Utf8CP TryGetOldNameFromNewName(Utf8CP name);
