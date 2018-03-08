@@ -306,12 +306,12 @@ private:
     size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
     void LoadJson(Json::Value jval);
 
-    // TODO: Attempt to remove these methods from the private API
+    // TODO: Attempt to remove these methods from the private API===============
     // Nothing yet.
-    // !TODO
+    // !TODO====================================================================
 
 public:
-    // TODO: Attempt to remove these methods from the public API
+    // TODO: Attempt to remove these methods from the public API================
     NumericFormatSpec(size_t precision) { DefaultInit(precision); }
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     UNITS_EXPORT NumericFormatSpec(Utf8CP jsonString);
@@ -341,7 +341,7 @@ public:
     UNITS_EXPORT int FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bool useSeparator);
 
     UNITS_EXPORT int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
-    // !TODO
+    // !TODO====================================================================
 
     NumericFormatSpec() { DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex()); }
     NumericFormatSpec(NumericFormatSpecCR other) = default;
@@ -501,7 +501,7 @@ private:
 
 public:
     void Clear() { m_unit = nullptr; m_unitName = Utf8String((Utf8CP)nullptr); m_unitLabel = Utf8String((Utf8CP)nullptr); }
-    UnitProxy():m_unit(nullptr), m_unitName((Utf8CP)nullptr), m_unitLabel((Utf8CP)nullptr){}       
+    UnitProxy():m_unit(nullptr), m_unitName((Utf8CP)nullptr), m_unitLabel((Utf8CP)nullptr){}
     UNITS_EXPORT UnitProxy(Utf8CP name, Utf8CP label = nullptr);
     UnitProxy(UnitProxyCR other)
         {
@@ -591,7 +591,11 @@ public:
     Utf8CP GetUnitLabel(size_t indx, Utf8CP subst = nullptr) const { return IsIndexCorrect(indx) ? m_proxys[indx].GetLabel() : subst; }
     Utf8CP SetUnitLabel(size_t indx, Utf8CP unitLabel) { return IsIndexCorrect(indx) ? m_proxys[indx].SetLabel(unitLabel) : nullptr; }
     bool SetUnit(size_t indx, BEU::UnitCP unitP) { return IsIndexCorrect(indx) ?  m_proxys[indx].SetUnit(unitP) : false; }
-    bool SetUnitName(size_t indx, Utf8CP unitName) const { return IsIndexCorrect(indx) ? m_proxys[indx].SetName(unitName) : false; }
+    bool SetUnitName(size_t indx, Utf8CP unitName) const {
+        return IsIndexCorrect(indx) ?
+            m_proxys[indx].SetName(unitName) 
+            : false; 
+    }
     UNITS_EXPORT Json::Value ToJson(bvector<Utf8CP> keyNames) const;
     UNITS_EXPORT bool IsIdentical(UnitProxySetCR other) const;
 };

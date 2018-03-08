@@ -152,6 +152,22 @@ TEST_F(NumericFormatSpecTest, Constructors)
     // TODO: Test the rest of the constructors and the Init method
     }
 
+TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
+    {
+    NumericFormatSpec numericFormatSpec;
+    numericFormatSpec.SetThousandSeparator('\'');
+    numericFormatSpec.SetUse1000Separator(true);
+    numericFormatSpec.SetKeepSingleZero(true);
+    CompositeValueSpec compositeValueSpec("MILE", "IN");
+    ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
+    ASSERT_EQ(CompositeSpecType::Double, compositeValueSpec.GetType());
+    NamedFormatSpec namedFormatSpec("TestNamedFormatSpec", numericFormatSpec, compositeValueSpec);
+
+    // 1500.5 miles == 1,500 miles and 31,680 inches
+    BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
+    EXPECT_STREQ("1'500.0 31'680.0", NumericFormatSpec::StdFormatQuantity(namedFormatSpec, quantity).c_str());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -716,6 +732,8 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     Utf8String string;
     double const testValPos = 100501.125;
     double const testValNeg = -100501.125;
+    double const testValMagnitudeLt1Pos = 0.000125;
+    double const testValMagnitudeLt1Neg = -0.000125;
 
     // Decimal
     {
@@ -767,10 +785,12 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     EXPECT_EQ(strlen("0.100501125e+6"), nfs.FormatDoubleBuf(testValPos, buff, FormattingTest::Countof(buff)));
     EXPECT_STREQ("0.100501125e+6", buff);
     EXPECT_STREQ("0.100501125e+6", nfs.FormatDouble(testValPos).c_str());
+    EXPECT_STREQ("0.125e-3", nfs.FormatDouble(testValMagnitudeLt1Pos).c_str());
 
     EXPECT_EQ(strlen("-0.100501125e+6"), nfs.FormatDoubleBuf(testValNeg, buff, FormattingTest::Countof(buff)));
     EXPECT_STREQ("-0.100501125e+6", buff);
     EXPECT_STREQ("-0.100501125e+6", nfs.FormatDouble(testValNeg).c_str());
+    EXPECT_STREQ("-0.125e-3", nfs.FormatDouble(testValMagnitudeLt1Neg).c_str());
     }
     }
 
@@ -1017,7 +1037,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_EQ(1760, cvs2unit.GetMajorToMiddleRatio());
 
     // Three Units
-    CompositeValueSpec cvs3unit("MILE", "YRD", "FOOT");
+    CompositeValueSpec cvs3unit("MILE", "YRD", "FT");
     ASSERT_EQ(3, cvs3unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Triple, cvs3unit.GetType());
     ASSERT_FALSE(cvs3unit.IsProblem());
@@ -1029,7 +1049,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_EQ(3, cvs3unit.GetMiddleToMinorRatio());
 
     // Four Units
-    CompositeValueSpec cvs4unit("MILE", "YRD", "FOOT", "INCH");
+    CompositeValueSpec cvs4unit("MILE", "YRD", "FT", "INCH");
     ASSERT_EQ(4, cvs4unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Quatro, cvs4unit.GetType());
     ASSERT_FALSE(cvs4unit.IsProblem());
