@@ -486,19 +486,10 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)ScalableMeshCoreLib.lib \
-	%if defined (BUILD_USING_VS2013)
-    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
-    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
-%elif defined (BUILD_USING_VS2015)
-    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
-    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
-%endif
     $(ContextSubpartsLibs)CGAL.lib \
     $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
     $(ContextSubpartsLibs)DgnView.lib \
     $(ContextSubpartsLibs)RasterCore.lib
-
-
 
 %include $(sharedMki)LinkLibrary.mki
 

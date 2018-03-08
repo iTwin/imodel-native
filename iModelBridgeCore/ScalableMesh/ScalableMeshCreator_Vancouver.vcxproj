@@ -342,7 +342,6 @@ bb -ax64 -p ScalableMeshImportersLib  -f  ScalableMeshCore -r  ScalableMesh  re 
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Reprojection.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\GeoCoords\Transformation.hpp" />
-    <ClInclude Include="PublicAPI\ScalableMesh\IClipDefinitionDataProvider.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Command\Base.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\All.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Import\Config\Content\Base.h" />
@@ -457,7 +456,6 @@ bb -ax64 -p ScalableMeshImportersLib  -f  ScalableMeshCore -r  ScalableMesh  re 
     <ClInclude Include="STM\ISMDataStore.h" />
     <ClInclude Include="STM\ISMDataStore.hpp" />
     <ClInclude Include="stm\MapBoxTextureProvider.h" />
-    <ClInclude Include="STM\MosaicTextureProvider.h" />
     <ClInclude Include="stm\RasterUtilities.h" />
     <ClInclude Include="stm\ReprojectionModel.h" />
     <ClInclude Include="STM\ScalableMeshAnalysis.h" />
@@ -563,8 +561,6 @@ bb -ax64 -p ScalableMeshImportersLib  -f  ScalableMeshCore -r  ScalableMesh  re 
     <ClInclude Include="STM\SMTextureTileStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.h" />
     <ClInclude Include="STM\Stores\ISMDataStore.hpp" />
-    <ClInclude Include="STM\Stores\SMExternalProviderDataStore.h" />
-    <ClInclude Include="STM\Stores\SMExternalProviderDataStore.hpp" />
     <ClInclude Include="STM\Stores\SMSQLiteSisterFile.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.h" />
     <ClInclude Include="STM\Stores\SMSQLiteStore.hpp" />
@@ -644,10 +640,8 @@ bb -ax64 -p ScalableMeshImportersLib  -f  ScalableMeshCore -r  ScalableMesh  re 
     <ClCompile Include="STM\CGALEdgeCollapse.cpp" />
     <ClCompile Include="STM\Edits\ClipRegistry.cpp" />
     <ClCompile Include="STM\Edits\Skirts.cpp" />
-    <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
     <ClCompile Include="STM\ImportPlugins\TextureImporter.cpp" />
     <ClCompile Include="stm\MapboxTextureProvider.cpp" />
-    <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="stm\RasterUtilities.cpp" />
     <ClCompile Include="stm\ReprojectionModel.cpp" />
     <ClCompile Include="STM\ScalableMeshAnalysis.cpp" />
@@ -730,22 +724,19 @@ bb -ax64 -p ScalableMeshImportersLib  -f  ScalableMeshCore -r  ScalableMesh  re 
     <ClCompile Include="STM\ScalableMesh\ScalableMeshGraph.cpp" />
     <ClCompile Include="STM\ScalableMeshLib.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelPCH.cpp" />
-    <ClCompile Include="STM\Stores\SMExternalProviderDataStore.cpp" />
-    <ClCompile Include="STM\Stores\SMSQLiteSisterFile.cpp" />
     <ClCompile Include="STM\Stores\SMSQLiteStore.cpp" />
     <ClCompile Include="STM\Stores\SMStoreUtils.cpp" />
     <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp" />
-    <ClCompile Include="STM\TextureProvider.cpp" />
     <ClCompile Include="STM\Threading\LightThreadPool.cpp" />
     <ClCompile Include="STM\Threading\ScalableMeshScheduler.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ScalableMesh_Vancouver.mke" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ScalableMeshCore.PartFile.xml">
       <SubType>Designer</SubType>
     </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ScalableMeshImportersLib_Vancouver.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

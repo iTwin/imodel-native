@@ -184,9 +184,10 @@ struct IScalableMeshCreator::Impl
 
     protected:
 
-        virtual void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d);
+        BENTLEY_SM_EXPORT virtual void ConfigureMesherFilter(ISMPointIndexFilter<PointType, PointIndexExtentType>*& pFilter, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher2d, ISMPointIndexMesher<PointType, PointIndexExtentType>*& pMesher3d);
           
     public :  
+
         BENTLEY_SM_EXPORT explicit                            Impl                           (const WChar*                          scmFileName);
         BENTLEY_SM_EXPORT explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
 

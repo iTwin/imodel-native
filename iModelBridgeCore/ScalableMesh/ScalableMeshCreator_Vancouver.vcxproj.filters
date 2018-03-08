@@ -990,7 +990,6 @@
     <ClInclude Include="PublicAPI\ScalableMesh\ITextureProvider.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="STM\MosaicTextureProvider.h" />
     <ClInclude Include="GeneratorTextureProvider.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
@@ -1021,9 +1020,6 @@
     <ClInclude Include="PublicAPI\ScalableMesh\IScalableMeshAnalysis.h">
       <Filter>Includes\PublicAPI</Filter>
     </ClInclude>
-    <ClInclude Include="PublicAPI\ScalableMesh\IClipDefinitionDataProvider.h" />
-    <ClInclude Include="STM\Stores\SMExternalProviderDataStore.h" />
-    <ClInclude Include="STM\Stores\SMExternalProviderDataStore.hpp" />
     <ClInclude Include="STM\ScalableMeshInfo.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
@@ -1437,7 +1433,6 @@
     <ClCompile Include="STM\MeshingFunctions.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="stm\importplugins\DGNdbImporter.cpp" />
     <ClCompile Include="STM\Stores\SMStreamingDataStore.cpp">
       <Filter>Source\Core\Stores</Filter>
     </ClCompile>
@@ -1447,7 +1442,6 @@
     <ClCompile Include="STM\Edits\ClipRegistry.cpp">
       <Filter>Source\Core\Edits</Filter>
     </ClCompile>
-    <ClCompile Include="STM\Stores\SMSQLiteSisterFile.cpp" />
     <ClCompile Include="STM\ScalableMeshSourceCreator.cpp">
       <Filter>Source\Core\Stores</Filter>
     </ClCompile>
@@ -1469,8 +1463,6 @@
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\MosaicTextureProvider.cpp" />
-    <ClCompile Include="STM\TextureProvider.cpp" />
     <ClCompile Include="GeneratorTextureProvider.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1492,7 +1484,6 @@
     <ClCompile Include="STM\ScalableMeshFrom3MX.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\Stores\SMExternalProviderDataStore.cpp" />
     <ClCompile Include="STM\ScalableMeshAnalysis_Ecef.cpp">
       <Filter>Source\Core\Analysis</Filter>
     </ClCompile>
@@ -1501,9 +1492,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ScalableMesh_Vancouver.mke" />
+    <Xml Include="ScalableMeshCore.PartFile.xml" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="ScalableMeshCore.PartFile.xml" />
+    <None Include="ScalableMeshImportersLib_Vancouver.mke" />
   </ItemGroup>
 </Project>

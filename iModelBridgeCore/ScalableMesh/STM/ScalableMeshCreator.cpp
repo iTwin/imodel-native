@@ -646,7 +646,7 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
     visitor.m_sourceRefP->SetDtmSource(source.Clone());
 
     return *visitor.m_sourceRefP;
-}
+}   
 
 
 int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
