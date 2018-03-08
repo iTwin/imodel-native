@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                     Affan.Khan                      10/18
+// @bsiclass                                     Affan.Khan                      03/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST(ECDbInit, Initialize)
     {
@@ -23,6 +23,7 @@ TEST(ECDbInit, Initialize)
     ECDb::Initialize(temporaryDir, &applicationSchemaDir);
     ASSERT_EQ(true, ECDb::IsInitialized());
     }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  10/17
 //+---------------+---------------+---------------+---------------+---------------+------

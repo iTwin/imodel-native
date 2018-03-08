@@ -2474,7 +2474,8 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(KindOfQuantityChanges& koqCha
                             oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
-        else if (change.GetState() == ChangeState::New)
+
+        if (change.GetState() == ChangeState::New)
             {
             KindOfQuantityCP koq = newSchema.GetKindOfQuantityCP(change.GetId());
             if (koq == nullptr)
@@ -2483,17 +2484,102 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(KindOfQuantityChanges& koqCha
                 return ERROR;
                 }
 
-            return ImportKindOfQuantity(*koq);
+            if (SUCCESS != ImportKindOfQuantity(*koq))
+                return ERROR;
+
+            continue;
             }
-        else if (change.GetState() == ChangeState::Modified)
+
+        if (change.GetState() == ChangeState::Modified)
             {
-            Issues().ReportV("ECSchema Upgrade failed. KindOfQuantity %s in ECSchema %s: Changing KindOfQuantity is not supported.",
-                            change.GetId(), oldSchema.GetFullSchemaName().c_str());
-            return ERROR;
+            KindOfQuantityCP oldKoq = oldSchema.GetKindOfQuantityCP(change.GetId());
+            KindOfQuantityCP newKoq = newSchema.GetKindOfQuantityCP(change.GetId());
+            if (oldKoq == nullptr || newKoq == nullptr)
+                {
+                BeAssert(oldKoq != nullptr && newKoq != nullptr);
+                return ERROR;
+                }
+
+            if (SUCCESS != UpdateKindOfQuantity(change, *oldKoq, *newKoq))
+                return ERROR;
             }
         }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle  03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateKindOfQuantity(KindOfQuantityChange& change, ECN::KindOfQuantityCR oldKoq, ECN::KindOfQuantityCR newKoq)
+    {
+    if (change.GetStatus() == ECChange::Status::Done)
+        return SUCCESS;
+
+    if (change.GetName().IsValid())
+        {
+        Issues().ReportV("ECSchema Upgrade failed. Changing the name of a KindOfQuantity is not supported.");
+        return ERROR;
+        }
+
+    size_t actualChanges = 0;
+
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_KindOfQuantity);
+    if (change.GetDisplayLabel().IsValid())
+        {
+        actualChanges++;
+        if (change.GetDisplayLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+        else
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.GetDisplayLabel().GetNew().Value().c_str());
+        }
+
+    if (change.GetDescription().IsValid())
+        {
+        actualChanges++;
+        if (change.GetDescription().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Description");
+        else
+            sqlUpdateBuilder.AddSetExp("Description", change.GetDescription().GetNew().Value().c_str());
+        }
+
+    if (change.GetRelativeError().IsValid())
+        {
+        if (change.GetRelativeError().GetNew().IsNull())
+            {
+            Issues().ReportV("ECSchema Upgrade failed. Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError.");
+            return ERROR;
+            }
+
+        actualChanges++;
+        sqlUpdateBuilder.AddSetExp("RelativeError", change.GetRelativeError().GetNew().Value());
+        }
+    
+    if (change.GetPresentationUnitList().IsValid())
+        {
+        actualChanges++;
+
+        if (newKoq.GetPresentationUnitList().empty())
+            sqlUpdateBuilder.AddSetToNull("PresentationUnits");
+        else
+            {
+            Utf8String presUnitsJson;
+            if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJson, m_ecdb, newKoq))
+                return ERROR;
+
+            sqlUpdateBuilder.AddSetExp("PresentationUnits", presUnitsJson.c_str());
+            }
+        }
+
+    if (change.ChangesCount() > actualChanges)
+        {
+        Issues().ReportV("ECSchema Upgrade failed. Changing properties of KindOfQuantity '%s' is not supported except for RelativeError, PresentationUnits, DisplayLabel and Description.",
+                         oldKoq.GetFullName().c_str());
+        return ERROR;
+        }
+
+    sqlUpdateBuilder.AddWhereExp("Id", oldKoq.GetId().GetValue());
+    return sqlUpdateBuilder.ExecuteSql(m_ecdb);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2527,13 +2613,75 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(PropertyCategoryChanges& ch
             }
         else if (change.GetState() == ChangeState::Modified)
             {
-            Issues().ReportV("ECSchema Upgrade failed. PropertyCategory %s in ECSchema %s: Changing PropertyCategory is not supported.",
-                            change.GetId(), oldSchema.GetFullSchemaName().c_str());
-            return ERROR;
+            PropertyCategoryCP oldCat = oldSchema.GetPropertyCategoryCP(change.GetId());
+            PropertyCategoryCP newCat = newSchema.GetPropertyCategoryCP(change.GetId());
+            if (oldCat == nullptr || newCat == nullptr)
+                {
+                BeAssert(oldCat != nullptr && newCat != nullptr);
+                return ERROR;
+                }
+
+            if (SUCCESS != UpdatePropertyCategory(change, *oldCat, *newCat))
+                return ERROR;
             }
         }
 
     return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle  03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdatePropertyCategory(PropertyCategoryChange& change, ECN::PropertyCategoryCR oldCat, ECN::PropertyCategoryCR newCat)
+    {
+    if (change.GetStatus() == ECChange::Status::Done)
+        return SUCCESS;
+
+    if (change.GetName().IsValid())
+        {
+        Issues().ReportV("ECSchema Upgrade failed. Changing the name of a PropertyCategory is not supported.");
+        return ERROR;
+        }
+
+    size_t actualChanges = 0;
+
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_PropertyCategory);
+    if (change.GetDisplayLabel().IsValid())
+        {
+        actualChanges++;
+        if (change.GetDisplayLabel().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("DisplayLabel");
+        else
+            sqlUpdateBuilder.AddSetExp("DisplayLabel", change.GetDisplayLabel().GetNew().Value().c_str());
+        }
+
+    if (change.GetDescription().IsValid())
+        {
+        actualChanges++;
+        if (change.GetDescription().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Description");
+        else
+            sqlUpdateBuilder.AddSetExp("Description", change.GetDescription().GetNew().Value().c_str());
+        }
+
+    if (change.GetPriority().IsValid())
+        {
+        actualChanges++;
+        if (change.GetPriority().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Priority");
+        else
+            sqlUpdateBuilder.AddSetExp("Priority", change.GetPriority().GetNew().Value());
+        }
+
+    if (change.ChangesCount() > actualChanges)
+        {
+        Issues().ReportV("ECSchema Upgrade failed. Changing properties of PropertyCategory '%s' is not supported except for Priority, DisplayLabel and Description.",
+                         oldCat.GetFullName().c_str());
+        return ERROR;
+        }
+
+    sqlUpdateBuilder.AddWhereExp("Id", oldCat.GetId().GetValue());
+    return sqlUpdateBuilder.ExecuteSql(m_ecdb);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2544,20 +2692,13 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
     if (enumChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    SqlUpdateBuilder sqlUpdateBuilder(TABLE_Enumeration);
-
     if (enumChange.GetName().IsValid())
         {
-        if (enumChange.GetName().GetNew().IsNull())
-            {
-            Issues().ReportV("ECSchema Upgrade failed. ECEnumeration %s: 'Name' must always be set for an ECEnumeration.",
-                oldEnum.GetFullName().c_str());
-
-            return ERROR;
-            }
-
-        sqlUpdateBuilder.AddSetExp("Name", enumChange.GetName().GetNew().Value().c_str());
+        Issues().ReportV("ECSchema Upgrade failed. Changing the name of a ECEnumeration is not supported.");
+        return ERROR;
         }
+
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_Enumeration);
 
     if (enumChange.GetTypeName().IsValid())
         {
@@ -2695,7 +2836,8 @@ BentleyStatus SchemaWriter::UpdateEnumerations(ECEnumerationChanges& enumChanges
                 return ERROR;
                 }
 
-            return ImportEnumeration(*ecEnum);
+            if (SUCCESS != ImportEnumeration(*ecEnum))
+                return ERROR;
             }
         else if (change.GetState() == ChangeState::Modified)
             {
