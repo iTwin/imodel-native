@@ -835,7 +835,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
                 builder->Append(*geom);
                 }
 
-            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb(), partCode);
+            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel(), partCodeValue);
 
             if (SUCCESS != builder->Finish(*geomPart) || !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                 return false;
@@ -978,7 +978,7 @@ LineStyleStatus LineStyleConverter::ConvertPointSymbol(LsComponentId& v10Id, Dgn
         builder->Append(*elemGeom);
         }
 
-    DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb().GetDictionaryModel());
+    DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
     if (SUCCESS != builder->Finish(*geomPart))
         return LINESTYLE_STATUS_ConvertingComponent;
 
@@ -2458,7 +2458,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
                 partBuilder->Append(*geometry);
 
-                DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(m_model.GetDgnDb(), partCode);
+                DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
 
                 if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                     {
@@ -2576,7 +2576,7 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
     if (!partId.IsValid())
         {
         DgnCode partCode = GetPartCode(instanceElRef, "CvtV8", sequenceNo, 1.0);
-        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(m_model.GetDgnDb(), partCode);
+        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
         GeometryBuilderPtr partBuilder = GeometryBuilder::CreateGeometryPart(m_model.GetDgnDb(), true);
 
         partBuilder->Append(geometry);
@@ -4665,7 +4665,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                         partBuilder->Append(*geometry);
 
-                        DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(m_model.GetDgnDb(), partCode);
+                        DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
 
                         if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                             {
@@ -5284,7 +5284,7 @@ bool LightWeightConverter::InitPatternParams(PatternParamsR pattern, DgnV8Api::P
                 builder->Append(*geom);
                 }
 
-            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb(), partCode);
+            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel(), partCode.GetValueUtf8());
 
             if (SUCCESS != builder->Finish(*geomPart) || !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                 return false;
@@ -5707,5 +5707,33 @@ void LightWeightConverter::ConvertTextString(TextStringPtr& clone, Bentley::Text
     clone = dbText.Clone();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+DefinitionModelPtr LightWeightConverter::GetJobDefinitionModel()
+    {
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    SubjectCPtr job = m_dgndb->Elements().GetRootSubject();
+    Utf8PrintfString partitionName("Definition Model For %s", job->GetDisplayLabel());
+    DgnCode partitionCode = DefinitionPartition::CreateCode(*job, partitionName);
+    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
+    m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    DefinitionPartitionPtr ed = DefinitionPartition::Create(*job, partitionName.c_str());
+    DefinitionPartitionCPtr partition = ed->InsertT<DefinitionPartition>();
+    if (!partition.IsValid())
+        return DefinitionModelPtr();
+
+    DefinitionModelPtr defModel = DefinitionModel::CreateAndInsert(*partition);
+    if (!defModel.IsValid())
+        return DefinitionModelPtr();
+
+    m_jobDefinitionModelId = defModel->GetModelId();
+    return defModel;
+    }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
