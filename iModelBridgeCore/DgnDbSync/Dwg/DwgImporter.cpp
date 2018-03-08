@@ -436,7 +436,7 @@ Utf8String      DwgImporter::ComputeModelName (Utf8StringR proposedName, BeFileN
     if (m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel) != modelType)
         return  uniqueName;
 
-    // unique phisical model names will later handled by PhysicalPartition::CreateUniqueCode
+    // unique phisical model names will be later handled by PhysicalPartition::CreateUniqueCode
 
     return uniqueName;
     }
@@ -1242,12 +1242,95 @@ BentleyStatus   DwgImporter::_ImportSpaces ()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
+    {
+    // this method creates a unique PhysicalModel for GeometryParts - no mapping is needed for this model
+    static Utf8CP   s_geometryPartsPartitionName = "DwgGeometryParts";
+    if (!m_spatialParentSubject.IsValid())
+        {
+        BeAssert (false && "Must create the spatail parent subject before partitioning for GeometryParts model!");
+        return  BSIERROR;
+        }
+
+    // create a GeometryParts subject
+    Utf8String  modelName = s_geometryPartsPartitionName;
+    auto partsSubject = this->GetOrCreateModelSubject (*m_spatialParentSubject, modelName, ModelSubjectType::GeometryParts);
+    if (!partsSubject.IsValid())
+        {
+        this->ReportError (IssueCategory::Unsupported(), Issue::Error(), "Failed creating the DwgGeometryParts subject");
+        return  BSIERROR;
+        }
+
+    // push spatial parent subject
+    this->SetSpatialParentSubject (*partsSubject);
+
+    // get GeometryParts partition
+    auto partitionCode = PhysicalPartition::CreateCode (*m_spatialParentSubject, modelName);
+    auto partitionId = m_dgndb->Elements().QueryElementIdByCode (partitionCode);
+    if (!partitionId.IsValid())
+        {
+        // create a new partition
+        auto   partition = PhysicalPartition::CreateAndInsert (*m_spatialParentSubject, partitionCode.GetValueUtf8CP());
+        if (!partition.IsValid())
+            {
+            this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), modelName.c_str());\
+            return  BSIERROR;
+            }
+        partitionId = partition->GetElementId ();
+        }
+    if (!partitionId.IsValid())
+        return BSIERROR;
+
+    // if the model exists, we are done!
+    m_geometryPartsModelId = DgnModelId (partitionId.GetValueUnchecked());
+    if (m_dgndb->Models().GetModel(m_geometryPartsModelId).IsValid())
+        return  BSISUCCESS;
+    
+    // get the model handler
+    DgnClassId  classId(m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel));
+    auto handler = dgn_ModelHandler::Model::FindHandler (*m_dgndb, classId);
+    if (nullptr == handler)
+        {
+        BeAssert(false);
+        this->ReportError(IssueCategory::Unknown(), Issue::ImportFailure(), "cannot find ModelHandler");
+        return BSIERROR;
+        }
+
+    // create & insert a new PhysicalModel
+    auto model = handler->Create (DgnModel::CreateParams(*m_dgndb, classId, partitionId, nullptr));
+    if (!model.IsValid() || DgnDbStatus::Success != model->Insert())
+        {
+        BeAssert(false);
+        return BSIERROR;
+        }
+
+    m_geometryPartsModelId = model->GetModelId ();
+    return  BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr DwgImporter::GetOrCreateModelSubject (SubjectCR parent, Utf8StringCR modelName, ModelSubjectType stype)
     {
     Json::Value modelProps(Json::nullValue);
-    modelProps["Type"] = (ModelSubjectType::Hierarchy==stype)? "Hierarchy": "References";
+    switch (stype)
+        {
+        case ModelSubjectType::Hierarchy:
+            modelProps["Type"] = "Hierarchy";
+            break;
+        case ModelSubjectType::References:
+            modelProps["Type"] = "References";
+            break;
+        case ModelSubjectType::GeometryParts:
+            modelProps["Type"] = "GeometryParts";
+            break;
+        default:
+            BeAssert (false && "Unsupported ModelSubjectType!!");
+            return  nullptr;
+        }
 
     for (auto childid : parent.QueryChildren())
         {
@@ -1449,7 +1532,15 @@ DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments
         return ImportJobCreateStatus::FailedInsertFailure;
         }
 
-    // 6. Now that we have the root model's syncinfo id, we can define the syncinfo part of the importjob.
+    // 6. Partition a spartial subject for GeometryParts model:
+    this->GetOrCreateGeometryPartsModel ();
+    if (!m_geometryPartsModelId.IsValid())
+        {
+        BeAssert (false && "Failed creating GeometryParts model!");
+        return ImportJobCreateStatus::FailedInsertFailure;
+        }
+
+    // 7. Now that we have the root model's syncinfo id, we can define the syncinfo part of the importjob.
     DwgSyncInfo::ImportJob  importJob;
     importJob.SetDwgModelSyncInfoId (m_rootDwgModelMap.GetModelSyncInfoId());
     importJob.SetPrefix (this->GetImportJobNamePrefix());
@@ -1497,6 +1588,8 @@ DwgImporter::ImportJobLoadStatus DwgImporter::FindJob ()
         this->SetSpatialParentSubject (*found);
     else
         return ImportJobLoadStatus::FailedNotFound;
+
+    this->GetOrCreateGeometryPartsModel ();
 
     return ImportJobLoadStatus::Success;
     }

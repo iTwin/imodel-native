@@ -2,7 +2,7 @@
 #
 #     $Source: BimTeleporter/BimImporter/lib/BisJson1Importer.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -28,6 +28,8 @@ $(o)SyncInfo.obj: $(baseDir)SyncInfo.cpp $(HeaderFiles) $(baseDir)SyncInfo.h
 
 $(o)Readers.obj: $(baseDir)Readers.cpp $(HeaderFiles) $(baseDir)Readers.h
 
+$(o)SchemaFlattener$(oext): $(baseDir)SchemaFlattener.cpp $(baseDir)SchemaFlattener.h
+
 
 #----------------------------------------------------------------------
 #   Link the library
@@ -39,7 +41,7 @@ DLM_NAME            = $(appName)
 DLM_DEST            = $(o)
 DLM_OBJECT_DEST     = $(o)
 DLM_EXPORT_DEST     = $(o)
-DLM_OBJECT_FILES    = $(o)BisJson1Importer.obj $(o)BisJson1ImporterImpl.obj $(o)SyncInfo.obj $(o)Readers.obj
+DLM_OBJECT_FILES    = $(o)BisJson1Importer.obj $(o)BisJson1ImporterImpl.obj $(o)SyncInfo.obj $(o)Readers.obj $(o)SchemaFlattener.obj
 DLM_NOINITFUNC          = 1
 DLM_NOENTRY             = 1
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib

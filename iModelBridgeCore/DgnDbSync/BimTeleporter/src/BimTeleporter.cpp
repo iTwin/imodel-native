@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/src/BimTeleporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,6 +16,7 @@
 #include <BimTeleporter/BisJson1Exporter0601.h>
 #include <BimTeleporter/BimTeleporter.h>
 #include "BimTeleporterInternal.h"
+#include <BimTeleporter/DgnDbToBimConverter.h>
 
 #include <folly/futures/Future.h>
 #include <folly/ProducerConsumerQueue.h>
@@ -260,41 +261,7 @@ int BimTeleporter::Run(int argc, WCharCP argv[])
         return _PrintUsage(argv[0]);
         }
 
-    BisJson1Exporter0601 exporter(m_inputFileName.GetName());
-    auto logFunc = [] (TeleporterLoggingSeverity severity, const char* message)
-        {
-        GetLogger().message((SEVERITY) severity, message);
-        };
-    exporter.SetLogger(logFunc);
-
-    auto perfLogFunc = [] (const char* message)
-        {
-        BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter.Performance")->info(message);
-        };
-    exporter.SetPerformanceLogger(perfLogFunc);
-
-    BisJson1Importer importer(m_outputPath.GetName());
-    exporter.SetQueueWrite([&importer] (const char* jsonEntry)
-        {
-        importer.AddToQueue(jsonEntry);
-        });
-
-    StopWatch totalTimer(true);
-    std::thread consumer([&importer] { importer.CreateBim(); });
-    auto future = ExportDgnDb(&exporter);
-    bool stat = future.get();
-    importer.SetDone();
-    consumer.join();
-    totalTimer.Stop();
-    Utf8PrintfString message("Total teleportation|%.0f millisecs", totalTimer.GetElapsedSeconds() * 1000.0);
-    BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter.Performance")->info(message.c_str());
-
-    //if (SUCCESS == importer.ImportDatabase(jsonInput))
-    //    fwprintf(stdout, L"Successfully teleported %ls into %ls\n", m_inputFileName.GetName(), m_outputPath.GetName());
-    //else
-    //    fwprintf(stdout, L"Failed to teleport %ls into %ls\n", m_inputFileName.GetName(), m_outputPath.GetName());
-
-    //dgndb->Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
+    bool converted = BentleyApi::DgnDbToBim::DgnDbToBimConverter::Convert(m_inputFileName.GetName(), m_outputPath.GetName());
 
     return 0;
     }

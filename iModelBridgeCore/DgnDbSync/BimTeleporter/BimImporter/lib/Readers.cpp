@@ -17,6 +17,7 @@
 #include "SyncInfo.h"
 #include "Readers.h"
 #include "BisJson1ImporterImpl.h"
+#include "SchemaFlattener.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -1446,7 +1447,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             return ERROR;
             }
         // We need to deserialize the known schemas so that they can be used as references, but we don't want to convert or import them.
-        bvector<Utf8String> knownSchemas = {"Bentley_Standard_CustomAttributes", "ECDbMap", "ECDbFileInfo", "ECDbSystem", "ECDbMeta", "ECDb_FileInfo", "ECDb_System", "EditorCustomAttributes", "Generic", "MetaSchema", "dgn"};
+        bvector<Utf8String> knownSchemas = {"Bentley_Standard_CustomAttributes", "ECDbMap", "ECDbFileInfo", "ECDbSystem", "ECDbMeta", "ECDb_FileInfo", "ECDb_System", "EditorCustomAttributes", "Generic", "MetaSchema", "dgn", "Unit_Attributes"};
         if (knownSchemas.end() != std::find(knownSchemas.begin(), knownSchemas.end(), ecSchema->GetName()))
             continue;
 
@@ -1456,7 +1457,37 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             return ERROR;
             }
         
-        if (SUCCESS != ImportSchema(ecSchema.get()))
+        bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group",
+            "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi"};
+        auto found = std::find_if(schemasWithMultiInheritance.begin(), schemasWithMultiInheritance.end(), [key] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(key.GetName().c_str(), reserved) == 0; }) != schemasWithMultiInheritance.end();
+
+        if (found || ecSchema->GetName().StartsWithI("ECXA_"))
+            {
+            SchemaFlattener flattener(m_importer->m_schemaReadContext);
+            flattener.FlattenSchemas(ecSchema.get());
+            }
+        ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest);
+#define EXPORT_FLATTENEDECSCHEMAS 1
+#ifdef EXPORT_FLATTENEDECSCHEMAS
+        BeFileName bimFileName = GetDgnDb()->GetFileName();
+        BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_flat").c_str());
+        if (!outFolder.DoesPathExist())
+            BeFileName::CreateNewDirectory(outFolder.GetName());
+
+        WString fileName;
+        fileName.AssignUtf8(toImport->GetFullSchemaName().c_str());
+        fileName.append(L".ecschema.xml");
+
+        BeFileName outPath(outFolder);
+        outPath.AppendToPath(fileName.c_str());
+
+        if (outPath.DoesPathExist())
+            outPath.BeDeleteFile();
+
+        toImport->WriteToXmlFile(outPath.GetName());
+#endif
+
+        if (SUCCESS != ImportSchema(toImport))
             {
             GetLogger().fatalv("Failed to import schema %s.  Unable to continue.", schemaName);
             return ERROR;
