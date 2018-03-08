@@ -151,7 +151,7 @@ bool tryValueToArc (JsonValueCR value, ICurvePrimitivePtr &result)
         if (   tryValueToDPoint3d (value["center"], arc.center)
             && tryValueToDPoint3d (value["vectorX"], arc.vector0)   // treat xyz as vector
             && tryValueToDPoint3d (value["vectorY"], arc.vector90)  // treat xyz as vector
-            && tryValueToDPoint3d (value["sweep"], sweepPoint))
+            && tryValueToDPoint3d (value["sweepStartEnd"], sweepPoint))
             {
             arc.start = Angle::DegreesToRadians (sweepPoint.x);
             arc.sweep = Angle::DegreesToRadians (sweepPoint.y - sweepPoint.x);

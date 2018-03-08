@@ -1581,7 +1581,7 @@ void Check::SetTransform (TransformCR transform) {s_transform = transform;}
 static int s_save = 1;
 static int s_noisyFiles = 0;
 static bool s_saveDGNJS = true;
-static bool s_saveIModelJson = false;
+static bool s_saveIModelJson = true;
 static bool s_checkIModelJsonRoundTrip = false;
 void Check::ClearGeometry (char const *name)
     {
@@ -1658,34 +1658,30 @@ void Check::ClearGeometry (char const *name)
 
         if (s_saveIModelJson)
             {
-            BeFile file;
-            if (s_saveIModelJson && BeFileStatus::Success == file.Create (iModelJsonFileName.c_str (), true))
+            Utf8String string;
+            if (IModelJson::TryGeometryToIModelJsonString (string, s_cache))
                 {
-                if (s_noisyFiles)
-                    printf ("%ls\n", path.c_str ());
-                uint32_t bytesWritten = 0;
-                Utf8String string;
-
-                if (IModelJson::TryGeometryToIModelJsonString (string, s_cache))
+                BeFile file;
+                if (s_saveIModelJson && BeFileStatus::Success == file.Create (iModelJsonFileName.c_str (), true))
                     {
-    //                printf ("%s\n", string.c_str ());
-                    file.Write(&bytesWritten, string.c_str(), (uint32_t)string.size());
-    #ifdef BENTLEY_WIN32
+                    if (s_noisyFiles)
+                        printf ("%ls\n", iModelJsonFileName.c_str ());
+                    uint32_t bytesWritten = 0;
+
+        //                printf ("%s\n", string.c_str ());
+                        file.Write(&bytesWritten, string.c_str(), (uint32_t)string.size());
+        #ifdef BENTLEY_WIN32
                     printf ("\n(#g=%d)(#bytes=%d) %S\n", (uint32_t)s_cache.size (), (uint32_t)string.size (), iModelJsonFileName.c_str ());
-    #endif
+        #endif
                     }
                 file.Close ();
                 }
             else
                 {
                 if (s_noisyFiles)
-                    printf ("UNABLE TO OPEN FOR OUTPUT        %ls\n", path.c_str ());
+                    printf ("NO IModelJson  %ls\n", iModelJsonFileName.c_str ());
                 }
             }
-
-
-
-
         }
     else if (s_save == 2)
         {

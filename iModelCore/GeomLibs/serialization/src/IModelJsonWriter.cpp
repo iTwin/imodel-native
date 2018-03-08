@@ -89,7 +89,7 @@ struct BeCGIModelJsonValueWriter
             value["center"] = toJson (arc.center);
             value["vectorX"] = toJson (arc.vector0);
             value["vectorY"] = toJson (arc.vector90);
-            value["sweep"] = createSweepStartSweepRadiansToStartEndDegrees (arc.start, arc.sweep);
+            value["sweepStartEnd"] = createSweepStartSweepRadiansToStartEndDegrees (arc.start, arc.sweep);
             return singleton ("arc", value);
             }
         bvector<DPoint3d> const *points = cp.GetLineStringCP ();
@@ -111,6 +111,7 @@ struct BeCGIModelJsonValueWriter
             value["points"] = toJson (poles);
             value["order"] = Json::Value (bcurve->GetOrder ());
             value["knots"] = toJson (knots);
+            value["closed"] = Json::Value (bcurve->IsClosed ());
             return singleton ("bcurve", value);
             }
         return Json::Value ();
