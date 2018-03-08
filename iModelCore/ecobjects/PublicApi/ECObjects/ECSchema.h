@@ -1493,7 +1493,7 @@ public:
     //! @returns true if the persistence FormatUnitSet is valid, false if not
     ECOBJECTS_EXPORT bool SetPersistenceUnit(Utf8StringCR fusDescriptor);
     ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Utf8CP format = nullptr);
-    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format);
+    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCR format);
     //! Gets the Unit of measurement used for persisting the information
     Formatting::FormatUnitSetCR GetPersistenceUnit() const {return m_persistenceFUS;}
 
@@ -1521,6 +1521,8 @@ public:
     ECOBJECTS_EXPORT bool AddPresentationUnit(Utf8StringCR fusDescriptor);
 
     ECOBJECTS_EXPORT bool AddPresentationUnit(ECUnitCR unit, Utf8CP format = nullptr);
+
+    ECOBJECTS_EXPORT bool AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCR format);
 
     //! Removes the specified presentation Unit from this KindOfQuantity
     ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSetCR fus);
@@ -3926,6 +3928,21 @@ public:
     //! @param[out] targetPropCategory If successful, will contain a new PropertyCategory object that is a copy of the sourcePropCategory
     //! @param[in]  sourcePropCategory The PropertyCategory to copy
     ECOBJECTS_EXPORT ECObjectsStatus CopyPropertyCategory(PropertyCategoryP& targetPropCategory, PropertyCategoryCR sourcePropCategory);
+
+    //! Given a source UnitSystem, will copy that UnitSystem into this schema if it does not already exist
+    //! @param[out] targetUnitSystem If successful, will contain a new UnitSystem object that is a copy of the sourceUnitSystem
+    //! @param[in]  sourceUnitSystem The UnitSystem to copy
+    ECOBJECTS_EXPORT ECObjectsStatus CopyUnitSystem(UnitSystemP& targetUnitSystem, UnitSystemCR sourceUnitSystem);
+
+    //! Given a source Phenomenon, will copy that Phenomenon into this schema if it does not already exist
+    //! @param[out] targetPhenom If successful, will contain a new Phenomenon object that is a copy of the sourcePhenom
+    //! @param[in]  sourcePhenom The Phenomenon to copy
+    ECOBJECTS_EXPORT ECObjectsStatus CopyPhenomenon(PhenomenonP& targetPhenom, PhenomenonCR sourcePhenom);
+
+    //! Given a source ECUnit, will copy that ECUnit into this schema if it does not already exist
+    //! @param[out] targetUnit If successful, will contain a new ECUnit object that is a copy of the sourceUnit
+    //! @param[in]  sourceUnit The ECUnit to copy
+    ECOBJECTS_EXPORT ECObjectsStatus CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit);
 
     //! Copies this schema
     //! @param[out] schemaOut   If successful, will contain a copy of this schema

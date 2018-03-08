@@ -1536,6 +1536,9 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
+    if (sourceKOQ.GetPersistenceUnit().HasProblem())
+        return ECObjectsStatus::Error;
+
     ECObjectsStatus status;
     status = CreateKindOfQuantity(targetKOQ, sourceKOQ.GetName().c_str());
     if (ECObjectsStatus::Success != status)
@@ -1546,12 +1549,33 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
 
     targetKOQ->SetDescription(sourceKOQ.GetInvariantDescription().c_str());
 
-    // targetKOQ->SetPersistenceUnit();
-    /*if (sourceKOQ.HasPresentationUnits())
+    ECSchemaR copyFromSchema = sourceKOQ.GetSchemaR();
+
+    ECUnitCP persistUnit = ((ECUnitCP)sourceKOQ.GetPersistenceUnit().GetUnit());
+    ECSchemaCR persistUnitSchema = persistUnit->GetSchema();
+    SchemaKey key = SchemaKey(persistUnitSchema.GetName().c_str(), persistUnitSchema.GetVersionRead(), persistUnitSchema.GetVersionWrite(), persistUnitSchema.GetVersionMinor());
+    ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
+
+    if (nullptr != foundSchema)
+        AddReferencedSchema(*foundSchema);
+
+    targetKOQ->SetPersistenceUnit(*persistUnit, *sourceKOQ.GetPersistenceUnit().GetNamedFormatSpec());
+
+    if (sourceKOQ.HasPresentationUnits())
         {
         for (const auto& fus : sourceKOQ.GetPresentationUnitList())
-            targetKOQ->AddPresentationUnit(fus);
-        }*/
+            { 
+            ECUnitCP presUnit = ((ECUnitCP)fus.GetUnit());
+            ECSchemaCR presUnitSchema = presUnit->GetSchema();
+            SchemaKey key = SchemaKey(presUnitSchema.GetName().c_str(), presUnitSchema.GetVersionRead(), presUnitSchema.GetVersionWrite(), presUnitSchema.GetVersionMinor());
+            ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
+
+            if (nullptr != foundSchema)
+                AddReferencedSchema(*foundSchema);
+
+            targetKOQ->AddPresentationUnit(*presUnit, *fus.GetNamedFormatSpec());
+            }
+        }
     
     targetKOQ->SetRelativeError(sourceKOQ.GetRelativeError());
 
@@ -1575,6 +1599,90 @@ ECObjectsStatus ECSchema::CopyPropertyCategory(PropertyCategoryP& targetPropCate
 
     targetPropCategory->SetDescription(sourcePropCategory.GetInvariantDescription().c_str());
     targetPropCategory->SetPriority(sourcePropCategory.GetPriority());
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CopyUnitSystem(UnitSystemP& targetUnitSystem, UnitSystemCR sourceUnitSystem)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status;
+    status = CreateUnitSystem(targetUnitSystem, sourceUnitSystem.GetName().c_str());
+
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (sourceUnitSystem.GetIsDisplayLabelDefined())
+        targetUnitSystem->SetDisplayLabel(sourceUnitSystem.GetInvariantDisplayLabel().c_str());
+
+    if (sourceUnitSystem.GetIsDescriptionDefined())
+        targetUnitSystem->SetDescription(sourceUnitSystem.GetDescription());
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CopyPhenomenon(PhenomenonP& targetPhenom, PhenomenonCR sourcePhenom)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status;
+    status = CreatePhenomenon(targetPhenom, sourcePhenom.GetName().c_str(), sourcePhenom.GetDefinition().c_str());
+
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (sourcePhenom.GetIsDisplayLabelDefined())
+        targetPhenom->SetDisplayLabel(sourcePhenom.GetInvariantDisplayLabel().c_str());
+    
+    if (sourcePhenom.GetIsDescriptionDefined())
+        targetPhenom->SetDescription(sourcePhenom.GetInvariantDescription().c_str());
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status;
+
+    if (sourceUnit.IsConstant())
+        {
+        status = CreateConstant(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *sourceUnit.GetPhenomenon(), *sourceUnit.GetUnitSystem(), sourceUnit.GetNumerator());
+        }
+    else if (sourceUnit.IsInvertedUnit())
+        {
+        status = CreateInvertedUnit(targetUnit, *(ECUnitCP)sourceUnit.GetParent(), sourceUnit.GetName().c_str(), *sourceUnit.GetUnitSystem());
+        }
+    else // Normal unit
+        {
+        status = CreateUnit(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *sourceUnit.GetPhenomenon(), *sourceUnit.GetUnitSystem());
+        }
+
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (sourceUnit.HasDenominator())
+        targetUnit->SetDenominator(sourceUnit.GetDenominator());
+
+    if (sourceUnit.HasOffset())
+        targetUnit->SetOffset(sourceUnit.GetOffset());
+
+    if (sourceUnit.GetIsDisplayLabelDefined())
+        targetUnit->SetDisplayLabel(sourceUnit.GetInvariantDisplayLabel().c_str());
+
+    if (sourceUnit.GetIsDescriptionDefined())
+        targetUnit->SetDescription(sourceUnit.GetInvariantDescription().c_str());
 
     return ECObjectsStatus::Success;
     }
@@ -1613,18 +1721,42 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
             return status;
         }
 
-    for (auto koq : m_kindOfQuantityContainer)
+    for (auto propertyCategory : m_propertyCategoryContainer)
         {
-        KindOfQuantityP copyKOQ;
-        status = schemaOut->CopyKindOfQuantity(copyKOQ, *koq);
+        PropertyCategoryP copyPropertyCategory;
+        status = schemaOut->CopyPropertyCategory(copyPropertyCategory, *propertyCategory);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
 
-    for (auto propertyCategory : m_propertyCategoryContainer)
+    for (auto system : m_unitsContext.m_unitSystemContainer)
         {
-        PropertyCategoryP copyKOQ;
-        status = schemaOut->CopyPropertyCategory(copyKOQ, *propertyCategory);
+        UnitSystemP copySystem;
+        status = schemaOut->CopyUnitSystem(copySystem, *system);
+        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+            return status;
+        }
+
+    for (auto phenom : m_unitsContext.m_phenomenonContainer)
+        {
+        PhenomenonP copyPhenom;
+        status = schemaOut->CopyPhenomenon(copyPhenom, *phenom);
+        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+            return status;
+        }
+
+    for (auto unit : m_unitsContext.m_unitContainer)
+        {
+        ECUnitP copyUnit;
+        status = schemaOut->CopyUnit(copyUnit, *unit);
+        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+            return status;
+        }
+
+    for (auto koq : m_kindOfQuantityContainer)
+        {
+        KindOfQuantityP copyKOQ;
+        status = schemaOut->CopyKindOfQuantity(copyKOQ, *koq);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }

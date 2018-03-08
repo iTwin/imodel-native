@@ -147,11 +147,12 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
 
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    m_sourceSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
     koq->SetDisplayLabel("Test KoQ");
     koq->SetDescription("Test Description");
-    koq->SetPersistenceUnit("M");
-    koq->AddPresentationUnit("CM");
-    koq->AddPresentationUnit("MM");
+    koq->SetPersistenceUnit("u:M");
+    koq->AddPresentationUnit("u:CM");
+    koq->AddPresentationUnit("u:MM");
     koq->SetRelativeError(10e-3);
 
     CopySchema();
@@ -178,9 +179,10 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_NoPresentationUnit)
 
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    m_sourceSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
     koq->SetDisplayLabel("Test KoQ");
     koq->SetDescription("Test Description");
-    koq->SetPersistenceUnit("M");
+    koq->SetPersistenceUnit("u:M");
     koq->SetRelativeError(10e-3);
 
     CopySchema();

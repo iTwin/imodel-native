@@ -1030,7 +1030,7 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
         }
     else
         {
-        newKOQ->SetPersistenceUnit((ECUnitCR) *baseKOQ->GetPersistenceUnit().GetUnit(), baseKOQ->GetPersistenceUnit().GetNamedFormatSpec());
+        newKOQ->SetPersistenceUnit((ECUnitCR) *baseKOQ->GetPersistenceUnit().GetUnit(), *baseKOQ->GetPersistenceUnit().GetNamedFormatSpec());
         newKOQ->SetRelativeError(baseKOQ->GetRelativeError());
         persistenceUnitChanged = true;
         }
