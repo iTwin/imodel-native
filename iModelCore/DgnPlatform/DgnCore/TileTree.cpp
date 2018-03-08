@@ -119,6 +119,9 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
             if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
                 return ERROR;
 
+            if (!query->m_responseBody->GetByteStream().HasData())
+                return ERROR;
+
             me->m_tileBytes = std::move(query->m_responseBody->GetByteStream()); // NEEDSWORK this is a copy not a move...
             me->m_contentType = response.GetHeaders().GetContentType();
             me->m_saveToCache = query->GetCacheContolExpirationDate(me->m_expirationDate, response);
