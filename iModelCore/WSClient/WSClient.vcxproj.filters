@@ -549,6 +549,9 @@
     <ClCompile Include="Client\WebApi\WebApiV2Utils\JobApi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="iModelHubClient\ChunkedWSChangeset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -1251,6 +1254,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChunkedWSChangeset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

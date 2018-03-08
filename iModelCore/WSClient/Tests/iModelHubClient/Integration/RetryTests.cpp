@@ -177,13 +177,17 @@ TEST_F(RetryTests, AcquireCodesLocksFails)
     {
     std::shared_ptr<MockHttpHandler> mockHandler = std::make_shared<MockHttpHandler>();
     mockHandler->
-        ExpectRequests(6)
+        ExpectRequests(10)
         .ForRequest(1, EmptyInstancesResponse) // Query held resources
         .ForRequest(2, EmptyInstancesResponse) // Query unavailable locks/codes
         .ForRequest(3, EmptyInstancesResponse) // Query unavailable locks/codes
         .ForRequest(4, EmptyInstancesResponse) // Query unavailable locks/codes
         .ForRequest(5, TimeoutResponse)
-        .ForRequest(6, TimeoutResponse);
+        .ForRequest(6, TimeoutResponse)
+        .ForRequest(7, TimeoutResponse)
+        .ForRequest(8, TimeoutResponse)
+        .ForRequest(9, TimeoutResponse)
+        .ForRequest(10, TimeoutResponse);
 
     DgnDbR db = m_briefcase->GetDgnDb();
     PhysicalPartitionPtr partition = PhysicalPartition::Create(*db.Elements().GetRootSubject(), TestCodeName());
