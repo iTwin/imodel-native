@@ -28,7 +28,7 @@ void GeometryPlacementStrategy::AddKeyPoint
     DPoint3dCR newKeyPoint
 )
     {
-    _GetManipulationStrategyForEdit()._ResetDynamicKeyPoint();
+    _ResetDynamicKeyPoint();
     _AddKeyPoint(newKeyPoint);
     }
 
@@ -53,7 +53,7 @@ void GeometryPlacementStrategy::_PopKeyPoint()
 //---------------+---------------+---------------+---------------+---------------+------
 void GeometryPlacementStrategy::PopKeyPoint()
     {
-    _GetManipulationStrategyForEdit()._ResetDynamicKeyPoint();
+    _ResetDynamicKeyPoint();
     _PopKeyPoint();
     }
 
@@ -95,7 +95,7 @@ void GeometryPlacementStrategy::AddDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    _GetManipulationStrategyForEdit()._ResetDynamicKeyPoint();
+    _ResetDynamicKeyPoint();
     _AddDynamicKeyPoint(newDynamicKeyPoint);
     }
 
@@ -107,7 +107,7 @@ void GeometryPlacementStrategy::AddDynamicKeyPoints
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
     {
-    _GetManipulationStrategyForEdit()._ResetDynamicKeyPoint();
+    _ResetDynamicKeyPoint();
     _AddDynamicKeyPoints(newDynamicKeyPoints);
     }
 
@@ -166,8 +166,10 @@ GMS_PROPERTY_OVERRIDE_IMPL(int)
 GMS_PROPERTY_OVERRIDE_IMPL(double)
 GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)
 GMS_PROPERTY_OVERRIDE_IMPL(DPlane3d)
+GMS_PROPERTY_OVERRIDE_IMPL(RotMatrix)
 GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
-GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElement)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementCP)
+GMS_PROPERTY_OVERRIDE_IMPL(Dgn::ColorDef)
 GMS_PROPERTY_OVERRIDE_IMPL(Utf8String)
 GMS_PROPERTY_OVERRIDE_IMPL(bvector<double>)
 GMS_PROPERTY_OVERRIDE_IMPL(bvector<Utf8String>)

@@ -9,14 +9,59 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
+#define DEFAULT_ORDER 3
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplineManipulationStrategyPtr SplineManipulationStrategy::Create
+(
+    SplinePlacementStrategyType placementStrategy
+)
+    {
+    switch (placementStrategy)
+        {
+        case SplinePlacementStrategyType::ControlPoints:
+            return SplineControlPointsManipulationStrategy::Create(DEFAULT_ORDER);
+        case SplinePlacementStrategyType::ThroughPoints:
+            return SplineThroughPointsManipulationStrategy::Create();
+        default:
+            BeAssert(false);
+            return nullptr;
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr SplineManipulationStrategy::CreatePlacement()
+    {
+    return _CreatePlacement();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyType SplineManipulationStrategy::GetType() const 
+    {
+        return _GetType();
+    }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
 const int SplineControlPointsManipulationStrategy::default_Order = 3;
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool SplineControlPointsManipulationStrategy::_IsComplete() const
+    {
+    return _GetKeyPoints().size() >= m_order;
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
@@ -50,9 +95,25 @@ CurvePrimitivePlacementStrategyPtr SplineControlPointsManipulationStrategy::_Cre
     return SplineControlPointsPlacementStrategy::Create(*this); 
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr SplineControlPointsManipulationStrategy::_CreatePlacement()
+    {
+    return SplineControlPointsPlacementStrategy::Create(*this);
+    }
+
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineThroughPointsManipulationStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool SplineThroughPointsManipulationStrategy::_IsComplete() const
+    {
+    return _GetKeyPoints().size() >= 2;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas             01/2018
 //---------------+---------------+---------------+---------------+---------------+------
@@ -98,4 +159,12 @@ void SplineThroughPointsManipulationStrategy::SetEndTangent(DVec3d endTangent)
     { 
     endTangent.Normalize();
     _SetEndTangent(endTangent); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyPtr SplineThroughPointsManipulationStrategy::_CreatePlacement()
+    {
+    return SplineThroughPointsPlacementStrategy::Create(*this);
     }

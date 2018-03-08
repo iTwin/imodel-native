@@ -20,6 +20,8 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
     {
     DEFINE_T_SUPER(GeometryManipulationStrategy)
 
+    friend struct ElementPlacementStrategy;
+
     protected:
         ElementManipulationStrategy() : T_Super() {}
 
@@ -43,6 +45,9 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         virtual GeometryManipulationStrategyCR _GetGeometryManipulationStrategy() const = 0;
         virtual GeometryManipulationStrategyR _GetGeometryManipulationStrategyForEdit() = 0;
 
+        virtual GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const = 0;
+        virtual GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() = 0;
+
         virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) = 0;
         virtual Dgn::DgnElementPtr _FinishElement() = 0;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
@@ -52,8 +57,10 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         ELEM_PROPERTY_OVERRIDE(double)
         ELEM_PROPERTY_OVERRIDE(DVec3d)
         ELEM_PROPERTY_OVERRIDE(DPlane3d)
+        ELEM_PROPERTY_OVERRIDE(RotMatrix)
         ELEM_PROPERTY_OVERRIDE(Dgn::DgnElementId)
-        ELEM_PROPERTY_OVERRIDE(Dgn::DgnElement)
+        ELEM_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
+        ELEM_PROPERTY_OVERRIDE(Dgn::ColorDef)
         ELEM_PROPERTY_OVERRIDE(Utf8String)
         ELEM_PROPERTY_OVERRIDE(bvector<double>)
         ELEM_PROPERTY_OVERRIDE(bvector<Utf8String>)

@@ -196,3 +196,56 @@ TEST_F(CurveVectorManipulationStrategyTestFixture, ReplaceKeyPoint_ContainsMulti
     ASSERT_TRUE(cv3.IsValid());
     ASSERT_TRUE(cv3->IsSameStructureAndGeometry(*expectedShape3));
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorManipulationStrategyTestFixture, PopKeyPoint_HadDynamicKeyPoint)
+    {
+    CurveVectorManipulationStrategyPtr sut = CurveVectorManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    ASSERT_TRUE(sut->GetKeyPoints().empty());
+    sut->AppendDynamicKeyPoint({0,0,0});
+    sut->ResetDynamicKeyPoint();
+    ASSERT_TRUE(sut->GetKeyPoints().empty());
+    sut->PopKeyPoint();
+    ASSERT_TRUE(sut->GetKeyPoints().empty());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorManipulationStrategyTestFixture, PopKeyPoint_ArcHadMultipleDynamicPoints_DoesNotCrash)
+    {
+    CurveVectorManipulationStrategyPtr sut = CurveVectorManipulationStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->ChangeDefaultNewGeometryType(DefaultNewGeometryType::Arc);
+    sut->ChangeDefaultPlacementStrategy(ArcPlacementMethod::CenterStart);
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), DVec3d::From(0, 0, 1));
+
+    ASSERT_FALSE(sut->Finish().IsValid());
+    sut->AppendDynamicKeyPoints({{0,0,0},{1,0,0}});
+    ASSERT_TRUE(sut->Finish().IsValid());
+
+    sut->PopKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(CurveVectorManipulationStrategyTestFixture, Finish_InitializedFromParityRegion)
+    {
+    CurveVectorPtr expectedShape = CurveVector::Create(CurveVector::BOUNDARY_TYPE_ParityRegion);
+    expectedShape->Add(CurveVector::CreateLinear({{0,0,0},{10,0,0},{10,10,0},{0,10,0},{0,0,0}}, CurveVector::BOUNDARY_TYPE_Outer));
+    expectedShape->Add(CurveVector::CreateLinear({{1,1,0},{9,1,0},{9,9,0},{1,9,0},{1,1,0}}, CurveVector::BOUNDARY_TYPE_Outer));
+
+    CurveVectorManipulationStrategyPtr sut = CurveVectorManipulationStrategy::Create(*expectedShape);
+    ASSERT_TRUE(sut.IsValid());
+    CurveVectorPtr actualShape = sut->Finish();
+    ASSERT_TRUE(actualShape.IsValid());
+    ASSERT_TRUE(actualShape->IsSameStructureAndGeometry(*expectedShape));
+    }

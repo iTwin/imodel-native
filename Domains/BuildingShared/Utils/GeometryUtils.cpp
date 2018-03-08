@@ -158,6 +158,39 @@ CurveVectorPtr GeometryUtils::GetXYCrossSection(IBRepEntityCR solid, double z)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                  03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurveVectorPtr GeometryUtils::GetProfileOnZeroPlane
+(
+CurveVectorCR profile
+)
+    {
+    Transform localToWorld, worldToLocal;
+    DRange3d range;
+    profile.IsPlanar(localToWorld, worldToLocal, range);
+    DPlane3d surfacePlane;
+    bsiTransform_getOriginAndVectors(&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
+    Transform transToZeroPlane = Transform::From(0.0, 0.0, -surfacePlane.origin.z);
+    return profile.Clone(transToZeroPlane);
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jonas.Valiunas                 03/2018
+//--------------+---------------+---------------+---------------+---------------+------
+BentleyStatus   GeometryUtils::GetTopBottomProfilesOnZeroPlane
+(
+Dgn::IBRepEntityCR solid,
+CurveVectorPtr& bottomProfile,
+CurveVectorPtr& topProfile
+)
+    {
+    bottomProfile = ExtractXYProfileFromSolid(solid, &topProfile);
+    bottomProfile = GetProfileOnZeroPlane(*bottomProfile);
+    topProfile = GetProfileOnZeroPlane(*topProfile);
+    return BSISUCCESS;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Nerijus.Jakeliunas              06/2017
 //---------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr GeometryUtils::ExtractXYProfileFromSolid(IBRepEntityCR solid, CurveVectorPtr* pTopProfile)
@@ -280,7 +313,7 @@ CurveVectorPtr GeometryUtils::ExtractXYProfileFromSolid(IBRepEntityCR solid, Cur
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus GeometryUtils::SliceBodyByZElevations
 (
-bvector<bpair<Dgn::IBRepEntityPtr, Dgn::IBRepEntityPtr>>& slicedGeometry,
+bvector<bpair<Dgn::IBRepEntityPtr, double>>& slicedGeometry,
 IBRepEntityCR geometryToSlice,
 bvector<double>& zElevationVector
 )
@@ -305,30 +338,36 @@ bvector<double>& zElevationVector
 
     bvector<IBRepEntityPtr> cutSheetBodies;
 
-    Transform transform = Transform::FromIdentity ();
+    Transform transformBottom = Transform::FromIdentity ();
+    Transform transformTop = Transform::FromIdentity();
     DPoint3d translation = { 0.0, 0.0, 0.0 };
 
     for (bvector<double>::iterator pIter = zElevationVector.begin (); pIter != zElevationVector.end (); ++pIter)
         {
+        IBRepEntityPtr slice = geometryToSlice.Clone();
+
         translation.z = *pIter;
-        transform.SetTranslation (translation);
+        transformBottom.SetTranslation(translation);
+        IBRepEntityPtr elevatedSheetBodyBottom = sheetBody->Clone();
+        elevatedSheetBodyBottom->ApplyTransform(transformBottom);
 
-        IBRepEntityPtr elevatedSheetBody = sheetBody->Clone ();
-        elevatedSheetBody->ApplyTransform (transform);
+        BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyBottom, BRepUtil::Modify::CutDirectionMode::Backward, BRepUtil::Modify::CutDepthMode::All, 0.0, true);
+        if ((pIter + 1) == zElevationVector.end())
+            {
+            slicedGeometry.push_back({ slice, *pIter });
+            break;
+            }
 
-        cutSheetBodies.push_back (elevatedSheetBody);
-        }
 
+        translation.z = *(pIter + 1);
+        transformTop.SetTranslation(translation);
 
-    //TODO: move to a different method..
-    //slice the body by sheets
-    for (bvector<IBRepEntityPtr>::iterator pSheetIter = cutSheetBodies.begin (); (pSheetIter+1) != cutSheetBodies.end (); ++pSheetIter)
-        {
-        IBRepEntityPtr nextSheetPtr = *(pSheetIter + 1);
-        IBRepEntityPtr slice = geometryToSlice.Clone ();
-        BRepUtil::Modify::BooleanCut (slice, *(*pSheetIter), BRepUtil::Modify::CutDirectionMode::Backward, BRepUtil::Modify::CutDepthMode::All, 0.0, true);
-        BRepUtil::Modify::BooleanCut (slice, *nextSheetPtr, BRepUtil::Modify::CutDirectionMode::Forward, BRepUtil::Modify::CutDepthMode::All, 0.0, true);
-        slicedGeometry.push_back ({ slice, *pSheetIter });
+        IBRepEntityPtr elevatedSheetBodyTop = sheetBody->Clone();
+        elevatedSheetBodyTop->ApplyTransform(transformTop);
+
+        BRepUtil::Modify::BooleanCut(slice, *elevatedSheetBodyTop, BRepUtil::Modify::CutDirectionMode::Forward, BRepUtil::Modify::CutDepthMode::All, 0.0, true);
+
+        slicedGeometry.push_back({ slice, *pIter });
         }
 
     return BSISUCCESS;
@@ -2529,8 +2568,19 @@ bool GeometryUtils::IsSameGeometry
     switch (geomType)
         {
         case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc:
-            if (!geom1.GetArcCP()->IsAlmostEqual(*geom2.GetArcCP(), tolerance))
+            DEllipse3d arc1 = *geom1.GetArcCP();
+            DEllipse3d arc2 = *geom2.GetArcCP();
+
+            if (arc1.IsAlmostEqual(arc2, tolerance))
+                return true;
+
+            if (!arc1.FractionToPoint(0).AlmostEqual(arc2.FractionToPoint(0), tolerance))
                 return false;
+            if (!arc1.FractionToPoint(0.5).AlmostEqual(arc2.FractionToPoint(0.5), tolerance))
+                return false;
+            if (!arc1.FractionToPoint(1).AlmostEqual(arc2.FractionToPoint(1), tolerance))
+                return false;
+
             break;
         case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_CurveVector:
             if (!IsSameSingleLoopGeometry(*geom1.GetChildCurveVectorCP(), *geom2.GetChildCurveVectorCP(), tolerance))
@@ -2581,7 +2631,17 @@ bool GeometryUtils::IsSameGeometry
 //---------------+---------------+---------------+---------------+---------------+------
 Transform GeometryUtils::FindTransformBetweenPlanes(DPlane3d const & source, DPlane3d const & target)
     {
-    // Find rotation transform
+    Transform transform = FindRotationTransformBetweenPlanes(source, target);
+    transform.SetTranslation(DVec3d::FromStartEnd(source.origin, target.origin));
+
+    return transform;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Transform GeometryUtils::FindRotationTransformBetweenPlanes(DPlane3d const & source, DPlane3d const & target)
+    {
     Transform transform = Transform::FromIdentity();
     if (!target.normal.IsPositiveParallelTo(source.normal)) // check if rotation is needed
         {
@@ -2590,25 +2650,47 @@ Transform GeometryUtils::FindTransformBetweenPlanes(DPlane3d const & source, DPl
         // Cross product will never be invalid because normals aren't parallel 
         DVec3d rotationAxis = DVec3d::FromCrossProduct(source.normal, target.normal);
 
-        transform = Transform::FromAxisAndRotationAngle(DRay3d::FromOriginAndVector(target.origin, rotationAxis),
-                                                                rotationAngle);
+        transform = Transform::FromAxisAndRotationAngle(DRay3d::FromOriginAndVector({0, 0, 0}, rotationAxis),
+                                                        rotationAngle);
         }
-    transform.SetTranslation(DVec3d::FromStartEnd(source.origin, target.origin));
-
     return transform;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus GeometryUtils::TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane)
+void GeometryUtils::TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane)
     {
     Transform transform = FindTransformBetweenPlanes(DPlane3d::FromOriginAndNormal(DPoint3d::From(0, 0, 0),
                                                                     DVec3d::From(0, 0, 1)), /*XY plane*/
                                                      plane);
     transform.Multiply(transformed, vector);
+    }
 
-    return BentleyStatus::SUCCESS;
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryUtils::RotationTransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane)
+    {
+    Transform transform = FindRotationTransformBetweenPlanes(DPlane3d::FromOriginAndNormal(plane.origin,
+                                                                                           DVec3d::From(0, 0, 1)), /*XY plane*/
+                                                             plane);
+    transform.Multiply(transformed, vector);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas              01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryUtils::RotateLineEndPointToAngleOnPlane(DPoint3dR rotatedEndPoint, DPoint3dCR fixedEndPoint, double angle, DPlane3d plane)
+    {
+    DVec3d lineVec = DVec3d::From(rotatedEndPoint.Distance(fixedEndPoint), 0, 0);
+    lineVec.RotateXY(angle);
+
+    GeometryUtils::RotationTransformVectorOnPlane(lineVec, lineVec, plane);
+
+    rotatedEndPoint = fixedEndPoint;
+    rotatedEndPoint.Add(lineVec);
+
     }
 
 END_BUILDING_SHARED_NAMESPACE

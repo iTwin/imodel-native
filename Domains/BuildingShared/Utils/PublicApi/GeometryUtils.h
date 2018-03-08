@@ -31,6 +31,19 @@ public:
     
     BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d>   ExtractSingleCurvePoints (CurveVectorPtr curve);
     
+
+    //! transforms a curvevector onto zero plane
+    //! @param[in] planar curvevector
+    //! @return profile transformed on zero plane
+    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr    GetProfileOnZeroPlane (CurveVectorCR profile);
+
+    //! transforms a curvevector onto zero plane
+    //! @param[in]  solid  solid to extract top/bottom profiles from
+    //! @param[out] bottomProfile bottom profile transformed onto zero plane
+    //! @param[out] topProfile top profile transformed onto zero plane
+    //! @return BSISUCCESS if profiles were computed
+    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus     GetTopBottomProfilesOnZeroPlane(Dgn::IBRepEntityCR solid, CurveVectorPtr& bottomProfile, CurveVectorPtr& topProfile);
+
     //! Forms points into a rectangle by a bounding point
     //! @params[out] point1, point2, point3, point4 points forming a rectangle
     //! @param[in] boundingPoint point in rectangle width line center that rectangle should adjust to
@@ -333,11 +346,11 @@ public:
 
 
     //! slice the body by Z elevations
-    //! @param[out] slicedGeometry      solid slices paired with corresponding bottom planes of the cuts
+    //! @param[out] slicedGeometry      solid slices paired with corresponding z elevations of the cuts
     //! @param[in]  geometryToSlice     geometry to slice
     //! @param[in]  zElevationVector    vector of Z elevations to slice at
     //! @return                         solid slices paired with corresponding bottom planes of the cuts
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus    SliceBodyByZElevations (bvector<bpair<Dgn::IBRepEntityPtr, Dgn::IBRepEntityPtr>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice, bvector<double>& zElevationVector);
+    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus    SliceBodyByZElevations (bvector<bpair<Dgn::IBRepEntityPtr, double>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice, bvector<double>& zElevationVector);
     
     //! Adds vertex to a curve vector.
     //! @param[in/out] cv     CurveVector to add the vertex to
@@ -391,11 +404,23 @@ public:
     //! Finds transform from one plane to another
     BUILDINGSHAREDUTILS_EXPORT static Transform FindTransformBetweenPlanes(DPlane3d const& source, DPlane3d const& target);
 
+    //! Finds rotation transform from one plane to another
+    BUILDINGSHAREDUTILS_EXPORT static Transform FindRotationTransformBetweenPlanes(DPlane3d const & source, DPlane3d const & target);
+
     //! Transforms vector from XY plane onto a given one
     //! @param[out] transformed transformed vector
     //! @param[in]  vector      vector to transform
     //! @param[in]  plane       plane to transform vector on
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane);
+    BUILDINGSHAREDUTILS_EXPORT static void TransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane);
+
+    //! Transforms vector from XY plane onto a given one using only rotation
+    //! @param[out] transformed transformed vector
+    //! @param[in]  vector      vector to transform
+    //! @param[in]  plane       plane to transform vector on
+    BUILDINGSHAREDUTILS_EXPORT static void RotationTransformVectorOnPlane(DVec3dR transformed, DVec3d vector, DPlane3d plane);
+
+    //! Rotates line point around plane normal by given angle
+    BUILDINGSHAREDUTILS_EXPORT static void RotateLineEndPointToAngleOnPlane(DPoint3dR rotatedEndPoint, DPoint3dCR fixedEndPoint, double angle, DPlane3d plane);
 };
 
 END_BUILDING_SHARED_NAMESPACE

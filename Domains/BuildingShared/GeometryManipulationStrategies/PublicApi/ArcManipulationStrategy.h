@@ -30,13 +30,19 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         static const size_t s_centerIndex = 2;
         static const size_t s_endIndex = 3;
 
+        bool m_useSweep;
+        double m_sweep;
+
+        bool m_useRadius;
+        double m_radius;
+
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcManipulationStrategy();
 
     protected:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ICurvePrimitivePtr _FinishPrimitive() const override;
 
         virtual CurvePrimitivePlacementStrategyPtr _CreateDefaultPlacementStrategy() override;
-        virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementStrategyType strategyType) override;
+        virtual ArcPlacementStrategyPtr _CreateArcPlacementStrategy(ArcPlacementMethod method) override;
 
 
         virtual void _OnKeyPointsChanged() override;
@@ -47,11 +53,28 @@ struct ArcManipulationStrategy : public EllipseManipulationStrategy
         virtual bool _IsSingleKeyPointLeft() const override;
         virtual DPoint3d _GetLastKeyPoint() const override;
         virtual DPoint3d _GetFirstKeyPoint() const override;
+        virtual void _Clear() override;
 
         CurvePrimitiveManipulationStrategyPtr _Clone() const override;
 
+        virtual void _SetProperty(Utf8CP key, bool const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, bool& value) const override;
+
+        virtual void _SetProperty(Utf8CP key, int const& value) override;
+        virtual void _SetProperty(Utf8CP key, double const& value) override;
+        virtual BentleyStatus _TryGetProperty(Utf8CP key, double& value) const override;
+
+        using T_Super::_SetProperty;
+        using T_Super::_TryGetProperty;
+
     public:
+        static constexpr Utf8CP prop_UseSweep() { return "UseSweep"; }
+        static constexpr Utf8CP prop_Sweep() { return "Sweep"; }
+        static constexpr Utf8CP prop_UseRadius() { return "UseRadius"; }
+        static constexpr Utf8CP prop_Radius() { return "Radius"; }
+
         static ArcManipulationStrategyPtr Create() { return new ArcManipulationStrategy(); }
+        static ArcManipulationStrategyPtr Create(ICurvePrimitiveCR arc);
 
         KEY_POINT_ACCESSOR_DECL(Start, s_startIndex)
         KEY_POINT_ACCESSOR_DECL(Center, s_centerIndex)

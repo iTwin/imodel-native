@@ -10,37 +10,98 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
+// @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-ArcPlacementStrategy::ArcPlacementStrategy
+void IArcPlacementMethod::AddKeyPoint
 (
-    ArcManipulationStrategyP manipulationStrategy
+    DPoint3dCR newKeyPoint
 )
-    : T_Super()
-    , m_manipulationStrategy(manipulationStrategy)
     {
-    BeAssert(m_manipulationStrategy.IsValid());
+    _AddKeyPoint(newKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementMethod::PopKeyPoint()
+    {
+    _PopKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementMethod::AddDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint
+)
+    {
+    _AddDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementMethod::AddDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    _AddDynamicKeyPoints(newDynamicKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementMethod IArcPlacementMethod::GetMethod() const
+    {
+    return _GetMethod();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> IArcPlacementMethod::GetKeyPoints() const
+    {
+    return _GetKeyPoints();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
-ArcPlacementStrategyPtr ArcPlacementStrategy::Create
+ArcPlacementStrategy::ArcPlacementStrategy
 (
-    ArcPlacementStrategyType strategyType
+    ArcManipulationStrategyR manipulationStrategy,
+    IArcPlacementMethodR placementMethod
+)
+    : T_Super()
+    , m_manipulationStrategy(&manipulationStrategy)
+    , m_placementMethod(&placementMethod)
+    {
+    BeAssert(m_manipulationStrategy.IsValid());
+    BeAssert(m_placementMethod.IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+IArcPlacementMethodPtr ArcPlacementStrategy::CreatePlacementMethod
+(
+    ArcPlacementMethod method,
+    ArcManipulationStrategyR manipulationStrategy
 )
     {
-    switch (strategyType)
+    switch (method)
         {
-        case ArcPlacementStrategyType::CenterStart :
-            return ArcCenterStartPlacementStrategy::Create();
-        case ArcPlacementStrategyType::StartCenter :
-            return ArcStartCenterPlacementStrategy::Create();
-        case ArcPlacementStrategyType::StartMidEnd :
-            return ArcStartMidEndPlacementStrategy::Create();
-        case ArcPlacementStrategyType::StartEndMid :
-            return ArcStartEndMidPlacementStrategy::Create();
-        default :
+        case ArcPlacementMethod::CenterStart:
+            return ArcCenterStartPlacementMethod::Create(manipulationStrategy);
+        case ArcPlacementMethod::StartCenter:
+            return ArcStartCenterPlacementMethod::Create(manipulationStrategy);
+        case ArcPlacementMethod::StartMidEnd:
+            return ArcStartMidEndPlacementMethod::Create(manipulationStrategy);
+        case ArcPlacementMethod::StartEndMid:
+            return ArcStartEndMidPlacementMethod::Create(manipulationStrategy);
+        default:
             BeAssert(false);
             return nullptr;
         }
@@ -51,16 +112,33 @@ ArcPlacementStrategyPtr ArcPlacementStrategy::Create
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementStrategyPtr ArcPlacementStrategy::Create
 (
-    ArcPlacementStrategyType strategyType, 
+    ArcPlacementMethod method
+)
+    {
+    ArcManipulationStrategyPtr manipulationStrategy = ArcManipulationStrategy::Create();
+    IArcPlacementMethodPtr placementMethod = CreatePlacementMethod(method, *manipulationStrategy);
+
+    if (manipulationStrategy.IsNull() || placementMethod.IsNull())
+        return nullptr;
+
+    return new ArcPlacementStrategy(*manipulationStrategy, *placementMethod);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                01/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementStrategyPtr ArcPlacementStrategy::Create
+(
+    ArcPlacementMethod method, 
     ArcManipulationStrategyR manipulationStrategy
 )
     {
-    ArcPlacementStrategyPtr placementStrategy = Create(strategyType);
-    if (placementStrategy.IsNull())
+    IArcPlacementMethodPtr placementMethod = CreatePlacementMethod(method, manipulationStrategy);
+    
+    if (placementMethod.IsNull())
         return nullptr;
 
-    placementStrategy->m_manipulationStrategy = &manipulationStrategy;
-    return placementStrategy;
+    return new ArcPlacementStrategy(manipulationStrategy, *placementMethod);
     }
 
 //--------------------------------------------------------------------------------------
@@ -90,4 +168,120 @@ DPoint3d ArcPlacementStrategy::CalculateVec90KeyPoint
     DPoint3d vec90Point = center;
     vec90Point.Add(vec90);
     return vec90Point;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_AddKeyPoint
+(
+    DPoint3dCR newKeyPoint
+)
+    {
+    m_placementMethod->AddKeyPoint(newKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_PopKeyPoint()
+    {
+    m_placementMethod->PopKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_AddDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint
+)
+    {
+    m_placementMethod->AddDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::_AddDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    m_placementMethod->AddDynamicKeyPoints(newDynamicKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetPlacementMethod
+(
+    ArcPlacementMethod method
+)
+    {
+    if (m_placementMethod->GetMethod() == method)
+        return;
+
+    m_manipulationStrategy->Clear();
+    m_placementMethod = CreatePlacementMethod(method, *m_manipulationStrategy);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementMethod ArcPlacementStrategy::GetPlacementMethod() const
+    {
+    return m_placementMethod->GetMethod();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> ArcPlacementStrategy::_GetKeyPoints() const
+    {
+    return m_placementMethod->GetKeyPoints();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetUseSweep
+(
+    bool useSweep
+)
+    {
+    _SetProperty(prop_UseSweep(), useSweep);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetSweep
+(
+    double sweep
+)
+    {
+    _SetProperty(prop_Sweep(), sweep);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetUseRadius
+(
+    bool useRadius
+)
+    {
+    _SetProperty(prop_UseRadius(), useRadius);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ArcPlacementStrategy::SetRadius
+(
+    double radius
+)
+    {
+    _SetProperty(prop_Radius(), radius);
     }

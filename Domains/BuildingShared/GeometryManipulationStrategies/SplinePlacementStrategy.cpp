@@ -10,8 +10,15 @@
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 /////////////////////////////////////////////////////////////////////////////////////////
-// SplineControlPointsPlacementStrategy
+// SplinePlacementStrategy
 /////////////////////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+SplinePlacementStrategyType SplinePlacementStrategy::GetType() const
+    {
+    return _GetType();
+    }
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SplineControlPointsPlacementStrategy

@@ -83,6 +83,9 @@ void CurvePrimitiveManipulationStrategy::_ReplaceKeyPoint
 //---------------+---------------+---------------+---------------+---------------+------
 void CurvePrimitiveManipulationStrategy::_PopKeyPoint()
     {
+    if (m_keyPoints.empty())
+        return;
+
     m_keyPoints.pop_back();
     }
 
@@ -269,7 +272,6 @@ void CurvePrimitiveManipulationStrategy::_UpdateDynamicKeyPoint
         return;
         }
 
-    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     m_keyPointsWithDynamicKeyPoint[index] = newDynamicKeyPoint;
     m_dynamicKeyPointSet = true;
     }
@@ -304,6 +306,7 @@ void CurvePrimitiveManipulationStrategy::_UpdateDynamicKeyPoints
 void CurvePrimitiveManipulationStrategy::_ResetDynamicKeyPoint()
     {
     m_dynamicKeyPointSet = false;
+    m_keyPointsWithDynamicKeyPoint = m_keyPoints;
     }
 
 //--------------------------------------------------------------------------------------
@@ -413,10 +416,10 @@ LinePlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateLinePlacement
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementStrategyPtr CurvePrimitiveManipulationStrategy::CreateArcPlacementStrategy
 (
-    ArcPlacementStrategyType strategyType
+    ArcPlacementMethod method
 )
     {
-    return _CreateArcPlacementStrategy(strategyType);
+    return _CreateArcPlacementStrategy(method);
     }
 
 //--------------------------------------------------------------------------------------
@@ -454,5 +457,9 @@ bool CurvePrimitiveManipulationStrategy::IsContinious() const
 //---------------+---------------+---------------+---------------+---------------+------
 IGeometryPtr CurvePrimitiveManipulationStrategy::_FinishGeometry() const
     {
-    return IGeometry::Create(_FinishPrimitive());
+    ICurvePrimitivePtr primitive = _FinishPrimitive();
+    if (primitive.IsNull())
+        return nullptr;
+
+    return IGeometry::Create(primitive);
     }

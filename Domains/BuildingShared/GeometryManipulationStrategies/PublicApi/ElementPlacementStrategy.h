@@ -26,8 +26,8 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         virtual ElementManipulationStrategyCR _GetElementManipulationStrategy() const = 0;
         virtual ElementManipulationStrategyR _GetElementManipulationStrategyForEdit() = 0;
 
-        virtual GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const = 0;
-        virtual GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() = 0;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategyCPtr TryGetGeometryPlacementStrategy() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategyPtr TryGetGeometryPlacementStrategyForEdit();
 
 		virtual Utf8String _GetMessage() const = 0;
 		virtual void _AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const = 0;
@@ -45,6 +45,7 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override;
 
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement();
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model);
 
         EPS_PROPERTY_OVERRIDE(bool)
@@ -52,14 +53,17 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         EPS_PROPERTY_OVERRIDE(double)
         EPS_PROPERTY_OVERRIDE(DVec3d)
         EPS_PROPERTY_OVERRIDE(DPlane3d)
+        EPS_PROPERTY_OVERRIDE(RotMatrix)
         EPS_PROPERTY_OVERRIDE(Dgn::DgnElementId)
-        EPS_PROPERTY_OVERRIDE(Dgn::DgnElement)
+        EPS_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
+        EPS_PROPERTY_OVERRIDE(Dgn::ColorDef)
         EPS_PROPERTY_OVERRIDE(Utf8String)
         EPS_PROPERTY_OVERRIDE(bvector<double>)
         EPS_PROPERTY_OVERRIDE(bvector<Utf8String>)
         EPS_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
 
     public:
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement();
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const;
 		GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Utf8String GetMessage() const;

@@ -12,6 +12,10 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
+struct ArcPlacementStrategyTestFixture : BuildingSharedTestFixtureBase
+    {
+    };
+
 struct ArcStartCenterPlacementStrategyTests : public BuildingSharedTestFixtureBase
     {
     };
@@ -54,6 +58,29 @@ void assertKeyPoints(ArcManipulationStrategyCR sut, bool startSet, bool endSet, 
 END_BUILDING_SHARED_NAMESPACE
 USING_NAMESPACE_BUILDING_SHARED
 
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcPlacementStrategyTestFixture, SetPlacementMethod_ClearsKeyPoints)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
+    ASSERT_TRUE(sut.IsValid());
+    ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
+    ASSERT_EQ(ArcPlacementMethod::StartMidEnd, sut->GetPlacementMethod());
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,1,0});
+    assertKeyPoints(manipSut, true, false, true, false, "Before SetPlacementMethod");
+
+    sut->SetPlacementMethod(ArcPlacementMethod::StartMidEnd);
+    ASSERT_EQ(ArcPlacementMethod::StartMidEnd, sut->GetPlacementMethod());
+    assertKeyPoints(manipSut, true, false, true, false, "Setting the same PlacementMethod does nothing");
+
+    sut->SetPlacementMethod(ArcPlacementMethod::StartEndMid);
+    ASSERT_EQ(ArcPlacementMethod::StartEndMid, sut->GetPlacementMethod());
+    assertKeyPoints(manipSut, false, false, false, false, "Setting new PlacementMethod clears KeyPoints");
+    }
+
 #pragma region Arc_StartCenter_PlacementStrategy
 
 //--------------------------------------------------------------------------------------
@@ -61,7 +88,7 @@ USING_NAMESPACE_BUILDING_SHARED
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, KeyPointManipulation)
     {
-    ArcPlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
@@ -133,7 +160,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, KeyPointManipulation)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CreatesCircularArc)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    CurvePrimitivePlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -153,7 +180,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CreatesCircularArc)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_SweepDeterminedByThe3rdPoint_CCW)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    CurvePrimitivePlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -175,7 +202,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_SweepDeterminedByTh
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_SweepDeterminedByThe3rdPoint_CW)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    CurvePrimitivePlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -197,7 +224,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_SweepDeterminedByTh
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CanSweepMoreThanPI)
     {
-    CurvePrimitivePlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    CurvePrimitivePlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -224,7 +251,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_CanSweepMoreThanPI)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInline_EndBetweenStartCenter)
     {
-    ArcPlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -258,7 +285,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInline_HalfSweepCCW)
     {
-    ArcPlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     sut->AddKeyPoint({2,0,0});
@@ -291,7 +318,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInline_HalfSweepCW)
     {
-    ArcPlacementStrategyPtr sut = ArcStartCenterPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
     ASSERT_TRUE(sut.IsValid());
 
     DVec3d normal;
@@ -321,6 +348,46 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
     ASSERT_DOUBLE_EQ(arc.sweep, -Angle::Pi());
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartCenterPlacementStrategyTests, FixedSweep)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartCenter);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    bool useSweep;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_UseSweep(), useSweep));
+    ASSERT_FALSE(useSweep);
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_UseSweep(), useSweep));
+    ASSERT_TRUE(useSweep);
+
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+
+    ASSERT_FALSE(sut->IsComplete());
+    sut->AddKeyPoint({1,0,0});
+    sut->AddKeyPoint({0,0,0});
+    ASSERT_TRUE(sut->IsComplete());
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+
+    ASSERT_TRUE(arc.center.AlmostEqual({0,0,0}));
+    ASSERT_TRUE(arc.IsCircular());
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 1);
+    DVec3d actualNormal = DVec3d::FromCrossProduct(arc.vector0, arc.vector90);
+    actualNormal.Normalize();
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
+    }
+
 #pragma endregion
 
 #pragma region Arc_CenterStart_PlacementStrategy
@@ -330,7 +397,7 @@ TEST_F(ArcStartCenterPlacementStrategyTests, FinishPrimitive_StartCenterEndInlin
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcCenterStartPlacementStrategyTests, KeyPointManipulation)
     {
-    ArcPlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
@@ -382,7 +449,7 @@ TEST_F(ArcCenterStartPlacementStrategyTests, KeyPointManipulation)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededForPrimitiveToBeValid)
     {
-    ArcPlacementStrategyPtr sut = ArcCenterStartPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
     ASSERT_TRUE(sut.IsValid());
 
     ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 0 key points";
@@ -408,6 +475,96 @@ TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededFor
     ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, FixedSweep)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    bool useSweep;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_UseSweep(), useSweep));
+    ASSERT_FALSE(useSweep);
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_UseSweep(), useSweep));
+    ASSERT_TRUE(useSweep);
+
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+
+    ASSERT_FALSE(sut->IsComplete());
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,0,0});
+    ASSERT_TRUE(sut->IsComplete());
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+
+    ASSERT_TRUE(arc.center.AlmostEqual({0,0,0}));
+    ASSERT_TRUE(arc.IsCircular());
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 1);
+    DVec3d actualNormal = DVec3d::FromCrossProduct(arc.vector0, arc.vector90);
+    actualNormal.Normalize();
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, AddDynamicKeyPoints_FixedSweep)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+
+    ASSERT_FALSE(sut->IsComplete());
+    sut->AddDynamicKeyPoints({{0,0,0},{1,0,0}});
+    ASSERT_TRUE(sut->IsComplete());
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+
+    ASSERT_TRUE(arc.center.AlmostEqual({0,0,0}));
+    ASSERT_TRUE(arc.IsCircular());
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 1);
+    DVec3d actualNormal = DVec3d::FromCrossProduct(arc.vector0, arc.vector90);
+    actualNormal.Normalize();
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcCenterStartPlacementStrategyTests, FinishGeometry_IsNullWhen0Radius)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::CenterStart);
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), DVec3d::From(0, 0, 1));
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddDynamicKeyPoint({0,0,0});
+    ASSERT_TRUE(sut->FinishGeometry().IsNull());
+    }
+
 #pragma endregion
 
 #pragma region Arc_StartMidEnd_PlacementStrategy
@@ -417,7 +574,7 @@ TEST_F(ArcCenterStartPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededFor
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartMidEndPlacementStrategyTests, KeyPointManipulation)
     {
-    ArcPlacementStrategyPtr sut = ArcStartMidEndPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
@@ -469,7 +626,7 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, KeyPointManipulation)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededForPrimitiveToBeValid)
     {
-    ArcPlacementStrategyPtr sut = ArcStartMidEndPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
     ASSERT_TRUE(sut.IsValid());
 
     ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 0 key points";
@@ -495,6 +652,47 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededFor
     ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartMidEndPlacementStrategyTests, FixedSweep)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartMidEnd);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    bool useSweep;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_UseSweep(), useSweep));
+    ASSERT_FALSE(useSweep);
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_UseSweep(), useSweep));
+    ASSERT_TRUE(useSweep);
+
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+
+    ASSERT_FALSE(sut->IsComplete());
+    sut->AddKeyPoint({2,0,0});
+    sut->AddKeyPoint({1,1,0});
+    sut->AddKeyPoint({0,0,0});
+    ASSERT_TRUE(sut->IsComplete());
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+
+    ASSERT_TRUE(arc.center.AlmostEqual({1,0,0}));
+    ASSERT_TRUE(arc.IsCircular());
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 1);
+    DVec3d actualNormal = DVec3d::FromCrossProduct(arc.vector0, arc.vector90);
+    actualNormal.Normalize();
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
+    }
+
 #pragma endregion
 
 #pragma region Arc_StartEndMid_PlacementStrategy
@@ -504,7 +702,7 @@ TEST_F(ArcStartMidEndPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededFor
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartEndMidPlacementStrategyTests, KeyPointManipulation)
     {
-    ArcPlacementStrategyPtr sut = ArcStartEndMidPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartEndMid);
     ASSERT_TRUE(sut.IsValid());
     ArcManipulationStrategyCR manipSut = dynamic_cast<ArcManipulationStrategyCR>(sut->GetManipulationStrategy());
 
@@ -556,7 +754,7 @@ TEST_F(ArcStartEndMidPlacementStrategyTests, KeyPointManipulation)
 //---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ArcStartEndMidPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededForPrimitiveToBeValid)
     {
-    ArcPlacementStrategyPtr sut = ArcStartEndMidPlacementStrategy::Create();
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartEndMid);
     ASSERT_TRUE(sut.IsValid());
 
     ASSERT_FALSE(sut->FinishPrimitive().IsValid()) << "IsValid with 0 key points";
@@ -580,6 +778,47 @@ TEST_F(ArcStartEndMidPlacementStrategyTests, FinishPrimitive_3KeyPointsNeededFor
     ASSERT_DOUBLE_EQ(actualArc.sweep, expectedArc.sweep);
     ASSERT_DOUBLE_EQ(actualArc.start, expectedArc.start);
     ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ArcStartEndMidPlacementStrategyTests, FixedSweep)
+    {
+    ArcPlacementStrategyPtr sut = ArcPlacementStrategy::Create(ArcPlacementMethod::StartEndMid);
+    ASSERT_TRUE(sut.IsValid());
+
+    DVec3d normal;
+    DVec3d expectedNormal = DVec3d::From(0, 0, 1);
+    sut->SetProperty(ArcPlacementStrategy::prop_Normal(), expectedNormal);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_Normal(), normal));
+
+    bool useSweep;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_UseSweep(), useSweep));
+    ASSERT_FALSE(useSweep);
+    sut->SetProperty(ArcPlacementStrategy::prop_UseSweep(), true);
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(ArcPlacementStrategy::prop_UseSweep(), useSweep));
+    ASSERT_TRUE(useSweep);
+
+    sut->SetProperty(ArcPlacementStrategy::prop_Sweep(), Angle::TwoPi());
+
+    ASSERT_FALSE(sut->IsComplete());
+    sut->AddKeyPoint({2,0,0});
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,1,0});
+    ASSERT_TRUE(sut->IsComplete());
+    ICurvePrimitivePtr arcPrimitive = sut->FinishPrimitive();
+    ASSERT_TRUE(arcPrimitive.IsValid());
+    DEllipse3d arc;
+    ASSERT_TRUE(arcPrimitive->TryGetArc(arc));
+
+    ASSERT_TRUE(arc.center.AlmostEqual({1,0,0}));
+    ASSERT_TRUE(arc.IsCircular());
+    ASSERT_DOUBLE_EQ(arc.vector0.Magnitude(), 1);
+    DVec3d actualNormal = DVec3d::FromCrossProduct(arc.vector0, arc.vector90);
+    actualNormal.Normalize();
+    ASSERT_TRUE(actualNormal.AlmostEqual(expectedNormal));
+    ASSERT_DOUBLE_EQ(arc.sweep, Angle::TwoPi());
     }
 
 #pragma endregion
