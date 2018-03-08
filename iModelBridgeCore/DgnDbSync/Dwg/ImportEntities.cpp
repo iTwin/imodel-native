@@ -2187,8 +2187,12 @@ BentleyStatus   CreateGeometryPart (BuilderInfoR builderInfo, DRange3dR partRang
     if (!geomBuilder.IsValid())
         return  BSIERROR;
 
+    auto partsModel = m_createParams.GetGeometryPartsModel ();
+    if (!partsModel.IsValid())  // should not occur!
+        partsModel = &db.GetDictionaryModel ();
+
     // create a new geometry part:
-    DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create (db, partCode);
+    DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create (*partsModel, partCode.GetValueUtf8());
     if (!geomPart.IsValid())
         return  BSIERROR;
 
@@ -2208,7 +2212,7 @@ BentleyStatus   CreateGeometryPart (BuilderInfoR builderInfo, DRange3dR partRang
 
     m_status = BSIERROR;
 
-    builderInfo.m_partId = DgnGeometryPart::QueryGeometryPartId (db, partCode);
+    builderInfo.m_partId = DgnGeometryPart::QueryGeometryPartId (*partsModel, partCode.GetValueUtf8());
     if (!builderInfo.m_partId.IsValid())
         {
         // insert the part to DgnDb, and append its ID to our output builder:
@@ -2883,6 +2887,9 @@ BentleyStatus   DwgImporter::_GetElementCreateParams (DwgImporter::ElementCreate
     // use entity's database if it's in an xref file; otherwise use current database:
     if (nullptr != xrefDwg && xrefDwg == m_dwgdb.get())
         xrefDwg = nullptr;
+
+    // GeometryParts 
+    params.m_geometryPartsModel = this->GetGeometryPartsModel ();
 
     if (model.Is3d())
         {

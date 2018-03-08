@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportLinetypes.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -15,6 +15,8 @@ USING_NAMESPACE_DGNDBSYNC_DWG
 #define PREFIX_LinePoint        "LP-"
 #define PREFIX_PointSymbol      "Symbol"
 
+
+BEGIN_DGNDBSYNC_DWG_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          08/16
@@ -342,8 +344,17 @@ LineStyleStatus LineStyleFactory::CreatePointSymbol (LsComponentId& outId, uint3
 
     DgnDbR      dgndb = m_importer.GetDgnDb ();
 
+    // place parts in our partitioned model
+    auto partsModel = m_importer.GetGeometryPartsModel ();
+    if (!partsModel.IsValid())  // should not occur!
+        partsModel = &dgndb.GetDictionaryModel ();
+
+    auto ltypeId = m_linetype->GetObjectId().ToUInt64 ();
+    auto fileId = m_importer.GetDwgFileId (m_importer.GetDwgDb(), false);
+    Utf8PrintfString codevalue("%s-%d:%x-%d", m_linetypeName.c_str(), fileId, ltypeId, segNo);
+
     // build geometry part
-    DgnGeometryPartPtr      geometryPart = DgnGeometryPart::Create (dgndb);
+    DgnGeometryPartPtr  geometryPart = DgnGeometryPart::Create (*partsModel, codevalue);
     if (BSISUCCESS != builder->Finish(*geometryPart))
         return LINESTYLE_STATUS_ConvertingComponent;
 
@@ -638,3 +649,4 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
     return  BSISUCCESS;
     }
 
+END_DGNDBSYNC_DWG_NAMESPACE

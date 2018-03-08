@@ -241,6 +241,7 @@ struct DwgImporter
     friend struct ViewportFactory;
     friend struct AttributeFactory;
     friend struct MaterialFactory;
+    friend struct LineStyleFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
@@ -488,6 +489,7 @@ public:
     struct ElementCreateParams
         {
         DgnModelR                       m_targetModel;
+        DefinitionModelPtr              m_geometryPartsModel;
         DgnCategoryId                   m_categoryId;
         DgnSubCategoryId                m_subCategoryId;
         DgnCode                         m_elementCode;
@@ -498,6 +500,7 @@ public:
 
         DgnModelCR          GetModel () { return m_targetModel; }
         DgnModelR           GetModelR () { return m_targetModel; }
+        DefinitionModelPtr  GetGeometryPartsModel () { return m_geometryPartsModel; }
         DgnCategoryId       GetCategoryId () { return m_categoryId; }
         DgnSubCategoryId    GetSubCategoryId () { return m_subCategoryId; }
         TransformR          GetTransformR () { return m_transform; }
@@ -962,7 +965,7 @@ protected:
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
-    DgnModelId                  m_geometryPartsModelId;
+    DefinitionModelPtr          m_geometryPartsModel;
     T_GeometryBuilderList       m_sharedGeometryPartList;
     T_PresentationRuleContents  m_presentationRuleContents;
 
@@ -1050,7 +1053,7 @@ protected:
     ResolvedModelMapping                GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
     //! Create the root model from the modelspace block if importing, or retrieve it from the syncInfo if updating.
     ResolvedModelMapping                GetOrCreateRootModel (bool updating);
-    //! Partition the spatial subject and create a PhysicalModel dedicated for GeometryParts
+    //! Partition the parent subject and create a DefinitionModel dedicated for GeometryParts
     BentleyStatus                       GetOrCreateGeometryPartsModel ();
     ResolvedModelMapping                GetRootModel () const { return  m_rootDwgModelMap; }
     ResolvedModelMapping                GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
@@ -1215,6 +1218,8 @@ public:
     DgnSubCategoryId                    InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
     T_GeometryBuilderList&              GetSharedPartListR () { return m_sharedGeometryPartList; }
     T_GeometryBuilderList const&        GetSharedPartList () const { return m_sharedGeometryPartList; }
+    //! Get the DefinitionModel that stores GeometryParts
+    DefinitionModelPtr                  GetGeometryPartsModel () { return m_geometryPartsModel; }
 
     //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
     DGNDBSYNC_EXPORT BentleyStatus      MakeSchemaChanges ();
