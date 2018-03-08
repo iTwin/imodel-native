@@ -1536,9 +1536,6 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    if (sourceKOQ.GetPersistenceUnit().HasProblem())
-        return ECObjectsStatus::Error;
-
     ECObjectsStatus status;
     status = CreateKindOfQuantity(targetKOQ, sourceKOQ.GetName().c_str());
     if (ECObjectsStatus::Success != status)
@@ -1552,14 +1549,17 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
     ECSchemaR copyFromSchema = sourceKOQ.GetSchemaR();
 
     ECUnitCP persistUnit = ((ECUnitCP)sourceKOQ.GetPersistenceUnit().GetUnit());
-    ECSchemaCR persistUnitSchema = persistUnit->GetSchema();
-    SchemaKey key = SchemaKey(persistUnitSchema.GetName().c_str(), persistUnitSchema.GetVersionRead(), persistUnitSchema.GetVersionWrite(), persistUnitSchema.GetVersionMinor());
-    ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
+    if (nullptr != persistUnit)
+        {
+        ECSchemaCR persistUnitSchema = persistUnit->GetSchema();
+        SchemaKey key = SchemaKey(persistUnitSchema.GetName().c_str(), persistUnitSchema.GetVersionRead(), persistUnitSchema.GetVersionWrite(), persistUnitSchema.GetVersionMinor());
+        ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
 
-    if (nullptr != foundSchema)
-        AddReferencedSchema(*foundSchema);
+        if (nullptr != foundSchema)
+            AddReferencedSchema(*foundSchema);
 
-    targetKOQ->SetPersistenceUnit(*persistUnit, *sourceKOQ.GetPersistenceUnit().GetNamedFormatSpec());
+        targetKOQ->SetPersistenceUnit(*persistUnit, *sourceKOQ.GetPersistenceUnit().GetNamedFormatSpec());
+        }
 
     if (sourceKOQ.HasPresentationUnits())
         {

@@ -1413,7 +1413,7 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::ComparePropertyCategory(PropertyCategoryChange& change, PropertyCategoryCR oldValue, PropertyCategoryCR newValue)
     {
-    if (!oldVal.GetName().EqualsIAscii(newVal.GetName()))
+    if (!oldValue.GetName().EqualsIAscii(newValue.GetName()))
         change.GetName().SetValue(oldValue.GetName(), newValue.GetName());
 
     const bool displayLabelDefinedInOld = oldValue.GetIsDisplayLabelDefined();
