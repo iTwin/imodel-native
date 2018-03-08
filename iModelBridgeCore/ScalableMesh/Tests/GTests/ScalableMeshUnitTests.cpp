@@ -801,6 +801,40 @@ TEST_P(ScalableMeshTestWithParams, NodeRayQueryMultipleNode)
     ASSERT_TRUE(nodes.empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQueryByDepth)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    params->SetDirection(direction);
+
+    bvector<IScalableMeshNodePtr> nodes1;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    DPoint3d testPt = DPoint3d::From(range.low.x + range.XLength() / 2, range.low.y + range.YLength() / 2, range.high.z+100);
+    ptr->Query(nodes1, &testPt, NULL, 0, params);
+
+    DRay3d toRange = DRay3d::FromOriginAndVector(testPt, direction);
+    DRange1d fraction;
+    DSegment3d segment;
+    toRange.ClipToRange(nodes1.front()->GetContentExtent(), segment, fraction);
+
+    params->SetDepth(fraction.low * 0.75);
+    ASSERT_EQ(params->GetDepth(), fraction.low * 0.75);
+    bvector<IScalableMeshNodePtr> nodes2;
+    ptr->Query(nodes2, &testPt, NULL, 0, params);
+
+    ASSERT_TRUE(nodes2.empty() || nodes2.front()->GetNodeId() != nodes1.front()->GetNodeId());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     02/2018
