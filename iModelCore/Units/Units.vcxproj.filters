@@ -9,6 +9,9 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
     </Filter>
+    <Filter Include="Make Files">
+      <UniqueIdentifier>{0dcc0a62-195a-4957-8092-ff397c6d5d43}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Header Files\Formatting">
       <UniqueIdentifier>{608c142b-0a41-481f-b32d-9e993189eedd}</UniqueIdentifier>
     </Filter>
@@ -110,6 +113,9 @@
     </ClInclude>
     <ClInclude Include="src\UnitsNativeLogging.h">
       <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h">
+      <Filter>Header Files\Formatting</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

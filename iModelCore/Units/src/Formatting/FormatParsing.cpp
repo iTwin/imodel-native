@@ -1873,21 +1873,6 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
             }
         if(nullptr == m_unit)
             m_unit = BEU::UnitRegistry::Get().LookupUnit(m_name.c_str());
-
-        //if (nullptr == m_unit && nullptr != refUnit)  // last attempt to resolve the unit name
-        //    {
-        //    BEU::PhenomenonCP ph = refUnit->GetPhenomenon();
-        //    Utf8CP un = nullptr;
-        //    if (nullptr != ph)
-        //        {
-        //        if (ph->IsLength())
-        //            un = FormatConstant::SpecialLengthSymbol(m_name);
-        //        else if (ph->IsAngle())
-        //            un = FormatConstant::SpecialAngleSymbol(m_name);
-        //        }
-        //    if (nullptr != un)
-        //        m_unit = BEU::UnitRegistry::Instance().LookupUnitCI(un);
-        //    }
          }
     }
 POP_MSVC_IGNORE

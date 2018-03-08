@@ -323,44 +323,12 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     return FormatSpecialCodes::SignatureInvalid;
     }
 
-const Utf8CP FormatConstant::SpecialAngleSymbol(Utf8String name)
-    {
-    if (name.Equals("^")) return "ARC_DEG";
-    //if (name.Equals(u8"°")) return "ARC_DEG";   
-    if (name.Equals(u8"\xC2\xB0"))return "ARC_DEG";
-    if (name.Equals(u8"\xB0"))return "ARC_DEG";
-    if (name.Equals("'")) return "ARC_MINUTE";
-    if (name.Equals("\"")) return "ARC_SECOND";     
-    return nullptr;
-    }
-
-const Utf8CP FormatConstant::SpecialLengthSymbol(Utf8String name)
-    {
-    if (name.EqualsI("'")) return "FT";
-    if (name.EqualsI("\"")) return "IN";
-    return nullptr;
-    }
-
 
 //===================================================
 //
 // Utils Methods
 //
 //===================================================
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-Utf8String Utils::ShowSignOptionName(ShowSignOption opt)
-    {
-    switch (opt)
-        {
-        case ShowSignOption::OnlyNegative: return FormatConstant::FPN_OnlyNegative();
-        case ShowSignOption::SignAlways: return FormatConstant::FPN_SignAlways();
-        case ShowSignOption::NegativeParentheses: FormatConstant::FPN_NegativeParenths();
-        default: return FormatConstant::FPN_NoSign();
-        }
-    }
-
 ShowSignOption Utils::NameToSignOption(Utf8CP name)
     {
     if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_OnlyNegative().c_str()) == 0) return ShowSignOption::OnlyNegative;
@@ -542,16 +510,6 @@ double Utils::DecimalPrecisionFactor(DecimalPrecision decP, int index = -1)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8CP Utils::GetParameterCategoryName(ParameterCategory parcat)
-    {
-    static Utf8CP CategoryNames[] = { "DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
-        "FractionBar", "AngleFormat", "Alignment", "Separator", "Padding", "Mapping" };
-    return CategoryNames[static_cast<int>(parcat)];
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
 Utf8String  Utils::PresentationTypeName(PresentationType type)
     {
     switch (type)
@@ -609,50 +567,6 @@ FractionBarType Utils::NameToFractionBarType(Utf8CP name)
     if (BeStringUtilities::StricmpAscii(name, "oblique") == 0) return FractionBarType::Oblique;
     if (BeStringUtilities::StricmpAscii(name, "horizontal") == 0) return FractionBarType::Horizontal;
     return FractionBarType::None;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
-    {
-    switch (prec)
-        {
-        case DecimalPrecision::Precision1: return FormatConstant::FPN_Precision1();
-        case DecimalPrecision::Precision2: return FormatConstant::FPN_Precision2();
-        case DecimalPrecision::Precision3: return FormatConstant::FPN_Precision3();
-        case DecimalPrecision::Precision4: return FormatConstant::FPN_Precision4();
-        case DecimalPrecision::Precision5: return FormatConstant::FPN_Precision5();
-        case DecimalPrecision::Precision6: return FormatConstant::FPN_Precision6();
-        case DecimalPrecision::Precision7: return FormatConstant::FPN_Precision7();
-        case DecimalPrecision::Precision8: return FormatConstant::FPN_Precision8();
-        case DecimalPrecision::Precision9: return FormatConstant::FPN_Precision9();
-        case DecimalPrecision::Precision10: return FormatConstant::FPN_Precision10();
-        case DecimalPrecision::Precision11: return FormatConstant::FPN_Precision11();
-        case DecimalPrecision::Precision12: return FormatConstant::FPN_Precision12();
-        default:
-        case DecimalPrecision::Precision0: return FormatConstant::FPN_Precision0();
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
- Utf8String Utils::FractionallPrecisionName(FractionalPrecision prec)
-    {
-    switch (prec)
-        {
-        case FractionalPrecision::Half: return FormatConstant::FPN_FractPrec2();
-        case FractionalPrecision::Quarter: return FormatConstant::FPN_FractPrec4();
-        case FractionalPrecision::Eighth: return FormatConstant::FPN_FractPrec8();
-        case FractionalPrecision::Sixteenth: return FormatConstant::FPN_FractPrec16();
-        case FractionalPrecision::Over_32: return FormatConstant::FPN_FractPrec32();
-        case FractionalPrecision::Over_64: return FormatConstant::FPN_FractPrec64();
-        case FractionalPrecision::Over_128: return FormatConstant::FPN_FractPrec128();
-        case FractionalPrecision::Over_256: return FormatConstant::FPN_FractPrec256();
-        default:
-        case FractionalPrecision::Whole: return FormatConstant::FPN_FractPrec1();
-        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -781,16 +695,6 @@ Utf8CP Utils::HexByte(Utf8Char c, Utf8P buf, size_t bufLen)
     else if (nullptr != buf)
         buf[0] = FormatConstant::EndOfLine();
     return buf;
-    }
-
-size_t Utils::NumberOfUtf8Bytes(size_t code)
-    {
-    if (code < 0x80) return 1;
-    if (code <  0x800) return 2;
-    if (code < 0x10000) return 3;
-    if (code < 0x200000) return 4;
-    if (code < 0x4000000) return 5;
-    return 6;
     }
 
 //----------------------------------------------------------------------------------------
