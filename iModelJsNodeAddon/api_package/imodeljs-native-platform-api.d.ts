@@ -6,13 +6,13 @@ import {
 } from "@bentley/bentleyjs-core";
 
 /* The primary key for the DGN_TABLE_Txns table. */
-interface AddonTxnId {
+interface NativeTxnId {
     readonly _id: string;
 }
 
 /* The signature of a callback that takes two arguments, the first being the error that describes a failed outcome and the second being the data
 returned in a successful outcome. */
-interface IModelJsAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
+interface IModelJsNativeCallback<ERROR_TYPE, SUCCESS_TYPE> {
     /**
      * The signature of a callback.
      * @param error A description of th error, in case of failure.
@@ -22,7 +22,7 @@ interface IModelJsAddonCallback<ERROR_TYPE, SUCCESS_TYPE> {
 }
 
 /* The signature of a callback that expects a single argument, a status code. */
-interface IModelJsAddonStatusOnlyCallback<STATUS_TYPE> {
+interface IModelJsNativeStatusOnlyCallback<STATUS_TYPE> {
     /**
      * The signature of a callback.
      * @param error A description of th error, in case of failure.
@@ -44,7 +44,7 @@ interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
 /**
  * A request to send on to iModelHub.
  */
-declare class AddonBriefcaseManagerResourcesRequest {
+declare class NativeBriefcaseManagerResourcesRequest {
 
     /**
      * Forget the requests.
@@ -59,7 +59,7 @@ declare class AddonBriefcaseManagerResourcesRequest {
 }
 
 /** How to handle a conflict 
-export const enum AddonBriefcaseManagerOnConflict {
+export const enum NativeBriefcaseManagerOnConflict {
     // Reject the incoming change
     RejectIncomingChange = 0,
     // Accept the incoming change
@@ -71,19 +71,19 @@ export const enum AddonBriefcaseManagerOnConflict {
  * The scenario is that the caller has made some changes to the *local* briefcase. Now, the caller is attempting to
  * merge in changes from iModelHub. The properties of this policy specify how to handle the *incoming* changes from iModelHub.
  */
-export interface AddonBriefcaseManagerOnConflictPolicy {
+export interface NativeBriefcaseManagerOnConflictPolicy {
     /** What to do with the incoming change in the case where the same entity was updated locally and also would be updated by the incoming change. */
-    updateVsUpdate: /*AddonBriefcaseManagerOnConflict*/number;
+    updateVsUpdate: /*NativeBriefcaseManagerOnConflict*/number;
     /** What to do with the incoming change in the case where an entity was updated locally and would be deleted by the incoming change. */
-    updateVsDelete: /*AddonBriefcaseManagerOnConflict*/number;
+    updateVsDelete: /*NativeBriefcaseManagerOnConflict*/number;
     /** What to do with the incoming change in the case where an entity was deleted locally and would be updated by the incoming change. */
-    deleteVsUpdate: /*AddonBriefcaseManagerOnConflict*/number;
+    deleteVsUpdate: /*NativeBriefcaseManagerOnConflict*/number;
 }
 
 /**
- * The AddonDgnDb class that is projected by the iModelJs node addon. 
+ * The NativeDgnDb class that is projected by IModelJsNative. 
  */
-declare class AddonDgnDb {
+declare class NativeDgnDb {
     constructor();
 
     /**
@@ -135,7 +135,7 @@ declare class AddonDgnDb {
      * @param changeCachePath The full path to the EC change cache file in the local file system
      * @return non-zero error status if operation failed.
     */
-    createChangeCache(changeCacheFile: AddonECDb, changeCachePath: string): DbResult;
+    createChangeCache(changeCacheFile: NativeECDb, changeCachePath: string): DbResult;
 
     /** Attaches an EC change cache file to this iModel. 
      * @param changeCachePath The full path to the EC change cache file in the local file system
@@ -153,7 +153,7 @@ declare class AddonDgnDb {
      * @param changesetFilePath The full path to the SQLite changeset file in the local file system
      * @return The ChangeSummary ECInstanceId as hex string or error codes in case of failure
     */
-    extractChangeSummary(changeCacheFile: AddonECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
+    extractChangeSummary(changeCacheFile: NativeECDb, changesetFilePath: string): ErrorStatusOrResult<DbResult, string>;
 
     /**
      * Set the briefcase Id of this iModel.
@@ -326,7 +326,7 @@ declare class AddonDgnDb {
     * @param elemId The ID of an existing element or the {modelid, code} properties that specify a new element.
     * @param opcode The operation that will be performed on the element.
     */
-    buildBriefcaseManagerResourcesRequestForElement(req: AddonBriefcaseManagerResourcesRequest, elemId: string, opcode: DbOpcode): RepositoryStatus;
+    buildBriefcaseManagerResourcesRequestForElement(req: NativeBriefcaseManagerResourcesRequest, elemId: string, opcode: DbOpcode): RepositoryStatus;
 
     /**
     * Add the lock, code, and other resource request that would be needed in order to carry out the specified operation.
@@ -334,7 +334,7 @@ declare class AddonDgnDb {
     * @param modelId The ID of a model
     * @param opcode The operation that will be performed on the model.
     */
-    buildBriefcaseManagerResourcesRequestForModel(req: AddonBriefcaseManagerResourcesRequest, modelId: string, opcode: DbOpcode): RepositoryStatus;
+    buildBriefcaseManagerResourcesRequestForModel(req: NativeBriefcaseManagerResourcesRequest, modelId: string, opcode: DbOpcode): RepositoryStatus;
 
     /**
     * Add the resource request that would be needed in order to carry out the specified operation.
@@ -342,7 +342,7 @@ declare class AddonDgnDb {
     * @param relKey Identifies a LinkTableRelationship: {classFullName, id}
     * @param opcode The operation that will be performed on the LinkTableRelationships.
     */
-    buildBriefcaseManagerResourcesRequestForLinkTableRelationship(req: AddonBriefcaseManagerResourcesRequest, relKey: string, opcode: DbOpcode): RepositoryStatus;
+    buildBriefcaseManagerResourcesRequestForLinkTableRelationship(req: NativeBriefcaseManagerResourcesRequest, relKey: string, opcode: DbOpcode): RepositoryStatus;
 
     /**
      * Extract requests from the current bulk operation and append them to reqOut
@@ -350,7 +350,7 @@ declare class AddonDgnDb {
      * @param locks Extract lock requests?
      * @param codes Extract Code requests?
      */
-    extractBulkResourcesRequest(req: AddonBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
+    extractBulkResourcesRequest(req: NativeBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
 
     /**
      * Extract requests from reqIn and append them to reqOut
@@ -359,14 +359,14 @@ declare class AddonDgnDb {
      * @param locks Extract lock requests?
      * @param codes Extract Code requests?
      */
-    extractBriefcaseManagerResourcesRequest(reqOut: AddonBriefcaseManagerResourcesRequest, reqIn: AddonBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
+    extractBriefcaseManagerResourcesRequest(reqOut: NativeBriefcaseManagerResourcesRequest, reqIn: NativeBriefcaseManagerResourcesRequest, locks: boolean, codes: boolean): void;
 
     /**
      * Append reqIn to reqOut
      * @param reqOut The request to be augmented
      * @param reqIn The request to read
      */
-    appendBriefcaseManagerResourcesRequest(reqOut: AddonBriefcaseManagerResourcesRequest, reqIn: AddonBriefcaseManagerResourcesRequest): void;
+    appendBriefcaseManagerResourcesRequest(reqOut: NativeBriefcaseManagerResourcesRequest, reqIn: NativeBriefcaseManagerResourcesRequest): void;
 
     /** Start bulk update mode. Valid only with the pessimistic concurrency control policy */
     briefcaseManagerStartBulkOperation(): RepositoryStatus;
@@ -386,20 +386,20 @@ declare class AddonDgnDb {
      * @param policy The policy to used
      * @return non-zero if the policy could not be set
      */
-    setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: AddonBriefcaseManagerOnConflictPolicy): RepositoryStatus;
+    setBriefcaseManagerOptimisticConcurrencyControlPolicy(conflictPolicy: NativeBriefcaseManagerOnConflictPolicy): RepositoryStatus;
 
     /** Query the ID of the first entry in the local Txn table, if any. */
-    txnManagerQueryFirstTxnId(): AddonTxnId;
+    txnManagerQueryFirstTxnId(): NativeTxnId;
     /** Query the ID of the entry in the local Txn table that comes after the specified Txn, if any. */
-    txnManagerQueryNextTxnId(txnId: AddonTxnId): AddonTxnId;
+    txnManagerQueryNextTxnId(txnId: NativeTxnId): NativeTxnId;
     /** Query the ID of the entry in the local Txn table that comes before the specified Txn, if any. */
-    txnManagerQueryPreviousTxnId(txnId: AddonTxnId): AddonTxnId;
+    txnManagerQueryPreviousTxnId(txnId: NativeTxnId): NativeTxnId;
     /** Query the ID of the most recent entry in the local Txn table, if any. */
-    txnManagerGetCurrentTxnId(): AddonTxnId;
+    txnManagerGetCurrentTxnId(): NativeTxnId;
     /** Get the description of the specified Txn. */
-    txnManagerGetTxnDescription(txnId: AddonTxnId): string;
+    txnManagerGetTxnDescription(txnId: NativeTxnId): string;
     /** Check if the specified TxnId is valid. The above query functions will return an invalid ID to indicate failure. */
-    txnManagerIsTxnIdValid(txnId: AddonTxnId): boolean;
+    txnManagerIsTxnIdValid(txnId: NativeTxnId): boolean;
     /** Check if there are un-saved changes in memory. */
     txnManagerHasUnsavedChanges(): boolean;
 
@@ -414,8 +414,8 @@ declare class AddonDgnDb {
     executeTest(testName: string, params: string): any;
 }
 
-/* The AddonECDb class that is projected by the iModelJs node addon. */
-declare class AddonECDb implements IDisposable {
+/* The NativeECDb class that is projected by IModelJsNative. */
+declare class NativeECDb implements IDisposable {
     constructor();
     /**
     * Create a new ECDb.
@@ -462,8 +462,8 @@ declare class AddonECDb implements IDisposable {
     importSchema(schemaPathName: string): DbResult;
 }
 
-/* The AddonECSqlStatement class that is projected by the iModelJs node addon. */
-declare class AddonECSqlStatement implements IDisposable {
+/* The NativeECSqlStatement class that is projected by IModelJsNative. */
+declare class NativeECSqlStatement implements IDisposable {
     constructor();
 
     /**
@@ -472,7 +472,7 @@ declare class AddonECSqlStatement implements IDisposable {
      * @param ecsql The ECSQL to prepare
      * @return Returns the Zero status in case of success. Non-zero error status in case of failure. The error's message property will contain additional information.
      */
-    prepare(db: AddonDgnDb | AddonECDb, ecsql: string): StatusCodeWithMessage<DbResult>;
+    prepare(db: NativeDgnDb | NativeECDb, ecsql: string): StatusCodeWithMessage<DbResult>;
 
     /** Reset the statement to just before the first row.
      * @return Returns non-zero error status in case of failure.
@@ -487,7 +487,7 @@ declare class AddonECSqlStatement implements IDisposable {
      * @param param Index (1-based) or name (without leading colon) of the parameter.
      * @return Returns the binder for the specified parameter
      */
-    getBinder(param: number | string): AddonECSqlBinder;
+    getBinder(param: number | string): NativeECSqlBinder;
 
     /** Clear the bindings of this statement. See bindValues.
      * @return Returns a non-zero error status in case of failure.
@@ -509,7 +509,7 @@ declare class AddonECSqlStatement implements IDisposable {
     * @param columnIndex Index (0-based) of the column in the ECSQL SELECT clause for which the value is to be retrieved.
     * @return Returns the ECSQL value of the specified column for the current row
     */
-    getValue(columnIndex: number): AddonECSqlValue;
+    getValue(columnIndex: number): NativeECSqlValue;
 
     /** 
     * Get the number of ECSQL columns in the result set after calling step on a SELECT statement.
@@ -518,11 +518,11 @@ declare class AddonECSqlStatement implements IDisposable {
     getColumnCount(): number;
 }
 
-/* The AddonECSqlBinder class that is projected by the iModelJs node addon. */
-declare class AddonECSqlBinder implements IDisposable {
+/* The NativeECSqlBinder class that is projected by IModelJsNative. */
+declare class NativeECSqlBinder implements IDisposable {
     constructor();
 
-    /** Dispose of the AddonECSqlBinder object */
+    /** Dispose of the NativeECSqlBinder object */
     dispose(): void;
 
     /** Binds null to the parameter represented by this binder
@@ -594,23 +594,23 @@ declare class AddonECSqlBinder implements IDisposable {
     /** Gets a binder for the specified member of a struct parameter
     * @return Struct member binder.
     */
-    bindMember(memberName: string): AddonECSqlBinder;
+    bindMember(memberName: string): NativeECSqlBinder;
 
     /** Adds a new array element to the array parameter and returns the binder for the new array element
     * @return Binder for the new array element.
     */
-    addArrayElement(): AddonECSqlBinder;
+    addArrayElement(): NativeECSqlBinder;
 }
 
 
-/* The AddonECSqlColumnInfo class that is projected by the iModelJs node addon. 
+/* The NativeECSqlColumnInfo class that is projected by IModelJsNative. 
    @remarks No need to dispose this is its native counterpart is owned by the IECSqlValue. */
-declare class AddonECSqlColumnInfo {
+declare class NativeECSqlColumnInfo {
     constructor();
 
     /** Gets the data type of the column. 
      *  @returns one of the values of the enum ECSqlValueType values, defined in imodeljs-core/common.
-     *  (enums cannot be defined in the addon)
+     *  (enums cannot be defined in the Native)
      */
     getType(): number;
 
@@ -650,14 +650,14 @@ declare class AddonECSqlColumnInfo {
     getRootClassAlias(): string;
 }
 
-/* The AddonECSqlValue class that is projected by the iModelJs node addon. */
-declare class AddonECSqlValue implements IDisposable {
+/* The NativeECSqlValue class that is projected by IModelJsNative. */
+declare class NativeECSqlValue implements IDisposable {
     constructor();
 
     dispose(): void;
 
     /** Get information about the ECSQL SELECT clause column this value refers to. */
-    getColumnInfo(): AddonECSqlColumnInfo;
+    getColumnInfo(): NativeECSqlColumnInfo;
 
     isNull(): boolean;
     /** Get value as a BLOB, formatted as Base64-encoded string. */
@@ -690,13 +690,13 @@ declare class AddonECSqlValue implements IDisposable {
     getNavigation(): { id: string, relClassName?: string };
 
     /** Get an iterator for iterating the struct members of this struct value. */
-    getStructIterator(): AddonECSqlValueIterator;
+    getStructIterator(): NativeECSqlValueIterator;
     /** Get an iterator for iterating the array elements of this array value. */
-    getArrayIterator(): AddonECSqlValueIterator;
+    getArrayIterator(): NativeECSqlValueIterator;
 }
 
-/* The AddonECSqlValueIterator class that is projected by the iModelJs node addon. */
-declare class AddonECSqlValueIterator implements IDisposable {
+/* The NativeECSqlValueIterator class that is projected by IModelJsNative. */
+declare class NativeECSqlValueIterator implements IDisposable {
     constructor();
     dispose(): void;
     /**
@@ -707,11 +707,11 @@ declare class AddonECSqlValueIterator implements IDisposable {
     /**
      * Get the ECSqlValue the iterator is currently pointing to.
      */
-    getCurrent(): AddonECSqlValue;
+    getCurrent(): NativeECSqlValue;
 }
 
-/* The AddonECPresentationManager class that is projected by the iModelJs node addon. */
-declare class AddonECPresentationManager {
+/* The NativeECPresentationManager class that is projected by IModelJsNative. */
+declare class NativeECPresentationManager {
     constructor();
     /**
      * Handles an ECPresentation manager request
@@ -719,7 +719,7 @@ declare class AddonECPresentationManager {
      * @param options Serialized JSON object that contains parameters for the request
      * @return Serialized JSON response
      */
-    handleRequest(db: AddonDgnDb, options: string): string;
+    handleRequest(db: NativeDgnDb, options: string): string;
     /**
      * Sets up a ruleset locater that looks for rulesets in the specified directories
      * @param directories Ruleset locations
@@ -727,8 +727,8 @@ declare class AddonECPresentationManager {
     setupRulesetDirectories(directories: string[]): void;
 }
 
-/* Some types used by the AddonECSchemaXmlContext class. */
-declare namespace AddonECSchemaXmlContext {
+/* Some types used by the NativeECSchemaXmlContext class. */
+declare namespace NativeECSchemaXmlContext {
     interface SchemaKey {
         name: string;
         readVersion: number;
@@ -749,11 +749,11 @@ declare namespace AddonECSchemaXmlContext {
     }
 }
 
-/* The AddonECSchemaXmlContext class that is projected by the iModelJs node addon. */
-declare class AddonECSchemaXmlContext {
+/* The NativeECSchemaXmlContext class that is projected by IModelJsNative. */
+declare class NativeECSchemaXmlContext {
     constructor();
 
     addSchemaPath(path: string): void;
-    setSchemaLocater(locater: AddonECSchemaXmlContext.SchemaLocaterCallback): void;
+    setSchemaLocater(locater: NativeECSchemaXmlContext.SchemaLocaterCallback): void;
     readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;
 }

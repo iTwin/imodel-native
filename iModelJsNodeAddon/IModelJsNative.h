@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: AddonUtils.h $
+|     $Source: IModelJsNative.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -20,9 +20,9 @@ USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_EC
 
-BEGIN_BENTLEY_DGN_NAMESPACE
+namespace IModelJsNative {
 
-struct AddonUtils
+struct JsInterop
 {
     BE_JSON_NAME(rootSubject)
     BE_JSON_NAME(name)
@@ -134,4 +134,5 @@ struct StrSqlFunction final : ScalarFunction
         static StrSqlFunction& GetSingleton();
     };
 
-END_BENTLEY_DGN_NAMESPACE
+} // namespace IModelJsNative
+

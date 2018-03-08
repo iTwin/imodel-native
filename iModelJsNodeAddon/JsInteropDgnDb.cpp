@@ -1,13 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: AddonUtilsDgnDb.cpp $
+|     $Source: JsInteropDgnDb.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "AddonUtils.h"
+#include "IModelJsNative.h"
 #include <Bentley/BeDirectoryIterator.h>
 #include <DgnPlatform/DgnGeoCoord.h>
+
+using namespace IModelJsNative;
 
 #define SET_IF_NOT_EMPTY_STR(j, str) {if (!(str).empty()) j = str;}
 #define SET_IF_NOT_NULL_STR(j, str) {if (nullptr != (str)) j = str;}
@@ -117,7 +119,7 @@ static void customAttributesToJson(JsonValueR jcas, ECN::IECCustomAttributeConta
         {
         Json::Value jca(Json::objectValue);
         ECN::ECValuesCollection caProps(*ca);
-        AddonUtils::GetECValuesCollectionAsJson(jca[json_properties()], caProps);
+        JsInterop::GetECValuesCollectionAsJson(jca[json_properties()], caProps);
         jca[json_ecclass()] = ca->GetClass().GetFullName();
         jcas.append(jca);
         }
@@ -126,7 +128,7 @@ static void customAttributesToJson(JsonValueR jcas, ECN::IECCustomAttributeConta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-DgnDbStatus AddonUtils::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP ecSchemaName, Utf8CP ecClassName)
+DgnDbStatus JsInterop::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8CP ecSchemaName, Utf8CP ecClassName)
     {
     auto ecclass = dgndb.Schemas().GetClass(ecSchemaName, ecClassName);
     if (nullptr == ecclass)
@@ -196,7 +198,7 @@ DgnDbStatus AddonUtils::GetECClassMetaData(JsonValueR mjson, DgnDbR dgndb, Utf8C
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-DgnDbStatus AddonUtils::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonValueCR inOpts)
+DgnDbStatus JsInterop::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonValueCR inOpts)
     {
     DgnElementCPtr elem;
     DgnElementId eid(inOpts[json_id()].asUInt64());
@@ -228,7 +230,7 @@ DgnDbStatus AddonUtils::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonVal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AddonUtils::InsertElement(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
+DgnDbStatus JsInterop::InsertElement(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
     {
     DgnElement::CreateParams params(dgndb, inJson);
     if (!params.m_classId.IsValid())
@@ -261,7 +263,7 @@ DgnDbStatus AddonUtils::InsertElement(JsonValueR outJson, DgnDbR dgndb, JsonValu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AddonUtils::UpdateElement(DgnDbR dgndb, JsonValueR inJson)
+DgnDbStatus JsInterop::UpdateElement(DgnDbR dgndb, JsonValueR inJson)
     {
     if (!inJson.isMember(DgnElement::json_id()))
         return DgnDbStatus::BadArg;
@@ -286,7 +288,7 @@ DgnDbStatus AddonUtils::UpdateElement(DgnDbR dgndb, JsonValueR inJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Nate.Rex                        01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AddonUtils::UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents)
+DgnDbStatus JsInterop::UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents)
 	{
 	auto& geolocation = dgndb.GeoLocation();
 	AxisAlignedBox3d extents;
@@ -298,7 +300,7 @@ DgnDbStatus AddonUtils::UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AddonUtils::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr)
+DgnDbStatus JsInterop::DeleteElement(DgnDbR dgndb, Utf8StringCR eidStr)
     {
     DgnElementId eid(BeInt64Id::FromString(eidStr.c_str()).GetValue());
     if (!eid.IsValid())
@@ -345,7 +347,7 @@ BeSQLite::EC::ECInstanceKey parseECReationshipInstanceKeyKey(DgnDbR dgndb, JsonV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult AddonUtils::InsertLinkTableRelationship(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
+DbResult JsInterop::InsertLinkTableRelationship(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
     {
     auto relClass = parseRelClass(dgndb, inJson);
     if (nullptr == relClass)
@@ -370,7 +372,7 @@ DbResult AddonUtils::InsertLinkTableRelationship(JsonValueR outJson, DgnDbR dgnd
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult AddonUtils::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson)
+DbResult JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson)
     {
     BeSQLite::EC::ECInstanceKey relKey = parseECReationshipInstanceKeyKey(dgndb, inJson);
     auto relClass = parseRelClass(dgndb, inJson);
@@ -395,7 +397,7 @@ DbResult AddonUtils::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult AddonUtils::DeleteLinkTableRelationship(DgnDbR dgndb, Json::Value& inJson)
+DbResult JsInterop::DeleteLinkTableRelationship(DgnDbR dgndb, Json::Value& inJson)
     {
     BeSQLite::EC::ECInstanceKey relKey = parseECReationshipInstanceKeyKey(dgndb, inJson);
     return dgndb.DeleteLinkTableRelationship(relKey);
@@ -421,7 +423,7 @@ static CodeScopeSpec getCodeScopeSpec(CodeScopeSpec::Type cstype, CodeScopeSpec:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AddonUtils::InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringCR name, CodeScopeSpec::Type cstype, CodeScopeSpec::ScopeRequirement cssreq)
+DgnDbStatus JsInterop::InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringCR name, CodeScopeSpec::Type cstype, CodeScopeSpec::ScopeRequirement cssreq)
     {
     CodeSpecPtr codeSpec = CodeSpec::Create(db, name.c_str(), getCodeScopeSpec(cstype, cssreq));
     if (!codeSpec.IsValid())
@@ -436,7 +438,7 @@ DgnDbStatus AddonUtils::InsertCodeSpec(Utf8StringR idStr, DgnDbR db, Utf8StringC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AddonUtils::InsertModel(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
+DgnDbStatus JsInterop::InsertModel(JsonValueR outJson, DgnDbR dgndb, JsonValueR inJson)
     {
     DgnModel::CreateParams params(dgndb, inJson);
     if (!params.m_classId.IsValid())
@@ -468,7 +470,7 @@ DgnDbStatus AddonUtils::InsertModel(JsonValueR outJson, DgnDbR dgndb, JsonValueR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AddonUtils::UpdateModel(DgnDbR dgndb, JsonValueR inJson)
+DgnDbStatus JsInterop::UpdateModel(DgnDbR dgndb, JsonValueR inJson)
     {
     if (!inJson.isMember(DgnModel::json_id()))
         return DgnDbStatus::BadArg;
@@ -490,7 +492,7 @@ DgnDbStatus AddonUtils::UpdateModel(DgnDbR dgndb, JsonValueR inJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AddonUtils::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr)
+DgnDbStatus JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr)
     {
     DgnModelId mid(BeInt64Id::FromString(midStr.c_str()).GetValue());
     if (!mid.IsValid())
@@ -506,7 +508,7 @@ DgnDbStatus AddonUtils::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus AddonUtils::GetModel(JsonValueR modelJson, DgnDbR dgndb, Json::Value const& inOpts)
+DgnDbStatus JsInterop::GetModel(JsonValueR modelJson, DgnDbR dgndb, Json::Value const& inOpts)
     {
     DgnModelId modelId(inOpts[json_id()].asUInt64());
     if (!modelId.IsValid())
@@ -539,7 +541,7 @@ DgnDbStatus AddonUtils::GetModel(JsonValueR modelJson, DgnDbR dgndb, Json::Value
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 09/17
 //---------------------------------------------------------------------------------------
-void AddonUtils::CloseDgnDb(DgnDbR dgndb)
+void JsInterop::CloseDgnDb(DgnDbR dgndb)
     {
     if (dgndb.Txns().HasChanges())
         dgndb.SaveChanges();
@@ -549,7 +551,7 @@ void AddonUtils::CloseDgnDb(DgnDbR dgndb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 09/17
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath)
+DbResult JsInterop::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFileNameCR cachePath)
     {
     /*
      * Folder structure for cached imodels:
@@ -651,7 +653,7 @@ DbResult AddonUtils::GetCachedBriefcaseInfos(JsonValueR jsonBriefcaseInfos, BeFi
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Keith.Bentley                 12/17
 //---------------------------------------------------------------------------------------
-void AddonUtils::GetIModelProps(JsonValueR val, DgnDbCR dgndb)
+void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb)
     {
     // add the root subject, if available.
     auto rootSubject = dgndb.Elements().GetRootSubject();

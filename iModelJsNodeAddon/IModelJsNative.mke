@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #
-#     $Source: addon.mke $
+#     $Source: IModelJsNative.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -55,15 +55,15 @@ CCompPDBName    =% $(appName)
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)nodejs_addon$(oext) : $(baseDir)nodejs_addon.cpp $(baseDir)AddonUtils.h $(o)imodeljs-nodeaddonapi.package.version.h ${MultiCompileDepends}
+$(o)IModelJsNative$(oext) : $(baseDir)IModelJsNative.cpp $(baseDir)IModelJsNative.h $(o)imodeljs-nodeaddonapi.package.version.h ${MultiCompileDepends}
 
 $(o)TestUtils$(oext) : $(baseDir)TestUtils.cpp ${MultiCompileDepends}
 
-$(o)AddonUtils$(oext) : $(baseDir)AddonUtils.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
+$(o)JsInterop$(oext) : $(baseDir)JsInterop.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
 
-$(o)AddonUtilsDgnDb$(oext) : $(baseDir)AddonUtilsDgnDb.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
+$(o)JsInteropDgnDb$(oext) : $(baseDir)JsInteropDgnDb.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
 
-$(o)AddonUtilsBriefcaseManager$(oext) : $(baseDir)AddonUtilsBriefcaseManager.cpp $(baseDir)AddonUtils.h ${MultiCompileDepends} 
+$(o)JsInteropBriefcaseManager$(oext) : $(baseDir)JsInteropBriefcaseManager.cpp $(baseDir)IModelJsNative.h ${MultiCompileDepends} 
 
 $(o)ECPresentationUtils$(oext) : $(baseDir)ECPresentationUtils.cpp $(baseDir)ECPresentationUtils.h ${MultiCompileDepends} 
 
@@ -75,7 +75,7 @@ $(o)ECSchemaXmlContextUtils$(oext) : $(baseDir)ECSchemaXmlContextUtils.cpp $(bas
 always:
     ~linkdir "$(BuildContext)Delivery/$(appName)-objs=${o}"
     ~linkdir "$(BuildContext)Delivery/PresentationRules=$(baseDir)/Assets/PresentationRules"
-    ~linkfile "$(BuildContext)Delivery/addon_input_libs.mki=$(_MakeFilePath)addon_input_libs.mki"
+    ~linkfile "$(BuildContext)Delivery/IModelJsNative_input_libs.mki=$(_MakeFilePath)IModelJsNative_input_libs.mki"
 
     %return
 %endif
@@ -98,7 +98,7 @@ DLM_OBJECT_FILES    = $(MultiCompileObjectList)
 DLM_NOENTRY         = 1
 DLM_NO_CONTEXT_LINK = 1
 
-%include $(baseDir)addon_input_libs.mki
+%include $(baseDir)IModelJsNative_input_libs.mki
 
 %ifdef __unix
 

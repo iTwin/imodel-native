@@ -133,15 +133,15 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
 # @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
 # @param packageVersion The semantic version number for the generated package
 # @return the full path to the generated package directory
-def generate_imodeljs_nodeaddonapi(outdirParent, parentSourceDir, packageVersion):
+def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, packageVersion):
 
-    outputpackagedir = os.path.join(outdirParent, 'imodeljs-nodeaddonapi')
+    outputpackagedir = os.path.join(outdirParent, 'imodeljs-native-platform-api')
 
     apiSourceDir = os.path.join(parentSourceDir, 'api_package');
 
     os.makedirs(outputpackagedir);
 
-    declFileName = 'imodeljs-nodeaddonapi.d.ts'
+    declFileName = 'imodeljs-native-platform-api.d.ts'
     packageTemplateFileName = 'package.json.template'
 
     # Copy some files into place without modifying them.
@@ -280,7 +280,7 @@ if __name__ == '__main__':
     if nodeOS != 'win32':
         doPublish = False;
 
-    publishPackage(generate_imodeljs_nodeaddonapi(outdirParent, sourceDir, packageVersion), doPublish, tag);
+    publishPackage(generate_imodeljs_native_platform_api(outdirParent, sourceDir, packageVersion), doPublish, tag);
     publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
     publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
 

@@ -55,7 +55,7 @@
       
   -->
 
-  <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
+  <Part Name="iModelJsNodeAddonLib-Mobile" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=iModelJs -dBUILD_FOR_IMODELJS_MOBILE=1" >
     <!-- Get the node-addon-api (declaration) from iModelJs, not from node! -->
     <SubPart PartName="node-addon-api" PartFile="iModelJs" Repository="iModelJs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
@@ -63,7 +63,7 @@
     <Bindings>
         <Directory SourceName="Delivery/imodeljs-addon-iModelJs-objs" SubPartDirectory="imodeljs-addon-objs" />
         <Files SubPartDirectory="imodeljs-addon-build-tools">
-            Delivery/addon_input_libs.mki
+            Delivery/IModelJsNative_input_libs.mki
         </Files>
         <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
             Delivery/PresentationRules/*.xml
@@ -71,7 +71,7 @@
     </Bindings>
   </Part>
   
-  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
+  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
@@ -86,7 +86,7 @@
   </Part>
 
   <!-- NB: Keep this version number consistent with nodejs:node-gyp-electron -->
-  <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api" >
+  <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=electron-addon-api" >
     <SubPart PartName="electron-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api" />
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
@@ -101,7 +101,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
+  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>
@@ -115,7 +115,7 @@
     </Bindings>
   </Part>
 
-  <Part Name="iModelJsNodeAddonLib-Darwin" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="addon.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
+  <Part Name="iModelJsNodeAddonLib-Darwin" OnlyPlatforms="MacOSX64" ExcludeLibType="Dynamic" BentleyBuildMakeFile="IModelJsNative.mke" BentleyBuildMakeOptions="-dNODE_ADDON_API=node-addon-api" >
     <SubPart PartName="node-addon-api" Repository="Thirdparty-node-addon-api" PartFile="node-addon-api"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <SubPart PartName="iModelJsNodeAddonSqlang"/>

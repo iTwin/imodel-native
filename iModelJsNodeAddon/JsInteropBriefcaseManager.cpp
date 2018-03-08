@@ -1,11 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: AddonUtilsBriefcaseManager.cpp $
+|     $Source: JsInteropBriefcaseManager.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "AddonUtils.h"
+#include "IModelJsNative.h"
+
+namespace IModelJsNative {
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   01/16
@@ -59,17 +61,17 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Sam.Wilson      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct AddonBriefcaseManager : IBriefcaseManager, TxnMonitor
+struct BriefcaseManager : IBriefcaseManager, TxnMonitor
     {
     Request m_req;      // locks and codes that we must acquire before we can say that update has succeeded
     int m_inBulkUpdate = 0;
 
-    AddonBriefcaseManager(DgnDbR db) : IBriefcaseManager(db)
+    BriefcaseManager(DgnDbR db) : IBriefcaseManager(db)
         {
         T_HOST.GetTxnAdmin().AddTxnMonitor(*this);
         }
 
-    ~AddonBriefcaseManager()
+    ~BriefcaseManager()
         {
         T_HOST.GetTxnAdmin().DropTxnMonitor(*this);
         }
@@ -349,7 +351,7 @@ struct RepositoryManagerWatchDog : IRepositoryManager
         if (req.Locks().IsEmpty() && req.Codes().empty())
             return Response(RequestPurpose::Acquire, req.Options(), RepositoryStatus::Success);
 
-        AddonUtils::ThrowJsException("acquire all locks and codes before calling endBulkOperation or saveChanges");
+        JsInterop::ThrowJsException("acquire all locks and codes before calling endBulkOperation or saveChanges");
         return Response(RequestPurpose::Acquire, req.Options(), RepositoryStatus::InvalidRequest);
         }
 
@@ -371,11 +373,11 @@ struct RepositoryManagerWatchDog : IRepositoryManager
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  05/17
 //=======================================================================================
-struct AddonRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
+struct NativeRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
     {
     DEFINE_T_SUPER(RepositoryAdmin);
 
-    AddonRepositoryAdmin() {}
+    NativeRepositoryAdmin() {}
 
     IRepositoryManagerP _GetRepositoryManager(DgnDbR db) const override
         {
@@ -389,7 +391,7 @@ struct AddonRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
             bc = MasterBriefcaseManager::Create(db);
         else
             {
-            bc = new AddonBriefcaseManager(db);
+            bc = new BriefcaseManager(db);
             if (nullptr != db.GetConcurrencyControl())
                 db.GetConcurrencyControl()->_ConfigureBriefcaseManager(*bc);
             }
@@ -397,21 +399,25 @@ struct AddonRepositoryAdmin : DgnPlatformLib::Host::RepositoryAdmin
         }
     };
 
+} // IModelJsNative
+
+using namespace IModelJsNative;
+
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  05/17
 //=======================================================================================
-DgnPlatformLib::Host::RepositoryAdmin& BentleyApi::Dgn::AddonUtils::GetRepositoryAdmin()
+DgnPlatformLib::Host::RepositoryAdmin& JsInterop::GetRepositoryAdmin()
     {
-    static AddonRepositoryAdmin* s_admin;
+    static NativeRepositoryAdmin* s_admin;
     if (nullptr == s_admin)
-        s_admin = new AddonRepositoryAdmin();
+        s_admin = new NativeRepositoryAdmin();
     return *s_admin;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestToInsertElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemProps)
+RepositoryStatus JsInterop::BuildBriefcaseManagerResourcesRequestToInsertElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemProps)
     {
     // *** NEEDS WORK: We don't want to go to the expense of creating a DgnElement just so that we can invoke its _PopulateRequest virtual method.
     // ***              We replicate here what the base DgnElement::_PopulateRequest method does.
@@ -445,7 +451,7 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestToInsertElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForElementById(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemIdJson, BeSQLite::DbOpcode opcode)
+RepositoryStatus JsInterop::BuildBriefcaseManagerResourcesRequestForElementById(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemIdJson, BeSQLite::DbOpcode opcode)
     {
     DgnElementId eid;
     eid.FromJson(elemIdJson);
@@ -461,7 +467,7 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForElementById
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode)
+RepositoryStatus JsInterop::BuildBriefcaseManagerResourcesRequestForElement(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR elemPropsJson, BeSQLite::DbOpcode opcode)
     {
     if (elemPropsJson.isNull())
         return RepositoryStatus::Success;
@@ -479,7 +485,7 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForElement(IBr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestToLockModel(IBriefcaseManager::Request& req, DgnDbR dgndb, DgnModelId mid, LockLevel level)
+RepositoryStatus JsInterop::BuildBriefcaseManagerResourcesRequestToLockModel(IBriefcaseManager::Request& req, DgnDbR dgndb, DgnModelId mid, LockLevel level)
     {
     auto model = dgndb.Models().GetModel(mid);
     if (!model.IsValid())
@@ -491,7 +497,7 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestToLockModel(IB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForModel(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op)
+RepositoryStatus JsInterop::BuildBriefcaseManagerResourcesRequestForModel(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op)
     {
     DgnModelId mid;
     mid.FromJson(modelPropsJson);
@@ -514,7 +520,7 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForModel(IBrie
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op)
+RepositoryStatus JsInterop::BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op)
     {
     // *** TODO: What should we lock?
     return RepositoryStatus::Success;
@@ -523,7 +529,7 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForLinkTableRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForCodeSpec(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op)
+RepositoryStatus JsInterop::BuildBriefcaseManagerResourcesRequestForCodeSpec(IBriefcaseManager::Request& req, DgnDbR dgndb, JsonValueCR modelPropsJson, BeSQLite::DbOpcode op)
     {
     // *** TODO: What should we lock?
     return RepositoryStatus::Success;
@@ -532,7 +538,7 @@ RepositoryStatus AddonUtils::BuildBriefcaseManagerResourcesRequestForCodeSpec(IB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::BriefcaseManagerStartBulkOperation(DgnDbR dgndb)
+RepositoryStatus JsInterop::BriefcaseManagerStartBulkOperation(DgnDbR dgndb)
     {
     dgndb.BriefcaseManager().StartBulkOperation();
     return RepositoryStatus::Success;
@@ -541,7 +547,7 @@ RepositoryStatus AddonUtils::BriefcaseManagerStartBulkOperation(DgnDbR dgndb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-RepositoryStatus AddonUtils::BriefcaseManagerEndBulkOperation(DgnDbR dgndb)
+RepositoryStatus JsInterop::BriefcaseManagerEndBulkOperation(DgnDbR dgndb)
     {
     auto& bcm = dgndb.BriefcaseManager();
     return bcm.EndBulkOperation().Result();

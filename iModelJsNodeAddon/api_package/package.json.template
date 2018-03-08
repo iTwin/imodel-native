@@ -1,5 +1,5 @@
 {
-  "name": "@bentley/imodeljs-nodeaddonapi",
+  "name": "@bentley/imodeljs-native-platform-api",
   "license": "UNLICENSED",
   "version": "${PACKAGE_VERSION}",
   "keywords": [

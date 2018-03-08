@@ -1,20 +1,20 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: AddonUtils.cpp $
+|     $Source: JsInterop.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "AddonUtils.h"
+#include "IModelJsNative.h"
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
 static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
-static AddonUtils::T_AssertHandler s_assertHandler;
+static IModelJsNative::JsInterop::T_AssertHandler s_assertHandler;
 
-BEGIN_UNNAMED_NAMESPACE
+namespace IModelJsNative {
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
@@ -31,7 +31,7 @@ static ECDbIssueListener s_listener;
 * This implementation works for Windows, Linux, and MacOS.
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct KnownAddonLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
+struct KnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 {
     BeFileName m_tempDirectory;
     BeFileName m_assetsDirectory;
@@ -40,7 +40,7 @@ struct KnownAddonLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_assetsDirectory;}
 
     //! Construct an instance of the KnownDesktopLocationsAdmin
-    KnownAddonLocationsAdmin()
+    KnownLocationsAdmin()
         {
         Desktop::FileSystem::BeGetTempPath(m_tempDirectory);
         m_assetsDirectory = s_addonDllDir;
@@ -51,11 +51,11 @@ struct KnownAddonLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 //=======================================================================================
 // @bsistruct                                   Sam.Wilson                  05/17
 //=======================================================================================
-struct AddonHost : DgnPlatformLib::Host
+struct DgnPlatformHost : DgnPlatformLib::Host
 {
 private:
-    void _SupplyProductName(Utf8StringR name) override { name.assign("AddonUtils"); }
-    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new KnownAddonLocationsAdmin(); }
+    void _SupplyProductName(Utf8StringR name) override { name.assign("IModelJs"); }
+    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new KnownLocationsAdmin(); }
     BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
         BeFileName sqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
@@ -63,7 +63,7 @@ private:
         return BeSQLite::L10N::SqlangFiles(sqlang);
         }
 
-    RepositoryAdmin& _SupplyRepositoryAdmin() override {return AddonUtils::GetRepositoryAdmin();}
+    RepositoryAdmin& _SupplyRepositoryAdmin() override {return JsInterop::GetRepositoryAdmin();}
 
     static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
         {
@@ -73,11 +73,13 @@ private:
             printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
         }
 public:
-    AddonHost() { BeAssertFunctions::SetBeAssertHandler(&AddonHost::OnAssert); }
+    DgnPlatformHost() { BeAssertFunctions::SetBeAssertHandler(&DgnPlatformHost::OnAssert); }
 };
 
-
-struct AddonLoggingShim : NativeLogging::Provider::ILogProvider
+//=======================================================================================
+// @bsistruct                                   Sam.Wilson                  02/18
+//=======================================================================================
+struct NativeLoggingShim : NativeLogging::Provider::ILogProvider
 {
     int STDCALL_ATTRIBUTE Initialize() override {return SUCCESS;}
 
@@ -115,31 +117,33 @@ struct AddonLoggingShim : NativeLogging::Provider::ILogProvider
     void STDCALL_ATTRIBUTE LogMessage(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev, Utf8CP msg) override
         {
         WString* ns = reinterpret_cast<WString*>(context);
-        AddonUtils::LogMessage(Utf8String(*ns).c_str(), sev, msg);
+        JsInterop::LogMessage(Utf8String(*ns).c_str(), sev, msg);
         }
 
     bool STDCALL_ATTRIBUTE IsSeverityEnabled(NativeLogging::Provider::ILogProviderContext* context, NativeLogging::SEVERITY sev) override
         {
         WString* ns = reinterpret_cast<WString*>(context);
-        return AddonUtils::IsSeverityEnabled(Utf8String(*ns).c_str(), sev);
+        return JsInterop::IsSeverityEnabled(Utf8String(*ns).c_str(), sev);
         }
 
 };
 
-END_UNNAMED_NAMESPACE
+} // namespace IModelJsNative
+
+using namespace IModelJsNative;
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-void AddonUtils::InitLogging()
+void JsInterop::InitLogging()
     {
-    NativeLogging::LoggingConfig::ActivateProvider(new AddonLoggingShim());
+    NativeLogging::LoggingConfig::ActivateProvider(new NativeLoggingShim());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-NativeLogging::ILogger& AddonUtils::GetLogger()
+NativeLogging::ILogger& JsInterop::GetLogger()
     {
     static NativeLogging::ILogger* s_logger;
     if (nullptr == s_logger)
@@ -150,7 +154,7 @@ NativeLogging::ILogger& AddonUtils::GetLogger()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-void AddonUtils::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHandler)
+void JsInterop::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHandler)
     {
     s_addonDllDir = addonDllDir;
     s_assertHandler = assertHandler;
@@ -158,7 +162,7 @@ void AddonUtils::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHand
     static std::once_flag s_initFlag;
     std::call_once(s_initFlag, []() 
         {
-        DgnPlatformLib::Initialize(*new AddonHost, true);
+        DgnPlatformLib::Initialize(*new DgnPlatformHost, true);
         InitLogging();
         });
     }
@@ -166,7 +170,7 @@ void AddonUtils::Initialize(BeFileNameCR addonDllDir, T_AssertHandler assertHand
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-Utf8StringCR AddonUtils::GetLastECDbIssue()
+Utf8StringCR JsInterop::GetLastECDbIssue()
     {
     // It's up to the caller to serialize access to this.
     return s_lastECDbIssue;
@@ -175,7 +179,7 @@ Utf8StringCR AddonUtils::GetLastECDbIssue()
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 02/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::CreateDgnDb(DgnDbPtr& db, BeFileNameCR pathname, Utf8StringCR rootSubjectName, Utf8StringCR rootSubjectDescription)
+DbResult JsInterop::CreateDgnDb(DgnDbPtr& db, BeFileNameCR pathname, Utf8StringCR rootSubjectName, Utf8StringCR rootSubjectDescription)
     {
     BeFileName path = pathname.GetDirectoryName();
     if (!path.DoesPathExist())
@@ -193,7 +197,7 @@ DbResult AddonUtils::CreateDgnDb(DgnDbPtr& db, BeFileNameCR pathname, Utf8String
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::OpenMode mode)
+DbResult JsInterop::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb::OpenMode mode)
     {
     BeFileName pathname;
     if (!fileOrPathname.GetDirectoryName().empty())
@@ -235,7 +239,7 @@ DbResult AddonUtils::OpenDgnDb(DgnDbPtr& db, BeFileNameCR fileOrPathname, DgnDb:
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens)
+DbResult JsInterop::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens)
     {
     revisionPtrs.clear();
     containsSchemaChanges = false;
@@ -271,7 +275,7 @@ DbResult AddonUtils::ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool&
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::ProcessSchemaChangeSets(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption, BeFileNameCR dbFileName)
+DbResult JsInterop::ProcessSchemaChangeSets(bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption, BeFileNameCR dbFileName)
     {
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(revisions, processOption));
     DbResult result;
@@ -285,7 +289,7 @@ DbResult AddonUtils::ProcessSchemaChangeSets(bvector<DgnRevisionCP> const& revis
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::ProcessDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption)
+DbResult JsInterop::ProcessDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> const& revisions, RevisionProcessOption processOption)
     {
     PRECONDITION(dgndb.IsDbOpen() && "Expected briefcase to be open when merging only data changes", BE_SQLITE_ERROR);
 
@@ -298,7 +302,7 @@ DbResult AddonUtils::ProcessDataChangeSets(DgnDbR dgndb, bvector<DgnRevisionCP> 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::ProcessChangeSets(DgnDbPtr dgndb, JsonValueCR changeSetTokens, RevisionProcessOption processOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName)
+DbResult JsInterop::ProcessChangeSets(DgnDbPtr dgndb, JsonValueCR changeSetTokens, RevisionProcessOption processOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName)
     {
     bvector<DgnRevisionPtr> revisionPtrs;
     bool containsSchemaChanges;
@@ -316,7 +320,7 @@ DbResult AddonUtils::ProcessChangeSets(DgnDbPtr dgndb, JsonValueCR changeSetToke
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb)
+DbResult JsInterop::StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb)
     {
     RevisionManagerR revisions = dgndb.Revisions();
 
@@ -338,7 +342,7 @@ DbResult AddonUtils::StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 01/18
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::FinishCreateChangeSet(DgnDbR dgndb)
+DbResult JsInterop::FinishCreateChangeSet(DgnDbR dgndb)
     {
     RevisionStatus status = dgndb.Revisions().FinishCreateRevision();
     return (status == RevisionStatus::Success) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
@@ -347,7 +351,7 @@ DbResult AddonUtils::FinishCreateChangeSet(DgnDbR dgndb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 09/17
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::SetupBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken)
+DbResult JsInterop::SetupBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken)
     {
     PRECONDITION(!briefcaseToken.isNull() && briefcaseToken.isObject(), BE_SQLITE_ERROR);
     PRECONDITION(briefcaseToken.isMember("pathname") && briefcaseToken.isMember("briefcaseId") && briefcaseToken.isMember("openMode"), BE_SQLITE_ERROR);
@@ -383,7 +387,7 @@ DbResult AddonUtils::SetupBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-void AddonUtils::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
+void JsInterop::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
     {
     JsonECSqlSelectAdapter adapter(stmt, JsonECSqlSelectAdapter::FormatOptions(JsonECSqlSelectAdapter::MemberNameCasing::LowerFirstChar, ECJsonInt64Format::AsHexadecimalString));
     adapter.GetRow(rowJson, true);
@@ -392,7 +396,7 @@ void AddonUtils::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-void AddonUtils::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCollectionCR props) 
+void JsInterop::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCollectionCR props) 
     {
     for (ECN::ECPropertyValue const& prop : props)
         {
@@ -408,7 +412,7 @@ void AddonUtils::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCol
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::OpenECDb(ECDbR ecdb, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode)
+DbResult JsInterop::OpenECDb(ECDbR ecdb, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode)
     {
     if (!pathname.DoesPathExist())
         return BE_SQLITE_NOTFOUND;
@@ -424,7 +428,7 @@ DbResult AddonUtils::OpenECDb(ECDbR ecdb, BeFileNameCR pathname, BeSQLite::Db::O
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::CreateECDb(ECDbR ecdb, BeFileNameCR pathname)
+DbResult JsInterop::CreateECDb(ECDbR ecdb, BeFileNameCR pathname)
     {
     BeFileName path = pathname.GetDirectoryName();
     if (!path.DoesPathExist())
@@ -441,7 +445,7 @@ DbResult AddonUtils::CreateECDb(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
+DbResult JsInterop::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
     {
     if (!pathname.DoesPathExist())
         return BE_SQLITE_NOTFOUND;
@@ -466,7 +470,7 @@ DbResult AddonUtils::ImportSchema(ECDbR ecdb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-DbResult AddonUtils::ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname)
+DbResult JsInterop::ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname)
     {
     if (!pathname.DoesPathExist())
         return BE_SQLITE_NOTFOUND;
@@ -491,7 +495,7 @@ DbResult AddonUtils::ImportSchemaDgnDb(DgnDbR dgndb, BeFileNameCR pathname)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-ECClassCP AddonUtils::GetClassFromInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
+ECClassCP JsInterop::GetClassFromInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
     {
     return ECJsonUtilities::GetClassFromClassNameJson(jsonInstance[ECJsonUtilities::json_className()], ecdb.GetClassLocater());
     }
@@ -499,7 +503,7 @@ ECClassCP AddonUtils::GetClassFromInstance(ECDbCR ecdb, JsonValueCR jsonInstance
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-ECInstanceId AddonUtils::GetInstanceIdFromInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
+ECInstanceId JsInterop::GetInstanceIdFromInstance(ECDbCR ecdb, JsonValueCR jsonInstance)
     {
     if (!jsonInstance.isMember(ECJsonUtilities::json_id()))
         return ECInstanceId();

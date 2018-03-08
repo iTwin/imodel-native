@@ -15,7 +15,7 @@
     "url": "http://www.bentley.com"
   },
   "peerDependencies": {
-    "@bentley/imodeljs-nodeaddonapi": "${COMPATIBLE_API_PACKAGE_VERSIONS}"
+    "@bentley/imodeljs-native-platform-api": "${COMPATIBLE_API_PACKAGE_VERSIONS}"
   },
   "//optionalDependencies": [
     "These dependencies are optional because each one is specific to a single combination of version, platform, and CPU.",

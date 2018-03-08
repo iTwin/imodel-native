@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: nodejs_addon.cpp $
+|     $Source: IModelJsNative.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,7 +15,7 @@
 #include <node-addon-api/napi.h>
 
 #include <json/value.h>
-#include "AddonUtils.h"
+#include "IModelJsNative.h"
 #include <ECDb/ECDb.h>
 #include <ECObjects/ECSchema.h>
 #include <rapidjson/rapidjson.h>
@@ -128,7 +128,7 @@ USING_NAMESPACE_BENTLEY_EC
         Napi::TypeError::New(Env(), "Argument " #i " must be string or undefined").ThrowAsJavaScriptException();\
     }
 
-namespace IModelJsAddon {
+namespace IModelJsNative {
 
 //=======================================================================================
 //! @bsiclass
@@ -182,17 +182,17 @@ struct NapiUtils
 // Projects the ECDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct AddonECDb : Napi::ObjectWrap<AddonECDb> 
+struct NativeECDb : Napi::ObjectWrap<NativeECDb> 
     {
     private:
         static Napi::FunctionReference s_constructor;
         std::unique_ptr<ECDb> m_ecdb;
 
     public:
-    AddonECDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonECDb>(info) {}
-    ~AddonECDb() {}
+    NativeECDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NativeECDb>(info) {}
+    ~NativeECDb() {}
 
-        // Check if val is really a AddonECDb peer object
+        // Check if val is really a NativeECDb peer object
         static bool InstanceOf(Napi::Value val)
             {
             if (!val.IsObject())
@@ -213,7 +213,7 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             {
             REQUIRE_ARGUMENT_STRING(0, dbName);
             RETURN_IF_HAD_EXCEPTION
-            const DbResult status = AddonUtils::CreateECDb(GetECDb(), BeFileName(dbName.c_str(), true));
+            const DbResult status = JsInterop::CreateECDb(GetECDb(), BeFileName(dbName.c_str(), true));
             if (BE_SQLITE_OK == status)
                 {
                 GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
@@ -229,7 +229,7 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             REQUIRE_ARGUMENT_INTEGER(1, mode);
             RETURN_IF_HAD_EXCEPTION
 
-            const DbResult status = AddonUtils::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode) mode);
+            const DbResult status = JsInterop::OpenECDb(GetECDb(), BeFileName(dbName.c_str(), true), (Db::OpenMode) mode);
             if (BE_SQLITE_OK == status)
                 {
                 GetECDb().AddFunction(HexStrSqlFunction::GetSingleton());
@@ -272,7 +272,7 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             {
             REQUIRE_ARGUMENT_STRING(0, schemaPathName);
             RETURN_IF_HAD_EXCEPTION
-            const DbResult status = AddonUtils::ImportSchema(GetECDb(), BeFileName(schemaPathName.c_str(), true));
+            const DbResult status = JsInterop::ImportSchema(GetECDb(), BeFileName(schemaPathName.c_str(), true));
             return Napi::Number::New(Env(), (int) status);
             }
 
@@ -290,18 +290,18 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
             // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
             // ***
             Napi::HandleScope scope(env);
-            Napi::Function t = DefineClass(env, "AddonECDb", {
-            InstanceMethod("createDb", &AddonECDb::CreateDb),
-            InstanceMethod("openDb", &AddonECDb::OpenDb),
-            InstanceMethod("closeDb", &AddonECDb::CloseDb),
-            InstanceMethod("dispose", &AddonECDb::Dispose),
-            InstanceMethod("saveChanges", &AddonECDb::SaveChanges),
-            InstanceMethod("abandonChanges", &AddonECDb::AbandonChanges),
-            InstanceMethod("importSchema", &AddonECDb::ImportSchema),
-            InstanceMethod("isOpen", &AddonECDb::IsOpen)
+            Napi::Function t = DefineClass(env, "NativeECDb", {
+            InstanceMethod("createDb", &NativeECDb::CreateDb),
+            InstanceMethod("openDb", &NativeECDb::OpenDb),
+            InstanceMethod("closeDb", &NativeECDb::CloseDb),
+            InstanceMethod("dispose", &NativeECDb::Dispose),
+            InstanceMethod("saveChanges", &NativeECDb::SaveChanges),
+            InstanceMethod("abandonChanges", &NativeECDb::AbandonChanges),
+            InstanceMethod("importSchema", &NativeECDb::ImportSchema),
+            InstanceMethod("isOpen", &NativeECDb::IsOpen)
             });
 
-            exports.Set("AddonECDb", t);
+            exports.Set("NativeECDb", t);
 
             s_constructor = Napi::Persistent(t);
             // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -312,10 +312,10 @@ struct AddonECDb : Napi::ObjectWrap<AddonECDb>
     };
 
 //=======================================================================================
-// Projects the AddonECSchemaXmlContext class into JS
+// Projects the NativeECSchemaXmlContext class into JS
 //! @bsiclass
 //=======================================================================================
-struct AddonECSchemaXmlContext : Napi::ObjectWrap<AddonECSchemaXmlContext>
+struct NativeECSchemaXmlContext : Napi::ObjectWrap<NativeECSchemaXmlContext>
     {
     private:
         static Napi::FunctionReference s_constructor;
@@ -323,12 +323,12 @@ struct AddonECSchemaXmlContext : Napi::ObjectWrap<AddonECSchemaXmlContext>
         ECSchemaXmlContextUtils::LocaterCallbackUPtr m_locater;
 
     public:
-        AddonECSchemaXmlContext(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonECSchemaXmlContext>(info)
+        NativeECSchemaXmlContext(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NativeECSchemaXmlContext>(info)
             {
             m_context = ECSchemaXmlContextUtils::CreateSchemaReadContext(T_HOST.GetIKnownLocationsAdmin());
             }
 
-        // Check if val is really a AddonECSchemaXmlContext peer object
+        // Check if val is really a NativeECSchemaXmlContext peer object
         static bool HasInstance(Napi::Value val) {
             if (!val.IsObject())
                 return false;
@@ -377,13 +377,13 @@ struct AddonECSchemaXmlContext : Napi::ObjectWrap<AddonECSchemaXmlContext>
             // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
             // ***
             Napi::HandleScope scope(env);
-            Napi::Function t = DefineClass(env, "AddonECSchemaXmlContext", {
-                InstanceMethod("addSchemaPath", &AddonECSchemaXmlContext::AddSchemaPath),
-                InstanceMethod("readSchemaFromXmlFile", &AddonECSchemaXmlContext::ReadSchemaFromXmlFile),
-                InstanceMethod("setSchemaLocater", &AddonECSchemaXmlContext::SetSchemaLocater)
+            Napi::Function t = DefineClass(env, "NativeECSchemaXmlContext", {
+                InstanceMethod("addSchemaPath", &NativeECSchemaXmlContext::AddSchemaPath),
+                InstanceMethod("readSchemaFromXmlFile", &NativeECSchemaXmlContext::ReadSchemaFromXmlFile),
+                InstanceMethod("setSchemaLocater", &NativeECSchemaXmlContext::SetSchemaLocater)
             });
 
-            exports.Set("AddonECSchemaXmlContext", t);
+            exports.Set("NativeECSchemaXmlContext", t);
 
             s_constructor = Napi::Persistent(t);
             // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -429,12 +429,12 @@ public:
 };
 
 // Project the IBriefcaseManager::Request class 
-struct AddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<AddonBriefcaseManagerResourcesRequest>
+struct NativeBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NativeBriefcaseManagerResourcesRequest>
 {
     IBriefcaseManager::Request m_req;
     static Napi::FunctionReference s_constructor;
 
-    AddonBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonBriefcaseManagerResourcesRequest>(info)
+    NativeBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NativeBriefcaseManagerResourcesRequest>(info)
         {
         }
 
@@ -453,13 +453,13 @@ struct AddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<AddonBriefcaseMa
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "AddonBriefcaseManagerResourcesRequest", {
-          InstanceMethod("reset", &AddonBriefcaseManagerResourcesRequest::Reset),
-          InstanceMethod("isEmpty", &AddonBriefcaseManagerResourcesRequest::IsEmpty),
-          InstanceMethod("toJSON", &AddonBriefcaseManagerResourcesRequest::ToJSON),
+        Napi::Function t = DefineClass(env, "NativeBriefcaseManagerResourcesRequest", {
+          InstanceMethod("reset", &NativeBriefcaseManagerResourcesRequest::Reset),
+          InstanceMethod("isEmpty", &NativeBriefcaseManagerResourcesRequest::IsEmpty),
+          InstanceMethod("toJSON", &NativeBriefcaseManagerResourcesRequest::ToJSON),
         });
 
-        exports.Set("AddonBriefcaseManagerResourcesRequest", t);
+        exports.Set("NativeBriefcaseManagerResourcesRequest", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -491,11 +491,11 @@ struct AddonBriefcaseManagerResourcesRequest : Napi::ObjectWrap<AddonBriefcaseMa
 // Projects the DgnDb class into JS
 //! @bsiclass
 //=======================================================================================
-struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
+struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     {
-    struct AddonAppData : Db::AppData 
+    struct NativeAppData : Db::AppData 
         {
-        AddonDgnDb& m_addonDb;
+        NativeDgnDb& m_addonDb;
 
         static Key const& GetKey()
             {
@@ -503,17 +503,17 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             return s_key;
             }
 
-        AddonAppData(AddonDgnDb& adb) : m_addonDb(adb) {}
+        NativeAppData(NativeDgnDb& adb) : m_addonDb(adb) {}
 
-        static AddonAppData* Find(DgnDbR db)
+        static NativeAppData* Find(DgnDbR db)
             {
-            return (AddonAppData*) db.FindAppData(GetKey());
+            return (NativeAppData*) db.FindAppData(GetKey());
             }
 
-        static void Add(AddonDgnDb& adb)
+        static void Add(NativeDgnDb& adb)
             {
             BeAssert(nullptr == Find(adb.GetDgnDb()));
-            adb.GetDgnDb().AddAppData(GetKey(), new AddonAppData(adb));
+            adb.GetDgnDb().AddAppData(GetKey(), new NativeAppData(adb));
             }
 
         static void Remove(DgnDbR db)
@@ -528,11 +528,11 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
 
-    AddonDgnDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonDgnDb>(info)
+    NativeDgnDb(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NativeDgnDb>(info)
         {
         }
 
-    ~AddonDgnDb() 
+    ~NativeDgnDb() 
         {
         CloseDgnDb();
         }
@@ -545,8 +545,8 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         TearDownPresentationManager();
         m_dgndb->RemoveFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->RemoveFunction(StrSqlFunction::GetSingleton());
-        AddonUtils::CloseDgnDb(*m_dgndb);
-        AddonAppData::Remove(GetDgnDb());
+        JsInterop::CloseDgnDb(*m_dgndb);
+        NativeAppData::Remove(GetDgnDb());
         m_dgndb = nullptr;
         }
 
@@ -560,19 +560,19 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
             return;
 
         SetupPresentationManager();
-        AddonAppData::Add(*this);
+        NativeAppData::Add(*this);
         m_dgndb->AddFunction(HexStrSqlFunction::GetSingleton());
         m_dgndb->AddFunction(StrSqlFunction::GetSingleton());
         }
 
-    static AddonDgnDb* From(DgnDbR db)
+    static NativeDgnDb* From(DgnDbR db)
         {
-        auto appdata = AddonAppData::Find(db);
+        auto appdata = NativeAppData::Find(db);
         return appdata? &appdata->m_addonDb: nullptr;
         }
 
 
-    //  Check if val is really a AddonDgnDb peer object
+    //  Check if val is really a NativeDgnDb peer object
     static bool InstanceOf(Napi::Value val)
         {
         if (!val.IsObject())
@@ -627,7 +627,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_ARGUMENT_INTEGER(1, mode);
         RETURN_IF_HAD_EXCEPTION
         DgnDbPtr db;
-        DbResult status = AddonUtils::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
+        DbResult status = JsInterop::OpenDgnDb(db, BeFileName(dbname.c_str(), true), (Db::OpenMode)mode);
         if (BE_SQLITE_OK == status)
             OnDgnDbOpened(db.get());
 
@@ -642,7 +642,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         DgnDbPtr db;
-        DbResult status = AddonUtils::CreateDgnDb(db, BeFileName(dbName.c_str(), true), rootSubjectName, rootSubjectDescription);
+        DbResult status = JsInterop::CreateDgnDb(db, BeFileName(dbName.c_str(), true), rootSubjectName, rootSubjectDescription);
         if (BE_SQLITE_OK == status)
             OnDgnDbOpened(db.get());
 
@@ -656,7 +656,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_ARGUMENT_STRING(1, c);
         RETURN_IF_HAD_EXCEPTION
         Json::Value metaDataJson;
-        auto status = AddonUtils::GetECClassMetaData(metaDataJson, GetDgnDb(), s.c_str(), c.c_str());
+        auto status = JsInterop::GetECClassMetaData(metaDataJson, GetDgnDb(), s.c_str(), c.c_str());
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), metaDataJson.ToString().c_str()));
         }
 
@@ -667,7 +667,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
         Json::Value opts = Json::Value::From(optsJsonStr);
         Json::Value elementJson;  // ouput
-        auto status = AddonUtils::GetElement(elementJson, GetDgnDb(), opts);
+        auto status = JsInterop::GetElement(elementJson, GetDgnDb(), opts);
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), elementJson.ToString().c_str()));
         }
 
@@ -678,7 +678,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
         Json::Value opts = Json::Value::From(optsJsonStr);
         Json::Value modelJson;;  // ouput
-        auto status = AddonUtils::GetModel(modelJson, GetDgnDb(), opts);
+        auto status = JsInterop::GetModel(modelJson, GetDgnDb(), opts);
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), modelJson.ToString().c_str()));
         }
 
@@ -690,7 +690,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         Json::Value jsonBriefcaseToken = Json::Value::From(briefcaseToken);
         
-        DbResult result = AddonUtils::SetupBriefcase(m_dgndb, jsonBriefcaseToken);
+        DbResult result = JsInterop::SetupBriefcase(m_dgndb, jsonBriefcaseToken);
         Napi::Object ret;
         if (BE_SQLITE_OK == result)
             OnDgnDbOpened(m_dgndb.get());
@@ -714,11 +714,11 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         if (containsSchemaChanges)
             CloseDgnDb();
             
-        DbResult result = AddonUtils::ProcessChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)processOptions, dbGuid, dbFileName);
+        DbResult result = JsInterop::ProcessChangeSets(m_dgndb, jsonChangeSetTokens, (RevisionProcessOption)processOptions, dbGuid, dbFileName);
         if (BE_SQLITE_OK == result && containsSchemaChanges)
             {
             DgnDbPtr db;
-            result = AddonUtils::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
+            result = JsInterop::OpenDgnDb(db, dbFileName, isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite);
             if (BE_SQLITE_OK == result)
                 OnDgnDbOpened(db.get());
             }
@@ -803,7 +803,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         Json::Value changeSetInfo;
-        DbResult result = AddonUtils::StartCreateChangeSet(changeSetInfo, *m_dgndb);
+        DbResult result = JsInterop::StartCreateChangeSet(changeSetInfo, *m_dgndb);
         return CreateBentleyReturnObject(result, Napi::String::New(Env(), changeSetInfo.ToString().c_str()));
         }
 
@@ -812,7 +812,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_DB_TO_BE_OPEN
         RETURN_IF_HAD_EXCEPTION
 
-        DbResult result = AddonUtils::FinishCreateChangeSet(*m_dgndb);
+        DbResult result = JsInterop::FinishCreateChangeSet(*m_dgndb);
         return Napi::Number::New(Env(), (int) result);
         }
 
@@ -823,7 +823,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         Json::Value cachedBriefcaseInfos;
         BeFileName cacheFile(cachePath.c_str(), true);
-        DbResult result = AddonUtils::GetCachedBriefcaseInfos(cachedBriefcaseInfos, cacheFile);
+        DbResult result = JsInterop::GetCachedBriefcaseInfos(cachedBriefcaseInfos, cacheFile);
         return CreateBentleyReturnObject(result, Napi::String::New(Env(), cachedBriefcaseInfos.ToString().c_str()));
         }
 
@@ -833,7 +833,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         Json::Value props;
-        AddonUtils::GetIModelProps(props, *m_dgndb);
+        JsInterop::GetIModelProps(props, *m_dgndb);
         return Napi::String::New(Env(), props.ToString().c_str());
         }
 
@@ -845,7 +845,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
         Json::Value elemIdJsonObj;
-        auto status = AddonUtils::InsertElement(elemIdJsonObj, GetDgnDb(), elemProps);
+        auto status = JsInterop::InsertElement(elemIdJsonObj, GetDgnDb(), elemProps);
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), elemIdJsonObj.ToString().c_str()));
         }
 
@@ -856,7 +856,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
-        auto status = AddonUtils::UpdateElement(GetDgnDb(), elemProps);
+        auto status = JsInterop::UpdateElement(GetDgnDb(), elemProps);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -866,7 +866,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
         RETURN_IF_HAD_EXCEPTION
 
-        auto status = AddonUtils::DeleteElement(GetDgnDb(), elemIdStr);
+        auto status = JsInterop::DeleteElement(GetDgnDb(), elemIdStr);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -878,7 +878,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         Json::Value props = Json::Value::From(propsJsonStr);
         Json::Value idJsonObj;
-        auto status = AddonUtils::InsertLinkTableRelationship(idJsonObj, GetDgnDb(), props);
+        auto status = JsInterop::InsertLinkTableRelationship(idJsonObj, GetDgnDb(), props);
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), idJsonObj.asCString()));
         }
 
@@ -889,7 +889,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         Json::Value props = Json::Value::From(propsJsonStr);
-        auto status = AddonUtils::UpdateLinkTableRelationship(GetDgnDb(), props);
+        auto status = JsInterop::UpdateLinkTableRelationship(GetDgnDb(), props);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -900,7 +900,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         Json::Value props = Json::Value::From(propsJsonStr);
-        auto status = AddonUtils::DeleteLinkTableRelationship(GetDgnDb(), props);
+        auto status = JsInterop::DeleteLinkTableRelationship(GetDgnDb(), props);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -924,7 +924,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         Utf8String idStr;
-        DgnDbStatus status = AddonUtils::InsertCodeSpec(idStr, GetDgnDb(), name, (CodeScopeSpec::Type)specType, (CodeScopeSpec::ScopeRequirement)scopeReq);
+        DgnDbStatus status = JsInterop::InsertCodeSpec(idStr, GetDgnDb(), name, (CodeScopeSpec::Type)specType, (CodeScopeSpec::ScopeRequirement)scopeReq);
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), idStr.c_str()));
         }
 
@@ -936,7 +936,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
         Json::Value elemIdJsonObj;
-        auto status = AddonUtils::InsertModel(elemIdJsonObj, GetDgnDb(), elemProps);
+        auto status = JsInterop::InsertModel(elemIdJsonObj, GetDgnDb(), elemProps);
         return CreateBentleyReturnObject(status, Napi::String::New(Env(), elemIdJsonObj.ToString().c_str()));
         }
 
@@ -947,7 +947,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         Json::Value elemProps = Json::Value::From(elemPropsJsonStr);
-        auto status = AddonUtils::UpdateModel(GetDgnDb(), elemProps);
+        auto status = JsInterop::UpdateModel(GetDgnDb(), elemProps);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -957,7 +957,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, elemIdStr);
         RETURN_IF_HAD_EXCEPTION
 
-        auto status = AddonUtils::DeleteModel(GetDgnDb(), elemIdStr);
+        auto status = JsInterop::DeleteModel(GetDgnDb(), elemIdStr);
         return Napi::Number::New(Env(), (int)status);
         }
 
@@ -1034,7 +1034,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_ARGUMENT_STRING(0, schemaPathnameStrObj);
         RETURN_IF_HAD_EXCEPTION
         BeFileName schemaPathname(schemaPathnameStrObj.c_str(), true);
-        auto stat = AddonUtils::ImportSchemaDgnDb(GetDgnDb(), schemaPathname);
+        auto stat = JsInterop::ImportSchemaDgnDb(GetDgnDb(), schemaPathname);
         return Napi::Number::New(Env(), (int)stat);
         }
 
@@ -1046,7 +1046,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
     Napi::Value CreateChangeCache(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_OBJ(0, AddonECDb, changeCacheECDb);
+        REQUIRE_ARGUMENT_OBJ(0, NativeECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changeCachePathStr);
         RETURN_IF_HAD_EXCEPTION
 
@@ -1078,16 +1078,16 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
     Napi::Value ExtractChangeSummary(const Napi::CallbackInfo& info)
         {
         REQUIRE_DB_TO_BE_OPEN
-        REQUIRE_ARGUMENT_OBJ(0, AddonECDb, changeCacheECDb);
+        REQUIRE_ARGUMENT_OBJ(0, NativeECDb, changeCacheECDb);
         REQUIRE_ARGUMENT_STRING(1, changesetFilePathStr);
         RETURN_IF_HAD_EXCEPTION
 
-        struct AddonChangeSet : BeSQLite::ChangeSet
+        struct NativeChangeSet : BeSQLite::ChangeSet
             {
             ConflictResolution _OnConflict(ConflictCause cause, BeSQLite::Changes::Change iter) override { return ConflictResolution::Skip; }
             };
 
-        AddonChangeSet changeset;
+        NativeChangeSet changeset;
         {
         BeFileName changesetFilePath(changesetFilePathStr.c_str(), true);
 
@@ -1174,34 +1174,34 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
     Napi::Value BuildBriefcaseManagerResourcesRequestForElement(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(0, NativeBriefcaseManagerResourcesRequest, req);
         REQUIRE_ARGUMENT_STRING(1, elemProps);
         REQUIRE_ARGUMENT_INTEGER(2, dbop);
         Json::Value elemPropsJson = Json::Value::From(elemProps);
-        return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForElement(req->m_req, GetDgnDb(), elemPropsJson, (BeSQLite::DbOpcode)dbop));
+        return Napi::Number::New(Env(), (int)JsInterop::BuildBriefcaseManagerResourcesRequestForElement(req->m_req, GetDgnDb(), elemPropsJson, (BeSQLite::DbOpcode)dbop));
         }
 
     Napi::Value BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(0, NativeBriefcaseManagerResourcesRequest, req);
         REQUIRE_ARGUMENT_STRING(1, props);
         REQUIRE_ARGUMENT_INTEGER(2, dbop);
         Json::Value propsJson = Json::Value::From(props);
-        return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(req->m_req, GetDgnDb(), propsJson, (BeSQLite::DbOpcode)dbop));
+        return Napi::Number::New(Env(), (int)JsInterop::BuildBriefcaseManagerResourcesRequestForLinkTableRelationship(req->m_req, GetDgnDb(), propsJson, (BeSQLite::DbOpcode)dbop));
         }
 
     Napi::Value BuildBriefcaseManagerResourcesRequestForModel(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(0, NativeBriefcaseManagerResourcesRequest, req);
         REQUIRE_ARGUMENT_STRING(1, modelProps);
         REQUIRE_ARGUMENT_INTEGER(2, dbop);
         Json::Value modelPropsJson = Json::Value::From(modelProps);
-        return Napi::Number::New(Env(), (int)AddonUtils::BuildBriefcaseManagerResourcesRequestForModel(req->m_req, GetDgnDb(), modelPropsJson, (BeSQLite::DbOpcode)dbop));
+        return Napi::Number::New(Env(), (int)JsInterop::BuildBriefcaseManagerResourcesRequestForModel(req->m_req, GetDgnDb(), modelPropsJson, (BeSQLite::DbOpcode)dbop));
         }
 
     void ExtractBulkResourcesRequest(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(0, NativeBriefcaseManagerResourcesRequest, req);
         REQUIRE_ARGUMENT_BOOL(1, locks);
         REQUIRE_ARGUMENT_BOOL(2, codes);
         GetDgnDb().BriefcaseManager().ExtractRequestFromBulkOperation(req->m_req, locks, codes);
@@ -1214,8 +1214,8 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 		
    void AppendBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, req);
-        REQUIRE_ARGUMENT_OBJ(1, AddonBriefcaseManagerResourcesRequest, reqIn);
+        REQUIRE_ARGUMENT_OBJ(0, NativeBriefcaseManagerResourcesRequest, req);
+        REQUIRE_ARGUMENT_OBJ(1, NativeBriefcaseManagerResourcesRequest, reqIn);
         req->m_req.Codes().insert(reqIn->m_req.Codes().begin(), reqIn->m_req.Codes().end());
         req->m_req.Locks().GetLockSet().insert(reqIn->m_req.Locks().GetLockSet().begin(), reqIn->m_req.Locks().GetLockSet().end());
         // TBD: merge in request options 
@@ -1223,8 +1223,8 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
    void ExtractBriefcaseManagerResourcesRequest(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, AddonBriefcaseManagerResourcesRequest, reqOut);
-        REQUIRE_ARGUMENT_OBJ(1, AddonBriefcaseManagerResourcesRequest, reqIn);
+        REQUIRE_ARGUMENT_OBJ(0, NativeBriefcaseManagerResourcesRequest, reqOut);
+        REQUIRE_ARGUMENT_OBJ(1, NativeBriefcaseManagerResourcesRequest, reqIn);
         REQUIRE_ARGUMENT_BOOL(2, locks);
         REQUIRE_ARGUMENT_BOOL(3, codes);
         if (codes)
@@ -1268,18 +1268,18 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 
     Napi::Value BriefcaseManagerStartBulkOperation(const Napi::CallbackInfo& info)
         {
-        return Napi::Number::New(Env(), (int)AddonUtils::BriefcaseManagerStartBulkOperation(GetDgnDb()));
+        return Napi::Number::New(Env(), (int)JsInterop::BriefcaseManagerStartBulkOperation(GetDgnDb()));
         }
 
     Napi::Value BriefcaseManagerEndBulkOperation(const Napi::CallbackInfo& info)
         {
-        return Napi::Number::New(Env(), (int)AddonUtils::BriefcaseManagerEndBulkOperation(GetDgnDb()));
+        return Napi::Number::New(Env(), (int)JsInterop::BriefcaseManagerEndBulkOperation(GetDgnDb()));
         }
 
     Napi::Value UpdateProjectExtents(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson)
-        return Napi::Number::New(Env(), (int)AddonUtils::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson)));
+        return Napi::Number::New(Env(), (int)JsInterop::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson)));
         }
     Napi::Value ReadFontMap(const Napi::CallbackInfo& info) 
         {
@@ -1308,7 +1308,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         REQUIRE_ARGUMENT_STRING(1, params);
 		RETURN_IF_HAD_EXCEPTION
 
-        return Napi::String::New(Env(), AddonUtils::ExecuteTest(GetDgnDb(), testName, params).ToString().c_str());
+        return Napi::String::New(Env(), JsInterop::ExecuteTest(GetDgnDb(), testName, params).ToString().c_str());
 		}
 
 
@@ -1319,71 +1319,71 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "AddonDgnDb", {
-            InstanceMethod("createDgnDb", &AddonDgnDb::CreateDgnDb),
-            InstanceMethod("openDgnDb", &AddonDgnDb::OpenDgnDb),
-            InstanceMethod("closeDgnDb", &AddonDgnDb::CloseDgnDb),
-            InstanceMethod("processChangeSets", &AddonDgnDb::ProcessChangeSets),
-            InstanceMethod("startCreateChangeSet", &AddonDgnDb::StartCreateChangeSet),
-            InstanceMethod("finishCreateChangeSet", &AddonDgnDb::FinishCreateChangeSet),
-            InstanceMethod("createChangeCache", &AddonDgnDb::CreateChangeCache),
-            InstanceMethod("attachChangeCache", &AddonDgnDb::AttachChangeCache),
-            InstanceMethod("isChangeCacheAttached", &AddonDgnDb::IsChangeCacheAttached),
-            InstanceMethod("extractChangeSummary", &AddonDgnDb::ExtractChangeSummary),
-            InstanceMethod("setBriefcaseId", &AddonDgnDb::SetBriefcaseId),
-            InstanceMethod("getBriefcaseId", &AddonDgnDb::GetBriefcaseId),
-            InstanceMethod("getReversedChangeSetId", &AddonDgnDb::GetReversedChangeSetId),
-            InstanceMethod("getParentChangeSetId", &AddonDgnDb::GetParentChangeSetId),
-            InstanceMethod("getDbGuid", &AddonDgnDb::GetDbGuid),
-            InstanceMethod("setDbGuid", &AddonDgnDb::SetDbGuid),
-            InstanceMethod("setupBriefcase", &AddonDgnDb::SetupBriefcase),
-            InstanceMethod("saveChanges", &AddonDgnDb::SaveChanges),
-            InstanceMethod("abandonChanges", &AddonDgnDb::AbandonChanges),
-            InstanceMethod("importSchema", &AddonDgnDb::ImportSchema),
-            InstanceMethod("getElement", &AddonDgnDb::GetElement),
-            InstanceMethod("getModel", &AddonDgnDb::GetModel),
-            InstanceMethod("insertElement", &AddonDgnDb::InsertElement),
-            InstanceMethod("updateElement", &AddonDgnDb::UpdateElement),
-            InstanceMethod("deleteElement", &AddonDgnDb::DeleteElement),
-            InstanceMethod("insertModel", &AddonDgnDb::InsertModel),
-            InstanceMethod("updateModel", &AddonDgnDb::UpdateModel),
-            InstanceMethod("deleteModel", &AddonDgnDb::DeleteModel),
-            InstanceMethod("insertCodeSpec", &AddonDgnDb::InsertCodeSpec),
-            InstanceMethod("getElementPropertiesForDisplay", &AddonDgnDb::GetElementPropertiesForDisplay),
-            InstanceMethod("insertLinkTableRelationship", &AddonDgnDb::InsertLinkTableRelationship),
-            InstanceMethod("updateLinkTableRelationship", &AddonDgnDb::UpdateLinkTableRelationship),
-            InstanceMethod("deleteLinkTableRelationship", &AddonDgnDb::DeleteLinkTableRelationship),
-            InstanceMethod("getECClassMetaData", &AddonDgnDb::GetECClassMetaData),
-            InstanceMethod("getECClassMetaData", &AddonDgnDb::GetECClassMetaData),
-            InstanceMethod("getCachedBriefcaseInfos", &AddonDgnDb::GetCachedBriefcaseInfos),
-            InstanceMethod("getIModelProps", &AddonDgnDb::GetIModelProps),
-			InstanceMethod("updateProjectExtents", &AddonDgnDb::UpdateProjectExtents),
-            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &AddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
-            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &AddonDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
-            InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &AddonDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
-            InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &AddonDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
-            InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &AddonDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
-            InstanceMethod("briefcaseManagerStartBulkOperation", &AddonDgnDb::BriefcaseManagerStartBulkOperation),
-            InstanceMethod("briefcaseManagerEndBulkOperation", &AddonDgnDb::BriefcaseManagerEndBulkOperation),
-            InstanceMethod("extractBulkResourcesRequest", &AddonDgnDb::ExtractBulkResourcesRequest),
-            InstanceMethod("appendBriefcaseManagerResourcesRequest", &AddonDgnDb::AppendBriefcaseManagerResourcesRequest),
-            InstanceMethod("extractBriefcaseManagerResourcesRequest", &AddonDgnDb::ExtractBriefcaseManagerResourcesRequest),
-            InstanceMethod("inBulkOperation", &AddonDgnDb::InBulkOperation),
-            InstanceMethod("txnManagerQueryFirstTxnId", &AddonDgnDb::TxnManagerQueryFirstTxnId),
-            InstanceMethod("txnManagerQueryNextTxnId", &AddonDgnDb::TxnManagerQueryNextTxnId),
-            InstanceMethod("txnManagerQueryPreviousTxnId", &AddonDgnDb::TxnManagerQueryPreviousTxnId),
-            InstanceMethod("txnManagerGetCurrentTxnId", &AddonDgnDb::TxnManagerGetCurrentTxnId),
-            InstanceMethod("txnManagerGetTxnDescription", &AddonDgnDb::TxnManagerGetTxnDescription),
-            InstanceMethod("txnManagerIsTxnIdValid", &AddonDgnDb::TxnManagerIsTxnIdValid),
-            InstanceMethod("txnManagerHasUnsavedChanges", &AddonDgnDb::TxnManagerHasUnsavedChanges),
-            InstanceMethod("readFontMap", &AddonDgnDb::ReadFontMap),
+        Napi::Function t = DefineClass(env, "NativeDgnDb", {
+            InstanceMethod("createDgnDb", &NativeDgnDb::CreateDgnDb),
+            InstanceMethod("openDgnDb", &NativeDgnDb::OpenDgnDb),
+            InstanceMethod("closeDgnDb", &NativeDgnDb::CloseDgnDb),
+            InstanceMethod("processChangeSets", &NativeDgnDb::ProcessChangeSets),
+            InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
+            InstanceMethod("finishCreateChangeSet", &NativeDgnDb::FinishCreateChangeSet),
+            InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
+            InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
+            InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
+            InstanceMethod("extractChangeSummary", &NativeDgnDb::ExtractChangeSummary),
+            InstanceMethod("setBriefcaseId", &NativeDgnDb::SetBriefcaseId),
+            InstanceMethod("getBriefcaseId", &NativeDgnDb::GetBriefcaseId),
+            InstanceMethod("getReversedChangeSetId", &NativeDgnDb::GetReversedChangeSetId),
+            InstanceMethod("getParentChangeSetId", &NativeDgnDb::GetParentChangeSetId),
+            InstanceMethod("getDbGuid", &NativeDgnDb::GetDbGuid),
+            InstanceMethod("setDbGuid", &NativeDgnDb::SetDbGuid),
+            InstanceMethod("setupBriefcase", &NativeDgnDb::SetupBriefcase),
+            InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
+            InstanceMethod("abandonChanges", &NativeDgnDb::AbandonChanges),
+            InstanceMethod("importSchema", &NativeDgnDb::ImportSchema),
+            InstanceMethod("getElement", &NativeDgnDb::GetElement),
+            InstanceMethod("getModel", &NativeDgnDb::GetModel),
+            InstanceMethod("insertElement", &NativeDgnDb::InsertElement),
+            InstanceMethod("updateElement", &NativeDgnDb::UpdateElement),
+            InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
+            InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
+            InstanceMethod("updateModel", &NativeDgnDb::UpdateModel),
+            InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
+            InstanceMethod("insertCodeSpec", &NativeDgnDb::InsertCodeSpec),
+            InstanceMethod("getElementPropertiesForDisplay", &NativeDgnDb::GetElementPropertiesForDisplay),
+            InstanceMethod("insertLinkTableRelationship", &NativeDgnDb::InsertLinkTableRelationship),
+            InstanceMethod("updateLinkTableRelationship", &NativeDgnDb::UpdateLinkTableRelationship),
+            InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
+            InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
+            InstanceMethod("getECClassMetaData", &NativeDgnDb::GetECClassMetaData),
+            InstanceMethod("getCachedBriefcaseInfos", &NativeDgnDb::GetCachedBriefcaseInfos),
+            InstanceMethod("getIModelProps", &NativeDgnDb::GetIModelProps),
+			InstanceMethod("updateProjectExtents", &NativeDgnDb::UpdateProjectExtents),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
+            InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
+            InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
+            InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),
+            InstanceMethod("briefcaseManagerStartBulkOperation", &NativeDgnDb::BriefcaseManagerStartBulkOperation),
+            InstanceMethod("briefcaseManagerEndBulkOperation", &NativeDgnDb::BriefcaseManagerEndBulkOperation),
+            InstanceMethod("extractBulkResourcesRequest", &NativeDgnDb::ExtractBulkResourcesRequest),
+            InstanceMethod("appendBriefcaseManagerResourcesRequest", &NativeDgnDb::AppendBriefcaseManagerResourcesRequest),
+            InstanceMethod("extractBriefcaseManagerResourcesRequest", &NativeDgnDb::ExtractBriefcaseManagerResourcesRequest),
+            InstanceMethod("inBulkOperation", &NativeDgnDb::InBulkOperation),
+            InstanceMethod("txnManagerQueryFirstTxnId", &NativeDgnDb::TxnManagerQueryFirstTxnId),
+            InstanceMethod("txnManagerQueryNextTxnId", &NativeDgnDb::TxnManagerQueryNextTxnId),
+            InstanceMethod("txnManagerQueryPreviousTxnId", &NativeDgnDb::TxnManagerQueryPreviousTxnId),
+            InstanceMethod("txnManagerGetCurrentTxnId", &NativeDgnDb::TxnManagerGetCurrentTxnId),
+            InstanceMethod("txnManagerGetTxnDescription", &NativeDgnDb::TxnManagerGetTxnDescription),
+            InstanceMethod("txnManagerIsTxnIdValid", &NativeDgnDb::TxnManagerIsTxnIdValid),
+            InstanceMethod("txnManagerHasUnsavedChanges", &NativeDgnDb::TxnManagerHasUnsavedChanges),
+            InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
 						
 			// DEVELOPMENT-ONLY METHODS:
-			InstanceMethod("executeTest", &AddonDgnDb::ExecuteTest),
+			InstanceMethod("executeTest", &NativeDgnDb::ExecuteTest),
 
         });
 
-        exports.Set("AddonDgnDb", t);
+        exports.Set("NativeDgnDb", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -1397,7 +1397,7 @@ struct AddonDgnDb : Napi::ObjectWrap<AddonDgnDb>
 // Projects the IECSqlBinder interface into JS.
 //! @bsiclass
 //=======================================================================================
-struct AddonECSqlBinder : Napi::ObjectWrap<AddonECSqlBinder>
+struct NativeECSqlBinder : Napi::ObjectWrap<NativeECSqlBinder>
     {
 private:
     static Napi::FunctionReference s_constructor;
@@ -1423,21 +1423,21 @@ private:
         return *m_binder;
         }
 public:
-    AddonECSqlBinder(Napi::CallbackInfo const& info) : Napi::ObjectWrap<AddonECSqlBinder>(info) 
+    NativeECSqlBinder(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlBinder>(info) 
         {
         if (info.Length() != 2)
-            Napi::TypeError::New(Env(), "AddonECSqlBinder constructor expects two arguments.").ThrowAsJavaScriptException();
+            Napi::TypeError::New(Env(), "NativeECSqlBinder constructor expects two arguments.").ThrowAsJavaScriptException();
 
         m_binder = info[0].As<Napi::External<IECSqlBinder>>().Data();
         if (m_binder == nullptr)
-            Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlBinder constructor. IECSqlBinder must not be nullptr").ThrowAsJavaScriptException();
+            Napi::TypeError::New(Env(), "Invalid first arg for NativeECSqlBinder constructor. IECSqlBinder must not be nullptr").ThrowAsJavaScriptException();
 
         m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
         if (m_ecdb == nullptr)
-            Napi::TypeError::New(Env(), "Invalid second arg for AddonECSqlBinder constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
+            Napi::TypeError::New(Env(), "Invalid second arg for NativeECSqlBinder constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
         }
 
-    ~AddonECSqlBinder() {}
+    ~NativeECSqlBinder() {}
 
     static bool InstanceOf(Napi::Value val)
         {
@@ -1455,25 +1455,25 @@ public:
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "AddonECSqlBinder", {
-        InstanceMethod("dispose", &AddonECSqlBinder::Dispose),
-        InstanceMethod("bindNull", &AddonECSqlBinder::BindNull),
-        InstanceMethod("bindBlob", &AddonECSqlBinder::BindBlob),
-        InstanceMethod("bindBoolean", &AddonECSqlBinder::BindBoolean),
-        InstanceMethod("bindDateTime", &AddonECSqlBinder::BindDateTime),
-        InstanceMethod("bindDouble", &AddonECSqlBinder::BindDouble),
-        InstanceMethod("bindGuid", &AddonECSqlBinder::BindGuid),
-        InstanceMethod("bindId", &AddonECSqlBinder::BindId),
-        InstanceMethod("bindInteger", &AddonECSqlBinder::BindInteger),
-        InstanceMethod("bindPoint2d", &AddonECSqlBinder::BindPoint2d),
-        InstanceMethod("bindPoint3d", &AddonECSqlBinder::BindPoint3d),
-        InstanceMethod("bindString", &AddonECSqlBinder::BindString),
-        InstanceMethod("bindNavigation", &AddonECSqlBinder::BindNavigation),
-        InstanceMethod("bindMember", &AddonECSqlBinder::BindMember),
-        InstanceMethod("addArrayElement", &AddonECSqlBinder::AddArrayElement)
+        Napi::Function t = DefineClass(env, "NativeECSqlBinder", {
+        InstanceMethod("dispose", &NativeECSqlBinder::Dispose),
+        InstanceMethod("bindNull", &NativeECSqlBinder::BindNull),
+        InstanceMethod("bindBlob", &NativeECSqlBinder::BindBlob),
+        InstanceMethod("bindBoolean", &NativeECSqlBinder::BindBoolean),
+        InstanceMethod("bindDateTime", &NativeECSqlBinder::BindDateTime),
+        InstanceMethod("bindDouble", &NativeECSqlBinder::BindDouble),
+        InstanceMethod("bindGuid", &NativeECSqlBinder::BindGuid),
+        InstanceMethod("bindId", &NativeECSqlBinder::BindId),
+        InstanceMethod("bindInteger", &NativeECSqlBinder::BindInteger),
+        InstanceMethod("bindPoint2d", &NativeECSqlBinder::BindPoint2d),
+        InstanceMethod("bindPoint3d", &NativeECSqlBinder::BindPoint3d),
+        InstanceMethod("bindString", &NativeECSqlBinder::BindString),
+        InstanceMethod("bindNavigation", &NativeECSqlBinder::BindNavigation),
+        InstanceMethod("bindMember", &NativeECSqlBinder::BindMember),
+        InstanceMethod("addArrayElement", &NativeECSqlBinder::AddArrayElement)
         });
 
-        exports.Set("AddonECSqlBinder", t);
+        exports.Set("NativeECSqlBinder", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -1686,10 +1686,10 @@ public:
     };
 
 //=======================================================================================
-// Projects the AddonECSqlColumnInfo interface into JS.
+// Projects the NativeECSqlColumnInfo interface into JS.
 //! @bsiclass
 //=======================================================================================
-struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
+struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
     {
     private:
         //Must match ECSqlValueType in imodeljs-core
@@ -1725,17 +1725,17 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
             }
 
     public:
-        AddonECSqlColumnInfo(Napi::CallbackInfo const& info) : Napi::ObjectWrap<AddonECSqlColumnInfo>(info)
+        NativeECSqlColumnInfo(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlColumnInfo>(info)
             {
             if (info.Length() != 1)
-                Napi::TypeError::New(Env(), "AddonECSqlColumnInfo constructor expects two argument.").ThrowAsJavaScriptException();
+                Napi::TypeError::New(Env(), "NativeECSqlColumnInfo constructor expects two argument.").ThrowAsJavaScriptException();
 
             m_colInfo = info[0].As<Napi::External<ECSqlColumnInfo>>().Data();
             if (m_colInfo == nullptr)
-                Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlColumnInfo constructor. ECSqlColumnInfo must not be nullptr").ThrowAsJavaScriptException();
+                Napi::TypeError::New(Env(), "Invalid first arg for NativeECSqlColumnInfo constructor. ECSqlColumnInfo must not be nullptr").ThrowAsJavaScriptException();
             }
 
-        ~AddonECSqlColumnInfo() {}
+        ~NativeECSqlColumnInfo() {}
 
         static bool InstanceOf(Napi::Value val)
             {
@@ -1753,17 +1753,17 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
             // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
             // ***
             Napi::HandleScope scope(env);
-            Napi::Function t = DefineClass(env, "AddonECSqlColumnInfo", {
-            InstanceMethod("getType", &AddonECSqlColumnInfo::GetType),
-            InstanceMethod("getPropertyName", &AddonECSqlColumnInfo::GetPropertyName),
-            InstanceMethod("getAccessString", &AddonECSqlColumnInfo::GetAccessString),
-            InstanceMethod("isSystemProperty", &AddonECSqlColumnInfo::IsSystemProperty),
-            InstanceMethod("isGeneratedProperty", &AddonECSqlColumnInfo::IsGeneratedProperty),
-            InstanceMethod("getRootClassTableSpace", &AddonECSqlColumnInfo::GetRootClassTableSpace),
-            InstanceMethod("getRootClassName", &AddonECSqlColumnInfo::GetRootClassName),
-            InstanceMethod("getRootClassAlias", &AddonECSqlColumnInfo::GetRootClassAlias)});
+            Napi::Function t = DefineClass(env, "NativeECSqlColumnInfo", {
+            InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
+            InstanceMethod("getPropertyName", &NativeECSqlColumnInfo::GetPropertyName),
+            InstanceMethod("getAccessString", &NativeECSqlColumnInfo::GetAccessString),
+            InstanceMethod("isSystemProperty", &NativeECSqlColumnInfo::IsSystemProperty),
+            InstanceMethod("isGeneratedProperty", &NativeECSqlColumnInfo::IsGeneratedProperty),
+            InstanceMethod("getRootClassTableSpace", &NativeECSqlColumnInfo::GetRootClassTableSpace),
+            InstanceMethod("getRootClassName", &NativeECSqlColumnInfo::GetRootClassName),
+            InstanceMethod("getRootClassAlias", &NativeECSqlColumnInfo::GetRootClassAlias)});
 
-            exports.Set("AddonECSqlColumnInfo", t);
+            exports.Set("NativeECSqlColumnInfo", t);
 
             s_constructor = Napi::Persistent(t);
             // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -1947,7 +1947,7 @@ struct AddonECSqlColumnInfo : Napi::ObjectWrap<AddonECSqlColumnInfo>
 // Projects the IECSqlValue interface into JS.
 //! @bsiclass
 //=======================================================================================
-struct AddonECSqlValue : Napi::ObjectWrap<AddonECSqlValue>
+struct NativeECSqlValue : Napi::ObjectWrap<NativeECSqlValue>
     {
 private:
     static Napi::FunctionReference s_constructor;
@@ -1963,21 +1963,21 @@ private:
         return *m_ecsqlValue;
         }
 public:
-    AddonECSqlValue(Napi::CallbackInfo const& info) : Napi::ObjectWrap<AddonECSqlValue>(info)
+    NativeECSqlValue(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlValue>(info)
         {
         if (info.Length() != 2)
-            Napi::TypeError::New(Env(), "AddonECSqlValue constructor expects two arguments.").ThrowAsJavaScriptException();
+            Napi::TypeError::New(Env(), "NativeECSqlValue constructor expects two arguments.").ThrowAsJavaScriptException();
 
         m_ecsqlValue = info[0].As<Napi::External<IECSqlValue>>().Data();
         if (m_ecsqlValue == nullptr)
-            Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlValue constructor. IECSqlValue must not be nullptr").ThrowAsJavaScriptException();
+            Napi::TypeError::New(Env(), "Invalid first arg for NativeECSqlValue constructor. IECSqlValue must not be nullptr").ThrowAsJavaScriptException();
 
         m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
         if (m_ecdb == nullptr)
-            Napi::TypeError::New(Env(), "Invalid second arg for AddonECSqlValue constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
+            Napi::TypeError::New(Env(), "Invalid second arg for NativeECSqlValue constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
         }
 
-    ~AddonECSqlValue() {}
+    ~NativeECSqlValue() {}
 
     static bool InstanceOf(Napi::Value val)
         {
@@ -1995,29 +1995,29 @@ public:
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "AddonECSqlValue", {
-        InstanceMethod("dispose", &AddonECSqlValue::Dispose),
-        InstanceMethod("isNull", &AddonECSqlValue::IsNull),
-        InstanceMethod("getColumnInfo", &AddonECSqlValue::GetColumnInfo),
-        InstanceMethod("getBlob", &AddonECSqlValue::GetBlob),
-        InstanceMethod("getBoolean", &AddonECSqlValue::GetBoolean),
-        InstanceMethod("getDateTime", &AddonECSqlValue::GetDateTime),
-        InstanceMethod("getDouble", &AddonECSqlValue::GetDouble),
-        InstanceMethod("getGeometry", &AddonECSqlValue::GetGeometry),
-        InstanceMethod("getGuid", &AddonECSqlValue::GetGuid),
-        InstanceMethod("getId", &AddonECSqlValue::GetId),
-        InstanceMethod("getClassNameForClassId", &AddonECSqlValue::GetClassNameForClassId),
-        InstanceMethod("getInt", &AddonECSqlValue::GetInt),
-        InstanceMethod("getInt64", &AddonECSqlValue::GetInt64),
-        InstanceMethod("getPoint2d", &AddonECSqlValue::GetPoint2d),
-        InstanceMethod("getPoint3d", &AddonECSqlValue::GetPoint3d),
-        InstanceMethod("getString", &AddonECSqlValue::GetString),
-        InstanceMethod("getNavigation", &AddonECSqlValue::GetNavigation),
-        InstanceMethod("getStructIterator", &AddonECSqlValue::GetStructIterator),
-        InstanceMethod("getArrayIterator", &AddonECSqlValue::GetArrayIterator)
+        Napi::Function t = DefineClass(env, "NativeECSqlValue", {
+        InstanceMethod("dispose", &NativeECSqlValue::Dispose),
+        InstanceMethod("isNull", &NativeECSqlValue::IsNull),
+        InstanceMethod("getColumnInfo", &NativeECSqlValue::GetColumnInfo),
+        InstanceMethod("getBlob", &NativeECSqlValue::GetBlob),
+        InstanceMethod("getBoolean", &NativeECSqlValue::GetBoolean),
+        InstanceMethod("getDateTime", &NativeECSqlValue::GetDateTime),
+        InstanceMethod("getDouble", &NativeECSqlValue::GetDouble),
+        InstanceMethod("getGeometry", &NativeECSqlValue::GetGeometry),
+        InstanceMethod("getGuid", &NativeECSqlValue::GetGuid),
+        InstanceMethod("getId", &NativeECSqlValue::GetId),
+        InstanceMethod("getClassNameForClassId", &NativeECSqlValue::GetClassNameForClassId),
+        InstanceMethod("getInt", &NativeECSqlValue::GetInt),
+        InstanceMethod("getInt64", &NativeECSqlValue::GetInt64),
+        InstanceMethod("getPoint2d", &NativeECSqlValue::GetPoint2d),
+        InstanceMethod("getPoint3d", &NativeECSqlValue::GetPoint3d),
+        InstanceMethod("getString", &NativeECSqlValue::GetString),
+        InstanceMethod("getNavigation", &NativeECSqlValue::GetNavigation),
+        InstanceMethod("getStructIterator", &NativeECSqlValue::GetStructIterator),
+        InstanceMethod("getArrayIterator", &NativeECSqlValue::GetArrayIterator)
         });
 
-        exports.Set("AddonECSqlValue", t);
+        exports.Set("NativeECSqlValue", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -2045,7 +2045,7 @@ public:
         if (info.Length() != 0)
             Napi::TypeError::New(info.Env(), "GetColumnInfo must not have arguments").ThrowAsJavaScriptException();
 
-        return AddonECSqlColumnInfo::New(Env(), GetECSqlValue().GetColumnInfo());
+        return NativeECSqlColumnInfo::New(Env(), GetECSqlValue().GetColumnInfo());
         }
 
     Napi::Value IsNull(const Napi::CallbackInfo& info)
@@ -2220,7 +2220,7 @@ public:
         return jsNavValue;
         }
 
-    //implementations are after AddonECSqlValueIterable as it needs to call into that class
+    //implementations are after NativeECSqlValueIterable as it needs to call into that class
     Napi::Value GetStructIterator(const Napi::CallbackInfo&);
     Napi::Value GetArrayIterator(const Napi::CallbackInfo&);
     };
@@ -2229,7 +2229,7 @@ public:
 // Projects the IECSqlValueIterable interface into JS.
 //! @bsiclass
 //=======================================================================================
-struct AddonECSqlValueIterator : Napi::ObjectWrap<AddonECSqlValueIterator>
+struct NativeECSqlValueIterator : Napi::ObjectWrap<NativeECSqlValueIterator>
     {
     private:
         static Napi::FunctionReference s_constructor;
@@ -2240,23 +2240,23 @@ struct AddonECSqlValueIterator : Napi::ObjectWrap<AddonECSqlValueIterator>
         IECSqlValueIterable::const_iterator m_endIt;
 
     public:
-        AddonECSqlValueIterator(Napi::CallbackInfo const& info) : Napi::ObjectWrap<AddonECSqlValueIterator>(info)
+        NativeECSqlValueIterator(Napi::CallbackInfo const& info) : Napi::ObjectWrap<NativeECSqlValueIterator>(info)
             {
             if (info.Length() != 2)
-                Napi::TypeError::New(Env(), "AddonECSqlValueIterator constructor expects two argument.").ThrowAsJavaScriptException();
+                Napi::TypeError::New(Env(), "NativeECSqlValueIterator constructor expects two argument.").ThrowAsJavaScriptException();
 
             m_iterable = info[0].As<Napi::External<IECSqlValueIterable>>().Data();
             if (m_iterable == nullptr)
-                Napi::TypeError::New(Env(), "Invalid first arg for AddonECSqlValueIterator constructor. IECSqlValueIterable must not be nullptr").ThrowAsJavaScriptException();
+                Napi::TypeError::New(Env(), "Invalid first arg for NativeECSqlValueIterator constructor. IECSqlValueIterable must not be nullptr").ThrowAsJavaScriptException();
 
             m_endIt = m_iterable->end();
 
             m_ecdb = info[1].As<Napi::External<ECDb>>().Data();
             if (m_ecdb == nullptr)
-                Napi::TypeError::New(Env(), "Invalid second arg for AddonECSqlValueIterator constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
+                Napi::TypeError::New(Env(), "Invalid second arg for NativeECSqlValueIterator constructor. ECDb must not be nullptr").ThrowAsJavaScriptException();
             }
 
-        ~AddonECSqlValueIterator() {}
+        ~NativeECSqlValueIterator() {}
 
         static bool InstanceOf(Napi::Value val)
             {
@@ -2274,12 +2274,12 @@ struct AddonECSqlValueIterator : Napi::ObjectWrap<AddonECSqlValueIterator>
             // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
             // ***
             Napi::HandleScope scope(env);
-            Napi::Function t = DefineClass(env, "AddonECSqlValueIterator", {
-            InstanceMethod("dispose", &AddonECSqlValueIterator::Dispose),
-            InstanceMethod("moveNext", &AddonECSqlValueIterator::MoveNext),
-            InstanceMethod("getCurrent", &AddonECSqlValueIterator::GetCurrent)});
+            Napi::Function t = DefineClass(env, "NativeECSqlValueIterator", {
+            InstanceMethod("dispose", &NativeECSqlValueIterator::Dispose),
+            InstanceMethod("moveNext", &NativeECSqlValueIterator::MoveNext),
+            InstanceMethod("getCurrent", &NativeECSqlValueIterator::GetCurrent)});
 
-            exports.Set("AddonECSqlValueIterator", t);
+            exports.Set("NativeECSqlValueIterator", t);
 
             s_constructor = Napi::Persistent(t);
             // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -2307,7 +2307,7 @@ struct AddonECSqlValueIterator : Napi::ObjectWrap<AddonECSqlValueIterator>
         Napi::Value MoveNext(const Napi::CallbackInfo& info)
             {
             if (info.Length() != 0)
-                Napi::TypeError::New(info.Env(), "AddonECSqlValueIterator::MoveNext must not have arguments").ThrowAsJavaScriptException();
+                Napi::TypeError::New(info.Env(), "NativeECSqlValueIterator::MoveNext must not have arguments").ThrowAsJavaScriptException();
 
             if (m_isBeforeFirstElement)
                 {
@@ -2326,32 +2326,32 @@ struct AddonECSqlValueIterator : Napi::ObjectWrap<AddonECSqlValueIterator>
         Napi::Value GetCurrent(const Napi::CallbackInfo& info)
             {
             if (info.Length() != 0)
-                Napi::TypeError::New(info.Env(), "AddonECSqlValueIterator::GetCurrent must not have arguments").ThrowAsJavaScriptException();
+                Napi::TypeError::New(info.Env(), "NativeECSqlValueIterator::GetCurrent must not have arguments").ThrowAsJavaScriptException();
 
-            return AddonECSqlValue::New(Env(), *m_it, *m_ecdb);
+            return NativeECSqlValue::New(Env(), *m_it, *m_ecdb);
             }
     };
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle               01/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value AddonECSqlValue::GetStructIterator(const Napi::CallbackInfo& info)
+Napi::Value NativeECSqlValue::GetStructIterator(const Napi::CallbackInfo& info)
     {
     if (info.Length() != 0)
         Napi::TypeError::New(info.Env(), "GetStructIterator must not have arguments").ThrowAsJavaScriptException();
 
-    return AddonECSqlValueIterator::New(info.Env(), GetECSqlValue().GetStructIterable(), *m_ecdb);
+    return NativeECSqlValueIterator::New(info.Env(), GetECSqlValue().GetStructIterable(), *m_ecdb);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle               01/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-Napi::Value AddonECSqlValue::GetArrayIterator(const Napi::CallbackInfo& info)
+Napi::Value NativeECSqlValue::GetArrayIterator(const Napi::CallbackInfo& info)
     {
     if (info.Length() != 0)
         Napi::TypeError::New(info.Env(), "GetArrayIterator must not have arguments").ThrowAsJavaScriptException();
 
-    return AddonECSqlValueIterator::New(info.Env(), GetECSqlValue().GetArrayIterable(), *m_ecdb);
+    return NativeECSqlValueIterator::New(info.Env(), GetECSqlValue().GetArrayIterable(), *m_ecdb);
     }
 
 
@@ -2359,7 +2359,7 @@ Napi::Value AddonECSqlValue::GetArrayIterator(const Napi::CallbackInfo& info)
 // Projects the ECSqlStatement class into JS.
 //! @bsiclass
 //=======================================================================================
-struct AddonECSqlStatement : Napi::ObjectWrap<AddonECSqlStatement>
+struct NativeECSqlStatement : Napi::ObjectWrap<NativeECSqlStatement>
 {
 private:
     #define MUST_HAVE_M_STMT if (m_stmt.get() == nullptr) Napi::TypeError::New(Env(), "Statement is not prepared").ThrowAsJavaScriptException();
@@ -2368,7 +2368,7 @@ private:
     std::unique_ptr<ECSqlStatement> m_stmt;
 
 public:
-    AddonECSqlStatement(const Napi::CallbackInfo& info) : Napi::ObjectWrap<AddonECSqlStatement>(info), m_stmt(new ECSqlStatement()) {}
+    NativeECSqlStatement(const Napi::CallbackInfo& info) : Napi::ObjectWrap<NativeECSqlStatement>(info), m_stmt(new ECSqlStatement()) {}
 
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
@@ -2377,19 +2377,19 @@ public:
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "AddonECSqlStatement", {
-          InstanceMethod("prepare", &AddonECSqlStatement::Prepare),
-          InstanceMethod("reset", &AddonECSqlStatement::Reset),
-          InstanceMethod("dispose", &AddonECSqlStatement::Dispose),
-          InstanceMethod("clearBindings", &AddonECSqlStatement::ClearBindings),
-          InstanceMethod("getBinder", &AddonECSqlStatement::GetBinder),
-          InstanceMethod("step", &AddonECSqlStatement::Step),
-          InstanceMethod("stepForInsert", &AddonECSqlStatement::StepForInsert),
-          InstanceMethod("getColumnCount", &AddonECSqlStatement::GetColumnCount),
-          InstanceMethod("getValue", &AddonECSqlStatement::GetValue)
+        Napi::Function t = DefineClass(env, "NativeECSqlStatement", {
+          InstanceMethod("prepare", &NativeECSqlStatement::Prepare),
+          InstanceMethod("reset", &NativeECSqlStatement::Reset),
+          InstanceMethod("dispose", &NativeECSqlStatement::Dispose),
+          InstanceMethod("clearBindings", &NativeECSqlStatement::ClearBindings),
+          InstanceMethod("getBinder", &NativeECSqlStatement::GetBinder),
+          InstanceMethod("step", &NativeECSqlStatement::Step),
+          InstanceMethod("stepForInsert", &NativeECSqlStatement::StepForInsert),
+          InstanceMethod("getColumnCount", &NativeECSqlStatement::GetColumnCount),
+          InstanceMethod("getValue", &NativeECSqlStatement::GetValue)
         });
 
-        exports.Set("AddonECSqlStatement", t);
+        exports.Set("NativeECSqlStatement", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -2402,24 +2402,24 @@ public:
         {
         if (info.Length() != 2) 
             {
-            Napi::TypeError::New(Env(), "AddonECSqlStatement::Prepare requires two arguments").ThrowAsJavaScriptException();
+            Napi::TypeError::New(Env(), "NativeECSqlStatement::Prepare requires two arguments").ThrowAsJavaScriptException();
             return NapiUtils::CreateErrorObject0(BE_SQLITE_ERROR, nullptr, Env());
             }
 
         Napi::Object dbObj = info[0].As<Napi::Object>();
 
         ECDb* ecdb = nullptr;
-        if (AddonDgnDb::InstanceOf(dbObj))
+        if (NativeDgnDb::InstanceOf(dbObj))
             {
-            AddonDgnDb* addonDgndb = AddonDgnDb::Unwrap(dbObj);
+            NativeDgnDb* addonDgndb = NativeDgnDb::Unwrap(dbObj);
             if (!addonDgndb->IsOpen())
                 return NapiUtils::CreateErrorObject0(BE_SQLITE_NOTADB, nullptr, Env());
 
             ecdb = &addonDgndb->GetDgnDb();
             }
-        else if (AddonECDb::InstanceOf(dbObj))
+        else if (NativeECDb::InstanceOf(dbObj))
             {
-            AddonECDb* addonECDb = AddonECDb::Unwrap(dbObj);
+            NativeECDb* addonECDb = NativeECDb::Unwrap(dbObj);
             ecdb = &addonECDb->GetECDb();
 
             if (!ecdb->IsDbOpen())
@@ -2427,7 +2427,7 @@ public:
             }
         else 
             {
-            Napi::TypeError::New(Env(), "Argument 0 must be a AddonDgnDb or AddonECDb object").ThrowAsJavaScriptException();
+            Napi::TypeError::New(Env(), "Argument 0 must be a NativeDgnDb or NativeECDb object").ThrowAsJavaScriptException();
             return Env().Undefined();
             }
 
@@ -2436,7 +2436,7 @@ public:
         BeSqliteDbMutexHolder serializeAccess(*ecdb); // hold mutex, so that we have a chance to get last ECDb error message
 
         const ECSqlStatus status = m_stmt->Prepare(*ecdb, ecsql.c_str());
-        return NapiUtils::CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? AddonUtils::GetLastECDbIssue().c_str() : nullptr, Env());
+        return NapiUtils::CreateErrorObject0(ToDbResult(status), !status.IsSuccess() ? JsInterop::GetLastECDbIssue().c_str() : nullptr, Env());
         }
 
     Napi::Value Reset(const Napi::CallbackInfo& info)
@@ -2483,7 +2483,7 @@ public:
             paramIndex = m_stmt->GetParameterIndex(paramArg.ToString().Utf8Value().c_str());
 
         IECSqlBinder& binder = m_stmt->GetBinder(paramIndex);
-        return AddonECSqlBinder::New(info.Env(), binder, *m_stmt->GetECDb());
+        return NativeECSqlBinder::New(info.Env(), binder, *m_stmt->GetECDb());
         }
 
     Napi::Value Step(const Napi::CallbackInfo& info)
@@ -2533,7 +2533,7 @@ public:
         REQUIRE_ARGUMENT_INTEGER(0, colIndex);
 
         IECSqlValue const& val = m_stmt->GetValue(colIndex);
-        return AddonECSqlValue::New(info.Env(), val, *m_stmt->GetECDb());
+        return NativeECSqlValue::New(info.Env(), val, *m_stmt->GetECDb());
         }
 
     static DbResult ToDbResult(ECSqlStatus status) 
@@ -2547,18 +2547,18 @@ public:
 };
 
 //=======================================================================================
-// Projects the AddonECPresentationManager class into JS.
+// Projects the NativeECPresentationManager class into JS.
 //! @bsiclass
 //=======================================================================================
-struct AddonECPresentationManager : Napi::ObjectWrap<AddonECPresentationManager>
+struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManager>
     {
     static Napi::FunctionReference s_constructor;
 
     ConnectionManager m_connections;
     std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     
-    AddonECPresentationManager(const Napi::CallbackInfo& info) 
-        : Napi::ObjectWrap<AddonECPresentationManager>(info)
+    NativeECPresentationManager(const Napi::CallbackInfo& info) 
+        : Napi::ObjectWrap<NativeECPresentationManager>(info)
         {
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(ECPresentationUtils::CreatePresentationManager(m_connections, T_HOST.GetIKnownLocationsAdmin()));
         }
@@ -2578,12 +2578,12 @@ struct AddonECPresentationManager : Napi::ObjectWrap<AddonECPresentationManager>
         // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
         // ***
         Napi::HandleScope scope(env);
-        Napi::Function t = DefineClass(env, "AddonECPresentationManager", {
-          InstanceMethod("handleRequest", &AddonECPresentationManager::HandleRequest),
-          InstanceMethod("setupRulesetDirectories", &AddonECPresentationManager::SetupRulesetDirectories)
+        Napi::Function t = DefineClass(env, "NativeECPresentationManager", {
+          InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
+          InstanceMethod("setupRulesetDirectories", &NativeECPresentationManager::SetupRulesetDirectories)
         });
 
-        exports.Set("AddonECPresentationManager", t);
+        exports.Set("NativeECPresentationManager", t);
 
         s_constructor = Napi::Persistent(t);
         // Per N-API docs: Call this on a reference that is declared as static data, to prevent its destructor
@@ -2594,7 +2594,7 @@ struct AddonECPresentationManager : Napi::ObjectWrap<AddonECPresentationManager>
 
     Napi::Value HandleRequest(const Napi::CallbackInfo& info)
         {
-        REQUIRE_ARGUMENT_OBJ(0, AddonDgnDb, db);    // contract pre-conditions
+        REQUIRE_ARGUMENT_OBJ(0, NativeDgnDb, db);    // contract pre-conditions
         REQUIRE_ARGUMENT_STRING(1, serializedRequest);
 
         if (!db->IsOpen())
@@ -2688,18 +2688,19 @@ static void SetLogger(Napi::CallbackInfo const& info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
     {
-    auto env = IModelJsAddon::s_logger.Env();
+    auto env = IModelJsNative::s_logger.Env();
     Napi::HandleScope scope(env);
 
-    Utf8CP fname = (sev <= NativeLogging::LOG_TRACE)?   "logTrace": 
+    Utf8CP fname = (sev == NativeLogging::LOG_TRACE)?   "logTrace": 
+                   (sev == NativeLogging::LOG_DEBUG)?   "logTrace": // Logger does not distinguish between trace and debug
                    (sev == NativeLogging::LOG_INFO)?    "logInfo":
                    (sev == NativeLogging::LOG_WARNING)? "logWarning":
-                                                        "logError";
+                                                        "logError"; // Logger does not distinguish between error and fatal
 
-    auto method = IModelJsAddon::s_logger.Get(fname).As<Napi::Function>();
+    auto method = IModelJsNative::s_logger.Get(fname).As<Napi::Function>();
     if (method == env.Undefined())
         {
-        Napi::Error::New(*IModelJsAddon::s_env, "Invalid Logger").ThrowAsJavaScriptException();
+        Napi::Error::New(*IModelJsNative::s_env, "Invalid Logger").ThrowAsJavaScriptException();
         return;
         }
 
@@ -2714,13 +2715,13 @@ static void logMessageToJs(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP 
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool callIsLogLevelEnabledJs(Utf8CP category, NativeLogging::SEVERITY sev)
     {
-    auto env = IModelJsAddon::s_logger.Env();
+    auto env = IModelJsNative::s_logger.Env();
     Napi::HandleScope scope(env);
 
-    auto method = IModelJsAddon::s_logger.Get("isEnabled").As<Napi::Function>();
+    auto method = IModelJsNative::s_logger.Get("isEnabled").As<Napi::Function>();
     if (method == env.Undefined())
         {
-        Napi::Error::New(*IModelJsAddon::s_env, "Invalid Logger").ThrowAsJavaScriptException();
+        Napi::Error::New(*IModelJsNative::s_env, "Invalid Logger").ThrowAsJavaScriptException();
         return true;
         }
     
@@ -2777,89 +2778,89 @@ static void doDeferredLogging()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool isMainThread()
     {
-    return BeThreadUtilities::GetCurrentThreadId() == IModelJsAddon::s_mainThreadId;
+    return BeThreadUtilities::GetCurrentThreadId() == IModelJsNative::s_mainThreadId;
     }
 
-} // namespace IModelJsAddon
+} // namespace IModelJsNative
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddonUtils::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
+void IModelJsNative::JsInterop::LogMessage(Utf8CP category, NativeLogging::SEVERITY sev, Utf8CP msg)
     {
-    if (IModelJsAddon::s_logger.IsEmpty() || !IModelJsAddon::isMainThread())
+    if (IModelJsNative::s_logger.IsEmpty() || !IModelJsNative::isMainThread())
         {
-        IModelJsAddon::deferLogging(category, sev, msg);
+        IModelJsNative::deferLogging(category, sev, msg);
         return;
         }
     
-    IModelJsAddon::doDeferredLogging();
-    IModelJsAddon::logMessageToJs(category, sev, msg);
+    IModelJsNative::doDeferredLogging();
+    IModelJsNative::logMessageToJs(category, sev, msg);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AddonUtils::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
+bool IModelJsNative::JsInterop::IsSeverityEnabled(Utf8CP category, NativeLogging::SEVERITY sev)
     {
-    if (IModelJsAddon::s_logger.IsEmpty() || !IModelJsAddon::isMainThread())
+    if (IModelJsNative::s_logger.IsEmpty() || !IModelJsNative::isMainThread())
         return true;
     
-    IModelJsAddon::doDeferredLogging();
-    return IModelJsAddon::callIsLogLevelEnabledJs(category, sev);
+    IModelJsNative::doDeferredLogging();
+    return IModelJsNative::callIsLogLevelEnabledJs(category, sev);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BentleyApi::Dgn::AddonUtils::ThrowJsException(Utf8CP msg)
+void IModelJsNative::JsInterop::ThrowJsException(Utf8CP msg)
     {
-    Napi::Error::New(*IModelJsAddon::s_env, msg).ThrowAsJavaScriptException();
+    Napi::Error::New(*IModelJsNative::s_env, msg).ThrowAsJavaScriptException();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Napi::Object iModelJsAddonRegisterModule(Napi::Env env, Napi::Object exports)
+static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exports)
     {
-    IModelJsAddon::s_env = new Napi::Env(env);
+    IModelJsNative::s_env = new Napi::Env(env);
 
     Napi::HandleScope scope(env);
 
     BeFileName addondir = Desktop::FileSystem::GetLibraryDir();
 
-    IModelJsAddon::s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
+    IModelJsNative::s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
 
-    AddonUtils::Initialize(addondir, IModelJsAddon::ThrowJsExceptionOnAssert);
-    IModelJsAddon::AddonDgnDb::Init(env, exports);
-    IModelJsAddon::AddonECDb::Init(env, exports);
-    IModelJsAddon::AddonECSqlStatement::Init(env, exports);
-    IModelJsAddon::AddonECSqlBinder::Init(env, exports);
-    IModelJsAddon::AddonECSqlValue::Init(env, exports);
-    IModelJsAddon::AddonECSqlColumnInfo::Init(env, exports);
-    IModelJsAddon::AddonECSqlValueIterator::Init(env, exports);
-    IModelJsAddon::AddonBriefcaseManagerResourcesRequest::Init(env, exports);
-    IModelJsAddon::AddonECPresentationManager::Init(env, exports);
-    IModelJsAddon::AddonECSchemaXmlContext::Init(env, exports);
+    IModelJsNative::JsInterop::Initialize(addondir, IModelJsNative::ThrowJsExceptionOnAssert);
+    IModelJsNative::NativeDgnDb::Init(env, exports);
+    IModelJsNative::NativeECDb::Init(env, exports);
+    IModelJsNative::NativeECSqlStatement::Init(env, exports);
+    IModelJsNative::NativeECSqlBinder::Init(env, exports);
+    IModelJsNative::NativeECSqlValue::Init(env, exports);
+    IModelJsNative::NativeECSqlColumnInfo::Init(env, exports);
+    IModelJsNative::NativeECSqlValueIterator::Init(env, exports);
+    IModelJsNative::NativeBriefcaseManagerResourcesRequest::Init(env, exports);
+    IModelJsNative::NativeECPresentationManager::Init(env, exports);
+    IModelJsNative::NativeECSchemaXmlContext::Init(env, exports);
 
     exports.DefineProperties(
         {
         Napi::PropertyDescriptor::Value("version", Napi::String::New(env, PACKAGE_VERSION), PROPERTY_ATTRIBUTES),
-        Napi::PropertyDescriptor::Accessor("logger", &IModelJsAddon::GetLogger, &IModelJsAddon::SetLogger),
+        Napi::PropertyDescriptor::Accessor("logger", &IModelJsNative::GetLogger, &IModelJsNative::SetLogger),
         });
 
     return exports;
     }
 
-Napi::FunctionReference IModelJsAddon::AddonBriefcaseManagerResourcesRequest::s_constructor;
-Napi::FunctionReference IModelJsAddon::AddonECSqlStatement::s_constructor;
-Napi::FunctionReference IModelJsAddon::AddonECSqlBinder::s_constructor;
-Napi::FunctionReference IModelJsAddon::AddonECSqlValue::s_constructor;
-Napi::FunctionReference IModelJsAddon::AddonECSqlColumnInfo::s_constructor;
-Napi::FunctionReference IModelJsAddon::AddonECSqlValueIterator::s_constructor;
-Napi::FunctionReference IModelJsAddon::AddonDgnDb::s_constructor;
-Napi::FunctionReference IModelJsAddon::AddonECPresentationManager::s_constructor;
-Napi::FunctionReference IModelJsAddon::AddonECDb::s_constructor;
-Napi::FunctionReference IModelJsAddon::AddonECSchemaXmlContext::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeBriefcaseManagerResourcesRequest::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeECSqlStatement::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeECSqlBinder::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeECSqlValue::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeECSqlColumnInfo::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeECSqlValueIterator::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeDgnDb::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeECPresentationManager::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeECDb::s_constructor;
+Napi::FunctionReference IModelJsNative::NativeECSchemaXmlContext::s_constructor;
 
-NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsAddonRegisterModule)
+NODE_API_MODULE(at_bentley_imodeljs_nodeaddon, iModelJsNativeRegisterModule)
