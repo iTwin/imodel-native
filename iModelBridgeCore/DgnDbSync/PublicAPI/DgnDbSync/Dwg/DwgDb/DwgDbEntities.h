@@ -266,7 +266,7 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(3dPolyline)
     DWGDB_DECLARE_ENTITY_MEMBERS()
 
-    //! same as Ac/OdDb::Poly3dType
+    //! same as Ac/OdDb:: Poly3dType
     enum class Type
         {
         Simple      = DWGDB_SDKENUM_DB(k3dSimplePoly),
@@ -318,7 +318,7 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(PolygonMesh)
     DWGDB_DECLARE_ENTITY_MEMBERS()
 
-    //! Same as Ac/OdDb::PolyMeshType
+    //! Same as Ac/OdDb:: PolyMeshType
     enum class Type
         {
         SimpleMesh      = DWGDB_SDKENUM_DB(kSimpleMesh),
@@ -373,7 +373,7 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(PolygonMeshVertex)
     DWGDB_DECLARE_ENTITY_MEMBERS()
 
-    //! Same as Ac/OdDb::Vertex3dType
+    //! Same as Ac/OdDb:: Vertex3dType
     enum class Type
         {
         SimpleVertex    = DWGDB_SDKENUM_DB(k3dSimpleVertex),

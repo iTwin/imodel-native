@@ -158,6 +158,18 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
         }
     EXPECT_EQ(1, count);
 
+    // check GeometryParts model
+    count = 0;
+    for (auto const& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_DefinitionModel)))
+        {
+        auto model = models.GetModel (entry.GetModelId());
+        ASSERT_TRUE(model.IsValid());
+        auto name = model->GetName ();
+        if (name.EqualsI("DwgGeometryParts"))
+            count++;
+        }
+    EXPECT_EQ(1, count) << "Should always & only have 1 DwgGeometryParts model!";
+
     // check sheet models
     count = 0;
     for (auto const& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_SheetModel)))
