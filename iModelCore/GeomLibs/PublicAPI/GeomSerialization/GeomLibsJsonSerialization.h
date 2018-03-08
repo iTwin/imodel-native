@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/GeomSerialization/GeomLibsJsonSerialization.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,6 +36,27 @@ public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToJsonString (Utf8S
 public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToJsonString(Utf8StringR string, bvector<IGeometryPtr> const &data, bool preferNativeDgnTYpes = true);
         //! Output readable json via GEOMAPI_PRINTF (i.e. for debug use only)
 public: static GEOMLIBS_SERIALIZATION_EXPORT void DumpJson (Utf8StringCR string);
+
+};
+
+
+struct IModelJson
+{
+
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryIModelJsonValueToGeometry (JsonValueCR value, bvector<IGeometryPtr> &geometry);
+
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryIModelJsonStringToGeometry (Utf8StringCR string, bvector<IGeometryPtr> &geometry);
+
+
+//! Convert a vector of IGeometry to json value with the IModelJson schema keys and structure
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToIModelJsonValue(Json::Value &value, bvector<IGeometryPtr> const &data);
+//! Convert a single IGeometry a json value with the IModelJson schema keys and structure
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToIModelJsonValue (Json::Value &value, IGeometryCR data);
+
+//! Convert a vector of IGeometry to string with the IModelJson schema keys and structure
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToIModelJsonString (Utf8StringR string, IGeometryCR data);
+//!  Convert a single IGeometry to string with the IModelJson schema keys and structure
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToIModelJsonString(Utf8StringR string, bvector<IGeometryPtr> const &data);
 
 };
 

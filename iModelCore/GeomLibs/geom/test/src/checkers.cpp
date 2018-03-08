@@ -1,6 +1,7 @@
 #include "checkers.h"
 #include <GeomSerialization/GeomSerializationApi.h>
 #include <Bentley/BeTest.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
 static double s_simpleZeroTol = 1.0e-12;
 
 struct ScopedPrintState
@@ -1579,6 +1580,9 @@ void Check::SetTransform (TransformCR transform) {s_transform = transform;}
 
 static int s_save = 1;
 static int s_noisyFiles = 0;
+static bool s_saveDGNJS = true;
+static bool s_saveIModelJson = false;
+static bool s_checkIModelJsonRoundTrip = false;
 void Check::ClearGeometry (char const *name)
     {
     if (s_save == 1)
@@ -1592,28 +1596,96 @@ void Check::ClearGeometry (char const *name)
         path.AppendToPath (wname.c_str ());
         path.AppendExtension (L"dgnjs");
 
-        BeFile file;
-        if (BeFileStatus::Success == file.Create (path.c_str (), true))
+        BeFileName iModelJsonFileName;
+        BeTest::GetHost ().GetOutputRoot (iModelJsonFileName);
+        iModelJsonFileName.AppendToPath (wname.c_str ());
+        iModelJsonFileName.AppendExtension (L"imjs");
+
+        if (s_saveDGNJS)
             {
-            if (s_noisyFiles)
-                printf ("%ls\n", path.c_str ());
-            uint32_t bytesWritten = 0;
-            Utf8String string;
-            if (BentleyGeometryJson::TryGeometryToJsonString (string, s_cache, true))
+            BeFile file;
+            if (s_saveDGNJS && BeFileStatus::Success == file.Create (path.c_str (), true))
                 {
+                if (s_noisyFiles)
+                    printf ("%ls\n", path.c_str ());
+                uint32_t bytesWritten = 0;
+                Utf8String string;
+                if (BentleyGeometryJson::TryGeometryToJsonString (string, s_cache, true))
+                    {
 //                printf ("%s\n", string.c_str ());
-                file.Write(&bytesWritten, string.c_str(), (uint32_t)string.size());
+                    file.Write(&bytesWritten, string.c_str(), (uint32_t)string.size());
 #ifdef BENTLEY_WIN32
-                printf ("\n(#g=%d)%S\n", (uint32_t)s_cache.size (), path.c_str ());
+                    printf ("\n(#g=%d)%S\n", (uint32_t)s_cache.size (), path.c_str ());
 #endif
+                    }
+                file.Close ();
                 }
-            file.Close ();
+            else
+                {
+                if (s_noisyFiles)
+                    printf ("UNABLE TO OPEN FOR OUTPUT        %ls\n", path.c_str ());
+                }
             }
-        else
+        if (s_checkIModelJsonRoundTrip){
+            Json::Value value;
+            if (IModelJson::TryGeometryToIModelJsonValue (value, s_cache))
+                {
+                bvector<IGeometryPtr> geometryB;
+                IModelJson::TryIModelJsonValueToGeometry (value, geometryB);
+                if (s_cache.size () == geometryB.size ())
+                    {
+                    uint32_t errors = 0;
+                    for (size_t i = 0; i < s_cache.size (); i++)
+                        {
+                        if (!s_cache[i]->IsSameStructureAndGeometry (*geometryB[i]))
+                            {
+                            errors++;
+                            printf ("\n IMJS geometry mismatch in %ls at [%d]\n", path.c_str (), (int)i);
+                            break;
+                            }
+                        }
+                    if (errors == 0)
+                        printf ("\n IMJS geometry ok in %ls [%d]\n", path.c_str (), (int)s_cache.size ());
+                    }
+                else
+                    {
+                    Json::FastWriter fastWriter;
+                    auto string = fastWriter.write(value);
+                    printf ("\n IMJS size mismatch in %ls (%d) (%d)\n", path.c_str (), (int)s_cache.size (), (int)geometryB.size ());
+                    }
+                }
+            }
+
+        if (s_saveIModelJson)
             {
-            if (s_noisyFiles)
-                printf ("UNABLE TO OPEN FOR OUTPUT        %ls\n", path.c_str ());
+            BeFile file;
+            if (s_saveIModelJson && BeFileStatus::Success == file.Create (iModelJsonFileName.c_str (), true))
+                {
+                if (s_noisyFiles)
+                    printf ("%ls\n", path.c_str ());
+                uint32_t bytesWritten = 0;
+                Utf8String string;
+
+                if (IModelJson::TryGeometryToIModelJsonString (string, s_cache))
+                    {
+    //                printf ("%s\n", string.c_str ());
+                    file.Write(&bytesWritten, string.c_str(), (uint32_t)string.size());
+    #ifdef BENTLEY_WIN32
+                    printf ("\n(#g=%d)(#bytes=%d) %S\n", (uint32_t)s_cache.size (), (uint32_t)string.size (), iModelJsonFileName.c_str ());
+    #endif
+                    }
+                file.Close ();
+                }
+            else
+                {
+                if (s_noisyFiles)
+                    printf ("UNABLE TO OPEN FOR OUTPUT        %ls\n", path.c_str ());
+                }
             }
+
+
+
+
         }
     else if (s_save == 2)
         {

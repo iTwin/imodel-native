@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #     $Source: serialization/src/serialization.mke $
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 %include mdl.mki
 
@@ -81,6 +81,10 @@ $(o)BeStructuredDataWriter$(oext)   :$(MySrc)BeStructuredDataWriter.cpp $(Common
 $(o)BeJsonToCG$(oext)               : $(MySrc)BeJsonToCG.cpp $(CommonDependencies) ${MultiCompileDepends}
 
 $(o)BeJsonValueBuilder$(oext)       : $(MySrc)BeJsonValueBuilder.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)IModelJsonWriter$(oext)       : $(MySrc)IModelJsonWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
+
+$(o)IModelJsonReader$(oext)       : $(MySrc)IModelJsonReader.cpp $(CommonDependencies) ${MultiCompileDepends}
 
 # MSXml
 $(o)MSXmlBinaryWriter$(oext)        : $(MySrc)MSXmlBinary/MSXmlBinaryWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
