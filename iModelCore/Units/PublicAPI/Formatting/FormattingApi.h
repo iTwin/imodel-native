@@ -300,52 +300,49 @@ private:
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
-    void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
     double RoundedValue(double dval, double round) const;
     int TrimTrailingZeroes(Utf8P buf, int index) const;
     size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
     void LoadJson(Json::Value jval);
 
     // TODO: Attempt to remove these methods from the private API===============
-    // Nothing yet.
+    int FormatInteger(int n, Utf8P bufOut, int bufLen);
+    size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
+    Utf8String FormatRoundedDouble(double dval, double round);
+    static double RoundDouble(double dval, double roundTo);
+    int GetDecimalPrecisionIndex(int prec) const;
+    double GetDecimalPrecisionFactor(int prec) const;
+    void SetPrecisionByValue(int prec);
+    static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
+    static bool AcceptableDifference(double dval1, double dval2, double maxDiff);
+    int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
+    int FormatBinaryByte(unsigned char n, Utf8P bufOut, int bufLen);
+    int FormatBinaryShort(short int n, Utf8P bufOut, int bufLen, bool useSeparator);
+    int FormatBinaryInt(int n, Utf8P bufOut, int bufLen, bool useSeparator);
+    int FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bool useSeparator);
+    NumericFormatSpec(size_t precision) { DefaultInit(precision); }
+    NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
+    Utf8String FormatIntegerToString(int n, int minSize) const;
+    void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
+    void DefaultInit(size_t precision);
     // !TODO====================================================================
 
 public:
     // TODO: Attempt to remove these methods from the public API================
-    NumericFormatSpec(size_t precision) { DefaultInit(precision); }
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     UNITS_EXPORT NumericFormatSpec(Utf8CP jsonString);
-    UNITS_EXPORT void DefaultInit(size_t precision);
     NumericFormatSpec(NumericFormatSpecCP other) : NumericFormatSpec(*other) {};
-    NumericFormatSpec& operator=(NumericFormatSpecCR other) = default;
     UNITS_EXPORT void Clone(NumericFormatSpecCR other) { *this = other; }
-    UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
-    UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
-    UNITS_EXPORT static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
-    UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff);
-    UNITS_EXPORT int GetDecimalPrecisionIndex(int prec) const;
-    UNITS_EXPORT double GetDecimalPrecisionFactor(int prec) const;
-    UNITS_EXPORT void SetPrecisionByValue(int prec);
-    
-    // Returns the number of bytes written.
-    UNITS_EXPORT int FormatInteger(int n, Utf8P bufOut, int bufLen);
-    UNITS_EXPORT Utf8String FormatIntegerToString(int n, int minSize) const;
     UNITS_EXPORT int static FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
-
-    UNITS_EXPORT Utf8String FormatRoundedDouble(double dval, double round);
-    UNITS_EXPORT size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
-
-    UNITS_EXPORT int FormatBinaryByte(unsigned char n, Utf8P bufOut, int bufLen);
-    UNITS_EXPORT int FormatBinaryShort(short int n, Utf8P bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT int FormatBinaryInt(int n, Utf8P bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT int FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bool useSeparator);
-
-    UNITS_EXPORT int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
     // !TODO====================================================================
 
-    NumericFormatSpec() { DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex()); }
+    UNITS_EXPORT NumericFormatSpec();
+    UNITS_EXPORT NumericFormatSpec(DecimalPrecision decimalPrecision);
     NumericFormatSpec(NumericFormatSpecCR other) = default;
     ~NumericFormatSpec() = default;
+
+    NumericFormatSpecR operator=(NumericFormatSpecCR other) = default;
+
     UNITS_EXPORT static const NumericFormatSpecCP DefaultFormat();
     UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
     
@@ -360,15 +357,23 @@ public:
 
     void SetPresentationType(PresentationType type) { m_presentationType = type; }
     PresentationType GetPresentationType() const { return m_presentationType; }
+    bool IsDecimal() const { return PresentationType::Decimal == m_presentationType; }
+    bool IsFractional() const { return PresentationType::Fractional == m_presentationType; }
+    bool IsScientific() const { return PresentationType::Scientific == m_presentationType || PresentationType::ScientificNorm == m_presentationType; }
 
     void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
     ShowSignOption GetSignOption() const { return m_signOption; }
+    bool IsNoSign() const { return ShowSignOption::NoSign == m_signOption; }
+    bool IsOnlyNegative() const { return ShowSignOption::OnlyNegative == m_signOption; }
+    bool IsSignAlways() const { return ShowSignOption::SignAlways == m_signOption; }
+    bool IsNegativeParentheses() const { return ShowSignOption::NegativeParentheses == m_signOption; }
 
     void SetFormatTraits(FormatTraits traits) { m_formatTraits = traits; }
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
 
     void SetDecimalPrecision(DecimalPrecision precision) { m_decPrecision = precision; }
     DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
+    bool IsPrecisionZero() const { return m_decPrecision == DecimalPrecision::Precision0; }
 
     void SetFractionaPrecision(FractionalPrecision precision) { m_fractPrecision = precision; }
     FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
@@ -393,35 +398,10 @@ public:
     Utf8Char GetStopSeparator() const { return m_statSeparator; }
 
     //======================================
-    // Presentation Type Setters/Getters
-    //======================================
-    // IsDecimal missing?
-    bool IsFractional() const { return m_presentationType == PresentationType::Fractional; }
-    bool IsScientific() const { return (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm); }
-    // Not sure if IsStop/IsStop100/IsStop1000 getters would be needed.
-
-
-    //======================================
-    // Show Sign Option Setters/Getters
-    //======================================
-    // SetNoSign missing?
-    // IsNotSign missing?
-
-    // SetOnlyNegative missing?
-    bool IsOnlyNegative() const { return (m_signOption == ShowSignOption::OnlyNegative); }
-
-    // SetSignAlways missing?
-    bool IsSignAlways() const { return (m_signOption == ShowSignOption::SignAlways); }
-
-    void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
-    bool IsNegativeParentheses() const { return (m_signOption == ShowSignOption::NegativeParentheses); }
-
-    //======================================
     // Format Traits Bit Setters/Getters
     //======================================
     bool CheckTraitsBit(FormatTraits word, FormatTraits bit) const { return ((static_cast<int>(word) & static_cast<int>(bit)) != 0); }
     bool CheckTraitsBit(FormatTraits bit) const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(bit)) != 0); }
-    //UNITS_EXPORT void SetTraitsBit(bool set, FormatTraits bit, FormatTraits* word = nullptr);
     UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose=false) const;
     UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits bit, FormatTraits traits, bool set);
     UNITS_EXPORT static void TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits);
@@ -462,11 +442,6 @@ public:
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
 
     //======================================
-    // DecimalPrecision Setters/Getters
-    //======================================
-    bool IsPrecisionZero() const { return (m_decPrecision == DecimalPrecision::Precision0); }
-
-    //======================================
     // Formatting Methods
     //======================================
     UNITS_EXPORT Utf8String ByteToBinaryText(unsigned char n);
@@ -477,9 +452,7 @@ public:
     UNITS_EXPORT Utf8String FormatInteger(int ival);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
 
-    // TODO: vvv test StdFormatDouble
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
-
     UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
 
@@ -487,7 +460,6 @@ public:
     UNITS_EXPORT Json::Value JsonFormatTraits(bool verbose) const;
     UNITS_EXPORT FormatTraits TraitsFromJson(JsonValueCR jval);
     };
-
 
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  06/2017
