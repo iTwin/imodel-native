@@ -252,7 +252,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ElevationGrid : Grid
         //! @note all surfaces will be tested to be planar and normal needs to be in Z direction
         GRIDELEMENTS_EXPORT static ElevationGridPtr CreateAndInsertWithSurfaces (CreateParams const& params, bvector<CurveVectorPtr> const& surfaces, bool createDimensions);
 
-        GRIDELEMENTS_EXPORT static ElevationGridPtr Create (CreateParams const& params);
+        GRIDELEMENTS_EXPORT static ElevationGridPtr CreateAndInsert (CreateParams const& params);
 
         //! Gets Default elevation increment of this ElevationGrid
         //! @return DefaultElevationIncrement of this ElevationGrid

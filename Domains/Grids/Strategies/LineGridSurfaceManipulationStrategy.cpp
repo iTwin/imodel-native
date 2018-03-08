@@ -22,6 +22,26 @@ LineGridSurfaceManipulationStrategy::LineGridSurfaceManipulationStrategy()
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                02/2018
+//---------------+---------------+---------------+---------------+---------------+------
+LineGridSurfaceManipulationStrategyPtr LineGridSurfaceManipulationStrategy::Create
+(
+    BBS::LinePlacementStrategyType linePlacementStrategyType
+)
+    {
+    LineGridSurfaceManipulationStrategyPtr strategy = Create();
+    if (strategy.IsNull())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    strategy->m_geometryPlacementStrategy = LinePlacementStrategy::Create(linePlacementStrategyType, *strategy->m_geometryManipulationStrategy);
+    BeAssert(strategy->m_geometryPlacementStrategy.IsValid());
+    return strategy;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus LineGridSurfaceManipulationStrategy::_UpdateGridSurface()
@@ -31,6 +51,8 @@ BentleyStatus LineGridSurfaceManipulationStrategy::_UpdateGridSurface()
     bvector<DPoint3d> keyPoints = m_geometryManipulationStrategy->GetKeyPoints();
     if (2 != keyPoints.size())
         return BentleyStatus::ERROR;
+
+    TransformPointsOnXYPlane(keyPoints);
 
     m_surface->SetBaseLine(DPoint2d::From(keyPoints[0]), DPoint2d::From(keyPoints[1]));
 
@@ -70,6 +92,8 @@ Dgn::DgnElementPtr LineGridSurfaceManipulationStrategy::_FinishElement
 
     if (m_surface.IsValid())
         return T_Super::_FinishElement();
+
+    TransformPointsOnXYPlane(keyPoints);
 
     SketchLineGridSurface::CreateParams params
     (

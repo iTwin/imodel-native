@@ -17,11 +17,9 @@ LineGridSurfacePlacementStrategy::LineGridSurfacePlacementStrategy
 (
     LinePlacementStrategyType linePlacementStrategyType
 )   : T_Super()
-    , m_manipulationStrategy(LineGridSurfaceManipulationStrategy::Create())
-    , m_geometryPlacementStrategy(m_manipulationStrategy->CreateLinePlacementStrategy(linePlacementStrategyType))
+    , m_manipulationStrategy(LineGridSurfaceManipulationStrategy::Create(linePlacementStrategyType))
     {
     BeAssert(m_manipulationStrategy.IsValid() && "Manipulation strategy should be valid");
-    BeAssert(m_geometryPlacementStrategy.IsValid() && "Geometry placement strategy should be valid");
     }
 
 //--------------------------------------------------------------------------------------

@@ -56,6 +56,10 @@ public:
     //! sets curveVector for this gridPlane
     //! @param[in]  newShape        new curvevector shape for the GridPlanarSurface
     GRIDELEMENTS_EXPORT void    SetCurveVector (CurveVectorR newShape);
+
+    //! gets the plane of this gridplanesurface
+    //! @return     plane of this gridplanesurface
+    GRIDELEMENTS_EXPORT         BentleyStatus   LockDimensionToOther(GridPlanarSurfaceCR otherSurface) const;
 };
 
 //=======================================================================================

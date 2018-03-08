@@ -19,10 +19,9 @@ USING_NAMESPACE_CONSTRAINTMODEL
 USING_NAMESPACE_BUILDING
 USING_NAMESPACE_BUILDING_SHARED
 
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (Grid)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (ElevationGrid)
-DEFINE_GRIDS_ELEMENT_BASE_METHODS (PlanGrid)
-
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(Grid)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(ElevationGrid)
+DEFINE_GRIDS_ELEMENT_BASE_METHODS(PlanGrid)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  09/2017
@@ -307,6 +306,20 @@ bool createDimensions
     if (BentleyStatus::SUCCESS != ValidateSurfaces (surfaces))
         return nullptr;
 
+    ElevationGridPtr thisGrid = ElevationGrid::CreateAndInsert (params);
+    
+    if (BentleyStatus::SUCCESS != thisGrid->CreateElevationGridPlanes (surfaces, *thisGrid->GetAxis(), createDimensions))
+        BeAssert (!"error inserting gridSurfaces into elevation grid..");
+    return thisGrid;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ElevationGridPtr        ElevationGrid::CreateAndInsert
+(
+CreateParams const& params
+)
+    {
     ElevationGridPtr thisGrid = new ElevationGrid (params);
 
     BuildingLocks_LockElementForOperation (*thisGrid, BeSQLite::DbOpcode::Insert, "Inserting elevation grid");
@@ -316,9 +329,7 @@ bool createDimensions
     Dgn::DefinitionModelCR defModel = thisGrid->GetDgnDb ().GetDictionaryModel ();
 
     GeneralGridAxisPtr horizontalAxis = GeneralGridAxis::CreateAndInsert(defModel, *thisGrid);
-    
-    if (BentleyStatus::SUCCESS != thisGrid->CreateElevationGridPlanes (surfaces, *horizontalAxis, createDimensions))
-        BeAssert (!"error inserting gridSurfaces into elevation grid.. shouldn't get here..");
+
     return thisGrid;
     }
 
@@ -378,7 +389,7 @@ GridAxisCPtr                    ElevationGrid::GetAxis
 (
 ) const
     {
-    return GetDgnDb().Elements().Get<GridAxis>((*MakeAxesIterator()).GetElementId());
+    return GetDgnDb().Elements().Get<GridAxis>((*MakeAxesIterator().begin()).GetElementId());
     }
 
 END_GRIDS_NAMESPACE
