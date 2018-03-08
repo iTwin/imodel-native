@@ -12,7 +12,7 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcStartCenterPlacementMethod::_AddKeyPoint
+void ArcStartCenterPlacementMethod::AddKeyPoint
 (
     DPoint3dCR newKeyPoint
 )
@@ -42,7 +42,7 @@ void ArcStartCenterPlacementMethod::_AddKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcStartCenterPlacementMethod::_AddDynamicKeyPoint
+void ArcStartCenterPlacementMethod::AddDynamicKeyPoint
 (
     DPoint3dCR newDynamicKeyPoint
 )
@@ -73,7 +73,7 @@ void ArcStartCenterPlacementMethod::_AddDynamicKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcStartCenterPlacementMethod::_PopKeyPoint()
+void ArcStartCenterPlacementMethod::PopKeyPoint()
     {
     BeAssert(!GetArcManipulationStrategy().IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
@@ -100,7 +100,7 @@ void ArcStartCenterPlacementMethod::_PopKeyPoint()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<DPoint3d> ArcStartCenterPlacementMethod::_GetKeyPoints() const
+bvector<DPoint3d> ArcStartCenterPlacementMethod::GetKeyPoints() const
     {
     ArcManipulationStrategyCR strategy = GetArcManipulationStrategy();
 

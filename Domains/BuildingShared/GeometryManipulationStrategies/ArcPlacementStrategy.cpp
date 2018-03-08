@@ -10,63 +10,6 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void IArcPlacementMethod::AddKeyPoint
-(
-    DPoint3dCR newKeyPoint
-)
-    {
-    _AddKeyPoint(newKeyPoint);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void IArcPlacementMethod::PopKeyPoint()
-    {
-    _PopKeyPoint();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void IArcPlacementMethod::AddDynamicKeyPoint
-(
-    DPoint3dCR newDynamicKeyPoint
-)
-    {
-    _AddDynamicKeyPoint(newDynamicKeyPoint);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                03/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void IArcPlacementMethod::AddDynamicKeyPoints
-(
-    bvector<DPoint3d> const& newDynamicKeyPoints
-)
-    {
-    _AddDynamicKeyPoints(newDynamicKeyPoints);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-ArcPlacementMethod IArcPlacementMethod::GetMethod() const
-    {
-    return _GetMethod();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                02/2018
-//---------------+---------------+---------------+---------------+---------------+------
-bvector<DPoint3d> IArcPlacementMethod::GetKeyPoints() const
-    {
-    return _GetKeyPoints();
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementStrategy::ArcPlacementStrategy

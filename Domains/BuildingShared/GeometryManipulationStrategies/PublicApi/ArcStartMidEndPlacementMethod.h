@@ -14,20 +14,26 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 struct ArcStartMidEndPlacementMethod : RefCounted<IArcPlacementMethod>
     {
-    DEFINE_T_SUPER(RefCounted<IArcPlacementMethod>)
-
     private:
-        ArcStartMidEndPlacementMethod(ArcManipulationStrategyR manipulationStrategy) : T_Super(manipulationStrategy) {}
+        ArcManipulationStrategyR m_manipulationStrategy;
+
+        ArcStartMidEndPlacementMethod(ArcManipulationStrategyR manipulationStrategy) 
+            : m_manipulationStrategy(manipulationStrategy) 
+            {}
 
     protected:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
-        virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ArcPlacementMethod _GetMethod() const { return ArcPlacementMethod::StartMidEnd; }
-        virtual bvector<DPoint3d> _GetKeyPoints() const override;
+        ArcManipulationStrategyCR GetArcManipulationStrategy() const { return m_manipulationStrategy; }
+        ArcManipulationStrategyR GetArcManipulationStrategyForEdit() { return m_manipulationStrategy; }
 
     public:
+        //IArcPlacementMethod
+        void AddKeyPoint(DPoint3dCR newKeyPoint);
+        void PopKeyPoint();
+        void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
+        void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) { BeAssert(false && "Not implemented"); }
+        ArcPlacementMethod GetMethod() const { return ArcPlacementMethod::StartMidEnd; }
+        bvector<DPoint3d> GetKeyPoints() const;
+
         static ArcStartMidEndPlacementMethodPtr Create(ArcManipulationStrategyR manipulationStrategy) { return new ArcStartMidEndPlacementMethod(manipulationStrategy); }
     };
 

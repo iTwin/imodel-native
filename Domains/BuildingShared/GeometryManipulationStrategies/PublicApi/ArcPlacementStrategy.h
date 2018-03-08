@@ -22,32 +22,13 @@ enum class ArcPlacementMethod
 //=======================================================================================
 struct IArcPlacementMethod : IRefCounted
     {
-    private:
-        ArcManipulationStrategyR m_manipulationStrategy;
-
-    protected:
-        IArcPlacementMethod(ArcManipulationStrategyR manipulationStrategy)
-            : m_manipulationStrategy(manipulationStrategy)
-            {}
-        virtual ~IArcPlacementMethod() {}
-
-        ArcManipulationStrategyR GetArcManipulationStrategyForEdit() { return m_manipulationStrategy; }
-        ArcManipulationStrategyCR GetArcManipulationStrategy() const { return m_manipulationStrategy; }
-
-        virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) = 0;
-        virtual void _PopKeyPoint() = 0;
-        virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) = 0;
-        virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) = 0;
-        virtual ArcPlacementMethod _GetMethod() const = 0;
-        virtual bvector<DPoint3d> _GetKeyPoints() const = 0;
-
     public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddKeyPoint(DPoint3dCR newKeyPoint);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint();
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementMethod GetMethod() const;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> GetKeyPoints() const;
+        virtual void AddKeyPoint(DPoint3dCR newKeyPoint) = 0;
+        virtual void PopKeyPoint() = 0;
+        virtual void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) = 0;
+        virtual void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) = 0;
+        virtual ArcPlacementMethod GetMethod() const = 0;
+        virtual bvector<DPoint3d> GetKeyPoints() const = 0;
     };
 
 //=======================================================================================

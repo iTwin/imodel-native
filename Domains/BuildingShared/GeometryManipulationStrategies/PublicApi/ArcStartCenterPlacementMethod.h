@@ -14,20 +14,26 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //=======================================================================================
 struct ArcStartCenterPlacementMethod : RefCounted<IArcPlacementMethod>
     {
-    DEFINE_T_SUPER(RefCounted<IArcPlacementMethod>)
-
     private:
-        ArcStartCenterPlacementMethod(ArcManipulationStrategyR manipulationStrategy) : T_Super(manipulationStrategy) {}
+        ArcManipulationStrategyR m_manipulationStrategy;
+
+        ArcStartCenterPlacementMethod(ArcManipulationStrategyR manipulationStrategy) 
+            : m_manipulationStrategy(manipulationStrategy)
+            {}
 
     protected:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
-        virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual ArcPlacementMethod _GetMethod() const { return ArcPlacementMethod::StartCenter; }
-        virtual bvector<DPoint3d> _GetKeyPoints() const override;
+        ArcManipulationStrategyCR GetArcManipulationStrategy() const { return m_manipulationStrategy; }
+        ArcManipulationStrategyR GetArcManipulationStrategyForEdit() { return m_manipulationStrategy; }
 
     public:
+        //IArcPlacementMethod
+        void AddKeyPoint(DPoint3dCR newKeyPoint);
+        void PopKeyPoint();
+        void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
+        void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) { BeAssert(false && "Not implemented"); }
+        ArcPlacementMethod GetMethod() const { return ArcPlacementMethod::StartCenter; }
+        bvector<DPoint3d> GetKeyPoints() const;
+
         static ArcStartCenterPlacementMethodPtr Create(ArcManipulationStrategyR manipulationStrategy) { return new ArcStartCenterPlacementMethod(manipulationStrategy); }
     };
 
