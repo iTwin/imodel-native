@@ -177,6 +177,7 @@
     <ClCompile Include="iModelHubClient\BaseFileInfo.cpp" />
     <ClCompile Include="iModelHubClient\BriefcaseInfo.cpp" />
     <ClCompile Include="iModelHubClient\Briefcase.cpp" />
+    <ClCompile Include="iModelHubClient\ChunkedWSChangeset.cpp" />
     <ClCompile Include="iModelHubClient\Client.cpp" />
     <ClCompile Include="iModelHubClient\ClientHelper.cpp" />
     <ClCompile Include="iModelHubClient\CodeAdmin.cpp" />
@@ -307,6 +308,7 @@
     <ClInclude Include="PublicAPI\WebServices\Connect\IConnectionClientInterface.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BaseFileInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetCacheManager.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChunkedWSChangeset.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ClientHelper.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\FileAccessKey.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\StatisticsInfo.h" />
