@@ -920,37 +920,44 @@ BentleyStatus SchemaComparer::CompareKindOfQuantities(KindOfQuantityChanges& cha
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::ComparePropertyCategories(PropertyCategoryChanges& changes, PropertyCategoryContainerCR a, PropertyCategoryContainerCR b)
     {
-    std::map<Utf8CP, PropertyCategoryCP, CompareIUtf8Ascii> aMap, bMap, cMap;
+    std::map<Utf8CP, PropertyCategoryCP, CompareIUtf8Ascii> oldMap, newMap, allMap;
     for (PropertyCategoryCP catCP : a)
-        aMap[catCP->GetName().c_str()] = catCP;
+        oldMap[catCP->GetName().c_str()] = catCP;
 
     for (PropertyCategoryCP catCP : b)
-        bMap[catCP->GetName().c_str()] = catCP;
+        newMap[catCP->GetName().c_str()] = catCP;
 
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
+    allMap.insert(oldMap.cbegin(), oldMap.cend());
+    allMap.insert(newMap.cbegin(), newMap.cend());
 
-    for (auto& u : cMap)
+    for (auto& kvPair : allMap)
         {
-        auto itorA = aMap.find(u.first);
-        auto itorB = bMap.find(u.first);
+        Utf8CP name = kvPair.first;
+        auto oldIt = oldMap.find(name);
+        auto newIt = newMap.find(name);
 
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
+        const bool existInOld = oldIt != oldMap.end();
+        const bool existInNew = newIt != newMap.end();
+        if (existInOld && existInNew)
             {
-            auto& catChange = changes.Add(ChangeState::Modified, u.first);
-            if (ComparePropertyCategory(catChange, *itorA->second, *itorB->second) == ERROR)
+            PropertyCategoryChange& catChange = changes.Add(ChangeState::Modified, name);
+            if (ComparePropertyCategory(catChange, *oldIt->second, *newIt->second) == ERROR)
                 return ERROR;
+
+            continue;
             }
-        else if (existInA && !existInB)
+        
+        if (existInOld && !existInNew)
             {
-            if (AppendPropertyCategory(changes, *itorA->second, ValueId::Deleted) == ERROR)
+            if (AppendPropertyCategory(changes, *oldIt->second, ValueId::Deleted) == ERROR)
                 return ERROR;
+
+            continue;
             }
-        else if (!existInA && existInB)
+
+        if (!existInOld && existInNew)
             {
-            if (AppendPropertyCategory(changes, *itorB->second, ValueId::New) == ERROR)
+            if (AppendPropertyCategory(changes, *newIt->second, ValueId::New) == ERROR)
                 return ERROR;
             }
         }
@@ -1406,7 +1413,7 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaComparer::ComparePropertyCategory(PropertyCategoryChange& change, PropertyCategoryCR oldValue, PropertyCategoryCR newValue)
     {
-    if (oldValue.GetName() != newValue.GetName())
+    if (!oldVal.GetName().EqualsIAscii(newVal.GetName()))
         change.GetName().SetValue(oldValue.GetName(), newValue.GetName());
 
     const bool displayLabelDefinedInOld = oldValue.GetIsDisplayLabelDefined();
@@ -1774,18 +1781,19 @@ BentleyStatus SchemaComparer::AppendECEnumeration(ECEnumerationChanges& changes,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChanges& changes, KindOfQuantityCR v, ValueId appendType)
+BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChanges& changes, KindOfQuantityCR koq, ValueId appendType)
     {
-    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
-    KindOfQuantityChange& kindOfQuantityChange = changes.Add(state, v.GetName().c_str());
-    kindOfQuantityChange.GetName().SetValue(appendType, v.GetName());
-    kindOfQuantityChange.GetDisplayLabel().SetValue(appendType, v.GetDisplayLabel());
-    kindOfQuantityChange.GetDescription().SetValue(appendType, v.GetDescription());
-    kindOfQuantityChange.GetPersistenceUnit().SetValue(appendType, v.GetPersistenceUnit().ToText(false));
-    kindOfQuantityChange.GetRelativeError().SetValue(appendType, v.GetRelativeError());
-    for (Formatting::FormatUnitSet const& fus : v.GetPresentationUnitList())
+    const ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
+    KindOfQuantityChange& change = changes.Add(state, koq.GetName().c_str());
+    if (koq.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(appendType, koq.GetInvariantDisplayLabel());
+
+    change.GetDescription().SetValue(appendType, koq.GetInvariantDescription());
+    change.GetPersistenceUnit().SetValue(appendType, koq.GetPersistenceUnit().ToText(false));
+    change.GetRelativeError().SetValue(appendType, koq.GetRelativeError());
+    for (Formatting::FormatUnitSet const& fus : koq.GetPresentationUnitList())
         {
-        kindOfQuantityChange.GetPresentationUnitList().Add(state).SetValue(appendType, fus.ToText(false));
+        change.GetPresentationUnitList().Add(state).SetValue(appendType, fus.ToText(false));
         }
 
     return SUCCESS;
