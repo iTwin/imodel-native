@@ -84,6 +84,8 @@ $(o)BeJsonValueBuilder$(oext)       : $(MySrc)BeJsonValueBuilder.cpp $(CommonDep
 
 $(o)IModelJsonWriter$(oext)       : $(MySrc)IModelJsonWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
 
+$(o)IModelJsonReader$(oext)       : $(MySrc)IModelJsonReader.cpp $(CommonDependencies) ${MultiCompileDepends}
+
 # MSXml
 $(o)MSXmlBinaryWriter$(oext)        : $(MySrc)MSXmlBinary/MSXmlBinaryWriter.cpp $(CommonDependencies) ${MultiCompileDepends}
 

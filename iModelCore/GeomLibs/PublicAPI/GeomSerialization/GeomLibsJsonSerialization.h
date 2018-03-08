@@ -42,6 +42,12 @@ public: static GEOMLIBS_SERIALIZATION_EXPORT void DumpJson (Utf8StringCR string)
 
 struct IModelJson
 {
+
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryIModelJsonValueToGeometry (JsonValueCR value, bvector<IGeometryPtr> &geometry);
+
+public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryIModelJsonStringToGeometry (Utf8StringCR string, bvector<IGeometryPtr> &geometry);
+
+
 //! Convert a vector of IGeometry to json value with the IModelJson schema keys and structure
 public: static GEOMLIBS_SERIALIZATION_EXPORT bool TryGeometryToIModelJsonValue(Json::Value &value, bvector<IGeometryPtr> const &data);
 //! Convert a single IGeometry a json value with the IModelJson schema keys and structure
