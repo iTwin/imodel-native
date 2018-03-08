@@ -1656,17 +1656,30 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit)
 
     ECObjectsStatus status;
 
+    PhenomenonCP phenom;
+    UnitSystemCP system;
+    if(sourceUnit.GetPhenomenon()->GetSchema().GetSchemaKey().Matches(GetSchemaKey(), SchemaMatchType::Exact))
+        {
+        phenom = this->GetPhenomenonCP(sourceUnit.GetPhenomenon()->GetName().c_str());
+        system = this->GetUnitSystemCP(sourceUnit.GetUnitSystem()->GetName().c_str());
+        }
+    else
+        {
+        phenom = sourceUnit.GetPhenomenon();
+        system = sourceUnit.GetUnitSystem();
+        }
+
     if (sourceUnit.IsConstant())
         {
-        status = CreateConstant(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *sourceUnit.GetPhenomenon(), *sourceUnit.GetUnitSystem(), sourceUnit.GetNumerator());
+        status = CreateConstant(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *phenom, *system, sourceUnit.GetNumerator());
         }
     else if (sourceUnit.IsInvertedUnit())
         {
-        status = CreateInvertedUnit(targetUnit, *(ECUnitCP)sourceUnit.GetParent(), sourceUnit.GetName().c_str(), *sourceUnit.GetUnitSystem());
+        status = CreateInvertedUnit(targetUnit, *(ECUnitCP)sourceUnit.GetParent(), sourceUnit.GetName().c_str(), *system);
         }
     else // Normal unit
         {
-        status = CreateUnit(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *sourceUnit.GetPhenomenon(), *sourceUnit.GetUnitSystem());
+        status = CreateUnit(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *phenom, *system);
         }
 
     if (ECObjectsStatus::Success != status)

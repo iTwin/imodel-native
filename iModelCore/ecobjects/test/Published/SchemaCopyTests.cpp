@@ -731,6 +731,55 @@ TEST_F(SchemaCopyTest, CopySchemaWithInvalidReferenceAndCreateInstance)
     EXPECT_TRUE(out.Equals(ECValue("test"))) << "Expect: " << "test" << " Actual: " << out.ToString().c_str();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopySchemaWithSystemAndPhenomenonInStandardUnitSchema)
+    {
+    CreateTestSchema();
+    m_sourceSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
+    ECUnitP unit;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *StandardUnitsHelper::GetPhenomenon("LENGTH"), *StandardUnitsHelper::GetUnitSystem("SI"), "SMOOT", "SMOOT"));
+
+    CopySchema();
+    //TODO check to make sure units schema is referenced
+    EXPECT_EQ(1, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetUnitCP("SMOOT");
+    ASSERT_TRUE(nullptr != targetUnit);
+    EXPECT_STREQ("SMOOT", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDefinition().c_str());
+    EXPECT_EQ(StandardUnitsHelper::GetPhenomenon("LENGTH")->GetName().c_str(), targetUnit->GetPhenomenon()->GetName().c_str());
+    EXPECT_EQ(StandardUnitsHelper::GetUnitSystem("SI")->GetName().c_str(), targetUnit->GetUnitSystem()->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopySchemaWithUnitAllDefinedInSchema)
+    {
+    CreateTestSchema();
+    ECUnitP unit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_targetSchema->GetUnitCount());
+
+    ECUnitCP targetUnit = m_targetSchema->GetUnitCP("SMOOT");
+    ASSERT_TRUE(nullptr != targetUnit);
+    EXPECT_STREQ("SMOOT", targetUnit->GetDisplayLabel().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetUnit->GetDefinition().c_str());
+    EXPECT_STREQ("SMOOT_PHENOM", targetUnit->GetPhenomenon()->GetName().c_str());
+    EXPECT_STREQ("SMOOT_SYSTEM", targetUnit->GetUnitSystem()->GetName().c_str());
+    }
+
 //=======================================================================================
 //! ClassCopyTest
 //
