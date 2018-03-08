@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SchemaComparer.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -245,6 +245,17 @@ struct ECObjectChange : ECChange
             {}
 
         virtual ~ECObjectChange() {}
+        size_t ChangesCount() const 
+            { 
+            size_t count = 0;
+            for (auto const& kvPair : m_changes)
+                {
+                if (kvPair.second->IsValid())
+                    count++;
+                }
+
+            return count; 
+            }
     };
 
 //=======================================================================================
