@@ -41,6 +41,7 @@ using namespace std;
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/ScalableMeshFrom3MX.h>
+#include <ScalableMesh/IScalableMeshDetectGround.h>
 
 #include <GeomSerialization\GeomLibsFlatBufferApi.h>
 
@@ -79,6 +80,9 @@ using namespace std;
 #include <CloudDataSource/DataSourceManager.h>
 #include <CloudDataSource/DataSourceAccount.h>
 #include <CloudDataSource/DataSourceBuffered.h>
+
+
+
 
 #pragma warning( disable : 4456 ) 
 
@@ -390,11 +394,12 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : coverageIds should not exist prior to doing ground extraction\r\n");
         return;
         }
-           
-    //return L"InputFileName, Nb Ground Regions, Result, Duration (minutes)\n";
+               
+    //return L"InputFileName, Nb Ground Regions, Nb Successful Ground Regions, Result, Duration (minutes)\n";
     fwprintf(pResultFile, L"%s,%zi", smFileName.c_str(), areas.size());
 
     WString errorInfo;
+    int nbSuccessGroundRegion = 0;
 
     clock_t totalTime = clock();
 
@@ -433,11 +438,10 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
         IScalableMeshGroundPreviewerPtr pSmQuickGroundPreviewer;
         BaseGCSCPtr destinationGcs;
-        BeFileName groundOutputFileName(groundOutputName.c_str());
+        BeFileName groundOutputFileName(BeFileName::GetFileNameWithoutExtension(groundOutputName.c_str()).c_str());
         BeFileName outputDirName(outputDir.c_str());
-            
-        
-        SMStatus status = scalableMeshPtr->DetectGroundForRegion(groundOutputFileName, outputDirName, areas[areaInd], areaInd, pSmQuickGroundPreviewer, destinationGcs, true);
+                            
+        SMStatus status = IScalableMeshDetectGround::DetectGroundForRegion(scalableMeshPtr, groundOutputFileName, outputDirName, areas[areaInd], areaInd, pSmQuickGroundPreviewer, destinationGcs, true);
         if (status != S_SUCCESS)
             {
             errorInfo += WPrintfString(L"Error returned by DetectGroundForRegion for area %i    ", areaInd);
@@ -458,7 +462,11 @@ void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
             //mdlOutput_rscvMessageCenter(OutputMessagePriority::Error, NULLRSC, MSGLISTIDS_SMErrors, MSGError_ErrorWhileGroundExtact, 0, OutputMessageAlert::Balloon, NULL);
             //return ERROR;
             }
+
+        nbSuccessGroundRegion++;
         }
+
+    fwprintf(pResultFile, L",%i", nbSuccessGroundRegion);
     
     totalTime = clock() - totalTime;
 

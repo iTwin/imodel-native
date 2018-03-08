@@ -459,11 +459,10 @@ SMStatus ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverage
 
     currentTextureDir.AppendString(textureSubFolderName.c_str());    
 
-    if (!s_deactivateTexturing)
-        {
+    IScalableMeshTextureGeneratorPtr textureGenerator(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetTextureGenerator());
 
-        IScalableMeshTextureGeneratorPtr textureGenerator(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetTextureGenerator());
-
+    if (!s_deactivateTexturing && textureGenerator.IsValid())
+        {        
         assert(textureGenerator.IsValid());
         
         textureGenerator->SetPixelSize(ComputeTextureResolution());
