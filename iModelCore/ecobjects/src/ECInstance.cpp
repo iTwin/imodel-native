@@ -2868,12 +2868,19 @@ struct  InstanceXmlReader
 
             if (nullptr != koq && !Utf8String::IsNullOrEmpty(oldUnitName))
                 {
-                // FIXME: This needs to use the nameMappings directly to get the new Units using the UnitsStandardSchemaHolder.
-                Units::UnitCP oldUnit = Units::UnitRegistry::Get().LookupUnitUsingOldName(oldUnitName);
-                double convertedValue;
-                oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
-                
-                ecValue.SetDouble(convertedValue);
+                Utf8CP ecName = Units::UnitNameMappings::TryGetECNameFromOldName(oldUnitName);
+                if (nullptr != ecName)
+                    {
+                    Utf8String alias;
+                    Utf8String unitName;
+                    ECClass::ParseClassName(alias, unitName, ecName);
+
+                    ECUnitCP oldUnit = StandardUnitsHelper::GetUnit(unitName.c_str());
+                    double convertedValue;
+                    oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
+
+                    ecValue.SetDouble(convertedValue);
+                    }
                 }
 
             ECObjectsStatus setStatus;
