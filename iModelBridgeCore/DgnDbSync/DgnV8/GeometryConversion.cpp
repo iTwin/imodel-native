@@ -800,7 +800,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
         nameStr.Assign(patternV8.cellName);
         Utf8PrintfString partCodeValue("PatternV8-%ld-%s-%lld", Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), nameStr.c_str(), patternV8.cellId);
         DgnCode partCode = CreateCode(partCodeValue);
-        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(GetDgnDb(), partCode);
+        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*GetJobDefinitionModel(), partCode.GetValueUtf8());
 
         if (!partId.IsValid())
             {
@@ -2444,7 +2444,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
             Transform         geomToLocal = Transform::FromProduct(invBasisTrans, pathEntry.m_geomToWorld);
             DgnCode           partCode = GetPartCode(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
-            DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(m_model.GetDgnDb(), partCode);
+            DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
             DRange3d          localRange = DRange3d::NullRange();
 
             if (!partId.IsValid())
@@ -4651,7 +4651,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                     Transform         geomToLocal = Transform::FromProduct(invBasisTrans, pathEntry.m_geomToWorld);
                     DgnCode           partCode = GetPartCode(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
-                    DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(m_model.GetDgnDb(), partCode);
+                    DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
                     DRange3d          localRange = DRange3d::NullRange();
 
                     if (!partId.IsValid())
@@ -5250,7 +5250,7 @@ bool LightWeightConverter::InitPatternParams(PatternParamsR pattern, DgnV8Api::P
 
         Utf8PrintfString partCodeValue("PatternV8-%ld-%s-%lld", m_converterId, nameStr.c_str(), patternV8.cellId);
         DgnCode partCode = CreateCode(partCodeValue);
-        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(GetDgnDb(), partCode);
+        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*GetJobDefinitionModel(), partCode.GetValueUtf8());
 
         if (!partId.IsValid())
             {
@@ -5705,35 +5705,6 @@ void LightWeightConverter::ConvertTextString(TextStringPtr& clone, Bentley::Text
     dbText.m_range.high = DoInterop(v8Text.GetExtents().high);
 
     clone = dbText.Clone();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-DefinitionModelPtr LightWeightConverter::GetJobDefinitionModel()
-    {
-    if (m_jobDefinitionModelId.IsValid())
-        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
-
-    SubjectCPtr job = m_dgndb->Elements().GetRootSubject();
-    Utf8PrintfString partitionName("Definition Model For %s", job->GetDisplayLabel());
-    DgnCode partitionCode = DefinitionPartition::CreateCode(*job, partitionName);
-    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
-    m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());
-    if (m_jobDefinitionModelId.IsValid())
-        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
-
-    DefinitionPartitionPtr ed = DefinitionPartition::Create(*job, partitionName.c_str());
-    DefinitionPartitionCPtr partition = ed->InsertT<DefinitionPartition>();
-    if (!partition.IsValid())
-        return DefinitionModelPtr();
-
-    DefinitionModelPtr defModel = DefinitionModel::CreateAndInsert(*partition);
-    if (!defModel.IsValid())
-        return DefinitionModelPtr();
-
-    m_jobDefinitionModelId = defModel->GetModelId();
-    return defModel;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
