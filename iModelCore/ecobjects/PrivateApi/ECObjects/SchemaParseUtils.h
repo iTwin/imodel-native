@@ -258,9 +258,9 @@ public:
     ECOBJECTS_EXPORT static Utf8CP ModifierToJsonString(ECClassModifier modifier);
     ECOBJECTS_EXPORT static Utf8CP PrimitiveTypeToString(PrimitiveType primitiveType);
     ECOBJECTS_EXPORT static Utf8CP StrengthToString(StrengthType strength);
+    ECOBJECTS_EXPORT static Utf8CP SchemaElementTypeToString(ECSchemaElementType elementType);
     ECOBJECTS_EXPORT static Utf8String ContainerTypeToString(CustomAttributeContainerType containerType);
     ECOBJECTS_EXPORT static Utf8String MultiplicityToLegacyString(RelationshipMultiplicity multiplicity);
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-

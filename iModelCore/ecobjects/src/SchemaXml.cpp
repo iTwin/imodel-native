@@ -317,7 +317,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaChildFromXml(ECSchemaPtr& schema
         ECObjectsStatus addStatus = schemaOut->AddSchemaChild<T>(schemaChild, childType);
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
-            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(childType), schemaChild->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            LOG.errorv("Duplicate %s node for %s in schema %s.", SchemaParseUtils::SchemaElementTypeToString(childType), schemaChild->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
             delete schemaChild;
             schemaChild = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -371,7 +371,7 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadUnitTypeFromXml(ECSchemaPtr& schemaOut
         ECObjectsStatus addStatus = schemaOut->AddSchemaChild<T>(unitChild, unitType);
         if (ECObjectsStatus::NamedItemAlreadyExists == addStatus)
             {
-            LOG.errorv("Duplicate %s node for %s in schema %s.", ECSchema::SchemaElementTypeToString(unitType), unitChild->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            LOG.errorv("Duplicate %s node for %s in schema %s.", SchemaParseUtils::SchemaElementTypeToString(unitType), unitChild->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
             delete unitChild;
             unitChild = nullptr;
             return SchemaReadStatus::InvalidECSchemaXml;

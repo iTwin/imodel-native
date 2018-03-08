@@ -13,6 +13,14 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
+UnitSystem::UnitSystem(ECSchemaCR schema, Utf8CP name) : Units::UnitSystem(name), m_schema(schema), m_hasExplicitDisplayLabel(false)
+    {
+    m_unitsContext = &schema.GetUnitsContext();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
 Utf8StringCR UnitSystem::GetFullName() const
     {
     if (m_fullName.size() == 0)

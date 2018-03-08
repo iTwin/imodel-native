@@ -41,10 +41,7 @@ private:
 
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
-    UnitSystem(ECSchemaCR schema, Utf8CP name) : Units::UnitSystem(name), m_schema(schema), m_hasExplicitDisplayLabel(false) 
-        {
-        m_unitsContext = (Units::IUnitsContextCP) &schema;
-        }
+    UnitSystem(ECSchemaCR schema, Utf8CP name);
 
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this UnitSystem is defined in.
@@ -102,14 +99,8 @@ private:
 
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
-    Phenomenon(ECSchemaCR schema, Utf8CP name) : Phenomenon(schema, name, nullptr) 
-        {
-        m_unitsContext = (Units::IUnitsContextCP) &schema;
-        }
-    Phenomenon(ECSchemaCR schema, Utf8CP name, Utf8CP definition) : Units::Phenomenon(name, definition), m_schema(schema), m_isDisplayLabelExplicitlyDefined(false) 
-        {
-        m_unitsContext = (Units::IUnitsContextCP) &schema;
-        }
+    Phenomenon(ECSchemaCR schema, Utf8CP name);
+    Phenomenon(ECSchemaCR schema, Utf8CP name, Utf8CP definition);
 
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this Phenomenon is defined in.
@@ -175,19 +166,9 @@ private:
     SchemaWriteStatus WriteInvertedUnitJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
     SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
-    ECUnit(ECSchemaCR schema, Utf8CP name) : Units::Unit(name), m_schema(schema) 
-        {
-        m_unitsContext = (Units::IUnitsContextCP) &schema;
-        }
-    ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName) : Units::Unit(parentUnit, system, unitName), m_schema(schema) 
-        {
-        m_unitsContext = (Units::IUnitsContextCP) &schema;
-        }
-    ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) : 
-        Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false),m_schema(schema)
-        {
-        m_unitsContext = (Units::IUnitsContextCP) &schema;
-        }
+    ECUnit(ECSchemaCR schema, Utf8CP name);
+    ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName);
+    ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
 
     ECSchemaR GetSchemaR() const {return const_cast<ECSchemaR>(m_schema);}
 

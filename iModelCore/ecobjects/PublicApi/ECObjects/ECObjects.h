@@ -61,6 +61,7 @@ EC_TYPEDEFS(ECSchemaCache);
 EC_TYPEDEFS(PropertyCategory);
 EC_TYPEDEFS(PropertyCategoryContainer);
 
+EC_TYPEDEFS(SchemaUnitContext);
 EC_TYPEDEFS(Phenomenon);
 EC_TYPEDEFS(PhenomenonContainer);
 EC_TYPEDEFS(ECUnit);

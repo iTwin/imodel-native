@@ -297,32 +297,8 @@ ECSchema::~ECSchema ()
     m_propertyCategoryMap.clear();
     BeAssert(m_propertyCategoryMap.empty());
 
-    for (auto entry : m_unitSystemMap)
-        {
-        auto unitSystem = entry.second;
-        delete unitSystem;
-        }
-
-    m_unitSystemMap.clear();
-    BeAssert(m_unitSystemMap.empty());
-
-    for (auto entry : m_phenomenonMap)
-        {
-        auto phenomenon = entry.second;
-        delete phenomenon;
-        }
-
-    m_phenomenonMap.clear();
-    BeAssert(m_phenomenonMap.empty());
-
-    for (auto entry : m_unitMap)
-        {
-        auto unit = entry.second;
-        delete unit;
-        }
-
-    m_unitMap.clear();
-    BeAssert(m_unitMap.empty());
+    // The Unit Types are deleted in the destructor of the SchemaUnitContext.
+    // delete &m_unitsContext;
 
     m_refSchemaList.clear();
 
@@ -593,35 +569,6 @@ Utf8CP ECSchema::GetECVersionString(ECVersion ecVersion)
             return "3.2";
         }
     return nullptr;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-// static
-Utf8CP ECSchema::SchemaElementTypeToString(ECSchemaElementType elementType)
-    {
-    switch (elementType)
-        {
-        case ECSchemaElementType::ECEnumeration:
-            return ECJSON_ENUMERATION_ELEMENT;
-        case ECSchemaElementType::KindOfQuantity:
-            return KIND_OF_QUANTITY_ELEMENT;
-        case ECSchemaElementType::PropertyCategory:
-            return PROPERTY_CATEGORY_ELEMENT;
-        case ECSchemaElementType::UnitSystem:
-            return UNIT_SYSTEM_ELEMENT;
-        case ECSchemaElementType::Phenomenon:
-            return PHENOMENON_ELEMENT;
-        case ECSchemaElementType::Unit:
-            return UNIT_ELEMENT;
-        case ECSchemaElementType::InvertedUnit:
-            return INVERTED_UNIT_ELEMENT;
-        case ECSchemaElementType::Constant:
-            return CONSTANT_ELEMENT;
-        }
-
-    return EMPTY_STRING;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1086,7 +1033,7 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
         return status;
         }
 
-    status = AddSchemaChildToMap<UnitSystem, UnitSystemMap>(system, &m_unitSystemMap, ECSchemaElementType::UnitSystem);
+    status = AddUnitType<UnitSystem>(system, ECSchemaElementType::UnitSystem);
     if (ECObjectsStatus::Success != status)
         {
         delete system;
@@ -1121,7 +1068,7 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
         return status;
         }
 
-    status = AddSchemaChildToMap<Phenomenon, PhenomenonMap>(phenomenon, &m_phenomenonMap, ECSchemaElementType::Phenomenon);
+    status = AddUnitType<Phenomenon>(phenomenon, ECSchemaElementType::Phenomenon);
     if (ECObjectsStatus::Success != status)
         {
         delete phenomenon;
@@ -1183,7 +1130,7 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
         if(status != ECObjectsStatus::Success) return status;
         }
 
-    status = AddSchemaChildToMap<ECUnit, UnitMap>(unit, &m_unitMap, ECSchemaElementType::Unit);
+    status = AddUnitType<ECUnit>(unit, ECSchemaElementType::Unit);
     cleanupIfNecessary();
     if(status != ECObjectsStatus::Success) return status;
 
@@ -1229,7 +1176,8 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
     status = unit->SetDescription(description);
     cleanupIfNecessary();
     if(status != ECObjectsStatus::Success) return status;
-    status = AddSchemaChildToMap<ECUnit, UnitMap>(unit, &m_unitMap, ECSchemaElementType::InvertedUnit);
+
+    status = AddUnitType<ECUnit>(unit, ECSchemaElementType::InvertedUnit);
     cleanupIfNecessary();
     if(status != ECObjectsStatus::Success) return status;
 
@@ -1285,7 +1233,7 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
         cleanupIfNecessary();
         if(status != ECObjectsStatus::Success) return status;
         }
-    status = AddSchemaChildToMap<ECUnit, UnitMap>(constant, &m_unitMap, ECSchemaElementType::Constant);
+    status = AddUnitType<ECUnit>(constant, ECSchemaElementType::Constant);
     cleanupIfNecessary();
     if(status != ECObjectsStatus::Success) return status;
 
@@ -1302,13 +1250,13 @@ ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElem
 
     if(NamedElementExists(child->GetName().c_str()))
         {
-        NativeLogging::LoggingManager::GetLogger(L"ECObjectsNative")->errorv("Cannot create %s '%s' because a named element with the same identifier already exists in the schema", ECSchema::SchemaElementTypeToString(childType), child->GetName().c_str());
+        LOG.errorv("Cannot create %s '%s' because a named element with the same identifier already exists in the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
         return ECObjectsStatus::NamedItemAlreadyExists;
         }
 
     if (false == map->insert(bpair<Utf8CP, T*>(child->GetName().c_str(), child)).second)
         {
-        NativeLogging::LoggingManager::GetLogger(L"ECObjectsNative")->errorv("There was a problem adding %s '%s' to the schema", ECSchema::SchemaElementTypeToString(childType), child->GetName().c_str());
+        LOG.errorv("There was a problem adding %s '%s' to the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
         return ECObjectsStatus::Error;
         }
 
@@ -1317,13 +1265,42 @@ ECObjectsStatus ECSchema::AddSchemaChildToMap(T* child, T_MAP* map, ECSchemaElem
     return ECObjectsStatus::Success;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+template<typename T>
+ECObjectsStatus ECSchema::AddUnitType(T* child, ECSchemaElementType childType)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    if(NamedElementExists(child->GetName().c_str()))
+        {
+        LOG.errorv("Cannot create %s '%s' because a named element with the same identifier already exists in the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
+        return ECObjectsStatus::NamedItemAlreadyExists;
+        }
+    
+    ECObjectsStatus status = m_unitsContext.Add<T>(child, childType);
+    if (ECObjectsStatus::Success != status)
+        {
+        LOG.errorv("There was a problem adding %s '%s' to the schema", SchemaParseUtils::SchemaElementTypeToString(childType), child->GetName().c_str());
+        return status;
+        }
+
+    if (m_serializationOrder.GetPreserveElementOrder())
+        m_serializationOrder.AddElement(child->GetName().c_str(), childType);
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
 template<typename T> ECObjectsStatus ECSchema::AddSchemaChild(T* child, ECSchemaElementType childType) {;}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<ECEnumeration>(ECEnumerationP child, ECSchemaElementType childType) {return AddSchemaChildToMap<ECEnumeration, EnumerationMap>(child, &m_enumerationMap, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<PropertyCategory>(PropertyCategoryP child, ECSchemaElementType childType) {return AddSchemaChildToMap<PropertyCategory, PropertyCategoryMap>(child, &m_propertyCategoryMap, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuantityP child, ECSchemaElementType childType) {return AddSchemaChildToMap<KindOfQuantity, KindOfQuantityMap>(child, &m_kindOfQuantityMap, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) {return AddSchemaChildToMap<UnitSystem, UnitSystemMap>(child, &m_unitSystemMap, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP child, ECSchemaElementType childType) {return AddSchemaChildToMap<Phenomenon, PhenomenonMap>(child, &m_phenomenonMap, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<ECUnit>(ECUnitP child, ECSchemaElementType childType) {return AddSchemaChildToMap<ECUnit, UnitMap>(child, &m_unitMap, childType);}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) {return AddUnitType<UnitSystem>(child, childType);}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP child, ECSchemaElementType childType) {return AddUnitType<Phenomenon>(child, childType);}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<ECUnit>(ECUnitP child, ECSchemaElementType childType) {return AddUnitType<ECUnit>(child, childType);}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod
@@ -1334,9 +1311,9 @@ bool ECSchema::NamedElementExists(Utf8CP name)
         (m_enumerationMap.find(name) != m_enumerationMap.end()) ||
         (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end()) ||
         (m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end()) ||
-        (m_unitSystemMap.find(name) != m_unitSystemMap.end()) ||
-        (m_phenomenonMap.find(name) != m_phenomenonMap.end()) ||
-        (m_unitMap.find(name) != m_unitMap.end());
+        (nullptr != GetUnitCP(name)) ||
+        (nullptr != GetPhenomenonCP(name)) ||
+        (nullptr != GetUnitSystemCP(name));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1715,125 +1692,23 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
     return ECObjectsStatus::SchemaNotFound;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-ECUnitP ECSchema::_LookupUnitP(Utf8CP name) const
-    {
-    Utf8String unitAlias;
-    Utf8String unitName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(unitAlias, unitName, name))
-        return nullptr;
-
-    ECUnitP unit = nullptr;
-    if (unitAlias.empty())
-        unit = GetUnitP(unitName.c_str());
-    else
-        {
-        ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(unitAlias);
-        if (nullptr == resolvedUnitSchema)
-            return nullptr;
-
-        unit = resolvedUnitSchema->GetUnitP(unitName.c_str());
-        }
-
-    return unit;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-PhenomenonP ECSchema::_LookupPhenomenonP(Utf8CP name) const
-    {
-    Utf8String phenomAlias;
-    Utf8String phenomName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(phenomAlias, phenomName, name))
-        return nullptr;
-
-    PhenomenonP phenom = nullptr;
-    if (phenomAlias.empty())
-        phenom = GetPhenomenonP(phenomName.c_str());
-    else
-        {
-        ECSchemaCP resolvedPhenomSchema = GetSchemaByAliasP(phenomAlias);
-        if (nullptr == resolvedPhenomSchema)
-            return nullptr;
-
-        phenom = resolvedPhenomSchema->GetPhenomenonP(phenomName.c_str());
-        }
-
-    return phenom;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-UnitSystemP ECSchema::_LookupUnitSystemP(Utf8CP name) const
-    {
-    Utf8String systemAlias;
-    Utf8String systemName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(systemAlias, systemName, name))
-        return nullptr;
-
-    UnitSystemP system = nullptr;
-    if (systemAlias.empty())
-        system = GetUnitSystemP(systemName.c_str());
-    else
-        {
-        ECSchemaCP resolvedSchema = GetSchemaByAliasP(systemAlias);
-        if (nullptr == resolvedSchema)
-            return nullptr;
-
-        system = resolvedSchema->GetUnitSystemP(systemName.c_str());
-        }
-
-    return system;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-void ECSchema::_AllPhenomena(bvector<Units::PhenomenonCP>& allPhenomena) const
-    {
-    for (auto phen : GetPhenomena())
-        allPhenomena.push_back(phen);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-void ECSchema::_AllUnits(bvector<Units::UnitCP>& allUnits) const
-    {
-    for (auto unit : GetUnits())
-        allUnits.push_back(unit);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-void ECSchema::_AllSystems(bvector<Units::UnitSystemCP>& allUnitSystems) const
-    {
-    for (auto system : GetUnitSystems())
-        allUnitSystems.push_back(system);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kyle.Abramowitz                 02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECUnitP ECSchema::GetInvertedUnitP(Utf8CP name)
-{
-    auto unit = GetSchemaChild<ECUnit, UnitMap>(name, &m_unitMap);
+    {
+    auto unit = GetUnitP(name);
     if((nullptr != unit) && (unit->IsInvertedUnit()))
         return unit;
     return nullptr;
-}
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kyle.Abramowitz                 02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECUnitP ECSchema::GetConstantP(Utf8CP name)
     {
-    auto unit = GetSchemaChild<ECUnit, UnitMap>(name, &m_unitMap);
+    auto unit = GetUnitP(name);
     if((nullptr != unit) && (unit->IsConstant()))
         return unit;
     return nullptr;

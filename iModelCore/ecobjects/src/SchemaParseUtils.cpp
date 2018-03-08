@@ -444,6 +444,37 @@ Utf8CP SchemaParseUtils::StrengthToString(StrengthType strength)
         }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+// static
+Utf8CP SchemaParseUtils::SchemaElementTypeToString(ECSchemaElementType elementType)
+    {
+    switch (elementType)
+        {
+        case ECSchemaElementType::ECClass:
+            return EC_CLASS_ELEMENT;
+        case ECSchemaElementType::ECEnumeration:
+            return ECJSON_ENUMERATION_ELEMENT;
+        case ECSchemaElementType::KindOfQuantity:
+            return KIND_OF_QUANTITY_ELEMENT;
+        case ECSchemaElementType::PropertyCategory:
+            return PROPERTY_CATEGORY_ELEMENT;
+        case ECSchemaElementType::UnitSystem:
+            return UNIT_SYSTEM_ELEMENT;
+        case ECSchemaElementType::Phenomenon:
+            return PHENOMENON_ELEMENT;
+        case ECSchemaElementType::Unit:
+            return UNIT_ELEMENT;
+        case ECSchemaElementType::InvertedUnit:
+            return INVERTED_UNIT_ELEMENT;
+        case ECSchemaElementType::Constant:
+            return CONSTANT_ELEMENT;
+        }
+
+    return EMPTY_STRING;
+    }
+
 static void SetOrAppendValue(Utf8StringR str, Utf8CP val)
     {
     if (Utf8String::IsNullOrEmpty(str.c_str()))

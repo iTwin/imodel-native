@@ -68,6 +68,7 @@
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECEnumeration.cpp" />
     <ClCompile Include="ECSchemaDownConverter.cpp" />
+    <ClCompile Include="ECSchemaUnitsContext.cpp" />
     <ClCompile Include="ECSchemaValidator.cpp" />
     <ClCompile Include="KindOfQuantity.cpp" />
     <ClCompile Include="ECSchemaConverter.cpp" />

@@ -566,7 +566,7 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::N
         return ECObjectsStatus::Success;
         }
 
-    unit = koq.GetSchema().LookupUnit(unitName.c_str());
+    unit = koq.GetSchema().GetUnitsContext().LookupUnit(unitName.c_str());
 
     if (nullptr == unit)
         {

@@ -104,6 +104,8 @@ $(o)ECSchemaConverter$(oext)                               : $(baseDir)ECSchemaC
 
 $(o)ECSchemaDownConverter$(oext)                           : $(baseDir)ECSchemaDownConverter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+$(o)ECSchemaUnitsContext$(oext)                            : $(baseDir)ECSchemaUnitsContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+
 $(o)ECSchemaValidator$(oext)                               : $(baseDir)ECSchemaValidator.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECType$(oext)                                          : $(baseDir)ECType.cpp $(ECObjectsHeaders) ${MultiCompileDepends}

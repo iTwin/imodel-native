@@ -13,6 +13,31 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
+ECUnit::ECUnit(ECSchemaCR schema, Utf8CP name) : Units::Unit(name), m_schema(schema)
+    {
+    m_unitsContext = &schema.GetUnitsContext();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName) : Units::Unit(parentUnit, system, unitName), m_schema(schema)
+    {
+    m_unitsContext = &schema.GetUnitsContext();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) :
+    Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false),m_schema(schema)
+    {
+    m_unitsContext = &schema.GetUnitsContext();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
 Utf8StringCR ECUnit::GetFullName() const
     {
     if (m_fullName.size() == 0)
