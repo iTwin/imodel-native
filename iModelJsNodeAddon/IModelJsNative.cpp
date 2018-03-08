@@ -816,6 +816,11 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int) result);
         }
 
+    void AbandonCreateChangeSet(const Napi::CallbackInfo& info)
+        {
+        AddonUtils::AbandonCreateChangeSet(*m_dgndb);
+        }
+
     Napi::Value GetCachedBriefcaseInfos(const Napi::CallbackInfo& info)
         {
         REQUIRE_ARGUMENT_STRING(0, cachePath);
@@ -1326,6 +1331,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("processChangeSets", &NativeDgnDb::ProcessChangeSets),
             InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
             InstanceMethod("finishCreateChangeSet", &NativeDgnDb::FinishCreateChangeSet),
+            InstanceMethod("abandonCreateChangeSet", &NativeDgnDb::AbandonCreateChangeSet),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),

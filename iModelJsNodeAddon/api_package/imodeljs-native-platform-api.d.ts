@@ -126,9 +126,14 @@ declare class NativeDgnDb {
     startCreateChangeSet(): ErrorStatusOrResult<DbResult, string>;
 
     /**
-     * Start creating a new change set with local changes
+     * Finish creating a new change set with local changes
      */
     finishCreateChangeSet(): DbResult;
+
+    /**
+     * Abandon creating a new change set with local changes
+     */
+    abandonCreateChangeSet(): void;
 
     /** Creates an EC change cache for this iModel (but does not attach it). 
      * @param changeCacheFile The created change cache ECDb file
