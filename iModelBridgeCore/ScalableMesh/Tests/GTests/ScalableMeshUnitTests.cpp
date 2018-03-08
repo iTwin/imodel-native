@@ -878,6 +878,43 @@ TEST_P(ScalableMeshTestWithParams, LoadMeshWithTexture)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, LoadMeshWithGraph)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    //not supported for the cesium data
+    if (myScalableMesh->IsCesium3DTiles())
+        return;
+
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, true);
+
+    auto mesh = nodeP->GetMesh(flags);
+    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+        ASSERT_TRUE(mesh.IsValid());
+    if (mesh.IsValid())
+    {
+        if (!myScalableMesh->IsTerrain())
+            return;
+
+        ASSERT_TRUE(flags->ShouldLoadGraph());
+        bvector<DPoint3d> pts;
+        ASSERT_EQ(mesh->GetBoundary(pts), DTM_SUCCESS);
+
+        flags->SetLoadGraph(false);
+        ASSERT_FALSE(flags->ShouldLoadGraph());
+        mesh = nodeP->GetMesh(flags);
+        ASSERT_EQ(mesh->GetBoundary(pts), DTM_ERROR);
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, AddSkirt)
 {
 }
