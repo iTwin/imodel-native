@@ -19,6 +19,7 @@
 #include <ScalableMesh/IScalableMeshAnalysis.h>
 #include <ScalableMesh/IScalableMeshInfo.h>
 #include <ScalableMesh/IScalableMeshClippingOptions.h>
+#include "ScalableMeshDefs.h"
 
 #undef static_assert
 
@@ -380,7 +381,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
 
-        BENTLEY_SM_EXPORT IScalableMeshEditPtr    GetMeshEditInterface() const;
+        IScalableMeshEditPtr    GetMeshEditInterface() const;
 
         BENTLEY_SM_EXPORT IScalableMeshAnalysisPtr    GetMeshAnalysisInterface();
 
@@ -421,9 +422,9 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshNodePtr  GetRootNode();
 
-        BENTLEY_SM_EXPORT int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
+        int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
-        BENTLEY_SM_EXPORT Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
+        Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
 
         BENTLEY_SM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
 
@@ -559,8 +560,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void  GetAllTextures(bvector<IScalableMeshTexturePtr>& textures);
 #endif
 
-        BENTLEY_SM_EXPORT static void SetUserFilterCallback(MeshUserFilterCallback callback);
-        BENTLEY_SM_EXPORT void ReFilter();
+        static void SetUserFilterCallback(MeshUserFilterCallback callback);
+        void ReFilter();
 
     };
 
