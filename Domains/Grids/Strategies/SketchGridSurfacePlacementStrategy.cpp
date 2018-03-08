@@ -19,20 +19,23 @@ const Utf8CP SketchGridSurfacePlacementStrategy::prop_Length = SketchGridSurface
 const Utf8CP SketchGridSurfacePlacementStrategy::prop_Angle = SketchGridSurfaceManipulationStrategy::prop_Angle;
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                    Haroldas.Vitunskas              01/2018
+// @bsimethod                                    Vytautas.Kaniusonis             03/2018
 //---------------+---------------+---------------+---------------+---------------+------
-Utf8String SketchGridSurfacePlacementStrategy::GetMessage() const
+Utf8String SketchGridSurfacePlacementStrategy::_GetMessage() const
     {
-    return _GetMessage();
+    return _GetSketchGridSurfaceManipulationStrategy().GetMessage();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Vytautas.Kaniusonis             03/2018
 //---------------+---------------+---------------+---------------+---------------+------
-Utf8String SketchGridSurfacePlacementStrategy::_GetMessage() const
-	{
-	return _GetSketchGridSurfaceManipulationStrategy().GetMessage();
-	}
+void SketchGridSurfacePlacementStrategy::_AddViewOverlay
+(
+    Dgn::Render::GraphicBuilderR builder,
+    DRange3dCR viewRange,
+    TransformCR worldToView,
+    Dgn::ColorDefCR contrastingToBackgroundColor
+) const {}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018

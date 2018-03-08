@@ -41,7 +41,8 @@ struct SketchGridSurfacePlacementStrategy : public BBS::ElementPlacementStrategy
         virtual BentleyStatus _TryGetProperty(Utf8CP key, Dgn::DgnElementCP& value) const override;
         virtual void _SetProperty(Utf8CP key, Dgn::DgnElementCP const& value) override;
 
-		virtual Utf8String _GetMessage() const override;
+        virtual Utf8String _GetMessage() const override;
+        virtual void _AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const;
 
     public:        
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_BottomElevation;

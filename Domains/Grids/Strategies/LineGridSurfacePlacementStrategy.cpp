@@ -42,14 +42,3 @@ void LineGridSurfacePlacementStrategy::_SetProperty(Utf8CP key, double const & v
     m_manipulationStrategy->SetProperty(key, value);
     T_Super::_SetProperty(key, value);
     }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Vytautas.Kaniusonis             03/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void LineGridSurfacePlacementStrategy::_AddViewOverlay 
-(
-	Dgn::Render::GraphicBuilderR builder,
-	DRange3dCR viewRange,
-	TransformCR worldToView,
-	Dgn::ColorDefCR contrastingToBackgroundColor
-) const	{}

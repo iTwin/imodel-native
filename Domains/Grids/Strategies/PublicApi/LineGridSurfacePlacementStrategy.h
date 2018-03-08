@@ -33,8 +33,6 @@ struct LineGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrat
         virtual BentleyStatus _TryGetProperty(Utf8CP key, double & value) const override;
         virtual void _SetProperty(Utf8CP key, double const & value) override;
 
-		virtual void _AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const;
-
     public:
         GRIDSTRATEGIES_EXPORT static LineGridSurfacePlacementStrategyPtr Create(BBS::LinePlacementStrategyType linePlacementStrategyType) { return new LineGridSurfacePlacementStrategy(linePlacementStrategyType); }
     };
