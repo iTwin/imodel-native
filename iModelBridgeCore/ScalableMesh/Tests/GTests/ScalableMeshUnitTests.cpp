@@ -592,6 +592,9 @@ INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDrapePoints, ::testing::Va
 
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName(SM_DISPLAY_QUERY_TEST_CASES))));
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis   12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 {
 	auto myScalableMesh = OpenMesh();
@@ -611,6 +614,9 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 	}
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis   12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 {   
 	auto myScalableMesh = OpenMesh();
@@ -627,6 +633,46 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 		EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
 	}
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePoints, IntersectRay)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePoints, DrapeAlongVector)
+{
+}
+
+#if 0
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestProjectPoints, ProjectPoint)
+{
+}
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePointsFast, DrapeSinglePoint)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePointsFast, DrapeLinear)
+{
+}
+#endif
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mathieu.St-Pierre   11/2017
@@ -668,6 +714,194 @@ TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
     if (result)
         queryTester.DoQuery();
     }
+
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetNodeQueryInterface)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    ASSERT_EQ(ptr.IsValid(), true);
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQuerySingleNode)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    params->SetDirection(direction);
+
+    IScalableMeshNodePtr node = nullptr;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    DPoint3d testPt = DPoint3d::From(range.low.x + range.XLength() / 2, range.low.y + range.YLength() / 2, range.high.z);
+    ptr->Query(node, &testPt, NULL, 0, params);
+
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_TRUE(node->GetContentExtent().low.x <= testPt.x);
+    ASSERT_TRUE(node->GetContentExtent().low.y <= testPt.y);
+    ASSERT_TRUE(node->GetContentExtent().high.x >= testPt.x);
+    ASSERT_TRUE(node->GetContentExtent().high.y >= testPt.y);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQueryMultipleNode)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    params->SetDirection(direction);
+
+    DVec3d testDirection = params->GetDirection();
+    ASSERT_TRUE(testDirection.IsEqual(direction));
+
+    bvector<IScalableMeshNodePtr> nodes;
+    IScalableMeshNodePtr node = nullptr;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    DPoint3d testPt = DPoint3d::From(range.low.x + range.XLength() / 2, range.low.y + range.YLength() / 2, range.high.z);
+    ptr->Query(nodes, &testPt, NULL, 0, params);
+
+    ASSERT_TRUE(!nodes.empty());
+
+    ptr->Query(node, &testPt, NULL, 0, params);
+    ASSERT_TRUE(std::find_if(nodes.begin(), nodes.end(), [&node](const IScalableMeshNodePtr& val)
+    {
+        return val->GetNodeId() == node->GetNodeId();
+    }) != nodes.end());
+
+    nodes.clear();
+    testPt = DPoint3d::From(range.high.x + range.XLength() / 2, range.high.y + range.YLength() / 2, range.high.z);
+    ptr->Query(nodes, &testPt, NULL, 0, params);
+    ASSERT_TRUE(nodes.empty());
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQueryByLevel)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    params->SetDirection(direction);
+
+    IScalableMeshNodePtr node = nullptr;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    DPoint3d testPt = DPoint3d::From(range.low.x + range.XLength() / 2, range.low.y + range.YLength() / 2, range.high.z);
+
+    for (size_t i = 0; i < myScalableMesh->GetNbResolutions(); ++i)
+    {
+        params->SetLevel(i);
+        ptr->Query(node, &testPt, NULL, 0, params);
+        EXPECT_TRUE(node->GetLevel() == i || (node->GetLevel() <= i && node->GetChildrenNodes().empty()));
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQueryUsing2dProjectedRays)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, LoadMeshWithTexture)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
+
+    auto mesh = nodeP->GetMesh(flags);
+    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+        ASSERT_TRUE(mesh.IsValid());
+    if (mesh.IsValid())
+    {
+        if (nodeP->IsTextured())
+            ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() != nullptr);
+        else
+            ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() == nullptr);
+
+        ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
+        ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
+        ASSERT_EQ(nodeP->GetPointCount(), mesh->GetNbPoints());
+
+        flags = IScalableMeshMeshFlags::Create(false, false);
+        mesh = nodeP->GetMesh(flags);
+        ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() == nullptr);
+
+        ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
+        ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
+        ASSERT_EQ(nodeP->GetPointCount(), mesh->GetNbPoints());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, AddSkirt)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, ModifySkirt)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, RemoveSkirt)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
+{
+}
 
 
 // Wrap Google's ASSERT_TRUE macro into a lambda because it returns a "success" error code.
