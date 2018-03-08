@@ -41,6 +41,8 @@ struct SketchGridSurfacePlacementStrategy : public BBS::ElementPlacementStrategy
         virtual BentleyStatus _TryGetProperty(Utf8CP key, Dgn::DgnElement& value) const override;
         virtual void _SetProperty(Utf8CP key, Dgn::DgnElement const& value) override;
 
+		virtual Utf8String _GetMessage() const override;
+
     public:        
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_BottomElevation;
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_TopElevation;
@@ -49,9 +51,6 @@ struct SketchGridSurfacePlacementStrategy : public BBS::ElementPlacementStrategy
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_WorkingPlane;
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_Length;
         GRIDSTRATEGIES_EXPORT static const Utf8CP prop_Angle;
-
-
-        GRIDSTRATEGIES_EXPORT Utf8String GetMessage() const;
     };
 
 END_GRIDS_NAMESPACE

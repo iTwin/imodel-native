@@ -23,8 +23,16 @@ const Utf8CP SketchGridSurfacePlacementStrategy::prop_Angle = SketchGridSurfaceM
 //---------------+---------------+---------------+---------------+---------------+------
 Utf8String SketchGridSurfacePlacementStrategy::GetMessage() const
     {
-    return _GetSketchGridSurfaceManipulationStrategy().GetMessage();
+    return _GetMessage();
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Vytautas.Kaniusonis             03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Utf8String SketchGridSurfacePlacementStrategy::_GetMessage() const
+	{
+	return _GetSketchGridSurfaceManipulationStrategy().GetMessage();
+	}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              01/2018
