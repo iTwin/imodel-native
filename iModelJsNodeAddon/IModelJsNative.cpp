@@ -818,7 +818,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     void AbandonCreateChangeSet(const Napi::CallbackInfo& info)
         {
-        AddonUtils::AbandonCreateChangeSet(*m_dgndb);
+        JsInterop::AbandonCreateChangeSet(*m_dgndb);
         }
 
     Napi::Value GetCachedBriefcaseInfos(const Napi::CallbackInfo& info)

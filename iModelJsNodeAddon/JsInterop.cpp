@@ -351,7 +351,7 @@ DbResult JsInterop::FinishCreateChangeSet(DgnDbR dgndb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Karolis.Dziedzelis              03/18
 //---------------------------------------------------------------------------------------
-void AddonUtils::AbandonCreateChangeSet(DgnDbR dgndb)
+void JsInterop::AbandonCreateChangeSet(DgnDbR dgndb)
     {
     RevisionManagerR revisions = dgndb.Revisions();
 
