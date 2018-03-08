@@ -345,6 +345,17 @@ DbResult AddonUtils::FinishCreateChangeSet(DgnDbR dgndb)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              03/18
+//---------------------------------------------------------------------------------------
+void AddonUtils::AbandonCreateChangeSet(DgnDbR dgndb)
+    {
+    RevisionManagerR revisions = dgndb.Revisions();
+
+    if (revisions.IsCreatingRevision())
+        revisions.AbandonCreateRevision();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 09/17
 //---------------------------------------------------------------------------------------
 DbResult AddonUtils::SetupBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken)

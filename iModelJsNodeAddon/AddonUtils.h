@@ -76,6 +76,7 @@ public:
     static BeSQLite::DbResult ProcessChangeSets(DgnDbPtr dgndb, JsonValueCR jsonChangeSetTokens, RevisionProcessOption processOption, Utf8StringCR dbGuid, BeFileNameCR dbFileName);
     static BeSQLite::DbResult StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb);
     static BeSQLite::DbResult FinishCreateChangeSet(DgnDbR dgndb);
+    static void AbandonCreateChangeSet(DgnDbR dgndb);
 
     static void GetIModelProps(JsonValueR, DgnDbCR dgndb);
     
