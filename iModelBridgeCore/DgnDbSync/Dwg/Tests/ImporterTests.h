@@ -38,6 +38,7 @@ struct ImporterTests : public ::testing::Test
 {
 public:
     static ImporterTestsHost s_testsHost;
+    static WString           s_dwgBridgeRegistryKey;
 
     static void SetUpTestCase();
     static void TearDownTestCase();
@@ -50,6 +51,7 @@ public:
     static BentleyApi::BeFileName GetOutputDir();
     static BentleyApi::WString GetOutRoot();
     static BentleyApi::BeFileName GetIBimFileName(BentleyApi::BeFileName& inFile);
+    static BentleyApi::WStringCR GetDwgBridgeRegistryKey ();
 
     static void DeleteExistingDgnDb(BentleyApi::BeFileNameCR);
     static DgnDbPtr OpenExistingDgnDb(BentleyApi::BeFileNameCR projectName, DgnDb::OpenMode mode = DgnDb::OpenMode::ReadWrite);
