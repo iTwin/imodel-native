@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DgnV8Text.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -155,29 +155,35 @@ DgnElementId Converter::_GetOrCreateTextStyleNoneId(DgnV8Api::DgnFile& v8File)
     // The fact we use V8's active settings to seed the style is arbitrary and generally irrelevant to the display, but I'm not sure there's a more reasonable alternative.
     // This allows for DgnDb's requirement to have a style, yet the elements will act like V8 if the user ever did get ahold of the style and tweaked it.
 
-    Utf8String defaultName = ConverterDataStrings::GetString(ConverterDataStrings::V8StyleNone());
-    if (defaultName.empty())
+    if (!m_textStyleNoneId.IsValid())
         {
-        BeDataAssert(false);
-        defaultName = "V8StyleNone";
-        }
-    AnnotationTextStyleCPtr dbDefaultStyle = AnnotationTextStyle::Get(*m_dgndb, defaultName.c_str());
-    if (!dbDefaultStyle.IsValid())
-        {
-        DgnV8Api::DgnTextStylePtr v8ActiveStyle = DgnV8Api::DgnTextStyle::GetSettings(v8File);
-        auto newDbDefaultStyle = _ConvertV8TextStyle(*v8ActiveStyle);
-        newDbDefaultStyle->SetName(defaultName.c_str());
-        newDbDefaultStyle->SetDescription(ConverterDataStrings::GetString(ConverterDataStrings::V8StyleNoneDescription()).c_str());
-
-        dbDefaultStyle = newDbDefaultStyle->Insert();
+        Utf8String defaultName = ConverterDataStrings::GetString(ConverterDataStrings::V8StyleNone());
+        if (defaultName.empty())
+            {
+            BeDataAssert(false);
+            defaultName = "V8StyleNone";
+            }
+        
+        AnnotationTextStyleCPtr dbDefaultStyle = AnnotationTextStyle::Get(*m_dgndb, defaultName.c_str());
         if (!dbDefaultStyle.IsValid())
             {
-            ReportError(IssueCategory::MissingData(), Issue::Error(), L"V8StyleNone");
-            return DgnElementId();
+            DgnV8Api::DgnTextStylePtr v8ActiveStyle = DgnV8Api::DgnTextStyle::GetSettings(v8File);
+            auto newDbDefaultStyle = _ConvertV8TextStyle(*v8ActiveStyle);
+            newDbDefaultStyle->SetName(defaultName.c_str());
+            newDbDefaultStyle->SetDescription(ConverterDataStrings::GetString(ConverterDataStrings::V8StyleNoneDescription()).c_str());
+
+            dbDefaultStyle = newDbDefaultStyle->Insert();
+            if (!dbDefaultStyle.IsValid())
+                {
+                ReportError(IssueCategory::MissingData(), Issue::Error(), L"V8StyleNone");
+                return DgnElementId();
+                }
             }
+        
+        m_textStyleNoneId = dbDefaultStyle->GetElementId();
         }
-    
-    return dbDefaultStyle->GetElementId();
+
+    return m_textStyleNoneId;
     }
 
 //---------------------------------------------------------------------------------------
