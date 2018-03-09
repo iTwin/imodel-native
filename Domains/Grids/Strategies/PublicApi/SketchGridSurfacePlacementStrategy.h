@@ -14,15 +14,15 @@ namespace BBS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 //=======================================================================================
 // @bsiclass                                     Haroldas.Vitunskas             01/2018
 //=======================================================================================
-struct SketchGridSurfacePlacementStrategy : public BBS::ElementPlacementStrategy
+struct SketchGridSurfacePlacementStrategy : public BBS::DgnElementPlacementStrategy
     {
-    DEFINE_T_SUPER(BBS::ElementPlacementStrategy)
+    DEFINE_T_SUPER(BBS::DgnElementPlacementStrategy)
         
     protected:
         SketchGridSurfacePlacementStrategy() {}
 
-        virtual BBS::ElementManipulationStrategyCR _GetElementManipulationStrategy() const override { return _GetSketchGridSurfaceManipulationStrategy(); }
-        virtual BBS::ElementManipulationStrategyR _GetElementManipulationStrategyForEdit() override { return _GetSketchGridSurfaceManipulationStrategyForEdit(); }
+        virtual BBS::DgnElementManipulationStrategyCR _GetDgnElementManipulationStrategy() const override { return _GetSketchGridSurfaceManipulationStrategy(); }
+        virtual BBS::DgnElementManipulationStrategyR _GetDgnElementManipulationStrategyForEdit() override { return _GetSketchGridSurfaceManipulationStrategyForEdit(); }
         virtual BBS::GeometryManipulationStrategyCR _GetManipulationStrategy() const override { return _GetSketchGridSurfaceManipulationStrategy(); }
         virtual BBS::GeometryManipulationStrategyR _GetManipulationStrategyForEdit() override { return _GetSketchGridSurfaceManipulationStrategyForEdit(); }
 

@@ -14,9 +14,9 @@ namespace BBS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 //=======================================================================================
 // @bsiclass                                     Haroldas.Vitunskas             01/2018
 //=======================================================================================
-struct SketchGridSurfaceManipulationStrategy : public BBS::ElementManipulationStrategy
+struct SketchGridSurfaceManipulationStrategy : public BBS::DgnElementManipulationStrategy
     {
-    DEFINE_T_SUPER(BBS::ElementManipulationStrategy)
+    DEFINE_T_SUPER(BBS::DgnElementManipulationStrategy)
 
     protected:
         double m_bottomElevation;
