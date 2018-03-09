@@ -403,6 +403,87 @@ IWSRepositoryClient::RequestOptionsPtr requestOptions
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas            03/2018
+//---------------------------------------------------------------------------------------
+StatusTaskPtr iModelConnection::SendChunkedChangesetRequestInternal
+(
+ChunkedWSChangeset const& chunkedChangeset,
+IBriefcaseManager::ResponseOptions options,
+ICancellationTokenPtr cancellationToken,
+IWSRepositoryClient::RequestOptionsPtr requestOptions
+) const
+    {
+
+    return SendChunkedChangesetRequestRecursive(chunkedChangeset, options, cancellationToken, requestOptions, 0, 1);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Algirdas.Mikoliunas            03/2018
+//---------------------------------------------------------------------------------------
+StatusTaskPtr iModelConnection::SendChunkedChangesetRequestRecursive
+(
+ChunkedWSChangeset const& chunkedChangeset,
+IBriefcaseManager::ResponseOptions options,
+ICancellationTokenPtr cancellationToken,
+IWSRepositoryClient::RequestOptionsPtr requestOptions,
+uint64_t changesetIndex,
+uint8_t attempt
+) const
+    {
+    const Utf8String methodName = "iModelConnection::SendChunkedChangesetRequestRecursive";
+
+    StatusResultPtr finalResult = std::make_shared<StatusResult>();
+    if (changesetIndex >= chunkedChangeset.GetChunks().size())
+        {
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Finished sending chunked request");
+        return CreateCompletedAsyncTask(StatusResult::Success());
+        }
+
+    auto chunk = chunkedChangeset.GetChunks().at(changesetIndex);
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting sending chunk %d/%d", changesetIndex + 1, chunkedChangeset.GetChunks().size());
+
+    return SendChangesetRequestInternal(chunk, options, cancellationToken, requestOptions)->Then([=](StatusResultCR chunkResult)
+        {
+        if (!chunkResult.IsSuccess())
+            {
+            if (attempt < 3 && IsErrorForRetry(chunkResult.GetError().GetId()))
+                {
+                SendChunkedChangesetRequestRecursive(chunkedChangeset, options, cancellationToken, requestOptions, changesetIndex, attempt + 1)->
+                    Then([=](StatusResultCR recursiveResult)
+                    {
+                    if (!recursiveResult.IsSuccess())
+                        {
+                        finalResult->SetError(recursiveResult.GetError());
+                        return;
+                        }
+
+                    finalResult->SetSuccess();
+                    });
+                return;
+                }
+
+            finalResult->SetError(chunkResult.GetError());
+            return;
+            }
+
+        SendChunkedChangesetRequestRecursive(chunkedChangeset, options, cancellationToken, requestOptions, changesetIndex + 1, 1)->
+            Then([=](StatusResultCR recursiveResult)
+            {
+            if (!recursiveResult.IsSuccess())
+                {
+                finalResult->SetError(recursiveResult.GetError());
+                return;
+                }
+
+            finalResult->SetSuccess();
+            });
+        })->Then<StatusResult>([=]
+            {
+            return *finalResult;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 StatusResult iModelConnection::DownloadBriefcaseFile
@@ -605,6 +686,24 @@ DgnCode searchCode
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             03/2018
+//---------------------------------------------------------------------------------------
+void AddCodesToInstance
+(
+bmap<Utf8String, bvector<DgnCode>>& groupedCodes,
+DgnCodeState                        state,
+BeBriefcaseId                       briefcaseId,
+std::shared_ptr<WSChangeset>        changeset,
+const WSChangeset::ChangeState&     changeState,
+bool                                queryOnly = false
+)
+    {
+    for (auto& group : groupedCodes)
+        {
+        AddCodeToInstance(*changeset, changeState, group.second, state, briefcaseId, queryOnly);
+        }
+    }
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
 void SetCodesJsonRequestToChangeSet
@@ -612,7 +711,7 @@ void SetCodesJsonRequestToChangeSet
 const DgnCodeSet                codes,
 DgnCodeState                    state,
 BeBriefcaseId                   briefcaseId,
-WSChangeset&                    changeset,
+ChunkedWSChangeset&             chunkedChangeset,
 const WSChangeset::ChangeState& changeState,
 bool                            queryOnly = false
 )
@@ -620,13 +719,17 @@ bool                            queryOnly = false
     bmap<Utf8String, bvector<DgnCode>> groupedCodes;
     for (auto& code : codes)
         {
+        if (!chunkedChangeset.AddInstance())
+            {
+            AddCodesToInstance(groupedCodes, state, briefcaseId, chunkedChangeset.GetCurrentChangeset(), changeState, queryOnly); 
+            groupedCodes.clear();
+            chunkedChangeset.StartNewChangeset();
+            }
+
         GroupCode(&groupedCodes, code);
         }
 
-    for (auto& group : groupedCodes)
-        {
-        AddCodeToInstance(changeset, changeState, group.second, state, briefcaseId, queryOnly);
-        }
+    AddCodesToInstance(groupedCodes, state, briefcaseId, chunkedChangeset.GetCurrentChangeset(), changeState, queryOnly);
     }
 
 //---------------------------------------------------------------------------------------
@@ -686,6 +789,25 @@ bool                             queryOnly
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             03/2018
+//---------------------------------------------------------------------------------------
+void AddLocksInstances
+(
+std::shared_ptr<WSChangeset>    changeset,
+const WSChangeset::ChangeState& changeState,
+bvector<BeInt64Id>              objects[],
+BeBriefcaseId                   briefcaseId,
+BeGuidCR                        seedFileId,
+Utf8StringCR                    releasedWithChangeSetId,
+bool                            queryOnly
+)
+    {
+    for (int i = 0; i < 12; ++i)
+        AddToInstance(*changeset, changeState, objects[i], briefcaseId, seedFileId, releasedWithChangeSetId, static_cast<LockableType>(i / 3),
+            static_cast<LockLevel>(i % 3), queryOnly);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             12/2015
 //---------------------------------------------------------------------------------------
 void SetLocksJsonRequestToChangeSet
@@ -694,7 +816,7 @@ const DgnLockSet&               locks,
 BeBriefcaseId                   briefcaseId,
 BeGuidCR                        seedFileId,
 Utf8StringCR                    releasedWithChangeSetId,
-WSChangeset&                    changeset,
+ChunkedWSChangeset&             chunkedChangeset,
 const WSChangeset::ChangeState& changeState,
 bool                            includeOnlyExclusive = false,
 bool                            queryOnly = false
@@ -706,14 +828,23 @@ bool                            queryOnly = false
         if (includeOnlyExclusive && LockLevel::Exclusive != lock.GetLevel())
             continue;
 
+        if (!chunkedChangeset.AddInstance())
+            {
+            AddLocksInstances(chunkedChangeset.GetCurrentChangeset(), changeState, objects, briefcaseId, seedFileId, releasedWithChangeSetId, queryOnly);
+            for (int i = 0; i < 12; i++)
+                {
+                objects[i].clear();
+                }
+
+            chunkedChangeset.StartNewChangeset();
+            }
+
         int index = static_cast<int32_t>(lock.GetType()) * 3 + static_cast<int32_t>(lock.GetLevel());
         if (index >= 0 && index <= 11)
             objects[index].push_back(lock.GetId());
         }
 
-    for (int i = 0; i < 12; ++i)
-        AddToInstance(changeset, changeState, objects[i], briefcaseId, seedFileId, releasedWithChangeSetId, static_cast<LockableType>(i / 3), 
-                      static_cast<LockLevel>(i % 3), queryOnly);
+    AddLocksInstances(chunkedChangeset.GetCurrentChangeset(), changeState, objects, briefcaseId, seedFileId, releasedWithChangeSetId, queryOnly);
     }
 
 //---------------------------------------------------------------------------------------
@@ -878,15 +1009,15 @@ ICancellationTokenPtr               cancellationToken
     {
     const Utf8String methodName = "iModelConnection::AcquireCodesLocksInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
 
-    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, seedFileId, lastChangeSetId, *changeset, WSChangeset::ChangeState::Modified);
+    ChunkedWSChangeset chunkedChangeset;
+    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, seedFileId, lastChangeSetId, chunkedChangeset, WSChangeset::ChangeState::Modified);
 
     DgnCodeState state;
     state.SetReserved(briefcaseId);
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Created);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, chunkedChangeset, WSChangeset::ChangeState::Created);
 
-    return SendChangesetRequestInternal(changeset, options, cancellationToken);
+    return SendChunkedChangesetRequestInternal(chunkedChangeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2460,6 +2591,7 @@ ICancellationTokenPtr               cancellationToken
     {
     BeBriefcaseId briefcaseId = dgndb.GetBriefcaseId();
     std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    ChunkedWSChangeset codesLocksChangeSet;
 
     //Set ChangeSet initialization request to ECChangeSet
     JsonValueR changeSetProperties = pushJson[ServerSchema::Instance][ServerSchema::Properties];
@@ -2473,7 +2605,7 @@ ICancellationTokenPtr               cancellationToken
     BeGuid seedFileId;
     seedFileId.FromString(changeSet->GetDbGuid().c_str());
     if (!usedLocks.IsEmpty())
-        SetLocksJsonRequestToChangeSet(usedLocks.GetLockSet(), briefcaseId, seedFileId, changeSet->GetId(), *changeset, 
+        SetLocksJsonRequestToChangeSet(usedLocks.GetLockSet(), briefcaseId, seedFileId, changeSet->GetId(), codesLocksChangeSet,
                                        WSChangeset::ChangeState::Modified, true);
 
     DgnCodeSet assignedCodes, discardedCodes;
@@ -2483,20 +2615,20 @@ ICancellationTokenPtr               cancellationToken
         {
         DgnCodeState state;
         state.SetUsed(changeSet->GetId());
-        SetCodesJsonRequestToChangeSet(assignedCodes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Modified);
+        SetCodesJsonRequestToChangeSet(assignedCodes, state, briefcaseId, codesLocksChangeSet, WSChangeset::ChangeState::Created);
         }
 
     if (!discardedCodes.empty())
         {
         DgnCodeState state;
         state.SetDiscarded(changeSet->GetId());
-        SetCodesJsonRequestToChangeSet(discardedCodes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Modified);
+        SetCodesJsonRequestToChangeSet(discardedCodes, state, briefcaseId, codesLocksChangeSet, WSChangeset::ChangeState::Modified);
         }
 
     if (relinquishCodesLocks)
         {
-        LockDeleteAllJsonRequest(changeset, briefcaseId);
-        CodeDiscardReservedJsonRequest(changeset, briefcaseId);
+        LockDeleteAllJsonRequest(codesLocksChangeSet.GetCurrentChangeset(), briefcaseId);
+        CodeDiscardReservedJsonRequest(codesLocksChangeSet.GetCurrentChangeset(), briefcaseId);
         }
 
     //Push ChangeSet initialization request and Locks update in a single batch
@@ -2513,6 +2645,13 @@ ICancellationTokenPtr               cancellationToken
         {
         if (initializeChangeSetResult.IsSuccess())
             {
+            auto codesLocksResult = SendChunkedChangesetRequestInternal(codesLocksChangeSet, options, cancellationToken, requestOptions)->GetResult();
+            if (!codesLocksResult.IsSuccess())
+                {
+                finalResult->SetError(codesLocksResult.GetError());
+                return;
+                }
+                
             finalResult->SetSuccess();
             return;
             }
@@ -2924,16 +3063,16 @@ IBriefcaseManager::ResponseOptions  options,
 ICancellationTokenPtr               cancellationToken
 ) const
     {
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
+    ChunkedWSChangeset chunkedChangeset;
 
-    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, seedFileId, lastChangeSetId, *changeset, WSChangeset::ChangeState::Modified, 
+    SetLocksJsonRequestToChangeSet(locks.GetLockSet(), briefcaseId, seedFileId, lastChangeSetId, chunkedChangeset, WSChangeset::ChangeState::Modified,
                                    false, true);
 
     DgnCodeState state;
     state.SetReserved(briefcaseId);
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Created, true);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, chunkedChangeset, WSChangeset::ChangeState::Created, true);
 
-    return SendChangesetRequest(changeset, options, cancellationToken);
+    return SendChunkedChangesetRequestInternal(chunkedChangeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2953,14 +3092,14 @@ ICancellationTokenPtr                   cancellationToken
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     CHECK_BRIEFCASEID(briefcaseId, StatusResult);
     //How to set description here?
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-    SetLocksJsonRequestToChangeSet(locks, briefcaseId, seedFileId, "", *changeset, WSChangeset::ChangeState::Modified);
+    ChunkedWSChangeset chunkedChangeset;
+    SetLocksJsonRequestToChangeSet(locks, briefcaseId, seedFileId, "", chunkedChangeset, WSChangeset::ChangeState::Modified);
 
     DgnCodeState state;
     state.SetAvailable();
-    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, *changeset, WSChangeset::ChangeState::Modified);
+    SetCodesJsonRequestToChangeSet(codes, state, briefcaseId, chunkedChangeset, WSChangeset::ChangeState::Modified);
 
-    return SendChangesetRequestInternal(changeset, options, cancellationToken);
+    return SendChunkedChangesetRequestInternal(chunkedChangeset, options, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
