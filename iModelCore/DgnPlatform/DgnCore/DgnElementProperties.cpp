@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElementProperties.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1214,6 +1214,8 @@ void ElementECPropertyAccessor::Init(uint32_t propIdx, Utf8CP accessString)
             {
             m_propIdx = 0;
             m_isPropertyIndexValid = false;
+            m_classInfo = nullptr;
+            m_accessors = nullptr;
             BeAssert(!IsValid());
             return;
             }
