@@ -1543,7 +1543,7 @@ BentleyStatus SchemaComparer::CompareUnit(UnitChange& change, ECUnitCR oldVal, E
     if (!oldPhen->GetFullName().EqualsIAscii(newPhen->GetFullName()))
         change.GetPhenomenon().SetValue(oldPhen->GetFullName(), newPhen->GetFullName());
 
-    BeAssert(dynamic_cast<UnitSystemCP> (oldVal.GetUnitSystem()) != nullptr && dynamic_cast<PhenomenonCP> (newVal.GetUnitSystem()));
+    BeAssert(dynamic_cast<UnitSystemCP> (oldVal.GetUnitSystem()) != nullptr && dynamic_cast<UnitSystemCP> (newVal.GetUnitSystem()));
     UnitSystemCP oldSystem = static_cast<UnitSystemCP> (oldVal.GetUnitSystem());
     UnitSystemCP newSystem = static_cast<UnitSystemCP> (newVal.GetUnitSystem());
     if (!oldSystem->GetFullName().EqualsIAscii(newSystem->GetFullName()))

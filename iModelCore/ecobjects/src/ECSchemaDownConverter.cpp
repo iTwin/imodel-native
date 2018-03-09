@@ -36,7 +36,7 @@ bool tryCreateCA(ECSchemaR schema, Utf8CP origClassName, Utf8CP className, IECIn
 bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, ECSchemaR unitAttributesSchema)
     {
     schema.AddReferencedSchema(unitAttributesSchema);
-    Utf8CP perUnitName = ecProperty->GetKindOfQuantity()->GetPersistenceUnit().GetUnit()->GetName().c_str();
+    Utf8CP perUnitName = ((ECUnitCP)ecProperty->GetKindOfQuantity()->GetPersistenceUnit().GetUnit())->GetFullName().c_str();
     Utf8CP oldPerUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(perUnitName);
     if(nullptr == oldPerUnitName)
         {
@@ -54,7 +54,7 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
 
     if (ecProperty->GetKindOfQuantity()->HasPresentationUnits())
         {
-        Utf8CP presUnitName = ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName().c_str();
+        Utf8CP presUnitName = ((ECUnitCP)ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit())->GetFullName().c_str();
         Utf8CP oldPresUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(presUnitName);
         if (nullptr == oldPresUnitName)
             {
@@ -111,6 +111,18 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
                     return false;
                     }
                 removeOldPersistenceUnitCustomAttribute(schema, ecProperty);
+                }
+            }
+        }
+
+    if(schema.IsSchemaReferenced(schema, *StandardUnitsHelper::GetSchema()))
+        {
+        for (auto ref : schema.GetReferencedSchemas())
+            {
+            if(3 == ref.second->GetOriginalECXmlVersionMajor() && 2 == ref.second->GetOriginalECXmlVersionMinor())
+                {
+                LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", ref.first.GetFullSchemaName());
+                schema.m_refSchemaList.erase(schema.m_refSchemaList.find(ref.first));
                 }
             }
         }

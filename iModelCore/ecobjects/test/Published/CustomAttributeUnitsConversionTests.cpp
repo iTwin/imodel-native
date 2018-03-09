@@ -184,6 +184,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnArrayPr
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    expectedRefSchemas.push_back("Units.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -220,6 +221,7 @@ TEST_F(UnitSpecificationConversionTest, SchemaWithOldUnitSpecification_OnlyOnPro
     validateUnitsInConvertedSchema(*schema, *originalSchema);
     bvector<Utf8String> expectedRefSchemas;
     expectedRefSchemas.push_back("ECv3ConversionAttributes.01.00.00");
+    expectedRefSchemas.push_back("Units.01.00.00");
     verifyReferencedSchemas(*schema, expectedRefSchemas);
     }
 
@@ -1000,6 +1002,56 @@ TEST_F(UnitsCustomAttributesConversionTests, EC3KOQsConvertBackToUnitSpecificati
     ASSERT_STREQ(convertedDuringXmlSerialization.c_str(), convertedThenSerialized.c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveReferenceToStandardUnitsSchema)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
+            <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" alias="V2ToV3" />
+            <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECEntityClass typeName='A' modifier='abstract'>
+                <ECProperty propertyName='PropA' typeName='double' kindOfQuantity='MyKindOfQuantity'>
+                    <ECCustomAttributes>
+                        <OldPersistenceUnit xmlns="ECv3ConversionAttributes.01.00">
+                            <Name>FOOT</Name>
+                        </OldPersistenceUnit>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECEntityClass>
+            <ECEntityClass typeName='B' modifer='none'>
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName='PropA' typeName='double' />
+            </ECEntityClass>
+            <ECEntityClass typeName='C' modifer='sealed'>
+                <BaseClass>B</BaseClass>
+                <ECProperty propertyName='PropA' typeName='double' />
+            </ECEntityClass>
+            <ECEntityClass typeName='D' modifer='sealed'>
+                <ECProperty propertyName='Prop0' typeName='double' />
+                <ECProperty propertyName='Prop1' typeName='double' kindOfQuantity='SecondKindOfQuantity' />
+                <ECProperty propertyName='Prop2' typeName='double' kindOfQuantity='AnotherKindOfQuantity' />
+            </ECEntityClass>
+            <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here'
+                displayLabel='best quantity of all times' persistenceUnit='u:CM' relativeError='10e-3'
+                presentationUnits='u:FT;u:IN;u:MILLIINCH'/>
+            <KindOfQuantity typeName='SecondKindOfQuantity' persistenceUnit='u:N' relativeError='10e-3' />
+            <KindOfQuantity typeName='AnotherKindOfQuantity' persistenceUnit='u:PA' relativeError='10e-3'
+                presentationUnits='u:PSI'/>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext)) << "ECSchema failed to deserialize EC3 schema.";
+    ASSERT_TRUE(schema.IsValid());
+
+    Utf8String convertedDuringXmlSerialization;
+    ASSERT_EQ(SchemaWriteStatus::Success, ECSchema::WriteToEC2XmlString(convertedDuringXmlSerialization, schema.get()));
+
+    ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
+    ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *StandardUnitsHelper::GetSchema()));
+    }
 //=======================================================================================
 //! UnitInstanceConversionTest
 //=======================================================================================

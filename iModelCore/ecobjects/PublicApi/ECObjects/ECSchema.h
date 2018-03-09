@@ -3305,6 +3305,9 @@ private:
     ECSchema (ECSchema const&);
     ECSchema& operator= (ECSchema const&);
 
+// This is needed to force removal of the Units schema from downconverted schemas.
+friend struct ECSchemaDownConverter;
+
 friend struct SearchPathSchemaFileLocater;
 friend struct SupplementedSchemaBuilder;
 friend struct SchemaXmlReader;

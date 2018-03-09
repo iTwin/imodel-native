@@ -1553,10 +1553,14 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
         {
         ECSchemaCR persistUnitSchema = persistUnit->GetSchema();
         SchemaKey key = SchemaKey(persistUnitSchema.GetName().c_str(), persistUnitSchema.GetVersionRead(), persistUnitSchema.GetVersionWrite(), persistUnitSchema.GetVersionMinor());
-        ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
-
-        if (nullptr != foundSchema)
-            AddReferencedSchema(*foundSchema);
+        if (!this->GetSchemaKey().Matches(persistUnitSchema.GetSchemaKey(), SchemaMatchType::Exact))
+            { 
+            ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
+            if (nullptr != foundSchema)
+                AddReferencedSchema(*foundSchema);
+            }
+        else
+            persistUnit = GetUnitCP(persistUnit->GetName().c_str());
 
         targetKOQ->SetPersistenceUnit(*persistUnit, sourceKOQ.GetPersistenceUnit().GetNamedFormatSpec());
         }
@@ -1568,10 +1572,14 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
             ECUnitCP presUnit = ((ECUnitCP)fus.GetUnit());
             ECSchemaCR presUnitSchema = presUnit->GetSchema();
             SchemaKey key = SchemaKey(presUnitSchema.GetName().c_str(), presUnitSchema.GetVersionRead(), presUnitSchema.GetVersionWrite(), presUnitSchema.GetVersionMinor());
-            ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
-
-            if (nullptr != foundSchema)
-                AddReferencedSchema(*foundSchema);
+            if (!this->GetSchemaKey().Matches(presUnitSchema.GetSchemaKey(), SchemaMatchType::Exact))
+                { 
+                ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
+                if (nullptr != foundSchema)
+                    AddReferencedSchema(*foundSchema);
+                }
+            else
+                presUnit = GetUnitCP(presUnit->GetName().c_str());
 
             targetKOQ->AddPresentationUnit(*presUnit, fus.GetNamedFormatSpec());
             }

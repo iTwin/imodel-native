@@ -198,6 +198,75 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_NoPresentationUnit)
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestKindOfQuantity_PersistanceUnitDefinedInSchema)
+    {
+    CreateTestSchema();
+
+    KindOfQuantityP koq;
+    ECUnitP unit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    koq->SetDisplayLabel("Test KoQ");
+    koq->SetDescription("Test Description");
+    koq->SetPersistenceUnit("SMOOT");
+    koq->SetRelativeError(10e-3);
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_targetSchema->GetKindOfQuantityCount());
+
+    KindOfQuantityCP targetKoq = m_targetSchema->GetKindOfQuantityCP("TestKoQ");
+    ASSERT_TRUE(nullptr != targetKoq);
+    EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetKoq->GetPersistenceUnit().GetUnit()->GetName().c_str());
+    EXPECT_FALSE(targetKoq->HasPresentationUnits());
+    EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestKindOfQuantity_PresentationUnitDefinedInSchema)
+    {
+    CreateTestSchema();
+
+    KindOfQuantityP koq;
+    ECUnitP unit;
+    UnitSystemP system;
+    PhenomenonP phenom;
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT_SQUARED", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
+    koq->SetDisplayLabel("Test KoQ");
+    koq->SetDescription("Test Description");
+    koq->SetPersistenceUnit("SMOOT");
+    koq->SetDefaultPresentationUnit("SMOOT_SQUARED");
+    koq->SetRelativeError(10e-3);
+
+    CopySchema();
+
+    EXPECT_EQ(1, m_targetSchema->GetKindOfQuantityCount());
+
+    KindOfQuantityCP targetKoq = m_targetSchema->GetKindOfQuantityCP("TestKoQ");
+    ASSERT_TRUE(nullptr != targetKoq);
+    EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
+    EXPECT_STREQ("SMOOT", targetKoq->GetPersistenceUnit().GetUnit()->GetName().c_str());
+    EXPECT_STREQ("SMOOT_SQUARED", targetKoq->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
+    EXPECT_TRUE(targetKoq->HasPresentationUnits());
+    EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
+    }
+
 //---------------------------------------------------------------------------------------//
 // @bsimethod                                           Colin.Kerr                  02/2018
 //+---------------+---------------+---------------+---------------+---------------+------//
