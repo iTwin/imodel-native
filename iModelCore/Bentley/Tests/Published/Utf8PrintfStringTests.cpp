@@ -89,9 +89,11 @@ TEST_F(Utf8PrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
 
     // Invalid format string/arg combinations result in "undefined" behavior across C libraries.
     // Therefore, I think we need unique result tests for each of these configurations.
-#if !defined(BENTLEYCONFIG_OS_UNIX)
-    EXPECT_STREQ("", str.c_str());
-#else
+#if defined(BENTLEYCONFIG_OS_APPLE)
     EXPECT_STREQ("a foo ype", str.c_str());
+#elif defined(BENTLEYCONFIG_OS_UNIX)
+    EXPECT_STREQ("a foo % ype", str.c_str());
+#else
+    EXPECT_STREQ("", str.c_str());
 #endif
     }
