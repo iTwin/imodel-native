@@ -195,8 +195,8 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(ECSchemaCR schema)
     if (references.empty())
         return SUCCESS;
 
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "INSERT INTO main." TABLE_SchemaReference "(SchemaId,ReferencedSchemaId) VALUES(?,?)"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main." TABLE_SchemaReference "(SchemaId,ReferencedSchemaId) VALUES(?,?)");
+    if (stmt == nullptr)
         return ERROR;
 
     for (bpair<SchemaKey, ECSchemaPtr> const& kvPair : references)
@@ -221,17 +221,17 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(ECSchemaCR schema)
             const_cast<ECSchema*>(reference)->SetId(referenceId);
             }
 
-        if (BE_SQLITE_OK != stmt.BindId(1, schema.GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(1, schema.GetId()))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt.BindId(2, referenceId))
+        if (BE_SQLITE_OK != stmt->BindId(2, referenceId))
             return ERROR;
 
-        if (BE_SQLITE_DONE != stmt.Step())
+        if (BE_SQLITE_DONE != stmt->Step())
             return ERROR;
 
-        stmt.Reset();
-        stmt.ClearBindings();
+        stmt->Reset();
+        stmt->ClearBindings();
         }
 
     return SUCCESS;
@@ -2313,14 +2313,14 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(ReferenceChanges& referenceCh
                 }
 
             ECSchemaId referenceSchemaId = SchemaPersistenceHelper::GetSchemaId(m_ecdb, DbTableSpace::Main(), newRef.GetName().c_str(), SchemaLookupMode::ByName);
-            Statement stmt;
-            if (stmt.Prepare(m_ecdb, "INSERT INTO main." TABLE_SchemaReference "(SchemaId, ReferencedSchemaId) VALUES (?,?)") != BE_SQLITE_OK)
+            CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main." TABLE_SchemaReference "(SchemaId, ReferencedSchemaId) VALUES (?,?)");
+            if (stmt == nullptr)
                 return ERROR;
 
-            stmt.BindId(1, oldSchema.GetId());
-            stmt.BindId(2, referenceSchemaId);
+            stmt->BindId(1, oldSchema.GetId());
+            stmt->BindId(2, referenceSchemaId);
 
-            if (stmt.Step() != BE_SQLITE_DONE)
+            if (stmt->Step() != BE_SQLITE_DONE)
                 {
                 Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Failed to add new reference to ECSchema %s.",
                                           oldSchema.GetFullSchemaName().c_str(), newRef.GetFullSchemaName().c_str());
@@ -2416,7 +2416,15 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
         return ERROR;
         }
 
-    if (!m_ecdb.Schemas().GetDerivedClasses(deletedClass).empty())
+    ECDerivedClassesList const* subClasses = m_ecdb.Schemas().GetDerivedClassesInternal(deletedClass);
+    if (subClasses == nullptr)
+        {
+        Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Could not delete ECClass '%s' because its subclasses failed to load.",
+                         deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    if (!subClasses->empty())
         {
         Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' is not supported because it has subclasses.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());

@@ -664,7 +664,6 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ec
 
     ClassDbEntry* entry = m_cache.Find(ecClassId);
     entry->m_derivedClassesAreLoaded = true;
-
     return SUCCESS;
     }
 
