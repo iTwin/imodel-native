@@ -23,13 +23,18 @@ struct ECQuantityFormattingTests : ECTestFixture {};
 
 static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer=nullptr)
     {
-    BEF::FormatUnitSet fus = BEF::FormatUnitSet(formatName, fusUnit);
+    ECUnitCP unit = StandardUnitsHelper::GetUnit(fusUnit);
+    BEF::NamedFormatSpecCP format = BEF::StdFormatSet::FindFormatSpec(formatName);
+
+    BEF::FormatUnitSet fus = BEF::FormatUnitSet(format, unit);
     EXPECT_FALSE(fus.HasProblem()) << "FUS-Problem: %s" << fus.GetProblemDescription().c_str();
     if (fus.HasProblem())
         return;
 
+    BEF::NamedFormatSpecCP real4u = BEF::StdFormatSet::FindFormatSpec("real4u");
+
     Formatting::FormatProblemCode code;
-    BEF::FormatUnitSet fus0 = BEF::FormatUnitSet("real4u", fusUnit);
+    BEF::FormatUnitSet fus0 = BEF::FormatUnitSet(real4u, unit);
     BEU::Quantity qty = ECQuantityFormatting::CreateQuantity(input, 0, fus, &code);
     Utf8String qtyT = fus.FormatQuantity(qty, spacer);
     Utf8String qtyT0 = fus0.FormatQuantity(qty, spacer);

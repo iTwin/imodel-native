@@ -91,7 +91,7 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationUnits)
     EXPECT_STREQ("IN", presUnitList.at(1).GetUnit()->GetName().c_str());
     EXPECT_STREQ("MILLIINCH", presUnitList.at(2).GetUnit()->GetName().c_str());
 
-    koq->RemovePresentationUnit("IN");
+    koq->RemovePresentationUnit(presUnitList.at(1).GetUnit());
     }
     {
     KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");

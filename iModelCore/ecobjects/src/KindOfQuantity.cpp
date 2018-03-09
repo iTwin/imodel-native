@@ -171,28 +171,28 @@ bool KindOfQuantity::SetPersistenceUnit(Utf8StringCR fusDescriptor)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Utf8CP format)
-    {
-    if (unit.IsConstant())
-        return false;
-
-    auto fus = Formatting::FormatUnitSet(&unit, format);
-    if (fus.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
-        return false;
-    
-    m_persistenceFUS = fus;
-    return true;
-    }
+//bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Utf8CP format)
+//    {
+//    if (unit.IsConstant())
+//        return false;
+//
+//    auto fus = Formatting::FormatUnitSet(&unit, format);
+//    if (fus.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+//        return false;
+//    
+//    m_persistenceFUS = fus;
+//    return true;
+//    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCR format)
+bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format)
     {
     if (unit.IsConstant())
         return false;
 
-    auto fus = Formatting::FormatUnitSet(&format, &unit);
+    auto fus = Formatting::FormatUnitSet(format, &unit);
     if (fus.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
         return false;
     
@@ -243,33 +243,15 @@ bool KindOfQuantity::AddPresentationUnit(Utf8StringCR fusDescriptor)
     return true;
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-bool KindOfQuantity::AddPresentationUnit(ECUnitCR unit, Utf8CP format)
-    {
-    if (unit.IsConstant())
-        return false;
-
-    Formatting::FormatUnitSet fus(&unit, format);
-    if (fus.HasProblem() ||
-        (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), m_persistenceFUS.GetUnit())) ||
-        (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
-        return false;
-
-    m_presentationFUS.push_back(fus);
-    return true;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                    03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-bool KindOfQuantity::AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCR format)
+bool KindOfQuantity::AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format)
     {
     if (unit.IsConstant())
         return false;
 
-    Formatting::FormatUnitSet fus(&format, &unit);
+    Formatting::FormatUnitSet fus(format, &unit);
     if (fus.HasProblem() ||
         (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), m_persistenceFUS.GetUnit())) ||
         (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
@@ -285,7 +267,7 @@ bool KindOfQuantity::AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatS
 void KindOfQuantity::RemovePresentationUnit(Formatting::FormatUnitSetCR presentationFUS)
     {
     for (auto itor = m_presentationFUS.begin(); itor != m_presentationFUS.end(); itor++)
-        if (Units::Unit::AreEqual(itor->GetUnit(), presentationFUS.GetUnit()))
+        if (itor->IsIdentical(presentationFUS))
             m_presentationFUS.erase(itor);
     }
 

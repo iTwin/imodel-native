@@ -1440,7 +1440,7 @@ private:
 
     //  Lifecycle management:  The schema implementation will
     //  serve as a factory for kind of quantities and will manage their lifecycle.
-    explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_persistenceFUS("invalid"), m_relativeError(1.0) {};
+    explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_relativeError(1.0) {};
 
     ~KindOfQuantity() {};
 
@@ -1492,8 +1492,7 @@ public:
     //! @param[in]  fusDescriptor  The new value to apply
     //! @returns true if the persistence FormatUnitSet is valid, false if not
     ECOBJECTS_EXPORT bool SetPersistenceUnit(Utf8StringCR fusDescriptor);
-    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Utf8CP format = nullptr);
-    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCR format);
+    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
     //! Gets the Unit of measurement used for persisting the information
     Formatting::FormatUnitSetCR GetPersistenceUnit() const {return m_persistenceFUS;}
 
@@ -1520,9 +1519,7 @@ public:
     //! @return ECObjectsStatus::InvalidFormatUnitSet if there is a problem detected, otherwise ECObjectsStatus::Success.
     ECOBJECTS_EXPORT bool AddPresentationUnit(Utf8StringCR fusDescriptor);
 
-    ECOBJECTS_EXPORT bool AddPresentationUnit(ECUnitCR unit, Utf8CP format = nullptr);
-
-    ECOBJECTS_EXPORT bool AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCR format);
+    ECOBJECTS_EXPORT bool AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
 
     //! Removes the specified presentation Unit from this KindOfQuantity
     ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSetCR fus);
@@ -1542,7 +1539,6 @@ public:
 
     //! Return Json array of allowable presentation units.
     ECOBJECTS_EXPORT Json::Value GetPresentationsJson(bool useAlias) const;
-    bool IsUnitComparable(Utf8CP unitName) {return Utf8String::IsNullOrEmpty(unitName) ? false : m_persistenceFUS.IsUnitComparable(unitName);}
     ECOBJECTS_EXPORT Json::Value ToJson(bool useAlias) const;
     ECOBJECTS_EXPORT BEU::T_UnitSynonymVector* GetSynonymVector() const;
     ECOBJECTS_EXPORT size_t GetSynonymCount() const;
