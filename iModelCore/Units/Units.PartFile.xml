@@ -128,7 +128,7 @@
         <SubPart PartName="PerformanceTests" />
     </Part>
 
-    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=UnitsTest -dTEST_COLLECTION_PRODUCT=Units-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=UnitsTest -dTEST_COLLECTION_PRODUCT=Units-Tests" TEST_FRAMEWORK_SQLANG=Units_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="Units-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
