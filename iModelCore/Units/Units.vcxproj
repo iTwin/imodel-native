@@ -28,6 +28,7 @@
     <None Include="Units.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h" />
     <ClInclude Include="PrivateAPI\Units\StandardDefinitions.h" />
     <ClInclude Include="PublicAPI\Units\Quantity.h" />
     <ClInclude Include="PublicAPI\Units\UnitNameMappings.h" />
@@ -35,6 +36,7 @@
     <ClInclude Include="PrivateAPI\Units\StandardNames.h" />
     <ClInclude Include="PrivateAPI\Units\SymbolicExpression.h" />
     <ClInclude Include="PublicAPI\Units\Units.h" />
+    <ClInclude Include="PublicAPI\Units\UnitsContext.h" />
     <ClInclude Include="PublicAPI\Units\UnitTypes.h" />
     <ClInclude Include="src\UnitsNativeLogging.h" />
     <ClInclude Include="PublicAPI\Formatting\FormattingApi.h" />

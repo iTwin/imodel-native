@@ -10,6 +10,7 @@
 #include <locale>
 #include <BeSQLite/L10N.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
+#include "../../PrivateAPI/Units/UnitRegistry.h" // temporary
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -210,170 +211,6 @@ void NumericFormatSpec::SetPrecisionByValue(int prec)
         m_decPrecision = Utils::DecimalPrecisionByIndex(prec);
         }
     }
-
-
-////////            Helpers for NumericFormat
- /*FormatTraits NumericFormatSpec::SetTraitsBit(FormatTraits bit, FormatTraits traits, bool keep)
-    {
-    size_t temp = (nullptr == wordP)? static_cast<int>(m_formatTraits) : static_cast<int>(*wordP);
-
-    if (keep)
-        temp |= static_cast<int>(bit);
-    else
-        temp &= ~static_cast<int>(bit);
-    if(nullptr == wordP)
-         m_formatTraits = static_cast<FormatTraits>(temp);
-    else
-        *wordP = static_cast<FormatTraits>(temp);
-    }
-*/
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetKeepTrailingZeroes(bool keep) 
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//
-//    if (keep)
-//        temp |= static_cast<int>(FormatTraits::TrailingZeroes);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::TrailingZeroes);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetUseLeadingZeroes(bool use)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (use)
-//        temp |= static_cast<int>(FormatTraits::LeadingZeroes);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::LeadingZeroes);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetKeepDecimalPoint(bool keep)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (keep)
-//        temp |= static_cast<int>(FormatTraits::KeepDecimalPoint);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::KeepDecimalPoint);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetKeepSingleZero(bool keep)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (keep)
-//        temp |= static_cast<int>(FormatTraits::KeepSingleZero);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::KeepSingleZero);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetZeroEmpty(bool empty)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (empty)
-//        temp |= static_cast<int>(FormatTraits::ZeroEmpty);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::ZeroEmpty);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetUse1000Separator(bool use)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (use)
-//        temp |= static_cast<int>(FormatTraits::Use1000Separator);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::Use1000Separator);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetApplyRounding(bool use)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (use)
-//        temp |= static_cast<int>(FormatTraits::ApplyRounding);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::ApplyRounding);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetAppendUnit(bool use)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (use)
-//        temp |= static_cast<int>(FormatTraits::AppendUnitName);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::AppendUnitName);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetUseFractionDash(bool use)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (use)
-//        temp |= static_cast<int>(FormatTraits::FractionDash);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::FractionDash);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetUseFractionSymbol(bool use)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (use)
-//    temp |= static_cast<int>(FormatTraits::UseFractSymbol);
-//    else
-//    temp &= ~static_cast<int>(FormatTraits::UseFractSymbol);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
-
-
-
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-//void NumericFormatSpec::SetExponentZero(bool empty)
-//    {
-//    size_t temp = static_cast<int>(m_formatTraits);
-//    if (empty)
-//        temp |= static_cast<int>(FormatTraits::ExponentZero);
-//    else
-//        temp &= ~static_cast<int>(FormatTraits::ExponentZero);
-//    m_formatTraits = static_cast<FormatTraits>(temp);
-//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -968,36 +805,36 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
                 // if this composite only defines a single component then use format traits to determine if unit label is shown. This allows
                 // support for SuppressUnitLable options in DgnClientFx. Also in this single component situation use the define UomSeparator.
                 if (fmtP->IsAppendUnit())
-                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), Utils::SubstituteNull(space, fmtP->GetUomSeparator())) + suff;
+                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), Utils::SubstituteNull(space, fmtP->GetUomSeparator())) + suff;
                 break;
 
             case CompositeSpecType::Double:
                 majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
-                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), spacer);
                 midT = fmtP->FormatDouble(dval.GetMiddle(), prec, round);
-                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
+                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel().c_str(), spacer);
                 majT += " " + midT + suff;
                 break;
 
             case CompositeSpecType::Triple:
                 majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
-                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), spacer);
                 midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
-                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
+                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel().c_str(), spacer);
                 minT = fmtP->FormatDouble(dval.GetMinor(), prec, round);
-                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
+                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel().c_str(), spacer);
                 majT += " " + midT + " " + minT + suff;
                 break;
 
             case CompositeSpecType::Quatro:
                 majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
-                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel(nullptr).c_str(), spacer);
+                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), spacer);
                 midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
-                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel(nullptr).c_str(), spacer);
+                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel().c_str(), spacer);
                 minT = fmtI.FormatDouble(dval.GetMinor(), prec, round);
-                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel(nullptr).c_str(), spacer);
+                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel().c_str(), spacer);
                 subT = fmtP->FormatDouble(dval.GetSub(), prec, round);
-                subT = Utils::AppendUnitName(subT.c_str(), compS->GetSubLabel(nullptr).c_str(), spacer);
+                subT = Utils::AppendUnitName(subT.c_str(), compS->GetSubLabel().c_str(), spacer);
                 majT += midT + " " + minT + " " + subT + suff;
                 break;
             }
@@ -1243,7 +1080,7 @@ NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString)
     {
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
-    NamedFormatSpecP nfs = new NamedFormatSpec(jval);
+    NamedFormatSpecP nfs = new NamedFormatSpec(jval, m_unitsRegistry);
     if (nullptr == nfs)
         return nullptr;
     Utf8String tval = jval.ToString();
@@ -1438,13 +1275,14 @@ FormatUnitSetCP StdFormatSet::AddFUS(FormatUnitSetCR fusR, Utf8CP fusName)
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 // static
-FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName)
+FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, BEU::UnitCP unit, Utf8CP fusName)
     {
     FormatUnitSetCP fusP;
     if (Set()->HasDuplicate(fusName, &fusP))
         return nullptr;
 
-    fusP = new FormatUnitSet(formatName, unitName); // make FUS
+    NamedFormatSpecCP format = StdFormatSet::FindFormatSpec(formatName);
+    fusP = new FormatUnitSet(format, unit);
     if (fusP->HasProblem())
         {
         Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
@@ -1460,7 +1298,7 @@ FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP descriptor, Utf8CP fusName)
     FormatUnitSetCP fusP;
     if (Set()->HasDuplicate(fusName, &fusP))
         return nullptr;
-    fusP = new FormatUnitSet(descriptor); // make FUS
+    fusP = new FormatUnitSet(descriptor, &BEU::UnitRegistry::Get()); // make FUS
     if (fusP->HasProblem())
         {
         Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);

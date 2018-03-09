@@ -118,7 +118,7 @@ void FormattingTestFixture::ShowHexDump(Utf8CP str, int len, Utf8CP message)
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::ShowFUS(Utf8CP koq)
     {
-    FormatUnitSet fus = FormatUnitSet(koq);
+    FormatUnitSet fus = FormatUnitSet(koq, &BEU::UnitRegistry::Get());
     if (fus.HasProblem())
         LOG.infov("Invalid KOQ: >%s<", koq);
     else
@@ -148,10 +148,10 @@ void FormattingTestFixture::RegisterFUS(Utf8CP descr, Utf8CP name)
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::CrossValidateFUS(Utf8CP descr1, Utf8CP descr2)
     {
-    FormatUnitSet fus1 = FormatUnitSet(descr1);
+    FormatUnitSet fus1 = FormatUnitSet(descr1, &BEU::UnitRegistry::Get());
     if (fus1.HasProblem())
         LOG.infov("Invalid descr1: >%s<", descr1);
-    FormatUnitSet fus2 = FormatUnitSet(descr2);
+    FormatUnitSet fus2 = FormatUnitSet(descr2, &BEU::UnitRegistry::Get());
     if (fus2.HasProblem())
         LOG.infov("Invalid descr1: >%s<", descr1);
     EXPECT_TRUE (fus1.IsIdentical(fus2));
@@ -162,7 +162,7 @@ void FormattingTestFixture::CrossValidateFUS(Utf8CP descr1, Utf8CP descr2)
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
     {
-    FormatUnitSet fus = FormatUnitSet(fusText);
+    FormatUnitSet fus = FormatUnitSet(fusText, &BEU::UnitRegistry::Get());
     EXPECT_STREQ (norm, fus.ToText(false).c_str());
     EXPECT_STREQ (aliased, fus.ToText(true).c_str());
     Json::Value jval = fus.ToJson(true);
@@ -174,7 +174,7 @@ void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space)
+void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnitName, Utf8CP fusFormat, Utf8CP space)
     {
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
     if (nullptr == unit)
@@ -183,7 +183,10 @@ void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit
         return;
         }
     BEU::Quantity const q = BEU::Quantity(dval, *unit);
-    FormatUnitSet fus = FormatUnitSet(fusFormat, fusUnit);
+
+    BEU::UnitCP fusUnit = BEU::UnitRegistry::Get().LookupUnit(fusUnitName);
+    NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(fusFormat);
+    FormatUnitSet fus = FormatUnitSet(nfs, fusUnit);
     if (fus.HasProblem())
         {
         LOG.infov("Invalid Formatting Set: >%s< or unit: >%s<", fus.GetProblemDescription().c_str());
@@ -245,7 +248,7 @@ void FormattingTestFixture::TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusD
     {
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
     BEU::Quantity q = BEU::Quantity(dval, *unit);
-    FormatUnitSet fus = FormatUnitSet(fusDesc);
+    FormatUnitSet fus = FormatUnitSet(fusDesc, &BEU::UnitRegistry::Get());
     LOG.infov("Testing FUS->Q  %s", fus.FormatQuantity(q, space).c_str());
     }
 
@@ -625,7 +628,8 @@ void FormattingTestFixture::TestScanTriplets(Utf8CP str)
 
 void FormattingTestFixture::TestSegments(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP expectReduced)
     {
-    FormatParsingSet fps = FormatParsingSet(input, start, unitName);
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
+    FormatParsingSet fps = FormatParsingSet(input, start, unit);
     if (nullptr == expectReduced)
         {
         LOG.infov("=========== TestSegments |%s| from %d", input, start);
@@ -651,17 +655,18 @@ void FormattingTestFixture::TestSegments(Utf8CP input, size_t start, Utf8CP unit
 void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP formatName)
     {
     LOG.infov("=========== Parsing To Quantity |%s| from %d", input, start);
-    FormatUnitSet fus = FormatUnitSet(formatName, unitName);
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
+    NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(formatName);
+    FormatUnitSet fus = FormatUnitSet(nfs, unit);
     FormatProblemCode probCode;
-    FormatParsingSet fps = FormatParsingSet(input, start, unitName);
+    FormatParsingSet fps = FormatParsingSet(input, start, unit);
     BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
     if(qty.IsNullQuantity())
         LOG.info("Parsing failed");
     else
         {
         LOG.infov("Unit: %s Magnitude %.6f", qty.GetUnitName(), qty.GetMagnitude());
-        BEU::UnitCP un1 = BEU::UnitRegistry::Get().LookupUnit(unitName);
-        BEU::Quantity q1 = qty.ConvertTo(un1);
+        BEU::Quantity q1 = qty.ConvertTo(unit);
         if (q1.IsNullQuantity())
             LOG.infov("Invalid alternative Unit: %s", unitName);
         else
@@ -673,9 +678,11 @@ void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP u
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer)
+void FormattingTestFixture::ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnitName, Utf8CP spacer)
     {
-    FormatUnitSet fus = FormatUnitSet(formatName, fusUnit);
+    BEU::UnitCP fusUnit = BEU::UnitRegistry::Get().LookupUnit(fusUnitName);
+    NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(formatName);
+    FormatUnitSet fus = FormatUnitSet(nfs, fusUnit);
     if (fus.HasProblem())
         {
         LOG.errorv("FUS-problem: %s", fus.GetProblemDescription().c_str());
@@ -973,7 +980,7 @@ void FormattingTestFixture::NamedFormatJsonTest(int testNum, Utf8CP stdName, boo
     LOG.infov("[%03d] Format %s json: %s", testNum, stdName, jval.ToString().c_str());
     bool equ; 
 
-    NamedFormatSpec nfs1 = NamedFormatSpec(jval);
+    NamedFormatSpec nfs1 = NamedFormatSpec(jval, &BEU::UnitRegistry::Get());
 
     equ = nfsP->IsIdentical(nfs1);
     if (equ)
@@ -1000,9 +1007,11 @@ void FormattingTestFixture::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName)
     {
-    UnitProxyCR up1 = UnitProxy(unitName, labelName);
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupConstant(unitName);
+    UnitProxyCR up1 = UnitProxy(unit, labelName);
     Json::Value jval = up1.ToJson();
-    UnitProxy up2 = UnitProxy(jval);
+    UnitProxy up2 = UnitProxy();
+    up2.LoadJson(jval, &BEU::UnitRegistry::Get());
     EXPECT_TRUE(up1.IsIdentical(up2));
     }
 
@@ -1038,7 +1047,7 @@ void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool do
     int diff = BeStringUtilities::StricmpAscii(jsonFormat, nfsJ.ToString().c_str());
 
     NamedFormatSpec nfsE = NamedFormatSpec();
-    nfsE.LoadJson(jsonFormat);
+    nfsE.LoadJson(jsonFormat, &BEU::UnitRegistry::Get());
     Json::Value nfsEJ = nfsE.ToJson(false);
     int diffE = BeStringUtilities::StricmpAscii(jsonFormat, nfsEJ.ToString().c_str());
 
@@ -1084,13 +1093,13 @@ void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8
         sprintf(buf, "%s", fusUnitName);
     else
         sprintf(buf, "%s(%s)", fusUnitName, formatName);
-    FormatUnitSet fus = FormatUnitSet(buf);
+    FormatUnitSet fus = FormatUnitSet(buf, &BEU::UnitRegistry::Get());
     if (Utils::IsNameNullOrEmpty(formatName))
         sprintf(buf, "{\"unitName\":\"%s\"}", fusUnitName);
     else
         sprintf(buf, "{\"unitName\":\"%s\",\"formatName\":\"%s\"}", fusUnitName, formatName);
     LOG.infov("JSON %s", buf);
-    FormatUnitSet fusS = FormatUnitSet(buf);
+    FormatUnitSet fusS = FormatUnitSet(buf, &BEU::UnitRegistry::Get());
 
     BEU::Quantity qty = BEU::Quantity(dval, *uom);
     Utf8String qtyT = fus.FormatQuantity(qty, "");
@@ -1103,7 +1112,7 @@ void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8
 
     Utf8String fusJ = fus.ToJsonString(false, true);
     LOG.infov("\nfusJ  %s\n", fusJ.c_str());
-    FormatUnitSet fusFromJ = FormatUnitSet(fusJ.c_str());
+    FormatUnitSet fusFromJ = FormatUnitSet(fusJ.c_str(), &BEU::UnitRegistry::Get());
     qtyT = fusFromJ.FormatQuantity(qty, "");
     EXPECT_STREQ (result, qtyT.c_str());
     LOG.infov("restored qty value: %s (expected %s)", qtyT.c_str(), result);
@@ -1127,9 +1136,11 @@ void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int pr
 //----------------------------------------------------------------------------------------
 void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName)
     {
-    FormatUnitSet fus = FormatUnitSet(formatName, unitName);
+    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
+    NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(formatName);
+    FormatUnitSet fus = FormatUnitSet(nfs, unit);
     FormatProblemCode probCode;
-    FormatParsingSet fps = FormatParsingSet(input, 0, unitName);
+    FormatParsingSet fps = FormatParsingSet(input, 0, unit);
     BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
     if (FormatProblemCode::NoProblems != probCode)
         {

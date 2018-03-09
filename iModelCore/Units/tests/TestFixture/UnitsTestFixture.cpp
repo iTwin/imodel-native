@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "UnitsTestFixture.h"
+#include "../../PrivateAPI/Units/UnitRegistry.h"
 
 #include <BeSqlite/L10N.h>
 #include <fstream>

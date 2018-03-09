@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
+#include "../PrivateAPI/Units/UnitRegistry.h"
 
 using namespace std;
 

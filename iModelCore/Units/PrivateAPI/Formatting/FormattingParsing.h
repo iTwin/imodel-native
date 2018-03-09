@@ -38,7 +38,7 @@ struct CursorScanPoint
 
         UNITS_EXPORT void Init();
         void ProcessASCII(unsigned char c);
-        //UNITS_EXPORT size_t CursorScanPoint::DetectHeadByte(Utf8CP input);
+        
     public:
         CursorScanPoint() { Init(); }
         UNITS_EXPORT CursorScanPoint(Utf8CP input, size_t indx, bool revers);
@@ -203,7 +203,6 @@ struct FormatParsingSet
         UNITS_EXPORT BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatUnitSetCP fusP = nullptr);
 
     public:
-        UNITS_EXPORT FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName = nullptr);// : m_input(input), m_start(start) { m_segs.clear(); }
         UNITS_EXPORT FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit = nullptr);// : m_input(input), m_start(start) { m_segs.clear(); }
         void AddSegment(FormatParsingSegmentCR seg) { m_segs.push_back(seg); }
         FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }

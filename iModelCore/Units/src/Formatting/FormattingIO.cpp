@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
+#include "../../PrivateAPI/Units/UnitRegistry.h"
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -19,6 +20,7 @@ StdFormatSetP StdFormatSet::Set()
     if (nullptr == set)
         {
         set = new StdFormatSet();
+        set->m_unitsRegistry = &BEU::UnitRegistry::Get();
         set->StdInit();
         set->CustomInit();
         }
@@ -105,57 +107,68 @@ size_t StdFormatSet::StdInit()
 	AddFormat("Fractional32U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 64), "fract64u");
     AddFormat("Fractional128U", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 128), "fract128u");
 
-    CompositeValueSpecP cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE", "ARC_SECOND", nullptr);
+    BEU::UnitCP arcDeg = m_unitsRegistry->LookupUnit("ARC_DEG");
+    BEU::UnitCP arcMinute = m_unitsRegistry->LookupUnit("ARC_MINUTE");
+    BEU::UnitCP arcSecond = m_unitsRegistry->LookupUnit("ARC_SECOND");
+
+    CompositeValueSpecP cvs = new CompositeValueSpec(arcDeg, arcMinute, arcSecond, nullptr);
     cvs->SetUnitLabels("\xC2\xB0", u8"'", u8"\"");
-    AddFormat("AngleDMS", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 0), cvs, "dms");
-    AddFormat("AngleDMS8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "dms8");
-    cvs = new CompositeValueSpec("ARC_DEG", "ARC_MINUTE");
+    AddFormat("AngleDMS", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 0), *cvs, "dms");
+    AddFormat("AngleDMS8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs, "dms8");
+    cvs = new CompositeValueSpec(arcDeg, arcMinute);
     cvs->SetUnitLabels("\xC2\xB0", u8"'");
-    AddFormat("AngleDM8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "dm8");
-    cvs = new CompositeValueSpec("MILE", "YRD", "FT", "IN");
+    AddFormat("AngleDM8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs, "dm8");
+
+    BEU::UnitCP mi = m_unitsRegistry->LookupUnit("MILE");
+    BEU::UnitCP yrd = m_unitsRegistry->LookupUnit("YRD");
+    BEU::UnitCP ft = m_unitsRegistry->LookupUnit("FT");
+    BEU::UnitCP in = m_unitsRegistry->LookupUnit("IN");
+    BEU::UnitCP meter = m_unitsRegistry->LookupUnit("M");
+
+    cvs = new CompositeValueSpec(mi, yrd, ft, in);
     cvs->SetUnitLabels("mile(s)", "yrd(s)", "'", "\"");
-    AddFormat("AmerMYFI4", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 4), cvs, "myfi4");
-    cvs = new CompositeValueSpec("FT", "IN");
+    AddFormat("AmerMYFI4", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 4), *cvs, "myfi4");
+    cvs = new CompositeValueSpec(ft, in);
     cvs->SetUnitLabels("'", "\"");
-    AddFormat("AmerFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "fi8");
-    AddFormat("AmerFI16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), cvs, "fi16");
-    AddFormat("AmerFI32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), cvs, "fi32");
+    AddFormat("AmerFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs, "fi8");
+    AddFormat("AmerFI16", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), *cvs, "fi16");
+    AddFormat("AmerFI32", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), *cvs, "fi32");
 
-    cvs = new CompositeValueSpec("YRD", "FT", "IN");
+    cvs = new CompositeValueSpec(mi, ft, in);
     cvs->SetUnitLabels("yrd(s)", "'", "\"");
-    AddFormat("AmerYFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "yfi8");
+    AddFormat("AmerYFI8", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs, "yfi8");
 
-    cvs = new CompositeValueSpec("M");
+    cvs = new CompositeValueSpec(meter);
     cvs->SetUnitLabels("m");
-    AddFormat("Meters4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), cvs, "meters4u");
+    AddFormat("Meters4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), *cvs, "meters4u");
 
-    cvs = new CompositeValueSpec("FT");
+    cvs = new CompositeValueSpec(ft);
     cvs->SetUnitLabels("'");
-    AddFormat("Feet4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), cvs, "feet4u");
+    AddFormat("Feet4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), *cvs, "feet4u");
 
-    cvs = new CompositeValueSpec("IN");
+    cvs = new CompositeValueSpec(in);
     cvs->SetUnitLabels("\"");
-    AddFormat("Inches4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), cvs, "inches4u");
+    AddFormat("Inches4u", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), *cvs, "inches4u");
 
-    cvs = new CompositeValueSpec("IN");
+    cvs = new CompositeValueSpec(in);
     cvs->SetUnitLabels("\"");
-    AddFormat("Inches18u", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 8, FormatConstant::EmptyString()), cvs, "Inches18u");
+    AddFormat("Inches18u", new NumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 8, FormatConstant::EmptyString()), *cvs, "Inches18u");
 
-    cvs = new CompositeValueSpec("ARC_DEG");
+    cvs = new CompositeValueSpec(arcDeg);
     cvs->SetUnitLabels("\xC2\xB0");
-    AddFormat("DecimalDeg4", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), cvs, "decimalDeg4");
+    AddFormat("DecimalDeg4", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), *cvs, "decimalDeg4");
 
-    cvs = new CompositeValueSpec("FT");
+    cvs = new CompositeValueSpec(ft);
     cvs->SetUnitLabels("'");
     stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2, FormatConstant::EmptyString());
     stop.SetMinWidth(2);
-    AddFormat("StationFt2", stop, cvs, "stationFt2");
+    AddFormat("StationFt2", stop, *cvs, "stationFt2");
 
-    cvs = new CompositeValueSpec("M");
+    cvs = new CompositeValueSpec(meter);
     cvs->SetUnitLabels("m");
     stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traitsU, 2);
     stop.SetMinWidth(4);
-    AddFormat("StationM4", stop, cvs, "stationM4");
+    AddFormat("StationM4", stop, *cvs, "stationM4");
 
     size_t s = m_formatSet.size();
     return s;
@@ -389,208 +402,6 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
 
 //===================================================
 //
-// UnitProxy Methods
-//
-//===================================================
-Json::Value UnitProxy::ToJson() const
-    {
-    Json::Value jUP;
-
-    Utf8CP uN = Utils::GetCharsOrNull(m_unitName);
-    Utf8CP uL = Utils::GetCharsOrNull(m_unitLabel);
-
-    if(nullptr != uN)
-        jUP[json_unitName()] = uN;
-    if (nullptr != uL)
-        jUP[json_unitLabel()] = uL;
-    return jUP;
-    }
-
-UnitProxy::UnitProxy(Json::Value jval)
-    {
-    Utf8CP paramName;
-    Utf8String str;
-    m_unitLabel = nullptr;
-    m_unitName = nullptr;
-
-    if (jval.empty())
-        return;
-
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
-            m_unitName = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_unitLabel()) == 0)
-            m_unitLabel = val.asString();
-        }
-    if(!m_unitName.empty())
-         m_unit = BEU::UnitRegistry::Get().LookupUnit(m_unitName.c_str());
-    }
-
-
-void UnitProxy::LoadJson(Json::Value jval) const
-    {
-    Utf8CP paramName;
-    Utf8String str;
-    m_unitLabel = nullptr;
-    m_unitName = nullptr;
-
-    if (jval.empty())
-        return;
-
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
-            m_unitName = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_unitLabel()) == 0)
-            m_unitLabel = val.asString();
-        }
-    if (!m_unitName.empty())
-        m_unit = BEU::UnitRegistry::Get().LookupUnit(m_unitName.c_str());
-    }
-
-//===================================================
-//
-//UnitProxySet Methods
-//
-//===================================================
-Json::Value UnitProxySet::ToJson(bvector<Utf8CP> keyNames) const
-    {
-    Json::Value jUP;
-
-    if(m_proxys.empty())
-        return jUP;
-    UnitProxy prox;
-    size_t num = Utils::MinInt(keyNames.size(), m_proxys.size());
-
-    for(int i = 0; i < num; i++)
-        {
-        jUP[keyNames[i]] = m_proxys[i].ToJson();
-        }
-    return jUP;
-    }
-
-
-//===================================================
-//
-// CompositeValueSpec Methods
-//
-//===================================================
-
-Json::Value CompositeValueSpec::ToJson() const
-    {
-    Json::Value jCVS;
-    bool valid = false;
-    bvector<Utf8CP> keyNames;
-    UnitProxyCP proxP;
-    switch (m_type)
-        {
-        case CompositeSpecType::Quatro:
-            proxP = m_unitProx.GetProxy(indxSub);
-            if(!proxP->IsEmpty())
-                jCVS[json_SubUnit()] = proxP->ToJson();
-        case CompositeSpecType::Triple:
-            proxP = m_unitProx.GetProxy(indxMinor);
-            if (!proxP->IsEmpty())
-                jCVS[json_MinorUnit()] = proxP->ToJson();
-        case CompositeSpecType::Double:
-            proxP = m_unitProx.GetProxy(indxMiddle);
-            if (!proxP->IsEmpty())
-                jCVS[json_MiddleUnit()] = proxP->ToJson();
-        case CompositeSpecType::Single: // smallQ already has the converted value
-            proxP = m_unitProx.GetProxy(indxMajor);
-            if (!proxP->IsEmpty())
-                {
-                jCVS[json_MajorUnit()] = proxP->ToJson();
-                valid = true;
-                }
-            break;
-        }
-
-    if (valid)
-        {
-        jCVS[json_includeZero()] = IsIncludeZero();
-        if (m_spacer.length() > 0)
-            jCVS[json_spacer()] = m_spacer.c_str();
-        }
-
-    return jCVS;
-    }
-
-void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
-    {
-    Utf8CP paramName;
-    Utf8String str;
-    if (jval.empty())
-        return;
-    Utf8String major;
-    Utf8String middle;
-    Utf8String minor;
-    Utf8String sub;
-    Utf8String input;
-    UnitProxyCP upp;  
-    int typeCount = 0;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
-        str = val.ToString();
-        if (BeStringUtilities::StricmpAscii(paramName, json_MajorUnit()) == 0)
-            {
-            upp = m_unitProx.GetProxy(indxMajor);
-            upp->LoadJson(val);
-            typeCount++;
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_MiddleUnit()) == 0)
-            {
-            upp = m_unitProx.GetProxy(indxMiddle);
-            upp->LoadJson(val);
-            typeCount++;
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_MinorUnit()) == 0)
-            {
-            upp = m_unitProx.GetProxy(indxMinor);
-            upp->LoadJson(val);
-            typeCount++;
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_SubUnit()) == 0)
-            {
-            upp = m_unitProx.GetProxy(indxSub);
-            upp->LoadJson(val);
-            typeCount++;
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_InputUnit()) == 0)
-            input = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
-            m_includeZero = val.asBool();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_spacer()) == 0)
-            m_spacer = val.asString();
-        }
-
-    if (typeCount == 1)
-        m_type = CompositeSpecType::Single;
-    else if (typeCount == 2)
-        m_type = CompositeSpecType::Double;
-    else if (typeCount == 3)
-        m_type = CompositeSpecType::Triple;
-    else if (typeCount == 4)
-        m_type = CompositeSpecType::Quatro;
-
-    //SetUnitNames(Utils::GetCharsOrNull(major), Utils::GetCharsOrNull(middle), Utils::GetCharsOrNull(minor), Utils::GetCharsOrNull(sub));
-    if (!input.empty())
-        {
-        BEU::UnitCP inputUnit = BEU::UnitRegistry::Get().LookupUnit(input.c_str());
-        SetInputUnit(inputUnit);
-        }
-    SetUnitRatios();
-    }
-
-//===================================================
-//
 // NamedFormatSpec Methods
 //
 //===================================================
@@ -634,7 +445,7 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
-void NamedFormatSpec::LoadJson(Json::Value jval)
+void NamedFormatSpec::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
     {
     Utf8CP paramName;
     Init();
@@ -643,7 +454,7 @@ void NamedFormatSpec::LoadJson(Json::Value jval)
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
         return;
         }
-    //str = jval.ToString();
+
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         paramName = iter.memberName();
@@ -661,32 +472,32 @@ void NamedFormatSpec::LoadJson(Json::Value jval)
         else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
             m_numericSpec = NumericFormatSpec(val);
         else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
-            m_compositeSpec.LoadJsonData(val);
+            m_compositeSpec.LoadJsonData(val, context);
         }
     }
 
-void NamedFormatSpec::LoadJson(Utf8CP jsonString)
+void NamedFormatSpec::LoadJson(Utf8CP jsonString, BEU::IUnitsContextCP context)
     {
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
-    LoadJson(jval);
+    LoadJson(jval, context);
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec(Json::Value jval)
+NamedFormatSpec::NamedFormatSpec(Json::Value jval, BEU::IUnitsContextCP context)
     {
-    LoadJson(jval);
+    LoadJson(jval, context);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec(Utf8CP jsonString)
+NamedFormatSpec::NamedFormatSpec(Utf8CP jsonString, BEU::IUnitsContextCP context)
     {
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
-    LoadJson(jval);
+    LoadJson(jval, context);
     }
 
 //===================================================

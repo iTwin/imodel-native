@@ -164,12 +164,8 @@ UIList UIUtils::GetAvailableTraits()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
-Json::Value UIUtils::GetAvailableUnitLabels(Utf8CP unitName)
+Json::Value UIUtils::GetAvailableUnitLabels(BEU::UnitCP unit)
     {
-    if (Utf8String::IsNullOrEmpty(unitName))
-        return Json::Value(Json::nullValue);
-
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
     if (nullptr == unit)
         return Json::Value(Json::nullValue);
 
@@ -1322,6 +1318,9 @@ POP_MSVC_IGNORE
 //
 //===================================================
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
 void FormatUnitSet::Init()
     {
     m_formatSpec = nullptr;
@@ -1337,16 +1336,15 @@ void FormatUnitSet::Init()
 FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData)
     {
     m_formatSpec = format;
-    m_unitName = Utf8String(unit->GetName());
-    m_unit = unit;
     if (nullptr == m_formatSpec)
         m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
-    if (nullptr == m_formatSpec)
-        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
-    else if (nullptr == m_unit)
+    
+    m_unit = unit;
+    if (nullptr == m_unit)
         m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
     else
         {
+        m_unitName = Utf8String(unit->GetName());
         if (cloneData)
             {
             m_localCopy.Clone(m_formatSpec);
@@ -1357,60 +1355,28 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cl
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(Utf8CP formatName, Utf8CP unitName,  bool cloneData)
-    {
-    m_problem = FormatProblemDetail();
-    m_unit = nullptr;
-    if (Utils::IsNameNullOrEmpty(formatName))
-        formatName = FormatConstant::DefaultFormatName();
-
-    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
-    if (nullptr == m_formatSpec)
-        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
-    else
-        {
-        m_unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
-        if (nullptr == m_unit)
-            m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
-        else
-            {
-            m_unitName = unitName;
-            if (cloneData)
-                {
-                m_localCopy.Clone(m_formatSpec);
-                m_formatSpec = &m_localCopy;
-                }
-            m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
-            }
-        }
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                  Kyle.Abramowitz 03/2018
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(BEU::UnitCP unit, Utf8CP formatName)
-    {
-    m_problem = FormatProblemDetail();
-    m_unit = unit;
-    if (Utils::IsNameNullOrEmpty(formatName))
-        formatName = FormatConstant::DefaultFormatName();
-
-    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
-    if (nullptr == m_formatSpec)
-        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
-    else
-        {
-        if (nullptr == m_unit)
-            m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
-        else
-            {
-            m_unitName = m_unit->GetName();
-            m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
-            }
-        }
-    }
+//FormatUnitSet::FormatUnitSet(Utf8CP formatName, BEU::UnitCP unit)
+//    {
+//    m_unit = unit;
+//    if (Utils::IsNameNullOrEmpty(formatName))
+//        formatName = FormatConstant::DefaultFormatName();
+//
+//    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
+//    if (nullptr == m_formatSpec)
+//        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
+//    else
+//        {
+//        if (nullptr == m_unit)
+//            m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+//        else
+//            {
+//            m_unitName = m_unit->GetName();
+//            m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
+//            }
+//        }
+//    }
 
 FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
     {
@@ -1433,29 +1399,10 @@ FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
     return *this;
     }
 
-FormatUnitSet::FormatUnitSet(FormatUnitSetCR other)
-    {
-    m_formatSpec = other.m_formatSpec;
-    m_unitName = other.m_unitName;
-    m_fusName.clear();
-    m_unit = other.m_unit;
-    m_problem = FormatProblemDetail(other.m_problem);
-    }
-
-FormatUnitSet::FormatUnitSet(FormatUnitSetCP other)
-    {
-    m_formatSpec = other->m_formatSpec;
-    m_unitName = other->m_unitName;
-    m_fusName.clear();
-    m_unit = other->m_unit;
-    m_problem = FormatProblemDetail(other->m_problem);
-    }
-
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
-void FormatUnitSet::LoadJson(Json::Value jval)
+void FormatUnitSet::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
     {
     Utf8CP paramName;
     Utf8String format;
@@ -1469,7 +1416,7 @@ void FormatUnitSet::LoadJson(Json::Value jval)
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
         return;
         }
-    //str = jval.ToString();
+
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         paramName = iter.memberName();
@@ -1477,7 +1424,13 @@ void FormatUnitSet::LoadJson(Json::Value jval)
         if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
             {
             m_unitName = val.asString();
-            m_unit = BEU::UnitRegistry::Get().LookupUnit(m_unitName.c_str());
+            if (nullptr == context)
+                {
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+                return;
+                }
+
+            m_unit = context->LookupUnit(m_unitName.c_str());
             if (nullptr == m_unit)
                 {
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
@@ -1496,7 +1449,7 @@ void FormatUnitSet::LoadJson(Json::Value jval)
             cloneData = val.asBool();
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatSpec()) == 0)
             {
-            m_localCopy.LoadJson(val);
+            m_localCopy.LoadJson(val, context);
             m_formatSpec = &m_localCopy;
             local = true;
             }
@@ -1515,7 +1468,7 @@ void FormatUnitSet::LoadJson(Json::Value jval)
 //  The text string has format <unitName>(<formatName>)
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-FormatUnitSet::FormatUnitSet(Utf8CP description)
+FormatUnitSet::FormatUnitSet(Utf8CP description, BEU::IUnitsContextCP context)
     {
     m_problem = FormatProblemDetail();
     description = Utils::SkipBlanks(description);
@@ -1523,7 +1476,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
         {
         Json::Value jval (Json::objectValue);
         Json::Reader::Parse(description, jval);
-        LoadJson(jval);
+        LoadJson(jval, context);
         }
     else
         {
@@ -1534,7 +1487,7 @@ FormatUnitSet::FormatUnitSet(Utf8CP description)
             m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
         else
             m_formatSpec = StdFormatSet::FindFormatSpec(fnam.c_str());
-        m_unit = BEU::UnitRegistry::Get().LookupUnit(unit.c_str());
+        m_unit = context->LookupUnit(unit.c_str());
         if (nullptr == m_formatSpec)
             m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
         else
@@ -1634,32 +1587,6 @@ Utf8CP FormatUnitSet::GetDisplayLabel(bool useDefault) const
     Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(nam.c_str()));
 
     return dispLabel.c_str();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-bool FormatUnitSet::IsComparable(BEU::QuantityCR qty) const
-    {
-    return Utils::AreUnitsComparable(qty.GetUnit(), m_unit);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-bool FormatUnitSet::IsUnitComparable(Utf8CP unitName) const
-    {
-     BEU::UnitCP unit =  BEU::UnitRegistry::Get().LookupUnit(unitName);
-     return Utils::AreUnitsComparable(unit, m_unit);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-BEU::UnitCP FormatUnitSet::ResetUnit()
-    {
-    m_unit = BEU::UnitRegistry::Get().LookupUnit(m_unitName.c_str());
-    return m_unit;
     }
 
 //----------------------------------------------------------------------------------------
