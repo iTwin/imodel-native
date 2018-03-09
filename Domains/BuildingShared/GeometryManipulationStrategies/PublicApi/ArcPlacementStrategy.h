@@ -22,6 +22,9 @@ enum class ArcPlacementMethod
 //=======================================================================================
 struct IArcPlacementMethod : IRefCounted
     {
+    protected:
+        virtual ~IArcPlacementMethod() {}
+
     public:
         virtual void AddKeyPoint(DPoint3dCR newKeyPoint) = 0;
         virtual void PopKeyPoint() = 0;
@@ -92,11 +95,11 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacem
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementMethod GetPlacementMethod() const;
 
         // IArcPlacementStrategy
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetPlacementMethod(ArcPlacementMethod method);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseSweep(bool useSweep);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetSweep(double sweep);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseRadius(bool useRadius);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetRadius(double radius);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetPlacementMethod(ArcPlacementMethod method) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseSweep(bool useSweep) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetSweep(double sweep) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseRadius(bool useRadius) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetRadius(double radius) override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcPlacementStrategyPtr Create(ArcPlacementMethod method);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcPlacementStrategyPtr Create(ArcPlacementMethod method, ArcManipulationStrategyR manipulationStrategy);

@@ -27,12 +27,12 @@ struct ArcStartCenterPlacementMethod : RefCounted<IArcPlacementMethod>
 
     public:
         //IArcPlacementMethod
-        void AddKeyPoint(DPoint3dCR newKeyPoint);
-        void PopKeyPoint();
-        void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
-        void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) { BeAssert(false && "Not implemented"); }
-        ArcPlacementMethod GetMethod() const { return ArcPlacementMethod::StartCenter; }
-        bvector<DPoint3d> GetKeyPoints() const;
+        void AddKeyPoint(DPoint3dCR newKeyPoint) override;
+        void PopKeyPoint() override;
+        void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
+        ArcPlacementMethod GetMethod() const override { return ArcPlacementMethod::StartCenter; }
+        bvector<DPoint3d> GetKeyPoints() const override;
 
         static ArcStartCenterPlacementMethodPtr Create(ArcManipulationStrategyR manipulationStrategy) { return new ArcStartCenterPlacementMethod(manipulationStrategy); }
     };
