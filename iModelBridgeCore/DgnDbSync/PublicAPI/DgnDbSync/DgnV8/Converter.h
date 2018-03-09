@@ -984,6 +984,7 @@ protected:
     bvector<ISChemaImportVerifier*> m_schemaImportVerifiers;
     bmap<DgnClassId, bvector<ECN::ECClassId>> m_classToAspectMappings;
     DgnModelId          m_jobDefinitionModelId;
+    DgnElementId         m_textStyleNoneId;
 
     DGNDBSYNC_EXPORT Converter(Params const&);
     DGNDBSYNC_EXPORT ~Converter();

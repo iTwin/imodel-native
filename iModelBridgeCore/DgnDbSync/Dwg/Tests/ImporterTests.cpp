@@ -2,14 +2,15 @@
 |
 |     $Source: Dwg/Tests/ImporterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ImporterTests.h"
 
 USING_NAMESPACE_DGNDBSYNC_DWG
 
-ImporterTestsHost ImporterTests::s_testsHost;
+ImporterTestsHost   ImporterTests::s_testsHost;
+WString             ImporterTests::s_dwgBridgeRegistryKey;
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Umar Hayat      05/16
@@ -136,4 +137,28 @@ void    ImporterTests::TearDownTestCase ()
     {
     s_testsHost.Terminate (false);
     DwgImporter::TerminateDwgHost ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyApi::WStringCR ImporterTests::GetDwgBridgeRegistryKey ()
+    {
+    if (s_dwgBridgeRegistryKey.empty())
+        {
+        // DwgBridge.dll should reside in the same directory:
+        auto handle = ::LoadLibrary (L"DwgBridge.dll");
+        if (nullptr != handle)
+            {
+            auto getRegistryKey = (bool(*)(wchar_t*,const size_t))::GetProcAddress (handle, "?DwgBridge_getBridgeRegistryKey@@YA_NPEA_W_K@Z");
+            if (nullptr != getRegistryKey)
+                {
+                wchar_t reg[100] = { 0 };
+                if ((*getRegistryKey)(reg, sizeof(reg)))
+                    s_dwgBridgeRegistryKey.assign (reg);
+                }
+            }
+        }
+    EXPECT_FALSE (s_dwgBridgeRegistryKey.empty()) << "Cannot get DwgBridge registry key!";
+    return  s_dwgBridgeRegistryKey;
     }

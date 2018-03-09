@@ -249,8 +249,6 @@ struct DwgImporter
     friend class DwgLightExt;
 
 public:
-    static WCharCP GetRegistrySubKey() {return L"DwgBridge";}
-
     //! Configuration for the conversion process
     struct Config
         {

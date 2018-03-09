@@ -216,7 +216,7 @@ void DwgBridge::_Terminate (BentleyStatus convertStatus)
 BentleyStatus   DwgBridge::_Initialize (int argc, WCharCP argv[])
     {
     if (_GetParams().GetBridgeRegSubKey().empty())
-        _GetParams().SetBridgeRegSubKey(DwgImporter::GetRegistrySubKey());
+        _GetParams().SetBridgeRegSubKey(s_dwgBridgeRegKey);
 
     auto host = DgnPlatformLib::QueryHost ();
     if (nullptr == host)
@@ -402,4 +402,14 @@ void iModelBridge_getAffinity(WCharP buffer, const size_t bufferSize, iModelBrid
         affinityLevel = BentleyApi::Dgn::iModelBridge::Affinity::Medium;
         BeStringUtilities::Wcsncpy(buffer, bufferSize, s_dwgBridgeRegKey);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+EXPORT_ATTRIBUTE bool DwgBridge_getBridgeRegistryKey (WCharP regKey, const size_t size)
+    {
+    // DwgBridge is the module who knows which the registry key is in effective:
+    regKey[0] = 0;
+    return nullptr != BeStringUtilities::Wcsncpy(regKey, size, s_dwgBridgeRegKey);
     }
