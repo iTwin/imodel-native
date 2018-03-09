@@ -15,7 +15,7 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcCenterStartPlacementMethod::AddKeyPoint
+void ArcCenterStartPlacementMethod::_AddKeyPoint
 (
     DPoint3dCR newKeyPoint
 )
@@ -45,7 +45,7 @@ void ArcCenterStartPlacementMethod::AddKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcCenterStartPlacementMethod::AddDynamicKeyPoint
+void ArcCenterStartPlacementMethod::_AddDynamicKeyPoint
 (
     DPoint3dCR newDynamicKeyPoint
 )
@@ -76,7 +76,7 @@ void ArcCenterStartPlacementMethod::AddDynamicKeyPoint
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                03/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcCenterStartPlacementMethod::AddDynamicKeyPoints
+void ArcCenterStartPlacementMethod::_AddDynamicKeyPoints
 (
     bvector<DPoint3d> const& newDynamicKeyPoints
 )
@@ -86,7 +86,7 @@ void ArcCenterStartPlacementMethod::AddDynamicKeyPoints
 
     if (newDynamicKeyPoints.size() == 1)
         {
-        AddDynamicKeyPoint(newDynamicKeyPoints.front());
+        _AddDynamicKeyPoint(newDynamicKeyPoints.front());
         return;
         }
 
@@ -120,7 +120,7 @@ void ArcCenterStartPlacementMethod::AddDynamicKeyPoints
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcCenterStartPlacementMethod::PopKeyPoint()
+void ArcCenterStartPlacementMethod::_PopKeyPoint()
     {
     BeAssert(!GetArcManipulationStrategy().IsDynamicKeyPointSet());
     ArcManipulationStrategyR strategy = GetArcManipulationStrategyForEdit();
@@ -147,7 +147,7 @@ void ArcCenterStartPlacementMethod::PopKeyPoint()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-bvector<DPoint3d> ArcCenterStartPlacementMethod::GetKeyPoints() const
+bvector<DPoint3d> ArcCenterStartPlacementMethod::_GetKeyPoints() const
     {
     ArcManipulationStrategyCR strategy = GetArcManipulationStrategy();
 

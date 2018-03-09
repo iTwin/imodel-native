@@ -10,6 +10,118 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementMethod::AddKeyPoint
+(
+    DPoint3dCR newKeyPoint
+)
+    {
+    _AddKeyPoint(newKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementMethod::PopKeyPoint()
+    {
+    _PopKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementMethod::AddDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint
+)
+    {
+    _AddDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementMethod::AddDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    _AddDynamicKeyPoints(newDynamicKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ArcPlacementMethod IArcPlacementMethod::GetMethod() const
+    {
+    return _GetMethod();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> IArcPlacementMethod::GetKeyPoints() const
+    {
+    return _GetKeyPoints();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementStrategy::SetPlacementMethod
+(
+    ArcPlacementMethod method
+)
+    {
+    _SetPlacementMethod(method);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementStrategy::SetUseSweep
+(
+    bool useSweep
+)
+    {
+    _SetUseSweep(useSweep);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementStrategy::SetSweep
+(
+    double sweep
+)
+    {
+    _SetSweep(sweep);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementStrategy::SetUseRadius
+(
+    bool useRadius
+)
+    {
+    _SetUseRadius(useRadius);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IArcPlacementStrategy::SetRadius
+(
+    double radius
+)
+    {
+    _SetRadius(radius);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
 //---------------+---------------+---------------+---------------+---------------+------
 ArcPlacementStrategy::ArcPlacementStrategy
@@ -157,7 +269,7 @@ void ArcPlacementStrategy::_AddDynamicKeyPoints
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcPlacementStrategy::SetPlacementMethod
+void ArcPlacementStrategy::_SetPlacementMethod
 (
     ArcPlacementMethod method
 )
@@ -188,7 +300,7 @@ bvector<DPoint3d> ArcPlacementStrategy::_GetKeyPoints() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcPlacementStrategy::SetUseSweep
+void ArcPlacementStrategy::_SetUseSweep
 (
     bool useSweep
 )
@@ -199,7 +311,7 @@ void ArcPlacementStrategy::SetUseSweep
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcPlacementStrategy::SetSweep
+void ArcPlacementStrategy::_SetSweep
 (
     double sweep
 )
@@ -210,7 +322,7 @@ void ArcPlacementStrategy::SetSweep
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcPlacementStrategy::SetUseRadius
+void ArcPlacementStrategy::_SetUseRadius
 (
     bool useRadius
 )
@@ -221,7 +333,7 @@ void ArcPlacementStrategy::SetUseRadius
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcPlacementStrategy::SetRadius
+void ArcPlacementStrategy::_SetRadius
 (
     double radius
 )

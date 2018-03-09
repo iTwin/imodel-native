@@ -25,13 +25,21 @@ struct IArcPlacementMethod : IRefCounted
     protected:
         virtual ~IArcPlacementMethod() {}
 
+    protected:
+        virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) = 0;
+        virtual void _PopKeyPoint() = 0;
+        virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) = 0;
+        virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) = 0;
+        virtual ArcPlacementMethod _GetMethod() const = 0;
+        virtual bvector<DPoint3d> _GetKeyPoints() const = 0;
+
     public:
-        virtual void AddKeyPoint(DPoint3dCR newKeyPoint) = 0;
-        virtual void PopKeyPoint() = 0;
-        virtual void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) = 0;
-        virtual void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) = 0;
-        virtual ArcPlacementMethod GetMethod() const = 0;
-        virtual bvector<DPoint3d> GetKeyPoints() const = 0;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddKeyPoint(DPoint3dCR newKeyPoint);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint();
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementMethod GetMethod() const;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT bvector<DPoint3d> GetKeyPoints() const;
     };
 
 //=======================================================================================
@@ -42,14 +50,22 @@ struct IArcPlacementStrategy
     protected:
         virtual ~IArcPlacementStrategy() {}
 
+        virtual void _SetPlacementMethod(ArcPlacementMethod method) = 0;
+
+        virtual void _SetUseSweep(bool useSweep) = 0;
+        virtual void _SetSweep(double sweep) = 0;
+
+        virtual void _SetUseRadius(bool useRadius) = 0;
+        virtual void _SetRadius(double radius) = 0;
+
     public:
-        virtual void SetPlacementMethod(ArcPlacementMethod method) = 0;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetPlacementMethod(ArcPlacementMethod method);
 
-        virtual void SetUseSweep(bool useSweep) = 0;
-        virtual void SetSweep(double sweep) = 0;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseSweep(bool useSweep);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetSweep(double sweep);
 
-        virtual void SetUseRadius(bool useRadius) = 0;
-        virtual void SetRadius(double radius) = 0;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseRadius(bool useRadius);
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetRadius(double radius);
     };
 
 //=======================================================================================
@@ -84,6 +100,13 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacem
 
         virtual bvector<DPoint3d> _GetKeyPoints() const override;
 
+        // IArcPlacementStrategy
+        virtual void _SetPlacementMethod(ArcPlacementMethod method) override;
+        virtual void _SetUseSweep(bool useSweep) override;
+        virtual void _SetSweep(double sweep) override;
+        virtual void _SetUseRadius(bool useRadius) override;
+        virtual void _SetRadius(double radius) override;
+
     public:
         static constexpr Utf8CP prop_Normal() { return EllipseManipulationStrategy::prop_Normal(); }
 
@@ -93,13 +116,6 @@ struct ArcPlacementStrategy : public CurvePrimitivePlacementStrategy, IArcPlacem
         static constexpr Utf8CP prop_Radius() { return ArcManipulationStrategy::prop_Radius(); }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT ArcPlacementMethod GetPlacementMethod() const;
-
-        // IArcPlacementStrategy
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetPlacementMethod(ArcPlacementMethod method) override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseSweep(bool useSweep) override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetSweep(double sweep) override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetUseRadius(bool useRadius) override;
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void SetRadius(double radius) override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcPlacementStrategyPtr Create(ArcPlacementMethod method);
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT static ArcPlacementStrategyPtr Create(ArcPlacementMethod method, ArcManipulationStrategyR manipulationStrategy);

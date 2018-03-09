@@ -25,15 +25,15 @@ struct ArcStartEndMidPlacementMethod : RefCounted<IArcPlacementMethod>
         ArcManipulationStrategyCR GetArcManipulationStrategy() const { return m_manipulationStrategy; }
         ArcManipulationStrategyR GetArcManipulationStrategyForEdit() { return m_manipulationStrategy; }
 
-    public:
         //IArcPlacementMethod
-        void AddKeyPoint(DPoint3dCR newKeyPoint) override;
-        void PopKeyPoint() override;
-        void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
-        void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
-        ArcPlacementMethod GetMethod() const override { return ArcPlacementMethod::StartEndMid; }
-        bvector<DPoint3d> GetKeyPoints() const override;
+        virtual void _AddKeyPoint(DPoint3dCR newKeyPoint) override;
+        virtual void _PopKeyPoint() override;
+        virtual void _AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        virtual void _AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override { BeAssert(false && "Not implemented"); }
+        virtual ArcPlacementMethod _GetMethod() const override { return ArcPlacementMethod::StartEndMid; }
+        virtual bvector<DPoint3d> _GetKeyPoints() const override;
 
+    public:
         static ArcStartEndMidPlacementMethodPtr Create(ArcManipulationStrategyR manipulationStrategy) { return new ArcStartEndMidPlacementMethod(manipulationStrategy); }
     };
 
