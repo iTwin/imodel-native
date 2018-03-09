@@ -2422,7 +2422,7 @@ TEST_F(DgnElementTests, FromJson)
     json["ArrayOfStructs"][1u] = phillyOffice;
 
     ASSERT_FALSE(ElementECPropertyAccessor(el, "invalidProp").IsValid());
-    ASSERT_FALSE(ElementECPropertyAccessor(el, "invalidProp").IsAutoHandled());
+    ASSERT_TRUE(ElementECPropertyAccessor(el, "invalidProp").IsAutoHandled());
     json["invalidProp"] = invalidProp;
 
     ASSERT_TRUE(ElementECPropertyAccessor(el, "TestElementProperty").IsValid());
