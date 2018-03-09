@@ -151,11 +151,11 @@ size_t StdFormatSet::StdInit()
 
     CompositeValueSpecP cvs = new CompositeValueSpec(arcDeg, arcMinute, arcSecond, nullptr);
     cvs->SetUnitLabels("\xC2\xB0", u8"'", u8"\"");
-    AddFormat("AngleDMS", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 0), cvs, "dms");
-    AddFormat("AngleDMS8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "dms8");
+    AddFormat("AngleDMS", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 0), *cvs, "dms");
+    AddFormat("AngleDMS8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs, "dms8");
     cvs = new CompositeValueSpec(arcDeg, arcMinute);
     cvs->SetUnitLabels("\xC2\xB0", u8"'");
-    AddFormat("AngleDM8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "dm8");
+    AddFormat("AngleDM8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs, "dm8");
 
     BEU::UnitCP mi = m_unitsRegistry->LookupUnit("MILE");
     BEU::UnitCP yrd = m_unitsRegistry->LookupUnit("YRD");
@@ -165,36 +165,36 @@ size_t StdFormatSet::StdInit()
 
     cvs = new CompositeValueSpec(mi, yrd, ft, in);
     cvs->SetUnitLabels("mile(s)", "yrd(s)", "'", "\"");
-    AddFormat("AmerMYFI4", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 4), cvs, "myfi4");
+    AddFormat("AmerMYFI4", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 4), *cvs, "myfi4");
     cvs = new CompositeValueSpec(ft, in);
     cvs->SetUnitLabels("'", "\"");
-    AddFormat("AmerFI8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "fi8");
-    AddFormat("AmerFI16", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), cvs, "fi16");
-    AddFormat("AmerFI32", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), cvs, "fi32");
+    AddFormat("AmerFI8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs, "fi8");
+    AddFormat("AmerFI16", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), *cvs, "fi16");
+    AddFormat("AmerFI32", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), *cvs, "fi32");
 
     cvs = new CompositeValueSpec(mi, ft, in);
     cvs->SetUnitLabels("yrd(s)", "'", "\"");
-    AddFormat("AmerYFI8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), cvs, "yfi8");
+    AddFormat("AmerYFI8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs, "yfi8");
 
     cvs = new CompositeValueSpec(meter);
     cvs->SetUnitLabels("m");
-    AddFormat("Meters4u", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), cvs, "meters4u");
+    AddFormat("Meters4u", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), *cvs, "meters4u");
 
     cvs = new CompositeValueSpec(ft);
     cvs->SetUnitLabels("'");
-    AddFormat("Feet4u", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), cvs, "feet4u");
+    AddFormat("Feet4u", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), *cvs, "feet4u");
 
     cvs = new CompositeValueSpec(in);
     cvs->SetUnitLabels("\"");
-    AddFormat("Inches4u", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), cvs, "inches4u");
+    AddFormat("Inches4u", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), *cvs, "inches4u");
 
     cvs = new CompositeValueSpec(in);
     cvs->SetUnitLabels("\"");
-    AddFormat("Inches18u", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 8, FormatConstant::EmptyString()), cvs, "Inches18u");
+    AddFormat("Inches18u", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 8, FormatConstant::EmptyString()), *cvs, "Inches18u");
 
     cvs = new CompositeValueSpec(arcDeg);
     cvs->SetUnitLabels("\xC2\xB0");
-    AddFormat("DecimalDeg4", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), cvs, "decimalDeg4");
+    AddFormat("DecimalDeg4", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), *cvs, "decimalDeg4");
 
     cvs = new CompositeValueSpec(ft);
     cvs->SetUnitLabels("'");

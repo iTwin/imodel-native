@@ -128,7 +128,10 @@ TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
     numericFormatSpec.SetThousandSeparator('\'');
     numericFormatSpec.SetUse1000Separator(true);
     numericFormatSpec.SetKeepSingleZero(true);
-    CompositeValueSpec compositeValueSpec("MILE", "IN");
+
+    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
+    BEU::UnitCP inch = BEU::UnitRegistry::Get().LookupUnit("IN");
+    CompositeValueSpec compositeValueSpec(mile, inch);
     ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Double, compositeValueSpec.GetType());
     NamedFormatSpec namedFormatSpec("TestNamedFormatSpec", numericFormatSpec, compositeValueSpec);
