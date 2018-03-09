@@ -43,7 +43,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 %include FakeServer/FakeServer.mki
 
-%include $(SrcRoot)bsicommon\PublicSDK\MultiCppCompileGo.mki
+%include $(SrcRoot)bsicommon/PublicSDK/MultiCppCompileGo.mki
 FakeServerObjectList = $(MultiCompileObjectList)
 
 #--------------------------------------------------------------------------------------
