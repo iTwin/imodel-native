@@ -114,6 +114,9 @@
     <ClInclude Include="src\UnitsNativeLogging.h">
       <Filter>Header Files\Units</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\Units\UnitsContext.h">
+      <Filter>Header Files\Units</Filter>
+    </ClInclude>
     <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>

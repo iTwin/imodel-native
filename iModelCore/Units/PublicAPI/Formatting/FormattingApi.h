@@ -23,7 +23,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatSet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxySet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UIListEntry)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LocaleProperties)
@@ -167,7 +166,7 @@ struct UIUtils
     UNITS_EXPORT static UIList GetAvailableThousandSeparators();
     UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators();
     UNITS_EXPORT static UIList GetAvailableTraits();
-    UNITS_EXPORT static Json::Value GetAvailableUnitLabels(Utf8CP unitName);
+    UNITS_EXPORT static Json::Value GetAvailableUnitLabels(BEU::UnitCP unit);
     };
 
 //=======================================================================================
@@ -468,109 +467,41 @@ struct UnitProxy
     {
 private:
     BEU::UnitCP mutable m_unit;
-    Utf8String mutable m_unitName;
     Utf8String mutable m_unitLabel;
 
 public:
-    void Clear() { m_unit = nullptr; m_unitName = Utf8String((Utf8CP)nullptr); m_unitLabel = Utf8String((Utf8CP)nullptr); }
-    UnitProxy():m_unit(nullptr), m_unitName((Utf8CP)nullptr), m_unitLabel((Utf8CP)nullptr){}
-    UNITS_EXPORT UnitProxy(Utf8CP name, Utf8CP label = nullptr);
+    UnitProxy() : m_unit(nullptr) {}
+    UNITS_EXPORT UnitProxy(BEU::UnitCP unit, Utf8CP label = nullptr);
     UnitProxy(UnitProxyCR other)
         {
         m_unit = other.m_unit;
-        m_unitName = Utf8String(other.m_unitName.c_str());
         m_unitLabel = Utf8String(other.m_unitLabel.c_str());
         }
     void Copy(UnitProxyCP other)
         {
         if (nullptr == other)
-            Clear();
+            {
+            m_unit = nullptr;
+            }
         else
             {
             m_unit = other->m_unit;
-            m_unitName = Utf8String(other->m_unitName.c_str());
             m_unitLabel = Utf8String(other->m_unitLabel.c_str());
             }
         }
-    UNITS_EXPORT UnitProxy(Json::Value jval);
-    UNITS_EXPORT void LoadJson(Json::Value jval) const;
-    UNITS_EXPORT bool Reset() const;
-    UNITS_EXPORT bool SetName(Utf8CP name);
-    UNITS_EXPORT bool SetUnit(BEU::UnitCP unit);
+
+    UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
+    bool SetUnit(BEU::UnitCP unit) {m_unit = unit; return true;}
     Utf8CP GetLabel() const { return m_unitLabel.c_str(); }
     Utf8CP SetLabel(Utf8CP lab) { m_unitLabel = Utf8String(lab);  return m_unitLabel.c_str(); }
-    Utf8CP GetName() const { return m_unitName.c_str(); }
+
+    //! Returns the name of Unit in this if one is available
+    Utf8CP GetName() const {if (nullptr == m_unit) return nullptr; return m_unit->GetName().c_str();}
     BEU::UnitCP GetUnit() const { return m_unit; }
     UNITS_EXPORT Json::Value ToJson() const;
-    bool IsEmpty() const { return m_unitName.empty(); }
-    UNITS_EXPORT bool IsIdentical(UnitProxyCR other) const;
+    bool IsEmpty() const {return nullptr == m_unit;}
+    bool IsIdentical(UnitProxyCR other) const {return !BEU::Unit::AreEqual(m_unit, other.m_unit) || !m_unitLabel.Equals(other.m_unitLabel);}
     };
-
-//=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz  06/2017
-//=======================================================================================
-struct UnitProxySet
-{
-private:
-    bvector<UnitProxy> mutable m_proxys;
-    BEU::UnitRegistry* m_unitReg = &BEU::UnitRegistry::Get();
-    int mutable m_resetCount;
-
-    UNITS_EXPORT int Validate() const;
-    bool IsConsistent();
-    
-    size_t GetSize() const { return m_proxys.size(); }
-
-public:
-    UnitProxySet(int size)
-        {
-        m_proxys.resize(size);
-        m_proxys.insert(m_proxys.begin(), size, UnitProxy());
-        m_resetCount = 0;
-        }
-    UnitProxySet (UnitProxySetCP other)
-        {
-        m_proxys.resize(other->GetSize());
-        m_resetCount = 0;
-        for (size_t i = 0; i < m_proxys.size(); i++)
-            {
-            m_proxys[i].Copy(other->GetProxy(i));
-            }
-        }
-    void Copy(UnitProxySetCR other)
-        {
-        m_proxys.resize(other.GetSize());
-        m_resetCount = 0;
-        for (size_t i = 0; i < m_proxys.size(); i++)
-            {
-            m_proxys[i].Copy(other.GetProxy(i));
-            }
-        }
-    UNITS_EXPORT size_t UnitCount() const;
-    int GetResetCount() const { return m_resetCount; }
-    bool IsIndexCorrect(size_t indx) const { return indx < m_proxys.size(); }
-    UnitProxyCP GetProxy(size_t indx) const { return (indx < m_proxys.size()) ? &m_proxys[indx] : nullptr; }
-    void Clear() 
-        { 
-        for (int i = 0; IsIndexCorrect(i); ++i)
-            {
-            m_proxys[i].Clear();
-            }
-        m_unitReg = &BEU::UnitRegistry::Get(); 
-        }
-    BEU::UnitCP GetUnit(size_t indx) const { Validate();  return IsIndexCorrect(indx) ? m_proxys[indx].GetUnit() : nullptr; }
-    Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return  IsIndexCorrect(indx) ? m_proxys[indx].GetName() : subst; }
-    Utf8CP GetUnitLabel(size_t indx, Utf8CP subst = nullptr) const { return IsIndexCorrect(indx) ? m_proxys[indx].GetLabel() : subst; }
-    Utf8CP SetUnitLabel(size_t indx, Utf8CP unitLabel) { return IsIndexCorrect(indx) ? m_proxys[indx].SetLabel(unitLabel) : nullptr; }
-    bool SetUnit(size_t indx, BEU::UnitCP unitP) { return IsIndexCorrect(indx) ?  m_proxys[indx].SetUnit(unitP) : false; }
-    bool SetUnitName(size_t indx, Utf8CP unitName) const {
-        return IsIndexCorrect(indx) ?
-            m_proxys[indx].SetName(unitName) 
-            : false; 
-    }
-    UNITS_EXPORT Json::Value ToJson(bvector<Utf8CP> keyNames) const;
-    UNITS_EXPORT bool IsIdentical(UnitProxySetCR other) const;
-};
 
 //=======================================================================================
 // We recognize combined numbers (combo-numbers) that represent some quantity as a sum of 
@@ -590,7 +521,7 @@ public:
 struct CompositeValueSpec
     {
     friend struct CompositeValue;
-protected:
+private:
     static const size_t  indxMajor  = 0;
     static const size_t  indxMiddle = 1;
     static const size_t  indxMinor  = 2;
@@ -598,50 +529,54 @@ protected:
     static const size_t  indxInput  = 4;
     static const size_t  indxLimit  = 5;
     size_t m_ratio[indxSub];
-    //BEU::UnitCP m_units[indxLimit];
-    UnitProxySet m_unitProx = UnitProxySet(indxLimit);
-    //Utf8CP m_unitLabel[indxLimit];
+    bvector<UnitProxy> mutable m_proxys;
     FormatProblemDetail m_problem;
     CompositeSpecType m_type;
     bool m_includeZero; // Not currently used in the formatting code.
     Utf8String m_spacer;
-    void SetUnitLabel(int index, Utf8CP label);
+
     size_t UnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
-    size_t UnitRatio(size_t uppIndx, size_t lowIndx);
+    size_t UnitRatio(size_t uppIndx, size_t lowIndx) {return  UnitRatio(GetUnit(uppIndx), GetUnit(lowIndx));}
     void ResetType() { m_type = CompositeSpecType::Undefined; }
-    BEU::UnitCP GetUnit(size_t indx) const { return m_unitProx.GetUnit(indx); }
-    bool SetInputUnit(BEU::UnitCP inputUnit) {return m_unitProx.SetUnit(indxInput, inputUnit); }
     void SetUnitRatios();
-    bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit=nullptr, Utf8CP MinorUnit = nullptr, Utf8CP SubUnit = nullptr);
-    Utf8CP GetUnitName(size_t indx, Utf8CP substitute) const { return m_unitProx.GetUnitName(indx, substitute); }
-    Utf8String GetEffectiveLabel(size_t indx, Utf8CP substitute) const 
-        { 
-        return  m_unitProx.GetUnitLabel(indx, m_unitProx.GetUnitName(indx));
-        }
-    //size_t GetRightmostRatioIndex();
+
+    // bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit=nullptr, Utf8CP MinorUnit = nullptr, Utf8CP SubUnit = nullptr);
+    Utf8CP GetUnitName(size_t indx, Utf8CP substitute = nullptr) const;
+    void SetUnitLabel(size_t index, Utf8CP label);
+    Utf8CP GetUnitLabel(size_t index, Utf8CP substitute = nullptr) const;
+    Utf8String GetEffectiveLabel(size_t indx) const;
     BEU::UnitCP GetSmallestUnit() const;
+
+    UnitProxyP GetProxyP(size_t indx) const {return IsIndexCorrect(indx) ? &m_proxys[indx] : nullptr;}
+    UnitProxyCP GetProxy(size_t indx) const {return GetProxyP(indx);}
+    BEU::UnitCP GetUnit(size_t indx) const
+        {
+        UnitProxyCP proxy = GetProxy(indx);
+        if (nullptr == proxy)
+            return nullptr;
+        return proxy->GetUnit();
+        }
+    bool SetUnit(size_t indx, BEU::UnitCP unitP) {return IsIndexCorrect(indx) ? m_proxys[indx].SetUnit(unitP) : false;}
+    bool IsIndexCorrect(size_t indx) const { return indx < m_proxys.size(); }
 
 public:
     UNITS_EXPORT void Init();
     UNITS_EXPORT void Clone(CompositeValueSpecCR other);
-   // UNITS_EXPORT CompositeValueSpec(size_t MajorToMiddle, size_t MiddleToMinor=0, size_t MinorToSub=0);
-    CompositeValueSpec() { Init(); };
+    CompositeValueSpec() { Init(); }
 
-    UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCP other);
-    UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
-    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP MajorUnit, BEU::UnitCP MiddleUnit=nullptr, BEU::UnitCP MinorUnit=nullptr, BEU::UnitCP subUnit = nullptr);
-    UNITS_EXPORT CompositeValueSpec(Utf8CP MajorUnit, Utf8CP MiddleUnit = nullptr, Utf8CP MinorUni = nullptr, Utf8CP subUnit = nullptr);
+    CompositeValueSpec(CompositeValueSpecCR other) {Clone(other);}
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit=nullptr, BEU::UnitCP minorUnit=nullptr, BEU::UnitCP subUnit = nullptr);
 
-    BEU::UnitCP GetMajorUnit() const { return m_unitProx.GetUnit(indxMajor); }
-    BEU::UnitCP GetMiddleUnit() const { return m_unitProx.GetUnit(indxMiddle); }
-    BEU::UnitCP GetMinorUnit() const { return m_unitProx.GetUnit(indxMinor); }
-    BEU::UnitCP GetSubUnit() const { return m_unitProx.GetUnit(indxSub); }
+    BEU::UnitCP GetMajorUnit() const {return GetProxy(indxMajor)->GetUnit();}
+    BEU::UnitCP GetMiddleUnit() const {return GetProxy(indxMiddle)->GetUnit();}
+    BEU::UnitCP GetMinorUnit() const {return GetProxy(indxMinor)->GetUnit();}
+    BEU::UnitCP GetSubUnit() const {return GetProxy(indxSub)->GetUnit();}
 
-    UNITS_EXPORT void SetUnitLabels(Utf8CP MajorLab, Utf8CP MiddleLab = nullptr, Utf8CP MinorLab = nullptr, Utf8CP SubLab = nullptr);
-    UNITS_EXPORT Utf8String GetMajorLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMajor, substitute); }
-    UNITS_EXPORT Utf8String GetMiddleLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMiddle, substitute); }
-    UNITS_EXPORT Utf8String GetMinorLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxMinor, substitute); }
-    UNITS_EXPORT Utf8String GetSubLabel(Utf8CP substitute) const { return GetEffectiveLabel(indxSub, substitute); }
+    UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
+    UNITS_EXPORT Utf8String GetMajorLabel() const { return GetEffectiveLabel(indxMajor); }
+    UNITS_EXPORT Utf8String GetMiddleLabel() const { return GetEffectiveLabel(indxMiddle); }
+    UNITS_EXPORT Utf8String GetMinorLabel() const { return GetEffectiveLabel(indxMinor); }
+    UNITS_EXPORT Utf8String GetSubLabel() const { return GetEffectiveLabel(indxSub); }
 
     bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
     bool IsProblem() const { return m_problem.IsProblem(); }
@@ -649,8 +584,8 @@ public:
     size_t GetMajorToMiddleRatio() { return m_ratio[indxMajor]; }
     size_t GetMiddleToMinorRatio() { return m_ratio[indxMiddle]; }
     size_t GetMinorToSubRatio() { return m_ratio[indxMinor]; }
-    UNITS_EXPORT size_t GetUnitCount() const { return m_unitProx.UnitCount(); }
-    UNITS_EXPORT Utf8CP GetProblemDescription() const { return m_problem.GetProblemDescription().c_str(); }
+    size_t GetUnitCount() const {return m_proxys.size();}
+    Utf8CP GetProblemDescription() const {return m_problem.GetProblemDescription().c_str();}
     UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
     CompositeSpecType GetType() const { return m_type; }
     Utf8String GetSpacer() const { return m_spacer; }
@@ -658,7 +593,7 @@ public:
     bool IsIncludeZero() const { return m_includeZero; }
     bool SetIncludeZero(bool incl) { return m_includeZero = incl; }
     UNITS_EXPORT Json::Value ToJson() const;
-    UNITS_EXPORT void LoadJsonData(JsonValueCR jval);
+    UNITS_EXPORT void LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP context);
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
     };
 
@@ -724,15 +659,15 @@ public:
         UNITS_EXPORT void Clone(NamedFormatSpecCP other);
         UNITS_EXPORT NamedFormatSpec& operator=(const NamedFormatSpec& other);
 
-        UNITS_EXPORT void LoadJson(Json::Value jval);
-        UNITS_EXPORT void LoadJson(Utf8CP jsonString);
+        UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
+        UNITS_EXPORT void LoadJson(Utf8CP jsonString, BEU::IUnitsContextCP context);
 
         //! Creates a new NamedFormatSpec with default values.
         NamedFormatSpec() : m_specType(FormatSpecType::Undefined) {m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);}
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
         UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
-        UNITS_EXPORT NamedFormatSpec(Json::Value jval);
-        UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString);
+        UNITS_EXPORT NamedFormatSpec(Json::Value jval, BEU::IUnitsContextCP context = nullptr);
+        UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
 
         Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
         Utf8CP GetAlias() const { return m_alias.c_str(); }
@@ -794,12 +729,13 @@ struct FormatUnitSet
 
     public:
         UNITS_EXPORT void Init();
-        UNITS_EXPORT FormatUnitSet():m_formatSpec(nullptr), m_unit(nullptr), m_localCopy(false), m_problem(FormatProblemDetail(FormatProblemCode::NotInitialized)) {}
-        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData = false);
-        UNITS_EXPORT FormatUnitSet(Utf8CP formatName, Utf8CP unitName, bool cloneData = false);
-        UNITS_EXPORT FormatUnitSet(BEU::UnitCP unit, Utf8CP formatName = nullptr);
-        UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
-        UNITS_EXPORT FormatUnitSet(FormatUnitSetCP other);
+        FormatUnitSet() : m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemCode::NotInitialized) {}
+        FormatUnitSet(BEU::UnitCP unit) : FormatUnitSet(nullptr, unit) {}
+        FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit) : FormatUnitSet(format, unit, false) {}
+        FormatUnitSet(FormatUnitSetCR other) : m_formatSpec(other.m_formatSpec), m_unitName(other.m_unitName), m_unit(other.m_unit), m_problem(other.m_problem) {}
+        // UNITS_EXPORT FormatUnitSet(Utf8CP formatName, BEU::UnitCP unit);
+        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData);
+        
         UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
 
         UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
@@ -819,7 +755,7 @@ struct FormatUnitSet
         //! boolean value indicates that the format spec should be cloned into the newly created
         //! FUS. The default value of the cloneData parameter if "false" the long one consists of
         //! the unitName and formatSpec that contains the full description of this Spec.
-        UNITS_EXPORT FormatUnitSet(Utf8CP descriptor);
+        UNITS_EXPORT FormatUnitSet(Utf8CP descriptor, BEU::IUnitsContextCP context);
 
         //! Resets this FUS to its initial state and populates it will the json value.
         //!
@@ -843,7 +779,7 @@ struct FormatUnitSet
         //! @note If a formatName and formatSpec are provided in the JSON the last will be used.
         //!
         //! @param[in] jval Json to use to populate this.
-        UNITS_EXPORT void LoadJson(Json::Value jval);
+        UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
 
         //! Returns whether this FormatUnitSet has a problem.
         bool HasProblem() const { return m_problem.IsProblem(); }
@@ -858,14 +794,13 @@ struct FormatUnitSet
         UNITS_EXPORT Utf8String ToText(bool useAlias = true) const;
         BEU::UnitCP GetUnit() const { return m_unit; }
         NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
-        UNITS_EXPORT bool IsComparable(BEU::QuantityCR qty) const;
-        UNITS_EXPORT bool IsUnitComparable(Utf8CP unitName) const;
+        bool IsComparable(BEU::QuantityCR qty) const {return IsComparable(qty.GetUnit());}
+        bool IsComparable(BEU::UnitCP unit) const {return BEU::Unit::AreCompatible(unit, m_unit);}
 
         UNITS_EXPORT Json::Value ToJson(bool useAlias = true, bool verbose = false) const;
         UNITS_EXPORT Utf8String ToJsonString(bool useAlias = true, bool verbose = false) const;
 
         UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space="") const;
-        UNITS_EXPORT BEU::UnitCP ResetUnit();
         BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
 
         //! Populates this FormatUnitSet with the provided Json data. 
@@ -909,6 +844,9 @@ struct FormatUnitSet
 struct StdFormatSet
     {
 private:
+    // This is going to be used only during testing
+    BEU::IUnitsContextCP m_unitsRegistry;
+
     bvector<NamedFormatSpecCP> m_formatSet;    // core + app
     bvector<FormatUnitSetCP> m_fusSet;
     FormatProblemDetail m_problem; 
@@ -939,7 +877,6 @@ public:
     bool HasProblem() const { return m_problem.IsProblem(); }
     FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
     void ResetProblemCode() { m_problem.Reset(); }
-    //UNITS_EXPORT static size_t AddFormatDef(bvector<NamedFormatSpecCP> *vec, NamedFormatSpecCP fmtP);
 
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
 
@@ -952,10 +889,10 @@ public:
 
     //! Creates a new FormatUnitSet with the provided name using the format and unit.
     //! @param[in] formatName Name of the NamedFormatSpec to add to the FormatUnitSet to be created.
-    //! @param[in] unitName Name of the Unit to add to the FormatUnitSet to be created.
+    //! @param[in] unit Unit to add to the FormatUnitSet to be created.
     //! @param[in] fusName Name of the FormatUnitSet to be created.
     //! @return A pointer to the newly created FormatUnitSet if successful; otherwise, nullptr.
-    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP formatName, Utf8CP unitName, Utf8CP fusName);
+    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP formatName, BEU::UnitCP unit, Utf8CP fusName);
 
     //! Creates a new FormatUnitSet with the provided name and json string describing the FUS to be
     //! created.

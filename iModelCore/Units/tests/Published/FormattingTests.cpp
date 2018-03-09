@@ -12,7 +12,6 @@
 USING_BENTLEY_FORMATTING
 
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
-static UnitProxySetCP upx = nullptr;
 static int repc = 0;
 BE_JSON_NAME(degrees)
 BE_JSON_NAME(low)
@@ -129,7 +128,10 @@ TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
     numericFormatSpec.SetThousandSeparator('\'');
     numericFormatSpec.SetUse1000Separator(true);
     numericFormatSpec.SetKeepSingleZero(true);
-    CompositeValueSpec compositeValueSpec("MILE", "IN");
+
+    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
+    BEU::UnitCP inch = BEU::UnitRegistry::Get().LookupUnit("IN");
+    CompositeValueSpec compositeValueSpec(mile, inch);
     ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Double, compositeValueSpec.GetType());
     NamedFormatSpec namedFormatSpec("TestNamedFormatSpec", numericFormatSpec, compositeValueSpec);
@@ -659,25 +661,25 @@ TEST_F(FormatDoubleTest, FormatDoubleFormatTraitsTests)
 TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     {
     {
-    FormatUnitSet MMFusNoFormatName("MM");
+    FormatUnitSet MMFusNoFormatName("MM", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusNoFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusNoFormatName);
     EXPECT_STREQ("MM(DefaultReal)", MMFusNoFormatName.ToText(false).c_str());
     EXPECT_STREQ("MM(real)", MMFusNoFormatName.ToText(true).c_str());
     }
     {
-    FormatUnitSet MMFusParens("MM(Real2)");
+    FormatUnitSet MMFusParens("MM(Real2)", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusParens.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusParens);
     EXPECT_STREQ("MM(Real2)", MMFusParens.ToText(false).c_str());
     EXPECT_STREQ("MM(real2)", MMFusParens.ToText(true).c_str());
     }
     {
-    FormatUnitSet MMFusBarFormatName("MM|Real2");
+    FormatUnitSet MMFusBarFormatName("MM|Real2", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusBarFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatName);
     EXPECT_STREQ("MM(Real2)", MMFusBarFormatName.ToText(false).c_str());
     EXPECT_STREQ("MM(real2)", MMFusBarFormatName.ToText(true).c_str());
     }
     {
-    FormatUnitSet MMFusBarFormatNameBar("MM|Real2|");
+    FormatUnitSet MMFusBarFormatNameBar("MM|Real2|", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusBarFormatNameBar.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatNameBar);
     EXPECT_STREQ("MM(Real2)", MMFusBarFormatNameBar.ToText(false).c_str());
     EXPECT_STREQ("MM(real2)", MMFusBarFormatNameBar.ToText(true).c_str());
@@ -685,11 +687,11 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     {
     FormatUnitSet MMFusJsonOnlyUnitName(R"json({
         unitName: "MM"
-    })json");
+    })json", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusJsonOnlyUnitName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonOnlyUnitName);
     EXPECT_STREQ("MM(Real2)", MMFusJsonOnlyUnitName.ToText(false).c_str());
     EXPECT_STREQ("MM(real2)", MMFusJsonOnlyUnitName.ToText(true).c_str());
-    EXPECT_TRUE(MMFusJsonOnlyUnitName.IsIdentical(FormatUnitSet("MM(Real2)")));
+    EXPECT_TRUE(MMFusJsonOnlyUnitName.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
     }
     // TODO: The below JSON methods aren't parsing the formatName attribute correctly. I tried
     // "formatName": "Real2"
@@ -702,11 +704,11 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     FormatUnitSet MMFusJsonUnitNameFormatName(R"json({
         "unitName": "MM",
         "formatName": "real2"
-    })json");
+    })json", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusJsonUnitNameFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonUnitNameFormatName);
     EXPECT_STREQ("MM(Real2)", MMFusJsonUnitNameFormatName.ToText(false).c_str());
     EXPECT_STREQ("MM(real2)", MMFusJsonUnitNameFormatName.ToText(true).c_str());
-    EXPECT_TRUE(MMFusJsonUnitNameFormatName.IsIdentical(FormatUnitSet("MM(Real2)")));
+    EXPECT_TRUE(MMFusJsonUnitNameFormatName.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
     }
     {
     FormatUnitSet MMFusJsonAllMembers(R"json({
@@ -714,11 +716,11 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
         "formatName": "real2",
         "cloneData": false,
         "formatSpec": { }
-    })json");
+    })json", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusJsonAllMembers.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonAllMembers);
     EXPECT_STREQ("MM(Real2)", MMFusJsonAllMembers.ToText(false).c_str());
     EXPECT_STREQ("MM(real2)", MMFusJsonAllMembers.ToText(true).c_str());
-    EXPECT_TRUE(MMFusJsonAllMembers.IsIdentical(FormatUnitSet("MM(Real2)")));
+    EXPECT_TRUE(MMFusJsonAllMembers.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
     }
     {
     FAIL() << "TODO: Test FUS from JSON with formatSpec fully defined.";
@@ -730,8 +732,13 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueSpecTest, Constructors)
     {
+    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
+    BEU::UnitCP yrd = BEU::UnitRegistry::Get().LookupUnit("YRD");
+    BEU::UnitCP ft = BEU::UnitRegistry::Get().LookupUnit("FT");
+    BEU::UnitCP inch = BEU::UnitRegistry::Get().LookupUnit("INCH");
+
     // Single Unit
-    CompositeValueSpec cvs1unit("MILE");
+    CompositeValueSpec cvs1unit(mile);
     ASSERT_EQ(1, cvs1unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Single, cvs1unit.GetType());
     ASSERT_FALSE(cvs1unit.IsProblem());
@@ -741,7 +748,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_EQ(nullptr, cvs1unit.GetSubUnit());
 
     // Two Units
-    CompositeValueSpec cvs2unit("MILE", "YRD");
+    CompositeValueSpec cvs2unit(mile, yrd);
     ASSERT_EQ(2, cvs2unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Double, cvs2unit.GetType());
     ASSERT_FALSE(cvs2unit.IsProblem());
@@ -752,7 +759,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_EQ(1760, cvs2unit.GetMajorToMiddleRatio());
 
     // Three Units
-    CompositeValueSpec cvs3unit("MILE", "YRD", "FT");
+    CompositeValueSpec cvs3unit(mile, yrd, ft);
     ASSERT_EQ(3, cvs3unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Triple, cvs3unit.GetType());
     ASSERT_FALSE(cvs3unit.IsProblem());
@@ -764,7 +771,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_EQ(3, cvs3unit.GetMiddleToMinorRatio());
 
     // Four Units
-    CompositeValueSpec cvs4unit("MILE", "YRD", "FT", "INCH");
+    CompositeValueSpec cvs4unit(mile, yrd, ft, inch);
     ASSERT_EQ(4, cvs4unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Quatro, cvs4unit.GetType());
     ASSERT_FALSE(cvs4unit.IsProblem());

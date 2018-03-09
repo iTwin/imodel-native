@@ -8,6 +8,7 @@
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
+#include "../../PrivateAPI/Units/UnitRegistry.h"
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -32,10 +33,6 @@ void FormattingScannerCursor::Rewind()
     return;
     }
 
-//FormattingScannerCursor::FormattingScannerCursor()
-//    {
-//    Rewind();
-//    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
@@ -437,13 +434,6 @@ Utf8CP FormattingScannerCursor::GetSignature(bool refresh, bool compress)
         }
     return m_traits.GetSignature();
     }
-
-size_t FormattingScannerCursor::SetSections()
-    {
-
-    return 0;
-    }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
@@ -1062,128 +1052,60 @@ Utf8String NumericAccumulator::ToText()
     }
 
 //===================================================
-//
 // UnitProxy Methods
-//
 //===================================================
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-UnitProxy::UnitProxy(Utf8CP name, Utf8CP label)
+UnitProxy::UnitProxy(Units::UnitCP unit, Utf8CP label)
     {
     m_unitLabel = nullptr;
-    m_unitName = nullptr;
-    m_unit = BEU::UnitRegistry::Get().LookupUnit(name);
+    m_unit = unit;
     if (nullptr != m_unit)
         {
-        m_unitName = Utf8String(name);
         if (!Utf8String::IsNullOrEmpty(label))
             m_unitLabel = Utf8String(label);
         }
     }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-bool UnitProxy::SetName(Utf8CP name)
-    {
-    m_unit = BEU::UnitRegistry::Get().LookupUnit(name);
-    if (nullptr != m_unit)
-        {
-        m_unitName = Utf8String(name);
-        return true;
-        }
-    return false;
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-bool UnitProxy::SetUnit(BEU::UnitCP unit)
-    {
-    if (nullptr != unit)
-        {
-        m_unit = unit;
-        m_unitName = Utf8String(unit->GetName());
-        return true;
-        }
-    return false;
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-bool UnitProxy::Reset() const
-    {
-    if (m_unitName.empty())
-        return false;
-    m_unit = BEU::UnitRegistry::Get().LookupUnit(m_unitName.c_str());
-    return !(nullptr == m_unit);
-    }
 
-bool UnitProxy::IsIdentical(UnitProxyCR other) const
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+Json::Value UnitProxy::ToJson() const
     {
-    if(!m_unitName.Equals(other.m_unitName)) return false;
-    if (!m_unitLabel.Equals(other.m_unitLabel)) return false;
-    return true;
+    Json::Value jUP;
+
+    if(nullptr != m_unit)
+        jUP[json_unitName()] = m_unit->GetName().c_str();
+    if (!m_unitLabel.empty())
+        jUP[json_unitLabel()] = m_unitLabel.c_str();
+    return jUP;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-bool UnitProxySet::IsConsistent()
+void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
     {
-    BEU::UnitCP un1;
-    BEU::UnitCP un2;
-    bool consist = true;
-    Validate();
-    if (UnitCount() < 2)
-        return true;
-    for (int i = 0, j = 1; j < m_proxys.size() && consist; i++, j++)
-        {
-        un1 = m_proxys[i].GetUnit();
-        un2 = m_proxys[j].GetUnit();
-        if (nullptr != un2)
-            if (un1->GetPhenomenon() != un2->GetPhenomenon())
-                consist = false;
-        }
-    return consist;
-    }
+    m_unitLabel.clear();
+    m_unit = nullptr;
+    if (jval.empty())
+        return;
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-int UnitProxySet::Validate() const
-    {
-    BEU::UnitRegistry* reg = &BEU::UnitRegistry::Get();
-    if (m_unitReg == reg) // there is a new instance
-        return m_resetCount;
-    for (int i = 0; i < m_proxys.size(); m_proxys[i++].Reset());
-    return m_resetCount++;
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-size_t UnitProxySet::UnitCount() const
-    {
-    for (size_t n = 0; IsIndexCorrect(n); ++n)
+    Utf8CP paramName;
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
-        if (nullptr == m_proxys[n].GetUnit())
-            return n;
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
+            {
+            Utf8CP str = val.asString().c_str();
+            if (nullptr != str)
+                m_unit = context->LookupUnit(str);
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_unitLabel()) == 0)
+            m_unitLabel = val.asString().c_str();
         }
-    return 0;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-bool UnitProxySet::IsIdentical(UnitProxySetCR other) const
-    {
-    size_t n1 = UnitCount();
-    size_t n2 = other.UnitCount();
-    if (n1 != n2) return false;
-    for (int i = 0; i < n1; i++)
-        {
-        if (!m_proxys[i].IsIdentical(other.m_proxys[i])) return false;
-        }
-    return true;
     }
 
 //===================================================
@@ -2008,14 +1930,6 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
 FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit)
     {
     Init(input, start, unit);
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 07/17
-//----------------------------------------------------------------------------------------
-FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName)
-    {
-    BEU::UnitCP unit = (nullptr == unitName) ? nullptr : BEU::UnitRegistry::Get().LookupUnit(unitName);
-    Init(input, start, unit);     
     }
 PUSH_MSVC_IGNORE(6385 6386)
 
