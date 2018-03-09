@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/TilePublisher.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,11 +16,13 @@
 #include <stdio.h>
 #include "../STM/Stores/ISMDataStore.h"
 
-#if defined(__TILEPUBLISHER_LIB_BUILD__)
+/*#if defined(__TILEPUBLISHER_LIB_BUILD__)
     #define TILEPUBLISHER_EXPORT EXPORT_ATTRIBUTE
 #else
-    #define TILEPUBLISHER_EXPORT /*IMPORT_ATTRIBUTE*/
-#endif
+    #define TILEPUBLISHER_EXPORT 
+#endif*/
+
+#define TILEPUBLISHER_EXPORT BENTLEY_SM_EXPORT
 
 //#define BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE BEGIN_BENTLEY_RENDER_NAMESPACE namespace Tile3d {
 //#define END_BENTLEY_DGN_TILE3D_NAMESPACE } END_BENTLEY_RENDER_NAMESPACE
@@ -80,9 +82,9 @@ struct  ScalableMeshTileNode : ModelTileNode
         {}
 
 #ifndef VANCOUVER_API
-    virtual TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const override;
+    TILEPUBLISHER_EXPORT virtual TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const override;
 #else
-    TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const;
+    TILEPUBLISHER_EXPORT  TileMeshList _GenerateMeshes(TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines) const;
 #endif            
 
     };  //  ScalableMeshTileNode

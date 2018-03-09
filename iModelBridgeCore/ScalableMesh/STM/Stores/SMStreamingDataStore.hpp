@@ -1107,10 +1107,15 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFil
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }
 
+template <class EXTENT> bool SMStreamingStore<EXTENT>::SetUseTempPath(bool useTempPath)
+    {
+    return SMSQLiteSisterFile::SetUseTempPath(useTempPath);
+    }    
+
 template <class EXTENT> void SMStreamingStore<EXTENT>::SaveProjectFiles()
     {
     __super::SaveSisterFiles();
-    }
+    }   
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::CompactProjectFiles()
 {
@@ -1257,7 +1262,7 @@ template <class EXTENT> SMNodeGroupPtr SMStreamingStore<EXTENT>::GetGroup(HPMBlo
         static std::atomic<uint64_t> s_NbAlreadyLoadedNodes = 0;
         s_NbAlreadyLoadedNodes += 1;
         {
-        std::lock_guard<mutex> clk(s_consoleMutex);
+       // std::lock_guard<mutex> clk(s_consoleMutex);
         std::cout << "[" << blockID.m_integerID << ", " << group->GetID() << "] already loaded in temporary streaming data cache!" << std::endl;
         }
         }
@@ -1737,7 +1742,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
     if (!IsProjectFilesPathSet())
         return false;
 
-    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, createSisterFile);
+    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, createSisterFile, IsUsingTempPath());
 
     if (!sqliteFilePtr.IsValid())
         return false;
@@ -1776,7 +1781,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
 
     SMSQLiteFilePtr sqlFilePtr;
 
-    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
+    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile, IsUsingTempPath());
 
     if (!sqlFilePtr.IsValid())
         return false;
@@ -1796,7 +1801,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetSisterNodeDataStore(IS
 		return true;
 	}
 
-    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
+    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile, IsUsingTempPath());
 
     if (!sqlFilePtr.IsValid())
         return false;
@@ -2637,7 +2642,11 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             catch (const HCDException& e)
                 {
                 //assert(!"There is an error decompressing texture");
-                std::wcout << L"Error: " << e.GetExceptionMessage() << std::endl;
+#ifdef VANCOUVER_API
+                std::wcout << "Error: " << e.GetExceptionMessage().c_str() << std::endl;
+#else
+				std::cout << "Error: " << e.GetExceptionMessage().c_str() << std::endl;
+#endif
                 }
             }
         }

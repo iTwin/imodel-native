@@ -20,7 +20,7 @@
     <Part Name="ScalableMeshUnitTestsExe" BentleyBuildMakeFile="Tests/GTests/BuildTests_vancouver.mke">
       <SubPart PartName="google_gtest"         PartFile="gtest"            Repository="util-gtest" />
       <SubPart PartName="google_gtest_lib"     PartFile="gtest"            Repository="util-gtest" />
-      <SubPart PartName="ScalableMesh"         PartFile="ScalableMeshCore" Repository="ScalableMesh" />
+      <SubPart PartName="ScalableMeshImportersLib"         PartFile="ScalableMeshCore" Repository="ScalableMesh" />
       <Bindings>
         <Files ProductDirectoryName="ScalableMeshUnitTests">Delivery/ScalableMeshUnitTests.exe</Files>
       </Bindings>

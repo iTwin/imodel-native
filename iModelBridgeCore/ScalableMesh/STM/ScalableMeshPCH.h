@@ -6,7 +6,7 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,13 +22,38 @@
 #include <map>
 
 
+#include <BeSQLite\BeSQLite.h>
+#include <ScalableMesh/Foundations/Definitions.h>
+#include <ScalableMesh/GeoCoords/Definitions.h>
+#include <ScalableMesh/Import/Definitions.h>
+#include <ScalableMesh/ScalableMeshDefs.h>
+
+#ifndef VANCOUVER_API    
+    #include <STMInternal/Foundations/FoundationsPrivateTools.h>
+#endif 
+
+
+#include <Bentley\Bentley.h>
+#include <TerrainModel/TerrainModel.h>
+#include <TerrainModel/Core/bcDTMBaseDef.h>
+#include <TerrainModel/Core/bcDTMClass.h>
+#include <TerrainModel/Core/bcdtminlines.h>
+#include <TerrainModel\Formats\InroadsImporter.h>
+
+
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
+
+
 #include <Bentley\BeStringUtilities.h>
 #include <DgnPlatform\DgnPlatform.h>
 #include <Geom/GeomApi.h>
 #include <Mtg/MtgStructs.h>
 #include <GeoCoord/BaseGeoCoord.h>
 
+
+
 #ifdef VANCOUVER_API
+#undef static_assert
 #include <DgnGeoCoord\DgnGeoCoord.h>
 #include <DgnPlatform\DgnAttachment.h>
 #include <DgnPlatform\DgnPlatform.h>
@@ -39,11 +64,13 @@
 #endif
 
 #ifndef VANCOUVER_API
-#include <DgnPlatform\ImageUtilities.h>
+//#include <DgnPlatform\ImageUtilities.h>
 #endif
 
 
 #include <DgnPlatform\DgnPlatform.r.h>
+
+
 #ifdef VANCOUVER_API
 #include <DgnPlatform\ElementHandle.h>
 #include <DgnPlatform\XAttributeHandler.h>
@@ -58,7 +85,11 @@
 #include <DgnPlatform\TerrainModel\TMElementHandler.h>
 #endif
 
+#ifdef VANCOUVER_API
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+USING_NAMESPACE_BENTLEY_DGN
+#endif
 
 #ifdef VANCOUVER_API
 #include <DgnPlatform\PointCloudHandler.h>
@@ -75,13 +106,6 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 /*----------------------------------------------------------------------+
 | Include TerrainModel general header files                             |
 +----------------------------------------------------------------------*/
-#include <TerrainModel/TerrainModel.h>
-#include <TerrainModel/Core/bcDTMBaseDef.h>
-#include <TerrainModel/Core/bcDTMClass.h>
-#include <TerrainModel/Core/bcdtminlines.h>
-#include <TerrainModel\Formats\InroadsImporter.h>
-
-USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #include <ScalableMesh/Foundations/Definitions.h>
 #include <ScalableMesh/GeoCoords/Definitions.h>
@@ -91,6 +115,10 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #ifndef VANCOUVER_API    
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #endif 
+
+
+#include <Logging\bentleylogging.h>
+
 
 //Useful for detecting memory leak
 //#define _DEBUG

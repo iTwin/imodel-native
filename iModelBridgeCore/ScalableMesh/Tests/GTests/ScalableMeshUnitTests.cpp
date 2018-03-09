@@ -2,14 +2,14 @@
 |
 |  $Source: Tests/GTests/ScalableMeshUnitTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/BeTest.h>
 #include "SMUnitTestUtil.h"
-#include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
+#include <ScalableMesh/IScalableMeshSaveAs.h>
 #include <TerrainModel/Core/IDTM.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
@@ -121,7 +121,13 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
         virtual void TearDown() { }
         BeFileName GetFileName() { return m_filename; }
         ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
-
+        ScalableMesh::IScalableMeshPtr OpenMesh()
+            {
+            StatusInt status;
+            ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(m_filename, true, true, status);
+            BeAssert(status == SUCCESS);
+            return myScalableMesh;
+            }
     };
 
 
@@ -201,8 +207,7 @@ public:
 TEST_P(ScalableMeshTestWithParams, CanOpen)
     {
     auto typeStr = ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType() ? L"3sm" : L"3dTiles";
-
-    EXPECT_EQ(ScalableMeshTest::OpenMesh(m_filename).IsValid(), true ) << "\n Error opening "<< typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
+    EXPECT_EQ(OpenMesh().IsValid(), true) << "\n Error opening " << typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -262,7 +267,8 @@ TEST_P(ScalableMeshTestWithParams, CanGenerate3DTiles)
     BeFileNameStatus statusFile = BeFileName::CreateNewDirectory(tempPath.c_str());
     ASSERT_EQ(statusFile == BeFileNameStatus::Success || statusFile == BeFileNameStatus::AlreadyExists, true);
 
-    auto ret = myScalableMesh->Generate3DTiles(tempPath);
+    auto ret = IScalableMeshSaveAs::Generate3DTiles(myScalableMesh, tempPath, L"", SMCloudServerType::LocalDisk, nullptr, nullptr, (uint64_t)-1);
+    //auto ret = myScalableMesh->Generate3DTiles(tempPath);
 
     ASSERT_TRUE(SUCCESS == ret);
     
@@ -503,7 +509,7 @@ TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     BeFileName destination = ScalableMeshGTestUtil::GetUserSMTempDir();
-    destination.append(testFile.c_str());
+    destination.AppendToPath(testFile.c_str());
 
     if (BeFileName::DoesPathExist(destination.c_str()))
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
@@ -524,7 +530,8 @@ TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
 
     auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
 
-    auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
+    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/);
+    //auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
 
     EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
 
@@ -551,7 +558,7 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     BeFileName destination = ScalableMeshGTestUtil::GetUserSMTempDir();
-    destination.append(testFile.c_str());
+    destination.AppendToPath(testFile.c_str());
 
     if (BeFileName::DoesPathExist(destination.c_str()))
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
@@ -572,7 +579,8 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
 
     auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
 
-    auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
+    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/);
+    //auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
 
     EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
 
@@ -670,6 +678,7 @@ TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
     [&]() { ASSERT_TRUE(isTrue); }(); \
     if (!(isTrue)) return 1; \
     }
+
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                                    Richard.Bois      10/2017

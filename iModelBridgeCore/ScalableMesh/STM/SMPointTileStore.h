@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointTileStore.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -257,7 +257,7 @@ public:
         }
 
 
-    operator SQLiteIndexHeader()
+    BENTLEY_SM_EXPORT operator SQLiteIndexHeader()
         {
         SQLiteIndexHeader header;
         header.m_rootNodeBlockID = m_rootNodeBlockID.IsValid() ? m_rootNodeBlockID.m_integerID : -1;

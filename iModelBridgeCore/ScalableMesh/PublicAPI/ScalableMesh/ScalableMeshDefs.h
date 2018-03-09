@@ -6,15 +6,14 @@
 |       $Date: 2011/10/26 17:55:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 /*__PUBLISH_SECTION_START__*/       
 #pragma once
-#ifndef BENTLEY_NAMESPACE_NAME
-#define BENTLEY_NAMESPACE_NAME Bentley
-#endif
+
+#include <Bentley/Bentley.h>
 
 #define BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace ScalableMesh {
 #define END_BENTLEY_SCALABLEMESH_NAMESPACE     }}
@@ -32,6 +31,14 @@
     #define BENTLEY_SM_EXPORT __declspec(dllimport)
 #endif
     
+
+#ifdef __BENTLEYSTMIMPORT_BUILD__ 
+#define BENTLEY_SM_IMPORT_EXPORT __declspec(dllexport)
+#else
+#define BENTLEY_SM_IMPORT_EXPORT __declspec(dllimport)
+#endif
+
+
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 enum ScalableMeshCompressionType
@@ -165,7 +172,13 @@ enum class SMTextureType
     Streaming
     };
 
-
+enum class SMNodeViewStatus
+    {
+    NotVisible = 0,
+    TooCoarse,
+    Fine
+    };
+	
 struct SMRasterTile
     {
     uint64_t m_posX;          //In pixels

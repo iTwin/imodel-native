@@ -197,6 +197,11 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileNa
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }    
 
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetUseTempPath(bool useTempPath)
+    {
+    return SMSQLiteSisterFile::SetUseTempPath(useTempPath);
+    }    
+
 template <class EXTENT> void SMSQLiteStore<EXTENT>::SaveProjectFiles()
     {
     __super::SaveSisterFiles();
@@ -248,6 +253,8 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::PreloadData(const bvector<DR
 
         //HVEShape shape(total3dRange.low.x, total3dRange.low.y, total3dRange.high.x, total3dRange.high.y, m_raster->GetShape().GetCoordSys());
 
+        // NEEDS_WORK_SM : Need to merge ImagePP dgndb06dev -> topaz
+		assert(!"Imagepp needs update on bim02");
         uint32_t consumerID = BINGMAPS_MULTIPLE_SETLOOKAHEAD_MIN_CONSUMER_ID;
         m_preloadMutex.lock();
         m_raster->SetLookAhead(shape, consumerID);
@@ -333,15 +340,21 @@ template <class EXTENT> void SMSQLiteStore<EXTENT>::ComputeRasterTiles(bvector<S
         }    
     }
 
-
 template <class EXTENT> void SMSQLiteStore<EXTENT>::CancelPreloadData()
-    {    
+    {
+#if 1    
+    return;
+#else
     if (m_streamingRasterFile != nullptr)
         { 
+        // NEEDS_WORK_SM : Imagepp needs to be updated on bim02
+        assert(!"Imagepp needs to be updated on bim02");
+
         HGFTileIDList blocks;
 
         ((HRFVirtualEarthFile*)m_streamingRasterFile.GetPtr())->ForceCancelLookAhead(0);  
         }
+#endif
     }
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::IsTextureAvailable()
@@ -439,7 +452,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISDif
     if (!IsProjectFilesPathSet())
         return false; 
 
-    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, createSisterFile);
+    SMSQLiteFilePtr sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::DiffSet, createSisterFile, IsUsingTempPath());
 
     if (!sqliteFilePtr.IsValid())
         return false;
@@ -461,7 +474,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMInt32Dat
 
     if (dataType == SMStoreDataType::LinearFeature)
         {
-        sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::LinearFeature, true);            
+        sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::LinearFeature, true, true);            
         assert(sqliteFilePtr.IsValid() == true);
         }
     else
@@ -479,7 +492,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
     SMSQLiteFilePtr sqliteFilePtr;
 
 
-    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph, true);
+    sqliteFilePtr = GetSisterSQLiteFile(SMStoreDataType::Graph, true, true);
     assert(sqliteFilePtr.IsValid() == true);
 
 
@@ -539,7 +552,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISMCo
 
     SMSQLiteFilePtr sqlFilePtr;
     
-    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile);
+    sqlFilePtr = GetSisterSQLiteFile(SMStoreDataType::CoverageName, createSisterFile, IsUsingTempPath());
 
     if (!sqlFilePtr.IsValid())
         return false;
@@ -560,7 +573,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetSisterNodeDataStore(ISM3D
 		return true;
 	}
 
-    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile);
+    SMSQLiteFilePtr sqlFilePtr = GetSisterSQLiteFile(dataType, createSisterFile, IsUsingTempPath());
 
     if (!sqlFilePtr.IsValid())
         return false;

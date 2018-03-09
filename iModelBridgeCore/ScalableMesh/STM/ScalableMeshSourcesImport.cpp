@@ -6,7 +6,7 @@
 |       $Date: 2011/10/20 18:47:55 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -422,12 +422,13 @@ SMStatus SourcesImporter::Impl::ImportSDKSources()
         const HVEClipShape* shape = sourceIt->m_importConfig->GetClipShape();
         if (shape != nullptr && !shape->IsEmpty())
             {
-            for (auto& clip : shape->m_clips)
+            //NEEDS_WORK_SM: either make m_clips public or write an accessor
+         /*   for (auto& clip : shape->m_clips)
                 {
                 if (clip.m_isClipMask) continue;
                 DRange3d ext = DRange3d::From(clip.m_pClipShape->GetExtent().GetXMin(), clip.m_pClipShape->GetExtent().GetYMin(), 0, clip.m_pClipShape->GetExtent().GetXMax(), clip.m_pClipShape->GetExtent().GetYMax(), 0);
                 extent.Extend(ext);
-                }
+                }*/
             }
         if (sourceIt->m_importConfig->HasDefaultTargetGCS())
             {
@@ -564,8 +565,8 @@ SMStatus SourcesImporter::Impl::ImportSource(SourceItem&    sourceItem,
         return S_ERROR;
 
     const SourcePtr sourcePtr(Configure(originalSourcePtr, 
-                                        sourceItem.m_contentConfig,
-                                        GetLog()));
+                                        sourceItem.m_contentConfig/*,
+                                        GetLog()*/));
     if (0 == sourcePtr.get())
         return S_ERROR;
 

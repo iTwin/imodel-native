@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:13 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -90,15 +90,16 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
 
     SMSQLiteFilePtr                     m_smSQLitePtr;
     bool                                m_isDgnDB;
-
+    
     size_t                              m_workingLayer;
 
     GeoCoords::GCS                      m_sourceGCS;
     DRange3d                            m_contentExtent;
 
     WString                             m_baseExtraFilesPath;
-
-    DataSourceAccount               *   m_dataSourceAccount;
+    bool                                m_useTempPath;
+    
+    DataSourceAccount*                  m_dataSourceAccount;
 
     // NOTE: Stored in order to make it possible for the creator to use this. Remove when creator does not depends on
     // this interface anymore (take only a path).
@@ -116,16 +117,17 @@ struct ScalableMeshBase : public RefCounted<IScalableMesh>
     bool                                LoadGCSFrom(WString wktStr);
     bool                                LoadGCSFrom();
 
-
 public:
 
-    const SMSQLiteFilePtr&              GetDbFile() const;
+    BENTLEY_SM_EXPORT const SMSQLiteFilePtr&              GetDbFile() const;
 
-    const WChar*                        GetPath                 () const;
+    BENTLEY_SM_EXPORT const WChar*                        GetPath                 () const;
 
     static DataSourceManager &          GetDataSourceManager    (void)                                  {return *DataSourceManager::Get();}
     void                                SetDataSourceAccount    (DataSourceAccount *dataSourceAccount)  {m_dataSourceAccount = dataSourceAccount;}
     DataSourceAccount *                 GetDataSourceAccount    (void) const                            {return m_dataSourceAccount;}
+
+    void                                SetUseTempPath(bool useTempPath)                                {m_useTempPath = useTempPath;}
    
     };
 
@@ -155,8 +157,7 @@ class ScalableMeshDTM : public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::
     virtual DTMStatusInt _GetTransformDTM(DTMPtr& transformedDTM, TransformCR transformation) override;
     virtual bool _GetTransformation(TransformR transformation) override;
     virtual IDTMVolumeP _GetDTMVolume() override;
-
-    virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation) override;
+    virtual DTMStatusInt _ExportToGeopakTinFile(BENTLEY_NAMESPACE_NAME::WCharCP fileNameP, TransformCP transformation) override;
 
     public:
 
@@ -228,11 +229,12 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual                         ~ScalableMesh                         ();
 
 
-        static IScalableMeshPtr       Open                           (SMSQLiteFilePtr& smSQLiteFile,
-                                                                        const WString&             filePath,
-                                                                        const Utf8String&     baseEditsFilePath,
-                                                                      bool                    needsNeighbors,
-                                                                      StatusInt&                      status);
+        static IScalableMeshPtr       Open                           (SMSQLiteFilePtr&  smSQLiteFile,
+                                                                      const WString&    filePath,
+                                                                      const Utf8String& baseEditsFilePath,
+                                                                      bool              useTempFolderForEditFiles,
+                                                                      bool              needsNeighbors,
+                                                                      StatusInt&        status);
 
 
         int                             Open                           ();                
@@ -658,6 +660,9 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void _ReFilter() override {};
            
     };
+
+   BENTLEY_SM_EXPORT void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons);
+   BENTLEY_SM_EXPORT void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded);
 
 
 /*__PUBLISH_SECTION_START__*/

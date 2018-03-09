@@ -102,29 +102,29 @@ public:
     bool Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
-    void Save();
+    BENTLEY_SM_EXPORT void Save();
 
     static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     void SetSource();
     bool SetWkt(WCharCP extendedWkt);
     bool HasWkt();
     bool AddSource();
-    bool SaveSource(SourcesDataSQLite& sourcesData);
-    bool HasSources();
+    BENTLEY_SM_EXPORT bool SaveSource(SourcesDataSQLite& sourcesData);
+    BENTLEY_SM_EXPORT bool HasSources();
     bool HasMasterHeader();
     bool HasPoints();
     bool SetMasterHeader(const SQLiteIndexHeader& newHeader);
     bool SetNodeHeader(const SQLiteNodeHeader& newNodeHeader);
-    bool SetSingleFile(bool isSingleFile);
+    BENTLEY_SM_EXPORT bool SetSingleFile(bool isSingleFile);
     bool SetProperties(const Json::Value& properties);
 
     bool GetSource();
     bool GetGCS();
-    bool GetWkt(WString& wktStr);
+    BENTLEY_SM_EXPORT bool GetWkt(WString& wktStr);
     bool GetMasterHeader(SQLiteIndexHeader& header);
     bool GetNodeHeader(SQLiteNodeHeader& nodeHeader);
     bool GetAccessMode() { return m_database->IsReadonly(); }
-    bool IsSingleFile();
+    BENTLEY_SM_EXPORT bool IsSingleFile();
     bool GetProperties(Json::Value& properties);
 
     //uint64_t GetLastInsertRowId() { return m_database->GetLastInsertRowId(); }
@@ -135,7 +135,7 @@ public:
     void GetIndices(int64_t nodeID, bvector<uint8_t>& indices, size_t& uncompressedSize);
     void GetPointsAndIndices(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSizePts, bvector<uint8_t>& indices, size_t& uncompressedSizeIndices);    
     void GetUVs(int64_t nodeID, bvector<uint8_t>& uvCoords, size_t& uncompressedSize);
-    bool LoadSources(SourcesDataSQLite& sourcesData);
+    BENTLEY_SM_EXPORT bool LoadSources(SourcesDataSQLite& sourcesData);
     void GetUVIndices(int64_t nodeID, bvector<uint8_t>& uvIndices, size_t& uncompressedSize);
     void GetTexture(int64_t nodeID, bvector<uint8_t>& texture, size_t& uncompressedSize);
 
@@ -220,12 +220,12 @@ public:
 
     bool m_autocommit = true;    
 
-    static const SchemaVersion CURRENT_VERSION;
+    static const BESQL_VERSION_STRUCT CURRENT_VERSION;
 protected:
     ScalableMeshDb* m_database;
     std::mutex dbLock;
 
-    virtual SchemaVersion GetCurrentVersion()
+    virtual BESQL_VERSION_STRUCT GetCurrentVersion()
         {
         return SMSQLiteFile::CURRENT_VERSION;
         }
@@ -233,11 +233,16 @@ protected:
     virtual DbResult CreateTables();
 
     virtual size_t GetNumberOfReleasedSchemas();
-    virtual const SchemaVersion* GetListOfReleasedVersions();
+    virtual const BESQL_VERSION_STRUCT* GetListOfReleasedVersions();
     virtual double* GetExpectedTimesForUpdateFunctions();
     virtual std::function<void(BeSQLite::Db*)>* GetFunctionsForAutomaticUpdate();
 
 private:
+
+#ifndef VANCOUVER_API
+    //Avoid assert added on Bim02    
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return std::numeric_limits<uint32_t>::max(); }
+#endif
 
     // string table name
     const std::string m_sMasterHeaderTable = "SMMasterHeader";

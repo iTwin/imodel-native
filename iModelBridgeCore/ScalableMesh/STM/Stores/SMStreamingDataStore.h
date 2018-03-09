@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMStreamingDataStore.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -18,10 +18,10 @@
 #include <ImagePP/all/h/HCDCodecIJG.h>
 #include <ScalableMesh\IScalableMeshRDSProvider.h>
 
-extern bool s_stream_from_wsg;
+BENTLEY_SM_EXPORT extern bool s_stream_from_wsg;
 extern bool s_stream_using_cesium_3d_tiles_format;
 extern bool s_import_from_bim_exported_cesium_3d_tiles;
-extern bool s_stream_using_curl;
+BENTLEY_SM_EXPORT extern bool s_stream_using_curl;
 extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
@@ -30,8 +30,8 @@ extern bool s_use_qa_azure;
 //extern std::mutex fileMutex;
 
 #ifndef NDEBUG
-#define DEBUG_STREAMING_DATA_STORE
-extern std::mutex s_consoleMutex;
+//#define DEBUG_STREAMING_DATA_STORE
+//extern std::mutex s_consoleMutex;
 #endif
 
 class DataSourceAccount; 
@@ -170,18 +170,18 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
     public : 
     
-        SMStreamingStore(const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary);
+        BENTLEY_SM_EXPORT SMStreamingStore(const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary);
 
-        SMStreamingStore(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider);
+        BENTLEY_SM_EXPORT SMStreamingStore(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider);
 
-        virtual ~SMStreamingStore();
+        BENTLEY_SM_EXPORT virtual ~SMStreamingStore();
 
 #ifdef VANCOUVER_API
-        static SMStreamingStore* Create(const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary)
+        BENTLEY_SM_EXPORT static SMStreamingStore* Create(const WString& path, bool compress = true, bool areNodeHeadersGrouped = false, bool isVirtualGrouping = false, WString headers_path = L"", FormatType formatType = FormatType::Binary)
             {
             return new SMStreamingStore(path, compress, areNodeHeadersGrouped, isVirtualGrouping, headers_path, formatType);
             }
-        static SMStreamingStore* Create(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider)
+        BENTLEY_SM_EXPORT static SMStreamingStore* Create(const SMStreamingSettingsPtr& settings, IScalableMeshRDSProviderPtr smRDSProvider)
             {
             return new SMStreamingStore(settings, smRDSProvider);
             }
@@ -189,7 +189,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         DataSource *InitializeDataSource(std::unique_ptr<DataSource::Buffer[]> &dest, DataSourceBuffer::BufferSize destSize) const;
 
-        DataSourceAccount *GetDataSourceAccount(void) const;
+        BENTLEY_SM_EXPORT DataSourceAccount *GetDataSourceAccount(void) const;
 
         void SetDataSourceAccount(DataSourceAccount *dataSourceAccount);
 
@@ -200,13 +200,13 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             m_settings->m_isPublishing = isPublishing;
             }
 
-        static void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize);
+        BENTLEY_SM_EXPORT static void SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize);
 
         void SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, size_t& po_pDataSize) const;
 
-        static void SerializeHeaderToCesium3DTileJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& tile);
+        BENTLEY_SM_EXPORT static void SerializeHeaderToCesium3DTileJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& tile);
 
-        static void SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block);
+        BENTLEY_SM_EXPORT static void SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block);
                    
         //Inherited from ISMDataStore
         virtual uint64_t GetNextID() const override;
@@ -223,6 +223,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
 
+        virtual bool SetUseTempPath(bool useTempPath) override;
+
         virtual void SaveProjectFiles() override;
 
 		virtual void CompactProjectFiles() override;
@@ -234,7 +236,7 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         virtual void ComputeRasterTiles(bvector<SMRasterTile>& rasterTiles, const bvector<DRange3d>& tileRanges) override;
 
         virtual bool IsTextureAvailable() override;        
-
+        
         virtual void Register(const uint64_t& smID) override;
 
         virtual void Unregister(const uint64_t& smID) override;

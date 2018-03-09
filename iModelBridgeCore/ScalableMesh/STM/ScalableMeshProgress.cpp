@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Richard.Bois $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -173,14 +173,17 @@ ScalableMeshProgress::ScalableMeshProgress()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ScalableMeshProgress::ScalableMeshProgress(const ScalableMeshProcessType& processType, IScalableMeshPtr smPtr)
     {
+    if (smPtr == nullptr)
+        {
+        BeAssert(!"Should use default constructor instead");
+        return;
+        }
     switch (processType)
         {
         case CONVERT_3DTILES:
         {
-        std::cout << "Counting nodes... ";
         auto nodeCount = smPtr->GetNodeCount();
-        assert(nodeCount > 0);
-        std::cout << nodeCount << " found" << std::endl;
+        BeAssert(nodeCount > 0);
         m_progressStepProcess = ScalableMeshStepProcess::PROCESS_CONVERT_3DTILES;
         m_totalNSteps = 2; // index + data
         m_totalNIterationsPerStep[0] = m_totalNIterationsPerStep[1] = nodeCount;
@@ -189,7 +192,7 @@ ScalableMeshProgress::ScalableMeshProgress(const ScalableMeshProcessType& proces
         case SAVEAS_3SM:
         {
         auto nodeCount = smPtr->GetNodeCount();
-        assert(nodeCount > 0);
+        BeAssert(nodeCount > 0);
         m_progressStepProcess = ScalableMeshStepProcess::PROCESS_SAVEAS_3SM;
         m_totalNSteps = 1;
         m_totalNIterationsPerStep[0] = nodeCount;
@@ -197,7 +200,7 @@ ScalableMeshProgress::ScalableMeshProgress(const ScalableMeshProcessType& proces
         }
         default:
         {
-        assert(!"Unknown process type for scalable mesh progress");
+        BeAssert(!"Unknown process type for scalable mesh progress");
         }
         }
     }

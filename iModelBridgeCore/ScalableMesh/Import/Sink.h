@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:06:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -50,20 +50,20 @@ private:
                                                                     Log&                 log) const = 0;
 
 protected:
-     explicit                    Sink                   ();
+    BENTLEY_SM_EXPORT explicit                    Sink                   ();
 
-     size_t                    GetTotalNumberOfExpectedSources() const;
+     BENTLEY_SM_EXPORT size_t                    GetTotalNumberOfExpectedSources() const;
 
 public:
-     virtual                     ~Sink                  () = 0;
+    BENTLEY_SM_EXPORT virtual                     ~Sink                  () = 0;
 
-     const ContentDescriptor&    GetDescriptor          () const;
+    BENTLEY_SM_EXPORT const ContentDescriptor&    GetDescriptor          () const;
 
-     void                       SetTotalNumberOfExpectedSources(size_t nSources);
+    BENTLEY_SM_EXPORT void                       SetTotalNumberOfExpectedSources(size_t nSources);
 
     // TDORAY: Add insertion config replace layerID and type for insertion query.
 
-     BackInserterPtr             CreateBackInserterFor  (const PacketGroup&          packets,
+    BENTLEY_SM_EXPORT BackInserterPtr             CreateBackInserterFor  (const PacketGroup&          packets,
                                                                     uint32_t                        layerID,
                                                                     const DataType&             type,
                                                                     Log&                        log) const;
@@ -97,13 +97,13 @@ protected:
      bool m_is3dData;
      bool m_isGridData;
 
-     explicit                    BackInserter           ();
+     BENTLEY_SM_EXPORT explicit                    BackInserter           ();
 public:
-     virtual                     ~BackInserter          () = 0;
+    BENTLEY_SM_EXPORT virtual                     ~BackInserter          () = 0;
 
-     void                        SetIs3dData(bool is3dData);
+    BENTLEY_SM_EXPORT void                        SetIs3dData(bool is3dData);
 
-     void                        SetIsGridData(bool isGridData);
+    BENTLEY_SM_EXPORT void                        SetIsGridData(bool isGridData);
 
      void                        Write                  () { _Write(); }     
 

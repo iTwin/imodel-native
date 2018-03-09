@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/GTests/SMUnitTestUtil.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,7 +38,7 @@ using namespace Bentley::GeoCoordinates;
 
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/ScalableMeshLib.h>
-//#include <ScalableMesh/IScalableMeshProgress.h>
+#include <ScalableMesh/IScalableMeshProgress.h>
 //#include <iostream>
 
 namespace ScalableMeshGTestUtil
@@ -104,15 +104,5 @@ namespace ScalableMeshGTestUtil
         };
 
     bool InitScalableMesh();
-
-    //struct TestProgressListener : ScalableMesh::IScalableMeshProgressListener
-    //    {
-    //    virtual void CheckContinueOnProgress(ScalableMesh::IScalableMeshProgress* progress) const override
-    //        {
-    //        auto progress_percent = progress->GetProgress() * 100;
-    //        std::cout << "\r" << progress_percent <<"%";
-    //        if (progress_percent >= 100) std::cout << std::endl;
-    //        };
-    //    };
 
     }
