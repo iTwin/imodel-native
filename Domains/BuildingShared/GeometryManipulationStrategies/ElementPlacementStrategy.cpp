@@ -8,6 +8,28 @@
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
 
 USING_NAMESPACE_BUILDING_SHARED
+    
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Vytautas.Kaniusonis             03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Utf8String ElementPlacementStrategy::GetMessage() const
+    {
+    return _GetMessage();
+    }    
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Vytautas.Kaniusonis             03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ElementPlacementStrategy::AddViewOverlay
+(
+    BentleyApi::Dgn::Render::GraphicBuilderR builder,
+    DRange3dCR viewRange,
+    TransformCR worldToView,
+    ColorDefCR contrastingToBackgroundColor
+) const
+    {
+    _AddViewOverlay(builder, viewRange, worldToView, contrastingToBackgroundColor);
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              02/2018
