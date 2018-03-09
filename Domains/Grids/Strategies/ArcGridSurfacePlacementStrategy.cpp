@@ -42,7 +42,7 @@ ArcPlacementStrategyPtr ArcGridSurfacePlacementStrategy::GetArcPlacementStrategy
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcGridSurfacePlacementStrategy::SetPlacementMethod
+void ArcGridSurfacePlacementStrategy::_SetPlacementMethod
 (
     BBS::ArcPlacementMethod method
 )
@@ -53,7 +53,7 @@ void ArcGridSurfacePlacementStrategy::SetPlacementMethod
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcGridSurfacePlacementStrategy::SetUseSweep
+void ArcGridSurfacePlacementStrategy::_SetUseSweep
 (
     bool useSweep
 )
@@ -64,7 +64,7 @@ void ArcGridSurfacePlacementStrategy::SetUseSweep
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcGridSurfacePlacementStrategy::SetSweep
+void ArcGridSurfacePlacementStrategy::_SetSweep
 (
     double sweep
 )
@@ -75,7 +75,7 @@ void ArcGridSurfacePlacementStrategy::SetSweep
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcGridSurfacePlacementStrategy::SetUseRadius
+void ArcGridSurfacePlacementStrategy::_SetUseRadius
 (
     bool useRadius
 )
@@ -86,7 +86,7 @@ void ArcGridSurfacePlacementStrategy::SetUseRadius
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                02/2018
 //---------------+---------------+---------------+---------------+---------------+------
-void ArcGridSurfacePlacementStrategy::SetRadius
+void ArcGridSurfacePlacementStrategy::_SetRadius
 (
     double radius
 )
