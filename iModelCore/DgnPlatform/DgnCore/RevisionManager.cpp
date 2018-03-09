@@ -482,12 +482,14 @@ static void dumpCurrentValues(DgnDbCR db, Changes::Change iter, Utf8CP tableName
     iter.GetPrimaryKeyColumns(&pcols, &npcols);
     
     int64_t pk = 0;
+    int pki = 0;
     for (int i = 0; i <= npcols; ++i)
         {
         if (pcols[i] == 0)
             continue;
 
         pk = iter.GetValue(i, Changes::Change::Stage::Old).GetValueInt64();
+        pki = i;
         break;
         }
 
@@ -501,14 +503,15 @@ static void dumpCurrentValues(DgnDbCR db, Changes::Change iter, Utf8CP tableName
             continue;   // this col was not changed
 
         Statement stmt;
-        stmt.Prepare(db, Utf8PrintfString("SELECT %s from %s WHERE Id=%lld", 
-                                                   columnNames[i].c_str(),
-                                                          tableName,   pk).c_str());
-        Utf8String oldVal;
+        stmt.Prepare(db, Utf8PrintfString("SELECT %s from %s WHERE %s=%lld", 
+                                                  columnNames[i].c_str(),
+                                                          tableName, 
+                                                                   columnNames[pki].c_str(),
+                                                                      pk).c_str());
         if (BE_SQLITE_ROW != stmt.Step())
-            oldVal = "?";
-        else
-            oldVal = formatOldValue(stmt);
+            return; // The row is not found. This must be a NOT_FOUND conflict, i.e., there is no current row with this Id.
+            
+        Utf8String oldVal = formatOldValue(stmt);
 
         LOG.infov(Utf8PrintfString("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str()).c_str());
         }
