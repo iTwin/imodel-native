@@ -103,8 +103,9 @@
     </Bindings>
   </Part>
 
-  <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe_Vancouver.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
-    <SubPart PartName="ScalableMesh"  PartFile="ScalableMeshCore" Repository="ScalableMesh" />
+  <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe_Vancouver.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">    
+    <SubPart PartName="ScalableMeshCoreLib"  />
+    <SubPart PartName="ScalableMeshImportersLib"  />
     <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
     <Bindings>
       <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>

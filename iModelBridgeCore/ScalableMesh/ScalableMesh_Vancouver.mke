@@ -338,6 +338,10 @@ $(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPI
 
 $(o)ScalableMeshClippingOptions$(oext) : $(stmDir)ScalableMeshClippingOptions.cpp $(stmDir)ScalableMeshClippingOptions.h ${MultiCompileDepends}
 
+$(o)ScalableMeshDetectGround$(oext) : $(stmDir)ScalableMeshDetectGround.cpp ${MultiCompileDepends}
+
+$(o)ScalableMeshSaveAs$(oext) : $(stmDir)ScalableMeshSaveAs.cpp ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Tile Publisher
 #-----------------------------------------------------------------------
