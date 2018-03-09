@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
 
-USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BUILDING_SHARED
 
 #define SET_PROPERTY_IMPL(value_type) \
@@ -33,9 +32,6 @@ SET_TRYGET_PROPERTY_IMPL(double)
 SET_TRYGET_PROPERTY_IMPL(DVec3d)
 SET_TRYGET_PROPERTY_IMPL(DPlane3d)
 SET_TRYGET_PROPERTY_IMPL(RotMatrix)
-SET_TRYGET_PROPERTY_IMPL(DgnElementId)
-SET_TRYGET_PROPERTY_IMPL(DgnElementCP)
-SET_TRYGET_PROPERTY_IMPL(Dgn::ColorDef)
 SET_TRYGET_PROPERTY_IMPL(Utf8String)
 SET_TRYGET_PROPERTY_IMPL(bvector<double>)
 SET_TRYGET_PROPERTY_IMPL(bvector<Utf8String>)

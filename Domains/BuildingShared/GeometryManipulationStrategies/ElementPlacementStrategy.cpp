@@ -8,45 +8,6 @@
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
 
 USING_NAMESPACE_BUILDING_SHARED
-USING_NAMESPACE_BENTLEY_DGN
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-DgnElementPtr ElementPlacementStrategy::_FinishElement
-(
-    DgnModelR model
-)
-    {
-    return _GetElementManipulationStrategyForEdit().FinishElement(model);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                03/2018
-//---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnElementPtr ElementPlacementStrategy::_FinishElement()
-    {
-    return _GetElementManipulationStrategyForEdit().FinishElement();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-DgnElementPtr ElementPlacementStrategy::FinishElement
-(
-    DgnModelR model
-)
-    {
-    return _FinishElement(model);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                03/2018
-//---------------+---------------+---------------+---------------+---------------+------
-Dgn::DgnElementPtr ElementPlacementStrategy::FinishElement()
-    {
-    return _FinishElement();
-    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              02/2018
@@ -225,9 +186,6 @@ EPS_PROPERTY_OVERRIDE_IMPL(double)
 EPS_PROPERTY_OVERRIDE_IMPL(DVec3d)
 EPS_PROPERTY_OVERRIDE_IMPL(DPlane3d)
 EPS_PROPERTY_OVERRIDE_IMPL(RotMatrix)
-EPS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
-EPS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementCP)
-EPS_PROPERTY_OVERRIDE_IMPL(Dgn::ColorDef)
 EPS_PROPERTY_OVERRIDE_IMPL(Utf8String)
 EPS_PROPERTY_OVERRIDE_IMPL(bvector<double>)
 EPS_PROPERTY_OVERRIDE_IMPL(bvector<Utf8String>)

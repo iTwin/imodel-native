@@ -228,7 +228,6 @@ void EllipseManipulationStrategy::_AppendDynamicKeyPoint
     DPoint3dCR newDynamicKeyPoint
 )
     {
-    bvector<DPoint3d> const& currentKeyPoints = GetKeyPoints();
     if(GetAcceptedKeyPoints().size() == 2)
         {
         if (DoubleOps::AlmostEqual(CalculateVec90(GetAcceptedKeyPoints()[0], GetAcceptedKeyPoints()[1], newDynamicKeyPoint).Magnitude(), 0))
@@ -259,7 +258,6 @@ void EllipseManipulationStrategy::_AppendDynamicKeyPoints
         return;
         }
 
-    bvector<DPoint3d> const& currentKeyPoints = GetKeyPoints();
     DPoint3d start, center, vec90Point;
     if (GetAcceptedKeyPoints().size() == 2)
         {

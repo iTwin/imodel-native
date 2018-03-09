@@ -8,26 +8,6 @@
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
 
 USING_NAMESPACE_BUILDING_SHARED
-USING_NAMESPACE_BENTLEY_DGN
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-DgnElementPtr ElementManipulationStrategy::FinishElement
-(
-    DgnModelR model
-)
-    {
-    return _FinishElement(model);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Mindaugas.Butkus                01/2018
-//---------------+---------------+---------------+---------------+---------------+------
-DgnElementPtr ElementManipulationStrategy::FinishElement()
-    {
-    return _FinishElement();
-    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                01/2018
@@ -245,9 +225,6 @@ GMS_PROPERTY_OVERRIDE_IMPL(double)
 GMS_PROPERTY_OVERRIDE_IMPL(DVec3d)
 GMS_PROPERTY_OVERRIDE_IMPL(DPlane3d)
 GMS_PROPERTY_OVERRIDE_IMPL(RotMatrix)
-GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementId)
-GMS_PROPERTY_OVERRIDE_IMPL(Dgn::DgnElementCP)
-GMS_PROPERTY_OVERRIDE_IMPL(Dgn::ColorDef)
 GMS_PROPERTY_OVERRIDE_IMPL(Utf8String)
 GMS_PROPERTY_OVERRIDE_IMPL(bvector<double>)
 GMS_PROPERTY_OVERRIDE_IMPL(bvector<Utf8String>)

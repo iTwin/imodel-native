@@ -38,6 +38,12 @@
 #define GEOMETRYMANIPULATIONSTRATEGIES_EXPORT IMPORT_ATTRIBUTE
 #endif
 
+#if defined (__DGNELEMENTMANIPULATIONSTRATEGIES_BUILD__)
+#define DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT EXPORT_ATTRIBUTE
+#else
+#define DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT IMPORT_ATTRIBUTE
+#endif
+
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
 //-----------------------------------------------------------------------------------------

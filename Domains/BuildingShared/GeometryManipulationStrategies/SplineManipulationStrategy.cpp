@@ -74,7 +74,7 @@ ICurvePrimitivePtr SplineControlPointsManipulationStrategy::_FinishPrimitive() c
     for (DPoint3d point : poles)
         weights.push_back(1.0);
 
-    int order = poles.size() < m_order ? poles.size() : m_order; // order can't be higher than poles size
+    int order = poles.size() < m_order ? static_cast<int>(poles.size()) : m_order; // order can't be higher than poles size
 
     bvector<double> knots;
     for (int i = 0; i < order + poles.size(); ++i)

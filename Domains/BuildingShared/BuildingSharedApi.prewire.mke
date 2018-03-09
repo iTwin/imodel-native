@@ -2,7 +2,7 @@
 #
 #     $Source: BuildingSharedApi.prewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
@@ -22,4 +22,7 @@ $(BuildContext)PublicAPI/BuildingShared/Utils : $(_MakeFilePath)Utils/PublicAPI
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(BuildContext)PublicAPI/BuildingShared/GeometryManipulationStrategies : $(_MakeFilePath)GeometryManipulationStrategies/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/DgnElementManipulationStrategies : $(_MakeFilePath)DgnElementManipulationStrategies/PublicAPI
     $(LinkFirstDepToFirstTargetAsDirectory)

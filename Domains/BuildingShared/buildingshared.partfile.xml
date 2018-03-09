@@ -67,15 +67,24 @@
         <SubPart PartName="BuildingUnits"/>
         <SubPart PartName="BuildingSharedApi"/>
         <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
-        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)GeometryManipulationStrategies$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(shlibext)</Assemblies>
         </Bindings>
     </Part>
+
+    <Part Name="DgnElementManipulationStrategies" BentleyBuildMakeFile="DgnElementManipulationStrategies/DgnElementManipulationStrategies.mke">
+        <SubPart PartName="GeometryManipulationStrategies"/>
+        <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)DgnElementManipulationStrategies$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DgnElementManipulationStrategies$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
     
   <Part Name="BuildingShared-Tested">
     <SubPart PartName="BuildingSharedBundle"/>
+    <SubPart PartName="DgnElementManipulationStrategies"/>
     <SubPart PartName="Gtest-RunAggregator"/>
   </Part>
 

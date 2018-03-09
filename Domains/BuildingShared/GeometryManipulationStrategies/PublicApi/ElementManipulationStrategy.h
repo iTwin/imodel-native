@@ -23,8 +23,6 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
     friend struct ElementPlacementStrategy;
 
     protected:
-        ElementManipulationStrategy() : T_Super() {}
-
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
@@ -48,8 +46,6 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         virtual GeometryPlacementStrategyCPtr _TryGetGeometryPlacementStrategy() const = 0;
         virtual GeometryPlacementStrategyPtr _TryGetGeometryPlacementStrategyForEdit() = 0;
 
-        virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model) = 0;
-        virtual Dgn::DgnElementPtr _FinishElement() = 0;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
 
         ELEM_PROPERTY_OVERRIDE(bool)
@@ -58,17 +54,10 @@ struct ElementManipulationStrategy : public GeometryManipulationStrategy
         ELEM_PROPERTY_OVERRIDE(DVec3d)
         ELEM_PROPERTY_OVERRIDE(DPlane3d)
         ELEM_PROPERTY_OVERRIDE(RotMatrix)
-        ELEM_PROPERTY_OVERRIDE(Dgn::DgnElementId)
-        ELEM_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
-        ELEM_PROPERTY_OVERRIDE(Dgn::ColorDef)
         ELEM_PROPERTY_OVERRIDE(Utf8String)
         ELEM_PROPERTY_OVERRIDE(bvector<double>)
         ELEM_PROPERTY_OVERRIDE(bvector<Utf8String>)
         ELEM_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
-
-    public:
-        Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model);
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement();
     };
 
 END_BUILDING_SHARED_NAMESPACE

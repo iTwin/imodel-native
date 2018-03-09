@@ -8,7 +8,7 @@
 #pragma once
 
 #include <BuildingShared/BuildingSharedMacros.h>
-#include <DgnPlatform/DgnPlatformApi.h>
+#include <Geom/GeomApi.h>
 
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryManipulationStrategyBase)
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(GeometryManipulationStrategy)

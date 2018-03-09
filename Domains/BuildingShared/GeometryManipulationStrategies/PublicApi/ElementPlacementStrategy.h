@@ -42,26 +42,16 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _IsComplete() const override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bool _CanAcceptMorePoints() const override;
 
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement();
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model);
-
         EPS_PROPERTY_OVERRIDE(bool)
         EPS_PROPERTY_OVERRIDE(int)
         EPS_PROPERTY_OVERRIDE(double)
         EPS_PROPERTY_OVERRIDE(DVec3d)
         EPS_PROPERTY_OVERRIDE(DPlane3d)
         EPS_PROPERTY_OVERRIDE(RotMatrix)
-        EPS_PROPERTY_OVERRIDE(Dgn::DgnElementId)
-        EPS_PROPERTY_OVERRIDE(Dgn::DgnElementCP)
-        EPS_PROPERTY_OVERRIDE(Dgn::ColorDef)
         EPS_PROPERTY_OVERRIDE(Utf8String)
         EPS_PROPERTY_OVERRIDE(bvector<double>)
         EPS_PROPERTY_OVERRIDE(bvector<Utf8String>)
         EPS_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
-
-    public:
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement();
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model);
     };
 
 END_BUILDING_SHARED_NAMESPACE
