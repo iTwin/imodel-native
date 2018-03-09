@@ -61,13 +61,13 @@ struct SchemaWriter final
         BentleyStatus UpdateSchemaReferences(ECN::ReferenceChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         BentleyStatus UpdateClasses(ECN::ClassChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         BentleyStatus UpdateEnumerations(ECN::ECEnumerationChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        BentleyStatus UpdateEnumeration(ECN::ECEnumerationChange& enumChanges, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
+        BentleyStatus UpdateEnumeration(ECN::ECEnumerationChange&, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
         BentleyStatus VerifyEnumeratorChanges(ECN::ECEnumerationCR oldEnum, ECN::ECEnumeratorChanges&) const;
 
         BentleyStatus UpdateKindOfQuantities(ECN::KindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        BentleyStatus UpdateKindOfQuantity(ECN::KindOfQuantityChange&, ECN::KindOfQuantityCR oldVal, ECN::KindOfQuantityCR newVal);
+        BentleyStatus UpdateKindOfQuantity(ECN::KindOfQuantityChange&, ECN::KindOfQuantityCR oldKoq, ECN::KindOfQuantityCR newKoq);
         BentleyStatus UpdatePropertyCategories(ECN::PropertyCategoryChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        BentleyStatus UpdatePropertyCategory(ECN::PropertyCategoryChange&, ECN::PropertyCategoryCR oldVal, ECN::PropertyCategoryCR newVal);
+        BentleyStatus UpdatePropertyCategory(ECN::PropertyCategoryChange&, ECN::PropertyCategoryCR oldCat, ECN::PropertyCategoryCR newCat);
         BentleyStatus UpdatePhenomena(ECN::PhenomenonChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
         BentleyStatus UpdatePhenomenon(ECN::PhenomenonChange&, ECN::PhenomenonCR oldVal, ECN::PhenomenonCR newVal);
         BentleyStatus UpdateUnitSystems(ECN::UnitSystemChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);

@@ -259,10 +259,7 @@ DbResult ECDb::Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, 
 // @bsimethod                                Affan.Khan                         03/2018
 //---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDb::IsInitialized()
-    {
-    return Impl::IsInitialized();
-    }
+bool ECDb::IsInitialized() { return Impl::IsInitialized(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle   09/2015

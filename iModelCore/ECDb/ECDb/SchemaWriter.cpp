@@ -2751,21 +2751,14 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(KindOfQuantityChanges& koqCha
             {
             KindOfQuantityCP oldKoq = oldSchema.GetKindOfQuantityCP(change.GetId());
             KindOfQuantityCP newKoq = newSchema.GetKindOfQuantityCP(change.GetId());
-            if (oldKoq == nullptr)
+            if (oldKoq == nullptr || newKoq == nullptr)
                 {
-                BeAssert(false && "Failed to find KOQ");
-                return ERROR;
-                }
-            if (newKoq == nullptr)
-                {
-                BeAssert(false && "Failed to find KOQ");
+                BeAssert(oldKoq != nullptr && newKoq != nullptr);
                 return ERROR;
                 }
 
-            if (UpdateKindOfQuantity(change, *oldKoq, *newKoq) != SUCCESS)
+            if (SUCCESS != UpdateKindOfQuantity(change, *oldKoq, *newKoq))
                 return ERROR;
-
-            continue;
             }
         }
 
@@ -2773,9 +2766,9 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantities(KindOfQuantityChanges& koqCha
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle  02/2018
+// @bsimethod                                                Krischan.Eberle  03/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdateKindOfQuantity(KindOfQuantityChange& change, ECN::KindOfQuantityCR oldVal, ECN::KindOfQuantityCR newVal)
+BentleyStatus SchemaWriter::UpdateKindOfQuantity(KindOfQuantityChange& change, ECN::KindOfQuantityCR oldKoq, ECN::KindOfQuantityCR newKoq)
     {
     if (change.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
@@ -2806,14 +2799,42 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(KindOfQuantityChange& change, E
             sqlUpdateBuilder.AddSetExp("Description", change.GetDescription().GetNew().Value().c_str());
         }
 
+    if (change.GetRelativeError().IsValid())
+        {
+        if (change.GetRelativeError().GetNew().IsNull())
+            {
+            Issues().ReportV("ECSchema Upgrade failed. Removing the RelativeError of a KindOfQuantity is not valid. A KindOfQuantity must always have a RelativeError.");
+            return ERROR;
+            }
+
+        actualChanges++;
+        sqlUpdateBuilder.AddSetExp("RelativeError", change.GetRelativeError().GetNew().Value());
+        }
+    
+    if (change.GetPresentationUnitList().IsValid())
+        {
+        actualChanges++;
+
+        if (newKoq.GetPresentationUnitList().empty())
+            sqlUpdateBuilder.AddSetToNull("PresentationUnits");
+        else
+            {
+            Utf8String presUnitsJson;
+            if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJson, m_ecdb, newKoq))
+                return ERROR;
+
+            sqlUpdateBuilder.AddSetExp("PresentationUnits", presUnitsJson.c_str());
+            }
+        }
+
     if (change.ChangesCount() > actualChanges)
         {
-        Issues().ReportV("ECSchema Upgrade failed. Changing properties of KindOfQuantity '%s' is not supported except for DisplayLabel and Description.",
-                         oldVal.GetFullName().c_str());
+        Issues().ReportV("ECSchema Upgrade failed. Changing properties of KindOfQuantity '%s' is not supported except for RelativeError, PresentationUnits, DisplayLabel and Description.",
+                         oldKoq.GetFullName().c_str());
         return ERROR;
         }
 
-    sqlUpdateBuilder.AddWhereExp("Id", oldVal.GetId().GetValue());
+    sqlUpdateBuilder.AddWhereExp("Id", oldKoq.GetId().GetValue());
     return sqlUpdateBuilder.ExecuteSql(m_ecdb);
     }
 
@@ -2852,33 +2873,27 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(PropertyCategoryChanges& ch
 
         if (change.GetState() == ChangeState::Modified)
             {
-            PropertyCategoryCP oldVal = oldSchema.GetPropertyCategoryCP(change.GetId());
-            PropertyCategoryCP newVal = newSchema.GetPropertyCategoryCP(change.GetId());
-            if (oldVal == nullptr)
+            PropertyCategoryCP oldCat = oldSchema.GetPropertyCategoryCP(change.GetId());
+            PropertyCategoryCP newCat = newSchema.GetPropertyCategoryCP(change.GetId());
+            if (oldCat == nullptr || newCat == nullptr)
                 {
-                BeAssert(false && "Failed to find PropertyCategory");
-                return ERROR;
-                }
-            if (newVal == nullptr)
-                {
-                BeAssert(false && "Failed to find PropertyCategory");
+                BeAssert(oldCat != nullptr && newCat != nullptr);
                 return ERROR;
                 }
 
-            if (UpdatePropertyCategory(change, *oldVal, *newVal) != SUCCESS)
+            if (SUCCESS != UpdatePropertyCategory(change, *oldCat, *newCat))
                 return ERROR;
-
-            continue;
             }
         }
 
     return SUCCESS;
     }
 
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle  02/2018
+// @bsimethod                                                Krischan.Eberle  03/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaWriter::UpdatePropertyCategory(PropertyCategoryChange& change, ECN::PropertyCategoryCR oldVal, ECN::PropertyCategoryCR newVal)
+BentleyStatus SchemaWriter::UpdatePropertyCategory(PropertyCategoryChange& change, ECN::PropertyCategoryCR oldCat, ECN::PropertyCategoryCR newCat)
     {
     if (change.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
@@ -2890,6 +2905,7 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(PropertyCategoryChange& chang
         }
 
     size_t actualChanges = 0;
+
     SqlUpdateBuilder sqlUpdateBuilder(TABLE_PropertyCategory);
     if (change.GetDisplayLabel().IsValid())
         {
@@ -2909,14 +2925,23 @@ BentleyStatus SchemaWriter::UpdatePropertyCategory(PropertyCategoryChange& chang
             sqlUpdateBuilder.AddSetExp("Description", change.GetDescription().GetNew().Value().c_str());
         }
 
+    if (change.GetPriority().IsValid())
+        {
+        actualChanges++;
+        if (change.GetPriority().GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("Priority");
+        else
+            sqlUpdateBuilder.AddSetExp("Priority", change.GetPriority().GetNew().Value());
+        }
+
     if (change.ChangesCount() > actualChanges)
         {
-        Issues().ReportV("ECSchema Upgrade failed. Changing properties of PropertyCategory '%s' is not supported except for DisplayLabel and Description.",
-                         oldVal.GetFullName().c_str());
+        Issues().ReportV("ECSchema Upgrade failed. Changing properties of PropertyCategory '%s' is not supported except for Priority, DisplayLabel and Description.",
+                         oldCat.GetFullName().c_str());
         return ERROR;
         }
 
-    sqlUpdateBuilder.AddWhereExp("Id", oldVal.GetId().GetValue());
+    sqlUpdateBuilder.AddWhereExp("Id", oldCat.GetId().GetValue());
     return sqlUpdateBuilder.ExecuteSql(m_ecdb);
     }
 
@@ -2928,20 +2953,13 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
     if (enumChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
-    SqlUpdateBuilder sqlUpdateBuilder(TABLE_Enumeration);
-
     if (enumChange.GetName().IsValid())
         {
-        if (enumChange.GetName().GetNew().IsNull())
-            {
-            Issues().ReportV("ECSchema Upgrade failed. ECEnumeration %s: 'Name' must always be set for an ECEnumeration.",
-                oldEnum.GetFullName().c_str());
-
-            return ERROR;
-            }
-
-        sqlUpdateBuilder.AddSetExp("Name", enumChange.GetName().GetNew().Value().c_str());
+        Issues().ReportV("ECSchema Upgrade failed. Changing the name of a ECEnumeration is not supported.");
+        return ERROR;
         }
+
+    SqlUpdateBuilder sqlUpdateBuilder(TABLE_Enumeration);
 
     if (enumChange.GetTypeName().IsValid())
         {

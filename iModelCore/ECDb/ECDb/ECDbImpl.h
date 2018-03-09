@@ -68,6 +68,7 @@ private:
         };
 
     
+    static bool s_isInitalized;
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
     std::unique_ptr<SchemaManager> m_schemaManager;
@@ -77,7 +78,6 @@ private:
     StatementCache m_sqliteStatementCache;
     BeBriefcaseBasedIdSequenceManager m_idSequenceManager;
     static const uint32_t s_instanceIdSequenceKey = 0;
-    static bool s_isInitalized;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
     mutable ClearCacheCounter m_clearCacheCounter;
