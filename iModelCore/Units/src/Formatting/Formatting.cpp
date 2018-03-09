@@ -21,7 +21,7 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //===================================================
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
+// @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NumericFormatSpec::NumericFormatSpec()
     : NumericFormatSpec(Utils::DecimalPrecisionByIndex(FormatConstant::DefaultDecimalPrecisionIndex()))
@@ -29,7 +29,7 @@ NumericFormatSpec::NumericFormatSpec()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
+// @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NumericFormatSpec::NumericFormatSpec(DecimalPrecision decimalPrecision)
     : m_roundFactor(0.0)
@@ -42,10 +42,50 @@ NumericFormatSpec::NumericFormatSpec(DecimalPrecision decimalPrecision)
     , m_decimalSeparator(FormatConstant::FPV_DecimalSeparator())
     , m_thousandsSeparator(FormatConstant::FPV_ThousandSeparator())
     , m_uomSeparator(FormatConstant::BlankString())
-    , m_statSeparator('+')
+    , m_statSeparator(FormatConstant::DefaultStopSeparator())
     , m_minWidth(0)
     {
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    David Fox-Rabinovitz
+//---------------+---------------+---------------+---------------+---------------+-------
+FormatTraits NumericFormatSpec::SetTraitsBit(FormatTraits traits, FormatTraits bit, bool setTo)
+    {
+    std::underlying_type<FormatTraits>::type traitsBitField = static_cast<std::underlying_type<FormatTraits>::type>(traits);
+    if (setTo)
+        traitsBitField |= static_cast<std::underlying_type<FormatTraits>::type>(bit);
+    else
+        traitsBitField &= ~static_cast<std::underlying_type<FormatTraits>::type>(bit);
+    return static_cast<FormatTraits>(traitsBitField);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+void NumericFormatSpec::SetTraitsBit(FormatTraits bit, bool setTo)
+    {
+    m_formatTraits = NumericFormatSpec::SetTraitsBit(m_formatTraits, bit, setTo);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+bool NumericFormatSpec::GetTraitsBit(FormatTraits traits, FormatTraits bit)
+    {
+    return 0 != (static_cast<std::underlying_type<FormatTraits>::type>(traits)
+        & static_cast<std::underlying_type<FormatTraits>::type>(bit));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+bool NumericFormatSpec::GetTraitsBit(FormatTraits bit) const
+    {
+    return NumericFormatSpec::GetTraitsBit(m_formatTraits, bit);
+    }
+
 
 //===================================================
 //
@@ -877,16 +917,16 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
     return majT;
     }
 
-const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
+const NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
     {
-    static NumericFormatSpec nfs = NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, FormatConstant::DefaultFormatTraits(), FormatConstant::DefaultDecimalPrecisionIndex());
-    return &nfs;
+    static NumericFormatSpec nfs;
+    return nfs;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
- Utf8String NumericFormatSpec::FormatInteger(int ival)
+ Utf8String NumericFormatSpec::FormatInteger(int32_t ival)
     {
         char buf[64];
         FormatInteger(ival, buf, sizeof(buf));
@@ -965,8 +1005,7 @@ const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
-
- Utf8String NumericFormatSpec::ByteToBinaryText(unsigned char n)
+ Utf8String NumericFormatSpec::ByteToBinaryText(Byte n)
  {
      char buf[64];
      FormatBinaryByte(n, buf, sizeof(buf));
@@ -976,7 +1015,7 @@ const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- Utf8String NumericFormatSpec::ShortToBinaryText(short int n, bool useSeparator)
+ Utf8String NumericFormatSpec::Int16ToBinaryText(int16_t n, bool useSeparator)
  {
      char buf[64];
      FormatBinaryShort(n, buf, sizeof(buf), useSeparator);
@@ -986,7 +1025,7 @@ const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- Utf8String NumericFormatSpec::IntToBinaryText(int n, bool useSeparator)
+ Utf8String NumericFormatSpec::Int32ToBinaryText(int32_t n, bool useSeparator)
  {
      char buf[80];
      FormatBinaryInt(n, buf, sizeof(buf), useSeparator);
@@ -996,10 +1035,10 @@ const NumericFormatSpecCP NumericFormatSpec::DefaultFormat()
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
- Utf8String NumericFormatSpec::DoubleToBinaryText(double x, bool useSeparator)
+ Utf8String NumericFormatSpec::DoubleToBinaryText(double n, bool useSeparator)
  {
      char buf[80];
-     FormatBinaryDouble(x, buf, sizeof(buf), useSeparator);
+     FormatBinaryDouble(n, buf, sizeof(buf), useSeparator);
      return Utf8String(buf);
  }
 
@@ -1176,7 +1215,7 @@ NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
+// @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 bool StdFormatSet::IsFormatDefined(Utf8CP name, Utf8CP alias)
     {

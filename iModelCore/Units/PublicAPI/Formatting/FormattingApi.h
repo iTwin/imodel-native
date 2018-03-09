@@ -302,7 +302,6 @@ private:
     double RoundedValue(double dval, double round) const;
     int TrimTrailingZeroes(Utf8P buf, int index) const;
     size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
-    void LoadJson(Json::Value jval);
 
     // TODO: Attempt to remove these methods from the private API===============
     int FormatInteger(int n, Utf8P bufOut, int bufLen);
@@ -324,29 +323,29 @@ private:
     Utf8String FormatIntegerToString(int n, int minSize) const;
     void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
     void DefaultInit(size_t precision);
+    bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
+    static void TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits);
     // !TODO====================================================================
 
 public:
     // TODO: Attempt to remove these methods from the public API================
-    UNITS_EXPORT NumericFormatSpec(Json::Value jval);
-    UNITS_EXPORT NumericFormatSpec(Utf8CP jsonString);
-    NumericFormatSpec(NumericFormatSpecCP other) : NumericFormatSpec(*other) {};
-    UNITS_EXPORT void Clone(NumericFormatSpecCR other) { *this = other; }
     UNITS_EXPORT int static FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
     // !TODO====================================================================
 
     UNITS_EXPORT NumericFormatSpec();
     UNITS_EXPORT NumericFormatSpec(DecimalPrecision decimalPrecision);
+    UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     NumericFormatSpec(NumericFormatSpecCR other) = default;
     ~NumericFormatSpec() = default;
 
     NumericFormatSpecR operator=(NumericFormatSpecCR other) = default;
 
-    UNITS_EXPORT static const NumericFormatSpecCP DefaultFormat();
     UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
-    
+
     UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
     UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
+
+    UNITS_EXPORT static const NumericFormatSpecCR DefaultFormat();
 
     //======================================
     // Data Member Setters/Getters
@@ -385,7 +384,6 @@ public:
 
     void SetThousandSeparator(char sep) { m_thousandsSeparator = sep; }
     Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
-    size_t GetThousandSeparatorSize() const { return sizeof(m_thousandsSeparator); }
 
     void SetUomSeparator(Utf8CP sep) { m_uomSeparator = Utf8String(sep); }
     Utf8CP GetUomSeparator(Utf8CP def = nullptr) const { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
@@ -399,56 +397,57 @@ public:
     //======================================
     // Format Traits Bit Setters/Getters
     //======================================
-    bool CheckTraitsBit(FormatTraits word, FormatTraits bit) const { return ((static_cast<int>(word) & static_cast<int>(bit)) != 0); }
-    bool CheckTraitsBit(FormatTraits bit) const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(bit)) != 0); }
+    UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits traits, FormatTraits bit, bool setTo);
+    UNITS_EXPORT static bool GetTraitsBit(FormatTraits traits, FormatTraits bit);
+    UNITS_EXPORT void SetTraitsBit(FormatTraits bit, bool setTo);
+    UNITS_EXPORT bool GetTraitsBit(FormatTraits bit) const;
     UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose=false) const;
-    UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits bit, FormatTraits traits, bool set);
-    UNITS_EXPORT static void TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits);
+    
+    UNITS_EXPORT void SetFormatTraitsFromJson(JsonValueCR jval);
+    UNITS_EXPORT Json::Value FormatTraitsToJson(bool verbose) const;
 
-    void SetUseLeadingZeroes(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::LeadingZeroes, m_formatTraits, use); }
-    bool IsUseLeadingZeroes() const { return CheckTraitsBit(FormatTraits::LeadingZeroes); }
+    void SetUseLeadingZeroes(bool setTo) { SetTraitsBit(FormatTraits::LeadingZeroes, setTo); }
+    bool IsUseLeadingZeroes() const { return GetTraitsBit(FormatTraits::LeadingZeroes); }
 
-    void SetKeepTrailingZeroes(bool keep) {m_formatTraits = SetTraitsBit(FormatTraits::TrailingZeroes, m_formatTraits, keep);}
-    bool IsKeepTrailingZeroes() const { return CheckTraitsBit(FormatTraits::TrailingZeroes);}
+    void SetKeepTrailingZeroes(bool setTo) {SetTraitsBit(FormatTraits::TrailingZeroes, setTo);}
+    bool IsKeepTrailingZeroes() const { return GetTraitsBit(FormatTraits::TrailingZeroes);}
 
-    void SetKeepDecimalPoint(bool use) {m_formatTraits = SetTraitsBit(FormatTraits::KeepDecimalPoint, m_formatTraits, use);}
-    bool IsKeepDecimalPoint() const { return CheckTraitsBit(FormatTraits::KeepDecimalPoint); }
+    void SetKeepDecimalPoint(bool setTo) { SetTraitsBit(FormatTraits::KeepDecimalPoint, setTo);}
+    bool IsKeepDecimalPoint() const { return GetTraitsBit(FormatTraits::KeepDecimalPoint); }
 
-    void SetKeepSingleZero(bool use) {m_formatTraits = SetTraitsBit(FormatTraits::KeepSingleZero, m_formatTraits, use);}
-    bool IsKeepSingleZero() const { return CheckTraitsBit(FormatTraits::KeepSingleZero); }
+    void SetKeepSingleZero(bool setTo) { SetTraitsBit(FormatTraits::KeepSingleZero, setTo);}
+    bool IsKeepSingleZero() const { return GetTraitsBit(FormatTraits::KeepSingleZero); }
 
-    void SetExponentZero(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::ExponentZero, m_formatTraits, use); }
-    bool IsExponentZero() const { return CheckTraitsBit(FormatTraits::ExponentZero); }
+    void SetExponentZero(bool setTo) { SetTraitsBit(FormatTraits::ExponentZero, setTo); }
+    bool IsExponentZero() const { return GetTraitsBit(FormatTraits::ExponentZero); }
 
-    void SetZeroEmpty(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::ZeroEmpty, m_formatTraits, use); }
-    bool IsZeroEmpty() const { return CheckTraitsBit(FormatTraits::ZeroEmpty); }
+    void SetZeroEmpty(bool setTo) { SetTraitsBit(FormatTraits::ZeroEmpty, setTo); }
+    bool IsZeroEmpty() const { return GetTraitsBit(FormatTraits::ZeroEmpty); }
 
-    void SetUse1000Separator(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::Use1000Separator, m_formatTraits, use); }
-    bool IsUse1000Separator() const { return CheckTraitsBit(FormatTraits::Use1000Separator); }
+    void SetUse1000Separator(bool setTo) { SetTraitsBit(FormatTraits::Use1000Separator, setTo); }
+    bool IsUse1000Separator() const { return GetTraitsBit(FormatTraits::Use1000Separator); }
 
-    void SetApplyRounding(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::ApplyRounding, m_formatTraits, use); }
-    bool IsApplyRounding() const { return CheckTraitsBit(FormatTraits::ApplyRounding); }
+    void SetApplyRounding(bool setTo) { SetTraitsBit(FormatTraits::ApplyRounding, setTo); }
+    bool IsApplyRounding() const { return GetTraitsBit(FormatTraits::ApplyRounding); }
 
-    void SetFractionDash(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::FractionDash, m_formatTraits, use); }
-    bool IsFractionDash() const { return CheckTraitsBit(FormatTraits::FractionDash); }
+    void SetFractionDash(bool setTo) { SetTraitsBit(FormatTraits::FractionDash, setTo); }
+    bool IsFractionDash() const { return GetTraitsBit(FormatTraits::FractionDash); }
 
-    void SetUseFractSymbol(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::UseFractSymbol, m_formatTraits, use); }
-    bool IsUseFractSymbol() const { return CheckTraitsBit(FormatTraits::UseFractSymbol); }
+    void SetUseFractSymbol(bool setTo) { SetTraitsBit(FormatTraits::UseFractSymbol, setTo); }
+    bool IsUseFractSymbol() const { return GetTraitsBit(FormatTraits::UseFractSymbol); }
 
-    void SetAppendUnit(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::AppendUnitName, m_formatTraits, use); }
-    bool IsAppendUnit() const { return CheckTraitsBit(FormatTraits::AppendUnitName); }
-
-    bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
+    void SetAppendUnit(bool setTo) { SetTraitsBit(FormatTraits::AppendUnitName, setTo); }
+    bool IsAppendUnit() const { return GetTraitsBit(FormatTraits::AppendUnitName); }
 
     //======================================
     // Formatting Methods
     //======================================
-    UNITS_EXPORT Utf8String ByteToBinaryText(unsigned char n);
-    UNITS_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
-    UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
-    UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
+    UNITS_EXPORT Utf8String ByteToBinaryText(Byte n);
+    UNITS_EXPORT Utf8String Int16ToBinaryText(int16_t n, bool useSeparator);
+    UNITS_EXPORT Utf8String Int32ToBinaryText(int32_t n, bool useSeparator);
+    UNITS_EXPORT Utf8String DoubleToBinaryText(double n, bool useSeparator);
 
-    UNITS_EXPORT Utf8String FormatInteger(int ival);
+    UNITS_EXPORT Utf8String FormatInteger(int32_t ival);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
 
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
@@ -456,8 +455,6 @@ public:
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
 
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
-    UNITS_EXPORT Json::Value JsonFormatTraits(bool verbose) const;
-    UNITS_EXPORT FormatTraits TraitsFromJson(JsonValueCR jval);
     };
 
 //=======================================================================================

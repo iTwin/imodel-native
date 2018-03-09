@@ -155,7 +155,7 @@ TEST_F(FormatBinaryTest, FormatByte)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatBinaryTest, FormatShort)
+TEST_F(FormatBinaryTest, FormatInt16)
     {
     NumericFormatSpec nfsComma;
     nfsComma.SetThousandSeparator(',');
@@ -164,23 +164,23 @@ TEST_F(FormatBinaryTest, FormatShort)
     nfsPlus.SetThousandSeparator('+');
     nfsPlus.SetUse1000Separator(true);
 
-    EXPECT_STREQ("0000000000000000", nfsComma.ShortToBinaryText(FormatBinaryTest::TestShort::allBitsZero, false).c_str());
-    EXPECT_STREQ("00000000,00000000", nfsComma.ShortToBinaryText(FormatBinaryTest::TestShort::allBitsZero, true).c_str());
-    EXPECT_STREQ("00000000+00000000", nfsPlus.ShortToBinaryText(FormatBinaryTest::TestShort::allBitsZero, true).c_str());
+    EXPECT_STREQ("0000000000000000", nfsComma.Int16ToBinaryText(FormatBinaryTest::TestShort::allBitsZero, false).c_str());
+    EXPECT_STREQ("00000000,00000000", nfsComma.Int16ToBinaryText(FormatBinaryTest::TestShort::allBitsZero, true).c_str());
+    EXPECT_STREQ("00000000+00000000", nfsPlus.Int16ToBinaryText(FormatBinaryTest::TestShort::allBitsZero, true).c_str());
 
-    EXPECT_STREQ("1111111111111111", nfsComma.ShortToBinaryText(FormatBinaryTest::TestShort::allBitsOne, false).c_str());
-    EXPECT_STREQ("11111111,11111111", nfsComma.ShortToBinaryText(FormatBinaryTest::TestShort::allBitsOne, true).c_str());
-    EXPECT_STREQ("11111111+11111111", nfsPlus.ShortToBinaryText(FormatBinaryTest::TestShort::allBitsOne, true).c_str());
+    EXPECT_STREQ("1111111111111111", nfsComma.Int16ToBinaryText(FormatBinaryTest::TestShort::allBitsOne, false).c_str());
+    EXPECT_STREQ("11111111,11111111", nfsComma.Int16ToBinaryText(FormatBinaryTest::TestShort::allBitsOne, true).c_str());
+    EXPECT_STREQ("11111111+11111111", nfsPlus.Int16ToBinaryText(FormatBinaryTest::TestShort::allBitsOne, true).c_str());
 
-    EXPECT_STREQ("0101101010010110", nfsComma.ShortToBinaryText(FormatBinaryTest::TestShort::testVal, false).c_str());
-    EXPECT_STREQ("01011010,10010110", nfsComma.ShortToBinaryText(FormatBinaryTest::TestShort::testVal, true).c_str());
-    EXPECT_STREQ("01011010+10010110", nfsPlus.ShortToBinaryText(FormatBinaryTest::TestShort::testVal, true).c_str());
+    EXPECT_STREQ("0101101010010110", nfsComma.Int16ToBinaryText(FormatBinaryTest::TestShort::testVal, false).c_str());
+    EXPECT_STREQ("01011010,10010110", nfsComma.Int16ToBinaryText(FormatBinaryTest::TestShort::testVal, true).c_str());
+    EXPECT_STREQ("01011010+10010110", nfsPlus.Int16ToBinaryText(FormatBinaryTest::TestShort::testVal, true).c_str());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatBinaryTest, FormatInt)
+TEST_F(FormatBinaryTest, FormatInt32)
     {
     FAIL() << "TODO: Untested methods are failing methods.";
     }
@@ -651,8 +651,6 @@ TEST_F(FormatDoubleTest, FormatDoubleFormatTraitsTests)
     EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
     EXPECT_STREQ("100501.125", nfs.FormatDouble(testValPos).c_str());
     EXPECT_STREQ("-100501.125", nfs.FormatDouble(testValNeg).c_str());
-
-    FAIL() << "TODO: Test with the buffer/round version.";
     }
 
 //---------------------------------------------------------------------------------------

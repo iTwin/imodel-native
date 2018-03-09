@@ -914,64 +914,7 @@ bvector<TraitJsonKeyMap> TraitJsonKeyMap::TraitJsonKeySet()
         }
     return vec;
     }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestFixture::FormattingTraitsTest()
-    {
-    bvector<TraitJsonKeyMap> vec = TraitJsonKeyMap::TraitJsonKeySet();
-    bvector<string> pos;
-    bvector<string> neg;
 
-    pos.push_back("{\"TrailZeroes\":\"true\"}");
-    neg.push_back("{\"TrailZeroes\":\"false\"}");
-    pos.push_back("{\"LeadZeroes\":\"true\"}");
-    neg.push_back("{\"LeadZeroes\":\"false\"}");
-    pos.push_back("{\"KeepDecPnt\":\"true\"}");
-    neg.push_back("{\"KeepDecPnt\":\"false\"}");
-    pos.push_back("{\"KeepSingleZero\":\"true\"}");
-    neg.push_back("{\"KeepSingleZero\":\"false\"}");
-    pos.push_back("{\"ExponentZero\":\"true\"}");
-    neg.push_back("{\"ExponentZero\":\"false\"}");
-    pos.push_back("{\"ZeroEmpty\":\"true\"}");
-    neg.push_back("{\"ZeroEmpty\":\"false\"}");
-    pos.push_back("{\"Use1000Separator\":\"true\"}");
-    neg.push_back("{\"Use1000Separator\":\"false\"}");
-    pos.push_back("{\"ApplyRounding\":\"true\"}");
-    neg.push_back("{\"ApplyRounding\":\"false\"}");
-    pos.push_back("{\"AppendUnitName\":\"true\"}");
-    neg.push_back("{\"AppendUnitName\":\"false\"}");
-    pos.push_back("{\"UseFractSymbol\":\"true\"}");
-    neg.push_back("{\"UseFractSymbol\":\"false\"}");
-    pos.push_back("{\"FractionDash\":\"true\"}");
-    neg.push_back("{\"FractionDash\":\"false\"}");
-
-    TraitJsonKeyMap* map;
-    Json::Value val;
-    FormatTraits traits = FormatTraits::DefaultTraits;
-    for(int i =0; i < vec.size(); i++)
-        {
-         map = &vec[i];
-         traits = NumericFormatSpec::SetTraitsBit(map->GetTrait(), traits, true);
-         NumericFormatSpec::TraitsBitToJsonKey(val, map->GetKey(), map->GetTrait(), traits);
-         EXPECT_STREQ (pos[i].c_str(), val.ToString().c_str());
-         //LOG.infov("Bit %s set: %s", map->GetKey(), val.ToString().c_str());
-         traits = NumericFormatSpec::SetTraitsBit(map->GetTrait(), traits, false);
-         NumericFormatSpec::TraitsBitToJsonKey(val, map->GetKey(), map->GetTrait(), traits);
-         EXPECT_STREQ (neg[i].c_str(), val.ToString().c_str());
-         //LOG.infov("Bit %s drop: %s", map->GetKey(), val.ToString().c_str());      
-         val.clear();
-         traits = FormatTraits::DefaultTraits;
-        }
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestFixture::FormattingSpecTraitsTest(Utf8CP testName, NumericFormatSpecCR spec, bool verbose)
-    {
-     Json::Value val = spec.JsonFormatTraits(verbose);
-     LOG.infov("Test %s json: %s", testName, val.ToString().c_str());
-    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------

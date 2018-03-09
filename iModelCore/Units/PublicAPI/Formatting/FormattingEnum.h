@@ -174,7 +174,7 @@ enum class PresentationType
 //=======================================================================================
 // @bsienum
 //=======================================================================================
-enum class FormatTraits : int
+enum class FormatTraits : int32_t
     {
     DefaultTraits    = 0x000, // No special traits. This value is being used only for initializing.
     LeadingZeroes    = 0x001, // Indicates that one or more insignificant zeroes are to be added in front of digital expression.

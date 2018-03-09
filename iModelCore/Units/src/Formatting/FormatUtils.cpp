@@ -1593,7 +1593,7 @@ void NamedFormatSpec::Clone(NamedFormatSpecCR other)
     m_alias = other.m_alias;
     m_description = other.m_description;
     m_displayLabel = other.m_displayLabel;
-    m_numericSpec.Clone(other.m_numericSpec);
+    m_numericSpec = other.m_numericSpec;
     m_compositeSpec.Clone(other.m_compositeSpec);
     m_specType = other.m_specType;
     m_problem.UpdateProblemCode(other.m_problem.GetProblemCode());
@@ -1608,7 +1608,7 @@ void NamedFormatSpec::Clone(NamedFormatSpecCP other)
     m_alias = other->m_alias;
     m_description = other->m_description;
     m_displayLabel = other->m_displayLabel;
-    m_numericSpec.Clone(other->m_numericSpec);
+    m_numericSpec = other->m_numericSpec;
     m_compositeSpec.Clone(other->m_compositeSpec);
     m_specType = other->m_specType;
     m_problem.UpdateProblemCode(other->m_problem.GetProblemCode());

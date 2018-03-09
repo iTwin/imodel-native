@@ -39,34 +39,34 @@ size_t StdFormatSet::StdInit()
         FormatTraits formatTraits,
         size_t const precision,
         Utf8CP uomSeparator = nullptr
-    ) -> NumericFormatSpecP
+    ) -> NumericFormatSpec
         {
-        NumericFormatSpecP nfs = new NumericFormatSpec;
+        NumericFormatSpec nfs;
 
         // Replacement for NumericFormatSpec::Init
-        nfs->SetRoundingFactor(0.0);
-        nfs->SetPresentationType(presentationType);
-        nfs->SetSignOption(signOption);
-        nfs->SetFormatTraits(formatTraits);
-        nfs->SetFractionalBarType(FractionBarType::Diagonal);
+        nfs.SetRoundingFactor(0.0);
+        nfs.SetPresentationType(presentationType);
+        nfs.SetSignOption(signOption);
+        nfs.SetFormatTraits(formatTraits);
+        nfs.SetFractionalBarType(FractionBarType::Diagonal);
         if (PresentationType::Fractional == presentationType)
             {
-            nfs->SetDecimalPrecision(FormatConstant::DefaultDecimalPrecision());
-            nfs->SetFractionaPrecision(Utils::FractionalPrecisionByDenominator(precision));
+            nfs.SetDecimalPrecision(FormatConstant::DefaultDecimalPrecision());
+            nfs.SetFractionaPrecision(Utils::FractionalPrecisionByDenominator(precision));
             }
         else
             {
-            nfs->SetDecimalPrecision(Utils::DecimalPrecisionByIndex(precision));
-            nfs->SetFractionaPrecision(FormatConstant::DefaultFractionalPrecision());
+            nfs.SetDecimalPrecision(Utils::DecimalPrecisionByIndex(precision));
+            nfs.SetFractionaPrecision(FormatConstant::DefaultFractionalPrecision());
             }
-        nfs->SetDecimalSeparator(FormatConstant::FPV_DecimalSeparator());
-        nfs->SetThousandSeparator(FormatConstant::FPV_ThousandSeparator());
-        nfs->SetUomSeparator(FormatConstant::BlankString());
-        nfs->SetStopSeparator('+');
-        nfs->SetMinWidth(0);
+        nfs.SetDecimalSeparator(FormatConstant::FPV_DecimalSeparator());
+        nfs.SetThousandSeparator(FormatConstant::FPV_ThousandSeparator());
+        nfs.SetUomSeparator(FormatConstant::BlankString());
+        nfs.SetStopSeparator('+');
+        nfs.SetMinWidth(0);
 
         if (uomSeparator)
-            nfs->SetUomSeparator(uomSeparator);
+            nfs.SetUomSeparator(uomSeparator);
         return nfs;
         };
 
@@ -74,7 +74,7 @@ size_t StdFormatSet::StdInit()
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
     FormatTraits traitsU = FormatConstant::UnitizedFormatTraits();
     //AddFormat("DefaultReal", CreateNewNumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()), "real");
-    AddFormat(FormatConstant::DefaultFormatName(), new NumericFormatSpec(NumericFormatSpec::DefaultFormat()), FormatConstant::DefaultFormatAlias());
+    AddFormat(FormatConstant::DefaultFormatName(), NumericFormatSpec::DefaultFormat(), FormatConstant::DefaultFormatAlias());
     AddFormat("DefaultRealU", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, FormatConstant::DefaultDecimalPrecisionIndex()), "realu");
     AddFormat("Real2", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2), "real2");
     AddFormat("Real3", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 3), "real3");
@@ -245,7 +245,7 @@ void StdFormatSet::CustomInit()
 //
 //===================================================
 
-void NumericFormatSpec::LoadJson(Json::Value jval)
+NumericFormatSpec::NumericFormatSpec(Json::Value jval)
     {
     DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex());
     if (jval.empty())
@@ -307,29 +307,20 @@ void NumericFormatSpec::LoadJson(Json::Value jval)
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
             {
-            TraitsFromJson(val);
+            SetFormatTraitsFromJson(val);
             }
         } // for
     }
 
-NumericFormatSpec::NumericFormatSpec(Json::Value jval)
-    {
-    LoadJson(jval);
-    }
-
-NumericFormatSpec::NumericFormatSpec(Utf8CP jsonString)
-    {
-    Json::Value jval (Json::objectValue);
-    Json::Reader::Parse(jsonString, jval);
-    LoadJson(jval);
-    }
-
-FormatTraits NumericFormatSpec::TraitsFromJson(JsonValueCR jval)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    David Fox-Rabinovitz
+//---------------+---------------+---------------+---------------+---------------+-------
+void NumericFormatSpec::SetFormatTraitsFromJson(JsonValueCR jval)
     {
     Utf8CP paramName;
     Utf8String str;
     if (jval.empty())
-        return m_formatTraits;
+        return;
 
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
@@ -358,26 +349,14 @@ FormatTraits NumericFormatSpec::TraitsFromJson(JsonValueCR jval)
         else if (BeStringUtilities::StricmpAscii(paramName, json_AppendUnitName()) == 0)
             SetAppendUnit(val.asBool());
         }
-    return m_formatTraits;
-    }
-
-FormatTraits NumericFormatSpec::SetTraitsBit(FormatTraits bit, FormatTraits traits, bool set)
-    {
-    size_t temp = static_cast<int>(traits);
-
-    if (set)
-        temp |= static_cast<int>(bit);
-    else
-        temp &= ~static_cast<int>(bit);
-    return  static_cast<FormatTraits>(temp);
     }
 
 void NumericFormatSpec::TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose) const
     {
     if (ref == nullptr)
         verbose = true;
-    if ((nullptr == ref) || !FormatConstant::IsBoolEqual(CheckTraitsBit(bit), CheckTraitsBit(*ref, bit)))  //.IsKeepTrailingZeroes())
-        outValue[bitIndex] = FormatConstant::BoolText(CheckTraitsBit(bit));
+    if ((nullptr == ref) || !FormatConstant::IsBoolEqual(GetTraitsBit(bit), GetTraitsBit(*ref, bit)))  //.IsKeepTrailingZeroes())
+        outValue[bitIndex] = FormatConstant::BoolText(GetTraitsBit(bit));
     }
 
 void NumericFormatSpec::TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits)
@@ -385,7 +364,7 @@ void NumericFormatSpec::TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex,
     outValue[bitIndex] = FormatConstant::BoolText((static_cast<int>(traits) & static_cast<int>(bit)) != 0);
     }
 
-Json::Value NumericFormatSpec::JsonFormatTraits(bool verbose) const
+Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
     {
     Json::Value jTraits;
     FormatTraits ref = FormatConstant::DefaultFormatTraits();
@@ -422,7 +401,7 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
     if (verbose || m_fractPrecision != defSpec.m_fractPrecision)
         jNFC[json_fractPrec()] = Utils::FractionalPrecisionDenominator(m_fractPrecision);
     if (verbose || m_formatTraits != defSpec.m_formatTraits)
-        jNFC[json_formatTraits()] = JsonFormatTraits(verbose);
+        jNFC[json_formatTraits()] = FormatTraitsToJson(verbose);
     if (verbose || m_barType != defSpec.m_barType)
         jNFC[json_barType()] = Utils::FractionBarName(m_barType);
     if (verbose || m_decimalSeparator != defSpec.m_decimalSeparator)
