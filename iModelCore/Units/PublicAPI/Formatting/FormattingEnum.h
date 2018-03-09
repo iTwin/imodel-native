@@ -511,9 +511,9 @@ struct Utils
     UNITS_EXPORT static Utf8Char GetFirstSignificantChar(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetLastSignificantChar(Utf8CP str);
     UNITS_EXPORT static bool IsJsonCandidate(Utf8CP str);
-	UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
-	UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
-	UNITS_EXPORT static Utf8String GetCurrentGrouping();
+    UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
+    UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
+    UNITS_EXPORT static Utf8String GetCurrentGrouping();
     //#endif
     };
 

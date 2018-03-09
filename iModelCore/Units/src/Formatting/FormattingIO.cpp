@@ -135,14 +135,14 @@ size_t StdFormatSet::StdInit()
     AddFormat("Fractional8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), "fract8");
     AddFormat("Fractional16", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 16), "fract16");
     AddFormat("Fractional32", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 32), "fract32");
-	AddFormat("Fractional64", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 64), "fract64");
+    AddFormat("Fractional64", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 64), "fract64");
     AddFormat("Fractional128", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 128), "fract128");
 
     AddFormat("Fractional4U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 4), "fract4u");
     AddFormat("Fractional8U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 8), "fract8u");
     AddFormat("Fractional16U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 16), "fract16u");
     AddFormat("Fractional32U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 32), "fract32u");
-	AddFormat("Fractional32U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 64), "fract64u");
+    AddFormat("Fractional32U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 64), "fract64u");
     AddFormat("Fractional128U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 128), "fract128u");
 
     BEU::UnitCP arcDeg = m_unitsRegistry->LookupUnit("ARC_DEG");
