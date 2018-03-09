@@ -8,7 +8,7 @@
 #include "IntegrationTestsBase.h"
 #include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <BeHttp/ProxyHttpHandler.h>
-#include "../FakeServer/MockIMHubHttpHandler.h"
+#include <WebServices/FakeServer/MockIMHubHttpHandler.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_IMODELHUB

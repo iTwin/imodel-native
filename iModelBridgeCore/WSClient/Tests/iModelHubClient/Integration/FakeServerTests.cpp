@@ -1,10 +1,10 @@
 #include "Helpers.h"
-#include "../FakeServer/FakeServer.h"
+#include <WebServices\FakeServer\FakeServer.h>
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include "IntegrationTestsBase.h"
-#include "../FakeServer/MockIMHubHttpHandler.h"
+#include <WebServices\FakeServer\MockIMHubHttpHandler.h>
 #include <WebServices\iModelHub\Utils.h>
 #include <BeXml/BeXml.h>
 

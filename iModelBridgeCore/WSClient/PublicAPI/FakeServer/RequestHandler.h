@@ -1,16 +1,16 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/iModelHubClient/FakeServer/RequestHandler.h $
+|     $Source: PublicAPI/FakeServer/RequestHandler.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
-#include "../Common.h"
+//__PUBLISH_SECTION_START__
 #include "FakeServer.h"
+#include <BeHttp/HttpRequest.h>
+#include <BeHttp/HttpResponse.h>
 
-BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 USING_NAMESPACE_BENTLEY_HTTP
 
 class RequestHandler
@@ -42,4 +42,3 @@ class RequestHandler
 
 
     };
-END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

@@ -234,6 +234,9 @@
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp" />
+	<ClCompile Include="FakeServer\MockIMHubHttpHandler.cpp" />
+	<ClCompile Include="FakeServer\RequestHandler.cpp" />
+	<ClCompile Include="FakeServer\FakeServer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CacheNavigationTask.h" />
@@ -469,6 +472,9 @@
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.h" />
+	<ClInclude Include="PublicAPI\FakeServer\RequestHandler.h" />
+    <ClInclude Include="PublicAPI\FakeServer\FakeServer.h" />
+    <ClInclude Include="PublicAPI\FakeServer\MockIMHubHttpHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
