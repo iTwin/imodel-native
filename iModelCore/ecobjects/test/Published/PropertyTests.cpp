@@ -1061,7 +1061,7 @@ TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     
     ECUnitCP mmUnit = unitsSchema.GetUnitCP("MM");
     EXPECT_NE(nullptr, mmUnit);
-    EXPECT_TRUE(koq->SetPersistenceUnit(*mmUnit, "DefaultReal"));
+    EXPECT_TRUE(koq->SetPersistenceUnit(*mmUnit, Formatting::StdFormatSet::FindFormatSpec("DefaultReal")));
 
     PrimitiveECPropertyP primProp;
     EC_EXPECT_SUCCESS(entity->CreatePrimitiveProperty(primProp, "TestPrimProp"));

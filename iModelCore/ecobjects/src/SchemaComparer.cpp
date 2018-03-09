@@ -1373,6 +1373,7 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
 
     Utf8String oldPersUnitStr = oldValue.GetPersistenceUnit().ToText(false);
     Utf8String newPersUnitStr = newValue.GetPersistenceUnit().ToText(false);
+    
     if (!oldPersUnitStr.Equals(newPersUnitStr))
         change.GetPersistenceUnit().SetValue(oldPersUnitStr, newPersUnitStr);
 

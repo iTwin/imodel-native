@@ -1025,20 +1025,20 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
 
     if (kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newUnit))
         {
-        newKOQ->SetPersistenceUnit(*newUnit, "DefaultRealU");
+        newKOQ->SetPersistenceUnit(*newUnit, Formatting::StdFormatSet::FindFormatSpec("DefaultRealU"));
         newKOQ->SetRelativeError(1e-4);
         }
     else
         {
-        newKOQ->SetPersistenceUnit((ECUnitCR) *baseKOQ->GetPersistenceUnit().GetUnit(), *baseKOQ->GetPersistenceUnit().GetNamedFormatSpec());
+        newKOQ->SetPersistenceUnit((ECUnitCR) *baseKOQ->GetPersistenceUnit().GetUnit(), baseKOQ->GetPersistenceUnit().GetNamedFormatSpec());
         newKOQ->SetRelativeError(baseKOQ->GetRelativeError());
         persistenceUnitChanged = true;
         }
 
     if (nullptr != newDisplayUnit)
-        newKOQ->AddPresentationUnit(*newDisplayUnit, "DefaultRealU");
+        newKOQ->AddPresentationUnit(*newDisplayUnit, Formatting::StdFormatSet::FindFormatSpec("DefaultRealU"));
     else if (persistenceUnitChanged)
-        newKOQ->AddPresentationUnit(*originalUnit, "DefaultRealU");
+        newKOQ->AddPresentationUnit(*originalUnit, Formatting::StdFormatSet::FindFormatSpec("DefaultRealU"));
 
     return ECObjectsStatus::Success;
     }
