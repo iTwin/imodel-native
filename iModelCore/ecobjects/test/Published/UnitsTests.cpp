@@ -205,6 +205,23 @@ TEST_F(UnitsTests, StandaloneSchemaChildECUnit)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitsTests, AllUnitsInStandardUnitsSchemaHaveValidDefinitions)
+    {
+    ECSchemaPtr schema = StandardUnitsHelper::GetSchema();
+
+    bvector<Units::UnitCP> allUnits;
+    schema->GetUnitsContext().AllUnits(allUnits);
+
+    for(auto const& unit: allUnits)
+        {
+        Utf8StringCR expression = ((ECUnitCP)unit)->GetParsedUnitExpression();
+        ASSERT_FALSE(expression.empty());
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                    02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
