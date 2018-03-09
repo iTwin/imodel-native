@@ -1515,14 +1515,26 @@ BentleyStatus SchemaComparer::CompareUnit(UnitChange& change, ECUnitCR oldVal, E
     if (!oldVal.GetDefinition().EqualsIAscii(newVal.GetDefinition()))
         change.GetDefinition().SetValue(oldVal.GetDefinition(), newVal.GetDefinition());
 
-    if (oldVal.GetNumerator() != newVal.GetNumerator())
+    if (oldVal.HasNumerator() && newVal.HasNumerator() && oldVal.GetNumerator() != newVal.GetNumerator())
         change.GetNumerator().SetValue(oldVal.GetNumerator(), newVal.GetNumerator());
+    else if(!oldVal.HasNumerator() && newVal.HasNumerator())
+        change.GetNumerator().SetValue(ValueId::New, newVal.GetNumerator());
+    else if (oldVal.HasNumerator() && !newVal.HasNumerator())
+        change.GetNumerator().SetValue(ValueId::Deleted, oldVal.GetNumerator());
 
-    if (oldVal.GetDenominator() != newVal.GetDenominator())
+    if (oldVal.HasDenominator() && newVal.HasDenominator() && oldVal.GetDenominator() != newVal.GetDenominator())
         change.GetDenominator().SetValue(oldVal.GetDenominator(), newVal.GetDenominator());
+    else if (!oldVal.HasDenominator() && newVal.HasDenominator())
+        change.GetDenominator().SetValue(ValueId::New, newVal.GetDenominator());
+    else if (oldVal.HasDenominator() && !newVal.HasDenominator())
+        change.GetDenominator().SetValue(ValueId::Deleted, oldVal.GetDenominator());
 
-    if (oldVal.GetOffset() != newVal.GetOffset())
+    if (oldVal.HasOffset() && newVal.HasOffset() && oldVal.GetOffset() != newVal.GetOffset())
         change.GetOffset().SetValue(oldVal.GetOffset(), newVal.GetOffset());
+    else if (!oldVal.HasOffset() && newVal.HasOffset())
+        change.GetOffset().SetValue(ValueId::New, newVal.GetOffset());
+    else if (oldVal.HasOffset() && !newVal.HasOffset())
+        change.GetOffset().SetValue(ValueId::Deleted, oldVal.GetOffset());
 
     BeAssert(dynamic_cast<PhenomenonCP> (oldVal.GetPhenomenon()) != nullptr && dynamic_cast<PhenomenonCP> (newVal.GetPhenomenon()));
     PhenomenonCP oldPhen = static_cast<PhenomenonCP> (oldVal.GetPhenomenon());
