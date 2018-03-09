@@ -477,6 +477,7 @@
 	<ClInclude Include="PublicAPI\FakeServer\RequestHandler.h" />
     <ClInclude Include="PublicAPI\FakeServer\FakeServer.h" />
     <ClInclude Include="PublicAPI\FakeServer\MockIMHubHttpHandler.h" />
+
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
