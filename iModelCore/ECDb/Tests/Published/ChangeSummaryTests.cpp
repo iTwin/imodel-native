@@ -678,7 +678,7 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
         if (expectedIsValidCache)
             EXPECT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM ts.Foo1.Changes(1,'AfterInsert')")) << assertMessage;
         else
-            EXPECT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdb, "SELECT * FROM ts.Foo1.Changes(1,'AfterInsert')")) << assertMessage;
+            EXPECT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(ecdb, "SELECT * FROM ts.Foo1.Changes(1,'AfterInsert')")) << assertMessage;
 
         stmt.Finalize();
         };
