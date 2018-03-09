@@ -25,7 +25,7 @@ static void* testFile = nullptr;
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                  Bill Steinbock 12/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::SetUpL10N()
+void FormattingTestUtils::SetUpL10N()
     {
     BeFileName sqlangFile;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
@@ -42,7 +42,7 @@ void FormattingTestFixture::SetUpL10N()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                  Bill Steinbock 12/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::TearDownL10N()
+void FormattingTestUtils::TearDownL10N()
     {
     BeSQLite::L10N::Shutdown();
     }
@@ -50,7 +50,7 @@ void FormattingTestFixture::TearDownL10N()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue)
+void FormattingTestUtils::StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue)
     {
     EXPECT_STREQ (expectedValue, NumericFormatSpec::StdFormatDouble(formatName, dval).c_str());
     }
@@ -58,7 +58,7 @@ void FormattingTestFixture::StdFormattingTest(Utf8CP formatName, double dval, Ut
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump)
+void FormattingTestUtils::SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump)
     {
     LOG.infov("Signature Test%02d  >%s<================", tstN, txt);
     FormattingScannerCursor curs1 = FormattingScannerCursor(txt, -1);
@@ -85,7 +85,7 @@ void FormattingTestFixture::SignaturePattrenCollapsing(Utf8CP txt, int tstN, boo
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------  
-void FormattingTestFixture::ShowSignature(Utf8CP txt, int tstN)
+void FormattingTestUtils::ShowSignature(Utf8CP txt, int tstN)
     {
     FormattingScannerCursor curs = FormattingScannerCursor(txt, -1);
     Utf8CP sig = curs.GetSignature(true, true);
@@ -98,7 +98,7 @@ void FormattingTestFixture::ShowSignature(Utf8CP txt, int tstN)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowHexDump(Utf8String str, int len)
+void FormattingTestUtils::ShowHexDump(Utf8String str, int len)
     {
     Utf8String hd = Utils::HexDump(str.c_str(), 30);
     LOG.infov(u8"COL: %s", hd.c_str());
@@ -107,7 +107,7 @@ void FormattingTestFixture::ShowHexDump(Utf8String str, int len)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowHexDump(Utf8CP str, int len, Utf8CP message)
+void FormattingTestUtils::ShowHexDump(Utf8CP str, int len, Utf8CP message)
     {
     Utf8String hd = Utils::HexDump(str, 30);
     if(nullptr == message)
@@ -118,7 +118,7 @@ void FormattingTestFixture::ShowHexDump(Utf8CP str, int len, Utf8CP message)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowFUS(Utf8CP koq)
+void FormattingTestUtils::ShowFUS(Utf8CP koq)
     {
     FormatUnitSet fus = FormatUnitSet(koq, &BEU::UnitRegistry::Get());
     if (fus.HasProblem())
@@ -133,7 +133,7 @@ void FormattingTestFixture::ShowFUS(Utf8CP koq)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::RegisterFUS(Utf8CP descr, Utf8CP name)
+void FormattingTestUtils::RegisterFUS(Utf8CP descr, Utf8CP name)
     {
     FormatUnitSetCP fusP = StdFormatSet::AddFUS(descr, name);
     if (StdFormatSet::FusRegistrationHasProblem())
@@ -148,7 +148,7 @@ void FormattingTestFixture::RegisterFUS(Utf8CP descr, Utf8CP name)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::CrossValidateFUS(Utf8CP descr1, Utf8CP descr2)
+void FormattingTestUtils::CrossValidateFUS(Utf8CP descr1, Utf8CP descr2)
     {
     FormatUnitSet fus1 = FormatUnitSet(descr1, &BEU::UnitRegistry::Get());
     if (fus1.HasProblem())
@@ -162,7 +162,7 @@ void FormattingTestFixture::CrossValidateFUS(Utf8CP descr1, Utf8CP descr2)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
+void FormattingTestUtils::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
     {
     FormatUnitSet fus = FormatUnitSet(fusText, &BEU::UnitRegistry::Get());
     EXPECT_STREQ (norm, fus.ToText(false).c_str());
@@ -176,7 +176,7 @@ void FormattingTestFixture::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnitName, Utf8CP fusFormat, Utf8CP space)
+void FormattingTestUtils::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnitName, Utf8CP fusFormat, Utf8CP space)
     {
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
     if (nullptr == unit)
@@ -207,7 +207,7 @@ void FormattingTestFixture::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowQuantityS(Utf8CP descr)
+void FormattingTestUtils::ShowQuantityS(Utf8CP descr)
     {
     size_t bufL = 256;
     Utf8P buf = (Utf8P)alloca(bufL);
@@ -230,7 +230,7 @@ void FormattingTestFixture::ShowQuantityS(Utf8CP descr)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-NumericAccumulator* FormattingTestFixture::NumericAccState(NumericAccumulator* nacc, Utf8CP txt)
+NumericAccumulator* FormattingTestUtils::NumericAccState(NumericAccumulator* nacc, Utf8CP txt)
     {
     if (nullptr == nacc)
     return nacc;
@@ -246,7 +246,7 @@ NumericAccumulator* FormattingTestFixture::NumericAccState(NumericAccumulator* n
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space)
+void FormattingTestUtils::TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space)
     {
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
     BEU::Quantity q = BEU::Quantity(dval, *unit);
@@ -257,7 +257,7 @@ void FormattingTestFixture::TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusD
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-int FormattingTestFixture::FindLastDividerPos(Utf8CP txt, Utf8Char div)
+int FormattingTestUtils::FindLastDividerPos(Utf8CP txt, Utf8Char div)
     {
     int pos = -1;
     int i = 0;
@@ -275,7 +275,7 @@ int FormattingTestFixture::FindLastDividerPos(Utf8CP txt, Utf8Char div)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-size_t FormattingTestFixture::FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8Char div)
+size_t FormattingTestUtils::FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8Char div)
     {
     if (nullptr == pos || nullptr == txt || *txt == '\0')
         return 0;
@@ -294,7 +294,7 @@ size_t FormattingTestFixture::FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowSplitByDividers(Utf8CP txt, Utf8CP divDef)
+void FormattingTestUtils::ShowSplitByDividers(Utf8CP txt, Utf8CP divDef)
     {
     FormattingDividers div = FormattingDividers(divDef);
     LOG.infov("Examining:|%s|", txt);
@@ -324,7 +324,7 @@ void FormattingTestFixture::ShowSplitByDividers(Utf8CP txt, Utf8CP divDef)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-bool FormattingTestFixture::OpenTestData()
+bool FormattingTestUtils::OpenTestData()
     {
 #if defined (BENTLEY_WIN32)
     char buf[MAX_PATH + 128];
@@ -351,7 +351,7 @@ bool FormattingTestFixture::OpenTestData()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::CloseTestData()
+void FormattingTestUtils::CloseTestData()
     {
     if (nullptr != testFile)
         {
@@ -364,7 +364,7 @@ void FormattingTestFixture::CloseTestData()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-bool FormattingTestFixture::IsDataAvailalbe()
+bool FormattingTestUtils::IsDataAvailalbe()
     {
     if (nullptr != testFile)
         {
@@ -377,7 +377,7 @@ bool FormattingTestFixture::IsDataAvailalbe()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-bool FormattingTestFixture::GetNextLine(Utf8P buf, int bufLen)
+bool FormattingTestUtils::GetNextLine(Utf8P buf, int bufLen)
     {
 #if defined (BENTLEY_WIN32)
     if (nullptr != testFile)
@@ -404,7 +404,7 @@ bool FormattingTestFixture::GetNextLine(Utf8P buf, int bufLen)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::DecomposeString(Utf8CP str, bool revers)
+void FormattingTestUtils::DecomposeString(Utf8CP str, bool revers)
     {
     size_t n = strlen(str);
     CursorScanPoint csp(str, revers? n:0, revers);
@@ -421,7 +421,7 @@ void FormattingTestFixture::DecomposeString(Utf8CP str, bool revers)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-Utf8String FormattingTestFixture::ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim)
+Utf8String FormattingTestUtils::ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim)
     {
 #define ETV_BUFLEN 256
     wchar_t* tokPtr = wcsstr(line, token);
@@ -446,7 +446,7 @@ Utf8String FormattingTestFixture::ExtractTokenValue(wchar_t* line, wchar_t* toke
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
 #ifdef _WIN32
-bool FormattingTestFixture::ValidateSchemaUnitNames(char* schemaPath, Utf8CP token, char* reportPath)
+bool FormattingTestUtils::ValidateSchemaUnitNames(char* schemaPath, Utf8CP token, char* reportPath)
 {
 #define VSN_BUFLEN 1024
     if (Utils::IsNameNullOrEmpty(schemaPath))
@@ -580,7 +580,7 @@ bool FormattingTestFixture::ValidateSchemaUnitNames(char* schemaPath, Utf8CP tok
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::TestScanPointVector(Utf8CP str)
+void FormattingTestUtils::TestScanPointVector(Utf8CP str)
     {
 
     FormatParseVector forw(str, false);
@@ -606,7 +606,7 @@ void FormattingTestFixture::TestScanPointVector(Utf8CP str)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::TestScanTriplets(Utf8CP str)
+void FormattingTestUtils::TestScanTriplets(Utf8CP str)
     {
     LOG.info("============= Triplet Scan =================\n");
     LOG.infov("Input: |%s|", str);
@@ -628,7 +628,7 @@ void FormattingTestFixture::TestScanTriplets(Utf8CP str)
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
 
-void FormattingTestFixture::TestSegments(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP expectReduced)
+void FormattingTestUtils::TestSegments(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP expectReduced)
     {
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
     FormatParsingSet fps = FormatParsingSet(input, start, unit);
@@ -654,7 +654,7 @@ void FormattingTestFixture::TestSegments(Utf8CP input, size_t start, Utf8CP unit
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP formatName)
+void FormattingTestUtils::ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP formatName)
     {
     LOG.infov("=========== Parsing To Quantity |%s| from %d", input, start);
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
@@ -680,7 +680,7 @@ void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP u
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnitName, Utf8CP spacer)
+void FormattingTestUtils::ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnitName, Utf8CP spacer)
     {
     BEU::UnitCP fusUnit = BEU::UnitRegistry::Get().LookupUnit(fusUnitName);
     NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(formatName);
@@ -703,7 +703,7 @@ void FormattingTestFixture::ShowQuantifiedValue(Utf8CP input, Utf8CP formatName,
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-bool FormattingTestFixture::GetNextInstruction(Utf8P buf, int bufLen, Utf8P com, int comLen)
+bool FormattingTestUtils::GetNextInstruction(Utf8P buf, int bufLen, Utf8P com, int comLen)
     {
 #if defined (BENTLEY_WIN32) && defined (USE_TEST_FILE)
     if (nullptr != testFile)
@@ -758,7 +758,7 @@ bool FormattingTestFixture::GetNextInstruction(Utf8P buf, int bufLen, Utf8P com,
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-size_t FormattingTestFixture::CopyTextSecure(Utf8P dest, size_t destSize, Utf8CP src)
+size_t FormattingTestUtils::CopyTextSecure(Utf8P dest, size_t destSize, Utf8CP src)
     {
     if (nullptr == dest || destSize == 0)
         return 0;
@@ -775,7 +775,7 @@ size_t FormattingTestFixture::CopyTextSecure(Utf8P dest, size_t destSize, Utf8CP
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-size_t FormattingTestFixture::ExtractArgs(Utf8CP desc, Utf8P buf, size_t bufL, bvector<Utf8CP>* parts, Utf8Char div)
+size_t FormattingTestUtils::ExtractArgs(Utf8CP desc, Utf8P buf, size_t bufL, bvector<Utf8CP>* parts, Utf8Char div)
     {
     size_t descL = (nullptr == desc) ? 0 : strlen(desc) + 1;
     if (descL > bufL - 1)
@@ -810,7 +810,7 @@ size_t FormattingTestFixture::ExtractArgs(Utf8CP desc, Utf8P buf, size_t bufL, b
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
 PUSH_MSVC_IGNORE(6385 6386)
-size_t FormattingTestFixture::GetNextArguments(Utf8P buf, int bufLen, bvector<Utf8CP>* parts, Utf8Char div)
+size_t FormattingTestUtils::GetNextArguments(Utf8P buf, int bufLen, bvector<Utf8CP>* parts, Utf8Char div)
     {
 #if defined (BENTLEY_WIN32)
     if (nullptr == parts)
@@ -865,7 +865,7 @@ POP_MSVC_IGNORE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void  FormattingTestFixture::NamedSpecToJson(Utf8CP stdName)
+void  FormattingTestUtils::NamedSpecToJson(Utf8CP stdName)
     {
     if (nullptr == stdName)
         {
@@ -918,7 +918,7 @@ bvector<TraitJsonKeyMap> TraitJsonKeyMap::TraitJsonKeySet()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::NamedFormatJsonTest(int testNum, Utf8CP stdName, bool verbose, Utf8CP expected)
+void FormattingTestUtils::NamedFormatJsonTest(int testNum, Utf8CP stdName, bool verbose, Utf8CP expected)
     {
     NamedFormatSpecCP  nfsP = StdFormatSet::FindFormatSpec(stdName);
     Json::Value jval = nfsP->ToJson(verbose);
@@ -937,7 +937,7 @@ void FormattingTestFixture::NamedFormatJsonTest(int testNum, Utf8CP stdName, boo
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
+void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
     {
     Json::Value jval = nfs.ToJson(true);
     Utf8String str = jval.ToString();
@@ -950,7 +950,7 @@ void FormattingTestFixture::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName)
+void FormattingTestUtils::UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName)
     {
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupConstant(unitName);
     UnitProxyCR up1 = UnitProxy(unit, labelName);
@@ -963,7 +963,7 @@ void FormattingTestFixture::UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
+void FormattingTestUtils::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
     {
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
     BEU::UnitSynonymMap map = BEU::UnitSynonymMap(unit, synonym);
@@ -985,7 +985,7 @@ void FormattingTestFixture::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
+void FormattingTestUtils::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
     {
     NamedFormatSpec nfs = NamedFormatSpec(jsonFormat);
     Json::Value nfsJ = nfs.ToJson(false);
@@ -1012,7 +1012,7 @@ void FormattingTestFixture::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool do
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result)
+void FormattingTestUtils::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result)
     {
     LOG.info("\n=========== StandaloneFUSTest=============");
     BEU::UnitCP uom = BEU::UnitRegistry::Get().LookupUnit(unitName);
@@ -1067,7 +1067,7 @@ void FormattingTestFixture::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int prec, double round, Utf8CP expect)
+void FormattingTestUtils::FormatDoubleTest(double dval, Utf8CP fmtName, int prec, double round, Utf8CP expect)
     {
     Utf8String txt = NumericFormatSpec::StdFormatDouble(fmtName, dval, prec, round);
     if(Utils::IsNameNullOrEmpty(expect))
@@ -1079,7 +1079,7 @@ void FormattingTestFixture::FormatDoubleTest(double dval, Utf8CP fmtName, int pr
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName)
+void FormattingTestUtils::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName)
     {
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
     NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(formatName);
@@ -1113,7 +1113,7 @@ void FormattingTestFixture::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena)
+void FormattingTestUtils::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena)
     {
     if (nullptr == phenP)
         return;
@@ -1149,7 +1149,7 @@ void FormattingTestFixture::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU:
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowKnownPhenomena()
+void FormattingTestUtils::ShowKnownPhenomena()
     {
     bvector<BEU::PhenomenonCP> allPhenomena;
     bvector<BEU::PhenomenonCP> undefPhenomena;
@@ -1171,7 +1171,7 @@ void FormattingTestFixture::ShowKnownPhenomena()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestFixture::ShowSynonyms()
+void FormattingTestUtils::ShowSynonyms()
     {
     bvector<BEU::UnitCP> allUnits;
     bvector<Utf8CP> synonyms;
@@ -1191,7 +1191,7 @@ void FormattingTestFixture::ShowSynonyms()
         }
     }
 
-Utf8String FormattingTestFixture::SetLocale(Utf8CP name)
+Utf8String FormattingTestUtils::SetLocale(Utf8CP name)
     {
     Utf8String locName;
     //const std::locale& loc = *(locale::global); // (name);

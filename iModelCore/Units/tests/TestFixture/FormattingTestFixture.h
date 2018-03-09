@@ -37,7 +37,7 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                             David Fox-Rabinovitz 06/2017
 +===============+===============+===============+===============+===============+======*/
-struct FormattingTestFixture
+struct FormattingTestUtils
     {
     private:
         Utf8CP m_text;
