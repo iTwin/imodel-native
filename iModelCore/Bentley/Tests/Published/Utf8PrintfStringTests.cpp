@@ -77,7 +77,6 @@ TEST_F(Utf8PrintfStringTests, Ctor_PositionalFormatWithMixedTypes_FormattedStrin
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Vincas.Razma                      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_UNIX)
 TEST_F(Utf8PrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
     {
     Utf8CP a = "a";
@@ -88,6 +87,11 @@ TEST_F(Utf8PrintfStringTests, Sprintf_BadFormat_DoesNotCrash)
     str.Sprintf("%s foo % type", a, b);
     BeTest::SetFailOnInvalidParameterAssert(true);
 
+    // Invalid format string/arg combinations result in "undefined" behavior across C libraries.
+    // Therefore, I think we need unique result tests for each of these configurations.
+#if !defined(BENTLEYCONFIG_OS_UNIX)
     EXPECT_STREQ("", str.c_str());
-    }
+#else
+    EXPECT_STREQ("a foo ype", str.c_str());
 #endif
+    }
