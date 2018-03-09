@@ -543,7 +543,7 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
 
     if (tablesSeen.find(tableName) == tablesSeen.end())
         {
-        LOG.infov("\nTable: %s", tableName);
+        LOG.infov("Table: %s", tableName);
         tablesSeen.insert(tableName);
         }
 
