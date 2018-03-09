@@ -35,6 +35,8 @@ struct DgnElementPlacementStrategy : ElementPlacementStrategy
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement(Dgn::DgnModelR model);
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT virtual Dgn::DgnElementPtr _FinishElement();
 
+        virtual void _AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const = 0;
+
         DGNELEM_P_V_PROPERTY(Dgn::DgnElementCP)
         DGNELEM_P_V_PROPERTY(Dgn::DgnElementId)
         DGNELEM_P_V_PROPERTY(Dgn::ColorDef)
@@ -44,6 +46,8 @@ struct DgnElementPlacementStrategy : ElementPlacementStrategy
     public:
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement(Dgn::DgnModelR model);
         DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT Dgn::DgnElementPtr FinishElement();
+
+        DGNELEMENTMANIPULATIONSTRATEGIES_EXPORT void AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const;
 
         DGNELEM_P_PROPERTY(Dgn::DgnElementCP)
         DGNELEM_P_PROPERTY(Dgn::DgnElementId)

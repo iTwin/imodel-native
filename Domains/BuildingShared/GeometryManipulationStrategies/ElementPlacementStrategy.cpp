@@ -15,20 +15,6 @@ USING_NAMESPACE_BUILDING_SHARED
 Utf8String ElementPlacementStrategy::GetMessage() const
     {
     return _GetMessage();
-    }    
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Vytautas.Kaniusonis             03/2018
-//---------------+---------------+---------------+---------------+---------------+------
-void ElementPlacementStrategy::AddViewOverlay
-(
-    BentleyApi::Dgn::Render::GraphicBuilderR builder,
-    DRange3dCR viewRange,
-    TransformCR worldToView,
-    ColorDefCR contrastingToBackgroundColor
-) const
-    {
-    _AddViewOverlay(builder, viewRange, worldToView, contrastingToBackgroundColor);
     }
 
 //--------------------------------------------------------------------------------------

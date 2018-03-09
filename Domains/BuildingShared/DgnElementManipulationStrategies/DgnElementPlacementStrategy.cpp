@@ -57,6 +57,20 @@ Dgn::DgnElementPtr DgnElementPlacementStrategy::FinishElement()
         return _GetDgnElementManipulationStrategy().TryGetProperty(key, value);                         \
         }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Vytautas.Kaniusonis             03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void DgnElementPlacementStrategy::AddViewOverlay
+(
+    Dgn::Render::GraphicBuilderR builder,
+    DRange3dCR viewRange,
+    TransformCR worldToView,
+    Dgn::ColorDefCR contrastingToBackgroundColor
+) const
+    {
+    _AddViewOverlay(builder, viewRange, worldToView, contrastingToBackgroundColor);
+    }
+
 EPS_V_PROPERTY_IMPL(Dgn::DgnElementCP)
 EPS_V_PROPERTY_IMPL(Dgn::DgnElementId)
 EPS_V_PROPERTY_IMPL(Dgn::ColorDef)

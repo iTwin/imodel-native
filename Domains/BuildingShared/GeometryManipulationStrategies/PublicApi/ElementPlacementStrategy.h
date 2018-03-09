@@ -30,7 +30,6 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryPlacementStrategyPtr TryGetGeometryPlacementStrategyForEdit();
 
         virtual Utf8String _GetMessage() const = 0;
-        virtual void _AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const = 0;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> _GetKeyPoints() const override;
 
@@ -55,7 +54,8 @@ struct ElementPlacementStrategy : public GeometryPlacementStrategy
         EPS_PROPERTY_OVERRIDE(bvector<double>)
         EPS_PROPERTY_OVERRIDE(bvector<Utf8String>)
         EPS_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
-        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddViewOverlay(Dgn::Render::GraphicBuilderR builder, DRange3dCR viewRange, TransformCR worldToView, Dgn::ColorDefCR contrastingToBackgroundColor = Dgn::ColorDef::Black()) const;
+
+    public:
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT Utf8String GetMessage() const;
     };
 
