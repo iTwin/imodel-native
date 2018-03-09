@@ -165,7 +165,7 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
         auto model = models.GetModel (entry.GetModelId());
         ASSERT_TRUE(model.IsValid());
         auto name = model->GetName ();
-        if (name.EqualsI("DwgGeometryParts"))
+        if (name.StartsWithI("DwgGeometryParts"))
             count++;
         }
     EXPECT_EQ(1, count) << "Should always & only have 1 DwgGeometryParts model!";
