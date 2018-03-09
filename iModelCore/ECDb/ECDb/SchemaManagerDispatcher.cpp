@@ -303,19 +303,20 @@ ClassMap const* SchemaManager::Dispatcher::GetClassMap(ECClassCR ecClass, Utf8CP
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaManager::Dispatcher::LoadDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const
+ECDerivedClassesList const* SchemaManager::Dispatcher::GetDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const
     {
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
-        return ERROR;
+        return nullptr;
 
     for (TableSpaceSchemaManager const* manager : iterable)
         {
-        if (SUCCESS == manager->LoadDerivedClasses(baseClass))
-            return SUCCESS;
+        ECDerivedClassesList const* subClasses = manager->GetDerivedClasses(baseClass);
+        if (subClasses != nullptr)
+            return subClasses;
         }
 
-    return ERROR;
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -432,16 +433,22 @@ ECSchemaPtr TableSpaceSchemaManager::LocateSchema(ECN::SchemaKeyR key, ECN::Sche
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TableSpaceSchemaManager::LoadDerivedClasses(ECN::ECClassCR baseClass) const
+ECDerivedClassesList const* TableSpaceSchemaManager::GetDerivedClasses(ECN::ECClassCR baseClass) const
     {
     ECClassId id = m_reader.GetClassId(baseClass);
     if (!id.IsValid())
         {
-        LOG.errorv("Cannot call SchemaManager::GetDerivedClasses on ECClass %s. The ECClass does not exist.", baseClass.GetFullName());
-        return ERROR;
+        LOG.errorv("SchemaManager::GetDerivedClasses failed for ECClass %s. The ECClass does not exist.", baseClass.GetFullName());
+        return nullptr;
         }
 
-    return m_reader.EnsureDerivedClassesExist(id);
+    if (SUCCESS != m_reader.EnsureDerivedClassesExist(id))
+        {
+        LOG.errorv("SchemaManager::GetDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
+        return nullptr;
+        }
+
+    return &baseClass.GetDerivedClasses();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1341,7 +1348,11 @@ BentleyStatus MainSchemaManager::GetRelationshipConstraintClassMaps(SchemaImport
     if (!recursive)
         return SUCCESS;
 
-    for (ECClassCP subclass : m_ecdb.Schemas().GetDerivedClasses(ecClass))
+    ECDerivedClassesList const* subclasses = m_ecdb.Schemas().GetDerivedClassesInternal(ecClass);
+    if (subclasses == nullptr)
+        return ERROR;
+
+    for (ECClassCP subclass : *subclasses)
         {
         if (SUCCESS != GetRelationshipConstraintClassMaps(ctx, classMaps, *subclass, recursive))
             return ERROR;

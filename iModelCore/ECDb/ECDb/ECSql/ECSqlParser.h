@@ -98,8 +98,8 @@ public:
     void PopArg();
 
     BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8CP tableSpace, Utf8StringCR schemaNameOrAlias, Utf8StringCR className, ECSqlType, bool isPolymorphicExp);
-    void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
-    void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
+    BentleyStatus GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
+    BentleyStatus GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
     Utf8String GenerateAlias();
     int TrackECSqlParameter(ParameterExp& parameterExp);
     ScopedIssueReporter const& Issues() const { return m_issues; }

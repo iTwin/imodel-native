@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/SchemaManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -241,6 +241,7 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         ECDB_EXPORT BentleyStatus RepopulateCacheTables() const;
         void ClearCache(Utf8CP tableSpace) const;
 
+        ECN::ECDerivedClassesList const* GetDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;
         Dispatcher const& GetDispatcher() const;
         struct MainSchemaManager const& Main() const;
 #endif

@@ -2151,7 +2151,15 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
         return ERROR;
         }
 
-    if (!m_ecdb.Schemas().GetDerivedClasses(deletedClass).empty())
+    ECDerivedClassesList const* subClasses = m_ecdb.Schemas().GetDerivedClassesInternal(deletedClass);
+    if (subClasses == nullptr)
+        {
+        Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Could not delete ECClass '%s' because its subclasses failed to load.",
+                         deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
+        return ERROR;
+        }
+
+    if (!subClasses->empty())
         {
         Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' is not supported because it has subclasses.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());

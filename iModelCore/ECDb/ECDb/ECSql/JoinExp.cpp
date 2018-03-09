@@ -113,14 +113,14 @@ Exp::FinalizeParseStatus ECRelationshipJoinExp::_FinalizeParsing(ECSqlParseConte
 //+---------------+---------------+---------------+---------------+---------------+--------
 BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& ctx)
     {
-    auto fromExpression = FindFromExpression();
+    FromExp const* fromExpression = FindFromExpression();
     PRECONDITION(fromExpression != nullptr, ERROR);
 
     std::vector<RangeClassInfo> fromClassRefs;
     fromExpression->FindRangeClassRefs(fromClassRefs);
     PRECONDITION(!fromClassRefs.empty(), ERROR);
 
-    auto relationshipClass = GetRelationshipClassNameExp().GetInfo().GetMap().GetClass().GetRelationshipClassCP();
+    ECRelationshipClassCP relationshipClass = GetRelationshipClassNameExp().GetInfo().GetMap().GetClass().GetRelationshipClassCP();
     PRECONDITION(relationshipClass != nullptr, ERROR);
 
     ResolvedEndPoint fromEP, toEP;
@@ -128,11 +128,14 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
     // Get flat list of relationship source and target classes. 
     // It also consider IsPolymorphic attribute on source and target constraint in ECSchema
     ECSqlParseContext::ClassListById sourceList, targetList;
-    ctx.GetConstraintClasses(sourceList, relationshipClass->GetSource());
-    ctx.GetConstraintClasses(targetList, relationshipClass->GetTarget());
+    if (SUCCESS != ctx.GetConstraintClasses(sourceList, relationshipClass->GetSource()))
+        return ERROR;
+
+    if (SUCCESS != ctx.GetConstraintClasses(targetList, relationshipClass->GetTarget()))
+        return ERROR;
 
     //We will attempt to resolve toClassName
-    auto& toECClass = toEP.GetClassNameRef()->GetInfo().GetMap().GetClass();
+    ECClassCR toECClass = toEP.GetClassNameRef()->GetInfo().GetMap().GetClass();
     if (sourceList.find(toECClass.GetId()) != sourceList.end())
         {
         toEP.SetLocation(ClassLocation::ExistInSource, true);

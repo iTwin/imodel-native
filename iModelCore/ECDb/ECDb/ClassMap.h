@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMap.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -158,7 +158,7 @@ struct ClassMap
 
         //! Returns the class maps of the classes derived from this class map's class.
         //! @return Derived classes class maps
-        std::vector<ClassMap const*> GetDerivedClassMaps() const;
+        Nullable<std::vector<ClassMap const*>> GetDerivedClassMaps() const;
         ECN::ECClassCR GetClass() const { return m_ecClass; }
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
         //!Only call this if the map strategy is TablePerHierarchy
