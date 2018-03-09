@@ -20,6 +20,32 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //
 //===================================================
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+NumericFormatSpec::NumericFormatSpec()
+    : NumericFormatSpec(Utils::DecimalPrecisionByIndex(FormatConstant::DefaultDecimalPrecisionIndex()))
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+NumericFormatSpec::NumericFormatSpec(DecimalPrecision decimalPrecision)
+    : m_roundFactor(0.0)
+    , m_presentationType(FormatConstant::DefaultPresentaitonType())
+    , m_signOption(FormatConstant::DefaultSignOption())
+    , m_formatTraits(FormatConstant::DefaultFormatTraits())
+    , m_decPrecision(decimalPrecision)
+    , m_fractPrecision(FormatConstant::DefaultFractionalPrecision())
+    , m_barType(FractionBarType::Diagonal)
+    , m_decimalSeparator(FormatConstant::FPV_DecimalSeparator())
+    , m_thousandsSeparator(FormatConstant::FPV_ThousandSeparator())
+    , m_uomSeparator(FormatConstant::BlankString())
+    , m_statSeparator('+')
+    , m_minWidth(0)
+    {
+    }
 
 //===================================================
 //
@@ -103,7 +129,6 @@ Utf8String LocaleProperties::ToText()
    return Utf8PrintfString("Separators: decimal |%c| thousands |%c|", m_decimalSeparator, m_thousandsSeparator);
 }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -182,7 +207,7 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double maxDiff) 
+bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double maxDiff)
     {
     return (fabs(maxDiff) > fabs(dval1 - dval2));
     }
