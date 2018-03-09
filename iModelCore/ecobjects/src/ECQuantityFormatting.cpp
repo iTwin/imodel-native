@@ -45,7 +45,7 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
     Utf8String str;
     ECQuantityFormattingStatus locStat = ECQuantityFormattingStatus::Success;
     if (nullptr == formatStatus) formatStatus = &locStat;
-    if (nullptr == defFormat) defFormat = BEF::NumericFormatSpec::DefaultFormat();
+    if (nullptr == defFormat) defFormat = &BEF::NumericFormatSpec::DefaultFormat();
     *formatStatus = ECQuantityFormattingStatus::Success;
 
     if (nullptr == koq)
