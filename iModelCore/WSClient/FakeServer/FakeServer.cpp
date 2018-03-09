@@ -1,4 +1,4 @@
-#include "FakeServer.h"
+#include <FakeServer\FakeServer.h>
 
 
 BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP serverPath)

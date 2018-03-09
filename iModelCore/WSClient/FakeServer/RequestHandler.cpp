@@ -1,10 +1,11 @@
-#include "RequestHandler.h"
+#include <FakeServer\RequestHandler.h>
 #include <Bentley/BeTest.h>
-#include "../../../iModelHubClient/Utils.h"
+#include "../iModelHubClient/Utils.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
+USING_NAMESPACE_BENTLEY_WEBSERVICES
+USING_NAMESPACE_BENTLEY_IMODELHUB
 
 RequestHandler::RequestHandler()
     {
@@ -22,7 +23,8 @@ RequestHandler::~RequestHandler()
 void CreateTable(Utf8CP tableName, BentleyB0200::BeSQLite::Db& db, Utf8CP ddl) 
     {
     if (!db.TableExists(tableName))
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateTable(tableName, ddl));
+        if (DbResult::BE_SQLITE_OK != db.CreateTable(tableName, ddl))
+            return;
     }
 Utf8String GetInstanceid(Utf8String str)
     {
@@ -130,7 +132,8 @@ void RequestHandler::CheckDb()
     dbPath.AppendToPath(dbName);
     if (dbPath.DoesPathExist())
         {
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)));
+        if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+            return;
         if(!m_db.TableExists("instances"))
             CreateTable("instances", m_db, "instanceid STRING, className STRING, schemaName STRING, Description STRING, Name STRING, Initialized STRING");
         if(!m_db.TableExists("users"))
@@ -145,7 +148,8 @@ void RequestHandler::Insert(bvector<Utf8String> insertStr)
     BeFileName dbPath(serverPath);
     dbPath.AppendToPath(dbName);
     BentleyB0200::BeSQLite::Db m_db;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)));
+    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+        return;
     
     Statement insertSt;
     insertSt.Prepare(m_db, "INSERT INTO instances(instanceid, className, schemaName, Description, Name) VALUES (?,?,?,?,?)");
@@ -154,7 +158,8 @@ void RequestHandler::Insert(bvector<Utf8String> insertStr)
     insertSt.BindText(3, insertStr[2], Statement::MakeCopy::No);
     insertSt.BindText(4, insertStr[3], Statement::MakeCopy::No);
     insertSt.BindText(5, insertStr[4], Statement::MakeCopy::No);
-    ASSERT_EQ(BE_SQLITE_DONE, insertSt.Step());
+    if (BE_SQLITE_DONE != insertSt.Step())
+        return;
     insertSt.Finalize();
     /*
     ASSERT_EQ(BE_SQLITE_OK, m_db.DropTable("instances"));

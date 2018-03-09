@@ -1,7 +1,7 @@
-#include "MockIMHubHttpHandler.h"
+#include <FakeServer\MockIMHubHttpHandler.h>
 #include <BeHttp/ProxyHttpHandler.h>
 
-USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
+
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    11/2017
