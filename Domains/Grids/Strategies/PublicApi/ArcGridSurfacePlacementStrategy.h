@@ -37,11 +37,11 @@ struct ArcGridSurfacePlacementStrategy : public SketchGridSurfacePlacementStrate
         GRIDSTRATEGIES_EXPORT static ArcGridSurfacePlacementStrategyPtr Create(BBS::ArcPlacementMethod arcPlacementStrategyType) { return new ArcGridSurfacePlacementStrategy(arcPlacementStrategyType); }
     
         // IArcPlacementStrategy
-        void SetPlacementMethod(BBS::ArcPlacementMethod method);
-        void SetUseSweep(bool useSweep);
-        void SetSweep(double sweep);
-        void SetUseRadius(bool useRadius);
-        void SetRadius(double radius);
+        void SetPlacementMethod(BBS::ArcPlacementMethod method) override;
+        void SetUseSweep(bool useSweep) override;
+        void SetSweep(double sweep) override;
+        void SetUseRadius(bool useRadius) override;
+        void SetRadius(double radius) override;
     };
 
 END_GRIDS_NAMESPACE
