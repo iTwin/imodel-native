@@ -40,113 +40,34 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    LOG.debug("ECDb profile upgrade: Added columns ECVersion, OriginalECXmlVersionMajor and OriginalECXmlVersionMinor to table " TABLE_Schema ".");
-
-    stat = UpgradeECEnums(ecdb);
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    LOG.debug("ECDb profile upgrade: Updated table " TABLE_Enumeration " to EC3.2 format.");
-
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_UnitSystem
-                           "(Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
-                           "DisplayLabel TEXT,"
-                           "Description TEXT);"
-                           "CREATE INDEX ix_ec_UnitSystem_SchemaId ON " TABLE_UnitSystem "(SchemaId);"
-                           "CREATE INDEX ix_ec_UnitSystem_Name ON " TABLE_UnitSystem "(Name);");
+    stat = ecdb.ExecuteSql(TABLEDDL_UnitSystem);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_UnitSystem " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
-
-
-    //ec_Phenomenon
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Phenomenon
-                           "(Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
-                           "DisplayLabel TEXT,"
-                           "Description TEXT,"
-                           "Definition TEXT NOT NULL);"
-                           "CREATE INDEX ix_ec_Phenomenon_SchemaId ON " TABLE_Phenomenon "(SchemaId);"
-                           "CREATE INDEX ix_ec_Phenomenon_Name ON " TABLE_Phenomenon "(Name);");
+    
+    stat = ecdb.ExecuteSql(TABLEDDL_Phenomenon);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Phenomenon " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    //ec_Unit
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Unit
-                           "(Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
-                           "DisplayLabel TEXT,"
-                           "Description TEXT,"
-                           "PhenomenonId INTEGER NOT NULL REFERENCES " TABLE_Phenomenon "(Id) ON DELETE CASCADE,"
-                           "UnitSystemId INTEGER NOT NULL REFERENCES " TABLE_UnitSystem "(Id) ON DELETE NO ACTION,"
-                           "Definition TEXT COLLATE NOCASE,"
-                           "Numerator REAL,"
-                           "Denominator REAL,"
-                           "Offset REAL,"
-                           "IsConstant BOOLEAN,"
-                           "InvertingUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL);"
-                           "CREATE INDEX ix_ec_Unit_SchemaId ON " TABLE_Unit "(SchemaId);"
-                           "CREATE INDEX ix_ec_Unit_Name ON " TABLE_Unit "(Name);"
-                           "CREATE INDEX ix_ec_Unit_PhenomenonId ON " TABLE_Unit "(PhenomenonId);"
-                           "CREATE INDEX ix_ec_Unit_UnitSystemId ON " TABLE_Unit "(UnitSystemId);"
-                           "CREATE INDEX ix_ec_Unit_InvertingUnitId ON " TABLE_Unit "(InvertingUnitId);");
+    stat = ecdb.ExecuteSql(TABLEDDL_Unit);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Unit " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
+    LOG.debug("ECDb profile upgrade: Added columns ECVersion, OriginalECXmlVersionMajor and OriginalECXmlVersionMinor to table " TABLE_Schema ". Added tables " TABLE_Unit ", " TABLE_Phenomenon ", and " TABLE_UnitSystem ".");
 
-    //ec_Format
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Format
-                           "(Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
-                           "DisplayLabel TEXT,"
-                           "Description TEXT,"
-                           "Alias TEXT COLLATE NOCASE,"
-                           "Type TEXT NOT NULL COLLATE NOCASE,"
-                           "RoundFactor REAL,"
-                           "PresentationType TEXT NOT NULL COLLATE NOCASE,"
-                           "SignOption TEXT NOT NULL COLLATE NOCASE,"
-                           "FormatTraits TEXT NOT NULL COLLATE NOCASE,"
-                           "DecimalPrecision INTEGER,"
-                           "FractionalPrecision INTEGER,"
-                           "FractionalBarType TEXT COLLATE NOCASE,"
-                           "DecimalSeparator TEXT COLLATE NOCASE,"
-                           "ThousandsSeparator TEXT COLLATE NOCASE,"
-                           "UomSeparator TEXT COLLATE NOCASE,"
-                           "StatSeparator TEXT COLLATE NOCASE,"
-                           "MinWidth INTEGER,"
-                           "CompositeSpecType TEXT COLLATE NOCASE,"
-                           "MajorUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL,"
-                           "MiddleUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL,"
-                           "MinorUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL,"
-                           "SubUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL,"
-                           "InputUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL);"
-                           "CREATE INDEX ix_ec_Format_SchemaId ON " TABLE_Format "(SchemaId);"
-                           "CREATE INDEX ix_ec_Format_Name ON " TABLE_Format "(Name);"
-                           "CREATE INDEX ix_ec_Format_MajorUnitId ON " TABLE_Format "(MajorUnitId);"
-                           "CREATE INDEX ix_ec_Format_MiddleUnitId ON " TABLE_Format "(MiddleUnitId);"
-                           "CREATE INDEX ix_ec_Format_MinorUnitId ON " TABLE_Format "(MinorUnitId);"
-                           "CREATE INDEX ix_ec_Format_SubUnitId ON " TABLE_Format "(SubUnitId);"
-                           "CREATE INDEX ix_ec_Format_InputUnitId ON " TABLE_Format "(InputUnitId);");
+    stat = UpgradeECEnums(ecdb);
     if (BE_SQLITE_OK != stat)
-        {
-        LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Format " and indexes: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
+        return stat;
 
-    return BE_SQLITE_OK;
+    return UpgradeKoqs(ecdb);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -352,11 +273,85 @@ void ProfileUpgrader_4002::UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, i
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    03/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT distinct SchemaId FROM main." TABLE_KindOfQuantity))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Selecting all KindOfQuantities failed: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    bset<ECSchemaId> schemasWithKoqs;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        schemasWithKoqs.insert(stmt.GetValueId<ECSchemaId>(0));
+        }
+
+    stmt.Finalize();
+
+    if (schemasWithKoqs.empty())
+        return BE_SQLITE_OK;
+
+    ECSchemaId unitSchemaId;
+    {
+    ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
+    readCtx->AddSchemaLocater(ecdb.GetSchemaLocater());
+    SchemaKey key("Units", 1, 0, 0);
+    ECSchemaPtr unitSchema = ECSchema::LocateSchema(key, *readCtx);
+    if (unitSchema == nullptr)
+        {
+        LOG.error("ECDb profile upgrade failed: Could not deserialize the standard Units ECSchema.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    bvector<ECSchemaCP> unitSchemaList;
+    unitSchemaList.push_back(unitSchema.get());
+    if (SUCCESS != ecdb.Schemas().ImportSchemas(unitSchemaList, ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()) ||
+        !unitSchema->HasId())
+        {
+        LOG.error("ECDb profile upgrade failed: Importing the standard Units ECSchema failed.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    unitSchemaId = unitSchema->GetId();
+    ecdb.ClearECDbCache();
+    }
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "INSERT INTO main." TABLE_SchemaReference "(SchemaId,ReferencedSchemaId) VALUES(?,?)"))
+        {
+        LOG.error("ECDb profile upgrade failed: Failed to prepare SQL to insert references to standard Units schema.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    for (ECSchemaId schemaWithKoq : schemasWithKoqs)
+        {
+        if (BE_SQLITE_OK != stmt.BindId(1, schemaWithKoq) ||
+            BE_SQLITE_OK != stmt.BindId(2, unitSchemaId) ||
+            BE_SQLITE_DONE != stmt.Step())
+            {
+            LOG.error("ECDb profile upgrade failed: Failed to insert references to standard Units schema.");
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
+
+    LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
+    return BE_SQLITE_OK;
+    }
+
+//******************************************************************************************************************
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    10/2017
 //+---------------+---------------+---------------+---------------+---------------+--------
 DbResult ProfileUpgrader_4001::_Upgrade(ECDbCR ecdb) const
     {
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " BEDB_TABLE_Local " WHERE Name NOT LIKE 'ec_instanceidsequence' COLLATE NOCASE AND NAME LIKE 'ec_%sequence' COLLATE NOCASE"))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM main." BEDB_TABLE_Local " WHERE Name NOT LIKE 'ec_instanceidsequence' COLLATE NOCASE AND NAME LIKE 'ec_%sequence' COLLATE NOCASE"))
         {
         LOG.errorv("ECDb profile upgrade failed: Deleting ECDb profile table id sequences from table '" BEDB_TABLE_Local "' failed: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;

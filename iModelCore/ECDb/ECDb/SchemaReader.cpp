@@ -896,14 +896,16 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             }
 
         Utf8CP definition = stmt->IsColumnNull(definitionColIx) ? nullptr : stmt->GetValueText(definitionColIx);
-        BeAssert(!stmt->IsColumnNull(numeratorColIx));
-        const double numerator = stmt->GetValueDouble(numeratorColIx);
 
-        double denominator = 1.0;
+        Nullable<double> numerator;
+        if (!stmt->IsColumnNull(numeratorColIx))
+            numerator = stmt->GetValueDouble(numeratorColIx);
+
+        Nullable<double> denominator;
         if (!stmt->IsColumnNull(denominatorColIx))
             denominator = stmt->GetValueDouble(denominatorColIx);
 
-        double offset = 1.0;
+        Nullable<double> offset;
         if (!stmt->IsColumnNull(offsetColIx))
             offset = stmt->GetValueDouble(offsetColIx);
 
@@ -911,7 +913,11 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         ECUnitP unit = nullptr;
         if (isConstant)
             {
-            if (ECObjectsStatus::Success != schema.CreateConstant(unit, name, definition, *ph, *us, numerator, denominator, displayLabel, description))
+            //WIP: Numerator should not be nullptr for constants -> HasNumerator should not return false
+            if (numerator == nullptr)
+                numerator = 1.0;
+            //BeAssert(numerator != nullptr && "Constant unit expects numerator not to be null");
+            if (ECObjectsStatus::Success != schema.CreateConstant(unit, name, definition, *ph, *us, numerator.Value(), denominator, displayLabel, description))
                     return ERROR;
             }
         else
@@ -1009,9 +1015,9 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     newKoq->SetDescription(description);
 
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
-    if (!newKoq->SetPersistenceUnit(Formatting::FormatUnitSet(persUnitStr)))
+    if (!newKoq->SetPersistenceUnit(persUnitStr))
         {
-        BeAssert(!newKoq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
+        BeAssert(false && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
         return ERROR;
         }
 
@@ -1290,8 +1296,7 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
                                                         "(SELECT COUNT(*) FROM [%s]." TABLE_PropertyCategory " cat WHERE s.Id = cat.SchemaId) + "
                                                         "(SELECT COUNT(*) FROM [%s]." TABLE_UnitSystem " us WHERE s.Id = us.SchemaId) + "
                                                         "(SELECT COUNT(*) FROM [%s]." TABLE_Phenomenon " ph WHERE s.Id = ph.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Unit " u WHERE s.Id = u.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Format " f WHERE s.Id = f.SchemaId) "
+                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Unit " u WHERE s.Id = u.SchemaId) "
                                                          "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
     if (stmt == nullptr)
         return ERROR;

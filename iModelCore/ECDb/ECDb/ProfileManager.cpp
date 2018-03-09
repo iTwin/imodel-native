@@ -304,100 +304,18 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
         return stat;
 
     //ec_UnitSystem
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_UnitSystem
-                           "(Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
-                           "DisplayLabel TEXT,"
-                           "Description TEXT)");
+    stat = ecdb.ExecuteSql(TABLEDDL_UnitSystem);
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_UnitSystem_SchemaId ON " TABLE_UnitSystem "(SchemaId);"
-                           "CREATE INDEX ix_ec_UnitSystem_Name ON " TABLE_UnitSystem "(Name);");
-    if (BE_SQLITE_OK != stat)
-        return stat;
 
     //ec_Phenomenon
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Phenomenon
-                           "(Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
-                           "DisplayLabel TEXT,"
-                           "Description TEXT,"
-                           "Definition TEXT NOT NULL)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Phenomenon_SchemaId ON " TABLE_Phenomenon "(SchemaId);"
-                           "CREATE INDEX ix_ec_Phenomenon_Name ON " TABLE_Phenomenon "(Name);");
+    stat = ecdb.ExecuteSql(TABLEDDL_Phenomenon);
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_Unit
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Unit
-                           "(Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
-                           "DisplayLabel TEXT,"
-                           "Description TEXT,"
-                           "PhenomenonId INTEGER NOT NULL REFERENCES " TABLE_Phenomenon "(Id) ON DELETE CASCADE,"
-                           "UnitSystemId INTEGER NOT NULL REFERENCES " TABLE_UnitSystem "(Id) ON DELETE NO ACTION,"
-                           "Definition TEXT COLLATE NOCASE,"
-                           "Numerator REAL,"
-                           "Denominator REAL,"
-                           "Offset REAL,"
-                           "IsConstant BOOLEAN,"
-                           "InvertingUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Unit_SchemaId ON " TABLE_Unit "(SchemaId);"
-                           "CREATE INDEX ix_ec_Unit_Name ON " TABLE_Unit "(Name);"
-                           "CREATE INDEX ix_ec_Unit_PhenomenonId ON " TABLE_Unit "(PhenomenonId);"
-                           "CREATE INDEX ix_ec_Unit_UnitSystemId ON " TABLE_Unit "(UnitSystemId);"
-                           "CREATE INDEX ix_ec_Unit_InvertingUnitId ON " TABLE_Unit "(InvertingUnitId);");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    //ec_Format
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Format
-                           "(Id INTEGER PRIMARY KEY,"
-                           "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE,"
-                           "Name TEXT NOT NULL COLLATE NOCASE,"
-                           "DisplayLabel TEXT,"
-                           "Description TEXT,"
-                           "Alias TEXT COLLATE NOCASE,"
-                           "Type TEXT NOT NULL COLLATE NOCASE,"
-                           "RoundFactor REAL,"
-                           "PresentationType TEXT NOT NULL COLLATE NOCASE,"
-                           "SignOption TEXT NOT NULL COLLATE NOCASE,"
-                           "FormatTraits TEXT NOT NULL COLLATE NOCASE,"
-                           "DecimalPrecision INTEGER,"
-                           "FractionalPrecision INTEGER,"
-                           "FractionalBarType TEXT COLLATE NOCASE,"
-                           "DecimalSeparator TEXT COLLATE NOCASE,"
-                           "ThousandsSeparator TEXT COLLATE NOCASE,"
-                           "UomSeparator TEXT COLLATE NOCASE,"
-                           "StatSeparator TEXT COLLATE NOCASE,"
-                           "MinWidth INTEGER,"
-                           "CompositeSpecType TEXT COLLATE NOCASE,"
-                           "MajorUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL,"
-                           "MiddleUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL,"
-                           "MinorUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL,"
-                           "SubUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL,"
-                           "InputUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL)");
-    if (BE_SQLITE_OK != stat)
-        return stat;
-
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Format_SchemaId ON " TABLE_Format "(SchemaId);"
-                           "CREATE INDEX ix_ec_Format_Name ON " TABLE_Format "(Name);"
-                           "CREATE INDEX ix_ec_Format_MajorUnitId ON " TABLE_Format "(MajorUnitId);"
-                           "CREATE INDEX ix_ec_Format_MiddleUnitId ON " TABLE_Format "(MiddleUnitId);"
-                           "CREATE INDEX ix_ec_Format_MinorUnitId ON " TABLE_Format "(MinorUnitId);"
-                           "CREATE INDEX ix_ec_Format_SubUnitId ON " TABLE_Format "(SubUnitId);"
-                           "CREATE INDEX ix_ec_Format_InputUnitId ON " TABLE_Format "(InputUnitId);");
-
+    stat = ecdb.ExecuteSql(TABLEDDL_Unit);
     if (BE_SQLITE_OK != stat)
         return stat;
 

@@ -571,21 +571,29 @@ BentleyStatus SchemaWriter::ImportUnit(ECUnitCR unit)
             return ERROR;
         }
 
-
     if (BE_SQLITE_OK != stmt->BindId(phIdParamIx, phen->GetId()))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(usIdParamIx, system->GetId()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindText(defParamIx, unit.GetDefinition(), Statement::MakeCopy::No))
-        return ERROR;
+    if (!unit.GetDefinition().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(defParamIx, unit.GetDefinition(), Statement::MakeCopy::No))
+            return ERROR;
+        }
 
-    if (BE_SQLITE_OK != stmt->BindDouble(numeratorParamIx, unit.GetNumerator()))
-        return ERROR;
+    if (unit.HasNumerator())
+        {
+        if (BE_SQLITE_OK != stmt->BindDouble(numeratorParamIx, unit.GetNumerator()))
+            return ERROR;
+        }
 
-    if (BE_SQLITE_OK != stmt->BindDouble(denominatorParamIx, unit.GetDenominator()))
-        return ERROR;
+    if (unit.HasDenominator())
+        {
+        if (BE_SQLITE_OK != stmt->BindDouble(denominatorParamIx, unit.GetDenominator()))
+            return ERROR;
+        }
 
     if (unit.HasOffset())
         {

@@ -1609,6 +1609,83 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
 
     std::vector<SchemaItem> testSchemas;
     testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                     <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
+                                                     displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5"
+                                                     presentationUnits="FT;IN" />
+                                     </ECSchema>)xml"));
+
+    testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                     <ECSchemaReference name="Schema1" version="01.00.00" alias="s1" />
+                                       <ECEntityClass typeName="Foo" >
+                                         <ECProperty propertyName="Length" typeName="double" kindOfQuantity="s1:MyKindOfQuantity" />
+                                         <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
+                                         <ECArrayProperty propertyName="AlternativeLengths" typeName="double" minOccurs="0" maxOccurs="unbounded" kindOfQuantity="s1:MyKindOfQuantity"/>
+                                         <ECArrayProperty propertyName="Favorites" typeName="string" extendedTypeName="URL" minOccurs="0" maxOccurs="unbounded" />
+                                       </ECEntityClass>
+                                     </ECSchema>)xml"));
+
+    ASSERT_EQ(SUCCESS, SetupECDb("getkindofquantity.ecdb", testSchemas[0]));
+    ASSERT_EQ(SUCCESS, ImportSchema(testSchemas[1]));
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+
+    KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("Schema1", "MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+    assertKoq(*koq);
+    }
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1", false);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(0, schema->GetKindOfQuantityCount());
+    ECClassCP classWithKoq = m_ecdb.Schemas().GetClass("Schema2", "Foo");
+    ASSERT_TRUE(classWithKoq != nullptr);
+    ASSERT_EQ(1, schema->GetKindOfQuantityCount());
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+    assertKoq(*koq);
+
+    ECPropertyCP prop = classWithKoq->GetPropertyP("Length");
+    ASSERT_TRUE(prop != nullptr);
+    koq = prop->GetKindOfQuantity();
+    ASSERT_TRUE(koq != nullptr);
+    assertKoq(*koq);
+    }
+
+    {
+    ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1", true);
+    ASSERT_TRUE(schema != nullptr);
+    ASSERT_EQ(1, schema->GetKindOfQuantityCount());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  06/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
+    {
+    auto assertKoq = [] (KindOfQuantityCR actualKoq)
+        {
+        ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
+        ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
+        ASSERT_STREQ("CM(real)", actualKoq.GetPersistenceUnit().ToText(true).c_str());
+        ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
+        bvector<Formatting::FormatUnitSet> const& actualPresentationUnits = actualKoq.GetPresentationUnitList();
+        ASSERT_EQ(2, actualPresentationUnits.size());
+        ASSERT_STREQ("FT(real)", actualPresentationUnits[0].ToText(true).c_str());
+        ASSERT_STREQ("IN(real)", actualPresentationUnits[1].ToText(true).c_str());
+        };
+
+    std::vector<SchemaItem> testSchemas;
+    testSchemas.push_back(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                                      <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                      <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                                                      displayLabel="My KindOfQuantity" persistenceUnit="CM" relativeError=".5"
