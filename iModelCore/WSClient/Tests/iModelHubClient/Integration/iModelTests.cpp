@@ -57,6 +57,7 @@ TEST_F(iModelTests, SuccessfulCreateiModel)
 
     iModelResult getResult = s_client->GetiModelById(s_projectId, createResult.GetValue()->GetId())->GetResult();
     ASSERT_SUCCESS(getResult) << "Needs defect filed";
+    EXPECT_TRUE(getResult.GetValue()->IsInitialized());
     EXPECT_EQ(getResult.GetValue()->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
 
     auto queryResult = s_client->GetiModels(s_projectId)->GetResult();
