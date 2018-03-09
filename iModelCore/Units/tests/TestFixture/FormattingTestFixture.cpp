@@ -11,6 +11,8 @@
 #include <iostream>
 #endif
 
+#include <locale>
+
 #include "FormattingTestFixture.h"
 
 USING_BENTLEY_FORMATTING
@@ -1244,6 +1246,24 @@ void FormattingTestFixture::ShowSynonyms()
                 }
             }
         }
+    }
+
+Utf8String FormattingTestFixture::SetLocale(Utf8CP name)
+    {
+    Utf8String locName;
+    //const std::locale& loc = *(locale::global); // (name);
+    std::locale currLoc("");
+
+    std::locale loc(name);
+    const std::numpunct<char>& myfacet = std::use_facet < numpunct<char> >(loc);
+    Utf8Char buf[3];
+    buf[0] = myfacet.decimal_point();
+    buf[1] = myfacet.thousands_sep();
+    buf[2] = 0;
+    locName.assign(buf);
+    LOG.infov("Current system locale decpnt= %s name %s   switched from %s", locName.c_str(), loc.name().c_str(), currLoc.name().c_str());
+
+    return locName;
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

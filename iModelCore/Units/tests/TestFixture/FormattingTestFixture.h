@@ -91,6 +91,7 @@ struct FormattingTestFixture
         static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
         static void ShowKnownPhenomena();
         static void ShowSynonyms();
+        static Utf8String SetLocale(Utf8CP name);
     };
 
 END_BENTLEY_FORMATTEST_NAMESPACE
