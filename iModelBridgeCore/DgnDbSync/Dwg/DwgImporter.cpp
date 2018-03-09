@@ -1246,7 +1246,7 @@ BentleyStatus   DwgImporter::_ImportSpaces ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
     {
-    // this method creates a unique PhysicalModel for GeometryParts - no mapping is needed for this model
+    // this method creates a unique DefinitionModel for GeometryParts - no mapping is needed for this model
     static Utf8CP   s_geometryPartsPartitionName = "DwgGeometryParts";
     if (!m_spatialParentSubject.IsValid())
         {
@@ -1266,13 +1266,13 @@ BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
     // push spatial parent subject
     this->SetSpatialParentSubject (*partsSubject);
 
-    // get GeometryParts partition
-    auto partitionCode = PhysicalPartition::CreateCode (*m_spatialParentSubject, modelName);
+    // get or create GeometryParts partition
+    auto partitionCode = DefinitionPartition::CreateCode (*m_spatialParentSubject, modelName);
     auto partitionId = m_dgndb->Elements().QueryElementIdByCode (partitionCode);
     if (!partitionId.IsValid())
         {
         // create a new partition
-        auto   partition = PhysicalPartition::CreateAndInsert (*m_spatialParentSubject, partitionCode.GetValueUtf8CP());
+        auto   partition = DefinitionPartition::CreateAndInsert (*m_spatialParentSubject, partitionCode.GetValueUtf8CP());
         if (!partition.IsValid())
             {
             this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), modelName.c_str());\
@@ -1283,30 +1283,29 @@ BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
     if (!partitionId.IsValid())
         return BSIERROR;
 
+    auto  partsPartition = m_dgndb->Elements().Get<DefinitionPartition> (partitionId);
+    if (!partsPartition.IsValid())
+        return BSIERROR;
+
     // if the model exists, we are done!
-    m_geometryPartsModelId = DgnModelId (partitionId.GetValueUnchecked());
-    if (m_dgndb->Models().GetModel(m_geometryPartsModelId).IsValid())
-        return  BSISUCCESS;
+    DgnModelId  modelId(partitionId.GetValueUnchecked());
+    auto model = m_dgndb->Models().GetModel (modelId);
+    if (model.IsValid())
+        {
+        m_geometryPartsModel = dynamic_cast<DefinitionModelP> (model.get());
+        if (m_geometryPartsModel.IsValid())
+            return  BSISUCCESS;
+        }
     
-    // get the model handler
-    DgnClassId  classId(m_dgndb->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel));
-    auto handler = dgn_ModelHandler::Model::FindHandler (*m_dgndb, classId);
-    if (nullptr == handler)
+    // create & insert a new DefinitionModel in our partition
+    m_geometryPartsModel = DefinitionModel::CreateAndInsert (*partsPartition);
+    if (!m_geometryPartsModel.IsValid() || !m_geometryPartsModel->GetModelId().IsValid())
         {
-        BeAssert(false);
-        this->ReportError(IssueCategory::Unknown(), Issue::ImportFailure(), "cannot find ModelHandler");
+        BeAssert (false && "GeometryParts model is not created or not inserted successfully!");
+        m_geometryPartsModel = nullptr;
         return BSIERROR;
         }
 
-    // create & insert a new PhysicalModel
-    auto model = handler->Create (DgnModel::CreateParams(*m_dgndb, classId, partitionId, nullptr));
-    if (!model.IsValid() || DgnDbStatus::Success != model->Insert())
-        {
-        BeAssert(false);
-        return BSIERROR;
-        }
-
-    m_geometryPartsModelId = model->GetModelId ();
     return  BSISUCCESS;
     }
 
@@ -1534,7 +1533,7 @@ DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments
 
     // 6. Partition a spartial subject for GeometryParts model:
     this->GetOrCreateGeometryPartsModel ();
-    if (!m_geometryPartsModelId.IsValid())
+    if (!m_geometryPartsModel.IsValid())
         {
         BeAssert (false && "Failed creating GeometryParts model!");
         return ImportJobCreateStatus::FailedInsertFailure;

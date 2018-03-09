@@ -262,7 +262,7 @@ TEST_F(BasicTests, CreateNewDwg)
     LineUpFilesForNewDwg(L"createNewDwgTest.ibim", L"createdfromcratch.dwg");
 
     m_options.SetInputFileName (m_dwgFileName);
-    m_options.SetBridgeRegSubKey (DwgImporter::GetRegistrySubKey());
+    m_options.SetBridgeRegSubKey (ImporterTests::GetDwgBridgeRegistryKey());
     m_options.SetIsUpdating (false);
     
     DwgImporter*    importer = new DwgImporter(m_options);
