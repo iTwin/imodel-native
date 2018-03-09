@@ -91,8 +91,6 @@ TEST (BeFileNameTests, BeFileNameSetName)
 //---------------------------------------------------------------------------------------
 // @betest                                      Shaun.Sewall                    10/11
 //---------------------------------------------------------------------------------------
-// Need to debug on Linux and MacOS
-#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS) && !defined(BENTLEYCONFIG_OS_APPLE_IOS)
 TEST (BeFileNameTests, BeFileNameSetNameUtf8)
 {
 #if defined (_WIN32)
@@ -114,6 +112,7 @@ TEST (BeFileNameTests, BeFileNameSetNameUtf8)
     ASSERT_TRUE (0 == wcscmp (expectedFileName, fromFileNameUtf8.GetName ()));
     ASSERT_TRUE (0 == strcmp (fileNameUtf8.c_str (), fromFileNameUtf8.GetNameUtf8().c_str ()));
     
+#if defined (_WIN32)
     //Added a few tests where a befilename constructed from utf8 string was misbehaving.
     char *filePathUtf8 = "\\\\naou19755\\basworkdir\\87\\1069_1\\A-CurtainWalls.dgn";
     BeFileName fromFileNameString(filePathUtf8, true);
@@ -121,14 +120,21 @@ TEST (BeFileNameTests, BeFileNameSetNameUtf8)
     //Test to make sure quoted file name path works correctly.
     BeFileName fromFileNameStringWithQuotes("\"\\\\naou19755\\basworkdir\\87\\1069_1\\A-CurtainWalls.dgn\"", true);
     ASSERT_TRUE(0 == wcscmp(L"\"\\\\naou19755\\basworkdir\\87\\1069_1\\A-CurtainWalls.dgn\"", fromFileNameStringWithQuotes.c_str()));
-
+#else
+    //Added a few tests where a befilename constructed from utf8 string was misbehaving.
+    char *filePathUtf8 = "/naou19755/basworkdir/87/1069_1/A-CurtainWalls.dgn";
+    BeFileName fromFileNameString(filePathUtf8, true);
+    ASSERT_TRUE(0 == wcscmp(L"/naou19755/basworkdir/87/1069_1/A-CurtainWalls.dgn", fromFileNameString.c_str()));
+    //Test to make sure quoted file name path works correctly.
+    BeFileName fromFileNameStringWithQuotes("\"/naou19755/basworkdir/87/1069_1/A-CurtainWalls.dgn\"", true);
+    ASSERT_TRUE(0 == wcscmp(L"\"/naou19755/basworkdir/87/1069_1/A-CurtainWalls.dgn\"", fromFileNameStringWithQuotes.c_str()));
+#endif
 //    The file://// uri tests are still failing. Need to work with platform for a fix.
 //    BeFileName embeddedPathStr("file:\\\\naou19755\\basworkdir\\87\\1069_1\\A-CurtainWalls.dgn", true);
 //    ASSERT_TRUE(0 == wcscmp(L"file:\\\\naou19755\\basworkdir\\87\\1069_1\\A-CurtainWalls.dgn", fromFileNameStringWithQuotes.c_str()));
 
     SUCCEED ();
 }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Shaun.Sewall                    09/11
