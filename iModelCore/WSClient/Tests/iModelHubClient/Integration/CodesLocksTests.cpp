@@ -300,7 +300,7 @@ TEST_F(CodesLocksTests, RelinquishOtherUserCodesLocks)
     iModelHubHelpers::ExpectCodesCount(briefcase1, 0);
     ExpectCodeState(CreateCodeUsed(modelElem1->GetCode(), changeSet1), imodelManager1);
     ExpectCodeState(CreateCodeUsed(modelElem2->GetCode(), changeSet1), imodelManager1);
-    iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 2);
 
     // Briefcase1 deletes one model and creates two new.
     EXPECT_EQ(DgnDbStatus::Success, modelElem2->Delete());
@@ -322,7 +322,7 @@ TEST_F(CodesLocksTests, RelinquishOtherUserCodesLocks)
     ExpectCodeState(CreateCodeUsed(modelElem2->GetCode(), changeSet1), imodelManager1);
     ExpectCodeState(CreateCodeReserved(modelElem3->GetCode(), db1), imodelManager1);
     ExpectCodeState(CreateCodeReserved(modelElem4->GetCode(), db1), imodelManager1);
-    iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 2);
 
     // Briefcase2 relinquishes specific code and lock.
     locks.clear();
@@ -335,7 +335,7 @@ TEST_F(CodesLocksTests, RelinquishOtherUserCodesLocks)
     ExpectCodeState(CreateCodeUsed(modelElem1->GetCode(), changeSet1), imodelManager1);
     ExpectCodeState(CreateCodeUsed(modelElem2->GetCode(), changeSet1), imodelManager1);
     ExpectCodeState(CreateCodeReserved(modelElem4->GetCode(), db1), imodelManager1);
-    iModelHubHelpers::ExpectLocksCount(briefcase1, 3);
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 1);
 
     // Briefcase2 deletes model1.
     EXPECT_SUCCESS(briefcase2->PullAndMerge()->GetResult());
@@ -345,7 +345,7 @@ TEST_F(CodesLocksTests, RelinquishOtherUserCodesLocks)
     EXPECT_EQ(DgnDbStatus::Success, model1_2->Delete());
     db2.SaveChanges();
     iModelHubHelpers::ExpectCodesCount(briefcase1, 1);
-    iModelHubHelpers::ExpectLocksCount(briefcase1, 3);
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 1);
     iModelHubHelpers::ExpectCodesCount(briefcase2, 0);
     ExpectCodeState(CreateCodeUsed(modelElem1->GetCode(), changeSet1), imodelManager2);
     iModelHubHelpers::ExpectLocksCount(briefcase2, 3);
@@ -377,7 +377,7 @@ TEST_F(CodesLocksTests, RelinquishOtherUserCodesLocks)
     EXPECT_EQ(Error::Id::CodeReservedByAnotherBriefcase, pushResult.GetError().GetId());
 
     iModelHubHelpers::ExpectCodesCount(briefcase1, 1);
-    iModelHubHelpers::ExpectLocksCount(briefcase1, 3);
+    iModelHubHelpers::ExpectLocksCount(briefcase1, 1);
     iModelHubHelpers::ExpectCodesCount(briefcase2, 1);
     ExpectNoCodeWithState(CreateCodeDiscarded(modelElem1->GetCode(), changeSet2), imodelManager2);
     ExpectCodeState(CreateCodeReserved(modelElem3->GetCode(), db2), imodelManager2);
