@@ -181,8 +181,7 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
     m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
     m_barType = FractionBarType::Diagonal;
-    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
-    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
+    ImbueLocale("");
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
     m_minWidth = 0;
@@ -210,11 +209,33 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
         m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
         }
 
-    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
-    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
+    ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
     m_minWidth = 0;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+bool NumericFormatSpec::ImbueLocale(Utf8CP name) // en-US en-UK   en-GB
+    {
+    std::locale loc = std::locale(name);
+    const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
+
+    m_decimalSeparator = myfacet.decimal_point();
+    m_thousandsSeparator = myfacet.thousands_sep(); 
+    return true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+bool NumericFormatSpec::ImbueLocaleProperties(LocalePropertiesCR locProp)
+    {
+    m_decimalSeparator = locProp.GetDecimalSeparator();
+    m_thousandsSeparator = locProp.GetThousandSeparator();
+    return true;
     }
 
 //----------------------------------------------------------------------------------------
