@@ -241,6 +241,7 @@ struct DwgImporter
     friend struct ViewportFactory;
     friend struct AttributeFactory;
     friend struct MaterialFactory;
+    friend struct LineStyleFactory;
     friend class DwgProtocalExtension;
     friend class DwgRasterImageExt;
     friend class DwgPointCloudExExt;
@@ -248,8 +249,6 @@ struct DwgImporter
     friend class DwgLightExt;
 
 public:
-    static WCharCP GetRegistrySubKey() {return L"DwgBridge";}
-
     //! Configuration for the conversion process
     struct Config
         {
@@ -488,6 +487,7 @@ public:
     struct ElementCreateParams
         {
         DgnModelR                       m_targetModel;
+        DefinitionModelPtr              m_geometryPartsModel;
         DgnCategoryId                   m_categoryId;
         DgnSubCategoryId                m_subCategoryId;
         DgnCode                         m_elementCode;
@@ -498,6 +498,7 @@ public:
 
         DgnModelCR          GetModel () { return m_targetModel; }
         DgnModelR           GetModelR () { return m_targetModel; }
+        DefinitionModelPtr  GetGeometryPartsModel () { return m_geometryPartsModel; }
         DgnCategoryId       GetCategoryId () { return m_categoryId; }
         DgnSubCategoryId    GetSubCategoryId () { return m_subCategoryId; }
         TransformR          GetTransformR () { return m_transform; }
@@ -836,6 +837,7 @@ public:
         L10N_STRING(ImageNotAJpeg)               // =="Sky box image is not a jpeg file, %s"==
         L10N_STRING(WrongBriefcaseManager)       // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
+        L10N_STRING(MissingJobDefinitionModel)   // =="Missing JobDefinitionModel for %s"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process
@@ -962,6 +964,8 @@ protected:
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
+    DefinitionModelPtr          m_geometryPartsModel;
+    DefinitionModelPtr          m_jobDefinitionModel;
     T_GeometryBuilderList       m_sharedGeometryPartList;
     T_PresentationRuleContents  m_presentationRuleContents;
 
@@ -1026,7 +1030,7 @@ protected:
     ResolvedImportJob GetResolvedImportJob (DwgSyncInfo::ImportJob const& job);
     ResolvedImportJob FindSoleImportJobForFile (DwgDbDatabaseR dwg);
     // model subjects
-    enum class ModelSubjectType {Hierarchy, References};
+    enum class ModelSubjectType {Hierarchy, References, GeometryParts};
     SubjectCPtr GetOrCreateModelSubject(SubjectCR parent, Utf8StringCR, ModelSubjectType);
     bool        IsUpdating () const { return GetOptions().IsUpdating(); }
     bool        IsCreatingNewDgnDb () { return GetOptions().IsCreatingNewDgnDb(); }
@@ -1049,6 +1053,8 @@ protected:
     ResolvedModelMapping                GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR block, TransformCR trans, DwgDbBlockReferenceCP xrefInsert = nullptr, DwgDbDatabaseP xrefDwg = nullptr);
     //! Create the root model from the modelspace block if importing, or retrieve it from the syncInfo if updating.
     ResolvedModelMapping                GetOrCreateRootModel (bool updating);
+    //! Partition the parent subject and create a DefinitionModel dedicated for GeometryParts
+    BentleyStatus                       GetOrCreateGeometryPartsModel ();
     ResolvedModelMapping                GetRootModel () const { return  m_rootDwgModelMap; }
     ResolvedModelMapping                GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans);
     //! Find a cached DgnModel mapped from a DWG "model".  Only search the cached map, no attempt to search in the syncInfo.
@@ -1212,6 +1218,10 @@ public:
     DgnSubCategoryId                    InsertAlternateSubCategory (DgnSubCategoryCPtr subcategory, DgnSubCategory::Appearance const& appearance, Utf8CP desiredName = nullptr);
     T_GeometryBuilderList&              GetSharedPartListR () { return m_sharedGeometryPartList; }
     T_GeometryBuilderList const&        GetSharedPartList () const { return m_sharedGeometryPartList; }
+    //! Get the DefinitionModel that stores GeometryParts
+    DefinitionModelPtr                  GetGeometryPartsModel () { return m_geometryPartsModel; }
+    //! Get/create the DefinitionModel that stores all other job specific definitions, expcept for GeometryParts.
+    DefinitionModelPtr                  GetOrCreateJobDefinitionModel ();
 
     //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
     DGNDBSYNC_EXPORT BentleyStatus      MakeSchemaChanges ();

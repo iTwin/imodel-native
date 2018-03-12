@@ -36,6 +36,11 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
         --------------------------------------------------------------------------------------------*/
         DwgDb2dPolyline::rxInit ();
         DwgDb3dPolyline::rxInit ();
+        DwgDbPolyFaceMesh::rxInit ();
+        DwgDbPolyFaceMeshVertex::rxInit ();
+        DwgDbPolygonMesh::rxInit ();
+        DwgDbPolygonMeshVertex::rxInit ();
+        DwgDbFaceRecord::rxInit ();
         DwgDbViewport::rxInit ();
         return;
         }
@@ -155,10 +160,15 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbPolyline::rxUninit ();
     DwgDb2dPolyline::rxUninit ();
     DwgDb3dPolyline::rxUninit ();
+    DwgDbPolyFaceMesh::rxUninit ();
+    DwgDbPolyFaceMeshVertex::rxUninit ();
+    DwgDbPolygonMesh::rxUninit ();
+    DwgDbPolygonMeshVertex::rxUninit ();
     DwgDbArc::rxUninit ();
     DwgDbCircle::rxUninit ();
     DwgDbEllipse::rxUninit ();
     DwgDbFace::rxUninit ();
+    DwgDbFaceRecord::rxUninit ();
     DwgDbAttributeDefinition::rxUninit ();
     DwgDbAttribute::rxUninit ();
     DwgDbViewport::rxUninit ();

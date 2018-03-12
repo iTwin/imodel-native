@@ -27,6 +27,9 @@
     <ClCompile Include="lib\BisJson1ImporterImpl.cpp">
       <Filter>Library</Filter>
     </ClCompile>
+    <ClCompile Include="lib\SchemaFlattener.cpp">
+      <Filter>Library</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\logging.config.xml" />
@@ -54,6 +57,9 @@
       <Filter>Library</Filter>
     </ClInclude>
     <ClInclude Include="lib\BisJson1ImporterImpl.h">
+      <Filter>Library</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\SchemaFlattener.h">
       <Filter>Library</Filter>
     </ClInclude>
   </ItemGroup>

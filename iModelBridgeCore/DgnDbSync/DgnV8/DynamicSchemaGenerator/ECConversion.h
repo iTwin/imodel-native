@@ -191,7 +191,7 @@ struct BisClassConverter
                         }
                     };
 
-				typedef Bentley::bpair<ECN::ECClassCP, ECN::ECClassCP> MixinContext;
+                typedef Bentley::bpair<ECN::ECClassCP, ECN::ECClassCP> MixinContext;
 
             private:
                 DynamicSchemaGenerator& m_converter;
@@ -210,8 +210,8 @@ struct BisClassConverter
                 std::vector<std::pair<ECN::ECClassCP, ElementAspectDefinition>> m_aspectMappings;
                 bmap<ECN::ECClassCP, size_t> m_aspectMappingIndexMap;
 
-				bmap<ECN::ECClassCP, ECN::ECClassP> m_mixinAppliesToMap;
-				bmap<ECN::ECSchemaCP, MixinContext>  m_mixinContextCache;
+                bmap<ECN::ECClassCP, ECN::ECClassP> m_mixinAppliesToMap;
+                bmap<ECN::ECSchemaCP, MixinContext>  m_mixinContextCache;
 
                 void ReportIssueV(Converter::IssueSeverity severity, BentleyApi::Utf8CP message, va_list args) const;
 
@@ -219,8 +219,8 @@ struct BisClassConverter
                 SchemaConversionContext(DynamicSchemaGenerator&, ECN::ECSchemaReadContext& schemaReadContext, ECN::ECSchemaReadContext& syncReadContext, bool autoDetectMixinParams);
 
                 BentleyStatus AddClassMapping(ECN::ECClassCR inputClass, ECN::ECClassR aspectClass, bool isAspectOnly, ECN::ECClassCR aspectBaseClass);
-				BentleyStatus AddMixinAppliesToMapping(ECN::ECClassCP mixinClass, ECN::ECClassP appliesToClass);
-				BentleyStatus AddMixinContextMapping(ECN::ECSchemaCP schema, MixinContext context);
+                BentleyStatus AddMixinAppliesToMapping(ECN::ECClassCP mixinClass, ECN::ECClassP appliesToClass);
+                BentleyStatus AddMixinContextMapping(ECN::ECSchemaCP schema, MixinContext context);
 
                 bool IsAlreadyConverted(ECN::ECClassCR inputClass) const;
                 std::vector<std::pair<ECN::ECClassCP, ElementAspectDefinition>> const& GetAspectMappings() const { return m_aspectMappings; }
@@ -234,8 +234,8 @@ struct BisClassConverter
                 ECN::ECRelationshipClassCP GetDomainRelationshipBaseClass(ECN::ECRelationshipClassR inputClass) const;
                 ECN::ECClassP GetInputClass(BentleyApi::Utf8CP schemaName, BentleyApi::Utf8CP className) const;
                 bmap<Utf8String, ECN::ECSchemaP> const& GetSchemas() const { return m_inputSchemaMap; }
-				bmap<ECN::ECClassCP, ECN::ECClassP> const& GetMixinAppliesToMapping() const { return m_mixinAppliesToMap; }
-				MixinContext* GetMixinContext(ECN::ECSchemaCR schema);
+                bmap<ECN::ECClassCP, ECN::ECClassP> const& GetMixinAppliesToMapping() const { return m_mixinAppliesToMap; }
+                MixinContext* GetMixinContext(ECN::ECSchemaCR schema);
                 static bool ExcludeSchemaFromBisification(ECN::ECSchemaCR);
 
                 void ReportIssue(Converter::IssueSeverity severity, BentleyApi::Utf8CP message, ...) const;
@@ -270,12 +270,12 @@ struct BisClassConverter
         static BentleyStatus ConvertECClass(SchemaConversionContext&, ECClassName const& v8ClassName, BisConversionRule const* parentConversionRule);
         static BentleyStatus DoConvertECClass(SchemaConversionContext&, BisConversionRule, ECN::ECClassR inputClass, ECClassName const& v8ClassName, bool hasSecondary);
 
-		static bool ShouldConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass, SchemaConversionContext& context);
-		static BentleyStatus ConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass, ECN::ECClassCR appliesTo);
-		static BentleyStatus CreateMixinContext(SchemaConversionContext::MixinContext& mixinContext, DynamicSchemaGenerator& converter, ECN::ECSchemaReadContext& syncReadContext, ECN::ECSchemaP schema, bool autoDetect);
-		static void FindCommonBaseClass(ECN::ECClassP& commonClass, ECN::ECClassP currentClass, ECN::ECBaseClassesList const& classes, const bvector<ECN::ECClassCP> propogationFilter);
+        static bool ShouldConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass, SchemaConversionContext& context);
+        static BentleyStatus ConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass, ECN::ECClassCR appliesTo);
+        static BentleyStatus CreateMixinContext(SchemaConversionContext::MixinContext& mixinContext, DynamicSchemaGenerator& converter, ECN::ECSchemaReadContext& syncReadContext, ECN::ECSchemaP schema, bool autoDetect);
+        static void FindCommonBaseClass(ECN::ECClassP& commonClass, ECN::ECClassP currentClass, ECN::ECBaseClassesList const& classes, const bvector<ECN::ECClassCP> propogationFilter);
         
-		static void GetBisBaseClasses(ECN::ECClassCP& elementBaseClass, ECN::ECClassCP& elementAspectClass, SchemaConversionContext&, BisConversionRule);
+        static void GetBisBaseClasses(ECN::ECClassCP& elementBaseClass, ECN::ECClassCP& elementAspectClass, SchemaConversionContext&, BisConversionRule);
 
         //! Injecting a BIS base class might lead to collisions between ECDbMap custom attributes used on the BIS base class and the domain class.
         //! The BIS base class custom attributes should be preferred, therefore the hint on the domain class is deleted.

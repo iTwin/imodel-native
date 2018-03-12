@@ -25,9 +25,14 @@ DWGDB_ENTITY_DEFINE_MEMBERS(Arc)
 DWGDB_ENTITY_DEFINE_MEMBERS(Circle)
 DWGDB_ENTITY_DEFINE_MEMBERS(Ellipse)
 DWGDB_ENTITY_DEFINE_MEMBERS(Face)
+DWGDB_ENTITY_DEFINE_MEMBERS(FaceRecord)
 DWGDB_ENTITY_DEFINE_MEMBERS(Polyline)
 DWGDB_ENTITY_DEFINE_MEMBERS(2dPolyline)
 DWGDB_ENTITY_DEFINE_MEMBERS(3dPolyline)
+DWGDB_ENTITY_DEFINE_MEMBERS(PolyFaceMesh)
+DWGDB_ENTITY_DEFINE_MEMBERS(PolyFaceMeshVertex)
+DWGDB_ENTITY_DEFINE_MEMBERS(PolygonMesh)
+DWGDB_ENTITY_DEFINE_MEMBERS(PolygonMeshVertex)
 DWGDB_ENTITY_DEFINE_MEMBERS(Hatch)
 DWGDB_ENTITY_DEFINE_MEMBERS(Light)
 DWGDB_ENTITY_DEFINE_MEMBERS(Region)
@@ -489,7 +494,98 @@ DwgDbObjectIterator     DwgDb3dPolyline::GetVertexIterator () const { return Dwg
 DwgDbStatus DwgDb3dPolyline::MakeOpen () { RETURNVOIDORSTATUS(T_Super::makeOpen()); }
 DwgDbStatus DwgDb3dPolyline::MakeClosed () { RETURNVOIDORSTATUS(T_Super::makeClosed()); }
 DwgDbStatus DwgDb3dPolyline::SplineFit () { RETURNVOIDORSTATUS(T_Super::splineFit()); }
-DwgDbStatus DwgDb3dPolyline::SplineFit (Type t, uint16_t n) {  RETURNVOIDORSTATUS(T_Super::splineFit(DWGDB_CASTTOENUM_DB(Poly3dType)(t), n)); }
+DwgDbStatus DwgDb3dPolyline::SplineFit (Type t, uint16_t n) { RETURNVOIDORSTATUS(T_Super::splineFit(DWGDB_CASTTOENUM_DB(Poly3dType)(t), n)); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbPolyFaceMesh::AppendVertex (DwgDbObjectIdR outId, DwgDbPolyFaceMeshVertexP vertex)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    outId = T_Super::appendVertex (vertex);
+    status = outId.isValid() ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::appendVertex(outId, vertex));
+#endif
+    return  status;
+    }
+int16_t DwgDbPolyFaceMesh::GetNumFaces() const { return T_Super::numFaces(); }
+int16_t DwgDbPolyFaceMesh::GetNumVertices() const { return T_Super::numVertices(); }
+DwgDbStatus DwgDbPolyFaceMesh::AppendFaceRecord(DwgDbFaceRecordP face) { RETURNVOIDORSTATUS(T_Super::appendFaceRecord(face)); }
+DwgDbObjectIterator DwgDbPolyFaceMesh::GetVertexIterator() const { return DwgDbObjectIterator(T_Super::vertexIterator()); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbPolygonMesh::AppendVertex (DwgDbObjectIdR outId, DwgDbPolygonMeshVertexP vertex)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    outId = T_Super::appendVertex (vertex);
+    status = outId.isValid() ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::appendVertex(outId, vertex));
+#endif
+    return  status;
+    }
+DwgDbPolygonMesh::Type DwgDbPolygonMesh::GetPolyMeshType() const { return static_cast<Type>(T_Super::polyMeshType()); }
+DwgDbStatus DwgDbPolygonMesh::SetPolyMeshType(Type t) { RETURNVOIDORSTATUS(T_Super::setPolyMeshType(DWGDB_CASTTOENUM_DB(PolyMeshType)(t))); }
+DwgDbStatus DwgDbPolygonMesh::ConvertTo(Type t){ RETURNVOIDORSTATUS(T_Super::convertToPolyMeshType(DWGDB_CASTTOENUM_DB(PolyMeshType)(t))); }
+int16_t     DwgDbPolygonMesh::GetMSize() const { return T_Super::mSize(); }
+int16_t     DwgDbPolygonMesh::GetNSize() const { return T_Super::nSize(); }
+DwgDbStatus DwgDbPolygonMesh::SetMSize(int16_t m) { RETURNVOIDORSTATUS(T_Super::setMSize(m)); }
+DwgDbStatus DwgDbPolygonMesh::SetNSize(int16_t n) { RETURNVOIDORSTATUS(T_Super::setNSize(n)); }
+bool        DwgDbPolygonMesh::IsMClosed() const { return T_Super::isMClosed(); }
+bool        DwgDbPolygonMesh::IsNClosed() const { return T_Super::isNClosed(); }
+DwgDbStatus DwgDbPolygonMesh::MakeMClosed() { RETURNVOIDORSTATUS(T_Super::makeMClosed()); }
+DwgDbStatus DwgDbPolygonMesh::MakeMOpen() { RETURNVOIDORSTATUS(T_Super::makeMOpen()); }
+DwgDbStatus DwgDbPolygonMesh::MakeNClosed() { RETURNVOIDORSTATUS(T_Super::makeNClosed()); }
+DwgDbStatus DwgDbPolygonMesh::MakeNOpen() { RETURNVOIDORSTATUS(T_Super::makeNOpen()); }
+int16_t     DwgDbPolygonMesh::GetMSurfaceDensity() const { return T_Super::mSurfaceDensity(); }
+int16_t     DwgDbPolygonMesh::GetNSurfaceDensity() const { return T_Super::nSurfaceDensity(); }
+DwgDbStatus DwgDbPolygonMesh::Straighten() { RETURNVOIDORSTATUS(T_Super::straighten()); }
+DwgDbStatus DwgDbPolygonMesh::SurfaceFit() { RETURNVOIDORSTATUS(T_Super::surfaceFit()); }
+DwgDbStatus DwgDbPolygonMesh::SurfaceFit(Type t, int16_t u, int16_t v) { RETURNVOIDORSTATUS(T_Super::surfaceFit(DWGDB_CASTTOENUM_DB(PolyMeshType)(t), u, v)); }
+DwgDbObjectIterator DwgDbPolygonMesh::GetVertexIterator() const {  return DwgDbObjectIterator(T_Super::vertexIterator()); }
+
+DPoint3d    DwgDbPolyFaceMeshVertex::GetPosition() const { return Util::DPoint3dFrom(T_Super::position()); }
+DwgDbStatus DwgDbPolyFaceMeshVertex::SetPosition(DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setPosition(Util::GePoint3dFrom(p))); }
+
+DwgDbPolygonMeshVertex::Type DwgDbPolygonMeshVertex::GetVertexType() const { return static_cast<Type>(T_Super::vertexType()); }
+DPoint3d    DwgDbPolygonMeshVertex::GetPosition() const { return Util::DPoint3dFrom(T_Super::position()); }
+DwgDbStatus DwgDbPolygonMeshVertex::SetPosition(DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setPosition(Util::GePoint3dFrom(p))); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbFaceRecord::GetVertexAt(int16_t faceIndex, int16_t& vertexIndex) const
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    vertexIndex = T_Super::getVertexAt (faceIndex);
+    status = vertexIndex < 0 ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::getVertexAt(faceIndex, vertexIndex));
+#endif
+    return  status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbFaceRecord::GetEdgeVisibilityAt (int16_t faceIndex, bool& visible) const
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    visible = T_Super::isEdgeVisibleAt (faceIndex);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::isEdgeVisibleAt(faceIndex, visible));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbFaceRecord::MakeEdgeVisibleAt(int16_t f) { RETURNVOIDORSTATUS(T_Super::makeEdgeVisibleAt(f)); }
+DwgDbStatus DwgDbFaceRecord::MakeEdgeInvisibleAt(int16_t f) { RETURNVOIDORSTATUS(T_Super::makeEdgeInvisibleAt(f)); }
+DwgDbStatus DwgDbFaceRecord::SetVertexAt(int16_t f, int16_t v) { RETURNVOIDORSTATUS(T_Super::setVertexAt(f, v)); }
 
 DPoint3d   DwgDbArc::GetCenter () const { return Util::DPoint3dFrom(T_Super::center()); }
 double     DwgDbArc::GetRadius () const { return T_Super::radius(); }

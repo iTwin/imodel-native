@@ -694,6 +694,7 @@ DgnElementId BisJson1ExporterImpl::CreateDisplayStyle(Json::Value& out, ViewCont
 
     row["BackgroundColor"] = vc.GetBackgroundColor().GetValue();
     row["Is3d"] = is3d;
+    MakeNavigationProperty(row, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
     (QueueJson)(displayStyle.toStyledString().c_str());
 
     return m_nextAvailableId;
@@ -740,6 +741,7 @@ DgnElementId BisJson1ExporterImpl::CreateCategorySelector(Json::Value& out, View
     row[JSON_INSTANCE_ID] = IdToString(m_nextAvailableId.GetValue());
     row["Name"] = name;
     row["Categories"] = Json::Value(Json::ValueType::arrayValue);
+    MakeNavigationProperty(row, "DefinitionModel", m_jobDefinitionModelId.GetValue());
     DgnElementId categorySelectorId = m_nextAvailableId;
     for (DgnCategoryId id : vc.GetViewedCategories())
         {
@@ -772,6 +774,7 @@ DgnElementId BisJson1ExporterImpl::CreateModelSelector(Json::Value& out, ViewCon
         model = IdToString(id.GetValue());
         row["Models"].append(model);
         }
+    MakeNavigationProperty(row, "DefinitionModel", m_jobDefinitionModelId.GetValue());
     (QueueJson)(modelSelector.toStyledString().c_str());
     return m_nextAvailableId;
     }
@@ -863,6 +866,8 @@ BentleyStatus BisJson1ExporterImpl::ExportViews(Json::Value& out)
         MakeNavigationProperty(obj, "CategorySelector", categorySelectorId.GetValue());
         MakeNavigationProperty(obj, "DisplayStyle", displayStyle.GetValue());
         MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeSpec, m_authorityIds["bis:ViewDefinition"].c_str());
+        MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
+
         if (obj.isMember("Source"))
             {
             if ((DgnViewSource) (obj["Source"].asInt()) == DgnViewSource::Private)
@@ -1137,6 +1142,29 @@ BentleyStatus BisJson1ExporterImpl::InitSheetListModel(Json::Value& out)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus BisJson1ExporterImpl::InitJobDefinitionModel(Json::Value& out)
+    {
+    m_jobDefinitionModelId = CreatePartitionElement("Job Definition Model", "DocumentPartition", m_jobSubjectId, out);
+    auto& entry = out.append(Json::ValueType::objectValue);
+    entry[JSON_TYPE_KEY] = JSON_TYPE_Model;
+    entry[JSON_OBJECT_KEY] = Json::Value(Json::ValueType::objectValue);
+    entry[JSON_ACTION_KEY] = JSON_ACTION_INSERT;
+    auto& obj = entry[JSON_OBJECT_KEY];
+    obj.clear();
+    obj[JSON_CLASSNAME] = "BisCore.DefinitionModel";
+
+    MakeNavigationProperty(obj, BIS_MODEL_PROP_ModeledElement, m_jobDefinitionModelId.GetValue());
+
+    m_nextAvailableId = DgnElementId(m_nextAvailableId.GetValue() + 1);
+    obj[JSON_INSTANCE_ID] = IdToString(m_jobDefinitionModelId.GetValue()).c_str();
+    (QueueJson) (entry.toStyledString().c_str());
+    return SUCCESS;
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BisJson1ExporterImpl::ExportModels(Json::Value& out)
@@ -1145,6 +1173,7 @@ BentleyStatus BisJson1ExporterImpl::ExportModels(Json::Value& out)
     m_jobSubjectId = CreateSubjectElement(subjectName.c_str(), out);
     InitDrawingListModel(out);
     InitSheetListModel(out);
+    InitJobDefinitionModel(out);
 
     Statement stmt;
     Utf8PrintfString sql("SELECT s.NAME, c.NAME from ec_Schema s, ec_Class c WHERE s.ID = c.[SchemaId] and c.Id in (SELECT DISTINCT ECClassId FROM %s_%s)", DGN_ECSCHEMA_NAME, DGN_CLASSNAME_Model);
@@ -1437,6 +1466,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             obj[JSON_CLASSNAME] = "BisCore.SpatialCategory";
             obj[BIS_ELEMENT_PROP_CodeSpec]["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
             obj.removeMember("Scope");
+            MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
             }
         else if (element->IsGeometricElement())
             {
@@ -1460,6 +1490,8 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             Utf8String encode;
             Base64Utilities::Encode(encode, geom.GetData(), geom.GetSize());
             obj["GeometryStream"] = encode.c_str();
+            MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeScope, m_jobDefinitionModelId);
+            MakeNavigationProperty(obj, BIS_ELEMENT_PROP_Model, m_jobDefinitionModelId);
             }
         else if (element->IsGroupInformationElement())
             {

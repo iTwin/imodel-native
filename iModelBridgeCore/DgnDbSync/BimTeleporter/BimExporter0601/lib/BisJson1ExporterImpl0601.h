@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimExporter0601/lib/BisJson1ExporterImpl0601.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -83,6 +83,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         Dgn::DgnElementId        m_jobSubjectId;
         Dgn::DgnElementId        m_documentListModelId;
         Dgn::DgnElementId        m_sheetListModelId;
+        Dgn::DgnElementId       m_jobDefinitionModelId;
         bmap<Utf8String, Utf8String> m_authorityIds;
 
         bmap<DgnElementId, int> m_insertedElements;
@@ -131,6 +132,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         DgnElementId InitListModel(Json::Value& out, Utf8CP name);
         BentleyStatus InitDrawingListModel(Json::Value& out);
         BentleyStatus InitSheetListModel(Json::Value& out);
+        BentleyStatus InitJobDefinitionModel(Json::Value& out);
         Utf8String RemapResourceAuthority(Json::Value& obj, ECN::ECClassCP elementClass);
         void HandleAnnotationTextStyle(Json::Value& obj, DgnElementId id);
 

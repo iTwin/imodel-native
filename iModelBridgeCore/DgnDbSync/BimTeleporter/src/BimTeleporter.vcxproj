@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BimTeleporter.cpp" />
+    <ClCompile Include="DgnDbToBimConverter.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7A66F486-9987-49A0-ADC8-28CAEA4310D8}</ProjectGuid>
