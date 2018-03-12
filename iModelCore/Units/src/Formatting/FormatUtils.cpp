@@ -13,6 +13,7 @@
 #include "../../Localization/xliffs/Units.xliff.h"
 #include <BeSQLite/L10N.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
+#include "../../PrivateAPI/Units/UnitRegistry.h" // temporary
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -1234,7 +1235,7 @@ void FormatUnitSet::Init()
     m_unitName.clear();
     m_unit = nullptr;
     m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
-    m_localCopy.Init();
+    m_localCopy = NamedFormatSpec();
     }
 
 //----------------------------------------------------------------------------------------
@@ -1254,7 +1255,7 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cl
         m_unitName = Utf8String(unit->GetName());
         if (cloneData)
             {
-            m_localCopy.Clone(m_formatSpec);
+            m_localCopy = *m_formatSpec;
             m_formatSpec = &m_localCopy;
             }
         m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
@@ -1291,7 +1292,7 @@ FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
         {
         if (other.m_formatSpec == &other.m_localCopy)
             {
-            m_localCopy.Clone(other.m_localCopy);
+            m_localCopy = other.m_localCopy;
             m_formatSpec = &m_localCopy;
             }
         else
@@ -1366,7 +1367,7 @@ void FormatUnitSet::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
         m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
     if (cloneData && !local && (nullptr != m_formatSpec))
         {
-        m_localCopy.Clone(m_formatSpec);
+        m_localCopy = *m_formatSpec;
         m_formatSpec = &m_localCopy;
         }
     }
@@ -1462,12 +1463,12 @@ void FormatUnitSet::ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-Utf8String FormatUnitSet::ToText(bool useAlias) const
+Utf8String FormatUnitSet::ToText() const
     {
     if (HasProblem())
         return "";
     char buf[256];
-    sprintf(buf, "%s(%s)", m_unit->GetName().c_str(), (useAlias? m_formatSpec->GetAlias() : m_formatSpec->GetName()));
+    sprintf(buf, "%s(%s)", m_unit->GetName().c_str(), m_formatSpec->GetName());
     return buf;
     }
 
@@ -1520,10 +1521,10 @@ Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty, Utf8CP space) cons
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space) const
+Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, Utf8CP space) const
     {
     Utf8String str;
-    Json::Value jval = ToJson(useAlias);
+    Json::Value jval = ToJson();
     BEU::Quantity conv = qty.ConvertTo(m_unit);
     Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, conv, nullptr, space);
     jval[FormatConstant::FUSJsonValue()] = conv.GetMagnitude();
@@ -1556,6 +1557,69 @@ bool FormattingDividers::IsDivider(char c)
     return (0 != ((m_markers[(c & 0x78) >> 3]) & (FormatConstant::TriadBitMask(c))));
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+Json::Value FormatUnitSet::ToJson(bool verbose) const
+    {
+    Json::Value jval;
+    if (!m_fusName.empty())
+        jval[json_fusName()] = m_fusName.c_str();
+    jval[json_unitName()] = m_unit->GetName();
+    if(verbose)
+        jval[json_formatSpec()] = m_formatSpec->ToJson(true);
+    else
+        jval[json_formatName()] = m_formatSpec->GetName();
+    return jval;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+Utf8String FormatUnitSet::ToJsonString(bool verbose) const
+    {
+    Utf8String str;
+    Json::Value jval = ToJson(verbose);
+    str = jval.ToString();
+    return str;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//----------------------------------------------------------------------------------------
+void FormatUnitSet::LoadJsonData(Json::Value jval)
+    {
+    if (jval.empty())
+        return;
+    Utf8CP paramName;
+    Utf8String formatName;
+    m_problem = FormatProblemDetail();
+    m_unit = nullptr;
+    m_formatSpec = nullptr;
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
+            {
+            m_unitName = val.asString();
+            m_unit = BEU::UnitRegistry::Get().LookupUnit(m_unitName.c_str());
+            if (nullptr == m_unit)
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_formatName()) == 0)
+            {
+            formatName = val.asString();
+            m_formatSpec = StdFormatSet::FindFormatSpec(formatName.c_str());
+            if (nullptr == m_formatSpec)
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_fusName()) == 0)
+            {
+            m_fusName = val.asString();
+            }
+        }
+    }
 
 //===================================================
 //
@@ -1577,120 +1641,6 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
     if (0 < len)
         memcpy(m_delim, delim, Utils::MinInt(maxDelim, len));
     m_isASCII = isAscii;
-    }
-
-//===================================================
-//
-// NamedFormatSpec
-//
-//===================================================
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-void NamedFormatSpec::Clone(NamedFormatSpecCR other)
-    {
-    m_name = other.m_name;
-    m_alias = other.m_alias;
-    m_description = other.m_description;
-    m_displayLabel = other.m_displayLabel;
-    m_numericSpec = other.m_numericSpec;
-    m_compositeSpec.Clone(other.m_compositeSpec);
-    m_specType = other.m_specType;
-    m_problem.UpdateProblemCode(other.m_problem.GetProblemCode());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-void NamedFormatSpec::Clone(NamedFormatSpecCP other)
-    {
-    m_name = other->m_name;
-    m_alias = other->m_alias;
-    m_description = other->m_description;
-    m_displayLabel = other->m_displayLabel;
-    m_numericSpec = other->m_numericSpec;
-    m_compositeSpec.Clone(other->m_compositeSpec);
-    m_specType = other->m_specType;
-    m_problem.UpdateProblemCode(other->m_problem.GetProblemCode());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-NamedFormatSpec& NamedFormatSpec::operator=(const NamedFormatSpec& other)
-    {
-    if (this != &other)
-        Clone(other);
-    return *this;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias)
-    {
-    m_specType = FormatSpecType::Undefined;
-    m_alias = alias;
-    m_name = name;
-    m_numericSpec = NumericFormatSpec(numSpec);
-    m_compositeSpec.Clone(compSpec);
-    m_specType = FormatSpecType::Composite;
-    m_problem = FormatProblemDetail();
-    if (Utils::IsNameNullOrEmpty(name))
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias)
-    {
-    m_specType = FormatSpecType::Undefined;
-    m_alias = alias;
-    m_name = name;
-    m_numericSpec = NumericFormatSpec(numSpec);
-    m_specType = FormatSpecType::Numeric;
-    m_problem = FormatProblemDetail();
-    if (Utils::IsNameNullOrEmpty(name))
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-bool NamedFormatSpec::IsIdentical(NamedFormatSpecCR other) const
-    {
-    int cod = 0;
-    while (0 == cod)
-        {
-        if (!m_name.Equals(other.m_name)) { cod = 1; break; }
-        if (!m_alias.Equals(other.m_alias)) { cod = 2; break; }
-        if (!m_numericSpec.IsIdentical(other.m_numericSpec)) { cod = 3; break; }
-        if (!m_compositeSpec.IsIdentical(other.m_compositeSpec)) { cod = 4; break; }
-        if (m_specType != other.m_specType) { cod = 5; break; }
-        if (m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) { cod = 6; break; }
-        break;
-        }
-    if(0 == cod)
-       return true;
-    return false;
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-bool NamedFormatSpec::HasName(Utf8CP name) const 
-    {
-    if (Utils::IsNameNullOrEmpty(name))
-        return false;
-    return (0 == BeStringUtilities::StricmpAscii(name, m_name.c_str())); 
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-bool NamedFormatSpec::HasAlias(Utf8CP name) const
-    {
-    if (Utils::IsNameNullOrEmpty(name))
-        return false;
-    return (0 == BeStringUtilities::StricmpAscii(name, m_alias.c_str()));
     }
 
 //===================================================

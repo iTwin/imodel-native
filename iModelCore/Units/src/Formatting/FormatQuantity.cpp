@@ -60,7 +60,7 @@ size_t CompositeValueSpec::CalculateUnitRatio(BEU::UnitCP unit, BEU::UnitCP subu
         return static_cast<size_t>(rat);
     else
         UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
-    
+
     return 0;
     }
 

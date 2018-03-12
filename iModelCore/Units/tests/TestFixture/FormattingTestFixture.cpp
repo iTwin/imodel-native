@@ -115,35 +115,6 @@ void FormattingTestUtils::ShowHexDump(Utf8CP str, int len, Utf8CP message)
     else
         LOG.infov(u8"%s => %s", message, hd.c_str());
     }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::ShowFUS(Utf8CP koq)
-    {
-    FormatUnitSet fus = FormatUnitSet(koq, &BEU::UnitRegistry::Get());
-    if (fus.HasProblem())
-        LOG.infov("Invalid KOQ: >%s<", koq);
-    else
-        LOG.infov("KOQ: >%s<  Normilized: >%s< WithAlias: >%s< ", koq, fus.ToText(false).c_str(), fus.ToText(true).c_str());
-    Utf8String strA = fus.ToJsonString(true);
-    Utf8String strN = fus.ToJsonString(false);
-    LOG.infov("FUS JSON: >%s<   (aliased) >%s<", strN.c_str(), strA.c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::RegisterFUS(Utf8CP descr, Utf8CP name)
-    {
-    FormatUnitSetCP fusP = StdFormatSet::AddFUS(descr, name);
-    if (StdFormatSet::FusRegistrationHasProblem())
-        LOG.infov("Invalid FUS definition: >%s<", descr);
-    else
-        LOG.infov("Registring FUS (%s): >%s<  Normilized: >%s< WithAlias: >%s< ", name, descr, fusP->ToText(false).c_str(), fusP->ToText(true).c_str());
-    Utf8String strA = fusP->ToJsonString(true);
-    Utf8String strN = fusP->ToJsonString(false);
-    LOG.infov("Registered FUS: %s JSON: >%s<   (aliased) >%s<", fusP->GetFusName(), strN.c_str(), strA.c_str());
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
@@ -157,20 +128,6 @@ void FormattingTestUtils::CrossValidateFUS(Utf8CP descr1, Utf8CP descr2)
     if (fus2.HasProblem())
         LOG.infov("Invalid descr1: >%s<", descr1);
     EXPECT_TRUE (fus1.IsIdentical(fus2));
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased)
-    {
-    FormatUnitSet fus = FormatUnitSet(fusText, &BEU::UnitRegistry::Get());
-    EXPECT_STREQ (norm, fus.ToText(false).c_str());
-    EXPECT_STREQ (aliased, fus.ToText(true).c_str());
-    Json::Value jval = fus.ToJson(true);
-    FormatUnitSet fus1;
-    fus1.LoadJsonData(jval);
-    EXPECT_TRUE(fus.IsIdentical(fus1));
     }
 
 //----------------------------------------------------------------------------------------
@@ -197,7 +154,7 @@ void FormattingTestUtils::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnitNa
 
     Utf8String fmtQ = fus.FormatQuantity(q, space);
     LOG.infov("\n===ShowQuantity: %f of %s = %s", dval, uom, fmtQ.c_str());
-    Json::Value jval = fus.FormatQuantityJson(q, true);
+    Json::Value jval = fus.FormatQuantityJson(q);
     Utf8String jsonQ = jval.ToString();
     LOG.infov("JSON: %s", jsonQ.c_str());
     FormatUnitSet deFUS = StdFormatSet::DefaultFUS(q);
@@ -865,36 +822,6 @@ POP_MSVC_IGNORE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void  FormattingTestUtils::NamedSpecToJson(Utf8CP stdName)
-    {
-    if (nullptr == stdName)
-        {
-        NumericFormatSpec defS = NumericFormatSpec();
-        NamedFormatSpec def("default", defS, "def");
-        Json::Value val = defS.ToJson(false);
-        LOG.infov("Format %s = %s ", stdName, val.ToString().c_str());
-        JsonValueCR spc = val[json_NumericFormat()];
-        LOG.infov("NumSpec %s", spc.ToString().c_str());
-        }
-    else
-        {
-        NamedFormatSpecCP namF = StdFormatSet::FindFormatSpec(stdName);
-        if (nullptr == namF)
-            {
-            LOG.infov("Format %s is not defined", stdName);
-            }
-        else
-            {
-            Json::Value val = namF->ToJson(false);
-            LOG.infov("Format %s = %s ", stdName, val.ToString().c_str());
-            JsonValueCR spc = val[json_NumericFormat()];
-            LOG.infov("NumSpec %s", spc.ToString().c_str());
-            }
-        }
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
 bvector<TraitJsonKeyMap> TraitJsonKeyMap::TraitJsonKeySet()
     {
     static bvector<TraitJsonKeyMap> vec;
@@ -1055,7 +982,7 @@ void FormattingTestUtils::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP
     EXPECT_STREQ (result, qtyT.c_str());
     EXPECT_STREQ (result, qtyS.c_str());
 
-    Utf8String fusJ = fus.ToJsonString(false, true);
+    Utf8String fusJ = fus.ToJsonString(false);
     LOG.infov("\nfusJ  %s\n", fusJ.c_str());
     FormatUnitSet fusFromJ = FormatUnitSet(fusJ.c_str(), &BEU::UnitRegistry::Get());
     qtyT = fusFromJ.FormatQuantity(qty, "");

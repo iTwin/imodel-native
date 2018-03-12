@@ -10,15 +10,7 @@
 #include "../TestFixture/FormattingTestFixture.h"
 
 USING_BENTLEY_FORMATTING
-
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
-static int repc = 0;
-BE_JSON_NAME(degrees)
-BE_JSON_NAME(low)
-BE_JSON_NAME(high)
-BE_JSON_NAME(yaw)
-BE_JSON_NAME(pitch)
-BE_JSON_NAME(roll)
 
 struct FormattingTest : public ::testing::Test
     {
@@ -26,6 +18,9 @@ struct FormattingTest : public ::testing::Test
     static constexpr size_t Countof(T const (&arr)[N]) { return std::extent<T[N]>::value; }
     };
 
+//===================================================
+// NumericFormatSpec
+//===================================================
 struct NumericFormatSpecTest : public FormattingTest
     {
     };
@@ -55,6 +50,9 @@ struct FormatDoubleTest : public NumericFormatSpecTest
     {
     };
 
+//===================================================
+// FormatUnitSet
+//===================================================
 struct FormatUnitSetTest : public FormattingTest
     {
     // Method for printing GTest FUS problem description error.
@@ -62,6 +60,19 @@ struct FormatUnitSetTest : public FormattingTest
         {
         return Utf8String("Problem: ") + fus.GetProblemDescription();
         }
+    };
+
+//===================================================
+// CompositeValueSpec
+//===================================================
+//===================================================
+// CompositeValue
+//===================================================
+//===================================================
+// NamedFormatSpec
+//===================================================
+struct NamedFormatSpecTest : public FormattingTest
+    {
     };
 
 //---------------------------------------------------------------------------------------
@@ -104,28 +115,17 @@ TEST_F(NumericFormatSpecTest, Constructors)
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     }
+
+    FAIL() << "TODO: Test NumericFormatSpec constructed from JSON";
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
+TEST_F(NumericFormatSpecTest, IsIdentical)
     {
-    NumericFormatSpec numericFormatSpec;
-    numericFormatSpec.SetThousandSeparator('\'');
-    numericFormatSpec.SetUse1000Separator(true);
-    numericFormatSpec.SetKeepSingleZero(true);
+    NumericFormatSpec nfsA;
+    NumericFormatSpec nfsB(DecimalPrecision::Max);
 
-    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
-    BEU::UnitCP inch = BEU::UnitRegistry::Get().LookupUnit("IN");
-    CompositeValueSpec compositeValueSpec(mile, inch);
-    ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
-    ASSERT_EQ(CompositeSpecType::Double, compositeValueSpec.GetType());
-    NamedFormatSpec namedFormatSpec("TestNamedFormatSpec", numericFormatSpec, compositeValueSpec);
-
-    // 1500.5 miles == 1,500 miles and 31,680 inches
-    BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
-    EXPECT_STREQ("1'500.0 31'680.0", NumericFormatSpec::StdFormatQuantity(namedFormatSpec, quantity).c_str());
+    EXPECT_TRUE(nfsA.IsIdentical(nfsA)) << "NumericFormatSpec is not identical to itself.";
+    EXPECT_FALSE(nfsA.IsIdentical(nfsB));
     }
 
 //---------------------------------------------------------------------------------------
@@ -178,17 +178,6 @@ TEST_F(BinaryFormattingTest, FormatInt32)
 TEST_F(BinaryFormattingTest, FormatDouble)
     {
     FAIL() << "TODO: Untested methods are failing methods.";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatIntegerTest, FormatIntegerFailsWhenBufferIsTooSmall)
-    {
-    NumericFormatSpec nfs;
-
-    Utf8Char buffLen1[1];
-    EXPECT_EQ(0, NumericFormatSpec::FormatIntegerSimple(42, buffLen1, (int)FormattingTest::Countof(buffLen1), false, false));
     }
 
 //---------------------------------------------------------------------------------------
@@ -640,6 +629,43 @@ TEST_F(FormatDoubleTest, FormatDoubleFormatTraitsTests)
     EXPECT_STREQ("-100501.125", nfs.FormatDouble(testValNeg).c_str());
     }
 
+TEST_F(NumericFormatSpecTest, StdFormatDouble)
+    {
+    FAIL() << "TODO: Untested methods are failing methods.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
+    {
+    NumericFormatSpec numericFormatSpec;
+    numericFormatSpec.SetThousandSeparator('\'');
+    numericFormatSpec.SetUse1000Separator(true);
+    numericFormatSpec.SetKeepSingleZero(true);
+
+    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
+    BEU::UnitCP inch = BEU::UnitRegistry::Get().LookupUnit("IN");
+    CompositeValueSpec compositeValueSpec(mile, inch);
+    ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
+    ASSERT_EQ(CompositeSpecType::Double, compositeValueSpec.GetType());
+    NamedFormatSpec namedFormatSpec("TestNamedFormatSpec", numericFormatSpec, compositeValueSpec);
+
+    // 1500.5 miles == 1,500 miles and 31,680 inches
+    BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
+    EXPECT_STREQ("1'500.0 31'680.0", NumericFormatSpec::StdFormatQuantity(namedFormatSpec, quantity).c_str());
+    }
+
+TEST_F(NumericFormatSpecTest, FormatQuantity)
+    {
+    FAIL() << "TODO: Untested methods are failing methods.";
+    }
+
+TEST_F(NumericFormatSpecTest, ToJson)
+    {
+    FAIL() << "TODO: Untested methods are failing methods.";
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -648,34 +674,34 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     {
     FormatUnitSet MMFusNoFormatName("MM", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusNoFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusNoFormatName);
-    EXPECT_STREQ("MM(DefaultReal)", MMFusNoFormatName.ToText(false).c_str());
-    EXPECT_STREQ("MM(real)", MMFusNoFormatName.ToText(true).c_str());
+    EXPECT_STREQ("MM(DefaultReal)", MMFusNoFormatName.ToText().c_str());
+    EXPECT_STREQ("MM(real)", MMFusNoFormatName.ToText().c_str());
     }
     {
     FormatUnitSet MMFusParens("MM(Real2)", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusParens.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusParens);
-    EXPECT_STREQ("MM(Real2)", MMFusParens.ToText(false).c_str());
-    EXPECT_STREQ("MM(real2)", MMFusParens.ToText(true).c_str());
+    EXPECT_STREQ("MM(Real2)", MMFusParens.ToText().c_str());
+    EXPECT_STREQ("MM(real2)", MMFusParens.ToText().c_str());
     }
     {
     FormatUnitSet MMFusBarFormatName("MM|Real2", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusBarFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatName);
-    EXPECT_STREQ("MM(Real2)", MMFusBarFormatName.ToText(false).c_str());
-    EXPECT_STREQ("MM(real2)", MMFusBarFormatName.ToText(true).c_str());
+    EXPECT_STREQ("MM(Real2)", MMFusBarFormatName.ToText().c_str());
+    EXPECT_STREQ("MM(real2)", MMFusBarFormatName.ToText().c_str());
     }
     {
     FormatUnitSet MMFusBarFormatNameBar("MM|Real2|", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusBarFormatNameBar.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatNameBar);
-    EXPECT_STREQ("MM(Real2)", MMFusBarFormatNameBar.ToText(false).c_str());
-    EXPECT_STREQ("MM(real2)", MMFusBarFormatNameBar.ToText(true).c_str());
+    EXPECT_STREQ("MM(Real2)", MMFusBarFormatNameBar.ToText().c_str());
+    EXPECT_STREQ("MM(real2)", MMFusBarFormatNameBar.ToText().c_str());
     }
     {
     FormatUnitSet MMFusJsonOnlyUnitName(R"json({
         unitName: "MM"
     })json", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusJsonOnlyUnitName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonOnlyUnitName);
-    EXPECT_STREQ("MM(Real2)", MMFusJsonOnlyUnitName.ToText(false).c_str());
-    EXPECT_STREQ("MM(real2)", MMFusJsonOnlyUnitName.ToText(true).c_str());
+    EXPECT_STREQ("MM(Real2)", MMFusJsonOnlyUnitName.ToText().c_str());
+    EXPECT_STREQ("MM(real2)", MMFusJsonOnlyUnitName.ToText().c_str());
     EXPECT_TRUE(MMFusJsonOnlyUnitName.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
     }
     // TODO: The below JSON methods aren't parsing the formatName attribute correctly. I tried
@@ -691,8 +717,8 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
         "formatName": "real2"
     })json", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusJsonUnitNameFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonUnitNameFormatName);
-    EXPECT_STREQ("MM(Real2)", MMFusJsonUnitNameFormatName.ToText(false).c_str());
-    EXPECT_STREQ("MM(real2)", MMFusJsonUnitNameFormatName.ToText(true).c_str());
+    EXPECT_STREQ("MM(Real2)", MMFusJsonUnitNameFormatName.ToText().c_str());
+    EXPECT_STREQ("MM(real2)", MMFusJsonUnitNameFormatName.ToText().c_str());
     EXPECT_TRUE(MMFusJsonUnitNameFormatName.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
     }
     {
@@ -703,8 +729,8 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
         "formatSpec": { }
     })json", &BEU::UnitRegistry::Get());
     EXPECT_FALSE(MMFusJsonAllMembers.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonAllMembers);
-    EXPECT_STREQ("MM(Real2)", MMFusJsonAllMembers.ToText(false).c_str());
-    EXPECT_STREQ("MM(real2)", MMFusJsonAllMembers.ToText(true).c_str());
+    EXPECT_STREQ("MM(Real2)", MMFusJsonAllMembers.ToText().c_str());
+    EXPECT_STREQ("MM(real2)", MMFusJsonAllMembers.ToText().c_str());
     EXPECT_TRUE(MMFusJsonAllMembers.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
     }
     {
@@ -742,5 +768,142 @@ TEST(FormattingTest, LocaleTest)
 
     LOG.infov("================  Locale Test (end) ===========================\n");
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NamedFormatSpecTest, Constructors)
+    {
+    // Default constructed.
+    {
+    NamedFormatSpec namedFmtSpec;
+
+    EXPECT_STREQ("", namedFmtSpec.GetName());
+    EXPECT_STREQ("", namedFmtSpec.GetDescription());
+    EXPECT_STREQ("", namedFmtSpec.GetDisplayLabel());
+    EXPECT_EQ(FormatSpecType::Undefined, namedFmtSpec.GetSpecType());
+    EXPECT_TRUE(namedFmtSpec.IsProblem());
+    EXPECT_EQ(nullptr, namedFmtSpec.GetNumericSpec());
+    EXPECT_EQ(nullptr, namedFmtSpec.GetCompositeSpec());
+    }
+
+    // Constructed with name and NumericFormatSpec
+    {
+    NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
+    NamedFormatSpec namedFmtSpec("FooBar", numFmtSpec);
+
+    EXPECT_STREQ("FooBar", namedFmtSpec.GetName());
+    EXPECT_STREQ("", namedFmtSpec.GetDescription());
+    EXPECT_STREQ("", namedFmtSpec.GetDisplayLabel());
+    EXPECT_EQ(FormatSpecType::Numeric, namedFmtSpec.GetSpecType());
+    EXPECT_FALSE(namedFmtSpec.IsProblem());
+    ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
+    EXPECT_TRUE(namedFmtSpec.GetNumericSpec()->IsIdentical(numFmtSpec));
+    EXPECT_EQ(nullptr, namedFmtSpec.GetCompositeSpec());
+    }
+
+    // Constructed with name, NumericFormatSpec, and CompositeValueSpec
+    {
+    NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
+    CompositeValueSpec compValSpec;
+    NamedFormatSpec namedFmtSpec("FooBar", numFmtSpec, compValSpec);
+
+    EXPECT_STREQ("FooBar", namedFmtSpec.GetName());
+    EXPECT_STREQ("", namedFmtSpec.GetDescription());
+    EXPECT_STREQ("", namedFmtSpec.GetDisplayLabel());
+    EXPECT_EQ(FormatSpecType::Composite, namedFmtSpec.GetSpecType());
+    EXPECT_FALSE(namedFmtSpec.IsProblem());
+    ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
+    EXPECT_TRUE(namedFmtSpec.GetNumericSpec()->IsIdentical(numFmtSpec));
+    ASSERT_NE(nullptr, namedFmtSpec.GetCompositeSpec());
+    EXPECT_TRUE(namedFmtSpec.GetCompositeSpec()->IsIdentical(compValSpec));
+    }
+
+    FAIL() << "TODO: Test const ref copy constructor and JSON constructors.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NamedFormatSpecTest, IsIdentical)
+    {
+    // Test format specs of varying value types.
+    // In these cases, only NumericFormatSpecs that are compared against themselves
+    // should be concidered identical by the identity principal.
+    {
+    NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
+    CompositeValueSpec compValSpec;
+
+    NamedFormatSpec namedFmtSpecUndefined;
+    NamedFormatSpec namedFmtSpecNumeric("FooBar", numFmtSpec);
+    NamedFormatSpec namedFmtSpecComposite("FooBar", numFmtSpec, compValSpec);
+
+    // Identity checks.
+    EXPECT_TRUE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecUndefined))  << "NamedFormatSpec is not identical to itself.";
+    EXPECT_TRUE(namedFmtSpecNumeric.IsIdentical(namedFmtSpecNumeric)) << "NamedFormatSpec is not identical to itself.";
+    EXPECT_TRUE(namedFmtSpecComposite.IsIdentical(namedFmtSpecComposite)) << "NamedFormatSpec is not identical to itself.";;
+
+    EXPECT_FALSE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecNumeric));
+    EXPECT_FALSE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecComposite));
+
+    EXPECT_FALSE(namedFmtSpecNumeric.IsIdentical(namedFmtSpecUndefined));
+    EXPECT_FALSE(namedFmtSpecNumeric.IsIdentical(namedFmtSpecComposite));
+
+    EXPECT_FALSE(namedFmtSpecComposite.IsIdentical(namedFmtSpecUndefined));
+    EXPECT_FALSE(namedFmtSpecComposite.IsIdentical(namedFmtSpecNumeric));
+    }
+
+    // NamedFormatSpecs with differing names/displayLabels/descriptions.
+    {
+    NumericFormatSpec numFmtSpec;
+
+    NamedFormatSpec namedFmtSpecFoo("Foo", numFmtSpec);
+    NamedFormatSpec namedFmtSpecBaz("Baz", numFmtSpec);
+    EXPECT_FALSE(namedFmtSpecFoo.IsIdentical(namedFmtSpecBaz));
+    EXPECT_FALSE(namedFmtSpecBaz.IsIdentical(namedFmtSpecFoo));
+
+    NamedFormatSpec namedFmtSpecFooDiffDispLabel("Foo", numFmtSpec);
+    namedFmtSpecFooDiffDispLabel.SetDisplayLabel("FOO");
+    EXPECT_TRUE(namedFmtSpecFoo.IsIdentical(namedFmtSpecFooDiffDispLabel));
+    EXPECT_TRUE(namedFmtSpecFooDiffDispLabel.IsIdentical(namedFmtSpecFoo));
+
+    NamedFormatSpec namedFmtSpecFooDiffDesc("Foo", numFmtSpec);
+    namedFmtSpecFooDiffDesc.SetDescription("The most common metasyntactic variable.");
+    EXPECT_TRUE(namedFmtSpecFoo.IsIdentical(namedFmtSpecFooDiffDesc));
+    EXPECT_TRUE(namedFmtSpecFooDiffDesc.IsIdentical(namedFmtSpecFoo));
+    }
+
+    // NamedFormatSpecs with differing NumericFormatSpecs.
+    {
+    NumericFormatSpec numFmtSpecA(DecimalPrecision::Precision8);
+    NumericFormatSpec numFmtSpecB(DecimalPrecision::Precision9);
+
+    NamedFormatSpec namedFmtSpecA("FooBar", numFmtSpecA);
+    NamedFormatSpec namedFmtSpecB("FooBar", numFmtSpecB);
+    EXPECT_FALSE(namedFmtSpecA.IsIdentical(namedFmtSpecB));
+    EXPECT_FALSE(namedFmtSpecB.IsIdentical(namedFmtSpecA));
+    }
+
+    // NamedFormatSpecs with differing CompositeValueSpecs.
+    {
+    NumericFormatSpec numFmtSpec;
+    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
+    CompositeValueSpec compValSpecA(mile);
+    CompositeValueSpec compValSpecB;
+    compValSpecB.SetSpacer(" # ");
+
+    NamedFormatSpec namedFmtSpecA("FooBar", numFmtSpec, compValSpecA);
+    NamedFormatSpec namedFmtSpecB("FooBar", numFmtSpec, compValSpecB);
+    EXPECT_FALSE(namedFmtSpecA.IsIdentical(namedFmtSpecB));
+    EXPECT_FALSE(namedFmtSpecB.IsIdentical(namedFmtSpecA));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+//TEST_F(NamedFormatSpecTest, )
+//    {
+//
 
 END_BENTLEY_FORMATTEST_NAMESPACE

@@ -55,7 +55,6 @@ BE_JSON_NAME(minWidth)
 
 // NamedFormatSpec
 BE_JSON_NAME(SpecName)
-BE_JSON_NAME(SpecAlias)
 BE_JSON_NAME(SpecDescript)
 BE_JSON_NAME(SpecLabel)
 BE_JSON_NAME(SpecType)
@@ -308,8 +307,8 @@ private:
     size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
     Utf8String FormatRoundedDouble(double dval, double round);
     static double RoundDouble(double dval, double roundTo);
-    int GetDecimalPrecisionIndex(int prec) const;
-    double GetDecimalPrecisionFactor(int prec) const;
+    int GetDecimalPrecisionIndex(int prec = -1) const;
+    double GetDecimalPrecisionFactor(int prec = -1) const;
     void SetPrecisionByValue(int prec);
     static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
     static bool AcceptableDifference(double dval1, double dval2, double maxDiff);
@@ -333,13 +332,14 @@ public:
     // !TODO====================================================================
 
     UNITS_EXPORT NumericFormatSpec();
+    NumericFormatSpec(NumericFormatSpecCR other) = default;
     UNITS_EXPORT NumericFormatSpec(DecimalPrecision decimalPrecision);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
-    NumericFormatSpec(NumericFormatSpecCR other) = default;
     ~NumericFormatSpec() = default;
 
     NumericFormatSpecR operator=(NumericFormatSpecCR other) = default;
 
+    //! Returns true if the all formatting properties of *this and other are equivalent.
     UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
 
     UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
@@ -442,12 +442,36 @@ public:
     //======================================
     // Formatting Methods
     //======================================
+    //! Format the provided byte as a binary string.
+    //! @param[in] n    Byte to format.
+    //! @return n as a binary string who's first character is the most significant bit of n.
     UNITS_EXPORT Utf8String ByteToBinaryText(Byte n);
+    //! Format the provided 16-bit integer as a binary string.
+    //! @param[in] n            Integer to format.
+    //! @param[in] useSeparator If true, the thousands separator will be used to separate each
+    //! 8-bit segment of the integer.
+    //! @return n as a binary string who's first character is the most significant bit of n.
     UNITS_EXPORT Utf8String Int16ToBinaryText(int16_t n, bool useSeparator);
+    //! Format the provided 32-bit integer as a binary string.
+    //! @param[in] n    Integer to format.
+    //! @param[in] useSeparator If true, the thousands separator will be used to separate each
+    //! 8-bit segment of the integer.
+    //! @return n as a binary string who's first character is the most significant bit of n.
     UNITS_EXPORT Utf8String Int32ToBinaryText(int32_t n, bool useSeparator);
+    //! Format the provided double as a binary string.
+    //! @param[in] n    Double to format.
+    //! @param[in] useSeparator If true, the thousands separator will be used to separate each
+    //! 8-bit segment of the double.
+    //! @return n as a binary string.
     UNITS_EXPORT Utf8String DoubleToBinaryText(double n, bool useSeparator);
 
+    //! Format an integer using this NumericFormatSpec's format settings.
+    //! @param[in] ival Integer to format.
+    //! @return ival as a formatted string.
     UNITS_EXPORT Utf8String FormatInteger(int32_t ival);
+    //! Format a double using this NumericFormatSpec's format settings.
+    //! @param[in] dval Double to format.
+    //! @return dval as a formatted string.
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
 
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
@@ -501,19 +525,23 @@ public:
     };
 
 //=======================================================================================
-// We recognize combined numbers (combo-numbers) that represent some quantity as a sum of 
-//   subquantities expressed in lesser UOM's. For example, a given length could be representes
-//    as a sum of M + Y + F + I where M- is a number of miles, Y - a number of yards, 
-//   F - a number of feet and I a number of inches. The operation of expressing the given length 
-//  in this form will require 3 ratios: M/Y, Y/F, F/I where M/Y is a number of Yards in a Mile,
-//   Y/F - is a number of feet in one yard, F/I is a number of inches in one foot.
-//  Obviously, the combo-presentation of length is just one example and in some special cases 
-//   this system of ratios can be anything the application needs. Ratios could be set explicitly
-// or automatically via names of the UOM's. The only condition is that all integer ratios must be > 1.
-//   let's define terms for UOM of different levels: 0 - majorUOM, 1 - midlleUOM, 2 - minorUOM, 3 - subUOM
-//    accordingly there are 3 ratios: major/middle, middle/minor. minor/sub and their indexes
-// in the ratio array are associated with the upper UOM
-// @bsiclass                                                    David.Fox-Rabinovitz  01/2017
+//! We recognize combined numbers (combo-numbers) that represent some quantity as a sum of
+//! subquantities expressed in lesser UOM's. For example, a given length could be represented as a
+//! sum of M + Y + F + I where M is some number of miles, Y is some number of yards, F is some
+//! number of feet and I is some number of inches. The operation of expressing a given length in
+//! this form will require 3 ratios: M/Y, Y/F, and F/I where Y/M is the number of yards per mile,
+//! F/Y is the number of feet per yard, I/F is a number of inches per foot.
+//! Obviously, the combo-presentation of length is just one example and in some special cases. This
+//! system of ratios can be anything the application needs. Ratios could be set explicitly or
+//! automatically via names of the UOM's. The only condition is that all integer ratios must be > 1.
+//! Let's define terms for UOM of different levels:
+//!      0 - major UOM
+//!      1 - middle UOM
+//!      2 - minor UOM
+//!      3 - sub UOM
+//! Accordingly there are 3 ratios: major/middle, middle/minor, and minor/sub. Their indexes
+//! in the ratio array are associated with the upper UOM.
+//! @bsiclass                                                David.Fox-Rabinovitz  01/2017
 //=======================================================================================
 struct CompositeValueSpec
     {
@@ -629,68 +657,90 @@ public:
     };
 
 //=======================================================================================
-//! Container for keeping together primary numeric, composite and other types of specs
-//! and referring to them by the unique name. Name and a valid numeric spec are required
-//! for creating a valid instance of this class. Alias and composite spec are optional
-//! at the moment of creation but can be added at any time.
+//! Container for keeping together primary, numeric, composite and other types of specs.
+//! Name and a valid numeric spec are required for creating a valid instance of this class.
+//! Alias and composite spec are optional at the moment of creation but can be added at
+//! any time.
 //!
-//! @bsistruct                                             David.Fox-Rabinovitz  03/2017
+//! @bsistruct                                          David.Fox-Rabinovitz  03/2017
 //=======================================================================================
 struct NamedFormatSpec
     {
 private:
-        Utf8String         m_name;                  // name or ID of the format
-        Utf8String         m_alias;                 // short alternative name (alias)
-        Utf8String         m_description;           // @units_msg:descr_Real8@
-        Utf8String         m_displayLabel;          // @units_msg:label_Real8@
-        NumericFormatSpec  m_numericSpec;
-        CompositeValueSpec m_compositeSpec;
-        FormatSpecType     m_specType;
-        FormatProblemDetail m_problem;
+    Utf8String          m_name;             // Name or ID of the format.
+    Utf8String          m_description;      // @units_msg:descr_Real8@
+    Utf8String          m_displayLabel;     // @units_msg:label_Real8@
+    FormatSpecType      m_specType;
+    NumericFormatSpec   m_numericSpec;
+    CompositeValueSpec  m_compositeSpec;
+    FormatProblemDetail m_problem;
 
 public:
-        UNITS_EXPORT void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
-        UNITS_EXPORT void Clone(NamedFormatSpecCR other);
-        UNITS_EXPORT void Clone(NamedFormatSpecCP other);
-        UNITS_EXPORT NamedFormatSpec& operator=(const NamedFormatSpec& other);
+    // TODO: Attempt to remove these methods from the public API================
+    UNITS_EXPORT bool HasName(Utf8CP name) const;
 
-        UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
-        UNITS_EXPORT void LoadJson(Utf8CP jsonString, BEU::IUnitsContextCP context);
+    UNITS_EXPORT void LoadJson(Utf8CP jsonString, BEU::IUnitsContextCP context);
+    UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
+    // !TODO====================================================================
 
-        //! Creates a new NamedFormatSpec with default values.
-        NamedFormatSpec() : m_specType(FormatSpecType::Undefined) {m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);}
-        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
-        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
-        UNITS_EXPORT NamedFormatSpec(Json::Value jval, BEU::IUnitsContextCP context = nullptr);
-        UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
+    UNITS_EXPORT NamedFormatSpec();
+    UNITS_EXPORT NamedFormatSpec(NamedFormatSpecCR other);
+    UNITS_EXPORT NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec);
+    UNITS_EXPORT NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
+    UNITS_EXPORT NamedFormatSpec(Json::Value jval, BEU::IUnitsContextCP context = nullptr);
+    UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
 
-        Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
-        Utf8CP GetAlias() const { return m_alias.c_str(); }
-        UNITS_EXPORT bool HasName(Utf8CP name) const;
-        UNITS_EXPORT bool HasAlias(Utf8CP name) const;
-        void SetSuppressUnitLabel() {m_numericSpec.SetAppendUnit(false);}
+    NamedFormatSpecR operator=(const NamedFormatSpec& other) = default;
 
-        Utf8CP GetName() const { return m_name.c_str(); };
-        Utf8CP GetDescription() const { return m_description.c_str(); };
-        Utf8CP SetDescription(Utf8CP descr) { m_description = descr;  return m_description.c_str(); };
-        Utf8CP GetLabel() const { return m_displayLabel.c_str(); };
-        Utf8CP SetLabel(Utf8CP label) { m_displayLabel = label;  return m_displayLabel.c_str(); };
+    //! Returns true if the name, NumericFormatSpec, CompositeValueSpec, and problem codes of *this
+    //! and other are identical.
+    UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
 
-        FormatSpecType  GetSpecType(){return m_specType;}
-        bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
-        size_t GetCompositeUnitCount() const { return HasComposite() ? m_compositeSpec.GetUnitCount() : 0; }
-        NumericFormatSpecCP GetNumericSpec() const { return &(this->m_numericSpec); }
-        CompositeValueSpecCP GetCompositeSpec() const { return  (HasComposite() ? &m_compositeSpec : nullptr); }
-        bool IsProblem() const { return m_problem.IsProblem(); }
-        Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
-        Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
-        PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
-        UNITS_EXPORT Json::Value ToJson(bool verbose) const;
-        UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
-        BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_compositeSpec.GetMajorUnit() : nullptr; }
-        BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_compositeSpec.GetMiddleUnit() : nullptr; }
-        BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_compositeSpec.GetMinorUnit() : nullptr; }
-        BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
+    Utf8CP GetName() const { return m_name.c_str(); };
+
+    void SetDescription(Utf8CP descr) { m_description = descr; };
+    Utf8CP GetDescription() const { return m_description.c_str(); };
+
+    void SetDisplayLabel(Utf8CP label) { m_displayLabel = label;};
+    Utf8CP GetDisplayLabel() const { return m_displayLabel.c_str(); };
+
+    FormatSpecType GetSpecType() { return m_specType; }
+    //! Returns true if this NamedFormatSpec contains a NumericFormatSpec.
+    bool HasNumeric() const { return HasComposite() || FormatSpecType::Numeric == m_specType; }
+    //! Returns true if this NamedFormatSpec containst a CompositeFormatSpec.
+    //! A NamedFormatSpec that contains a CompositeValueSpec will also contain a NumericFormatSpec.
+    bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
+
+    //! Returns a const pointer to this NamedFormatSpec's NumericFormatSpec if it exists.
+    //! Returns nullptr if no NumericFormatSpec is defined.
+    NumericFormatSpecCP GetNumericSpec() const { return HasNumeric() ? &m_numericSpec : nullptr; }
+    //! Returns a const pointer to this NamedFormatSpec's CompositeValueSpec if it exists.
+    //! Returns nullptr if no CompositeValueSpec is defined.
+    CompositeValueSpecCP GetCompositeSpec() const { return HasComposite() ? &m_compositeSpec : nullptr; }
+    //! Returns the number of units defined on this NamedFormatSpec's CompositeValueSpec.
+    //! Returns 0 if the CompositeValueSpec has no units OR in the case that no CompositeValueSpec
+    //! is defined on this NumericFormatSpec.
+    size_t GetCompositeUnitCount() const { return HasComposite() ? m_compositeSpec.GetUnitCount() : 0; }
+    //! Returns a const pointer to the major unit of this NamedFormatSpec's CompositeValueSpec.
+    //! Returns nullptr if no CompositeValueSpec is defined.
+    BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_compositeSpec.GetMajorUnit() : nullptr; }
+    //! Returns a const pointer to the middle unit of this NamedFormatSpec's CompositeValueSpec.
+    //! Returns nullptr if no CompositeValueSpec is defined.
+    BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_compositeSpec.GetMiddleUnit() : nullptr; }
+    //! Returns a const pointer to the minor unit of this NamedFormatSpec's CompositeValueSpec.
+    //! Returns nullptr if no CompositeValueSpec is defined.
+    BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_compositeSpec.GetMinorUnit() : nullptr; }
+    //! Returns a const pointer to the sub unit of this NamedFormatSpec's CompositeValueSpec.
+    //! Returns nullptr if no CompositeValueSpec is defined.
+    BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
+
+    void SetSuppressUnitLabel() { m_numericSpec.SetAppendUnit(false); }
+
+    bool IsProblem() const { return m_problem.IsProblem(); }
+    Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
+    PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
+
+    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
     };
 
 //=======================================================================================
@@ -786,16 +836,16 @@ struct FormatUnitSet
         Utf8CP GetFusName() const { return m_fusName.c_str(); }
 
         UNITS_EXPORT Utf8CP GetDisplayLabel(bool useDefault=false) const;
-        UNITS_EXPORT Utf8String ToText(bool useAlias = true) const;
+        UNITS_EXPORT Utf8String ToText() const;
         BEU::UnitCP GetUnit() const { return m_unit; }
         NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
         bool IsComparable(BEU::QuantityCR qty) const {return IsComparable(qty.GetUnit());}
         bool IsComparable(BEU::UnitCP unit) const {return BEU::Unit::AreCompatible(unit, m_unit);}
 
-        UNITS_EXPORT Json::Value ToJson(bool useAlias = true, bool verbose = false) const;
-        UNITS_EXPORT Utf8String ToJsonString(bool useAlias = true, bool verbose = false) const;
+        UNITS_EXPORT Json::Value ToJson(bool verbose = false) const;
+        UNITS_EXPORT Utf8String ToJsonString(bool verbose = false) const;
 
-        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, bool useAlias, Utf8CP space="") const;
+        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, Utf8CP space="") const;
         BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
 
         //! Populates this FormatUnitSet with the provided Json data. 
@@ -846,7 +896,7 @@ private:
     bvector<FormatUnitSetCP> m_fusSet;
     FormatProblemDetail m_problem; 
 
-    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, Utf8CP alias = nullptr);
+    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP);
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias = nullptr); 
     NumericFormatSpecCP AddFormat(Utf8CP jsonString);
     NamedFormatSpecCP AddNamedFormat(Utf8CP jsonString);
@@ -855,7 +905,7 @@ private:
     void CustomInit();
     StdFormatSet() { m_problem = FormatProblemDetail(); }
     static StdFormatSetP Set();
-    UNITS_EXPORT static bool IsFormatDefined(Utf8CP name, Utf8CP alias);
+    UNITS_EXPORT static bool IsFormatDefined(Utf8CP name);
     UNITS_EXPORT FormatUnitSetCP FindFUS(Utf8CP fusName) const;
     bool HasDuplicate(Utf8CP name, FormatUnitSetCP * fusP);
 
@@ -866,8 +916,8 @@ public:
     static size_t GetFormatSetSize() { return Set()->m_formatSet.size(); }
     UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name);
     UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name);
-    UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
-    UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
+    UNITS_EXPORT static bvector<Utf8CP> StdFormatNames();
+    UNITS_EXPORT static Utf8String StdFormatNameList();
     size_t GetFormatCount() { return m_formatSet.size(); }
     bool HasProblem() const { return m_problem.IsProblem(); }
     FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
@@ -909,7 +959,7 @@ public:
 
     //! Whether or not the StdFormatSet has a problem.
     //! @return true if the Set has a problem; false, otherwise.
-    UNITS_EXPORT static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
+    static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
     };
 
 struct QuantityFormatting

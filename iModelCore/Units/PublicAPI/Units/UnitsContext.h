@@ -15,7 +15,7 @@ BEGIN_BENTLEY_UNITS_NAMESPACE
 //! @beginGroup
 
 //=======================================================================================
-//! The UnitsContext is an abstact class to provide a generic interface to look up Units, 
+//! The UnitsContext is an abstact class to provide a generic interface to look up Units,
 //! Phenomena, and UnitSystems within a UnitsContext.
 // @bsistruct                                                    Caleb.Shafer       02/18
 //=======================================================================================
