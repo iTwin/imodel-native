@@ -1,11 +1,11 @@
 #include "Helpers.h"
-#include <WebServices\FakeServer\FakeServer.h>
+#include <FakeServer/FakeServer.h>
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include "IntegrationTestsBase.h"
-#include <WebServices\FakeServer\MockIMHubHttpHandler.h>
-#include <WebServices\iModelHub\Utils.h>
+#include <FakeServer/MockIMHubHttpHandler.h>
+//#include <WebServices\iModelHub\Utils.h>
 #include <BeXml/BeXml.h>
 
 
@@ -72,12 +72,12 @@ class FakeServerFixture : public testing::Test
 Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description)
     {
     Json::Value iModelCreation(Json::objectValue);
-    JsonValueR instance = iModelCreation[ServerSchema::Instance] = Json::objectValue;
-    instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
-    instance[ServerSchema::ClassName] = ServerSchema::Class::iModel;
-    JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
-    properties[ServerSchema::Property::iModelName] = iModelName;
-    properties[ServerSchema::Property::iModelDescription] = description;
+    // JsonValueR instance = iModelCreation[ServerSchema::Instance] = Json::objectValue;
+    // instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+    // instance[ServerSchema::ClassName] = ServerSchema::Class::iModel;
+    // JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+    // properties[ServerSchema::Property::iModelName] = iModelName;
+    // properties[ServerSchema::Property::iModelDescription] = description;
     return iModelCreation;
     }
 
