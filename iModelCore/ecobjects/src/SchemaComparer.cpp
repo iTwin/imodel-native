@@ -1813,11 +1813,11 @@ BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChanges& change
         change.GetDisplayLabel().SetValue(appendType, koq.GetInvariantDisplayLabel());
 
     change.GetDescription().SetValue(appendType, koq.GetInvariantDescription());
-    change.GetPersistenceUnit().SetValue(appendType, koq.GetPersistenceUnit().ToText(false));
+    change.GetPersistenceUnit().SetValue(appendType, koq.GetPersistenceUnit().ToText());
     change.GetRelativeError().SetValue(appendType, koq.GetRelativeError());
     for (Formatting::FormatUnitSet const& fus : koq.GetPresentationUnitList())
         {
-        change.GetPresentationUnitList().Add(state).SetValue(appendType, fus.ToText(false));
+        change.GetPresentationUnitList().Add(state).SetValue(appendType, fus.ToText());
         }
 
     return SUCCESS;

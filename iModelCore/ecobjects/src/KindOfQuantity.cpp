@@ -58,7 +58,7 @@ bool KindOfQuantity::Verify() const
         else if ((!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presFUS.GetUnit(), m_persistenceFUS.GetUnit())))
             {
             LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet conflicts with the persistence FormatUnitSet %s.",
-                GetFullName().c_str(), m_persistenceFUS.ToText(false).c_str());
+                GetFullName().c_str(), m_persistenceFUS.ToText().c_str());
             isValid = false;
             }
         }
@@ -596,7 +596,7 @@ Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) cons
 Json::Value KindOfQuantity::PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias) const
     {
     Formatting::FormatUnitSetCP fusCP = GetPresentationFUS(indx);
-    Json::Value jval = fusCP->FormatQuantityJson(qty, useAlias);
+    Json::Value jval = fusCP->FormatQuantityJson(qty);
     return jval;
     }
 
@@ -615,7 +615,7 @@ Json::Value KindOfQuantity::GetPresentationsJson(bool useAlias) const
             if (fus.HasProblem())
                 continue;
 
-            arrayObj.append(fus.ToText(useAlias));
+            arrayObj.append(fus.ToText());
             }
         }
     return arrayObj;

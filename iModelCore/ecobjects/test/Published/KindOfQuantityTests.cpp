@@ -33,7 +33,7 @@ TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
     entityClass->CreatePrimitiveProperty(prop, "Property");
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
-    koq->SetPersistenceUnit("u:FT(real)");
+    koq->SetPersistenceUnit("u:FT(DefaultRealU)");
     prop->SetKindOfQuantity(koq);
 
     Utf8String schemaXML;
@@ -53,7 +53,7 @@ TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
     auto resultKindOfQuantity = property->GetKindOfQuantity();
     ASSERT_NE(resultKindOfQuantity, nullptr);
     EXPECT_STREQ("MyKindOfQuantity", resultKindOfQuantity->GetName().c_str());
-    EXPECT_STREQ("FT(DefaultRealU)", resultKindOfQuantity->GetPersistenceUnit().ToText(false).c_str());
+    EXPECT_STREQ("FT(DefaultRealU)", resultKindOfQuantity->GetPersistenceUnit().ToText().c_str());
     }
 
 //---------------------------------------------------------------------------------------

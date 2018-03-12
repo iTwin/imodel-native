@@ -1512,7 +1512,7 @@ public:
     //! @return A const pointer to the FormatUnitSet at the specified index if it exists; otherwise, nullptr.
     ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(size_t indx) const;
 
-    Utf8String GetPresentationFUSDescriptor(size_t indx, bool useAlias) const {return GetPresentationFUS(indx)->ToText(useAlias);}
+    Utf8String GetPresentationFUSDescriptor(size_t indx, bool useAlias) const {return GetPresentationFUS(indx)->ToText();}
 
     //! Adds the FormatUnitSet to the list of presentation Units.
     //! @param[in]  value  The new FormatUnitSet to add to the list of presentation units
