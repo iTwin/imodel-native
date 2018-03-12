@@ -1757,7 +1757,7 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflic
             break;
         }
         
-    return HandleConflict(m_policy.updateVsUpdate, tableName, change, opcode, indirect);
+    return HandleConflict(onConflict, tableName, change, opcode, indirect);
     }
 
 //---------------------------------------------------------------------------------------

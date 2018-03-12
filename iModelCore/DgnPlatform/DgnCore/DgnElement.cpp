@@ -1184,10 +1184,10 @@ DgnDbStatus DgnElement::_LoadFromDb()
 Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
     {
     Json::Value val;
-    val[json_id()] = m_id.ToHexStr();
+    val[ECJsonUtilities::json_navId()] = m_id.ToHexStr();
     auto relClass = db.Schemas().GetClass(m_relClassId);
     if (relClass != nullptr)
-        val[json_relClassName()] = relClass->GetName();
+        ECJsonUtilities::ClassNameToJson(val[ECJsonUtilities::json_navRelClassName()], *relClass);
     return val;
     }
 
@@ -1202,9 +1202,9 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
         return;
         }
 
-    m_id.FromJson(val[json_id()]);
+    m_id.FromJson(val[ECJsonUtilities::json_navId()]);
     if (m_id.IsValid())
-        m_relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(val[json_relClassName()], db.GetClassLocater());
+        m_relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(val[ECJsonUtilities::json_navRelClassName()], db.GetClassLocater());
     }
 
 //---------------------------------------------------------------------------------------

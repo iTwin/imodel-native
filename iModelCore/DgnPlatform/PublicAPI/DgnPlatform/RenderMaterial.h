@@ -122,8 +122,27 @@ public:
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
+#define RENDER_MATERIAL_Type                                        "Type"
+#define RENDER_MATERIAL_PatternFlags                                "PatternFlags"
+#define RENDER_MATERIAL_Diffuse                                     "diffuse" 
+#define RENDER_MATERIAL_Reflect                                     "reflect" 
+#define RENDER_MATERIAL_Transmit                                    "transmit" 
+#define RENDER_MATERIAL_Refract                                     "refract" 
+#define RENDER_MATERIAL_Specular                                    "specular" 
+#define RENDER_MATERIAL_Finish                                      "finish" 
+#define RENDER_MATERIAL_Map                                         "Map"
+#define RENDER_MATERIAL_Flags                                       "Flags"
+#define RENDER_MATERIAL_Ambient                                     "ambient" 
+#define RENDER_MATERIAL_Glow                                        "glow" 
 
-// From V8 Flags.
+#define RENDER_MATERIAL_Color                                       "color" 
+#define RENDER_MATERIAL_SpecularColor                               "specular_color" 
+#define RENDER_MATERIAL_ReflectColor                                "reflect_color" 
+#define RENDER_MATERIAL_GlowColor                                   "glow_color" 
+#define RENDER_MATERIAL_TransparentColor                            "transparent_color" 
+#define RENDER_MATERIAL_TranslucencyColor                           "translucent_color" 
+
+
 #define RENDER_MATERIAL_FlagNoShadows                               "NoShadows"             
 #define RENDER_MATERIAL_FlagHasBaseColor                            "HasBaseColor"          
 #define RENDER_MATERIAL_FlagHasSpecularColor                        "HasSpecularColor"      
@@ -148,14 +167,65 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_FlagHasReflectColor                         "HasReflectColor"                         
 #define RENDER_MATERIAL_FlagHasExitColor                            "HasExitColor"                            
 
+
+                  
+// Pattern (Texture maps).                        
+#define RENDER_MATERIAL_Pattern                                     "pattern" 
+#define RENDER_MATERIAL_PatternOff                                  "pattern_off" 
+#define RENDER_MATERIAL_PatternSize                                 "pattern_size" 
+#define RENDER_MATERIAL_PatternAngle                                "pattern_angle" 
+#define RENDER_MATERIAL_PatternScale                                "pattern_scale" 
+#define RENDER_MATERIAL_PatternOffset                               "pattern_offset" 
+#define RENDER_MATERIAL_PatternFlipV                                "pattern_flip" 
+#define RENDER_MATERIAL_PatternLockSize                             "pattern_lock_size" 
+#define RENDER_MATERIAL_PatternWeight                               "pattern_weight" 
+#define RENDER_MATERIAL_PatternMapping                              "pattern_mapping" 
+#define RENDER_MATERIAL_PatternScaleMode                            "pattern_scalemode" 
+#define RENDER_MATERIAL_PatternTileSection                          "pattern_tilesection"
+#define RENDER_MATERIAL_PatternFlipU                                "pattern_u_flip" 
+#define RENDER_MATERIAL_PatternTileDecalU                           "pattern_tile_decal_u" 
+#define RENDER_MATERIAL_PatternTileDecalV                           "pattern_tile_decal_v" 
+#define RENDER_MATERIAL_PatternTileMirrorU                          "pattern_tile_mirror_u" 
+#define RENDER_MATERIAL_PatternTileMirrorV                          "pattern_tile_mirror_v" 
+#define RENDER_MATERIAL_PatternLockProjectionScale                  "pattern_lock_projection_scale" 
+#define RENDER_MATERIAL_PatternCylCapped                            "pattern_cylindrical_projection_capped" 
+#define RENDER_MATERIAL_Antialiasing                                "enable_antialiasing"
+#define RENDER_MATERIAL_FileName                                    "Filename"
+
+
+// Geometry maps..
+#define RENDER_MATERIAL_UseCellColors                               "use_cell_colors"
+#define RENDER_MATERIAL_Snappable                                   "snappable"
+
+// Map types.
+#define RENDER_MATERIAL_MAP_None                                   "None"                 
+#define RENDER_MATERIAL_MAP_Pattern                                "Pattern"              
+#define RENDER_MATERIAL_MAP_Bump                                   "Bump"                 
+#define RENDER_MATERIAL_MAP_Specular                               "Specular"             
+#define RENDER_MATERIAL_MAP_Reflect                                "Reflect"              
+#define RENDER_MATERIAL_MAP_Transparency                           "Transparency"         
+#define RENDER_MATERIAL_MAP_Translucency                           "Translucency"         
+#define RENDER_MATERIAL_MAP_Finish                                 "Finish"               
+#define RENDER_MATERIAL_MAP_Diffuse                                "Diffuse"              
+#define RENDER_MATERIAL_MAP_GlowAmount                             "GlowAmount"           
+#define RENDER_MATERIAL_MAP_Geometry                               "Geometry"             
+#define RENDER_MATERIAL_GeometryMap                                 "geometry_map"
+
+
+
+// DgnDB Only...
+#define RENDER_MATERIAL_TextureId                                  "TextureId"
+
+//__PUBLISH_SECTION_END__
+
+
+#ifdef UNUSED_DGN_V8
 // From DgnMaterial.cpp Internal Tags.
 #define RENDER_MATERIAL_FileName                                    "Filename"
 #define RENDER_MATERIAL_Layer                                       "layer"
 #define RENDER_MATERIAL_Type                                        "Type"
-#define RENDER_MATERIAL_Map                                         "Map"
 #define RENDER_MATERIAL_Shader                                      "Shader"
 #define RENDER_MATERIAL_Fur                                         "Fur"
-#define RENDER_MATERIAL_Flags                                       "Flags"
 #define RENDER_MATERIAL_BumpFlags                                   "BumpFlags"
 #define RENDER_MATERIAL_PatternFlags                                "PatternFlags"
 #define RENDER_MATERIAL_SpecularFlags                               "SpecularFlags"
@@ -181,26 +251,10 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_RefractionRoughnessFlags                    "RefractionRoughnessFlags"
 #define RENDER_MATERIAL_SpecularFresnelFlags                        "SpecularFresnelFlags"
 
-// DgnDB Only...
-#define RENDER_MATERIAL_TextureId                                  "TextureId"
-
 // These were an internal map enum in V8.  
-#define RENDER_MATERIAL_MAP_None                                   "None"                 
-#define RENDER_MATERIAL_MAP_Pattern                                "Pattern"              
-#define RENDER_MATERIAL_MAP_Bump                                   "Bump"                 
-#define RENDER_MATERIAL_MAP_Specular                               "Specular"             
-#define RENDER_MATERIAL_MAP_Reflect                                "Reflect"              
-#define RENDER_MATERIAL_MAP_Transparency                           "Transparency"         
-#define RENDER_MATERIAL_MAP_Translucency                           "Translucency"         
-#define RENDER_MATERIAL_MAP_Finish                                 "Finish"               
-#define RENDER_MATERIAL_MAP_Diffuse                                "Diffuse"              
-#define RENDER_MATERIAL_MAP_GlowAmount                             "GlowAmount"           
 #define RENDER_MATERIAL_MAP_ClearcoatAmount                        "ClearcoatAmount"      
 #define RENDER_MATERIAL_MAP_AnisotropicDirection                   "AnisotropicDirection" 
 #define RENDER_MATERIAL_MAP_SpecularColor                          "SpecularColor"        
-#define RENDER_MATERIAL_MAP_TransparentColor                       "TransparentColor"     
-#define RENDER_MATERIAL_MAP_TranslucencyColor                      "TranslucencyColor"    
-#define RENDER_MATERIAL_MAP_Displacement                           "Displacement"         
 #define RENDER_MATERIAL_MAP_Normal                                 "Normal"               
 #define RENDER_MATERIAL_MAP_FurLength                              "FurLength"            
 #define RENDER_MATERIAL_MAP_FurDensity                             "FurDensity"           
@@ -215,31 +269,11 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_MAP_ReflectColor                           "ReflectColor"         
 #define RENDER_MATERIAL_MAP_RefractionRoughness                    "RefractionRoughness"  
 #define RENDER_MATERIAL_MAP_SpecularFresnel                        "SpecularFresnel"      
-#define RENDER_MATERIAL_MAP_Geometry                               "Geometry"             
+
 
 
 // From V8 Palette Tokens.
-#define RENDER_MATERIAL_Color                                       "color" 
-#define RENDER_MATERIAL_SpecularColor                               "specular_color" 
-#define RENDER_MATERIAL_Diffuse                                     "diffuse" 
-#define RENDER_MATERIAL_Reflect                                     "reflect" 
-#define RENDER_MATERIAL_Transmit                                    "transmit" 
-#define RENDER_MATERIAL_Refract                                     "refract" 
-#define RENDER_MATERIAL_Specular                                    "specular" 
-#define RENDER_MATERIAL_Finish                                      "finish" 
 #define RENDER_MATERIAL_Highlight                                   "highlight" 
-#define RENDER_MATERIAL_Pattern                                     "pattern" 
-#define RENDER_MATERIAL_PatternOff                                  "pattern_off" 
-#define RENDER_MATERIAL_PatternSize                                 "pattern_size" 
-#define RENDER_MATERIAL_PatternAngle                                "pattern_angle" 
-#define RENDER_MATERIAL_PatternScale                                "pattern_scale" 
-#define RENDER_MATERIAL_PatternOffset                               "pattern_offset" 
-#define RENDER_MATERIAL_PatternFlipV                                "pattern_flip" 
-#define RENDER_MATERIAL_PatternLockSize                             "pattern_lock_size" 
-#define RENDER_MATERIAL_PatternWeight                               "pattern_weight" 
-#define RENDER_MATERIAL_PatternMapping                              "pattern_mapping" 
-#define RENDER_MATERIAL_PatternScaleMode                            "pattern_scalemode" 
-#define RENDER_MATERIAL_PatternTileSection                          "pattern_tilesection"
 #define RENDER_MATERIAL_BgTrans                                     "bgtrans" 
 #define RENDER_MATERIAL_Fresnel                                     "fresnel" 
 #define RENDER_MATERIAL_PixiePattern                                "pixie_pattern" 
@@ -250,14 +284,12 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_BumpMapInvert                               "bump_map_invert" 
 #define RENDER_MATERIAL_Shadows                                     "shadows" 
 #define RENDER_MATERIAL_End                                         "end" 
-#define RENDER_MATERIAL_Ambient                                     "ambient" 
 #define RENDER_MATERIAL_Radiosity                                   "radiosity" 
 #define RENDER_MATERIAL_LockEfficiency                              "lock_efficiency" 
 #define RENDER_MATERIAL_LockSpecularAndReflect                      "lock_specular_and_reflect" 
 #define RENDER_MATERIAL_LockFinishToSpecular                        "lock_finish_to_specular" 
 #define RENDER_MATERIAL_ActualReflect                               "actual_reflect" 
 #define RENDER_MATERIAL_Translucency                                "translucency" 
-#define RENDER_MATERIAL_Glow                                        "glow" 
 #define RENDER_MATERIAL_Thickness                                   "thickness" 
 #define RENDER_MATERIAL_MapState                                    "map_state" 
 #define RENDER_MATERIAL_MapLink                                     "map_link" 
@@ -275,13 +307,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_ProjectionOffset                            "pattern_proj_offset" 
 #define RENDER_MATERIAL_ProjectionAngles                            "pattern_proj_angles" 
 #define RENDER_MATERIAL_ProjectionScale                             "pattern_proj_scale" 
-#define RENDER_MATERIAL_PatternFlipU                                "pattern_u_flip" 
-#define RENDER_MATERIAL_PatternTileDecalU                           "pattern_tile_decal_u" 
-#define RENDER_MATERIAL_PatternTileDecalV                           "pattern_tile_decal_v" 
-#define RENDER_MATERIAL_PatternTileMirrorU                          "pattern_tile_mirror_u" 
-#define RENDER_MATERIAL_PatternTileMirrorV                          "pattern_tile_mirror_v" 
-#define RENDER_MATERIAL_PatternLockProjectionScale                  "pattern_lock_projection_scale" 
-#define RENDER_MATERIAL_PatternCylCapped                            "pattern_cylindrical_projection_capped" 
 #define RENDER_MATERIAL_SpecularMap                                 "specular_map" 
 #define RENDER_MATERIAL_SpecularMapOff                              "specular_map_off" 
 #define RENDER_MATERIAL_ReflectMap                                  "reflect_map" 
@@ -515,7 +540,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_Dissolve                                    "dissolve" 
 #define RENDER_MATERIAL_AbsorptionDistance                          "absorption_distance" 
 #define RENDER_MATERIAL_RefractionRoughness                         "refraction_roughness" 
-#define RENDER_MATERIAL_GlowColor                                   "glow_color" 
 #define RENDER_MATERIAL_GlowColorMap                                "glow_color_map" 
 #define RENDER_MATERIAL_GlowColorMapOff                             "glow_color_map_off" 
 #define RENDER_MATERIAL_FurAutoFading                               "fur_auto_fading" 
@@ -526,7 +550,6 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_LockFresnelToReflect                        "lock_fresnel_to_reflect" 
 #define RENDER_MATERIAL_LockRefractionRoughnessToFinish             "lock_refraction_roughness_to_finish" 
 #define RENDER_MATERIAL_ImageGamma                                  "image_gamma" 
-#define RENDER_MATERIAL_ReflectColor                                "reflect_color" 
 #define RENDER_MATERIAL_ReflectColorMap                             "reflect_color_map" 
 #define RENDER_MATERIAL_ReflectColorMapOff                          "reflect_color_map_off" 
 #define RENDER_MATERIAL_RefractionRoughnessMap                      "refraction_roughness_map" 
@@ -559,14 +582,11 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_LxoOcclusionSameSurface                     "lxo_occlusion_same_surface"
 #define RENDER_MATERIAL_ExitColor                                   "exit_color"
 #define RENDER_MATERIAL_BackFaceCulling                             "back_face_culling"
-#define RENDER_MATERIAL_Antialiasing                                "enable_antialiasing"
 #define RENDER_MATERIAL_TextureFilterType                           "texture_filter_type"
 #define RENDER_MATERIAL_LowValue                                    "low_value"
 #define RENDER_MATERIAL_HighValue                                   "high_value"
 #define RENDER_MATERIAL_AntialiasStrength                           "antialias_strength"
 #define RENDER_MATERIAL_MinimumSpot                                 "minimum_spot"
-#define RENDER_MATERIAL_UseCellColors                               "use_cell_colors"
-#define RENDER_MATERIAL_Snappable                                   "snappable"
 #define RENDER_MATERIAL_BrickPrimaryColor                           "brick_primary_color"
 #define RENDER_MATERIAL_BrickSecondaryColor                         "brick_secondary_color"
 #define RENDER_MATERIAL_BrickPatternId                              "brick_pattern_id"
@@ -1461,4 +1481,5 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 #define RENDER_MATERIAL_LxoWindyWavesBackPrev                       "lxo_windy_waves_background_previous"
 #define RENDER_MATERIAL_LxoWindyWavesForePrev                       "lxo_windy_waves_foreground_previous"
 
-//__PUBLISH_SECTION_END__
+#endif
+

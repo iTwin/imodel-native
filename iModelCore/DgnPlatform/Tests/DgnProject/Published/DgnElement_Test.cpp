@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include <ECObjects/ECJsonUtilities.h>
 
 USING_NAMESPACE_BENTLEY_DPTEST
 
@@ -2351,7 +2352,6 @@ TEST_F(DgnElementTests, CreateSubjectChildElemet)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                   02/2018
 //---------------+---------------+---------------+---------------+---------------+--------
-#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS) // TFS#821136
 TEST_F(DgnElementTests, FromJson)
     {
     SetupSeedProject();
@@ -2422,7 +2422,7 @@ TEST_F(DgnElementTests, FromJson)
     json["ArrayOfStructs"][1u] = phillyOffice;
 
     ASSERT_FALSE(ElementECPropertyAccessor(el, "invalidProp").IsValid());
-    ASSERT_FALSE(ElementECPropertyAccessor(el, "invalidProp").IsAutoHandled());
+    ASSERT_TRUE(ElementECPropertyAccessor(el, "invalidProp").IsAutoHandled());
     json["invalidProp"] = invalidProp;
 
     ASSERT_TRUE(ElementECPropertyAccessor(el, "TestElementProperty").IsValid());
@@ -2558,7 +2558,66 @@ TEST_F(DgnElementTests, FromJson)
 
     m_db->CloseDb();
 }
-#endif
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Bill.Goehrig     03/2018
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, RelatedElementToJson)
+    {
+    SetupSeedProject();
+
+    DgnElementId elementId((uint64_t)0x123456789u);
+    DgnClassId relClassId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME));
+    DgnElement::RelatedElement related(elementId, relClassId);
+
+    Json::Value actualJson = related.ToJson(*m_db);
+    EXPECT_TRUE(actualJson.isObject());
+
+    Utf8String expectedId = elementId.ToHexStr();
+    EXPECT_TRUE(actualJson[ECN::ECJsonUtilities::json_navId()].isString());
+    EXPECT_STREQ(expectedId.c_str(), actualJson[ECN::ECJsonUtilities::json_navId()].asCString());
+
+    Utf8CP expectedRelClassName = DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME;
+    EXPECT_TRUE(actualJson[ECN::ECJsonUtilities::json_navRelClassName()].isString());
+    EXPECT_STREQ(expectedRelClassName, actualJson[ECN::ECJsonUtilities::json_navRelClassName()].asCString());
+
+    m_db->CloseDb();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Bill.Goehrig     03/2018
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, RelatedElementFromJson)
+    {
+    SetupSeedProject();
+
+    DgnElementId expectedElementId((uint64_t)0x987654321u);
+    DgnClassId expectedRelClassId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME));
+
+    Utf8String serializedElementId = expectedElementId.ToHexStr();
+    Json::Value json(Json::ValueType::objectValue);
+    json[ECN::ECJsonUtilities::json_navId()] = serializedElementId;
+
+    // Normal relClassName format - {schemaName}.{className}
+        {
+        json[ECN::ECJsonUtilities::json_navRelClassName()] = DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME;
+        DgnElement::RelatedElement related;
+        related.FromJson(*m_db, json);
+        EXPECT_TRUE(expectedElementId == related.m_id);
+        EXPECT_EQ(expectedRelClassId, related.m_relClassId);
+        }
+
+    // Should also support legacy relClassName format - {schemaName}:{className}
+        {
+        json[ECN::ECJsonUtilities::json_navRelClassName()] = DPTEST_SCHEMA_NAME ":" DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME;
+        DgnElement::RelatedElement related;
+        related.FromJson(*m_db, json);
+        EXPECT_TRUE(expectedElementId == related.m_id);
+        EXPECT_EQ(expectedRelClassId, related.m_relClassId);
+        }
+
+    m_db->CloseDb();
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsiclass                                                    Sam.Wilson      10/17
