@@ -3504,10 +3504,11 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnMo
         // Handle wacky 'spatial' views created for 2d models by DgnV8Converter...
         DgnModelIdSet viewedModels;
         GetViewedModelsFromView(viewedModels, attachment->GetAttachedViewId());
-        BeAssert(1 == viewedModels.size());
+        BeAssert(1 == viewedModels.size() || view->IsSpatialView());
         if (viewedModels.empty())
             continue;
 
+        // ###TODO: Spatial view attachments with multiple models unhandled...
         DgnModelId baseModelId = *viewedModels.begin();
         attachedModels.insert(baseModelId);
 
@@ -3763,33 +3764,6 @@ BeFileName  PublisherContext::GetModelDataDirectory(DgnModelId modelId, Classifi
     return modelDir;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId)
-    {
-    viewedModels.insert(modelId);
-
-    // Scan for viewAttachments...
-    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
-    stmt->BindId(1, modelId);
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        auto attachId = stmt->GetValueId<DgnElementId>(0);
-        auto attach   = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
-
-        if (!attach.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
-
-        GetViewedModelsFromView (viewedModels, attach->GetAttachedViewId());
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3799,12 +3773,12 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
     auto view2d = GetDgnDb().Elements().Get<ViewDefinition2d>(viewId);
     if (view2d.IsValid())
         {
-        AddViewedModel (viewedModels, view2d->GetBaseModelId()); 
+        viewedModels.insert(view2d->GetBaseModelId());
         }
     else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
         {
         for (auto& modelId : spatialView->GetModelSelector().GetModels())
-            AddViewedModel (viewedModels, modelId);
+            viewedModels.insert(modelId);
         }
     }
 
