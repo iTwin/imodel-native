@@ -3351,13 +3351,18 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
             auto        wgs84Datum = GeoCoordinates::Datum::CreateDatum (L"WGS84");
             auto        thisDatum = GeoCoordinates::Datum::CreateDatum(dgnGCS->GetDatumName());
             auto        datumConverter = GeoCoordinates::DatumConverter::Create (*thisDatum, *wgs84Datum);
-            GeoPoint    wgsOrigin, wgsNorth;
+            if (nullptr != datumConverter)
+                {
+                GeoPoint    wgsOrigin, wgsNorth;
 
-            datumConverter->ConvertLatLong3D(wgsOrigin, originLatLong);
-            datumConverter->ConvertLatLong3D(wgsNorth, northLatLong);
+                datumConverter->ConvertLatLong3D(wgsOrigin, originLatLong);
+                datumConverter->ConvertLatLong3D(wgsNorth, northLatLong);
 
-            originLatLong = wgsOrigin;
-            northLatLong  = wgsNorth;
+                originLatLong = wgsOrigin;
+                northLatLong  = wgsNorth;
+
+                // delete datumConverter; // ###TODO leak. Barry gives us a raw heap-allocated pointer, and destructor is protected so can't explicitly delete.
+                }
             }
 
         /// Note we used to call dgnGCS->XYZFromLatLong to do the ECEF conversion - but that seems unreliable when datum is not WGS84 (TFS# 799148).
