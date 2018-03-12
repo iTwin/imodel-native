@@ -636,6 +636,8 @@ public:
     //! Request all accumulated tiles to be loaded. This operation first cancels loading of any previously-requested tiles which
     //! are not contained in this set of requests.
     DGNPLATFORM_EXPORT void RequestMissing(BeDuration timeoutForPartialTiles) const;
+
+    DGNPLATFORM_EXPORT bool HasMissingTiles() const;
 };
 
 //=======================================================================================
