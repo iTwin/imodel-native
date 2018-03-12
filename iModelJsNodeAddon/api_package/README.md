@@ -13,7 +13,7 @@ The native platform and its API declaration are in separate packages. In fact, t
 
 imodeljs-backend depends directly on imodeljs-native-platform-api, as it is built to expect a particular native platform API. The native platform that is loaded and used at runtime must implement the expected API. imodeljs-backend checks compatibility at run time.
 
-imodeljs-backend has peerDependencies on the native platform packages as of the same version is the API that it uses. These peer dependencies tell downstream apps what versions of the native platform packages to depend on.
+Ultimately, it is up to an app to deliver and load a native platform at run time. The loaded native platform must implement at least the API that imodeljs-backend requires.
 
 # iModelJsNodeAddon
 
@@ -166,12 +166,12 @@ The native platform packages are published by PRG, not by developers.
 This scheme allows us to version the native platform API in steps, with all downstream consumers opting in when they are ready. In a nutshell, if you add new methods to the native platform and you want imodeljs-backend to consume them, the upgrade process is:
 1. Publish a new version of the native platform and API packages with a higher minor version.
 1. Once they have landed, imodeljs-backend can move up:
-  a. Change imodeljs-backend/package.json to depend on the higher minor version of the API. Change its peerDependencies to point to the corresponding versions of the -node and -electron packages.
+  a. Change imodeljs-backend/package.json to depend on the higher minor version of the API. Change its "helper" dependencies to point to the corresponding versions of the -node and -electron packages.
   b. rush install
   c. Change the minor version of the imodeljs-backend package itself.
   d. Publish imodeljs-backend.
 1. Once that has landed, apps can move up:
-  a. Change their package.json to depend on the newer minor version of imodeljs-backend and the new version of the imodeljs-native-platform-node and -electron packages.
+  a. Change their package.json to depend on the newer minor version of imodeljs-backend.
   b. NPM INSTALL
 
 Note: imodeljs-backend depends on imodeljs-native-platform-node and imodeljs-native-platform-api in two places: in backend/package.json, and testbed/package.json. Keep them consistent!
