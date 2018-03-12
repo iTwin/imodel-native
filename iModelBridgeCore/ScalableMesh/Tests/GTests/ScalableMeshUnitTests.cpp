@@ -15,6 +15,8 @@
 #include <DgnPlatform/ClipVector.h>
 #include "SMUnitTestDisplayQuery.h"
 
+#define BINGWKT L"PROJCS[\"Google Maps Global Mercator\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Mercator_2SP\"],PARAMETER[\"standard_parallel_1\",0],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",0],PARAMETER[\"false_easting\",0],PARAMETER[\"false_northing\",0],UNIT[\"Meter\",1],EXTENSION[\"PROJ4\",\"+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext  +no_defs\"],AUTHORITY[\"EPSG\",\"900913\"]]"
+
 class ScalableMeshEnvironment : public ::testing::Environment
     {
     private:
@@ -48,7 +50,7 @@ class ScalableMeshEnvironment : public ::testing::Environment
         }
     virtual void TearDown() 
         {
-        BeFileName test;
+       BeFileName test;
 #ifdef VANCOUVER_API
         BeFileName::BeGetTempPath(test);
 #else
@@ -99,10 +101,10 @@ class ScalableMeshTest : public ::testing::Test
         }
 
     public:
-    static ScalableMesh::IScalableMeshPtr OpenMesh(BeFileName filename)
+    static ScalableMesh::IScalableMeshPtr OpenMesh(BeFileName filename, bool readOnly = true, bool shareable = true)
         {
         StatusInt status;
-        ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(filename, true, true, status);
+        ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(filename, readOnly, shareable, status);
         BeAssert(status == SUCCESS);
         return myScalableMesh;
         }
@@ -118,15 +120,63 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
             {
             m_filename = GetParam(); 
             }
-        virtual void TearDown() { }
+        virtual void TearDown() 
+            { 
+            bvector<uint64_t> clipIds;
+            auto scalablemesh = ScalableMeshTest::OpenMesh(m_filename);
+
+            auto tempClipFilePath = ScalableMeshGTestUtil::GetTempPathFromProjectPath(m_filename);
+            auto clipDefinitionsFile = tempClipFilePath + L"_clipDefinitions";
+            if (BeFileName::DoesPathExist(clipDefinitionsFile.c_str()))
+                {
+                ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(clipDefinitionsFile.c_str(), true));
+                }
+            auto clipsFile = tempClipFilePath + L"_clips";
+            if (BeFileName::DoesPathExist(clipsFile.c_str()))
+                {
+                ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(clipsFile.c_str(), true));
+                }
+            scalablemesh->GetAllClipIds(clipIds);
+            ASSERT_TRUE(clipIds.empty());
+            //for (auto clipId : clipIds)
+            //    {
+            //    scalablemesh->RemoveClip(clipId);
+            //    }
+            }
         BeFileName GetFileName() { return m_filename; }
         ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
-        ScalableMesh::IScalableMeshPtr OpenMesh()
+        //ScalableMesh::IScalableMeshPtr OpenMesh(bool readOnly = true, bool shareable = true)
+        //    {
+        //    StatusInt status;
+        //    ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(m_filename, readOnly, shareable, status);
+        //    BeAssert(status == SUCCESS);
+        //    return myScalableMesh;
+        //    }
+
+        void CreateClipFromRangeHelper(bvector<DPoint3d>& v, const DRange3d& r)
             {
-            StatusInt status;
-            ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(m_filename, true, true, status);
-            BeAssert(status == SUCCESS);
-            return myScalableMesh;
+            v.push_back(DPoint3d::From(r.low.x, r.low.y, r.low.z));
+            v.push_back(DPoint3d::From(r.high.x, r.low.y, r.low.z));
+            v.push_back(DPoint3d::From(r.high.x, r.high.y, r.low.z));
+            v.push_back(DPoint3d::From(r.low.x, r.high.y, r.low.z));
+            v.push_back(DPoint3d::From(r.low.x, r.low.y, r.low.z));
+            };
+
+        IScalableMeshNodePtr GetFirstNonEmptyNode(IScalableMeshPtr sm)
+            {
+            std::function<IScalableMeshNodePtr(IScalableMeshNodePtr)> findNonEmptyNodeRecursive;
+            findNonEmptyNodeRecursive = [&](IScalableMeshNodePtr node)
+                {
+                if (node->GetPointCount() > 0) return node;
+                for (auto child : node->GetChildrenNodes())
+                    {
+                    auto foundNode = findNonEmptyNodeRecursive(child);
+                    if (foundNode.IsValid()) return foundNode;
+                    }
+                // All nodes are empty
+                return IScalableMeshNodePtr();
+                };
+            return findNonEmptyNodeRecursive(sm->GetRootNode());
             }
     };
 
@@ -170,44 +220,51 @@ public:
 
 };
 
-
-class ScalableMeshTestDisplayQuery : public ::testing::TestWithParam<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>>
-{
-protected:
-    BeFileName        m_filename;
-    DMatrix4d         m_rootToViewMatrix;    
-    bvector<DPoint4d> m_clipPlanes;
-    bvector<double>   m_expectedResults;
-
-public:
-
-    virtual void SetUp() {
-        auto paramList = GetParam();
-        m_filename = std::get<0>(paramList);
-        m_rootToViewMatrix = std::get<1>(paramList);
-        m_clipPlanes = std::get<2>(paramList);
-        m_expectedResults = std::get<3>(paramList);
-    }
-
-    virtual void TearDown() { }
-    BeFileName GetFileName() { return m_filename; }
-    const DMatrix4d& GetRootToViewMatrix() { return m_rootToViewMatrix; }
-    const bvector<DPoint4d>& GetClipPlanes() { return m_clipPlanes; }
-    bvector<double>& GetExpectedResults() { return m_expectedResults; }
-
-    ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
-
-
-};
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, CanOpen)
     {
     auto typeStr = ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType() ? L"3sm" : L"3dTiles";
-    EXPECT_EQ(OpenMesh().IsValid(), true) << "\n Error opening " << typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
+    EXPECT_EQ(ScalableMeshTest::OpenMesh(m_filename).IsValid(), true) << "\n Error opening " << typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, CanOpenReadOnly)
+    {
+    auto typeStr = ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType() ? L"3sm" : L"3dTiles";
+    auto scalablemesh = ScalableMeshTest::OpenMesh(m_filename, true);
+    ASSERT_EQ(scalablemesh.IsValid(), true);
+    EXPECT_EQ(scalablemesh->IsReadOnly(), true) << "\n Error opening (read only) " << typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, CanOpenWrite)
+    {
+    auto scalablemesh = ScalableMeshTest::OpenMesh(m_filename, false);
+    ASSERT_EQ(scalablemesh.IsValid(), true);
+    if (ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType())
+        EXPECT_EQ(scalablemesh->IsReadOnly(), false) << "\n Error opening (read only) 3sm: " << GetFileName().c_str() << std::endl << std::endl;
+    else
+        {
+        // Cesium 3dtiles are always read only
+        EXPECT_EQ(scalablemesh->IsReadOnly(), true) << "\n Error opening (read only) 3dTiles: " << GetFileName().c_str() << std::endl << std::endl;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, CanOpenShareable)
+    {
+    auto typeStr = ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType() ? L"3sm" : L"3dTiles";
+    auto scalablemesh = ScalableMeshTest::OpenMesh(m_filename, true, true);
+    ASSERT_EQ(scalablemesh.IsValid(), true);
+    EXPECT_EQ(scalablemesh->IsShareable(), true) << "\n Error opening (read only) " << typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -486,6 +543,439 @@ TEST_P(ScalableMeshTestWithParams, VerifyMeshNodeInfo)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetQueryInterface)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    EXPECT_FALSE(myScalableMesh->GetQueryInterface(ScalableMeshQueryType::SCM_QUERY_FULL_RESOLUTION).IsValid()); // Not implemented...
+    EXPECT_FALSE(myScalableMesh->GetQueryInterface(ScalableMeshQueryType::SCM_QUERY_EXTENTS_BY_PARTS).IsValid()); // Not implemented...
+    EXPECT_FALSE(myScalableMesh->GetQueryInterface(ScalableMeshQueryType::SCM_QUERY_ALL_POINTS_IN_EXTENT).IsValid()); // Not implemented...
+    EXPECT_FALSE(myScalableMesh->GetQueryInterface(ScalableMeshQueryType::SCM_QUERY_ALL_LINEARS_IN_EXTENT).IsValid()); // Not implemented...
+    EXPECT_FALSE(myScalableMesh->GetQueryInterface(ScalableMeshQueryType::SCM_QUERY_QTY).IsValid()); // Not implemented...
+
+    EXPECT_TRUE(myScalableMesh->GetQueryInterface(ScalableMeshQueryType::SCM_QUERY_VIEW_DEPENDENT).IsValid());
+    EXPECT_TRUE(myScalableMesh->GetQueryInterface(ScalableMeshQueryType::SCM_QUERY_FIX_RESOLUTION_VIEW).IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, SetGetReprojectionTransform)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    GeoCoordinates::BaseGCSPtr gcs = GeoCoordinates::BaseGCS::CreateGCS();
+    Transform tr = Transform::FromRowValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+    myScalableMesh->SetReprojection(*gcs, tr);
+
+    Transform reprojectionTr = myScalableMesh->GetReprojectionTransform();
+
+    EXPECT_TRUE(reprojectionTr.IsEqual(tr));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, AddRemoveClip)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    // Create clip from scalable mesh extent
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    range.scaleAboutCenter(&range, 0.75);
+
+    bvector<DPoint3d> clipPoints;
+    CreateClipFromRangeHelper(clipPoints, range);
+
+    uint64_t clipId = 0;
+    ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
+
+    // Verify clip is added
+    clipPoints.clear();
+    myScalableMesh->GetClip(clipId, clipPoints);
+    EXPECT_FALSE(clipPoints.empty());
+    EXPECT_EQ(clipPoints.size(), 5);
+
+    myScalableMesh->RemoveClip(clipId);
+
+    // Verify clip is removed
+    clipPoints.clear();
+    myScalableMesh->GetClip(clipId, clipPoints);
+    EXPECT_TRUE(clipPoints.empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, ModifyClip)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    // Create clip from scalable mesh extent
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    range.scaleAboutCenter(&range, 0.75);
+
+    bvector<DPoint3d> originalClipPoints;
+    CreateClipFromRangeHelper(originalClipPoints, range);
+
+    uint64_t clipId = 0;
+    ASSERT_TRUE(myScalableMesh->AddClip(originalClipPoints.data(), originalClipPoints.size(), clipId));
+
+    // Change clip values
+    range.scaleAboutCenter(&range, 0.75);
+
+    bvector<DPoint3d> modifiedClipPoints;
+    CreateClipFromRangeHelper(modifiedClipPoints, range);
+
+    myScalableMesh->ModifyClip(modifiedClipPoints.data(), modifiedClipPoints.size(), clipId);
+
+    // Verify change
+    bvector<DPoint3d> newClipPoints;
+    myScalableMesh->GetClip(clipId, newClipPoints);
+    ASSERT_EQ(newClipPoints.size(), originalClipPoints.size());
+    for (int i = 0; i < newClipPoints.size(); i++)
+        {
+        EXPECT_FALSE(newClipPoints[i].AlmostEqual(originalClipPoints[i]));
+        EXPECT_TRUE(newClipPoints[i].AlmostEqual(modifiedClipPoints[i]));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, SynchronizeClipData)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    // Create clip from scalable mesh extent
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    range.scaleAboutCenter(&range, 0.75);
+
+    // We will create 2 clips and 1 skirt (associated to the first clip)
+    uint64_t clipId1 = 1, clipId2 = 2, skirtId = clipId1;
+
+    bvector<bvector<DPoint3d>> clips = { bvector<DPoint3d>(), bvector<DPoint3d>() /*{ DPoint3d::From(0, 0, 0), DPoint3d::From(1, 1, 1) }*/ };
+    CreateClipFromRangeHelper(clips[0], range);
+    CreateClipFromRangeHelper(clips[1], range);
+
+    bvector<bpair<uint64_t, bvector<DPoint3d>>> listOfClips;
+    listOfClips.push_back(make_bpair(clipId1, clips[0]));
+    listOfClips.push_back(make_bpair(clipId2, clips[1]));
+    
+    bvector<bvector<DPoint3d>> skirt;
+    skirt.push_back(clips[0]);
+    skirt.push_back(clips[1]);
+    bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>> listOfSkirts;
+    listOfSkirts.push_back(make_bpair(skirtId, skirt));
+
+    myScalableMesh->SynchronizeClipData(listOfClips, listOfSkirts);
+
+    bvector<uint64_t> clipIds;
+    myScalableMesh->GetAllClipIds(clipIds);
+
+    EXPECT_FALSE(clipIds.empty());
+    EXPECT_EQ(clipIds.size(), 2);
+    EXPECT_EQ(clipIds[0], 1);
+    EXPECT_EQ(clipIds[1], 2);
+
+    skirt.clear();
+    EXPECT_TRUE(myScalableMesh->GetSkirt(clipIds[0], skirt));
+
+    for (int clip = 0; clip < clips.size(); clip++)
+        {
+        EXPECT_EQ(skirt[clip].size(), clips[clip].size());
+        for (int i = 0; i < skirt[clip].size(); i++)
+            {
+            EXPECT_TRUE(skirt[clip][i].AlmostEqual(clips[clip][i]));
+            }
+        }
+
+    skirt.clear();
+    EXPECT_FALSE(myScalableMesh->GetSkirt(clipIds[1], skirt));
+    EXPECT_TRUE(skirt.empty());
+
+    // Cleanup (only skirt, clips are removed in TearDown())
+    myScalableMesh->RemoveSkirt(skirtId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, ShouldInvertClips)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    EXPECT_FALSE(myScalableMesh->ShouldInvertClips());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, SetInvertClip)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    ASSERT_FALSE(myScalableMesh->ShouldInvertClips());
+
+    myScalableMesh->SetInvertClip(true);
+    EXPECT_TRUE(myScalableMesh->ShouldInvertClips());
+
+    myScalableMesh->SetInvertClip(false);
+    EXPECT_FALSE(myScalableMesh->ShouldInvertClips());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, IsInsertingClips)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    EXPECT_FALSE(myScalableMesh->IsInsertingClips());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, SetIsInsertingClips)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    myScalableMesh->SetIsInsertingClips(true);
+
+    EXPECT_TRUE(myScalableMesh->IsInsertingClips());
+
+    myScalableMesh->SetIsInsertingClips(false);
+    EXPECT_FALSE(myScalableMesh->IsInsertingClips());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, Node_HasClip)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    // Create clip from scalable mesh extent
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    range.scaleAboutCenter(&range, 0.75);
+
+    bvector<DPoint3d> clipPoints;
+    CreateClipFromRangeHelper(clipPoints, range);
+
+    uint64_t clipId = 0;
+    ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
+
+    DRange3d extent = DRange3d::From(&clipPoints[0], (int)clipPoints.size());
+
+    if (extent.Volume() == 0)
+        {
+        if (extent.XLength() == 0)
+            {
+            extent.low.x -= 1.e-5;
+            extent.high.x += 1.e-5;
+            }
+        if (extent.YLength() == 0)
+            {
+            extent.low.y -= 1.e-5;
+            extent.high.y += 1.e-5;
+            }
+        if (extent.ZLength() == 0)
+            {
+            extent.low.z -= 1.e-5;
+            extent.high.z += 1.e-5;
+            }
+        }
+
+    bool isCesium3DTiles = myScalableMesh->IsCesium3DTiles();
+    std::function<void(IScalableMeshNodePtr)> checkNodesHasClipRecursive;
+    checkNodesHasClipRecursive = [&](IScalableMeshNodePtr node)
+        {
+        
+        if (node->GetPointCount() > 0 && (isCesium3DTiles ? extent.IntersectsWith(node->GetContentExtent()) : extent.IntersectsWith(node->GetContentExtent(),2)))
+            EXPECT_TRUE(node->HasClip(clipId));
+        for (auto child : node->GetChildrenNodes())
+            checkNodesHasClipRecursive(child);
+        };
+    checkNodesHasClipRecursive(myScalableMesh->GetRootNode());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, Node_IsClippingUpToDate)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    std::function<void(IScalableMeshNodePtr)> checkNodesRecursive;
+    checkNodesRecursive = [&](IScalableMeshNodePtr node)
+        {
+        ASSERT_TRUE(node->IsClippingUpToDate());
+        for (auto child : node->GetChildrenNodes()) checkNodesRecursive(child);
+        };
+    checkNodesRecursive(myScalableMesh->GetRootNode());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, Node_IsClippingUpToDateAfterAddClip)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    // Create clip from scalable mesh extent
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    //range.scaleAboutCenter(&range, 0.75);
+
+    bvector<DPoint3d> clipPoints;
+    CreateClipFromRangeHelper(clipPoints, range);
+
+    DRange3d extent = DRange3d::From(&clipPoints[0], (int)clipPoints.size());
+
+    if (extent.Volume() == 0)
+        {
+        if (extent.XLength() == 0)
+            {
+            extent.low.x -= 1.e-5;
+            extent.high.x += 1.e-5;
+            }
+        if (extent.YLength() == 0)
+            {
+            extent.low.y -= 1.e-5;
+            extent.high.y += 1.e-5;
+            }
+        if (extent.ZLength() == 0)
+            {
+            extent.low.z -= 1.e-5;
+            extent.high.z += 1.e-5;
+            }
+        }
+
+    uint64_t clipId = 0;
+    ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
+
+    bool isCesium3DTiles = myScalableMesh->IsCesium3DTiles();
+    std::function<void(IScalableMeshNodePtr)> checkNodesRecursive;
+    checkNodesRecursive = [&](IScalableMeshNodePtr node)
+        {
+        if (node->GetContentExtent().isEmpty()) return;
+        if (node->GetPointCount() > 0 && (isCesium3DTiles ? extent.IntersectsWith(node->GetContentExtent()) : extent.IntersectsWith(node->GetContentExtent(), 2)))
+            ASSERT_FALSE(node->IsClippingUpToDate());
+        else ASSERT_TRUE(node->IsClippingUpToDate());
+        for (auto child : node->GetChildrenNodes()) checkNodesRecursive(child);
+        };
+    checkNodesRecursive(myScalableMesh->GetRootNode());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, Node_RefreshMergedClip)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    if (myScalableMesh->IsCesium3DTiles())
+        {
+        Transform tr = myScalableMesh->GetReprojectionTransform();
+        if (tr.IsIdentity())
+            {
+            // Reproject ECEF mesh using Bing maps GCS because they can't be clipped without being reprojected
+            WString bingWKT(BINGWKT);
+            auto bingGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+            StatusInt warningStat;
+            WString warningMessageString;
+
+            bingGCS->InitFromWellKnownText(&warningStat,
+                                           &warningMessageString,
+                                           BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor::wktFlavorUnknown,
+                                           bingWKT.c_str());
+
+            ASSERT_EQ(warningStat, SUCCESS);
+            ASSERT_EQ(warningMessageString.size(), 0);
+
+            DRange3d range;
+            ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+            DPoint3d extent;
+            extent.DifferenceOf(range.high, range.low);
+
+            GeoCoordinates::DgnGCSPtr  smGCS = GeoCoordinates::DgnGCS::CreateGCS(myScalableMesh->GetBaseGCS().get(), nullptr);
+            GeoCoordinates::DgnGCSPtr  targetGCS = GeoCoordinates::DgnGCS::CreateGCS(bingGCS.get(), nullptr);
+
+            Transform       approxTransform;
+            auto status = smGCS->GetLocalTransform(&approxTransform, 
+                                                    range.low,
+                                                   &extent, 
+                                                    true/*doRotate*/, true/*doScale*/, 
+                                                    GeoCoordinates::GeoCoordInterpretation::XYZ, 
+                                                    *targetGCS);
+
+            if (0 != status && 1 != status)
+                {
+                // Skip this dataset, it is not ECEF
+                return;
+                }
+            myScalableMesh->SetReprojection(*bingGCS, approxTransform);
+            }
+        }
+
+    // Create clip from scalable mesh extent
+    DRange3d range;
+    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetRange(range));
+
+    range.scaleAboutCenter(&range, 0.75);
+
+    bvector<DPoint3d> clipPoints;
+    CreateClipFromRangeHelper(clipPoints, range);
+
+    uint64_t clipId = 1;
+    ASSERT_TRUE(myScalableMesh->AddClip(clipPoints.data(), clipPoints.size(), clipId));
+
+    Transform reprojectionTr = myScalableMesh->GetReprojectionTransform();
+    std::function<void(IScalableMeshNodePtr)> refreshMergedClipRecursive;
+    refreshMergedClipRecursive = [&](IScalableMeshNodePtr node)
+        {
+        node->RefreshMergedClip(reprojectionTr);
+        for (auto child : node->GetChildrenNodes()) refreshMergedClipRecursive(child);
+        };
+    refreshMergedClipRecursive(myScalableMesh->GetRootNode());
+
+    std::function<void(IScalableMeshNodePtr)> checkNodesRecursive;
+    checkNodesRecursive = [&](IScalableMeshNodePtr node)
+        {
+        ASSERT_TRUE(node->IsClippingUpToDate());
+        for (auto child : node->GetChildrenNodes()) checkNodesRecursive(child);
+        };
+    checkNodesRecursive(myScalableMesh->GetRootNode());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestWithParams, ::testing::ValuesIn(ScalableMeshGTestUtil::GetFiles(BeFileName(SM_DATA_PATH))));
@@ -590,8 +1080,6 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
 
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDrapePoints, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfValues(BeFileName(SM_LISTING_FILE_NAME))));
 
-INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName(SM_DISPLAY_QUERY_TEST_CASES))));
-
 TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 {
 	auto myScalableMesh = OpenMesh();
@@ -628,56 +1116,16 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 	}
 }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                  Mathieu.St-Pierre   11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
-    {
-
-    /*
-    BeFileName GetFileName() { return m_filename; }
-    const DMatrix4d& GetRootToViewMatrix() { return m_rootToViewMatrix; }
-    const bvector<DPoint4d>& GetClipPlanes() { return m_clipPlanes; }
-    bvector<double>& GetExpectedResults() { return m_expectedResults; }
-    */
 
 
-    //auto myScalableMesh = OpenMesh();
-
-    /*
-    bvector<DPoint3d> sourcePts = GetData();
-    TerrainModel::DTMDrapedLinePtr result;
-    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetDTMInterface()->GetDTMDraping()->DrapeLinear(result, sourcePts.data(), (int)sourcePts.size()));
-    ASSERT_EQ(result.IsValid(), true);
-    for (size_t i = 0; i < GetResult().size(); ++i)
-    {
-    DPoint3d pt;
-    result->GetPointByIndex(pt, nullptr, nullptr, (unsigned int)i);
-    EXPECT_EQ(fabs(pt.z - GetResult()[i].z) < 1e-6, true);
-    EXPECT_EQ(fabs(pt.x - GetResult()[i].x) < 1e-6, true);
-    EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
-    }*/
-    
-
-    DisplayQueryTester queryTester;
-
-    bool result = queryTester.SetQueryParams(GetFileName(), GetRootToViewMatrix(), GetClipPlanes(), GetExpectedResults());
-
-    EXPECT_EQ(result == true, true);
-
-    if (result)
-        queryTester.DoQuery();
-    }
-
-
-// Wrap Google's ASSERT_TRUE macro into a lambda because it returns a "success" error code.
-// When calling from main function, we actually want to return an error.
-#define FAIL_IF_FALSE(condition) \
-    { \
-    bool isTrue = condition; \
-    [&]() { ASSERT_TRUE(isTrue); }(); \
-    if (!(isTrue)) return 1; \
-    }
+//// Wrap Google's ASSERT_TRUE macro into a lambda because it returns a "success" error code.
+//// When calling from main function, we actually want to return an error.
+//#define FAIL_IF_FALSE(condition) \
+//    { \
+//    bool isTrue = condition; \
+//    [&]() { ASSERT_TRUE(isTrue); }(); \
+//    if (!(isTrue)) return 1; \
+//    }
 
 
 ///*---------------------------------------------------------------------------------**//**

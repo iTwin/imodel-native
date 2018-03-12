@@ -1348,8 +1348,6 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
-        virtual void   _ApplyAllExistingClips(Transform tr) const override;
-
         virtual void   _RefreshMergedClip(Transform tr) const override;
 
         virtual bool   _AddClip(uint64_t id, bool isVisible) const override;

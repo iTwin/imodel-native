@@ -242,11 +242,15 @@ struct IScalableMesh abstract:  IRefCounted
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) = 0;
 
 
+        virtual bool                               _GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirt) = 0;
+
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) = 0;
 
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) = 0;
 
         virtual bool                               _RemoveSkirt(uint64_t skirtID) = 0;
+
+        virtual bool                               _IsInsertingClips() = 0;
 
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) = 0;
 
@@ -368,7 +372,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType queryType) const;
 
-        BENTLEY_SM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
+        IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
                                                                                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                                const DRange3d&                      extentInTargetGCS) const;
 
@@ -442,12 +446,15 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts);
 
 
+        BENTLEY_SM_EXPORT bool                   GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirtData);
 
         BENTLEY_SM_EXPORT bool                   ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
 
         BENTLEY_SM_EXPORT bool                   AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
 
         BENTLEY_SM_EXPORT bool                   RemoveSkirt(uint64_t skirtID);
+
+        BENTLEY_SM_EXPORT bool                   IsInsertingClips();
 
         BENTLEY_SM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
 

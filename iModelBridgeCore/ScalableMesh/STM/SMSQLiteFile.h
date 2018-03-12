@@ -102,6 +102,7 @@ public:
     bool Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
+    bool IsReadOnly() { return m_database->IsReadonly(); }
     BENTLEY_SM_EXPORT void Save();
 
     static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
@@ -212,10 +213,12 @@ public:
 
     virtual void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize) { assert(false); }
     virtual void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize) { assert(false); }
+    virtual void DeleteDiffSet(int64_t diffsetID) { assert(false); }
 
     virtual void DeleteCoveragePolygon(int64_t coverageID) { assert(false); }
     virtual void DeleteClipPolygon(int64_t clipID) { assert(false); }
-    
+    virtual void DeleteSkirtPolygon(int64_t clipID) { assert(false); }
+
 	void Compact();
 
     bool m_autocommit = true;    

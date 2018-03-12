@@ -2477,7 +2477,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::ClipActionRecursive(ClipAction action, uint64_t clipId, DRange3d& extent,bool setToggledWhenIdIsOn, Transform tr)
     {
     if (!IsLoaded()) Load();
-    if (/*size() == 0 || m_nodeHeader.m_nbFaceIndexes < 3*/m_nodeHeader.m_totalCount == 0) return;
+    if (m_nodeHeader.m_totalCountDefined ? m_nodeHeader.m_totalCount == 0 : GetNbPoints() == 0 || m_nodeHeader.m_nbFaceIndexes < 3) return;
    /* DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                                         ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));*/
     
@@ -4500,10 +4500,10 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 	{
 		extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), ExtentOp<EXTENT>::GetZMin(ext),
 			ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), ExtentOp<EXTENT>::GetZMax(ext));
-		tr.Multiply(extRange.low, extRange.low);
-		tr.Multiply(extRange.high, extRange.high);
-		extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(extRange), ExtentOp<EXTENT>::GetYMin(extRange), 0,
-			ExtentOp<EXTENT>::GetXMax(extRange), ExtentOp<EXTENT>::GetYMax(extRange), 0);
+		//tr.Multiply(extRange.low, extRange.low);
+		//tr.Multiply(extRange.high, extRange.high);
+		//extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(extRange), ExtentOp<EXTENT>::GetYMin(extRange), 0,
+		//	ExtentOp<EXTENT>::GetXMax(extRange), ExtentOp<EXTENT>::GetYMax(extRange), 0);
 		for (auto& pt : polyPts)
 			tr.Multiply(pt, pt);
 	}
@@ -4649,12 +4649,20 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
             }
         }
     if (found)
-    {
+        {
         diffSetPtr->erase(indices);
-       /* //force commit
-        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
-    }
+        /* //force commit
+         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
+        if (m_nbClips == 0)
+            {
+            ISDiffSetDataStorePtr nodeDiffsetStore;
+            bool result = m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &m_nodeHeader, false);
+            BeAssert(result == true);
+            if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
+            }
+        }
+
     return found;
     }
 
@@ -4696,6 +4704,14 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
         }
     else
     {
+        DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_contentExtent),
+            ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_contentExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_contentExtent));
+        bvector<DPoint3d> clipData;
+        GetClipRegistry()->GetClip(clipId, clipData);
+        DRange3d clipExtent = DRange3d::From(&clipData[0], (int)clipData.size());
+
+        if (!clipExtent.IntersectsWith(nodeRange))
+            DeleteClip(clipId, isVisible, setToggledWhenIdIsOn);
   /*      //force commit
         GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
         m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/

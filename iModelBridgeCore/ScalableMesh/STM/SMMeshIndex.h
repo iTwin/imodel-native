@@ -356,9 +356,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     //Modifies an existing clip or returns false if there is no clip with this ID.
     bool ModifyClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
 
-    //Requests adding a clip asynchronously. ID is set but diffset is filled later.
-    bool  AddClipAsync(uint64_t clipId, bool isVisible);
-
     //Completes an async clip operation.
     void DoClip(uint64_t clipId, bool isVisible);
 

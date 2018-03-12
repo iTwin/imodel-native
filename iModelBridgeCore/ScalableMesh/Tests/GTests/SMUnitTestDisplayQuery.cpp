@@ -2,12 +2,11 @@
 |
 |     $Source: Tests/GTests/SMUnitTestDisplayQuery.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "SMUnitTestDisplayQuery.h"
-#include <Bentley/BeTest.h>
 #include <Bentley\BeThread.h>
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 
@@ -376,6 +375,22 @@ void DisplayQueryTester::VerifyCurrentlyViewedNodesFunctions(bvector<IScalableMe
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                 03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayQueryTester::SetActiveClips(const bset<uint64_t>& clips)
+    {
+    GetProgressiveQueryEngine()->SetActiveClips(clips, m_smPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                 03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void DisplayQueryTester::GetActiveClips(bset<uint64_t>& clips)
+    {
+    GetProgressiveQueryEngine()->GetActiveClips(clips, m_smPtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                 11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DisplayQueryTester::DoQuery()
@@ -527,3 +542,48 @@ bool DisplayQueryTester::SetQueryParams(const BeFileName& smFileName, const DMat
         
 
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Mathieu.St-Pierre   11/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
+    {
+    DisplayQueryTester queryTester;
+
+    bool result = queryTester.SetQueryParams(GetFileName(), GetRootToViewMatrix(), GetClipPlanes(), GetExpectedResults());
+
+    EXPECT_EQ(result == true, true);
+
+    if (result)
+        queryTester.DoQuery();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Richard.Bois   03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery_SetGetActiveClips)
+    {
+    DisplayQueryTester queryTester;
+
+    bool result = queryTester.SetQueryParams(GetFileName(), GetRootToViewMatrix(), GetClipPlanes(), GetExpectedResults());
+
+    EXPECT_EQ(result == true, true);
+
+    if (result)
+        {
+        bset<uint64_t> activeClips;
+        activeClips.insert(0);
+        activeClips.insert(1);
+        activeClips.insert(2);
+        activeClips.insert(3);
+        queryTester.SetActiveClips(activeClips);
+
+        bset<uint64_t> storedClips;
+        queryTester.GetActiveClips(storedClips);
+
+        EXPECT_TRUE(std::equal(storedClips.begin(), storedClips.end(), activeClips.begin()));
+        }
+    }
+
+INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName(SM_DISPLAY_QUERY_TEST_CASES))));

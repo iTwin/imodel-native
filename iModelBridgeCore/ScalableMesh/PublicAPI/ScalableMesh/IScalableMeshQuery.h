@@ -495,8 +495,6 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual IScalableMeshNodePtr _GetParentNode() const = 0;
         
-        virtual void     _ApplyAllExistingClips(Transform tr) const = 0;
-
         virtual void     _RefreshMergedClip(Transform tr) const = 0;
 
         virtual bool     _AddClip(uint64_t id, bool isVisible) const = 0;
@@ -580,17 +578,18 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT IScalableMeshNodePtr GetParentNode() const;
 
-        BENTLEY_SM_EXPORT void     ApplyAllExistingClips(Transform tr) const;
+        // Deprecated, use _RefreshMergedClip instead
+        //BENTLEY_SM_EXPORT void     ApplyAllExistingClips(Transform tr) const;
 
         BENTLEY_SM_EXPORT void     RefreshMergedClip(Transform tr) const;
 
-        BENTLEY_SM_EXPORT bool     AddClip(uint64_t id, bool isVisible=true) const;
+        bool     AddClip(uint64_t id, bool isVisible=true) const;
 
-        BENTLEY_SM_EXPORT bool     AddClipAsync(uint64_t id, bool isVisible = true) const;
+        bool     AddClipAsync(uint64_t id, bool isVisible = true) const;
 
-        BENTLEY_SM_EXPORT bool     ModifyClip(uint64_t id,bool isVisible=true) const;
+        bool     ModifyClip(uint64_t id,bool isVisible=true) const;
 
-        BENTLEY_SM_EXPORT bool     DeleteClip(uint64_t id, bool isVisible=true) const;
+        bool     DeleteClip(uint64_t id, bool isVisible=true) const;
 
         BENTLEY_SM_EXPORT DRange3d GetNodeExtent() const;
 

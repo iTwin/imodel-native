@@ -51,6 +51,8 @@ namespace ScalableMeshGTestUtil
 
     BeFileName GetUserSMTempDir();
 
+    BeFileName GetTempPathFromProjectPath(const BeFileName& path);
+
     enum class SMMeshType
         {
         TYPE_3SM,

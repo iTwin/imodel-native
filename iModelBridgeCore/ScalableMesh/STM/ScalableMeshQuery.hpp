@@ -3047,12 +3047,6 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     else return m_meshNode->IsClippingUpToDate();
     }
 
-template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips(Transform tr) const
-    {
-       
-    _RefreshMergedClip(tr);    
-    }
-
 template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip(Transform tr) const
     {
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->BuildSkirts();
