@@ -28,8 +28,6 @@
 #include "..\Initialize.h"
 #include "..\TiledTriangulation\ITiledTriangulatorValidator.h"
 
-
-
 using namespace std;
 
 #include <ScalableMesh/IScalableMesh.h>
@@ -42,6 +40,8 @@ using namespace std;
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh/IScalableMeshProgress.h>
+#include <ScalableMesh/ScalableMeshFrom3MX.h>
+#include <ScalableMesh/IScalableMeshDetectGround.h>
 
 #include <GeomSerialization\GeomLibsFlatBufferApi.h>
 
@@ -82,12 +82,14 @@ using namespace std;
 #include <CloudDataSource/DataSourceBuffered.h>
 
 
+
+
 #pragma warning( disable : 4456 ) 
 
 //#define ABORT(ERROR + 1)
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
-USING_NAMESPACE_BENTLEY_SCALABLEMESH
+
 
 #ifdef VANCOUVER_API
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -330,7 +332,9 @@ void PerformExportToUnityTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         }
     }
 
-void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+
+
+void PerformGroundExtractionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     BeXmlStatus status;
     WString smFileName;
@@ -341,68 +345,143 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : smFileName attribute not found\r\n");
         return;
         }
+
+    WString groundAreaFileName;
+
+    //parse dgn file name
+    if (pTestNode->GetAttributeStringValue(groundAreaFileName, "groundAreaFileName") != BEXML_Success)
+        {
+        printf("ERROR : groundAreaFileName attribute not found\r\n");
+        return;
+        }
+
+    WString outputDir;
+
+    if (pTestNode->GetAttributeStringValue(outputDir, "outputDir") != BEXML_Success)
+        {
+        printf("ERROR : outputDir attribute not found\r\n");
+        return;
+        }
+
+    BeFileName::EmptyAndRemoveDirectory(outputDir.c_str());
+    BeFileName::CreateNewDirectory(outputDir.c_str());
     
     StatusInt openStatus;
-    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr scalableMeshPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(smFileName.c_str(), false, false, openStatus));
+    BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshPtr scalableMeshPtr(BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMesh::GetFor(smFileName.c_str(), Utf8String(outputDir.c_str()), false, false, false, openStatus));
     
     if (scalableMeshPtr == 0)
         {
         printf("ERROR : cannot open 3SM file\r\n");
         return;
         }
-                         
-#ifndef VANCOUVER_API          
-    clock_t t = clock();     
-    WString terrainPath =    smFileName+L"Terrain.3sm";    
-    IScalableMeshGroundExtractorPtr groundExtractorPtr(IScalableMeshGroundExtractor::Create(terrainPath,scalableMeshPtr));        
     
-    BeFileName temp = BeFileName(L"C:\\temp\\");
-    StatusInt statusGround = groundExtractorPtr->ExtractAndEmbed(temp);                    
+    //Line in lns file are in meters, apply scaling if required.    
+    SetReprojectionMatrixForMeterData(scalableMeshPtr);   
 
-    if (statusGround != SUCCESS)
+    bvector<bvector<DPoint3d>> areas;
+
+    GetLinePointsFromLnsFile(areas, groundAreaFileName);
+
+    //parse dgn file name
+    
+
+    //Get list of ids to increment the id for next coverage
+    bvector<uint64_t> ids;
+    scalableMeshPtr->GetCoverageIds(ids);
+
+    if (ids.size() > 0)
+        {
+        printf("ERROR : coverageIds should not exist prior to doing ground extraction\r\n");
         return;
+        }
+               
+    //return L"InputFileName, Nb Ground Regions, Nb Successful Ground Regions, Result, Duration (minutes)\n";
+    fwprintf(pResultFile, L"%s,%zi", smFileName.c_str(), areas.size());
 
-    t = clock() - t;
-#endif    
-    
-    
-    /*
-    double delay = (double)t / CLOCKS_PER_SEC;
-    double minutes = delay / 60.0;
-    double hours = minutes / 60.0;    
-    */
-    /*
-            fwprintf(pResultFile,
-                     L"%s,%s,%s,%s,%I64d,%I64d,%.5f%%,%.5f,%s,%.5f,%.5f,%.5f,%.5f,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f%%,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%s\n",
-                     stmFileName.c_str(), mesher.c_str(), filter.c_str(), trimming.c_str(), IScalableMeshSourceCreator::GetNbImportedPoints(), pointCount,
-                     (double)pointCount / IScalableMeshSourceCreator::GetNbImportedPoints() * 100.0, (double)fileSize / 1024.0 / 1024.0,
-                     acceleratorUseCpu == ACCELERATOR_CPU ? L"CPU" : L"GPU",
-                     nTimeToCreateSeeds,
-                     nTimeToEstimateParams,
-                     nTimeToFilterGround,
-                     GetGroundDetectionDuration(),                             
-                     GetGroundDetectionDuration() / minutes * 100,
-                     (IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration()) / minutes * 100, //Import points duration includes ground detection duration.
-                     IScalableMeshSourceCreator::GetLastBalancingDuration() / minutes * 100,
-                     IScalableMeshSourceCreator::GetLastMeshingDuration() / minutes * 100,
-                     IScalableMeshSourceCreator::GetLastFilteringDuration() / minutes * 100,
-                     IScalableMeshSourceCreator::GetLastStitchingDuration() / minutes * 100,
-                     minutes, hours,
-                     GetGroundDetectionDuration(),
-                     IScalableMeshSourceCreator::GetImportPointsDuration() - GetGroundDetectionDuration(),
-                     IScalableMeshSourceCreator::GetLastBalancingDuration(),
-                     IScalableMeshSourceCreator::GetLastMeshingDuration(),
-                     IScalableMeshSourceCreator::GetLastFilteringDuration(),
-                     IScalableMeshSourceCreator::GetLastStitchingDuration(),
-                     result.c_str());
-                     
-            }
-        else
+    WString errorInfo;
+    int nbSuccessGroundRegion = 0;
+
+    clock_t totalTime = clock();
+
+    for (int areaInd = 0; areaInd < areas.size(); areaInd++)
+        {
+        WPrintfString groundOutputName(L"%s\\groundArea%i.3sm", outputDir.c_str(), areaInd);
+
+        if (BeFileName::DoesPathExist(groundOutputName.c_str()))
             {
-            fwprintf(pResultFile, L"%s,%s,%s,%.5f,%s\n", L"", L"", L"", 0.0, L"ERROR");
+            BeFileNameStatus status = BeFileName::BeDeleteFile(groundOutputName.c_str(), true);
+            if (status != BeFileNameStatus::Success)
+                {
+                printf("ERROR : Cannot delete ground extration 3sm file : %ls ", groundOutputName.c_str());
+                return;
+                }
             }
-            */
-        fflush(pResultFile);            
+
+        BeFileName featureFilePath(outputDir.c_str());
+
+        BeFileName textureSubFolderName;
+        BeFileName extraLinearFeatureFileName;
+
+        IScalableMeshGroundExtractor::GetTempDataLocation(textureSubFolderName, extraLinearFeatureFileName);        
+        featureFilePath.AppendString(extraLinearFeatureFileName.c_str());
+
+
+        double ratioToGcsUnit = 1.0 / scalableMeshPtr->GetGCS().GetUnit().GetRatioToBase();
+     
+        Transform computedTransform = Transform::FromRowValues(ratioToGcsUnit, 0, 0, 0,
+                                                                0, ratioToGcsUnit, 0, 0,
+                                                                0, 0, ratioToGcsUnit, 0);
+        
+        
+        CreateBreaklines(featureFilePath, areas[areaInd], scalableMeshPtr, computedTransform);
+        
+
+        IScalableMeshGroundPreviewerPtr pSmQuickGroundPreviewer;
+        BaseGCSCPtr destinationGcs;
+        BeFileName groundOutputFileName(BeFileName::GetFileNameWithoutExtension(groundOutputName.c_str()).c_str());
+        BeFileName outputDirName(outputDir.c_str());
+                            
+        SMStatus status = IScalableMeshDetectGround::DetectGroundForRegion(scalableMeshPtr, groundOutputFileName, outputDirName, areas[areaInd], areaInd, pSmQuickGroundPreviewer, destinationGcs, true);
+        if (status != S_SUCCESS)
+            {
+            errorInfo += WPrintfString(L"Error returned by DetectGroundForRegion for area %i    ", areaInd);
+            continue;
+
+            //mdlOutput_rscvMessageCenter(OutputMessagePriority::Error, NULLRSC, MSGLISTIDS_SMErrors, MSGError_ErrorWhileGroundExtact, 0, OutputMessageAlert::Balloon, NULL);
+            //return ERROR;
+            }
+
+        Utf8String coverageName(groundOutputName.c_str());
+
+        BentleyStatus createStatus = scalableMeshPtr->CreateCoverage(areas[areaInd], areaInd, coverageName);
+        if (createStatus != SUCCESS)
+            {
+            errorInfo += WPrintfString(L"Error returned by CreateCoverage for area %i    ", areaInd);
+            continue;
+
+            //mdlOutput_rscvMessageCenter(OutputMessagePriority::Error, NULLRSC, MSGLISTIDS_SMErrors, MSGError_ErrorWhileGroundExtact, 0, OutputMessageAlert::Balloon, NULL);
+            //return ERROR;
+            }
+
+        nbSuccessGroundRegion++;
+        }
+
+    fwprintf(pResultFile, L",%i", nbSuccessGroundRegion);
+    
+    totalTime = clock() - totalTime;
+
+    if (errorInfo.size() == 0)
+        {
+        fwprintf(pResultFile, L",SUCCESS");
+        }
+    else
+        {        
+        fwprintf(pResultFile, L",ERROR : %s", errorInfo.c_str());
+        }
+
+    fwprintf(pResultFile, L",%.5f\n", totalTime / CLOCKS_PER_SEC / 60.0);
+
+    fflush(pResultFile);
     }
 
 int CollectAllElmsCallback(ElementRefP elemRef, CallbackArgP callbackArg, ScanCriteriaP scP)
@@ -521,6 +600,13 @@ void PerformDrapeTestLnsFileCreation(BeXmlNodeP pTestNode, FILE* pResultFile)
                 memcpy(&origPoints[0], &element->point_string_3d.point[0], element->point_string_3d.numpts * sizeof(DPoint3d));
                 break;
                 }
+            case SHAPE_ELM:
+                {
+                origPoints.resize(element->point_string_3d.numpts);
+                memcpy(&origPoints[0], &element->point_string_3d.point[0], element->point_string_3d.numpts * sizeof(DPoint3d));
+                break;
+                }
+                
             default:
                 break;
             }   
@@ -1625,7 +1711,7 @@ struct DPoint3dComparer
             }
     };
 
-StatusInt DrapeOnScalableMesh(DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>& drapedPoints, std::vector<DPoint3d> origPoints)
+StatusInt DrapeOnScalableMesh(DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>& drapedPoints, bvector<DPoint3d>& origPoints)
     {
     DTMDrapedLinePtr drapedLine;
     auto draping = smPtr->GetDTMDraping();
@@ -1646,7 +1732,7 @@ StatusInt DrapeOnScalableMesh(DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>&
     return SUCCESS;
     }
 
-StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<vector<DPoint3d>>& drapeLines)
+StatusInt DoBatchDrape(bvector<bvector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<vector<DPoint3d>>& drapeLines)
     {
     bool aborded = false;
 
@@ -1998,120 +2084,91 @@ void AddTexturesToMesh(BeXmlNodeP pTestNode, FILE* pResultFile)
     fflush(pResultFile);
     }
 
-
-void SetReprojectionMatrixForMeterData(IScalableMeshPtr& stmFile)
-    {
-    double ratioToMeter = stmFile->GetGCS().GetHorizontalUnit().GetRatioToBase();
-
-    if (ratioToMeter != 1.0)
-        {
-        GeoCoordinates::BaseGCSPtr targetGcs(GeoCoordinates::BaseGCS::CreateGCS());
-        Transform approximateTransform(Transform::FromIdentity());
-        approximateTransform.form3d[0][0] = approximateTransform.form3d[1][1] = approximateTransform.form3d[2][2] = ratioToMeter;
-        BentleyStatus status = stmFile->SetReprojection(*targetGcs, approximateTransform);
-        assert(status == SUCCESS);
-        }
-    }
-
-
 void PerformDrapeLineTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString stmFileName, linesFileName, name;
-    // Parses the test(s) definition:
-    if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
+        WString stmFileName, linesFileName, name;
+        // Parses the test(s) definition:
+        if (pTestNode->GetAttributeStringValue(stmFileName, "stmFileName") != BEXML_Success)
         {
-        printf("ERROR : stmFileName attribute not found\r\n");
-        return;
+            printf("ERROR : stmFileName attribute not found\r\n");
+            return;
         }
-    StatusInt status;
-    IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
+        StatusInt status;
+        IScalableMeshPtr stmFile = IScalableMesh::GetFor(stmFileName.c_str(), true, true, status);
 
-    //Line in lns file are in meters, apply scaling if required.    
-    SetReprojectionMatrixForMeterData(stmFile);
-        
-    uint64_t pointCount = 0;
-    WString result;
+        //Line in lns file are in meters, apply scaling if required.    
+        SetReprojectionMatrixForMeterData(stmFile);
 
-    if (stmFile != 0)
+        uint64_t pointCount = 0;
+        WString result;
+
+        if (stmFile != 0)
         {
-        pointCount = stmFile->GetPointCount();
-        result = L"SUCCESS";
+            pointCount = stmFile->GetPointCount();
+            result = L"SUCCESS";
         }
-    else
+        else
         {
-        result = L"FAILURE";
+            result = L"FAILURE";
         }
-    //parse dgn file name
-    if (pTestNode->GetAttributeStringValue(linesFileName, "linesFileName") != BEXML_Success)
+        //parse dgn file name
+        if (pTestNode->GetAttributeStringValue(linesFileName, "linesFileName") != BEXML_Success)
         {
-        printf("ERROR : linesFileName attribute not found\r\n");
-        return;
-        }
-
-    std::wstring line;
-    
-    std::wifstream infile(linesFileName.c_str());
-
-    vector<vector<DPoint3d>> pts;
-    vector<vector<DPoint3d>> lines;
-    vector<DPoint3d> linePts(2);
-    
-    while (std::getline(infile, line))
-        {
-        std::wistringstream iss(line);
-        wchar_t semiColon;
-        if (!(iss >> linePts[0].x >> linePts[0].y >> linePts[0].z >> semiColon)) { break; } // error
-        if (!(iss >> linePts[1].x >> linePts[1].y >> linePts[1].z >> semiColon)) { break; } // error
-
-        lines.push_back(linePts);
+            printf("ERROR : linesFileName attribute not found\r\n");
+            return;
         }
 
-    DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*stmFile->GetDTMInterface());
+        bvector<bvector<DPoint3d>> lines;
+        vector<vector<DPoint3d>> pts;
 
-    status = DoBatchDrape(lines, dtmP, pts);
+        GetLinePointsFromLnsFile(lines, linesFileName);
 
-    int64_t nOfLinesToDrape = 0, nOfLinesDraped = 0, nOfLinesNotDraped = 0;
-    double timeOfDrape = 0.0;
-    IScalableMeshATP::GetInt(L"nOfLines", nOfLinesToDrape);
-    IScalableMeshATP::GetInt(L"nOfLinesNotDraped", nOfLinesNotDraped);
-    IScalableMeshATP::GetInt(L"nOfLinesDraped", nOfLinesDraped);
-    IScalableMeshATP::GetDouble(L"drapeTime", timeOfDrape);
-    int64_t loadAttempts;
-    int64_t loadMisses;
-    int64_t nOutPts = 0;
-    int64_t nPartial = 0;
-    double drapeLength = 0.0;
-    IScalableMeshATP::GetInt(L"nOfGraphLoadAttempts", loadAttempts);
-    IScalableMeshATP::GetInt(L"nOfGraphStoreMisses", loadMisses);
-    IScalableMeshATP::GetInt(L"nOfLinesPartial", nPartial);
-    IScalableMeshATP::GetInt(L"nOfOutputPoints", nOutPts);
-    IScalableMeshATP::GetDouble(L"lengthOfLinesPartial", drapeLength);
-    fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%I64d,%I64d,%.5f,%.5f,%.5f,%I64d,%.5f,%.5f,%.5f,%I64d, %.5f\n",
-             stmFileName.c_str(),
-             result.c_str(),
-             stmFile->GetPointCount(),
-             nOfLinesToDrape,
-             nOfLinesDraped,
-             nOfLinesDraped - nPartial,
-             nPartial * 100.0 / nOfLinesDraped,
-             drapeLength * 100.0,
-             loadMisses*100.0 / loadAttempts,
-             nOfLinesNotDraped,
-             (double)nOfLinesNotDraped*100.0 / nOfLinesToDrape,
-             timeOfDrape,
-             timeOfDrape / nOfLinesToDrape,
-             nOutPts,
-             1000 * timeOfDrape / nOutPts);
-    IScalableMeshATP::StoreInt(L"nOfLines", 0);
-    IScalableMeshATP::StoreInt(L"nOfLinesNotDraped", 0);
-    IScalableMeshATP::StoreInt(L"nOfLinesDraped", 0);
-    IScalableMeshATP::StoreInt(L"nOfOutputPoints", 0);
-    IScalableMeshATP::StoreDouble(L"drapeTime", 0.0);
-    IScalableMeshATP::StoreDouble(L"lengthOfLinesPartial", 0.0);
-    IScalableMeshATP::StoreInt(L"nOfLinesPartial", 0);
-    fflush(pResultFile);
-    stmFile = nullptr;
-    dtmP = nullptr;
+        DTMPtr dtmP = dynamic_cast<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM*>(&*stmFile->GetDTMInterface());
+
+        status = DoBatchDrape(lines, dtmP, pts);
+
+        int64_t nOfLinesToDrape = 0, nOfLinesDraped = 0, nOfLinesNotDraped = 0;
+        double timeOfDrape = 0.0;
+        IScalableMeshATP::GetInt(L"nOfLines", nOfLinesToDrape);
+        IScalableMeshATP::GetInt(L"nOfLinesNotDraped", nOfLinesNotDraped);
+        IScalableMeshATP::GetInt(L"nOfLinesDraped", nOfLinesDraped);
+        IScalableMeshATP::GetDouble(L"drapeTime", timeOfDrape);
+        int64_t loadAttempts;
+        int64_t loadMisses;
+        int64_t nOutPts = 0;
+        int64_t nPartial = 0;
+        double drapeLength = 0.0;
+        IScalableMeshATP::GetInt(L"nOfGraphLoadAttempts", loadAttempts);
+        IScalableMeshATP::GetInt(L"nOfGraphStoreMisses", loadMisses);
+        IScalableMeshATP::GetInt(L"nOfLinesPartial", nPartial);
+        IScalableMeshATP::GetInt(L"nOfOutputPoints", nOutPts);
+        IScalableMeshATP::GetDouble(L"lengthOfLinesPartial", drapeLength);
+        fwprintf(pResultFile, L"%s,%s,%I64d,%I64d,%I64d,%I64d,%.5f,%.5f,%.5f,%I64d,%.5f,%.5f,%.5f,%I64d, %.5f\n",
+            stmFileName.c_str(),
+            result.c_str(),
+            stmFile->GetPointCount(),
+            nOfLinesToDrape,
+            nOfLinesDraped,
+            nOfLinesDraped - nPartial,
+            nPartial * 100.0 / nOfLinesDraped,
+            drapeLength * 100.0,
+            loadMisses*100.0 / loadAttempts,
+            nOfLinesNotDraped,
+            (double)nOfLinesNotDraped*100.0 / nOfLinesToDrape,
+            timeOfDrape,
+            timeOfDrape / nOfLinesToDrape,
+            nOutPts,
+            1000 * timeOfDrape / nOutPts);
+        IScalableMeshATP::StoreInt(L"nOfLines", 0);
+        IScalableMeshATP::StoreInt(L"nOfLinesNotDraped", 0);
+        IScalableMeshATP::StoreInt(L"nOfLinesDraped", 0);
+        IScalableMeshATP::StoreInt(L"nOfOutputPoints", 0);
+        IScalableMeshATP::StoreDouble(L"drapeTime", 0.0);
+        IScalableMeshATP::StoreDouble(L"lengthOfLinesPartial", 0.0);
+        IScalableMeshATP::StoreInt(L"nOfLinesPartial", 0);
+        fflush(pResultFile);
+        stmFile = nullptr;
+        dtmP = nullptr;
     }
 
 //int CollectFirstMeshElement
@@ -2673,8 +2730,78 @@ static bool AllOtherArraysEmpty(bvector<bvector<T>> &data, size_t index)
 
 void Perform3MxTo3SmTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
+
+    WString threeMxFileName, smFileName;
+    // Parses the test(s) definition:
+    if (pTestNode->GetAttributeStringValue(smFileName, "smFileName") != BEXML_Success)
+        {
+        printf("ERROR : smFileName attribute not found\r\n");
+        return;
+        }
     
+    if (pTestNode->GetAttributeStringValue(threeMxFileName, "threeMxFileName") != BEXML_Success)
+        {
+        printf("ERROR : threeMxFileName attribute not found\r\n");
+        return;
+        }
     
+/*
+    SMImport3mxProgressListener progressListener;
+
+    auto progressSM = IScalableMeshProgress::Create();
+    if (!progressSM->AddListener(progressListener))
+        {
+        assert(!"Error");
+        return false;
+        }
+  */  
+    // Import the 3mx
+
+    IScalableMeshProgressPtr   noProgressHandler;
+    GeoCoordinates::BaseGCSPtr noGCS;
+    SMFrom3MXWarnings warnings;
+
+    clock_t totalTime = clock();
+
+    SMFrom3MXStatus status = createScalableMeshFrom3MX(BeFileName(threeMxFileName.c_str()), BeFileName(smFileName.c_str()), noGCS, noProgressHandler, warnings);
+
+    totalTime = clock() - totalTime;
+
+    //L"InputFileName, OutputFileName, Result, Duration (minutes)\n";
+            
+    fwprintf(pResultFile, L"%s,%s", threeMxFileName.c_str(), smFileName.c_str());
+    
+    if (SMFrom3MXStatus::Success == status)
+        {
+        fwprintf(pResultFile, L",SUCCESS");
+        }
+    else
+        {
+        WString errorStr;
+
+        switch (status)
+            {
+            case SMFrom3MXStatus::Canceled: errorStr.AssignOrClear(L"Cancelled during processing"); break;
+            case SMFrom3MXStatus::Read3MXError: errorStr.AssignOrClear(L"Error while reading the master 3MX file"); break;
+            case SMFrom3MXStatus::Read3MXBError: errorStr.AssignOrClear(L"Error while reading a 3MXB file"); break;
+            case SMFrom3MXStatus::ReadJPEGError: errorStr.AssignOrClear(L"Error while reading a JPEG texture resource"); break;
+            case SMFrom3MXStatus::GCSError: errorStr.AssignOrClear(L"Error related to GCS"); break;
+            case SMFrom3MXStatus::ScalableMeshSDKError: errorStr.AssignOrClear(L"Error related to ScalableMeshSDK"); break;
+            case SMFrom3MXStatus::ReprojectionError: errorStr.AssignOrClear(L"Error encountered in reprojection (most likely due to a 3D point out of bounds)"); break;
+            case SMFrom3MXStatus::SeveralLayersError: errorStr.AssignOrClear(L"Special case not handled by the converter: 3MX with several layers"); break;
+            case SMFrom3MXStatus::SeveralGeometriesError: errorStr.AssignOrClear(L"Special case not handled by the converter: node with several geometries"); break;
+            default:
+                assert("Unexpected SMFrom3MXStatus");
+                errorStr.AssignOrClear(L"Unknown error");            
+            }
+
+        fwprintf(pResultFile, L",ERROR : %s", errorStr.c_str());
+        }
+
+    fwprintf(pResultFile, L",%.5f\n", totalTime / CLOCKS_PER_SEC / 60.0);
+
+    fflush(pResultFile);    
+
     }
 
 #define MAX_CUT_FILL_ERROR_PERCENT 0.001 

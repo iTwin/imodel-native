@@ -659,11 +659,10 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
             Load();
 
         this->m_nodeHeader.m_geometryResolution = newGeometricErrorValue;
-
+#ifndef VANCOUVER_API
         typedef SMNodeDistributor<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> Distribution_Type;
         static Distribution_Type* distributor = new Distribution_Type([&pi_pDataStore](HFCPtr<SMPointIndexNode<POINT, EXTENT>> node)
             {
-#ifndef VANCOUVER_API
             auto loadChildExtentHelper = [](HFCPtr<SMPointIndexNode<POINT, EXTENT>> parent, HFCPtr<SMPointIndexNode<POINT, EXTENT>> child) ->void
                 {
                 if (!child->IsLoaded())
@@ -696,12 +695,12 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
             pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 
             //node->Unload();
-#else
-            assert(false && "Make this compile on Vancouver!");
-#endif
             });
 
         distributor->AddWorkItem(this);
+#else
+        assert(false && "Make this compile on Vancouver!");
+#endif
 
         if (m_pSubNodeNoSplit != nullptr)
             {
@@ -722,7 +721,10 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
 
         if (m_nodeHeader.m_level == 0)
             {
+#ifndef VANCOUVER_API
             delete distributor;
+#else
+#endif
             }
         }
     
@@ -772,7 +774,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadInd
                 node->GetTexturePtr();
                 }
             loadDataTime += clock() - loadTime;
-        }));
+        }, std::thread::hardware_concurrency(), 5000));
 
     if (!m_nodeHeader.m_IsLeaf)
         {
@@ -1629,8 +1631,11 @@ template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EX
             bool isPointInRange = nodeRange.IsContained(origPoints[pt]);
             if (!withinExtent && isPointInRange && pt > 0)
                 {
-                points.push_back(origPoints[pt - 1]);
+                if (points.size() == 0) extent = DRange3d::From(origPoints[pt]);
+
+                points.push_back(origPoints[pt - 1]);                
                 }
+
             if (isPointInRange)
                 {
                 if (points.size() == 0) extent = DRange3d::From(origPoints[pt]);

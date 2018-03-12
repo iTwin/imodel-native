@@ -19,7 +19,7 @@ struct IScalableMeshSaveAs
 {
 public:
     BENTLEY_SM_IMPORT_EXPORT static StatusInt DoSaveAs(const IScalableMeshPtr& source, const WString& destination, ClipVectorPtr clips, IScalableMeshProgressPtr progress);
-    BENTLEY_SM_IMPORT_EXPORT static StatusInt Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, ClipVectorPtr clips, uint64_t coverageId);
+    BENTLEY_SM_IMPORT_EXPORT static StatusInt Generate3DTiles(const IScalableMeshPtr& meshP, const WString& outContainerName = L"", const WString& outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr, ClipVectorPtr clips = nullptr, uint64_t coverageId = (uint64_t)-1);
 
 };
 END_BENTLEY_SCALABLEMESH_NAMESPACE

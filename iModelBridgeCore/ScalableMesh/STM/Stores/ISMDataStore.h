@@ -232,6 +232,12 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) = 0;
 
         /**----------------------------------------------------------------------------
+         Determine if the files created for a given project (e.g. : dgndb file) are 
+         written in the OS temp folder or in the path set by SetProjectFilesPath. 
+        -----------------------------------------------------------------------------*/
+        virtual bool SetUseTempPath(bool useTempPath) = 0;
+
+        /**----------------------------------------------------------------------------
         Save the content of the project files.
         -----------------------------------------------------------------------------*/
         virtual void SaveProjectFiles() = 0;

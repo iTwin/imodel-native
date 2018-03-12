@@ -363,15 +363,15 @@ struct IScalableMeshMesh : public RefCountedBase
 
 		BENTLEY_SM_EXPORT void RemoveSlivers(double edgeLengthRatio=1e-6);
                 
-        BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const;
-        BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const;
+        bool FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const;
+        bool FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const;
 
-        BENTLEY_SM_EXPORT int ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const MTGNodeId triangleEdge, DPoint3d startPt) const;
+        int ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const MTGNodeId triangleEdge, DPoint3d startPt) const;
 
-        BENTLEY_SM_EXPORT int ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const;
+        int ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const;
 
-        BENTLEY_SM_EXPORT bool FindTriangleAlongRay(int* outTriangle, DRay3d& ray, MTGNodeId edge =-1) const;
-        BENTLEY_SM_EXPORT bool FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const;
+        bool FindTriangleAlongRay(int* outTriangle, DRay3d& ray, MTGNodeId edge =-1) const;
+        bool FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT bool CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const;
 

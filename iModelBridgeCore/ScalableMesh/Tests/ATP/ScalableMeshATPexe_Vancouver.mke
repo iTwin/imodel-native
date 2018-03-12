@@ -86,7 +86,8 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnGeoCoord.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMeshCoreLib.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMeshImportersLib.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppGraLibs.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppUtlLibs.lib

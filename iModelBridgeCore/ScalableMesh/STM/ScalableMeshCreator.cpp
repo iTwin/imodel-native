@@ -646,7 +646,7 @@ SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString&
     visitor.m_sourceRefP->SetDtmSource(source.Clone());
 
     return *visitor.m_sourceRefP;
-}
+}   
 
 
 int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
@@ -659,7 +659,7 @@ void IScalableMeshCreator::Impl::ConfigureMesherFilter(ISMPointIndexFilter<Point
 {
 
 }
-
+   
 /*---------------------------------------------------------------------------------**//**
 * @description
 * @bsimethod                                                  Raymond.Gauthier   12/2011
