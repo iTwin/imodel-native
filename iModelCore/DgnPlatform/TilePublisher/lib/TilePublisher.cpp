@@ -3351,13 +3351,18 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
             auto        wgs84Datum = GeoCoordinates::Datum::CreateDatum (L"WGS84");
             auto        thisDatum = GeoCoordinates::Datum::CreateDatum(dgnGCS->GetDatumName());
             auto        datumConverter = GeoCoordinates::DatumConverter::Create (*thisDatum, *wgs84Datum);
-            GeoPoint    wgsOrigin, wgsNorth;
+            if (nullptr != datumConverter)
+                {
+                GeoPoint    wgsOrigin, wgsNorth;
 
-            datumConverter->ConvertLatLong3D(wgsOrigin, originLatLong);
-            datumConverter->ConvertLatLong3D(wgsNorth, northLatLong);
+                datumConverter->ConvertLatLong3D(wgsOrigin, originLatLong);
+                datumConverter->ConvertLatLong3D(wgsNorth, northLatLong);
 
-            originLatLong = wgsOrigin;
-            northLatLong  = wgsNorth;
+                originLatLong = wgsOrigin;
+                northLatLong  = wgsNorth;
+
+                // delete datumConverter; // ###TODO leak. Barry gives us a raw heap-allocated pointer, and destructor is protected so can't explicitly delete.
+                }
             }
 
         /// Note we used to call dgnGCS->XYZFromLatLong to do the ECEF conversion - but that seems unreliable when datum is not WGS84 (TFS# 799148).
@@ -3504,10 +3509,11 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnMo
         // Handle wacky 'spatial' views created for 2d models by DgnV8Converter...
         DgnModelIdSet viewedModels;
         GetViewedModelsFromView(viewedModels, attachment->GetAttachedViewId());
-        BeAssert(1 == viewedModels.size());
+        BeAssert(1 == viewedModels.size() || view->IsSpatialView());
         if (viewedModels.empty())
             continue;
 
+        // ###TODO: Spatial view attachments with multiple models unhandled...
         DgnModelId baseModelId = *viewedModels.begin();
         attachedModels.insert(baseModelId);
 
@@ -3763,33 +3769,6 @@ BeFileName  PublisherContext::GetModelDataDirectory(DgnModelId modelId, Classifi
     return modelDir;
     }
 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId)
-    {
-    viewedModels.insert(modelId);
-
-    // Scan for viewAttachments...
-    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
-    stmt->BindId(1, modelId);
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        auto attachId = stmt->GetValueId<DgnElementId>(0);
-        auto attach   = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
-
-        if (!attach.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
-
-        GetViewedModelsFromView (viewedModels, attach->GetAttachedViewId());
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3799,12 +3778,12 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
     auto view2d = GetDgnDb().Elements().Get<ViewDefinition2d>(viewId);
     if (view2d.IsValid())
         {
-        AddViewedModel (viewedModels, view2d->GetBaseModelId()); 
+        viewedModels.insert(view2d->GetBaseModelId());
         }
     else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
         {
         for (auto& modelId : spatialView->GetModelSelector().GetModels())
-            AddViewedModel (viewedModels, modelId);
+            viewedModels.insert(modelId);
         }
     }
 
