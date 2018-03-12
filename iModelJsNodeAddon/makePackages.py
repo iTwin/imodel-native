@@ -122,7 +122,7 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
     nodeEngines = ' '
     if (versionsubdir.lower().startswith('n_')):
         nodeEngineVersion = versionsubdir[2:].replace('_', '.')
-        nodeEngines = '"engines": "' + nodeEngineVersion + '",'
+        nodeEngines = '"engines": {"node": "' + nodeEngineVersion + '"},'
 
     setMacros(dstpackagefile, NODE_VERSION_CODE = versionsubdir, NODE_OS = nodeOS, NODE_CPU = nodeCPU, PACKAGE_VERSION = packageVersion, NODE_ENGINES = nodeEngines)
 
