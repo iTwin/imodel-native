@@ -39,11 +39,11 @@ dirToSearch = $(_MakeFilePath)PublicAPI/
 %include cincapnd.mki
 
 MultiCompileDepends=$(_MakeFileSpec)
-%include C:\BSW\Bim0200Dev2\src\bsicommon\PublicSDK\MultiCppCompileRule.mki
+%include $(SrcRoot)bsicommon/PublicSDK/MultiCppCompileRule.mki
 
 %include FakeServer/FakeServer.mki
 
-%include C:\BSW\Bim0200Dev2\src\bsicommon\PublicSDK\MultiCppCompileGo.mki
+%include $(SrcRoot)bsicommon/PublicSDK/MultiCppCompileGo.mki
 FakeServerObjectList = $(MultiCompileObjectList)
 
 #--------------------------------------------------------------------------------------
