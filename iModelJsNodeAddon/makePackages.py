@@ -159,14 +159,14 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
     return outputpackagedir;
 
 
-# Generate imodeljs-nodeaddon
+# Generate imodeljs-native-platform-node
 # @param outdirParent The path to the output package's parent directory
 # @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
 # @param packageVersion The semantic version number for the generated package
 # @return the full path to the generated package directory
 def generate_imodeljs_nodeaddon(outputpackagedir, parentSourceDir, packageVersion):
 
-    outputpackagedir = os.path.join(outdirParent, 'imodeljs-nodeaddon')
+    outputpackagedir = os.path.join(outdirParent, 'imodeljs-native-platform-node')
 
     addonSourceDir = os.path.join(parentSourceDir, 'addon_package');
 
@@ -191,14 +191,14 @@ def generate_imodeljs_nodeaddon(outputpackagedir, parentSourceDir, packageVersio
     
     return outputpackagedir;
 
-# Generate imodeljs-electronaddon
+# Generate imodeljs-native-platform-electron
 # @param outdirParent The path to the output package's parent directory
 # @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
 # @param packageVersion The semantic version number for the generated package
 # @return the full path to the generated package directory
 def generate_imodeljs_electronaddon(outputpackagedir, parentSourceDir, packageVersion):
 
-    outputpackagedir = os.path.join(outdirParent, 'imodeljs-electronaddon')
+    outputpackagedir = os.path.join(outdirParent, 'imodeljs-native-platform-electron')
 
     addonSourceDir = os.path.join(parentSourceDir, 'addon_package');
 

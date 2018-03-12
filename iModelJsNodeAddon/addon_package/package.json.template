@@ -1,9 +1,8 @@
 {
-  "name": "@bentley/imodeljs-nodeaddon",
+  "name": "@bentley/imodeljs-native-platform-node",
   "version": "${PACKAGE_VERSION}",
   "description": "The native code addon for nodejs apps",
   "license": "UNLICENSED",
-  "main": "NodeAddonLoader.js",
   "repository": {},
   "keywords": [
     "Bentley",
