@@ -784,3 +784,10 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
     return  DwgDbDatabasePtr();
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbLayoutManagerPtr   IDwgDbHost::GetLayoutManager () const
+    {
+    return new DwgDbLayoutManager (DwgToolkitHost::GetHost().layoutManager());
+    }

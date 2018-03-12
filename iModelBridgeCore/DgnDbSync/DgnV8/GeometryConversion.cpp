@@ -800,7 +800,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
         nameStr.Assign(patternV8.cellName);
         Utf8PrintfString partCodeValue("PatternV8-%ld-%s-%lld", Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), nameStr.c_str(), patternV8.cellId);
         DgnCode partCode = CreateCode(partCodeValue);
-        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(GetDgnDb(), partCode);
+        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*GetJobDefinitionModel(), partCode.GetValueUtf8());
 
         if (!partId.IsValid())
             {
@@ -835,7 +835,7 @@ bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParam
                 builder->Append(*geom);
                 }
 
-            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb(), partCode);
+            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel(), partCodeValue);
 
             if (SUCCESS != builder->Finish(*geomPart) || !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                 return false;
@@ -978,7 +978,7 @@ LineStyleStatus LineStyleConverter::ConvertPointSymbol(LsComponentId& v10Id, Dgn
         builder->Append(*elemGeom);
         }
 
-    DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb().GetDictionaryModel());
+    DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()));
     if (SUCCESS != builder->Finish(*geomPart))
         return LINESTYLE_STATUS_ConvertingComponent;
 
@@ -2444,7 +2444,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
             Transform         geomToLocal = Transform::FromProduct(invBasisTrans, pathEntry.m_geomToWorld);
             DgnCode           partCode = GetPartCode(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
-            DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(m_model.GetDgnDb(), partCode);
+            DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
             DRange3d          localRange = DRange3d::NullRange();
 
             if (!partId.IsValid())
@@ -2458,7 +2458,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
                 partBuilder->Append(*geometry);
 
-                DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(m_model.GetDgnDb(), partCode);
+                DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
 
                 if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                     {
@@ -2576,7 +2576,7 @@ void PostInstanceGeometry(Dgn::GeometryBuilderR builder, GeometricPrimitiveR geo
     if (!partId.IsValid())
         {
         DgnCode partCode = GetPartCode(instanceElRef, "CvtV8", sequenceNo, 1.0);
-        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(m_model.GetDgnDb(), partCode);
+        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
         GeometryBuilderPtr partBuilder = GeometryBuilder::CreateGeometryPart(m_model.GetDgnDb(), true);
 
         partBuilder->Append(geometry);
@@ -4651,7 +4651,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                     Transform         geomToLocal = Transform::FromProduct(invBasisTrans, pathEntry.m_geomToWorld);
                     DgnCode           partCode = GetPartCode(instanceElRef, nullptr == scDefElRef ? "XGSymbV8" : "SCDefV8", sequenceNo, pathEntry.m_partScale);
-                    DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(m_model.GetDgnDb(), partCode);
+                    DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
                     DRange3d          localRange = DRange3d::NullRange();
 
                     if (!partId.IsValid())
@@ -4665,7 +4665,7 @@ struct V8GraphicsLightWeightCollector : DgnV8Api::IElementGraphicsProcessor
 
                         partBuilder->Append(*geometry);
 
-                        DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(m_model.GetDgnDb(), partCode);
+                        DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create(*(m_converter.GetJobDefinitionModel()), partCode.GetValueUtf8());
 
                         if (SUCCESS == partBuilder->Finish(*geomPart) && m_model.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                             {
@@ -5250,7 +5250,7 @@ bool LightWeightConverter::InitPatternParams(PatternParamsR pattern, DgnV8Api::P
 
         Utf8PrintfString partCodeValue("PatternV8-%ld-%s-%lld", m_converterId, nameStr.c_str(), patternV8.cellId);
         DgnCode partCode = CreateCode(partCodeValue);
-        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(GetDgnDb(), partCode);
+        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(*GetJobDefinitionModel(), partCode.GetValueUtf8());
 
         if (!partId.IsValid())
             {
@@ -5284,7 +5284,7 @@ bool LightWeightConverter::InitPatternParams(PatternParamsR pattern, DgnV8Api::P
                 builder->Append(*geom);
                 }
 
-            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb(), partCode);
+            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(*GetJobDefinitionModel(), partCode.GetValueUtf8());
 
             if (SUCCESS != builder->Finish(*geomPart) || !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                 return false;
@@ -5706,6 +5706,5 @@ void LightWeightConverter::ConvertTextString(TextStringPtr& clone, Bentley::Text
 
     clone = dbText.Clone();
     }
-
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

@@ -156,20 +156,26 @@ DWGDB_DEFINE_OBJECTPTR (Object)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbObjectIterator
     {
+//__PUBLISH_SECTION_END__
 private:
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbObjectIteratorPtr           m_objectIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbObjectIterator (OdDbObjectIterator* newIter) : m_objectIterator(newIter) {}
 
+//__PUBLISH_SECTION_END__
 #elif DWGTOOLKIT_RealDwg
     AcDbObjectIterator*             m_objectIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbObjectIterator (AcDbObjectIterator* newIter) { m_objectIterator = newIter; }
     DwgDbObjectIterator () : m_objectIterator(nullptr) {}
+//__PUBLISH_SECTION_END__
 #endif  // DWGTOOLKIT_
+//__PUBLISH_SECTION_START__
 
     DWGDB_EXPORT ~DwgDbObjectIterator ();
 
@@ -187,20 +193,26 @@ public:
 +===============+===============+===============+===============+===============+======*/
 class DwgDbDictionaryIterator
     {
+//__PUBLISH_SECTION_END__
 private:
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbDictionaryIteratorPtr       m_dictionaryIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbDictionaryIterator (OdDbDictionaryIterator* newIter) : m_dictionaryIterator(newIter) {}
 
+//__PUBLISH_SECTION_END__
 #elif DWGTOOLKIT_RealDwg
     AcDbDictionaryIterator*         m_dictionaryIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbDictionaryIterator (AcDbDictionaryIterator* newIter) { m_dictionaryIterator = newIter; }
     DwgDbDictionaryIterator () : m_dictionaryIterator(nullptr) {}
+//__PUBLISH_SECTION_END__
 #endif  // DWGTOOLKIT_
+//__PUBLISH_SECTION_START__
 
     DWGDB_EXPORT ~DwgDbDictionaryIterator ();
 
@@ -503,6 +515,38 @@ public:
 DWGDB_DEFINE_OBJECTPTR (Layout)
 
 /*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbLayoutManager : public RefCountedBase
+    {
+//__PUBLISH_SECTION_END__
+private:
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbLayoutManagerPtr    m_layoutManager;
+#elif DWGTOOLKIT_RealDwg
+    AcDbLayoutManager*      m_layoutManager;
+public:
+    DwgDbLayoutManager () : m_layoutManager(nullptr) {}
+#endif  // DWGTOOLKIT_
+//__PUBLISH_SECTION_START__
+public:
+    //! Constructors
+    DWGDB_EXPORT DwgDbLayoutManager (DWGDB_TypeP(LayoutManager) manager);
+    
+    DWGDB_EXPORT bool   IsValid () const;
+    DWGDB_EXPORT int    CountLayouts (DwgDbDatabaseP dwg) const;
+    DWGDB_EXPORT DwgDbObjectId  FindLayoutByName (DwgStringCR name, DwgDbDatabaseCP dwg) const;
+    DWGDB_EXPORT DwgDbObjectId  FindActiveLayout (DwgDbDatabaseCP dwg) const;
+    DWGDB_EXPORT DwgDbObjectId  GetActiveLayoutBlock (DwgDbDatabaseCP dwg) const;
+    DWGDB_EXPORT DwgDbStatus    ActivateLayout (DwgDbObjectId layoutId);
+    DWGDB_EXPORT DwgDbStatus    CreateLayout (DwgDbObjectIdR layoutId, DwgDbObjectIdR blockId, DwgStringCR name, DwgDbDatabaseP);
+    DWGDB_EXPORT DwgDbStatus    DeleteLayout (DwgStringCR name, DwgDbDatabaseP dwg);
+    DWGDB_EXPORT DwgDbStatus    RenameLayout (DwgStringCR oldName, DwgStringCR newName, DwgDbDatabaseP dwg);
+    };  // DwgDbLayoutManager
+typedef RefCountedPtr<DwgDbLayoutManager> DwgDbLayoutManagerPtr;
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbLayoutManager)
+
+/*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          05/16
 +===============+===============+===============+===============+===============+======*/
 class DwgDbSpatialFilter : public DWGDB_EXTENDCLASS(SpatialFilter)
@@ -527,20 +571,26 @@ DWGDB_DEFINE_OBJECTPTR (SpatialFilter)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbFilteredBlockIterator
     {
+//__PUBLISH_SECTION_END__
 private:
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbFilteredBlockIteratorPtr     m_filteredBlockIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbFilteredBlockIterator (OdDbFilteredBlockIterator* newIter) : m_filteredBlockIterator(newIter) {}
 
+//__PUBLISH_SECTION_END__
 #elif DWGTOOLKIT_RealDwg
     AcDbFilteredBlockIterator*       m_filteredBlockIterator;
+//__PUBLISH_SECTION_START__
 
 public:
     DwgDbFilteredBlockIterator (AcDbFilteredBlockIterator* newIter) { m_filteredBlockIterator = newIter; }
     DwgDbFilteredBlockIterator () : m_filteredBlockIterator(nullptr) {}
+//__PUBLISH_SECTION_END__
 #endif  // DWGTOOLKIT_
+//__PUBLISH_SECTION_START__
 
     DWGDB_EXPORT ~DwgDbFilteredBlockIterator ();
 

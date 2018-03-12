@@ -36,7 +36,10 @@
 #include    <Teigha/Drawing/Include/DbClass.h>
 #include    <Teigha/Drawing/Include/DbObjectId.h>
 #include    <Teigha/Drawing/Include/DbDatabase.h>
+#include    <Teigha/Drawing/Include/DbLayoutManager.h>
 #include    <Teigha/Drawing/Include/DbXrecord.h>
+#include    <Teigha/Drawing/Include/ModelDocObj/DbViewBorder.h>
+#include    <Teigha/Drawing/Include/ModelDocObj/DbViewRepBlockReference.h>
 #include    <Teigha/Kernel/Include/OdString.h>
 #include    <Teigha/Drawing/Extensions/ExServices/ExHostAppServices.h>
 #include    <Teigha/Kernel/Extensions/ExServices/ExSystemServices.h>
@@ -50,6 +53,7 @@
 #include    <Realdwg/Base/adesk.h>
 #include    <Realdwg/Base/acadstrc.h>
 #include    <Realdwg/Base/dbmain.h>
+#include    <Realdwg/Base/dbents.h>
 #include    <Realdwg/Base/dbapserv.h>
 #include    <Realdwg/Base/rxclass.h>
 #include    <Realdwg/Base/rxobject.h>
@@ -59,6 +63,9 @@
 #include    <RealDwg/Base/dbboiler.h>
 #include    <Realdwg/Base/dbobjptr2.h>
 #include    <Realdwg/Base/dbxrecrd.h>
+#include    <RealDwg/Base/dbViewBorder.h>
+#include    <RealDwg/Base/dbViewRepBlockReference.h>
+#include    <RealDwg/Base/AcDbLMgr.h>
 #include    <RealDwg/Base/AcString.h>
 
 #else
@@ -306,11 +313,13 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbArc)
 DEFINE_DWGDB_TYPEDEFS (DwgDbCircle)
 DEFINE_DWGDB_TYPEDEFS (DwgDb3dSolid)
 DEFINE_DWGDB_TYPEDEFS (DwgDbBlockReference)
+DEFINE_DWGDB_TYPEDEFS (DwgDbViewRepBlockReference)
 DEFINE_DWGDB_TYPEDEFS (DwgDbBody)
 DEFINE_DWGDB_TYPEDEFS (DwgDbCamera)
 DEFINE_DWGDB_TYPEDEFS (DwgDbCurve)
 DEFINE_DWGDB_TYPEDEFS (DwgDbDimension)
 DEFINE_DWGDB_TYPEDEFS (DwgDbFace)
+DEFINE_DWGDB_TYPEDEFS (DwgDbFaceRecord)
 DEFINE_DWGDB_TYPEDEFS (DwgDbFcf)
 DEFINE_DWGDB_TYPEDEFS (DwgDbFrame)
 DEFINE_DWGDB_TYPEDEFS (DwgDbGeoPositionMarker)
@@ -347,6 +356,8 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbText)
 DEFINE_DWGDB_TYPEDEFS (DwgDbTrace)
 DEFINE_DWGDB_TYPEDEFS (DwgDbUnderlayReference)
 DEFINE_DWGDB_TYPEDEFS (DwgDbVertex)
+DEFINE_DWGDB_TYPEDEFS (DwgDbPolyFaceMeshVertex)
+DEFINE_DWGDB_TYPEDEFS (DwgDbPolygonMeshVertex)
 DEFINE_DWGDB_TYPEDEFS (DwgDbViewBorder)
 DEFINE_DWGDB_TYPEDEFS (DwgDbViewport)
 DEFINE_DWGDB_TYPEDEFS (DwgDbViewSymbol)

@@ -598,7 +598,14 @@ void            ViewportFactory::AddSpatialCategories (DgnDbR dgndb, Utf8StringC
     DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (dwg);
     DwgSyncInfo&            syncInfo = m_importer.GetSyncInfo ();
 
-    m_categories = new CategorySelector (dgndb.GetDictionaryModel(), viewName.c_str());
+    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == model)
+        {
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "CategorySelector");
+        model = &dgndb.GetDictionaryModel ();
+        }
+
+    m_categories = new CategorySelector (*model, viewName.c_str());
 
     DgnCategoryIdSet&   categoryIdSet = m_categories->GetCategoriesR ();
 
@@ -631,8 +638,14 @@ void            ViewportFactory::AddSpatialCategories (DgnDbR dgndb, Utf8StringC
 bool            ViewportFactory::ValidateViewName (Utf8StringR viewNameInOut, DgnViewId& viewIdOut)
     {
     DgnDbR  dgndb = m_importer.GetDgnDb ();
+    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == model)
+        {
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "ViewDefinition");
+        model = &dgndb.GetDictionaryModel ();
+        }
 
-    viewIdOut = ViewDefinition::QueryViewId (dgndb.GetDictionaryModel(), viewNameInOut);
+    viewIdOut = ViewDefinition::QueryViewId (*model, viewNameInOut);
 
     if (viewIdOut.IsValid())
         {
@@ -652,7 +665,7 @@ bool            ViewportFactory::ValidateViewName (Utf8StringR viewNameInOut, Dg
             {
             suffix.Sprintf ("-%d", count++);
             viewNameInOut = m_importer.RemapNameString (fileName, proposedName, suffix);
-            } while (ViewDefinition::QueryViewId(dgndb.GetDictionaryModel(), viewNameInOut).IsValid());
+            } while (ViewDefinition::QueryViewId(*model, viewNameInOut).IsValid());
         }
 
     // return false to create a new view with the validated name.
@@ -709,15 +722,22 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
 
     viewId.Invalidate ();
 
+    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == model)
+        {
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "SpatialView");
+        model = &dgndb.GetDictionaryModel ();
+        }
+
     // only add the master file's modelspace at this time - other models may be added in post process:
-    ModelSelectorPtr    models = new ModelSelector (dgndb.GetDictionaryModel(), viewName.c_str());
+    ModelSelectorPtr    models = new ModelSelector (*model, viewName.c_str());
     models->AddModel (modelId);
 
     // add all spatial categories to the view, with viewport frozen layers applied:
     this->AddSpatialCategories (dgndb, viewName);
 
     // create a display style:
-    DisplayStyle3dPtr   displayStyle = new DisplayStyle3d (dgndb.GetDictionaryModel(), viewName.c_str());
+    DisplayStyle3dPtr   displayStyle = new DisplayStyle3d (*model, viewName.c_str());
     this->ComputeSpatialDisplayStyle (*displayStyle);
 
     // add a default camera for now, if there is one, and will set it later in ComputerSpatialView:
@@ -725,7 +745,7 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
     ViewDefinition3d::Camera*   optionalCamera = m_hasCamera ? &camera : nullptr;
 
     // create a CameraView for a perspective viewport or an OrthographicView otherwise:
-    SpatialViewDefinitionPtr view = new SpatialViewDefinition (dgndb.GetDictionaryModel(), viewName, *m_categories, *displayStyle, *models, optionalCamera);
+    SpatialViewDefinitionPtr view = new SpatialViewDefinition (*model, viewName, *m_categories, *displayStyle, *models, optionalCamera);
 
     // convert DWG viewport data to DgnView
     this->ComputeSpatialView (*view);
@@ -785,15 +805,22 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
 
     viewId.Invalidate ();
 
+    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == model)
+        {
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "SheetViewDefinition");
+        model = &dgndb.GetDictionaryModel ();
+        }
+
     // add an empty drawing category to the view - will update in the post process:
-    CategorySelectorPtr categories = new CategorySelector (dgndb.GetDictionaryModel(), viewName.c_str());
+    CategorySelectorPtr categories = new CategorySelector (*model, viewName.c_str());
 
     // create a display style for the sheet
-    DisplayStyle2dPtr   displayStyle = new DisplayStyle2d (dgndb.GetDictionaryModel(), viewName.c_str());
+    DisplayStyle2dPtr   displayStyle = new DisplayStyle2d (*model, viewName.c_str());
     this->ComputeSheetDisplayStyle (*displayStyle);
 
     // create a new sheet view
-    SheetViewDefinitionPtr  view = new SheetViewDefinition (dgndb.GetDictionaryModel(), viewName, modelId, *categories, *displayStyle);
+    SheetViewDefinitionPtr  view = new SheetViewDefinition (*model, viewName, modelId, *categories, *displayStyle);
     if (!view.IsValid())
         {
         BeAssert (false && "failed creating SheetViewDefinition!");

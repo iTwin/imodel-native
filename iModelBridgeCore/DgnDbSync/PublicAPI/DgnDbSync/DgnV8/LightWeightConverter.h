@@ -55,6 +55,7 @@ struct LightWeightConverter
         DGNDBSYNC_EXPORT DgnFont const& _RemapV8Font(DgnV8Api::DgnFile&, uint32_t v8FontId);
 
         Int32  GetConverterId() { return m_converterId; }
+        DefinitionModelPtr GetJobDefinitionModel();
 
         //! Query sync info for a v8 linestyle in the current v8 file.
 
@@ -141,7 +142,9 @@ struct LightWeightConverter
         bset<BeFileName>                    m_tempFontFiles;
         T_FontRemap                         m_fontRemap;
         DgnDbPtr                            m_dgndb;
-        bmap<int32_t, MappedLineStyle>      m_lineStyle;  
+        bmap<int32_t, MappedLineStyle>      m_lineStyle;
+        DgnModelId          m_jobDefinitionModelId;
+
 
         BentleyStatus _CreateElementGeom(DgnCategoryId targetCategoryId, DgnV8EhCR v8eh, GeometryBuilderPtr builder);
         DgnSubCategoryId ConvertLevelToSubCategory(DgnV8Api::LevelHandle const& level, DgnV8ModelCR v8Model, DgnCategoryId catid);

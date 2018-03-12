@@ -36,6 +36,11 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
         --------------------------------------------------------------------------------------------*/
         DwgDb2dPolyline::rxInit ();
         DwgDb3dPolyline::rxInit ();
+        DwgDbPolyFaceMesh::rxInit ();
+        DwgDbPolyFaceMeshVertex::rxInit ();
+        DwgDbPolygonMesh::rxInit ();
+        DwgDbPolygonMeshVertex::rxInit ();
+        DwgDbFaceRecord::rxInit ();
         DwgDbViewport::rxInit ();
         return;
         }
@@ -122,15 +127,19 @@ void            RegisterDwgDbObjectExtensions (bool beforeValidation)
     // demand loading image OE resulted in a RealDWG2017 crash - TFS 615432
     acrxLoadModule (L"acISMobj21.dbx", 0);
     acrxLoadModule (L"AcSceneOE.dbx", 0);
+    acrxLoadModule (L"AcModelDocObj.dbx", 0);
 
     AcDbRasterImage::rxInit ();
     AcDbRasterImageDef::rxInit ();
 
 #endif  // DWGTOOLKIT_
 
+    // post initialize classes after their object enablers have been loaded:
     DwgDbRasterImage::rxInit ();
     DwgDbPointCloudEx::rxInit ();
     DwgDbLight::rxInit ();
+    DwgDbViewRepBlockReference::rxInit ();
+    DwgDbViewBorder::rxInit ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -151,14 +160,20 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbPolyline::rxUninit ();
     DwgDb2dPolyline::rxUninit ();
     DwgDb3dPolyline::rxUninit ();
+    DwgDbPolyFaceMesh::rxUninit ();
+    DwgDbPolyFaceMeshVertex::rxUninit ();
+    DwgDbPolygonMesh::rxUninit ();
+    DwgDbPolygonMeshVertex::rxUninit ();
     DwgDbArc::rxUninit ();
     DwgDbCircle::rxUninit ();
     DwgDbEllipse::rxUninit ();
     DwgDbFace::rxUninit ();
+    DwgDbFaceRecord::rxUninit ();
     DwgDbAttributeDefinition::rxUninit ();
     DwgDbAttribute::rxUninit ();
     DwgDbViewport::rxUninit ();
     DwgDbBlockReference::rxUninit ();
+    DwgDbViewRepBlockReference::rxUninit ();
     DwgDbHatch::rxUninit ();
     DwgDbRasterImage::rxUninit ();
     DwgDbRegion::rxUninit ();
@@ -169,6 +184,7 @@ void            UnRegisterDwgDbObjectExtensions ()
     DwgDbMText::rxUninit ();
     DwgDbText::rxUninit ();
     DwgDbTrace::rxUninit ();
+    DwgDbViewBorder::rxUninit ();
 
     DwgDbSymbolTable::rxUninit ();
     DwgDbSymbolTableRecord::rxUninit ();

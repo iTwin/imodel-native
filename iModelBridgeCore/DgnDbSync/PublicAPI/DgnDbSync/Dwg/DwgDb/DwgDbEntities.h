@@ -266,8 +266,8 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(3dPolyline)
     DWGDB_DECLARE_ENTITY_MEMBERS()
 
-    //! same as T_Super::Poly3dType
-    enum Type
+    //! same as Ac/OdDb:: Poly3dType
+    enum class Type
         {
         Simple      = DWGDB_SDKENUM_DB(k3dSimplePoly),
         QuadSpline  = DWGDB_SDKENUM_DB(k3dQuadSplinePoly),
@@ -291,6 +291,118 @@ private:
 //__PUBLISH_SECTION_START__
     };  // DwgDb3dPolyline
 DWGDB_DEFINE_OBJECTPTR (3dPolyline)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbPolyFaceMesh : public DWGDB_EXTENDCLASS(PolyFaceMesh)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(PolyFaceMesh)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    DWGDB_EXPORT int16_t        GetNumFaces () const;
+    DWGDB_EXPORT int16_t        GetNumVertices () const;
+    DWGDB_EXPORT DwgDbStatus    AppendFaceRecord (DwgDbFaceRecordP face);
+    DWGDB_EXPORT DwgDbStatus    AppendVertex (DwgDbObjectIdR outId, DwgDbPolyFaceMeshVertexP vertex);
+    DWGDB_EXPORT DwgDbObjectIterator    GetVertexIterator () const;
+    };  // DwgDbPolyFaceMesh
+DWGDB_DEFINE_OBJECTPTR (PolyFaceMesh)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbPolygonMesh : public DWGDB_EXTENDCLASS(PolygonMesh)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(PolygonMesh)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    //! Same as Ac/OdDb:: PolyMeshType
+    enum class Type
+        {
+        SimpleMesh      = DWGDB_SDKENUM_DB(kSimpleMesh),
+        QuadSurface     = DWGDB_SDKENUM_DB(kQuadSurfaceMesh),
+        CubicSurface    = DWGDB_SDKENUM_DB(kCubicSurfaceMesh),
+        BezierSurface   = DWGDB_SDKENUM_DB(kBezierSurfaceMesh),
+        };  // Type
+
+    DWGDB_EXPORT Type           GetPolyMeshType () const;
+    DWGDB_EXPORT DwgDbStatus    SetPolyMeshType (Type type);
+    DWGDB_EXPORT DwgDbStatus    ConvertTo (Type newType);
+    DWGDB_EXPORT int16_t        GetMSize () const;
+    DWGDB_EXPORT int16_t        GetNSize () const;
+    DWGDB_EXPORT DwgDbStatus    SetMSize (int16_t size);
+    DWGDB_EXPORT DwgDbStatus    SetNSize (int16_t size);
+    DWGDB_EXPORT bool           IsMClosed () const;
+    DWGDB_EXPORT bool           IsNClosed () const;
+    DWGDB_EXPORT DwgDbStatus    MakeMClosed ();
+    DWGDB_EXPORT DwgDbStatus    MakeMOpen ();
+    DWGDB_EXPORT DwgDbStatus    MakeNClosed ();
+    DWGDB_EXPORT DwgDbStatus    MakeNOpen ();
+    DWGDB_EXPORT int16_t        GetMSurfaceDensity () const;
+    DWGDB_EXPORT int16_t        GetNSurfaceDensity () const;
+    DWGDB_EXPORT DwgDbStatus    Straighten ();
+    DWGDB_EXPORT DwgDbStatus    SurfaceFit ();
+    DWGDB_EXPORT DwgDbStatus    SurfaceFit (Type type, int16_t u, int16_t v);
+    DWGDB_EXPORT DwgDbObjectIterator    GetVertexIterator () const;
+    DWGDB_EXPORT DwgDbStatus    AppendVertex (DwgDbObjectIdR outId, DwgDbPolygonMeshVertexP vertex);
+    };  // DwgDbPolygonMesh
+DWGDB_DEFINE_OBJECTPTR (PolygonMesh)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbPolyFaceMeshVertex : public DWGDB_EXTENDCLASS(PolyFaceMeshVertex)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(PolyFaceMeshVertex)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    DWGDB_EXPORT DPoint3d       GetPosition () const;
+    DWGDB_EXPORT DwgDbStatus    SetPosition (DPoint3dCR point);
+    };  // DwgDbPolyFaceMeshVertex
+DWGDB_DEFINE_OBJECTPTR (PolyFaceMeshVertex)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbPolygonMeshVertex : public DWGDB_EXTENDCLASS(PolygonMeshVertex)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(PolygonMeshVertex)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    //! Same as Ac/OdDb:: Vertex3dType
+    enum class Type
+        {
+        SimpleVertex    = DWGDB_SDKENUM_DB(k3dSimpleVertex),
+        ControlVertex   = DWGDB_SDKENUM_DB(k3dControlVertex),
+        FitVertex       = DWGDB_SDKENUM_DB(k3dFitVertex),
+        };  // Type
+
+    DWGDB_EXPORT Type           GetVertexType () const;
+    DWGDB_EXPORT DPoint3d       GetPosition () const;
+    DWGDB_EXPORT DwgDbStatus    SetPosition (DPoint3dCR point);
+    };  // DwgDbPolygonMeshVertex
+DWGDB_DEFINE_OBJECTPTR (PolygonMeshVertex)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbFaceRecord : public DWGDB_EXTENDCLASS(FaceRecord)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(FaceRecord)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    DWGDB_EXPORT DwgDbStatus    GetVertexAt (int16_t faceIndex, int16_t& vertexIndex) const;
+    DWGDB_EXPORT DwgDbStatus    GetEdgeVisibilityAt (int16_t faceIndex, bool& visible) const;
+    DWGDB_EXPORT DwgDbStatus    MakeEdgeVisibleAt (int16_t faceIndex);
+    DWGDB_EXPORT DwgDbStatus    MakeEdgeInvisibleAt (int16_t faceIndex);
+    DWGDB_EXPORT DwgDbStatus    SetVertexAt (int16_t faceIndex, int16_t vertexIndex);
+    };  // DwgDbFaceRecord
+DWGDB_DEFINE_OBJECTPTR (FaceRecord)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
@@ -609,6 +721,48 @@ DWGDB_DEFINE_OBJECTPTR (Viewport)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
+class DwgDbViewBorder : public DWGDB_EXTENDCLASS(ViewBorder)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(ViewBorder)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    //! Same as T_Super::SourceType
+    enum class Source
+        {
+        NotDefined      = T_Super::kSourceNotDefined,
+        FromInventor    = T_Super::kInventorSource,
+        FromFusion      = T_Super::kFusionSource,
+        FromModelSpace  = T_Super::kModelSpaceSource,
+        };  // Source
+    
+    //! Same as T_Super::ViewStyleType
+    enum class ViewStyle
+        {
+        FromBase                = T_Super::kFromBase,
+        WireframeVisibleEdges   = T_Super::kWireframeVisibleEdges,
+        WireframeHiddenEdges    = T_Super::kWireframeHiddenEdges,
+        ShadedVisibleEdges      = T_Super::kShadedVisibleEdges,
+        ShadedHiddenEdges       = T_Super::kShadedHiddenEdges,
+        };  // ViewStyle
+    
+    DWGDB_EXPORT DwgDbObjectId  GetViewportId () const;
+    DWGDB_EXPORT Source         GetSourceType () const;
+    DWGDB_EXPORT ViewStyle      GetViewStyle () const;
+    DWGDB_EXPORT double         GetHeight () const;
+    DWGDB_EXPORT double         GetWidth () const;
+    DWGDB_EXPORT DPoint3d       GetInsertionPoint () const;
+    DWGDB_EXPORT DwgString      GetInventorFileReference () const;
+    DWGDB_EXPORT bool           IsFirstAngleProjection () const;
+    DWGDB_EXPORT double         GetRotationAngle () const;
+    DWGDB_EXPORT double         GetScale () const;
+    DWGDB_EXPORT uint32_t       GetShadedDPI () const;
+    };  // DwgDbViewBorder
+DWGDB_DEFINE_OBJECTPTR (ViewBorder)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
 class DwgDbBlockReference : public DWGDB_EXTENDCLASS(BlockReference)
     {
 public:
@@ -627,6 +781,31 @@ public:
     DWGDB_EXPORT DwgDbObjectIterator    GetAttributeIterator () const;
     };  // DwgDbBlockReference
 DWGDB_DEFINE_OBJECTPTR (BlockReference)
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
+class DwgDbViewRepBlockReference : public DWGDB_EXTENDCLASS(ViewRepBlockReference)
+    {
+public:
+    DWGDB_DECLARE_COMMON_MEMBERS(ViewRepBlockReference)
+    DWGDB_DECLARE_ENTITY_MEMBERS()
+
+    DWGDB_EXPORT DwgDbObjectId  GetBlockTableRecordId () const;
+    DWGDB_EXPORT DPoint3d       GetPosition () const;
+    DWGDB_EXPORT void           GetBlockTransform (TransformR tranform) const;
+    DWGDB_EXPORT DPoint3d       GetScaleFactors () const;
+    DWGDB_EXPORT DVec3d         GetNormal () const;
+    DWGDB_EXPORT DwgDbStatus    ExplodeToOwnerSpace () const;
+    DWGDB_EXPORT DwgDbStatus    GetExtentsBestFit (DRange3dR extents, TransformCR parentXform = Transform::FromIdentity()) const;
+    DWGDB_EXPORT bool           IsXAttachment (WStringP blockName = nullptr, WStringP path = nullptr) const;
+    DWGDB_EXPORT DwgDbStatus    OpenSpatialFilter (DwgDbSpatialFilterPtr& filterOut, DwgDbOpenMode mode) const;
+    DWGDB_EXPORT DwgDbObjectIterator    GetAttributeIterator () const;
+    DWGDB_EXPORT DwgDbObjectId  GetOwnerViewportId () const;
+    DWGDB_EXPORT void           SetOwnerViewportId (DwgDbObjectId viewportId);
+    };  // DwgDbViewRepBlockReference
+DWGDB_DEFINE_OBJECTPTR (ViewRepBlockReference)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16

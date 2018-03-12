@@ -17,6 +17,7 @@
 #include "SyncInfo.h"
 #include "Readers.h"
 #include "BisJson1ImporterImpl.h"
+#include "SchemaFlattener.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -703,6 +704,16 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
             }
         newId = lp->GetElementId();
         }
+    else if (partitionType.Equals("DefinitionPartition"))
+        {
+        DefinitionPartitionCPtr dp = DefinitionPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
+        if (!dp.IsValid())
+            {
+            GetLogger().errorv("Failed to create DefinitionPartition for %s", oldInstanceId.ToString().c_str());
+            return ERROR;
+            }
+        newId = dp->GetElementId();
+        }
     else
         {
         GetLogger().errorv("Unknown (or empty) partition type '%s' for element %s", partitionType.c_str(), oldInstanceId.ToString().c_str());
@@ -951,8 +962,8 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
     if (!instanceId.IsValid())
         return ERROR;
 
-    DgnModelId model = GetMappedModelId(viewDefinition);
-    if (!model.IsValid())
+    DgnModelId modelId = GetMappedModelId(viewDefinition);
+    if (!modelId.IsValid())
         return ERROR;
 
     DgnCode dgnCode = CreateCodeFromJson(viewDefinition);
@@ -972,6 +983,10 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
 
     ECClassCP ecClass = _GetClassFromName(viewDefinition[ECJsonUtilities::json_className()].asString().c_str(), viewDefinition);
     if (nullptr == ecClass)
+        return ERROR;
+
+    DefinitionModelPtr model = GetDgnDb()->Models().Get<DefinitionModel>(DgnModelId(modelId.GetValue()));
+    if (!model.IsValid())
         return ERROR;
 
     if (m_is3d)
@@ -1019,10 +1034,10 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
             camera->SetLensAngle(lensAngle);
             camera->SetEyePoint(eyePoint);
 
-            viewDef = new SpatialViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValueUtf8(), *categorySelector, *displayStyle, *modelSelector, camera);
+            viewDef = new SpatialViewDefinition(*model, dgnCode.GetValueUtf8(), *categorySelector, *displayStyle, *modelSelector, camera);
             }
         else
-            viewDef = new OrthographicViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValueUtf8(), *categorySelector, *displayStyle, *modelSelector);
+            viewDef = new OrthographicViewDefinition(*model, dgnCode.GetValueUtf8(), *categorySelector, *displayStyle, *modelSelector);
 
         viewDef->SetOrigin(origin);
         viewDef->SetExtents(DVec3d::From(extents));
@@ -1072,9 +1087,9 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
             m_importer->m_sheetViewClass = GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, "SheetViewDefinition");
 
         if (ecClass->Is(m_importer->m_sheetViewClass))
-            viewDef = new SheetViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValueUtf8(), baseModelId, *categorySelector, *displayStyle);
+            viewDef = new SheetViewDefinition(*model, dgnCode.GetValueUtf8(), baseModelId, *categorySelector, *displayStyle);
         else
-            viewDef = new DrawingViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValueUtf8(), baseModelId, *categorySelector, *displayStyle);
+            viewDef = new DrawingViewDefinition(*model, dgnCode.GetValueUtf8(), baseModelId, *categorySelector, *displayStyle);
 
         DgnDbStatus stat;
         DgnElementCPtr inserted = viewDef->Insert(&stat);
@@ -1283,7 +1298,18 @@ BentleyStatus CategorySelectorReader::_Read(Json::Value& object)
         return ERROR;
         }
 
-    CategorySelector selector(GetDgnDb()->GetDictionaryModel(), object["Name"].asString().c_str());
+    DgnElementId definitionModelId = GetMappedElementId(object, "DefinitionModel");
+    if (!definitionModelId.IsValid())
+        {
+        GetLogger().errorv("Could not map DefinitionModel for CategorySelector");
+        return ERROR;
+        }
+
+    DefinitionModelPtr model = GetDgnDb()->Models().Get<DefinitionModel>(DgnModelId(definitionModelId.GetValue()));
+    if (!model.IsValid())
+        return ERROR;
+
+    CategorySelector selector(*model, object["Name"].asString().c_str());
     DgnElementId oldInstanceId = ECJsonUtilities::JsonToId<DgnElementId>(object[ECJsonSystemNames::Id()]);
 
     for (Json::Value::iterator iter = categories.begin(); iter != categories.end(); iter++)
@@ -1315,7 +1341,18 @@ BentleyStatus ModelSelectorReader::_Read(Json::Value& object)
         return ERROR;
         }
 
-    ModelSelector selector(GetDgnDb()->GetDictionaryModel(), object["Name"].asString().c_str());
+    DgnElementId definitionModelId = GetMappedElementId(object, "DefinitionModel");
+    if (!definitionModelId.IsValid())
+        {
+        GetLogger().errorv("Could not map DefinitionModel for CategorySelector");
+        return ERROR;
+        }
+
+    DefinitionModelPtr model = GetDgnDb()->Models().Get<DefinitionModel>(DgnModelId(definitionModelId.GetValue()));
+    if (!model.IsValid())
+        return ERROR;
+
+    ModelSelector selector(*model, object["Name"].asString().c_str());
     DgnElementId oldInstanceId = ECJsonUtilities::JsonToId<DgnElementId>(object[ECJsonSystemNames::Id()]);
 
     for (Json::Value::iterator iter = models.begin(); iter != models.end(); iter++)
@@ -1346,11 +1383,19 @@ BentleyStatus DisplayStyleReader::_Read(Json::Value& object)
         GetLogger().error("DisplayStyle name cannot be null");
         return ERROR;
         }
+    DgnModelId modelId = GetMappedModelId(object);
+    if (!modelId.IsValid())
+        return ERROR;
+
+    DefinitionModelPtr model = GetDgnDb()->Models().Get<DefinitionModel>(modelId);
+    if (!model.IsValid())
+        return ERROR;
+
     DisplayStyle* displayStyle;
     if (object["Is3d"].asBool())
-        displayStyle = new DisplayStyle3d(GetDgnDb()->GetDictionaryModel(), displayStyleName);
+        displayStyle = new DisplayStyle3d(*model, displayStyleName);
     else
-        displayStyle = new DisplayStyle2d(GetDgnDb()->GetDictionaryModel(), displayStyleName);
+        displayStyle = new DisplayStyle2d(*model, displayStyleName);
     if (!object["BackgroundColor"].isNull())
         {
         ColorDef backgroundColor(object["BackgroundColor"].asUInt());
@@ -1446,7 +1491,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             return ERROR;
             }
         // We need to deserialize the known schemas so that they can be used as references, but we don't want to convert or import them.
-        bvector<Utf8String> knownSchemas = {"Bentley_Standard_CustomAttributes", "ECDbMap", "ECDbFileInfo", "ECDbSystem", "ECDbMeta", "ECDb_FileInfo", "ECDb_System", "EditorCustomAttributes", "Generic", "MetaSchema", "dgn"};
+        bvector<Utf8String> knownSchemas = {"Bentley_Standard_CustomAttributes", "ECDbMap", "ECDbFileInfo", "ECDbSystem", "ECDbMeta", "ECDb_FileInfo", "ECDb_System", "EditorCustomAttributes", "Generic", "MetaSchema", "dgn", "Unit_Attributes"};
         if (knownSchemas.end() != std::find(knownSchemas.begin(), knownSchemas.end(), ecSchema->GetName()))
             continue;
 
@@ -1456,7 +1501,37 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             return ERROR;
             }
         
-        if (SUCCESS != ImportSchema(ecSchema.get()))
+        bvector<Utf8CP> schemasWithMultiInheritance = {"OpenPlant_3D", "BuildingDataGroup", "StructuralModelingComponents", "OpenPlant", "jclass", "pds", "group",
+            "ams", "bmf", "pid", "schematics", "OpenPlant_PID", "OpenPlant3D_PID", "speedikon", "autoplant_PIW", "ECXA_autoplant_PIW", "Bentley_Plant", "globals", "Electrical_RCM", "pid_ansi"};
+        auto found = std::find_if(schemasWithMultiInheritance.begin(), schemasWithMultiInheritance.end(), [key] (Utf8CP reserved) ->bool { return BeStringUtilities::StricmpAscii(key.GetName().c_str(), reserved) == 0; }) != schemasWithMultiInheritance.end();
+
+        if (found || ecSchema->GetName().StartsWithI("ECXA_"))
+            {
+            SchemaFlattener flattener(m_importer->m_schemaReadContext);
+            flattener.FlattenSchemas(ecSchema.get());
+            }
+        ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest);
+#define EXPORT_FLATTENEDECSCHEMAS 1
+#ifdef EXPORT_FLATTENEDECSCHEMAS
+        BeFileName bimFileName = GetDgnDb()->GetFileName();
+        BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_flat").c_str());
+        if (!outFolder.DoesPathExist())
+            BeFileName::CreateNewDirectory(outFolder.GetName());
+
+        WString fileName;
+        fileName.AssignUtf8(toImport->GetFullSchemaName().c_str());
+        fileName.append(L".ecschema.xml");
+
+        BeFileName outPath(outFolder);
+        outPath.AppendToPath(fileName.c_str());
+
+        if (outPath.DoesPathExist())
+            outPath.BeDeleteFile();
+
+        toImport->WriteToXmlFile(outPath.GetName());
+#endif
+
+        if (SUCCESS != ImportSchema(toImport))
             {
             GetLogger().fatalv("Failed to import schema %s.  Unable to continue.", schemaName);
             return ERROR;

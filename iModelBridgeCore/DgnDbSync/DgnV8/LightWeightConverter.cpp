@@ -1068,5 +1068,34 @@ void LightWeightConverter::InitBusinessKeyCodeSpec()
     BeAssert(m_businessKeyCodeSpecId.IsValid());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+DefinitionModelPtr LightWeightConverter::GetJobDefinitionModel()
+    {
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    SubjectCPtr job = m_dgndb->Elements().GetRootSubject();
+    Utf8PrintfString partitionName("Definition Model For %s", job->GetDisplayLabel());
+    DgnCode partitionCode = DefinitionPartition::CreateCode(*job, partitionName);
+    DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
+    m_jobDefinitionModelId = DgnModelId(partitionId.GetValueUnchecked());
+    if (m_jobDefinitionModelId.IsValid())
+        return m_dgndb->Models().Get<DefinitionModel>(m_jobDefinitionModelId);
+
+    DefinitionPartitionPtr ed = DefinitionPartition::Create(*job, partitionName.c_str());
+    DefinitionPartitionCPtr partition = ed->InsertT<DefinitionPartition>();
+    if (!partition.IsValid())
+        return DefinitionModelPtr();
+
+    DefinitionModelPtr defModel = DefinitionModel::CreateAndInsert(*partition);
+    if (!defModel.IsValid())
+        return DefinitionModelPtr();
+
+    m_jobDefinitionModelId = defModel->GetModelId();
+    return defModel;
+    }
+
 END_DGNDBSYNC_DGNV8_NAMESPACE
 

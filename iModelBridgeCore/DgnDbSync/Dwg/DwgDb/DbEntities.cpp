@@ -25,9 +25,14 @@ DWGDB_ENTITY_DEFINE_MEMBERS(Arc)
 DWGDB_ENTITY_DEFINE_MEMBERS(Circle)
 DWGDB_ENTITY_DEFINE_MEMBERS(Ellipse)
 DWGDB_ENTITY_DEFINE_MEMBERS(Face)
+DWGDB_ENTITY_DEFINE_MEMBERS(FaceRecord)
 DWGDB_ENTITY_DEFINE_MEMBERS(Polyline)
 DWGDB_ENTITY_DEFINE_MEMBERS(2dPolyline)
 DWGDB_ENTITY_DEFINE_MEMBERS(3dPolyline)
+DWGDB_ENTITY_DEFINE_MEMBERS(PolyFaceMesh)
+DWGDB_ENTITY_DEFINE_MEMBERS(PolyFaceMeshVertex)
+DWGDB_ENTITY_DEFINE_MEMBERS(PolygonMesh)
+DWGDB_ENTITY_DEFINE_MEMBERS(PolygonMeshVertex)
 DWGDB_ENTITY_DEFINE_MEMBERS(Hatch)
 DWGDB_ENTITY_DEFINE_MEMBERS(Light)
 DWGDB_ENTITY_DEFINE_MEMBERS(Region)
@@ -40,9 +45,11 @@ DWGDB_ENTITY_DEFINE_MEMBERS(MText)
 DWGDB_ENTITY_DEFINE_MEMBERS(Attribute)
 DWGDB_ENTITY_DEFINE_MEMBERS(AttributeDefinition)
 DWGDB_ENTITY_DEFINE_MEMBERS(BlockReference)
+DWGDB_ENTITY_DEFINE_MEMBERS(ViewRepBlockReference)
 DWGDB_ENTITY_DEFINE_MEMBERS(RasterImage)
 DWGDB_ENTITY_DEFINE_MEMBERS(PointCloudEx)
 DWGDB_ENTITY_DEFINE_MEMBERS(Viewport)
+DWGDB_ENTITY_DEFINE_MEMBERS(ViewBorder)
 
 
 
@@ -487,7 +494,98 @@ DwgDbObjectIterator     DwgDb3dPolyline::GetVertexIterator () const { return Dwg
 DwgDbStatus DwgDb3dPolyline::MakeOpen () { RETURNVOIDORSTATUS(T_Super::makeOpen()); }
 DwgDbStatus DwgDb3dPolyline::MakeClosed () { RETURNVOIDORSTATUS(T_Super::makeClosed()); }
 DwgDbStatus DwgDb3dPolyline::SplineFit () { RETURNVOIDORSTATUS(T_Super::splineFit()); }
-DwgDbStatus DwgDb3dPolyline::SplineFit (Type t, uint16_t n) {  RETURNVOIDORSTATUS(T_Super::splineFit(DWGDB_CASTTOENUM_DB(Poly3dType)(t), n)); }
+DwgDbStatus DwgDb3dPolyline::SplineFit (Type t, uint16_t n) { RETURNVOIDORSTATUS(T_Super::splineFit(DWGDB_CASTTOENUM_DB(Poly3dType)(t), n)); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbPolyFaceMesh::AppendVertex (DwgDbObjectIdR outId, DwgDbPolyFaceMeshVertexP vertex)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    outId = T_Super::appendVertex (vertex);
+    status = outId.isValid() ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::appendVertex(outId, vertex));
+#endif
+    return  status;
+    }
+int16_t DwgDbPolyFaceMesh::GetNumFaces() const { return T_Super::numFaces(); }
+int16_t DwgDbPolyFaceMesh::GetNumVertices() const { return T_Super::numVertices(); }
+DwgDbStatus DwgDbPolyFaceMesh::AppendFaceRecord(DwgDbFaceRecordP face) { RETURNVOIDORSTATUS(T_Super::appendFaceRecord(face)); }
+DwgDbObjectIterator DwgDbPolyFaceMesh::GetVertexIterator() const { return DwgDbObjectIterator(T_Super::vertexIterator()); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbPolygonMesh::AppendVertex (DwgDbObjectIdR outId, DwgDbPolygonMeshVertexP vertex)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    outId = T_Super::appendVertex (vertex);
+    status = outId.isValid() ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::appendVertex(outId, vertex));
+#endif
+    return  status;
+    }
+DwgDbPolygonMesh::Type DwgDbPolygonMesh::GetPolyMeshType() const { return static_cast<Type>(T_Super::polyMeshType()); }
+DwgDbStatus DwgDbPolygonMesh::SetPolyMeshType(Type t) { RETURNVOIDORSTATUS(T_Super::setPolyMeshType(DWGDB_CASTTOENUM_DB(PolyMeshType)(t))); }
+DwgDbStatus DwgDbPolygonMesh::ConvertTo(Type t){ RETURNVOIDORSTATUS(T_Super::convertToPolyMeshType(DWGDB_CASTTOENUM_DB(PolyMeshType)(t))); }
+int16_t     DwgDbPolygonMesh::GetMSize() const { return T_Super::mSize(); }
+int16_t     DwgDbPolygonMesh::GetNSize() const { return T_Super::nSize(); }
+DwgDbStatus DwgDbPolygonMesh::SetMSize(int16_t m) { RETURNVOIDORSTATUS(T_Super::setMSize(m)); }
+DwgDbStatus DwgDbPolygonMesh::SetNSize(int16_t n) { RETURNVOIDORSTATUS(T_Super::setNSize(n)); }
+bool        DwgDbPolygonMesh::IsMClosed() const { return T_Super::isMClosed(); }
+bool        DwgDbPolygonMesh::IsNClosed() const { return T_Super::isNClosed(); }
+DwgDbStatus DwgDbPolygonMesh::MakeMClosed() { RETURNVOIDORSTATUS(T_Super::makeMClosed()); }
+DwgDbStatus DwgDbPolygonMesh::MakeMOpen() { RETURNVOIDORSTATUS(T_Super::makeMOpen()); }
+DwgDbStatus DwgDbPolygonMesh::MakeNClosed() { RETURNVOIDORSTATUS(T_Super::makeNClosed()); }
+DwgDbStatus DwgDbPolygonMesh::MakeNOpen() { RETURNVOIDORSTATUS(T_Super::makeNOpen()); }
+int16_t     DwgDbPolygonMesh::GetMSurfaceDensity() const { return T_Super::mSurfaceDensity(); }
+int16_t     DwgDbPolygonMesh::GetNSurfaceDensity() const { return T_Super::nSurfaceDensity(); }
+DwgDbStatus DwgDbPolygonMesh::Straighten() { RETURNVOIDORSTATUS(T_Super::straighten()); }
+DwgDbStatus DwgDbPolygonMesh::SurfaceFit() { RETURNVOIDORSTATUS(T_Super::surfaceFit()); }
+DwgDbStatus DwgDbPolygonMesh::SurfaceFit(Type t, int16_t u, int16_t v) { RETURNVOIDORSTATUS(T_Super::surfaceFit(DWGDB_CASTTOENUM_DB(PolyMeshType)(t), u, v)); }
+DwgDbObjectIterator DwgDbPolygonMesh::GetVertexIterator() const {  return DwgDbObjectIterator(T_Super::vertexIterator()); }
+
+DPoint3d    DwgDbPolyFaceMeshVertex::GetPosition() const { return Util::DPoint3dFrom(T_Super::position()); }
+DwgDbStatus DwgDbPolyFaceMeshVertex::SetPosition(DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setPosition(Util::GePoint3dFrom(p))); }
+
+DwgDbPolygonMeshVertex::Type DwgDbPolygonMeshVertex::GetVertexType() const { return static_cast<Type>(T_Super::vertexType()); }
+DPoint3d    DwgDbPolygonMeshVertex::GetPosition() const { return Util::DPoint3dFrom(T_Super::position()); }
+DwgDbStatus DwgDbPolygonMeshVertex::SetPosition(DPoint3dCR p) { RETURNVOIDORSTATUS(T_Super::setPosition(Util::GePoint3dFrom(p))); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbFaceRecord::GetVertexAt(int16_t faceIndex, int16_t& vertexIndex) const
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    vertexIndex = T_Super::getVertexAt (faceIndex);
+    status = vertexIndex < 0 ? DwgDbStatus::UnknownError : DwgDbStatus::Success;
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::getVertexAt(faceIndex, vertexIndex));
+#endif
+    return  status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbFaceRecord::GetEdgeVisibilityAt (int16_t faceIndex, bool& visible) const
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    visible = T_Super::isEdgeVisibleAt (faceIndex);
+#elif DWGTOOLKIT_RealDwg
+    status = ToDwgDbStatus (T_Super::isEdgeVisibleAt(faceIndex, visible));
+#endif
+    return  status;
+    }
+DwgDbStatus DwgDbFaceRecord::MakeEdgeVisibleAt(int16_t f) { RETURNVOIDORSTATUS(T_Super::makeEdgeVisibleAt(f)); }
+DwgDbStatus DwgDbFaceRecord::MakeEdgeInvisibleAt(int16_t f) { RETURNVOIDORSTATUS(T_Super::makeEdgeInvisibleAt(f)); }
+DwgDbStatus DwgDbFaceRecord::SetVertexAt(int16_t f, int16_t v) { RETURNVOIDORSTATUS(T_Super::setVertexAt(f, v)); }
 
 DPoint3d   DwgDbArc::GetCenter () const { return Util::DPoint3dFrom(T_Super::center()); }
 double     DwgDbArc::GetRadius () const { return T_Super::radius(); }
@@ -1331,6 +1429,18 @@ DwgDbStatus DwgDbViewport::SetCustomScale (double s) { RETURNVOIDORSTATUS(T_Supe
 DwgDbStatus DwgDbViewport::SetBrightness (double b) { RETURNVOIDORSTATUS(T_Super::setBrightness(b)); }
 DwgDbStatus DwgDbViewport::SetAmbientLightColor (DwgCmColorCR c) { RETURNVOIDORSTATUS(T_Super::setAmbientLightColor(c)); }
 
+DwgDbViewBorder::Source DwgDbViewBorder::GetSourceType () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return Source::NotDefined;}, {return static_cast<Source>(T_Super::sourceType());}) }
+DwgDbViewBorder::ViewStyle DwgDbViewBorder::GetViewStyle () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return ViewStyle::FromBase;}, {return static_cast<ViewStyle>(T_Super::viewStyleType());}) }
+DwgDbObjectId DwgDbViewBorder::GetViewportId () const { return T_Super::viewportId(); }
+double      DwgDbViewBorder::GetHeight () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return 0.0;}, {return T_Super::height();}) }
+double      DwgDbViewBorder::GetWidth () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return 0.0;}, {return T_Super::width();}) }
+DPoint3d    DwgDbViewBorder::GetInsertionPoint () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return DPoint3d::FromZero();}, {return Util::DPoint3dFrom(T_Super::insertionPoint());}) }
+DwgString   DwgDbViewBorder::GetInventorFileReference () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return DwgString();}, {return T_Super::inventorFileReference();}) }
+bool        DwgDbViewBorder::IsFirstAngleProjection () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return false;}, {return T_Super::isFirstAngleProjection();}) }
+double      DwgDbViewBorder::GetRotationAngle () const { return T_Super::rotationAngle(); }
+double      DwgDbViewBorder::GetScale () const { return T_Super::scale(); }
+uint32_t    DwgDbViewBorder::GetShadedDPI () const { DWGDB_CALLSDKMETHOD({BeAssert(false && "Unsupported in Teigha!"); return 0;}, {return T_Super::shadedDPI();}) }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1413,6 +1523,88 @@ DwgDbStatus     DwgDbBlockReference::OpenSpatialFilter (DwgDbSpatialFilterPtr& f
 
     return  status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d        DwgDbViewRepBlockReference::GetScaleFactors () const
+    {
+    DWGGE_Type(Scale3d) scale = T_Super::scaleFactors ();
+    return DPoint3d::From (scale.sx, scale.sy, scale.sz);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbViewRepBlockReference::GetExtentsBestFit (DRange3dR out, TransformCR parentXform) const
+    {
+    DWGGE_Type(Matrix3d) matrix;
+    Util::GetGeMatrix (matrix, parentXform);
+
+    DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents)    extents;
+
+    DwgDbStatus status = ToDwgDbStatus (T_Super::geomExtentsBestFit(extents, matrix));
+
+    if (DwgDbStatus::Success == status)
+        out = Util::DRange3dFrom (extents);
+    else
+        out.Init ();
+
+    return  status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgDbViewRepBlockReference::IsXAttachment (WStringP blockName, WStringP path) const
+    {
+    DwgDbBlockTableRecordPtr    block(T_Super::blockTableRecord(), DwgDbOpenMode::ForRead);
+    if (!block.IsNull() && block->isFromExternalReference())
+        {
+        if (nullptr != blockName)
+            blockName->assign (block->GetName ());
+        if (nullptr != path)
+            path->assign (block->GetPath ());
+        return  true;
+        }
+    return  false;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbViewRepBlockReference::OpenSpatialFilter (DwgDbSpatialFilterPtr& filterOut, DwgDbOpenMode mode) const
+    {
+    DwgDbStatus status = DwgDbStatus::ObjectNotOpenYet;
+
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbFilterPtr   odFilter = OdDbIndexFilterManager::getFilter (this, OdDbSpatialFilter::desc(), FromDwgDbOpenMode(mode));
+    if (odFilter.isNull() || !(filterOut = DwgDbSpatialFilter::Cast(odFilter.get())).isNull())
+        status = DwgDbStatus::Success;
+
+#elif DWGTOOLKIT_RealDwg
+    AcDbFilter*         acFilter = nullptr;
+    Acad::ErrorStatus   es = AcDbIndexFilterManager::getFilter (this, AcDbSpatialFilter::desc(), FromDwgDbOpenMode(mode), acFilter);
+    if (Acad::eOk == es && nullptr != acFilter)
+        {
+        DwgDbSpatialFilterP spatial = DwgDbSpatialFilter::Cast (acFilter);
+        if (nullptr == spatial || Acad::eOk != (es = filterOut.acquire(spatial)))
+            {
+            acFilter->close ();
+            if (Acad::eOk == es)
+                es = Acad::eNullObjectPointer;
+            }
+        }
+    status = ToDwgDbStatus (es);
+#endif  // DWGTOOLKIT_
+
+    return  status;
+    }
+DwgDbObjectId   DwgDbViewRepBlockReference::GetBlockTableRecordId () const { return T_Super::blockTableRecord(); }
+DPoint3d        DwgDbViewRepBlockReference::GetPosition () const { return Util::DPoint3dFrom(T_Super::position()); }
+void            DwgDbViewRepBlockReference::GetBlockTransform (TransformR out) const { return Util::GetTransform(out, T_Super::blockTransform()); }
+DVec3d          DwgDbViewRepBlockReference::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
+DwgDbStatus     DwgDbViewRepBlockReference::ExplodeToOwnerSpace () const { return ToDwgDbStatus(T_Super::explodeToOwnerSpace()); }
+DwgDbObjectIterator DwgDbViewRepBlockReference::GetAttributeIterator () const { return DwgDbObjectIterator(T_Super::attributeIterator()); }
+DwgDbObjectId   DwgDbViewRepBlockReference::GetOwnerViewportId () const { return T_Super::ownerViewportId(); }
+void            DwgDbViewRepBlockReference::SetOwnerViewportId (DwgDbObjectId id) { T_Super::setOwnerViewportId(id); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16

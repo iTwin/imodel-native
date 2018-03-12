@@ -382,8 +382,13 @@ BentleyStatus   MaterialFactory::CreateTextureFromImageFile (Json::Value& mapJso
 
     // create a DGN texture and added to DB:
     DgnDbStatus     status = DgnDbStatus::Success;
-    DictionaryModelR model = m_importer.GetDgnDb().GetDictionaryModel ();
-    DgnTexture      texture(DgnTexture::CreateParams(model, utf8Name, imageSource, image.GetWidth(), image.GetHeight()));
+    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == model)
+        {
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "DgnTexture");
+        model = &m_importer.GetDgnDb().GetDictionaryModel ();
+        }
+    DgnTexture      texture(DgnTexture::CreateParams(*model, utf8Name, imageSource, image.GetWidth(), image.GetHeight()));
 
     if (texture.Insert(&status).IsNull() || DgnDbStatus::Success != status)
         {
@@ -722,10 +727,15 @@ BentleyStatus   MaterialFactory::Create (RenderMaterialId& idOut)
     {
     this->Convert ();
 
-    DictionaryModelR model = m_importer.GetDgnDb().GetDictionaryModel ();
+    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == model)
+        {
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "RenderMaterial");
+        model = &m_importer.GetDgnDb().GetDictionaryModel ();
+        }
 
     // create a DGN material
-    RenderMaterial dgnMaterial(model, m_paletteName, m_materialName);
+    RenderMaterial dgnMaterial(*model, m_paletteName, m_materialName);
 
     // WIP - need a description?
     // Utf8String  description (m_dwgMaterial->GetDescription().c_str());

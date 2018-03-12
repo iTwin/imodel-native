@@ -101,6 +101,8 @@ public:
     virtual void            _DebugPrintf (WCharCP format, ...) const { }
     //! Read a DWG file
     DWGDB_EXPORT DwgDbDatabasePtr       ReadFile (WStringCR filename, bool convCodepage = false, bool partialLoad = false, FileShareMode mode = FileShareMode::DenyNo, WStringCR password = WString());
+    //! Returns the layout manager to access layouts in a DWG file.
+    DWGDB_EXPORT DwgDbLayoutManagerPtr  GetLayoutManager () const;
 
     // methods to call the toolkit.
     //! Supply your app's host - must be called exactly once per session.

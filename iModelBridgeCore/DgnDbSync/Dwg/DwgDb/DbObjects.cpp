@@ -563,6 +563,135 @@ double          DwgDbLayout::GetCustomScale () const { double n=1.0,d=1.0; T_Sup
 DwgDbLayout::PaperOrientation DwgDbLayout::GetPaperOrientation () const { return static_cast<PaperOrientation>(T_Super::plotRotation()); }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId  DwgDbLayoutManager::FindLayoutByName (DwgStringCR name, DwgDbDatabaseCP dwg) const
+    {
+    DwgDbObjectId   layoutId;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        layoutId = m_layoutManager->findLayoutNamed (dwg, name);
+#elif DWGTOOLKIT_RealDwg
+    #if VendorVersion > 2017
+        layoutId = m_layoutManager->findLayoutNamed (name.c_str(), dwg);
+    #else
+        AcDbLayout* layout = m_layoutManager->findLayoutNamed (name.c_str(), false, dwg);
+        if (nullptr != layout)
+            layoutId = layout->objectId ();
+    #endif
+#endif
+        }
+    return  layoutId;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId  DwgDbLayoutManager::FindActiveLayout (DwgDbDatabaseCP dwg) const
+    {
+    DwgDbObjectId   layoutId;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        layoutId = m_layoutManager->findLayoutNamed (dwg, m_layoutManager->findActiveLayout(dwg, true));
+#elif DWGTOOLKIT_RealDwg
+    #if VendorVersion > 2017
+        layoutId = m_layoutManager->findLayoutNamed (m_layoutManager->findActiveLayout(true, dwg), dwg);
+    #else
+        AcDbLayout* layout = m_layoutManager->findLayoutNamed (m_layoutManager->findActiveLayout(true, dwg), false, dwg);
+        if (nullptr != layout)
+            layoutId = layout->objectId ();
+    #endif
+#endif
+        }
+    return  layoutId;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus    DwgDbLayoutManager::ActivateLayout (DwgDbObjectId layoutId)
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        status = DwgDbStatus::InvalidInput;
+        if (layoutId.isValid())
+            {
+            m_layoutManager->setCurrentLayout (layoutId.database(), layoutId);
+            status = DwgDbStatus::Success;
+            }
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (m_layoutManager->setCurrentLayoutId(layoutId));
+#endif
+        }
+    return  status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus    DwgDbLayoutManager::CreateLayout (DwgDbObjectIdR layoutId, DwgDbObjectIdR blockId, DwgStringCR name, DwgDbDatabaseP dwg)
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        layoutId = m_layoutManager->createLayout(dwg, name, &blockId);
+        status = layoutId.isValid() ? DwgDbStatus::Success : DwgDbStatus::NotPersistentObject;
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (m_layoutManager->createLayout(name.c_str(), layoutId, blockId, dwg));
+#endif
+        }
+    return  status;
+    }    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus    DwgDbLayoutManager::DeleteLayout (DwgStringCR name, DwgDbDatabaseP dwg)
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        status = DwgDbStatus::InvalidInput;
+        if (!name.isEmpty() && nullptr != dwg)
+            {
+            m_layoutManager->deleteLayout (dwg, name);
+            status = DwgDbStatus::Success;
+            }
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (m_layoutManager->deleteLayout(name.c_str(), dwg));
+#endif
+        }
+    return  status;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus    DwgDbLayoutManager::RenameLayout (DwgStringCR oldName, DwgStringCR newName, DwgDbDatabaseP dwg)
+    {
+    DwgDbStatus status = DwgDbStatus::InvalidData;
+    if (this->IsValid())
+        {
+#ifdef DWGTOOLKIT_OpenDwg
+        status = DwgDbStatus::InvalidInput;
+        if (!oldName.isEmpty() && !newName.isEmpty() && nullptr != dwg)
+            {
+            m_layoutManager->renameLayout (dwg, oldName, newName);
+            status = DwgDbStatus::Success;
+            }
+#elif DWGTOOLKIT_RealDwg
+        status = ToDwgDbStatus (m_layoutManager->renameLayout(oldName.c_str(), newName.c_str(), dwg));
+#endif
+        }
+    return  status;
+    }
+DwgDbLayoutManager::DwgDbLayoutManager (DWGDB_TypeP(LayoutManager) manager) : m_layoutManager(manager) {}
+bool DwgDbLayoutManager::IsValid () const { return nullptr != m_layoutManager; }
+int  DwgDbLayoutManager::CountLayouts (DwgDbDatabaseP dwg) const { if (IsValid()) return m_layoutManager->countLayouts(dwg); else return -1; }
+DwgDbObjectId  DwgDbLayoutManager::GetActiveLayoutBlock (DwgDbDatabaseCP dwg) const { if (IsValid()) return m_layoutManager->getActiveLayoutBTRId(dwg); else return DwgDbObjectId(); }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DwgDbFilteredBlockIterator::~DwgDbFilteredBlockIterator ()
