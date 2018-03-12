@@ -2188,8 +2188,12 @@ BentleyStatus   CreateGeometryPart (BuilderInfoR builderInfo, DRange3dR partRang
         return  BSIERROR;
 
     auto partsModel = m_createParams.GetGeometryPartsModel ();
-    if (!partsModel.IsValid())  // should not occur!
+    if (!partsModel.IsValid())
+        {
+        // should not occur!
+        importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "GeometryParts");
         partsModel = &db.GetDictionaryModel ();
+        }
 
     // create a new geometry part:
     DgnGeometryPartPtr  geomPart = DgnGeometryPart::Create (*partsModel, partCode.GetValueUtf8());

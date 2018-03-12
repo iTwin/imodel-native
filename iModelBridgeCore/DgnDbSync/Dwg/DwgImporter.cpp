@@ -1244,6 +1244,54 @@ BentleyStatus   DwgImporter::_ImportSpaces ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr  DwgImporter::GetOrCreateJobDefinitionModel ()
+    {
+    static Utf8CP   s_definitionPartitionName = "DwgDefinitionModel";
+    if (m_jobDefinitionModel.IsValid() && m_jobDefinitionModel->GetModelId().IsValid())
+        return  m_jobDefinitionModel;
+
+    // get or create the importer job partition
+    auto const& jobSubject = this->GetJobSubject ();
+    Utf8PrintfString    partitionName("%s:%ls", s_definitionPartitionName, m_rootFileName.GetFileNameWithoutExtension());
+
+    auto partitionCode = DefinitionPartition::CreateCode (jobSubject, partitionName);
+    auto partitionId = m_dgndb->Elements().QueryElementIdByCode (partitionCode);
+    if (!partitionId.IsValid())
+        {
+        // create a new partition
+        auto partition = DefinitionPartition::CreateAndInsert (jobSubject, partitionCode.GetValueUtf8CP());
+        if (!partition.IsValid())
+            {
+            this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), partitionCode.GetValueUtf8CP());
+            return  nullptr;
+            }
+        partitionId = partition->GetElementId ();
+        }
+    if (!partitionId.IsValid())
+        return nullptr;
+
+    // if the model exists, we are done!
+    m_jobDefinitionModel = m_dgndb->Models().Get<DefinitionModel> (DgnModelId(partitionId.GetValueUnchecked()));
+    if (m_jobDefinitionModel.IsValid())
+        return m_jobDefinitionModel;
+    
+    auto defPartition = m_dgndb->Elements().Get<DefinitionPartition> (partitionId);
+    if (!defPartition.IsValid())
+        return nullptr;
+
+    // create & insert a new DefinitionModel in our partition
+    m_jobDefinitionModel = DefinitionModel::CreateAndInsert (*defPartition);
+    if (!m_jobDefinitionModel.IsValid() || !m_jobDefinitionModel->GetModelId().IsValid())
+        {
+        BeAssert (false && "GeometryParts model is not created or not inserted successfully!");
+        m_jobDefinitionModel = nullptr;
+        }
+    return m_jobDefinitionModel;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
     {
     // this method creates a unique DefinitionModel for GeometryParts - no mapping is needed for this model
@@ -1255,8 +1303,8 @@ BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
         }
 
     // create a GeometryParts subject
-    Utf8String  modelName = s_geometryPartsPartitionName;
-    auto partsSubject = this->GetOrCreateModelSubject (*m_spatialParentSubject, modelName, ModelSubjectType::GeometryParts);
+    Utf8PrintfString  partitionName("%s:%ls", s_geometryPartsPartitionName, m_rootFileName.GetFileNameWithoutExtension());
+    auto partsSubject = this->GetOrCreateModelSubject (*m_spatialParentSubject, partitionName, ModelSubjectType::GeometryParts);
     if (!partsSubject.IsValid())
         {
         this->ReportError (IssueCategory::Unsupported(), Issue::Error(), "Failed creating the DwgGeometryParts subject");
@@ -1267,7 +1315,7 @@ BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
     this->SetSpatialParentSubject (*partsSubject);
 
     // get or create GeometryParts partition
-    auto partitionCode = DefinitionPartition::CreateCode (*m_spatialParentSubject, modelName);
+    auto partitionCode = DefinitionPartition::CreateCode (*m_spatialParentSubject, partitionName);
     auto partitionId = m_dgndb->Elements().QueryElementIdByCode (partitionCode);
     if (!partitionId.IsValid())
         {
@@ -1275,7 +1323,7 @@ BentleyStatus DwgImporter::GetOrCreateGeometryPartsModel ()
         auto   partition = DefinitionPartition::CreateAndInsert (*m_spatialParentSubject, partitionCode.GetValueUtf8CP());
         if (!partition.IsValid())
             {
-            this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), modelName.c_str());\
+            this->ReportError (IssueCategory::Unknown(), Issue::CantCreateModel(), partitionName.c_str());\
             return  BSIERROR;
             }
         partitionId = partition->GetElementId ();

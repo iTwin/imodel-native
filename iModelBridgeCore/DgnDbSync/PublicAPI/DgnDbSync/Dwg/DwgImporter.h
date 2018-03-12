@@ -837,6 +837,7 @@ public:
         L10N_STRING(ImageNotAJpeg)               // =="Sky box image is not a jpeg file, %s"==
         L10N_STRING(WrongBriefcaseManager)       // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
+        L10N_STRING(MissingJobDefinitionModel)   // =="Missing JobDefinitionModel for %s"==
     IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process
@@ -964,6 +965,7 @@ protected:
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
     DgnModelId                  m_sheetListModelId;
     DefinitionModelPtr          m_geometryPartsModel;
+    DefinitionModelPtr          m_jobDefinitionModel;
     T_GeometryBuilderList       m_sharedGeometryPartList;
     T_PresentationRuleContents  m_presentationRuleContents;
 
@@ -1218,6 +1220,8 @@ public:
     T_GeometryBuilderList const&        GetSharedPartList () const { return m_sharedGeometryPartList; }
     //! Get the DefinitionModel that stores GeometryParts
     DefinitionModelPtr                  GetGeometryPartsModel () { return m_geometryPartsModel; }
+    //! Get/create the DefinitionModel that stores all other job specific definitions, expcept for GeometryParts.
+    DefinitionModelPtr                  GetOrCreateJobDefinitionModel ();
 
     //! An iModelBridge must call this method from _MakeSchemaChanges, to create/update the stored DwgAttributeDefinitions schema.
     DGNDBSYNC_EXPORT BentleyStatus      MakeSchemaChanges ();
