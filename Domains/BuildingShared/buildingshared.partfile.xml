@@ -40,7 +40,6 @@
     
     <Part Name="BuildingUtils" BentleyBuildMakeFile="Utils/BuildingUtils.mke">
         <SubPart PartName="BuildingSharedApi"/>
-        <SubPart PartName="PublishedApi" PartFile="Bentley" Repository="Bentley"/>
         <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>

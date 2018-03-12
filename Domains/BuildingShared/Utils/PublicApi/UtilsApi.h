@@ -10,6 +10,4 @@
 #include <Geom/GeomApi.h>
 #include <BuildingShared/BuildingSharedMacros.h>
 #include "BuildingMessages.h"
-#include <Bentley/BeId.h>
-#include "ShortestPath.h"
 #include "GeometryUtils.h"

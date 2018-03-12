@@ -44,7 +44,9 @@ $(o)DgnGeometryUtils$(oext) : $(_MakeFilePath)DgnGeometryUtils.cpp ${MultiCompil
 
 $(o)BuildingUtils$(oext) : $(_MakeFilePath)BuildingUtils.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/BuildingUtils.h
 
-$(o)GeometryDebug$(oext) : $(_MakeFilePath)GeometryDebug.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryDebug.h                                                    
+$(o)GeometryDebug$(oext) : $(_MakeFilePath)GeometryDebug.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryDebug.h   
+
+$(o)ShortestPath$(oext) : $(_MakeFilePath)ShortestPath.cpp ${MultiCompileDepends} $(BuildingUtilsPublicApi)ShortestPath.h                                                 
 
 
 %include MultiCppCompileGo.mki

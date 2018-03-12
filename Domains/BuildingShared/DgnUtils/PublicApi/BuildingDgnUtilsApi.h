@@ -21,3 +21,4 @@
 #include "Interfaces/IToolSettingsChangedHandler.h"
 #include "BuildingEvents.h"
 #include "BuildingUtils.h"
+#include "ShortestPath.h"

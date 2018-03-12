@@ -29,8 +29,6 @@ BuildingUtilsPrivateApi = $(_MakeFilePath)PrivateAPI/
 
 $(o)GeometryUtils$(oext) : $(_MakeFilePath)GeometryUtils.cpp ${MultiCompileDepends} $(BuildingUtilsPublicApi)GeometryUtils.h
 
-$(o)ShortestPath$(oext) : $(_MakeFilePath)ShortestPath.cpp ${MultiCompileDepends} $(BuildingUtilsPublicApi)ShortestPath.h
-
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
