@@ -94,4 +94,14 @@ struct FormattingTestUtils
         static Utf8String SetLocale(Utf8CP name);
     };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
+struct FormattingTestFixture : ::testing::Test
+{
+    FormattingTestFixture() {}
+    virtual void SetUp() override {FormattingTestUtils::SetUpL10N();}
+    virtual void TearDown() override {FormattingTestUtils::TearDownL10N();}
+};
+
 END_BENTLEY_FORMATTEST_NAMESPACE

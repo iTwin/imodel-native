@@ -1099,7 +1099,7 @@ void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
         JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
             {
-            Utf8CP str = val.asString().c_str();
+            Utf8CP str = val.asCString();
             if (nullptr != str)
                 m_unit = context->LookupUnit(str);
             }

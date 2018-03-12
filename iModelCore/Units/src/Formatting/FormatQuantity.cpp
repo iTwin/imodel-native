@@ -37,7 +37,7 @@ void CompositeValueSpec::Init()
 //    3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-size_t CompositeValueSpec::UnitRatio(BEU::UnitCP unit, BEU::UnitCP subunit)
+size_t CompositeValueSpec::CalculateUnitRatio(BEU::UnitCP unit, BEU::UnitCP subunit)
     {
     if (nullptr == subunit) // subunit is not defined - which is OK regardless of whether the unit is defined
         return 0;
@@ -68,21 +68,21 @@ size_t CompositeValueSpec::UnitRatio(BEU::UnitCP unit, BEU::UnitCP subunit)
 // Checks comparability and calculates ratios between UOM of the parts and checks their consistency
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-void CompositeValueSpec::SetUnitRatios()
+void CompositeValueSpec::CalculateUnitRatios()
     {
     m_type = CompositeSpecType::Undefined;
     size_t ratioBits = 0; // the proper combinations are 0x1, 0x3, 0x7
     memset(m_ratio, 0, sizeof(m_ratio));
-    m_ratio[indxMajor] = UnitRatio(GetUnit(indxMajor), GetUnit(indxMiddle));
+    m_ratio[indxMajor] = CalculateUnitRatio(GetUnit(indxMajor), GetUnit(indxMiddle));
 
     if (NoProblem())
         {
         if (1 < m_ratio[indxMajor]) ratioBits |= 0x1;
-        m_ratio[indxMiddle] = UnitRatio(indxMiddle, indxMinor);
+        m_ratio[indxMiddle] = CalculateUnitRatio(indxMiddle, indxMinor);
         if (1 < m_ratio[indxMiddle]) ratioBits |= 0x2;
         if (NoProblem())
             {
-            m_ratio[indxMinor] = UnitRatio(indxMinor, indxSub);
+            m_ratio[indxMinor] = CalculateUnitRatio(indxMinor, indxSub);
             if (1 < m_ratio[indxMinor]) ratioBits |= 0x4;
             switch (ratioBits)
                 {
@@ -176,7 +176,7 @@ BEU::UnitCP CompositeValueSpec::GetSmallestUnit() const
 Utf8CP CompositeValueSpec::GetUnitName(size_t indx, Utf8CP substitute) const
     {
     auto proxy = GetProxy(indx);
-    if (nullptr != proxy)
+    if (nullptr == proxy)
         return substitute;
 
     Utf8CP name = proxy->GetName();
@@ -203,11 +203,24 @@ void CompositeValueSpec::Clone(CompositeValueSpecCR other)
 CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit)
     {
     Init();
+
+    int count = 0;
+    if (nullptr != majorUnit)
+        count += 1;
+    if (nullptr != middleUnit)
+        count += 1;
+    if (nullptr != minorUnit)
+        count += 1;
+    if (nullptr != subUnit)
+        count += 1;
+
+    m_proxys.resize(count);
+
     SetUnit(indxMajor, majorUnit);
     SetUnit(indxMiddle, middleUnit);
     SetUnit(indxMinor, minorUnit);
     SetUnit(indxSub, subUnit);
-    SetUnitRatios();
+    CalculateUnitRatios();
     }
 
 //---------------------------------------------------------------------------------------
@@ -343,10 +356,11 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP con
     Utf8String str;
     if (jval.empty())
         return;
+
+    m_proxys.resize(4);
     
     Utf8String input;
     UnitProxyP upp;
-    int typeCount = 0;
     for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
         {
         paramName = iter.memberName();
@@ -356,32 +370,21 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP con
             {
             upp = GetProxyP(indxMajor);
             upp->LoadJson(val, context);
-            typeCount++;
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_MiddleUnit()) == 0)
             {
             upp = GetProxyP(indxMiddle);
             upp->LoadJson(val, context);
-            typeCount++;
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_MinorUnit()) == 0)
             {
             upp = GetProxyP(indxMinor);
             upp->LoadJson(val, context);
-            typeCount++;
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_SubUnit()) == 0)
             {
             upp = GetProxyP(indxSub);
             upp->LoadJson(val, context);
-            typeCount++;
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_InputUnit()) == 0)
-            {
-            input = val.asString();
-            if (input.empty())
-                continue;
-            SetUnit(indxInput, context->LookupUnit(input.c_str()));
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_includeZero()) == 0)
             m_includeZero = val.asBool();
@@ -389,17 +392,7 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP con
             m_spacer = val.asString();
         }
 
-    if (typeCount == 1)
-        m_type = CompositeSpecType::Single;
-    else if (typeCount == 2)
-        m_type = CompositeSpecType::Double;
-    else if (typeCount == 3)
-        m_type = CompositeSpecType::Triple;
-    else if (typeCount == 4)
-        m_type = CompositeSpecType::Quatro;
-
-    
-    SetUnitRatios();
+    CalculateUnitRatios();
     }
 
 //===================================================

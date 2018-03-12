@@ -497,7 +497,7 @@ public:
     BEU::UnitCP GetUnit() const { return m_unit; }
     UNITS_EXPORT Json::Value ToJson() const;
     bool IsEmpty() const {return nullptr == m_unit;}
-    bool IsIdentical(UnitProxyCR other) const {return !BEU::Unit::AreEqual(m_unit, other.m_unit) || !m_unitLabel.Equals(other.m_unitLabel);}
+    bool IsIdentical(UnitProxyCR other) const {return BEU::Unit::AreEqual(m_unit, other.m_unit) && m_unitLabel.Equals(other.m_unitLabel);}
     };
 
 //=======================================================================================
@@ -523,8 +523,6 @@ private:
     static const size_t  indxMiddle = 1;
     static const size_t  indxMinor  = 2;
     static const size_t  indxSub    = 3;
-    static const size_t  indxInput  = 4;
-    static const size_t  indxLimit  = 5;
     size_t m_ratio[indxSub];
     bvector<UnitProxy> mutable m_proxys;
     FormatProblemDetail m_problem;
@@ -532,12 +530,11 @@ private:
     bool m_includeZero; // Not currently used in the formatting code.
     Utf8String m_spacer;
 
-    size_t UnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
-    size_t UnitRatio(size_t uppIndx, size_t lowIndx) {return  UnitRatio(GetUnit(uppIndx), GetUnit(lowIndx));}
+    size_t CalculateUnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
+    size_t CalculateUnitRatio(size_t uppIndx, size_t lowIndx) {return  CalculateUnitRatio(GetUnit(uppIndx), GetUnit(lowIndx));}
     void ResetType() { m_type = CompositeSpecType::Undefined; }
-    void SetUnitRatios();
+    void CalculateUnitRatios();
 
-    // bool SetUnitNames(Utf8CP MajorUnit, Utf8CP MiddleUnit=nullptr, Utf8CP MinorUnit = nullptr, Utf8CP SubUnit = nullptr);
     Utf8CP GetUnitName(size_t indx, Utf8CP substitute = nullptr) const;
     void SetUnitLabel(size_t index, Utf8CP label);
     Utf8CP GetUnitLabel(size_t index, Utf8CP substitute = nullptr) const;
@@ -564,10 +561,10 @@ public:
     CompositeValueSpec(CompositeValueSpecCR other) {Clone(other);}
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit=nullptr, BEU::UnitCP minorUnit=nullptr, BEU::UnitCP subUnit = nullptr);
 
-    BEU::UnitCP GetMajorUnit() const {return GetProxy(indxMajor)->GetUnit();}
-    BEU::UnitCP GetMiddleUnit() const {return GetProxy(indxMiddle)->GetUnit();}
-    BEU::UnitCP GetMinorUnit() const {return GetProxy(indxMinor)->GetUnit();}
-    BEU::UnitCP GetSubUnit() const {return GetProxy(indxSub)->GetUnit();}
+    BEU::UnitCP GetMajorUnit() const {return GetUnit(indxMajor);}
+    BEU::UnitCP GetMiddleUnit() const {return GetUnit(indxMiddle);}
+    BEU::UnitCP GetMinorUnit() const {return GetUnit(indxMinor);}
+    BEU::UnitCP GetSubUnit() const {return GetUnit(indxSub);}
 
     UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
     UNITS_EXPORT Utf8String GetMajorLabel() const { return GetEffectiveLabel(indxMajor); }
@@ -578,9 +575,9 @@ public:
     bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
     bool IsProblem() const { return m_problem.IsProblem(); }
     bool NoProblem() const { return m_problem.NoProblem(); }
-    size_t GetMajorToMiddleRatio() { return m_ratio[indxMajor]; }
-    size_t GetMiddleToMinorRatio() { return m_ratio[indxMiddle]; }
-    size_t GetMinorToSubRatio() { return m_ratio[indxMinor]; }
+    size_t GetMajorToMiddleRatio() const {return m_ratio[indxMajor];}
+    size_t GetMiddleToMinorRatio() const  {return m_ratio[indxMiddle];}
+    size_t GetMinorToSubRatio() const {return m_ratio[indxMinor];}
     size_t GetUnitCount() const {return m_proxys.size();}
     Utf8CP GetProblemDescription() const {return m_problem.GetProblemDescription().c_str();}
     UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
@@ -600,8 +597,9 @@ public:
 struct CompositeValue
     {
 private:
+    static const size_t  indxInput = 4;
     bool m_negative;
-    double m_parts[CompositeValueSpec::indxLimit];
+    double m_parts[5];
     FormatProblemDetail m_problem;
     double GetSignFactor() { return m_negative ? -1.0 : 1.0; }
     void Init();
@@ -618,13 +616,13 @@ public:
     double SetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle] = dval; }
     double SetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor] = dval; }
     double SetSub(double dval)    { return m_parts[CompositeValueSpec::indxSub] = dval; }
-    double SetInput(double dval)  { return m_parts[CompositeValueSpec::indxInput] = dval; }
+    double SetInput(double dval)  { return m_parts[indxInput] = dval; }
 
     double GetMajor()  { return m_parts[CompositeValueSpec::indxMajor]; }
     double GetMiddle() { return m_parts[CompositeValueSpec::indxMiddle]; }
     double GetMinor()  { return m_parts[CompositeValueSpec::indxMinor]; }
     double GetSub()    { return m_parts[CompositeValueSpec::indxSub]; }
-    double GetInput()  { return m_parts[CompositeValueSpec::indxInput]; }
+    double GetInput()  { return m_parts[indxInput]; }
 
     bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
     bool IsProblem() { return m_problem.IsProblem(); }

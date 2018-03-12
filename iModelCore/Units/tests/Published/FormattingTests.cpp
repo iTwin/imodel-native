@@ -64,14 +64,6 @@ struct FormatUnitSetTest : public FormattingTest
         }
     };
 
-struct CompositeValueSpecTest: public FormattingTest
-    {
-    };
-
-struct CompositeValueTest: public FormattingTest
-    {
-    };
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -718,105 +710,6 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     {
     FAIL() << "TODO: Test FUS from JSON with formatSpec fully defined.";
     }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeValueSpecTest, Constructors)
-    {
-    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
-    BEU::UnitCP yrd = BEU::UnitRegistry::Get().LookupUnit("YRD");
-    BEU::UnitCP ft = BEU::UnitRegistry::Get().LookupUnit("FT");
-    BEU::UnitCP inch = BEU::UnitRegistry::Get().LookupUnit("INCH");
-
-    // Single Unit
-    CompositeValueSpec cvs1unit(mile);
-    ASSERT_EQ(1, cvs1unit.GetUnitCount());
-    ASSERT_EQ(CompositeSpecType::Single, cvs1unit.GetType());
-    ASSERT_FALSE(cvs1unit.IsProblem());
-    EXPECT_STREQ("mi", cvs1unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_EQ(nullptr, cvs1unit.GetMiddleUnit());
-    EXPECT_EQ(nullptr, cvs1unit.GetMinorUnit());
-    EXPECT_EQ(nullptr, cvs1unit.GetSubUnit());
-
-    // Two Units
-    CompositeValueSpec cvs2unit(mile, yrd);
-    ASSERT_EQ(2, cvs2unit.GetUnitCount());
-    ASSERT_EQ(CompositeSpecType::Double, cvs2unit.GetType());
-    ASSERT_FALSE(cvs2unit.IsProblem());
-    EXPECT_STREQ("mi", cvs2unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("yd", cvs2unit.GetMiddleUnit()->GetLabel().c_str());
-    EXPECT_EQ(nullptr, cvs2unit.GetMinorUnit());
-    EXPECT_EQ(nullptr, cvs2unit.GetSubUnit());
-    EXPECT_EQ(1760, cvs2unit.GetMajorToMiddleRatio());
-
-    // Three Units
-    CompositeValueSpec cvs3unit(mile, yrd, ft);
-    ASSERT_EQ(3, cvs3unit.GetUnitCount());
-    ASSERT_EQ(CompositeSpecType::Triple, cvs3unit.GetType());
-    ASSERT_FALSE(cvs3unit.IsProblem());
-    EXPECT_STREQ("mi", cvs3unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("yd", cvs3unit.GetMiddleUnit()->GetLabel().c_str());
-    EXPECT_STREQ("ft", cvs3unit.GetMinorUnit()->GetLabel().c_str());
-    EXPECT_EQ(nullptr, cvs3unit.GetSubUnit());
-    EXPECT_EQ(1760, cvs3unit.GetMajorToMiddleRatio());
-    EXPECT_EQ(3, cvs3unit.GetMiddleToMinorRatio());
-
-    // Four Units
-    CompositeValueSpec cvs4unit(mile, yrd, ft, inch);
-    ASSERT_EQ(4, cvs4unit.GetUnitCount());
-    ASSERT_EQ(CompositeSpecType::Quatro, cvs4unit.GetType());
-    ASSERT_FALSE(cvs4unit.IsProblem());
-    EXPECT_STREQ("mi", cvs4unit.GetMajorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("yd", cvs4unit.GetMiddleUnit()->GetLabel().c_str());
-    EXPECT_STREQ("ft", cvs4unit.GetMinorUnit()->GetLabel().c_str());
-    EXPECT_STREQ("in", cvs4unit.GetSubUnit()->GetLabel().c_str());
-    EXPECT_EQ(1760, cvs4unit.GetMajorToMiddleRatio());
-    EXPECT_EQ(3, cvs4unit.GetMiddleToMinorRatio());
-    EXPECT_EQ(12, cvs4unit.GetMinorToSubRatio());
-
-    FAIL() << "TODO: Test the rest of the constructors";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeValueTest, Constructors)
-    {
-    CompositeValue cv;
-    ASSERT_FALSE(cv.IsProblem());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeValueTest, DataMemberSettersAndGetters)
-    {
-    CompositeValue cv;
-
-    cv.SetMajor(1.0);
-    cv.SetMiddle(2.0);
-    cv.SetMinor(3.0);
-    cv.SetSub(4.0);
-    cv.SetInput(5.0);
-    EXPECT_EQ(1.0, cv.GetMajor());
-    EXPECT_EQ(2.0, cv.GetMiddle());
-    EXPECT_EQ(3.0, cv.GetMinor());
-    EXPECT_EQ(4.0, cv.GetSub());
-    EXPECT_EQ(5.0, cv.GetInput());
-
-    cv.SetPositive();
-    EXPECT_STREQ("", cv.GetSignPrefix().c_str());
-    EXPECT_STREQ("", cv.GetSignPrefix(true).c_str());
-    EXPECT_STREQ("", cv.GetSignSuffix().c_str());
-    EXPECT_STREQ("", cv.GetSignSuffix(true).c_str());
-
-    cv.SetNegative();
-    EXPECT_STREQ("-", cv.GetSignPrefix().c_str());
-    EXPECT_STREQ("(", cv.GetSignPrefix(true).c_str());
-    EXPECT_STREQ("", cv.GetSignSuffix().c_str());
-    EXPECT_STREQ(")", cv.GetSignSuffix(true).c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
