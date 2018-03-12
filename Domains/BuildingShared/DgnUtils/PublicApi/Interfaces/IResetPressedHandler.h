@@ -1,15 +1,17 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Utils/PublicApi/UtilsApi.h $
+|     $Source: DgnUtils/PublicApi/Interfaces/IResetPressedHandler.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <Geom/GeomApi.h>
-#include <BuildingShared/BuildingSharedMacros.h>
-#include "BuildingMessages.h"
-#include <Bentley/BeId.h>
-#include "ShortestPath.h"
-#include "GeometryUtils.h"
+BEGIN_BUILDING_SHARED_NAMESPACE
+
+struct IResetPressedHandler
+    {
+    virtual void OnResetPressed(JsonValueCR jsonValue, DgnClientFx::MessageResponse& response) = 0;
+    };
+
+END_BUILDING_SHARED_NAMESPACE

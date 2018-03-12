@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Utils/BuildingUtils.cpp $
+|     $Source: DgnUtils/BuildingUtils.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "PublicApi/utilsApi.h"
+#include "PublicApi/BuildingDgnUtilsApi.h"
 
 //#include "PublicApi/BuildingUtils.h"
 #include <DgnView/DgnTool.h>
@@ -599,6 +599,138 @@ Dgn::ElementIterator BuildingElementsUtils::MakeIterator
     elementIterator.GetStatement()->BindId(2, classId);
 
     return elementIterator;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Wouter.Rombouts                 08/2016
+//---------------------------------------------------------------------------------------
+void BuildingElement_notifyFail(Utf8CP pOperation, Dgn::DgnElement& elm, Dgn::DgnDbStatus* stat)
+    {
+    if (stat)
+        {
+        if (*stat == Dgn::DgnDbStatus::LockNotHeld)
+            {
+            auto eid = elm.GetElementId();
+            int64_t eidVal = 0;
+            if (eid.IsValid())
+                {
+                eidVal = eid.GetValue();
+                }
+            Utf8String notify = Utf8PrintfString("Error> Operation %s Failed on Element:%I64u, (Label:\"%s\"), due to LockNotHeld!", pOperation, eidVal, elm.GetUserLabel());
+            Dgn::NotifyMessageDetails nmd(Dgn::OutputMessagePriority::Error, notify.c_str());
+            Dgn::NotificationManager::OutputMessage(nmd);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Jonas.Valiunas   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void            DisplayLockFailedMessage
+(
+Dgn::DgnElementCR el, 
+BeSQLite::DbOpcode op, 
+Dgn::IBriefcaseManager::Response* pResponse
+)
+    {
+    Dgn::RepositoryStatus status = pResponse ? pResponse->Result () : Dgn::RepositoryStatus::Success;
+    Utf8String statusString;
+    Utf8String additionalInfo = "";
+
+    switch (status)
+        {
+    case RepositoryStatus::ServerUnavailable:
+        statusString = "ServerUnavailable";
+        break;
+    case RepositoryStatus::LockAlreadyHeld:
+        statusString = "LockAlreadyHeld";
+        //extract who's using the element
+        {
+        Dgn::DgnLockInfoSet const& lockStates = pResponse->LockStates ();
+        if (lockStates.size () > 0)
+            {
+            Dgn::DgnLockInfo lockInfo = *lockStates.begin ();
+            Dgn::DgnLockOwnershipCR lockOwner = lockInfo.GetOwnership ();
+
+            lockOwner.GetLockLevel ();
+            }
+        else
+            additionalInfo += " Owner is not defined";
+
+        break;
+        }
+
+        break;
+    case RepositoryStatus::SyncError:
+        statusString = "SyncError";
+        break;
+    case RepositoryStatus::InvalidResponse:
+        statusString = "InvalidResponse";
+        break;
+    case RepositoryStatus::PendingTransactions:
+        statusString = "PendingTransactions";
+        break;
+    case RepositoryStatus::LockUsed:
+        statusString = "LockUsed";
+        break;
+    case RepositoryStatus::CannotCreateRevision:
+        statusString = "CannotCreateRevision";
+        break;
+    case RepositoryStatus::InvalidRequest:
+        statusString = "InvalidRequest";
+        break;
+    case RepositoryStatus::RevisionRequired:
+        statusString = "RevisionRequired";
+        break;
+    case RepositoryStatus::CodeUnavailable:
+        statusString = "CodeUnavailable";
+        break;
+    case RepositoryStatus::CodeNotReserved:
+        statusString = "CodeNotReserved";
+        break;
+    case RepositoryStatus::CodeUsed:
+        statusString = "CodeUsed";
+        break;
+    case RepositoryStatus::LockNotHeld:
+        statusString = "LockNotHeld";
+        break;
+    case RepositoryStatus::RepositoryIsLocked:
+        statusString = "RepositoryIsLocked";
+        break;
+        }
+
+    Utf8String notify = Utf8PrintfString ("Error> acquire lock Failed on Element:%I64u, (Label:\"%s\"), due to \"%s\"", el.GetElementId (), el.GetUserLabel (), statusString).append(additionalInfo);
+    Dgn::NotifyMessageDetails nmd (Dgn::OutputMessagePriority::Error, notify.c_str ());
+    Dgn::NotificationManager::OutputMessage (nmd);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Jonas.Valiunas   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::RepositoryStatus BuildingLocks_LockElementForOperation 
+(
+Dgn::DgnElementCR el, 
+BeSQLite::DbOpcode op, 
+Utf8CP pOperation
+)
+    {
+    IBriefcaseManager::Request request;
+    auto stat = el.PopulateRequest (request, op);
+    if (RepositoryStatus::Success == stat)
+        {
+        request.SetOptions (IBriefcaseManager::ResponseOptions::All);
+        Dgn::IBriefcaseManager::Response response = el.GetDgnDb ().BriefcaseManager ().Acquire (request);
+        //T_HOST.GetRepositoryAdmin ()._OnResponse (response, GetLocalizedToolName ().c_str ());
+
+        if (RepositoryStatus::Success != response.Result())
+            DisplayLockFailedMessage (el, op, &response);
+
+        }
+    else
+        DisplayLockFailedMessage (el, op, NULL);
+
+    return stat;
     }
 
 END_BUILDING_SHARED_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/GeometryUtils_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley\BeTest.h>
@@ -33,10 +33,10 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_LowestCrossSectionParallelToXYPlane
     body.FractionToSection(0, expectedEllipse);
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
     Dgn::IBRepEntityPtr solid = nullptr;
-    GeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
     ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
 
-    CurveVectorPtr crossSection = GeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().low.z);
+    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().low.z);
     ASSERT_TRUE(crossSection.IsValid());
     ASSERT_EQ(crossSection->size(), 1) << "Cross-section should contain 1 CurvePrimitive";
     ASSERT_EQ(crossSection->at(0)->GetCurvePrimitiveType(), ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc);
@@ -53,10 +53,10 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_TopmostCrossSectionParallelToXYPlan
     body.FractionToSection(1, expectedEllipse);
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
     Dgn::IBRepEntityPtr solid = nullptr;
-    GeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
     ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
 
-    CurveVectorPtr crossSection = GeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().high.z);
+    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().high.z);
     ASSERT_TRUE(crossSection.IsValid());
     ASSERT_EQ(crossSection->size(), 1) << "Cross-section should contain 1 CurvePrimitive";
     ASSERT_EQ(crossSection->at(0)->GetCurvePrimitiveType(), ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc);
@@ -71,10 +71,10 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_TryGetCrossSectionBelowSolid)
     DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 0, 0, 20 }, 20, 10, true);
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
     Dgn::IBRepEntityPtr solid = nullptr;
-    GeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
     ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
 
-    CurveVectorPtr crossSection = GeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().low.z - 1);
+    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().low.z - 1);
     ASSERT_FALSE(crossSection.IsValid());
     }
 
@@ -86,10 +86,10 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_TryGetCrossSectionAboveSolid)
     DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 0, 0, 20 }, 20, 10, true);
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
     Dgn::IBRepEntityPtr solid = nullptr;
-    GeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
     ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
 
-    CurveVectorPtr crossSection = GeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().high.z + 1);
+    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().high.z + 1);
     ASSERT_FALSE(crossSection.IsValid());
     }
 
@@ -101,10 +101,10 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_ReturnsPointStringWhenSinglePointOn
     DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 0, 0, 20 }, 20, 0, true);
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
     Dgn::IBRepEntityPtr solid = nullptr;
-    GeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
     ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
 
-    CurveVectorPtr crossSection = GeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().high.z);
+    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().high.z);
     ASSERT_TRUE(crossSection.IsValid());
     ASSERT_EQ(crossSection->size(), 1);
     ASSERT_EQ(crossSection->at(0)->GetCurvePrimitiveType(), ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString);
@@ -120,10 +120,10 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_GetLowestPointOfSolidWithRoundNotXY
     DgnConeDetail body = DgnConeDetail({ 0, 0, 0 }, { 20, 0, 20 }, 20 * sqrt(2), 0, true);
     GeometricPrimitivePtr geometry = GeometricPrimitive::Create(body);
     Dgn::IBRepEntityPtr solid = nullptr;
-    GeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(solid, geometry, true);
     ASSERT_TRUE(solid.IsValid()) << "Failed to create solid";
 
-    CurveVectorPtr crossSection = GeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().low.z);
+    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*solid, solid->GetEntityRange().low.z);
     ASSERT_TRUE(crossSection.IsValid());
     ASSERT_EQ(crossSection->size(), 1);
     ASSERT_EQ(crossSection->at(0)->GetCurvePrimitiveType(), ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString);
@@ -149,12 +149,12 @@ TEST_F(GeometryUtilsTests, GetXYCrossSection_BoxUnionTouchesAndIntersects)
 
     IBRepEntityPtr box1Solid;
     IBRepEntityPtr box2Solid;
-    GeometryUtils::CreateBodyFromGeometricPrimitive(box1Solid, box1GeomPrimitive, true);
-    GeometryUtils::CreateBodyFromGeometricPrimitive(box2Solid, box2GeomPrimitive, true);
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(box1Solid, box1GeomPrimitive, true);
+    DgnGeometryUtils::CreateBodyFromGeometricPrimitive(box2Solid, box2GeomPrimitive, true);
 
     BRepUtil::Modify::BooleanOperation(box1Solid, box2Solid, BRepUtil::Modify::BooleanMode::Unite);
     ASSERT_TRUE(box1Solid.IsValid()) << "Failed to create solid";
-    CurveVectorPtr crossSection = GeometryUtils::GetXYCrossSection(*box1Solid, 0);
+    CurveVectorPtr crossSection = DgnGeometryUtils::GetXYCrossSection(*box1Solid, 0);
     ASSERT_TRUE(crossSection.IsValid());
     CurveVectorPtr expectedCV = CurveVector::CreateLinear({ {0,0,0}, {200,0,0}, {200, 200, 0}, {0, 200, 0} }, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
     ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*crossSection, *expectedCV));

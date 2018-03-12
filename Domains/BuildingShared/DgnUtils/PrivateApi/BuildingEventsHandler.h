@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Utils/PrivateApi/BuildingEventsHandler.h $
+|     $Source: DgnUtils/PrivateApi/BuildingEventsHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,7 +20,7 @@ struct BuildingEventsHandler : RefCountedBase, DgnClientFx::IMessageHandler
         ~BuildingEventsHandler();
 
     public:
-        BUILDINGSHAREDUTILS_EXPORT static BuildingEventsHandlerPtr GetInstance();
+        static BuildingEventsHandlerPtr GetInstance();
 
     protected:
         virtual void                _HandleMessage(DgnClientFx::JsonMessage const&, DgnClientFx::MessageResponse& response) override;

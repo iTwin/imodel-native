@@ -26,3 +26,6 @@ $(BuildContext)PublicAPI/BuildingShared/GeometryManipulationStrategies : $(_Make
 
 $(BuildContext)PublicAPI/BuildingShared/DgnElementManipulationStrategies : $(_MakeFilePath)DgnElementManipulationStrategies/PublicAPI
     $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(BuildContext)PublicAPI/BuildingShared/DgnUtils : $(_MakeFilePath)DgnUtils/PublicAPI
+    $(LinkFirstDepToFirstTargetAsDirectory)

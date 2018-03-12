@@ -39,28 +39,42 @@
     </Part>
     
     <Part Name="BuildingUtils" BentleyBuildMakeFile="Utils/BuildingUtils.mke">
-      <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx"/>
-      <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
-      <SubPart PartName="BuildingUnits"/>
-      <Bindings>
-        <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
-        <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(shlibext)</Assemblies>
-      </Bindings>
+        <SubPart PartName="BuildingSharedApi"/>
+        <SubPart PartName="PublishedApi" PartFile="Bentley" Repository="Bentley"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+
+    <Part Name="BuildingDgnUtils" BentleyBuildMakeFile="DgnUtils/BuildingDgnUtils.mke">
+        <SubPart PartName="BuildingSharedApi" />
+        <SubPart PartName="PublishedApi" Repository="DgnClientFx" PartFile="DgnClientFx" />
+        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx" />
+        <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
+        <SubPart PartName="BuildingUnits" />
+        <SubPart PartName="BuildingUtils" />
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingDgnUtils$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingDgnUtils$(shlibext)</Assemblies>
+        </Bindings>
     </Part>
     
     <Part Name="BuildingUnits" BentleyBuildMakeFile="Units/BuildingUnits.mke">
-        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx"/>
         <SubPart PartName="BuildingSharedApi"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
         <Bindings>
           <Libs>Delivery/$(libprefix)BuildingUnits$(libext)</Libs>
           <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-  <Part Name="BuildingSharedBundle">
-    <SubPart PartName="BuildingUtils"/>
-    <SubPart PartName="GeometryManipulationStrategies"/>
-  </Part>
+    <Part Name="BuildingSharedBundle">
+        <SubPart PartName="BuildingUtils"/>
+        <SubPart PartName="BuildingDgnUtils" />
+        <SubPart PartName="GeometryManipulationStrategies"/>
+    </Part>
 
     <Part Name="GeometryManipulationStrategies" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke">
         <SubPart PartName="BuildingUtils"/>

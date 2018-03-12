@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Utils/BuildingEventsHandler.cpp $
+|     $Source: DgnUtils/BuildingEventsHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "DgnClientFx/DgnClientApp.h"
-#include "PublicApi/utilsApi.h"
+#include "PublicApi/BuildingDgnUtilsApi.h"
 
 #include "PrivateApi/BuildingEventsHandler.h"
 //#include "PublicApi/BuildingEvents.h"

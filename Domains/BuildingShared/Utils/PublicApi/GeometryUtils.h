@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-//#include <ConstraintSystem/Domain/ConstraintModelMacros.h>
-#include <DgnPlatform/ElementGeometry.h>
-#include <DgnPlatform/SolidKernel.h>
-
 #define SPLINE_ORDER 3
 #define EGRESS_CORRECTION 0.3048
 #define DEFAULT_MAX_EDGE_LENGTH 0.5
@@ -18,17 +14,10 @@
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
-//GeometryUtils is a static class for doing various operations on geometry (this is also a wrapper for all parasolid related activity)
+//GeometryUtils is a static class for doing various operations on geometry
 class GeometryUtils
     {
-public:
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus    CreateBodyFromGeometricPrimitive (Dgn::IBRepEntityPtr& out, Dgn::GeometricPrimitiveCPtr primitive, bool assignIds = false);
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus    SliceBodyByPlanes (bvector<bpair<Dgn::IBRepEntityPtr, CurveVectorPtr>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice,
-                                                                    CurveVectorCR cuttingPlaneProfile, double sliceHeight);
-    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr   ExtractXYProfileFromSolid (Dgn::IBRepEntityCR solid, CurveVectorPtr* pTopProfile = nullptr);
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus    GetGeometricPrimitivesFromGeometricElement(bvector<Dgn::GeometricPrimitivePtr>& geometricPrimitivesOut, Dgn::GeometricElementCPtr geoElement);
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus    GetIBRepEntitiesFromGeometricElement (bvector<Dgn::IBRepEntityPtr>& brepsOut, Dgn::GeometricElementCPtr geoElement);
-    
+public:    
     BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d>   ExtractSingleCurvePoints (CurveVectorPtr curve);
     
 
@@ -36,13 +25,6 @@ public:
     //! @param[in] planar curvevector
     //! @return profile transformed on zero plane
     BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr    GetProfileOnZeroPlane (CurveVectorCR profile);
-
-    //! transforms a curvevector onto zero plane
-    //! @param[in]  solid  solid to extract top/bottom profiles from
-    //! @param[out] bottomProfile bottom profile transformed onto zero plane
-    //! @param[out] topProfile top profile transformed onto zero plane
-    //! @return BSISUCCESS if profiles were computed
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus     GetTopBottomProfilesOnZeroPlane(Dgn::IBRepEntityCR solid, CurveVectorPtr& bottomProfile, CurveVectorPtr& topProfile);
 
     //! Forms points into a rectangle by a bounding point
     //! @params[out] point1, point2, point3, point4 points forming a rectangle
@@ -127,37 +109,11 @@ public:
     //! @param[in] point        a point to find
     //! @return                 index of the closest point in given vector
     BUILDINGSHAREDUTILS_EXPORT static int FindClosestPointIndex(bvector<DPoint3d>& keyPoints, DPoint3d point);
-    
-    //! Rotates placement by given angle in radians in XY plane
-    //! @param[in/out] placement    placement to rotate
-    //! @param[in] theta            angle in radians
-    BUILDINGSHAREDUTILS_EXPORT static void RotatePlacementXY(Dgn::Placement3dR placement, double theta);
-
-    //! Rotates placement around point by given angle in radians in XY plane
-    //! @param[in/out] placement    placement to rotate
-    //! @param[in] origin           point to rotate around
-    //! @param[in] theta            angle in radians
-    BUILDINGSHAREDUTILS_EXPORT static void RotatePlacementAroundPointXY(Dgn::Placement3dR placement, DPoint3d origin, double theta);
-
-    //! Translates placement by given vector in XY plane
-    //! @param[in/out] placement    placement to translate
-    //! @param[in] translation      vector to translate by
-    BUILDINGSHAREDUTILS_EXPORT static void TranslatePlacementXY(Dgn::Placement3dR placement, DVec3d translation);
-
-    //! Translates placement by given vector
-    //! @param[in/out] placement    placement to translate
-    //! @param[in] translation      vector to translate by
-    BUILDINGSHAREDUTILS_EXPORT static void TranslatePlacement(Dgn::Placement3dR placement, DVec3d translation);
 
     //! Finds angle in XY plane from rotation matrix
     //! @param[in] rotMatrix    rotation matrix around z axis
     //! @return                 rotation angle around z axis
     BUILDINGSHAREDUTILS_EXPORT static double RotMatrixToAngleXY(RotMatrix rotMatrix);
-
-    //! Finds angle in XY plane from placement
-    //! @param[in] placement    placement with rotation angle
-    //! @return                 rotation angle aroud z axis
-    BUILDINGSHAREDUTILS_EXPORT static double PlacementToAngleXY(Dgn::Placement3d placement);
 
     //! Translates point by rotated vector
     //! @param[in/out]  point   point to translate
@@ -337,20 +293,6 @@ public:
     //! @param[in]  correctionPoints    points between source and target
     //! @return     corrected path length
     BUILDINGSHAREDUTILS_EXPORT static double GetCorrectedPathLength(DPoint3d source, DPoint3d target, bvector<DPoint3d> correctionPoints);
-    
-    //! Get's the cross section that is parallel to the XY plane at a given Z.
-    //! @param[in] solid The body to get the cross section of
-    //! @param[in] z     The Z coordinate of cross section
-    //! @return the cross section of a given solid at a given Z.
-    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr GeometryUtils::GetXYCrossSection(Dgn::IBRepEntityCR solid, double z);
-
-
-    //! slice the body by Z elevations
-    //! @param[out] slicedGeometry      solid slices paired with corresponding z elevations of the cuts
-    //! @param[in]  geometryToSlice     geometry to slice
-    //! @param[in]  zElevationVector    vector of Z elevations to slice at
-    //! @return                         solid slices paired with corresponding bottom planes of the cuts
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus    SliceBodyByZElevations (bvector<bpair<Dgn::IBRepEntityPtr, double>>& slicedGeometry, Dgn::IBRepEntityCR geometryToSlice, bvector<double>& zElevationVector);
     
     //! Adds vertex to a curve vector.
     //! @param[in/out] cv     CurveVector to add the vertex to

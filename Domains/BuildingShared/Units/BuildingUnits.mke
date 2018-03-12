@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #     $Source: Units/BuildingUnits.mke $
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 %include mdl.mki
 
@@ -27,7 +27,6 @@ BuildingUnitsPublicApi = $(_MakeFilePath)PublicAPI/
 
 $(o)UnitConverter$(oext) : $(_MakeFilePath)UnitConverter.cpp ${MultiCompileDepends} $(BuildingUnitsPublicApi)UnitConverter.h
 
-$(o)GeometryDebug$(oext) : $(_MakeFilePath)GeometryDebug.cpp ${MultiCompileDepends} $(BuildingUnitsPublicApi)GeometryDebug.h                                                    
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
@@ -43,15 +42,7 @@ DLM_NOENTRY = 1
 DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnClientFx$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeomSerialization$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 

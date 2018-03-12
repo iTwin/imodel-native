@@ -5,7 +5,9 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <BuildingShared/BuildingSharedApi.h>
+#include "PublicApi/GeometryManipulationStrategiesApi.h"
+#include <BuildingShared/Utils/UtilsApi.h>
+#include <BuildingShared/Units/UnitsApi.h>
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
@@ -377,7 +379,7 @@ BentleyStatus LinePointsLengthPlacementStrategy::AdjustEndPoint()
         GetLineManipulationStrategyForEdit().ReplaceKeyPoint(endPoint, 1);
     else
         {
-        int dynamicCount = GetKeyPoints().size() - GetLineManipulationStrategyForEdit().GetAcceptedKeyPoints().size();
+        int dynamicCount = static_cast<int>(GetKeyPoints().size() - GetLineManipulationStrategyForEdit().GetAcceptedKeyPoints().size());
         if (1 == dynamicCount)
             {
             T_Super::_AddDynamicKeyPoint(endPoint);
@@ -594,7 +596,7 @@ BentleyStatus LinePointsAnglePlacementStrategy::AdjustEndPoint()
         GetLineManipulationStrategyForEdit().ReplaceKeyPoint(endPoint, 1);
     else
         {
-        int dynamicCount = GetKeyPoints().size() - GetLineManipulationStrategyForEdit().GetAcceptedKeyPoints().size();
+        int dynamicCount = static_cast<int>(GetKeyPoints().size() - GetLineManipulationStrategyForEdit().GetAcceptedKeyPoints().size());
         if (1 == dynamicCount)
             {
             T_Super::_AddDynamicKeyPoint(endPoint);
