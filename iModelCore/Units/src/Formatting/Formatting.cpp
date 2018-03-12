@@ -941,7 +941,7 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-const NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
+NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
     {
     static NumericFormatSpec nfs;
     return nfs;
