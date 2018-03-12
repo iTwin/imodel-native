@@ -614,7 +614,7 @@ public:
     static const Utf8CP FUSDividers() { return "()[]{}|"; }
     static const Utf8CP FUSDividerMatch() { return ")(][}{|"; }
     UNITS_EXPORT static const size_t* FractionCodes();
-    static const Utf8CP DefaultFormatName() { return "DefaultReal"; }
+    static const Utf8CP DefaultFormatName() { return "DefaultRealU"; }
     static const Utf8CP DefaultFormatAlias() { return "real"; }
     static const Utf8CP FUSJsonValue() { return "value"; }
     static const Utf8CP FUSJsonDispValue() { return "displayValue"; }
