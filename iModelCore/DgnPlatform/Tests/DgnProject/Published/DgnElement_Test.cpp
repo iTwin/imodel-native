@@ -2352,7 +2352,6 @@ TEST_F(DgnElementTests, CreateSubjectChildElemet)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                   02/2018
 //---------------+---------------+---------------+---------------+---------------+--------
-#if !defined(BENTLEYCONFIG_OS_LINUX) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS) // TFS#821136
 TEST_F(DgnElementTests, FromJson)
     {
     SetupSeedProject();
@@ -2423,7 +2422,7 @@ TEST_F(DgnElementTests, FromJson)
     json["ArrayOfStructs"][1u] = phillyOffice;
 
     ASSERT_FALSE(ElementECPropertyAccessor(el, "invalidProp").IsValid());
-    ASSERT_FALSE(ElementECPropertyAccessor(el, "invalidProp").IsAutoHandled());
+    ASSERT_TRUE(ElementECPropertyAccessor(el, "invalidProp").IsAutoHandled());
     json["invalidProp"] = invalidProp;
 
     ASSERT_TRUE(ElementECPropertyAccessor(el, "TestElementProperty").IsValid());
@@ -2559,7 +2558,6 @@ TEST_F(DgnElementTests, FromJson)
 
     m_db->CloseDb();
 }
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Bill.Goehrig     03/2018
@@ -2568,7 +2566,7 @@ TEST_F(DgnElementTests, RelatedElementToJson)
     {
     SetupSeedProject();
 
-    DgnElementId elementId(0x123456789u);
+    DgnElementId elementId((uint64_t)0x123456789u);
     DgnClassId relClassId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME));
     DgnElement::RelatedElement related(elementId, relClassId);
 
@@ -2593,7 +2591,7 @@ TEST_F(DgnElementTests, RelatedElementFromJson)
     {
     SetupSeedProject();
 
-    DgnElementId expectedElementId(0x987654321u);
+    DgnElementId expectedElementId((uint64_t)0x987654321u);
     DgnClassId expectedRelClassId(m_db->Schemas().GetClassId(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME));
 
     Utf8String serializedElementId = expectedElementId.ToHexStr();
@@ -2605,7 +2603,7 @@ TEST_F(DgnElementTests, RelatedElementFromJson)
         json[ECN::ECJsonUtilities::json_navRelClassName()] = DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME;
         DgnElement::RelatedElement related;
         related.FromJson(*m_db, json);
-        EXPECT_EQ(expectedElementId, related.m_id);
+        EXPECT_TRUE(expectedElementId == related.m_id);
         EXPECT_EQ(expectedRelClassId, related.m_relClassId);
         }
 
@@ -2614,7 +2612,7 @@ TEST_F(DgnElementTests, RelatedElementFromJson)
         json[ECN::ECJsonUtilities::json_navRelClassName()] = DPTEST_SCHEMA_NAME ":" DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME;
         DgnElement::RelatedElement related;
         related.FromJson(*m_db, json);
-        EXPECT_EQ(expectedElementId, related.m_id);
+        EXPECT_TRUE(expectedElementId == related.m_id);
         EXPECT_EQ(expectedRelClassId, related.m_relClassId);
         }
 
