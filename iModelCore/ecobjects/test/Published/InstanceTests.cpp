@@ -470,7 +470,6 @@ TEST_F (InstanceTests, TestIsNullArray)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
 TEST_F(InstanceTests, TestGetNullPropertyValues)
     {
     CreateSchema();
@@ -550,7 +549,7 @@ TEST_F(InstanceTests, TestGetNullPropertyValues)
     m_instance->GetValue(testValue, "DoubleProp");
     { // Precondition within the GetBoolean to assert if null.
     DISABLE_ASSERTS
-    EXPECT_EQ(std::numeric_limits<double>::quiet_NaN(), testValue.GetDouble());
+    EXPECT_TRUE(std::isnan(testValue.GetDouble()));
     }
 
     testValue.Clear();
@@ -600,7 +599,6 @@ TEST_F(InstanceTests, TestGetNullPropertyValues)
     EXPECT_EQ(nullptr, testValue.GetUtf8CP());
     EXPECT_EQ(nullptr, testValue.GetWCharCP());
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Raimondas.Rimkus 02/2013
