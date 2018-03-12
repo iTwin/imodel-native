@@ -1371,8 +1371,19 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     if (oldValue.GetDescription() != newValue.GetDescription())
         change.GetDescription().SetValue(oldValue.GetDescription(), newValue.GetDescription());
 
-    Utf8String oldPersUnitStr = oldValue.GetPersistenceUnit().ToText(false);
-    Utf8String newPersUnitStr = newValue.GetPersistenceUnit().ToText(false);
+    auto qualifiedToText = [](ECUnitCR unit, Formatting::NamedFormatSpecCR format) -> Utf8String 
+        {
+        Utf8String ret;
+        ret += unit.GetFullName();
+        ret += "(";
+        ret += format.GetName();
+        ret += ")";
+        return ret;
+        };
+
+    Utf8String oldPersUnitStr = qualifiedToText(*(ECUnitCP)oldValue.GetPersistenceUnit().GetUnit(), *oldValue.GetPersistenceUnit().GetNamedFormatSpec());
+
+    Utf8String newPersUnitStr = qualifiedToText(*(ECUnitCP)newValue.GetPersistenceUnit().GetUnit(), *newValue.GetPersistenceUnit().GetNamedFormatSpec());
     
     if (!oldPersUnitStr.Equals(newPersUnitStr))
         change.GetPersistenceUnit().SetValue(oldPersUnitStr, newPersUnitStr);
@@ -1383,12 +1394,12 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     bset<Utf8String> oldPresUnits, newPresUnits, allPresUnits;
     for (Formatting::FormatUnitSet const& fus : oldValue.GetPresentationUnitList())
         {
-        oldPresUnits.insert(fus.ToText(false));
+        oldPresUnits.insert(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetNamedFormatSpec()));
         }
 
     for (Formatting::FormatUnitSet const& fus : newValue.GetPresentationUnitList())
         {
-        newPresUnits.insert(fus.ToText(false));
+        newPresUnits.insert(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetNamedFormatSpec()));
         }
 
     allPresUnits.insert(oldPresUnits.begin(), oldPresUnits.end());
