@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/lib/Constants.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -289,18 +289,17 @@ static std::string s_tesselatedPolylinePositionCalculation = R"RAW_STRING(
                 float   dotP       = dot(bisector, perp);
                 float   jointParam = mod(a_param.y, 4.0);
                 float   miter       = 1.0 / dotP;
-
-                miter = (miter < 0.0) ? max(-5.0, miter) : min(5.0, miter);  // Avoid zingers.
+                const   float       maxMiter = 3.0;
 
                 if (jointParam < 0.01)
                     {
                     // Standard miter. (used where angle is known to be small).
-                    delta = bisector * dist * miter;
+                    delta = (abs(miter) > maxMiter) ? (perp * dist)  : (bisector * dist * miter);
                     }
                 else if (jointParam < 1.01)
                     {
                     // Miter on the interior - perpendicular on exterior (to leave space for joint).
-                    if (dotP < 0.0)
+                    if (dotP < 0.0 && abs(miter) < maxMiter)
                         delta = bisector * dist * miter;
                     else
                         delta = perp * dist;

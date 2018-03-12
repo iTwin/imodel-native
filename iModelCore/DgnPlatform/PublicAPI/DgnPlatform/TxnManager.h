@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TxnManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -306,7 +306,7 @@ private:
     bvector<ValidationError> m_validationErrors;
     TxnRelationshipLinkTables m_rlt;
     bool m_initTableHandlers;
-
+    bool m_enableNotifyTxnMonitors;
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
 
@@ -355,7 +355,7 @@ public:
     DGNPLATFORM_EXPORT ~TxnManager(); //!< @private
     BeSQLite::DbResult InitializeTableHandlers(); //!< @private
     TxnRelationshipLinkTables& RelationshipLinkTables(); //!< @private
-
+    void EnableNotifyTxnMontiors(bool enabled) { m_enableNotifyTxnMonitors = enabled; }
     
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;

@@ -434,15 +434,22 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController3d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
+    mutable Render::SceneLightsPtr m_lights;
+
     ViewController3dCP _ToView3d() const override final {return this;}
     ViewController3d(ViewDefinition3dCR definition) : T_Super(definition) {}
 
+    virtual void _AddModelLights(Render::SceneLightsR lights, Render::TargetR) const { }
+    void AddModelLights(Render::SceneLightsR lights, DgnModelId modelId, Render::TargetR) const;
 public:
     void SetDisplayStyle(DisplayStyle3dR style) { GetViewDefinition3dR().SetDisplayStyle3d(style); SetViewFlags(style.GetViewFlags()); }
     
     ViewDefinition3dCR GetViewDefinition3d() const {return static_cast<ViewDefinition3dCR>(*m_definition);}
     ViewDefinition3dR GetViewDefinition3dR() {return static_cast<ViewDefinition3dR>(*m_definition);}
     DGNPLATFORM_EXPORT ViewportStatus TurnCameraOn(Angle lensAngle);
+
+    DGNPLATFORM_EXPORT Render::SceneLightsPtr GetLights() const;
+    void ClearLights() {DgnDb::VerifyClientThread(); m_lights = nullptr;}
 };
 
 //=======================================================================================
@@ -562,7 +569,6 @@ protected:
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
-    mutable Render::SceneLightsPtr m_lights;
 
     void QueryModelExtents(FitContextR);
 
@@ -578,6 +584,7 @@ protected:
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
+    DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     BentleyStatus CreateThumbnailScene(SceneContextR context);
 
@@ -596,8 +603,6 @@ public:
     void ResetDeviceOrientation() {m_defaultDeviceOrientationValid = false;}
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point); //!< @private
-    DGNPLATFORM_EXPORT Render::SceneLightsPtr GetLights() const;
-    void ClearLights() {DgnDb::VerifyClientThread(); m_lights = nullptr;}
     SpatialViewDefinitionR GetSpatialViewDefinition() const {return static_cast<SpatialViewDefinitionR>(*m_definition);}
 
     //! Called when the display of a model is changed on or off
@@ -795,9 +800,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController2d : ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
 
-private:
-    DgnModelId m_viewedModelId;
-
 protected:
     TemplateViewController2dCP _ToTemplateView2d() const override final {return this;}
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
@@ -807,7 +809,7 @@ public:
     TemplateViewDefinition2dCR GetTemplateViewDefinition2d() const {return static_cast<TemplateViewDefinition2dCR>(*m_definition);}
     TemplateViewDefinition2dR GetTemplateViewDefinition2dR() {return static_cast<TemplateViewDefinition2dR>(*m_definition);}
 
-    DgnModelId GetViewedModelId() const {return m_viewedModelId;}
+    DgnModelId GetViewedModelId() const {return GetTemplateViewDefinition2d().GetViewedModel();}
     GeometricModel2dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel2d>(GetViewedModelId()).get();}
     DGNPLATFORM_EXPORT DgnDbStatus SetViewedModel(DgnModelId modelId);
 };
@@ -822,8 +824,7 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
     DEFINE_T_SUPER(ViewController3d);
 
 private:
-    DgnModelId m_viewedModelId;
-
+    DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
 protected:
     TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
@@ -838,7 +839,7 @@ public:
     TemplateViewDefinition3dCR GetTemplateViewDefinition3d() const {return static_cast<TemplateViewDefinition3dCR>(*m_definition);}
     TemplateViewDefinition3dR GetTemplateViewDefinition3dR() {return static_cast<TemplateViewDefinition3dR>(*m_definition);}
 
-    DgnModelId GetViewedModelId() const {return m_viewedModelId;}
+    DgnModelId GetViewedModelId() const {return GetTemplateViewDefinition3d().GetViewedModel();}
     GeometricModel3dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel3d>(GetViewedModelId()).get();}
     DGNPLATFORM_EXPORT DgnDbStatus SetViewedModel(DgnModelId modelId);
 };

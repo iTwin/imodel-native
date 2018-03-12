@@ -163,7 +163,6 @@ protected:
 
     typedef bmap<DgnElementId, Render::Primitives::GeometryList> GeomListMap;
 
-    DgnModelId                      m_modelId;
     Utf8String                      m_name;
     mutable BeMutex                 m_mutex;
     mutable std::mutex              m_dbMutex;
@@ -190,7 +189,6 @@ public:
     static RootPtr Create(GeometricModelR model, RenderContextR context);
     virtual ~Root() { ClearAllTiles(); }
 
-    DgnModelId GetModelId() const { return m_modelId; }
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }

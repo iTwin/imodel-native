@@ -1177,8 +1177,8 @@ TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model.GetDgnDb(), transform, "", &system),
-    m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()),
+Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, "", &system),
+    m_name(model.GetName()), m_is3d(model.Is3dModel()),
 #if defined(CACHE_LARGE_GEOMETRY)
     m_cacheGeometry(m_is3d)
 #else
