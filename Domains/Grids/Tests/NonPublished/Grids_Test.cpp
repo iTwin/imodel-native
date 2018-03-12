@@ -360,13 +360,13 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_CreatedAndDeleted)
     // all horizontal elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(0, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     // all vertical elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(-msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     /////////////////////////////////////////////////////////////
@@ -481,12 +481,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(0, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(-msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -572,12 +572,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterRotat
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -665,12 +665,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Unconstrained_PlacementCorrectAfterTrans
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -798,7 +798,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_CreatedAndDeleted)
     // all horizontal elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(0, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     /////////////////////////////////////////////////////////////
@@ -913,12 +913,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(0, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(-msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1001,12 +1001,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_UnconstrainedExtended_PlacementCorrectAf
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1134,7 +1134,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_CreatedAndDeleted)
     // all horizontal elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(0, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     /////////////////////////////////////////////////////////////
@@ -1249,12 +1249,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(0, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(-msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1340,12 +1340,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterRotatio
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1433,12 +1433,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_Constrained_PlacementCorrectAfterTransla
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1566,7 +1566,7 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_CreatedAndDeleted)
     // all horizontal elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(0, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     /////////////////////////////////////////////////////////////
@@ -1681,12 +1681,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(0, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(0, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(-msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(-msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
 
@@ -1772,12 +1772,12 @@ TEST_F(GridsTestFixture, OrthogonalGrid_ConstrainedExtended_PlacementCorrectAfte
     // all elements placement rotation angle should be 0
     for (GridPlanarSurfaceCPtr plane : horizontalElements)
         {
-        ASSERT_EQ(newAngle, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     for (GridPlanarSurfaceCPtr plane : verticalElements)
         {
-        ASSERT_EQ(newAngle - msGeomConst_piOver2, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        ASSERT_EQ(newAngle - msGeomConst_piOver2, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
     }
   
@@ -1889,13 +1889,13 @@ TEST_F(GridsTestFixture, RadialGrid_CreatedAndDeleted)
     for (size_t i = 0; i < planeElements.size(); ++i)
         {
         GridPlanarSurfaceCPtr plane = planeElements[i];
-        EXPECT_DOUBLE_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(i * 7 * msGeomConst_pi / 180, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     // all arc elements rotation angle should be 0
     for (GridArcSurfaceCPtr arc : arcElements)
         {
-        EXPECT_DOUBLE_EQ(0, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(0, DgnGeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
         }
 
     /////////////////////////////////////////////////////////////
@@ -2024,13 +2024,13 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslation)
         {
         GridPlanarSurfaceCPtr plane = planeElements[i];
 
-        EXPECT_DOUBLE_EQ(i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(i * 7 * msGeomConst_pi / 180, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     // all arc elements rotation angle should be 0
     for (GridArcSurfaceCPtr arc : arcElements)
         {
-        EXPECT_DOUBLE_EQ(0, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(0, DgnGeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
         }
     }
 
@@ -2115,13 +2115,13 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterRotation)
         {
         GridPlanarSurfaceCPtr plane = planeElements[i];
 
-        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     // all arc elements rotation angle should be msGeomConst_pi / 4
     for (GridArcSurfaceCPtr arc : arcElements)
         {
-        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4, DgnGeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
         }
     }
 
@@ -2207,13 +2207,13 @@ TEST_F(GridsTestFixture, RadialGrid_PlacementCorrectAfterTranslationAndRotation)
         {
         GridPlanarSurfaceCPtr plane = planeElements[i];
 
-        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, GeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4 + i * 7 * msGeomConst_pi / 180, DgnGeometryUtils::PlacementToAngleXY(plane->GetPlacement())) << "Grid plane rotation angle is incorrect";
         }
 
     // all arc elements rotation angle should be msGeomConst_pi / 4
     for (GridArcSurfaceCPtr arc : arcElements)
         {
-        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4, GeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
+        EXPECT_DOUBLE_EQ(msGeomConst_pi / 4, DgnGeometryUtils::PlacementToAngleXY(arc->GetPlacement())) << "Grid arc rotation angle is incorrect";
         }
     }    
     

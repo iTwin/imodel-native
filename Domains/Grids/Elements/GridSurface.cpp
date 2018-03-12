@@ -152,7 +152,7 @@ DgnClassId classId
 BentleyStatus GridSurface::_RotateXY(double theta)
     {
     Placement3d placement = GetPlacement();
-    GeometryUtils::RotatePlacementXY(placement, theta);
+    DgnGeometryUtils::RotatePlacementXY(placement, theta);
     SetPlacement(placement);
     return BentleyStatus::SUCCESS;
     }
@@ -163,7 +163,7 @@ BentleyStatus GridSurface::_RotateXY(double theta)
 BentleyStatus GridSurface::_RotateXY(DPoint3d point, double theta)
     {
     Placement3d placement = GetPlacement();
-    GeometryUtils::RotatePlacementAroundPointXY(placement, point, theta);
+    DgnGeometryUtils::RotatePlacementAroundPointXY(placement, point, theta);
     SetPlacement(placement);
     return BentleyStatus::SUCCESS;
     }
@@ -175,7 +175,7 @@ BentleyStatus GridSurface::_TranslateXY(DVec2d translation)
     {
     Placement3d placement = GetPlacement();
     DVec3d vec3d = DVec3d::From(translation.x, translation.y, 0.0);
-    GeometryUtils::TranslatePlacementXY(placement, vec3d);
+    DgnGeometryUtils::TranslatePlacementXY(placement, vec3d);
     SetPlacement(placement);
     return BentleyStatus::SUCCESS;
     }
@@ -186,7 +186,7 @@ BentleyStatus GridSurface::_TranslateXY(DVec2d translation)
 BentleyStatus GridSurface::_Translate(DVec3d translation)
     {
     Placement3d placement = GetPlacement();
-    GeometryUtils::TranslatePlacement(placement, translation);
+    DgnGeometryUtils::TranslatePlacement(placement, translation);
     SetPlacement(placement);
     return BentleyStatus::SUCCESS;
     }

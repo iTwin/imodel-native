@@ -88,8 +88,8 @@ GridSurfaceCPtr otherSurface
 )
     {
     bvector<Dgn::IBRepEntityPtr> brepsThis, brepsThat;
-    if (SUCCESS == GeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThis, thisSurface) &&
-        SUCCESS == GeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThat, otherSurface))
+    if (SUCCESS == DgnGeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThis, thisSurface) &&
+        SUCCESS == DgnGeometryUtils::GetIBRepEntitiesFromGeometricElement (brepsThat, otherSurface))
         {
         Dgn::IBRepEntity::EntityType type1 = brepsThis[0]->GetEntityType();
         Dgn::IBRepEntity::EntityType type2 = brepsThat[0]->GetEntityType();
