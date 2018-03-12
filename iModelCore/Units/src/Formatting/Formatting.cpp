@@ -58,39 +58,11 @@ LocaleProperties::LocaleProperties(Json::Value jval)
 LocaleProperties::LocaleProperties(Utf8CP localeName)
 {
     std::locale loc = std::locale(localeName);
-    ImbueLocale("");
-    m_uomSeparator = FormatConstant::BlankString();
-    m_statSeparator = '+';
-    m_minWidth = 0;
-    }
+    const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//----------------------------------------------------------------------------------------
-//void NumericFormatSpec::Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
-void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
-    {
-    m_roundFactor = 0.0;
-    m_presentationType = presType;
-    m_signOption = signOpt;
-    m_formatTraits = formatTraits;
-    m_barType = FractionBarType::Diagonal;
-    if (PresentationType::Fractional == m_presentationType)
-        {
-        m_decPrecision = FormatConstant::DefaultDecimalPrecision();
-        m_fractPrecision = Utils::FractionalPrecisionByDenominator(precision);
-        }
-    else
-        {
-        m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
-        m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
-        }
-
-    ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
-    m_uomSeparator = FormatConstant::BlankString();
-    m_statSeparator = '+';
-    m_minWidth = 0;
-    }
+    m_decimalSeparator = myfacet.decimal_point();
+    m_thousandsSeparator = myfacet.thousands_sep();
+}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
@@ -113,6 +85,10 @@ bool NumericFormatSpec::ImbueLocaleProperties(LocalePropertiesCR locProp)
     m_decimalSeparator = locProp.GetDecimalSeparator();
     m_thousandsSeparator = locProp.GetThousandSeparator();
     return true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 LocaleProperties LocaleProperties::DefaultAmerican()
 {
@@ -757,6 +733,7 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
         m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
         }
 
+    ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
@@ -775,13 +752,15 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_formatTraits = FormatConstant::DefaultFormatTraits();
     m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
     m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
-    m_barType = FractionBarType::Diagonal;
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
+    m_barType = FractionBarType::Diagonal;
+    ImbueLocale("");
     m_uomSeparator = FormatConstant::BlankString();
     m_statSeparator = '+';
     m_minWidth = 0;
     }
+
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
@@ -798,7 +777,7 @@ void NumericFormatSpec::TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::FormatIntegerSimple (int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero)
+int NumericFormatSpec::FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero)
     {
     char sign = '+';
     char buf[64];
