@@ -2087,8 +2087,8 @@ static int execSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
   while( SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
     const char *zSubSql = (const char*)sqlite3_column_text(pStmt,0);
     assert( sqlite3_strnicmp(zSql,"SELECT",6)==0 );
-    if( zSubSql ){
-      assert( zSubSql[0]!='S' );
+    assert( sqlite3_strnicmp(zSubSql,"SELECT",6)!=0 || CORRUPT_DB );
+    if( zSubSql && zSubSql[0]!='S' ){
       rc = execSql(db, pzErrMsg, zSubSql);
       if( rc!=SQLITE_OK ) break;
     }
@@ -5626,7 +5626,15 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
       if( sqlite3ExprIsVector(pX->pRight) ){
         r1 = rTemp = sqlite3GetTempReg(pParse);
         codeExprOrVector(pParse, pX->pRight, r1, 1);
-        op = aMoveOp[(pX->op - TK_GT) | 0x0001];
+        testcase( pX->op==TK_GT );
+        testcase( pX->op==TK_GE );
+        testcase( pX->op==TK_LT );
+        testcase( pX->op==TK_LE );
+        op = aMoveOp[((pX->op - TK_GT - 1) & 0x3) | 0x1];
+        assert( pX->op!=TK_GT || op==OP_SeekGE );
+        assert( pX->op!=TK_GE || op==OP_SeekGE );
+        assert( pX->op!=TK_LT || op==OP_SeekLE );
+        assert( pX->op!=TK_LE || op==OP_SeekLE );
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pX->pRight, &rTemp);
         disableTerm(pLevel, pStart);
@@ -6401,6 +6409,12 @@ SQLITE_PRIVATE Bitmask sqlite3WhereCodeOneLoopStart(
                     WO_EQ|WO_IN|WO_IS, 0);
     if( pAlt==0 ) continue;
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
+    if( (pAlt->eOperator & WO_IN) 
+     && (pAlt->pExpr->flags & EP_xIsSelect)
+     && (pAlt->pExpr->x.pSelect->pEList->nExpr>1)
+    ){
+      continue;
+    }
     testcase( pAlt->eOperator & WO_EQ );
     testcase( pAlt->eOperator & WO_IS );
     testcase( pAlt->eOperator & WO_IN );
@@ -7315,6 +7329,9 @@ static Bitmask exprSelectUsage(WhereMaskSet *pMaskSet, Select *pS){
       for(i=0; i<pSrc->nSrc; i++){
         mask |= exprSelectUsage(pMaskSet, pSrc->a[i].pSelect);
         mask |= sqlite3WhereExprUsage(pMaskSet, pSrc->a[i].pOn);
+        if( pSrc->a[i].fg.isTabFunc ){
+          mask |= sqlite3WhereExprListUsage(pMaskSet, pSrc->a[i].u1.pFuncArg);
+        }
       }
     }
     pS = pS->pPrior;
@@ -7727,7 +7744,7 @@ static void exprAnalyze(
       exprAnalyze(pSrc, pWC, idxNew);
     }
     pTerm = &pWC->a[idxTerm];
-    pTerm->wtFlags = TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
+    pTerm->wtFlags |= TERM_CODED|TERM_VIRTUAL;  /* Disable the original */
     pTerm->eOperator = 0;
   }
 
@@ -10452,10 +10469,12 @@ static int whereLoopAddBtreeIndex(
       if( iCol==XN_ROWID 
        || (iCol>=0 && nInMul==0 && saved_nEq==pProbe->nKeyCol-1)
       ){
-        if( iCol>=0 && pProbe->uniqNotNull==0 ){
-          pNew->wsFlags |= WHERE_UNQ_WANTED;
-        }else{
+        if( iCol==XN_ROWID || pProbe->uniqNotNull 
+         || (pProbe->nKeyCol==1 && pProbe->onError && eOp==WO_EQ) 
+        ){
           pNew->wsFlags |= WHERE_ONEROW;
+        }else{
+          pNew->wsFlags |= WHERE_UNQ_WANTED;
         }
       }
     }else if( eOp & WO_ISNULL ){
@@ -12602,6 +12621,7 @@ SQLITE_PRIVATE WhereInfo *sqlite3WhereBegin(
   */
   for(ii=0; ii<sWLB.pWC->nTerm; ii++){
     WhereTerm *pT = &sWLB.pWC->a[ii];
+    if( pT->wtFlags & TERM_VIRTUAL ) continue;
     if( pT->prereqAll==0 && (nTabList==0 || exprIsDeterministic(pT->pExpr)) ){
       sqlite3ExprIfFalse(pParse, pT->pExpr, pWInfo->iBreak, SQLITE_JUMPIFNULL);
       pT->wtFlags |= TERM_CODED;
@@ -15060,7 +15080,8 @@ static unsigned int yy_find_shift_action(
 #endif
   do{
     i = yy_shift_ofst[stateno];
-    assert( i>=0 && i+YYNTOKEN<=sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
+    assert( i>=0 );
+    assert( i+YYNTOKEN<=(int)sizeof(yy_lookahead)/sizeof(yy_lookahead[0]) );
     assert( iLookAhead!=YYNOCODE );
     assert( iLookAhead < YYNTOKEN );
     i += iLookAhead;
@@ -15774,6 +15795,10 @@ static void yy_reduce(
       case 34: /* ccons ::= DEFAULT scanpt ID|INDEXED */
 {
   Expr *p = tokenExpr(pParse, TK_STRING, yymsp[0].minor.yy0);
+  if( p ){
+    sqlite3ExprIdToTrueFalse(p);
+    testcase( p->op==TK_TRUEFALSE && sqlite3ExprTruthValue(p) );
+  }
   sqlite3AddDefaultValue(pParse,p,yymsp[0].minor.yy0.z,yymsp[0].minor.yy0.z+yymsp[0].minor.yy0.n);
 }
         break;
@@ -18402,6 +18427,10 @@ SQLITE_PRIVATE int sqlite3Fts3Init(sqlite3 *db);
 */
 /* #include "sqlite3.h" */
 
+#ifdef SQLITE_OMIT_VIRTUALTABLE
+# undef SQLITE_ENABLE_RTREE
+#endif
+
 #if 0
 extern "C" {
 #endif  /* __cplusplus */
@@ -18663,6 +18692,11 @@ SQLITE_API int sqlite3_initialize(void){
       sqlite3GlobalConfig.isPCacheInit = 1;
       rc = sqlite3OsInit();
     }
+#ifdef SQLITE_ENABLE_DESERIALIZE
+    if( rc==SQLITE_OK ){
+      rc = sqlite3MemdbInit();
+    }
+#endif
     if( rc==SQLITE_OK ){
       sqlite3PCacheBufferSetup( sqlite3GlobalConfig.pPage, 
           sqlite3GlobalConfig.szPage, sqlite3GlobalConfig.nPage);
@@ -18695,7 +18729,7 @@ SQLITE_API int sqlite3_initialize(void){
 #ifndef NDEBUG
 #ifndef SQLITE_OMIT_FLOATING_POINT
   /* This section of code's only "output" is via assert() statements. */
-  if ( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK ){
     u64 x = (((u64)1)<<63)-1;
     double y;
     assert(sizeof(x)==8);
@@ -19862,11 +19896,21 @@ SQLITE_PRIVATE const char *sqlite3ErrStr(int rc){
     /* SQLITE_FORMAT      */ 0,
     /* SQLITE_RANGE       */ "column index out of range",
     /* SQLITE_NOTADB      */ "file is not a database",
+    /* SQLITE_NOTICE      */ "notification message",
+    /* SQLITE_WARNING     */ "warning message",
   };
   const char *zErr = "unknown error";
   switch( rc ){
     case SQLITE_ABORT_ROLLBACK: {
       zErr = "abort due to ROLLBACK";
+      break;
+    }
+    case SQLITE_ROW: {
+      zErr = "another row available";
+      break;
+    }
+    case SQLITE_DONE: {
+      zErr = "no more rows available";
       break;
     }
     default: {

@@ -124,9 +124,12 @@ SQLITE_API int sqlite3_enable_shared_cache(int enable){
 */
 #ifdef SQLITE_DEBUG
 int corruptPageError(int lineno, MemPage *p){
-  char *zMsg = sqlite3_mprintf("database corruption page %d of %s",
+  char *zMsg;
+  sqlite3BeginBenignMalloc();
+  zMsg = sqlite3_mprintf("database corruption page %d of %s",
       (int)p->pgno, sqlite3PagerFilename(p->pBt->pPager, 0)
   );
+  sqlite3EndBenignMalloc();
   if( zMsg ){
     sqlite3ReportError(SQLITE_CORRUPT, lineno, zMsg);
   }
@@ -4343,7 +4346,7 @@ SQLITE_PRIVATE int sqlite3BtreeCursorSize(void){
 ** of run-time by skipping the initialization of those elements.
 */
 SQLITE_PRIVATE void sqlite3BtreeCursorZero(BtCursor *p){
-  memset(p, 0, offsetof(BtCursor, iPage));
+  memset(p, 0, offsetof(BtCursor, BTCURSOR_FIRST_UNINIT));
 }
 
 /*
@@ -4386,11 +4389,19 @@ SQLITE_PRIVATE int sqlite3BtreeCloseCursor(BtCursor *pCur){
 ** Using this cache reduces the number of calls to btreeParseCell().
 */
 #ifndef NDEBUG
+  static int cellInfoEqual(CellInfo *a, CellInfo *b){
+    if( a->nKey!=b->nKey ) return 0;
+    if( a->pPayload!=b->pPayload ) return 0;
+    if( a->nPayload!=b->nPayload ) return 0;
+    if( a->nLocal!=b->nLocal ) return 0;
+    if( a->nSize!=b->nSize ) return 0;
+    return 1;
+  }
   static void assertCellInfo(BtCursor *pCur){
     CellInfo info;
     memset(&info, 0, sizeof(info));
     btreeParseCell(pCur->pPage, pCur->ix, &info);
-    assert( CORRUPT_DB || memcmp(&info, &pCur->info, sizeof(info))==0 );
+    assert( CORRUPT_DB || cellInfoEqual(&info, &pCur->info) );
   }
 #else
   #define assertCellInfo(x)
@@ -4666,14 +4677,15 @@ static int accessPayload(
     */
     if( (pCur->curFlags & BTCF_ValidOvfl)==0 ){
       int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
-      if( nOvfl>pCur->nOvflAlloc ){
+      if( pCur->aOverflow==0
+       || nOvfl*(int)sizeof(Pgno) > sqlite3MallocSize(pCur->aOverflow)
+      ){
         Pgno *aNew = (Pgno*)sqlite3Realloc(
             pCur->aOverflow, nOvfl*2*sizeof(Pgno)
         );
         if( aNew==0 ){
           return SQLITE_NOMEM_BKPT;
         }else{
-          pCur->nOvflAlloc = nOvfl*2;
           pCur->aOverflow = aNew;
         }
       }
@@ -6187,9 +6199,8 @@ static void freePage(MemPage *pPage, int *pRC){
 }
 
 /*
-** Free any overflow pages associated with the given Cell.  Write the
-** local Cell size (the number of bytes on the original page, omitting
-** overflow) into *pnSize.
+** Free any overflow pages associated with the given Cell.  Store
+** size information about the cell in pInfo.
 */
 static int clearCell(
   MemPage *pPage,          /* The page that contains the Cell */
@@ -7393,7 +7404,7 @@ static int balance_nonroot(
     }
 
     /* Load b.apCell[] with pointers to all cells in pOld.  If pOld
-    ** constains overflow cells, include them in the b.apCell[] array
+    ** contains overflow cells, include them in the b.apCell[] array
     ** in the correct spot.
     **
     ** Note that when there are multiple overflow cells, it is always the
@@ -10878,6 +10889,51 @@ SQLITE_PRIVATE int sqlite3VdbeCheckMemInvariants(Mem *p){
 }
 #endif
 
+#ifdef SQLITE_DEBUG
+/*
+** Check that string value of pMem agrees with its integer or real value.
+**
+** A single int or real value always converts to the same strings.  But
+** many different strings can be converted into the same int or real.
+** If a table contains a numeric value and an index is based on the
+** corresponding string value, then it is important that the string be
+** derived from the numeric value, not the other way around, to ensure
+** that the index and table are consistent.  See ticket
+** https://www.sqlite.org/src/info/343634942dd54ab (2018-01-31) for
+** an example.
+**
+** This routine looks at pMem to verify that if it has both a numeric
+** representation and a string representation then the string rep has
+** been derived from the numeric and not the other way around.  It returns
+** true if everything is ok and false if there is a problem.
+**
+** This routine is for use inside of assert() statements only.
+*/
+SQLITE_PRIVATE int sqlite3VdbeMemConsistentDualRep(Mem *p){
+  char zBuf[100];
+  char *z;
+  int i, j, incr;
+  if( (p->flags & MEM_Str)==0 ) return 1;
+  if( (p->flags & (MEM_Int|MEM_Real))==0 ) return 1;
+  if( p->flags & MEM_Int ){
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%lld",p->u.i);
+  }else{
+    sqlite3_snprintf(sizeof(zBuf),zBuf,"%!.15g",p->u.r);
+  }
+  z = p->z;
+  i = j = 0;
+  incr = 1;
+  if( p->enc!=SQLITE_UTF8 ){
+    incr = 2;
+    if( p->enc==SQLITE_UTF16BE ) z++;
+  }
+  while( zBuf[j] ){
+    if( zBuf[j++]!=z[i] ) return 0;
+    i += incr;
+  }
+  return 1;
+}
+#endif /* SQLITE_DEBUG */
 
 /*
 ** If pMem is an object with a valid string representation, this routine
@@ -11313,6 +11369,16 @@ SQLITE_PRIVATE double sqlite3VdbeRealValue(Mem *pMem){
 }
 
 /*
+** Return 1 if pMem represents true, and return 0 if pMem represents false.
+** Return the value ifNull if pMem is NULL.  
+*/
+SQLITE_PRIVATE int sqlite3VdbeBooleanValue(Mem *pMem, int ifNull){
+  if( pMem->flags & MEM_Int ) return pMem->u.i!=0;
+  if( pMem->flags & MEM_Null ) return ifNull;
+  return sqlite3VdbeRealValue(pMem)!=0.0;
+}
+
+/*
 ** The MEM structure is already a MEM_Real.  Try to also make it a
 ** MEM_Int if we can.
 */
@@ -11367,6 +11433,18 @@ SQLITE_PRIVATE int sqlite3VdbeMemRealify(Mem *pMem){
   return SQLITE_OK;
 }
 
+/* Compare a floating point value to an integer.  Return true if the two
+** values are the same within the precision of the floating point value.
+**
+** For some versions of GCC on 32-bit machines, if you do the more obvious
+** comparison of "r1==(double)i" you sometimes get an answer of false even
+** though the r1 and (double)i values are bit-for-bit the same.
+*/
+static int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
+  double r2 = (double)i;
+  return memcmp(&r1, &r2, sizeof(r1))==0;
+}
+
 /*
 ** Convert pMem so that it has types MEM_Real or MEM_Int or both.
 ** Invalidate any prior representations.
@@ -11386,7 +11464,7 @@ SQLITE_PRIVATE int sqlite3VdbeMemNumerify(Mem *pMem){
     }else{
       i64 i = pMem->u.i;
       sqlite3AtoF(pMem->z, &pMem->u.r, pMem->n, pMem->enc);
-      if( rc==1 && pMem->u.r==(double)i ){
+      if( rc==1 && sqlite3RealSameAsInt(pMem->u.r, i) ){
         pMem->u.i = i;
         MemSetTypeFlag(pMem, MEM_Int);
       }else{
@@ -11869,6 +11947,7 @@ static SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
   assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
               || pVal->db->mallocFailed );
   if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
+    assert( sqlite3VdbeMemConsistentDualRep(pVal) );
     return pVal->z;
   }else{
     return 0;
@@ -11891,6 +11970,7 @@ SQLITE_PRIVATE const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
   assert( (pVal->flags & MEM_RowSet)==0 );
   if( (pVal->flags&(MEM_Str|MEM_Term))==(MEM_Str|MEM_Term) && pVal->enc==enc ){
+    assert( sqlite3VdbeMemConsistentDualRep(pVal) );
     return pVal->z;
   }
   if( pVal->flags&MEM_Null ){
@@ -17672,14 +17752,12 @@ SQLITE_API void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
 SQLITE_API void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_ERROR;
-  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(pCtx->pOut, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 #ifndef SQLITE_OMIT_UTF16
 SQLITE_API void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_ERROR;
-  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(pCtx->pOut, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 #endif
@@ -17785,8 +17863,7 @@ SQLITE_API int sqlite3_result_zeroblob64(sqlite3_context *pCtx, u64 n){
   return SQLITE_OK;
 }
 SQLITE_API void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
-  pCtx->isError = errCode;
-  pCtx->fErrorOrAux = 1;
+  pCtx->isError = errCode ? errCode : -1;
 #ifdef SQLITE_DEBUG
   if( pCtx->pVdbe ) pCtx->pVdbe->rcApp = errCode;
 #endif
@@ -17800,7 +17877,6 @@ SQLITE_API void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
 SQLITE_API void sqlite3_result_error_toobig(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   pCtx->isError = SQLITE_TOOBIG;
-  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(pCtx->pOut, "string or blob too big", -1, 
                        SQLITE_UTF8, SQLITE_STATIC);
 }
@@ -17810,7 +17886,6 @@ SQLITE_API void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   sqlite3VdbeMemSetNull(pCtx->pOut);
   pCtx->isError = SQLITE_NOMEM_BKPT;
-  pCtx->fErrorOrAux = 1;
   sqlite3OomFault(pCtx->pOut->db);
 }
 
@@ -18217,10 +18292,7 @@ SQLITE_API void sqlite3_set_auxdata(
     pAuxData->iAuxArg = iArg;
     pAuxData->pNextAux = pVdbe->pAuxData;
     pVdbe->pAuxData = pAuxData;
-    if( pCtx->fErrorOrAux==0 ){
-      pCtx->isError = 0;
-      pCtx->fErrorOrAux = 1;
-    }
+    if( pCtx->isError==0 ) pCtx->isError = -1;
   }else if( pAuxData->xDeleteAux ){
     pAuxData->xDeleteAux(pAuxData->pAux);
   }
@@ -19750,6 +19822,11 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
     pRec->flags |= MEM_Real;
     if( bTryForInt ) sqlite3VdbeIntegerAffinity(pRec);
   }
+  /* TEXT->NUMERIC is many->one.  Hence, it is important to invalidate the
+  ** string representation after computing a numeric equivalent, because the
+  ** string representation might not be the canonical representation for the
+  ** numeric value.  Ticket [343634942dd54ab57b7024] 2018-01-31. */
+  pRec->flags &= ~MEM_Str;
 }
 
 /*
@@ -20218,7 +20295,7 @@ SQLITE_PRIVATE int sqlite3VdbeExec(
 
     assert( pOp>=aOp && pOp<&aOp[p->nOp]);
 #ifdef VDBE_PROFILE
-    start = sqlite3Hwtime();
+    start = sqlite3NProfileCnt ? sqlite3NProfileCnt : sqlite3Hwtime();
 #endif
     nVmStep++;
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
@@ -21742,18 +21819,8 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
   int v1;    /* Left operand:  0==FALSE, 1==TRUE, 2==UNKNOWN or NULL */
   int v2;    /* Right operand: 0==FALSE, 1==TRUE, 2==UNKNOWN or NULL */
 
-  pIn1 = &aMem[pOp->p1];
-  if( pIn1->flags & MEM_Null ){
-    v1 = 2;
-  }else{
-    v1 = sqlite3VdbeIntValue(pIn1)!=0;
-  }
-  pIn2 = &aMem[pOp->p2];
-  if( pIn2->flags & MEM_Null ){
-    v2 = 2;
-  }else{
-    v2 = sqlite3VdbeIntValue(pIn2)!=0;
-  }
+  v1 = sqlite3VdbeBooleanValue(&aMem[pOp->p1], 2);
+  v2 = sqlite3VdbeBooleanValue(&aMem[pOp->p2], 2);
   if( pOp->opcode==OP_And ){
     static const unsigned char and_logic[] = { 0, 0, 0, 0, 1, 2, 0, 2, 2 };
     v1 = and_logic[v1*3+v2];
@@ -21771,6 +21838,35 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
   break;
 }
 
+/* Opcode: IsTrue P1 P2 P3 P4 *
+** Synopsis: r[P2] = coalesce(r[P1]==TRUE,P3) ^ P4
+**
+** This opcode implements the IS TRUE, IS FALSE, IS NOT TRUE, and
+** IS NOT FALSE operators.
+**
+** Interpret the value in register P1 as a boolean value.  Store that
+** boolean (a 0 or 1) in register P2.  Or if the value in register P1 is 
+** NULL, then the P3 is stored in register P2.  Invert the answer if P4
+** is 1.
+**
+** The logic is summarized like this:
+**
+** <ul> 
+** <li> If P3==0 and P4==0  then  r[P2] := r[P1] IS TRUE
+** <li> If P3==1 and P4==1  then  r[P2] := r[P1] IS FALSE
+** <li> If P3==0 and P4==1  then  r[P2] := r[P1] IS NOT TRUE
+** <li> If P3==1 and P4==0  then  r[P2] := r[P1] IS NOT FALSE
+** </ul>
+*/
+case OP_IsTrue: {               /* in1, out2 */
+  assert( pOp->p4type==P4_INT32 );
+  assert( pOp->p4.i==0 || pOp->p4.i==1 );
+  assert( pOp->p3==0 || pOp->p3==1 );
+  sqlite3VdbeMemSetInt64(&aMem[pOp->p2],
+      sqlite3VdbeBooleanValue(&aMem[pOp->p1], pOp->p3) ^ pOp->p4.i);
+  break;
+}
+
 /* Opcode: Not P1 P2 * * *
 ** Synopsis: r[P2]= !r[P1]
 **
@@ -21781,10 +21877,10 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
 case OP_Not: {                /* same as TK_NOT, in1, out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
-  sqlite3VdbeMemSetNull(pOut);
   if( (pIn1->flags & MEM_Null)==0 ){
-    pOut->flags = MEM_Int;
-    pOut->u.i = !sqlite3VdbeIntValue(pIn1);
+    sqlite3VdbeMemSetInt64(pOut, !sqlite3VdbeBooleanValue(pIn1,0));
+  }else{
+    sqlite3VdbeMemSetNull(pOut);
   }
   break;
 }
@@ -21851,30 +21947,25 @@ case OP_Once: {             /* jump */
 ** is considered true if it is numeric and non-zero.  If the value
 ** in P1 is NULL then take the jump if and only if P3 is non-zero.
 */
+case OP_If:  {               /* jump, in1 */
+  int c;
+  c = sqlite3VdbeBooleanValue(&aMem[pOp->p1], pOp->p3);
+  VdbeBranchTaken(c!=0, 2);
+  if( c ) goto jump_to_p2;
+  break;
+}
+
 /* Opcode: IfNot P1 P2 P3 * *
 **
 ** Jump to P2 if the value in register P1 is False.  The value
 ** is considered false if it has a numeric value of zero.  If the value
 ** in P1 is NULL then take the jump if and only if P3 is non-zero.
 */
-case OP_If:                 /* jump, in1 */
 case OP_IfNot: {            /* jump, in1 */
   int c;
-  pIn1 = &aMem[pOp->p1];
-  if( pIn1->flags & MEM_Null ){
-    c = pOp->p3;
-  }else{
-#ifdef SQLITE_OMIT_FLOATING_POINT
-    c = sqlite3VdbeIntValue(pIn1)!=0;
-#else
-    c = sqlite3VdbeRealValue(pIn1)!=0.0;
-#endif
-    if( pOp->opcode==OP_IfNot ) c = !c;
-  }
+  c = !sqlite3VdbeBooleanValue(&aMem[pOp->p1], !pOp->p3);
   VdbeBranchTaken(c!=0, 2);
-  if( c ){
-    goto jump_to_p2;
-  }
+  if( c ) goto jump_to_p2;
   break;
 }
 
@@ -21935,7 +22026,7 @@ case OP_IfNullRow: {         /* jump */
 ** P2 is the column number for the argument to the sqlite_offset() function.
 ** This opcode does not use P2 itself, but the P2 value is used by the
 ** code generator.  The P1, P2, and P3 operands to this opcode are the
-** as as for OP_Column.
+** same as for OP_Column.
 **
 ** This opcode is only available if SQLite is compiled with the
 ** -DSQLITE_ENABLE_OFFSET_SQL_FUNC option.
@@ -25779,12 +25870,17 @@ case OP_AggStep0: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem+1 - p->nCursor) );
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem+1 - p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
-  pCtx = sqlite3DbMallocRawNN(db, sizeof(*pCtx) + (n-1)*sizeof(sqlite3_value*));
+  pCtx = sqlite3DbMallocRawNN(db, n*sizeof(sqlite3_value*) +
+               (sizeof(pCtx[0]) + sizeof(Mem) - sizeof(sqlite3_value*)));
   if( pCtx==0 ) goto no_mem;
   pCtx->pMem = 0;
+  pCtx->pOut = (Mem*)&(pCtx->argv[n]);
+  sqlite3VdbeMemInit(pCtx->pOut, db, MEM_Null);
   pCtx->pFunc = pOp->p4.pFunc;
   pCtx->iOp = (int)(pOp - aOp);
   pCtx->pVdbe = p;
+  pCtx->skipFlag = 0;
+  pCtx->isError = 0;
   pCtx->argc = n;
   pOp->p4type = P4_FUNCCTX;
   pOp->p4.pCtx = pCtx;
@@ -25795,7 +25891,6 @@ case OP_AggStep: {
   int i;
   sqlite3_context *pCtx;
   Mem *pMem;
-  Mem t;
 
   assert( pOp->p4type==P4_FUNCCTX );
   pCtx = pOp->p4.pCtx;
@@ -25818,26 +25913,28 @@ case OP_AggStep: {
 #endif
 
   pMem->n++;
-  sqlite3VdbeMemInit(&t, db, MEM_Null);
-  pCtx->pOut = &t;
-  pCtx->fErrorOrAux = 0;
-  pCtx->skipFlag = 0;
+  assert( pCtx->pOut->flags==MEM_Null );
+  assert( pCtx->isError==0 );
+  assert( pCtx->skipFlag==0 );
   (pCtx->pFunc->xSFunc)(pCtx,pCtx->argc,pCtx->argv); /* IMP: R-24505-23230 */
-  if( pCtx->fErrorOrAux ){
-    if( pCtx->isError ){
-      sqlite3VdbeError(p, "%s", sqlite3_value_text(&t));
+  if( pCtx->isError ){
+    if( pCtx->isError>0 ){
+      sqlite3VdbeError(p, "%s", sqlite3_value_text(pCtx->pOut));
       rc = pCtx->isError;
     }
-    sqlite3VdbeMemRelease(&t);
+    if( pCtx->skipFlag ){
+      assert( pOp[-1].opcode==OP_CollSeq );
+      i = pOp[-1].p1;
+      if( i ) sqlite3VdbeMemSetInt64(&aMem[i], 1);
+      pCtx->skipFlag = 0;
+    }
+    sqlite3VdbeMemRelease(pCtx->pOut);
+    pCtx->pOut->flags = MEM_Null;
+    pCtx->isError = 0;
     if( rc ) goto abort_due_to_error;
-  }else{
-    assert( t.flags==MEM_Null );
   }
-  if( pCtx->skipFlag ){
-    assert( pOp[-1].opcode==OP_CollSeq );
-    i = pOp[-1].p1;
-    if( i ) sqlite3VdbeMemSetInt64(&aMem[i], 1);
-  }
+  assert( pCtx->pOut->flags==MEM_Null );
+  assert( pCtx->skipFlag==0 );
   break;
 }
 
@@ -26324,7 +26421,8 @@ case OP_VColumn: {
   }
   rc = pModule->xColumn(pCur->uc.pVCur, &sContext, pOp->p2);
   sqlite3VtabImportErrmsg(p, pVtab);
-  if( sContext.isError ){
+  if( sContext.isError>0 ){
+    sqlite3VdbeError(p, "%s", sqlite3_value_text(pDest));
     rc = sContext.isError;
   }
   sqlite3VdbeChangeEncoding(pDest, encoding);
@@ -26589,6 +26687,7 @@ case OP_Function0: {
   pCtx->pFunc = pOp->p4.pFunc;
   pCtx->iOp = (int)(pOp - aOp);
   pCtx->pVdbe = p;
+  pCtx->isError = 0;
   pCtx->argc = n;
   pOp->p4type = P4_FUNCCTX;
   pOp->p4.pCtx = pCtx;
@@ -26623,16 +26722,17 @@ case OP_Function: {
   }
 #endif
   MemSetTypeFlag(pOut, MEM_Null);
-  pCtx->fErrorOrAux = 0;
+  assert( pCtx->isError==0 );
   (*pCtx->pFunc->xSFunc)(pCtx, pCtx->argc, pCtx->argv);/* IMP: R-24505-23230 */
 
   /* If the function returned an error, throw an exception */
-  if( pCtx->fErrorOrAux ){
-    if( pCtx->isError ){
+  if( pCtx->isError ){
+    if( pCtx->isError>0 ){
       sqlite3VdbeError(p, "%s", sqlite3_value_text(pOut));
       rc = pCtx->isError;
     }
     sqlite3VdbeDeleteAuxData(db, &p->pAuxData, pCtx->iOp, pOp->p1);
+    pCtx->isError = 0;
     if( rc ) goto abort_due_to_error;
   }
 
@@ -26674,8 +26774,10 @@ case OP_Function: {
 */
 case OP_Trace:
 case OP_Init: {          /* jump */
-  char *zTrace;
   int i;
+#ifndef SQLITE_OMIT_TRACE
+  char *zTrace;
+#endif
 
   /* If the P4 argument is not NULL, then it must be an SQL comment string.
   ** The "--" string is broken up to prevent false-positives with srcck1.c.
@@ -26792,7 +26894,7 @@ default: {          /* This is really OP_Noop and OP_Explain */
 
 #ifdef VDBE_PROFILE
     {
-      u64 endTime = sqlite3Hwtime();
+      u64 endTime = sqlite3NProfileCnt ? sqlite3NProfileCnt : sqlite3Hwtime();
       if( endTime>start ) pOrigOp->cycles += endTime - start;
       pOrigOp->cnt++;
     }
@@ -31179,10 +31281,16 @@ static int lookupName(
   ** Because no reference was made to outer contexts, the pNC->nRef
   ** fields are not changed in any context.
   */
-  if( cnt==0 && zTab==0 && ExprHasProperty(pExpr,EP_DblQuoted) ){
-    pExpr->op = TK_STRING;
-    pExpr->pTab = 0;
-    return WRC_Prune;
+  if( cnt==0 && zTab==0 ){
+    assert( pExpr->op==TK_ID );
+    if( ExprHasProperty(pExpr,EP_DblQuoted) ){
+      pExpr->op = TK_STRING;
+      pExpr->pTab = 0;
+      return WRC_Prune;
+    }
+    if( sqlite3ExprIdToTrueFalse(pExpr) ){
+      return WRC_Prune;
+    }
   }
 
   /*
@@ -31531,15 +31639,30 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
       break;
     }
+    case TK_IS:
+    case TK_ISNOT: {
+      Expr *pRight;
+      assert( !ExprHasProperty(pExpr, EP_Reduced) );
+      /* Handle special cases of "x IS TRUE", "x IS FALSE", "x IS NOT TRUE",
+      ** and "x IS NOT FALSE". */
+      if( (pRight = pExpr->pRight)->op==TK_ID ){
+        int rc = resolveExprStep(pWalker, pRight);
+        if( rc==WRC_Abort ) return WRC_Abort;
+        if( pRight->op==TK_TRUEFALSE ){
+          pExpr->op2 = pExpr->op;
+          pExpr->op = TK_TRUTH;
+          return WRC_Continue;
+        }
+      }
+      /* Fall thru */
+    }
     case TK_BETWEEN:
     case TK_EQ:
     case TK_NE:
     case TK_LT:
     case TK_LE:
     case TK_GT:
-    case TK_GE:
-    case TK_IS:
-    case TK_ISNOT: {
+    case TK_GE: {
       int nLeft, nRight;
       if( pParse->db->mallocFailed ) break;
       assert( pExpr->pLeft!=0 );
