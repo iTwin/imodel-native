@@ -235,7 +235,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_ServerDoesNotReturnMetaSchema_GetsSc
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_ServerRetursMetaSchema_GetsAllSchemasFromServerButSkipsMetaSchema)
+TEST_F(CachingDataSourceTests, OpenOrCreate_ServerRetursMetaSchema_GetsAllSchemasFromServer)
     {
     auto client = MockWSRepositoryClient::Create();
 
@@ -249,10 +249,10 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_ServerRetursMetaSchema_GetsAllSchema
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
 
-    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(1)
+    EXPECT_CALL(*client, SendGetFileRequest(_, _, _, _, _)).Times(2)
         .WillOnce(Invoke([&] (ObjectIdCR objectId, BeFileNameCR, Utf8StringCR, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "TestSchemaId"), objectId);
+        EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "MetaSchemaId"), objectId);
         return CreateCompletedAsyncTask(WSFileResult());
         }));
 
