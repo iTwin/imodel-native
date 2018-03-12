@@ -3361,7 +3361,9 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
                 originLatLong = wgsOrigin;
                 northLatLong  = wgsNorth;
 
-                // delete datumConverter; // ###TODO leak. Barry gives us a raw heap-allocated pointer, and destructor is protected so can't explicitly delete.
+                // Eww?
+                datumConverter->Destroy();
+                datumConverter = nullptr;
                 }
             }
 
