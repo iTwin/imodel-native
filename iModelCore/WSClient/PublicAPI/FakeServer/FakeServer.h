@@ -13,21 +13,8 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGN
-//This class has methods that are faking each possible Rest Call to iModelHub
-class CentralRepository 
-    {
-    enum Response 
-        {
-        Completed = 1,
-        UnSuccessful = 2,
-        Interrupted = 3
-        };
-    public:
-        static void GrantLock();
-        static void EntertainPullRequest();
-        static void EntertainPushRequest();
-    };
 
+//This class has methods that are faking each possible Rest Call to iModelHub
 class FakeServer 
     {
     public:
