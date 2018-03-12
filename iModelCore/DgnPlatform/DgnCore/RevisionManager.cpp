@@ -691,6 +691,8 @@ BeFileName DgnRevision::BuildRevisionChangesPathname(Utf8String revisionId)
 //---------------------------------------------------------------------------------------
 void DgnRevision::Dump(DgnDbCR dgndb) const
     {
+// Don't log "sensitive" information in production builds.
+#if !defined(PRG)
     LOG.infov("Id : %s", m_id.c_str());
     LOG.infov("ParentId : %s", m_parentId.c_str());
     LOG.infov("Initial ParentId : %s", m_initialParentId.c_str());
@@ -713,6 +715,7 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
         dbSchemaChangeSet.Dump("DDL: ");
 
     fs.Dump("ChangeSet:\n", dgndb, false, 0);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
