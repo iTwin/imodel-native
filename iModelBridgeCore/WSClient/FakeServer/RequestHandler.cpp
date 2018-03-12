@@ -260,12 +260,12 @@ Response RequestHandler::UploadNewSeedFile(Request req)
             st.Prepare(m_db, "Select Name from instances where instanceid = ?");
             st.BindText(1, instanceid, Statement::MakeCopy::No);
 
-            printf("%d\n", st.Step());
+            st.Step();
             Utf8String fileToDelete(st.GetValueText(0));
             fileToDelete += ".bim";
             BeFileName fileDelete(serverFilePath);
             fileDelete.AppendToPath(BeFileName(fileToDelete));
-            printf("%d\n", fileDelete.BeDeleteFile());
+            fileDelete.BeDeleteFile();
 
             st.Finalize();
             
@@ -276,7 +276,7 @@ Response RequestHandler::UploadNewSeedFile(Request req)
             stUpdate.BindText(1, name, Statement::MakeCopy::No);
             stUpdate.BindText(2, instanceid, Statement::MakeCopy::No);
 
-            printf("%d\n", stUpdate.Step());
+            stUpdate.Step();
             stUpdate.Finalize();
             Utf8String contentEmpty("");
             auto content = HttpResponseContent::Create(HttpStringBody::Create(contentEmpty));
@@ -304,7 +304,7 @@ Response RequestHandler::DownloadiModel(Request req)
         st.Prepare(m_db, "Select Name from instances where instanceid = ?");
         st.BindText(1, instanceid, Statement::MakeCopy::No);
 
-        printf("%d\n", st.Step());
+        st.Step();
         
         filetoDownload = st.GetValueText(0);
 
@@ -392,7 +392,7 @@ Response RequestHandler::GetBriefcaseId(Request req)
         propertiesl2[ServerSchema::Property::DownloadUrl] = Utf8String("https://imodelhubqasa01.blob.core.windows.net/imodelhub-").append(iModelId).append("/").append(filetoDownload).append(".bim").c_str();
 
         Utf8String contentToWrite(Json::FastWriter().write(instanceCreation));
-        printf("%s\n", contentToWrite.c_str());
+        
         st.Finalize();
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
@@ -413,10 +413,8 @@ Response RequestHandler::GetiModels(Request req)
     else
         {
         Statement st;
-        printf("%d\n", st.Prepare(m_db, "Select * from instances"));
-        /*printf("%d\n", st.Step());
-        printf("%s\n", st.GetValueText(0));
-        printf("%s\n", st.GetValueText(1));*/
+        st.Prepare(m_db, "Select * from instances");
+        
         DbResult result  = DbResult::BE_SQLITE_ROW;
         Json::Value instancesinfo(Json::objectValue);
         JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
@@ -437,7 +435,7 @@ Response RequestHandler::GetiModels(Request req)
             }
         st.Finalize();
         Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
-        //printf("%s\n", contentToWrite.c_str());
+        
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
@@ -459,9 +457,9 @@ Response RequestHandler::DeleteiModels(Request req)
     if (BeFileNameStatus::Success == FakeServer::DeleteiModel(serverPath, iModelId))
         {
         Statement stDelete;
-        printf("%d\n", stDelete.Prepare(m_db, "Delete from instances where instanceid = ?"));
-        printf("%d\n", stDelete.BindText(1, iModelId, Statement::MakeCopy::No));
-        printf("%d\n", stDelete.Step());
+        stDelete.Prepare(m_db, "Delete from instances where instanceid = ?");
+        stDelete.BindText(1, iModelId, Statement::MakeCopy::No);
+        stDelete.Step();
         stDelete.Finalize();
 
         Json::Value instanceDeletion(Json::objectValue);
@@ -474,7 +472,7 @@ Response RequestHandler::DeleteiModels(Request req)
         JsonValueR properties = instanceAfterChange[ServerSchema::Properties] = Json::objectValue;
 
         Utf8String contentToWrite(Json::FastWriter().write(instanceDeletion));
-        printf("%s\n", contentToWrite.c_str());
+        
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
@@ -488,26 +486,21 @@ Response RequestHandler::CreateFileInstance(Request req)
 Response RequestHandler::PerformGetRequest(Request req)
     {
     Utf8String urlExpected("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
-    //identify the type of request
-    // do the specific operation by passing to the concerned function
-    // build up the response according to the action taken
-    // return response
+    
     bvector<Utf8String> args = ParseUrl(req);
     
-    /*if (args[5] == ServerSchema::Schema::Project)
-    resp = GetProjectSchema(args);*/
+    
     if (!req.GetUrl().CompareTo(urlExpected))
         return RequestHandler::PluginRequest(req);
     if (req.GetUrl().Contains("Repositories/Project") && req.GetUrl().Contains("ProjectScope/iModel"))
         return RequestHandler::GetiModels(req);
     if (req.GetUrl().Contains("https://imodelhubqasa01.blob.core.windows.net/imodelhub"))//detect imodelhub
         return DownloadiModel(req);
-    //get request with iModel--Nr
+    
     return Response();
     }
 Response RequestHandler::PerformOtherRequest(Request req)
     {
-    printf("%s\n", req.GetUrl().c_str());
     Utf8String urlExpected("https://buddi.bentley.com/discovery.asmx");
     Utf8String urlExpected2("https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx");
     Utf8String urlExpected3("https://qa-ims.bentley.com/rest/DelegationSTSService/json/IssueEx");
