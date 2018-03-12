@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimImporter/lib/Readers.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -288,14 +288,14 @@ struct ModelSelectorReader : Reader
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-struct DisplayStyleReader : Reader
+struct DisplayStyleReader : ElementReader
     {
     protected:
         BentleyStatus _Read(Json::Value& object) override;
         Utf8CP _GetElementType() override { return "DisplayStyle"; }
 
     public:
-        using Reader::Reader;
+        using ElementReader::ElementReader;
     };
 
 //---------------------------------------------------------------------------------------

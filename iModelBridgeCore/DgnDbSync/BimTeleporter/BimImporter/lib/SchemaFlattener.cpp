@@ -14,12 +14,26 @@
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool excludeSchema(ECN::ECSchemaCR schema)
+    {
+    return schema.IsStandardSchema() || schema.IsSystemSchema() || schema.IsSupplementalSchema() ||
+        schema.GetName().EqualsI("DgnDbSyncV8") || schema.GetName().EqualsI("BisCore") ||
+        schema.GetName().EqualsIAscii("Generic") || schema.GetName().EqualsIAscii("Functional") ||
+        schema.GetName().StartsWithI("ecdb") || schema.GetName().EqualsIAscii("ECv3ConversionAttributes");
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaFlattener::CopyFlatCustomAttributes(ECN::IECCustomAttributeContainerR targetContainer, ECN::IECCustomAttributeContainerCR sourceContainer)
     {
     for (ECN::IECInstancePtr instance : sourceContainer.GetCustomAttributes(true))
         {
+        if (excludeSchema(instance->GetClass().GetSchema()))
+            continue;
+
         if (instance->GetClass().GetName().Equals("CalculatedECPropertySpecification") && instance->GetClass().GetSchema().GetName().Equals("Bentley_Standard_CustomAttributes"))
             continue;
 
@@ -147,17 +161,6 @@ BentleyStatus SchemaFlattener::CopyFlatClass(ECN::ECClassP& targetClass, ECN::EC
         }
 
     return BSISUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-bool excludeSchema(ECN::ECSchemaCR schema)
-    {
-    return schema.IsStandardSchema() || schema.IsSystemSchema() || schema.IsSupplementalSchema() ||
-        schema.GetName().EqualsI("DgnDbSyncV8") || schema.GetName().EqualsI("BisCore") ||
-        schema.GetName().EqualsIAscii("Generic") || schema.GetName().EqualsIAscii("Functional") ||
-        schema.GetName().StartsWithI("ecdb") || schema.GetName().EqualsIAscii("ECv3ConversionAttributes");
     }
 
 //---------------------------------------------------------------------------------------
@@ -500,6 +503,28 @@ void addDroppedDerivedClass(ECN::ECClassP baseClass, ECN::ECClassP derivedClass)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SchemaFlattener::FindBisBaseClass(ECN::ECClassP targetClass, ECN::ECClassCP sourceClass)
+    {
+    if (excludeSchema(sourceClass->GetSchema()))
+        {
+        ECN::ECSchemaPtr flatBaseSchema = m_flattenedRefs[sourceClass->GetSchema().GetName()];
+        if (!flatBaseSchema.IsValid())
+            return BSIERROR;
+        targetClass->AddBaseClass(*flatBaseSchema->GetClassCP(sourceClass->GetName().c_str()), false, false, false);
+        return BSISUCCESS;
+        }
+    const ECN::ECBaseClassesList& baseClasses = sourceClass->GetBaseClasses();
+    for (ECN::ECClassP sourceBaseClass : baseClasses)
+        {
+        if (BSISUCCESS == FindBisBaseClass(targetClass, sourceBaseClass))
+            return BSISUCCESS;
+        }
+    return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
@@ -616,6 +641,8 @@ BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
                     ECN::ECClassP flatBase = flatBaseSchema->GetClassP(baseClass->GetName().c_str());
                     addDroppedDerivedClass(flatBase, targetClass);
                     }
+                // Drop the immediate base class, but we still need to add the BIS base class
+                FindBisBaseClass(targetClass, sourceClass);
                 }
             if (targetClass->GetClassModifier() == ECN::ECClassModifier::Abstract)
                 verifyBaseClassAbstract(targetClass);
@@ -639,6 +666,8 @@ BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
             for (ECN::ECPropertyCP sourceProperty : sourceClass->GetProperties(true))
                 {
                 ECN::ECPropertyP targetProperty = targetClass->GetPropertyP(sourceProperty->GetName().c_str());
+                if (nullptr == targetProperty) // If we didn't copy over the property because it came from an excluded schema
+                    continue;
                 CopyFlatCustomAttributes(*targetProperty, *sourceProperty);
                 }
             }

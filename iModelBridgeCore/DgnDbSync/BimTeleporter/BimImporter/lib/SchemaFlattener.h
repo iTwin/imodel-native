@@ -23,6 +23,7 @@ struct SchemaFlattener
     BentleyStatus CreateFlatClass(ECN::ECClassP& targetClass, ECN::ECSchemaP flatSchema, ECN::ECClassCP sourceClass);
     BentleyStatus CopyFlatClass(ECN::ECClassP& targetClass, ECN::ECSchemaP flatSchema, ECN::ECClassCP sourceClass);
     BentleyStatus CopyFlattenedProperty(ECN::ECClassP targetClass, ECN::ECPropertyCP sourceProperty);
+    BentleyStatus FindBisBaseClass(ECN::ECClassP targetClass, ECN::ECClassCP sourceClass);
 
     public:
         SchemaFlattener(ECN::ECSchemaReadContextPtr context) : m_schemaReadContext(context) {}

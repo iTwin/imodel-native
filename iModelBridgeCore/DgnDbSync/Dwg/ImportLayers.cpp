@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportLayers.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -192,10 +192,16 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer)
     DgnDbTable::ReplaceInvalidCharacters(name, DgnCategory::GetIllegalCharacters(), '_');
     name.Trim ();
 
-    DictionaryModelR dictionaryModel = db.GetDictionaryModel ();
-    DgnCode         categoryCode = SpatialCategory::CreateCode (dictionaryModel, name.c_str());
+    DefinitionModelP    definitionModel = this->GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == definitionModel)
+        {
+        this->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "SpartialCategory");
+        definitionModel = &db.GetDictionaryModel ();
+        }
 
-    categoryId = DgnCategory::QueryCategoryId (db, categoryCode);
+    DgnCode categoryCode = SpatialCategory::CreateCode (*definitionModel, name.c_str());
+
+    categoryId = SpatialCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
     if (categoryId.IsValid())
         {
         if (LOG_LAYER_IS_SEVERITY_ENABLED (NativeLogging::LOG_TRACE))
@@ -203,7 +209,7 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer)
         }
     else
         {
-        SpatialCategory newCategory (dictionaryModel, name, DgnCategory::Rank::User, Utf8String(layer.GetDescription().c_str()));
+        SpatialCategory newCategory (*definitionModel, name, DgnCategory::Rank::User, Utf8String(layer.GetDescription().c_str()));
 
         newCategory.Insert (appear, &status);
 
@@ -300,14 +306,20 @@ BentleyStatus   DwgImporter::_ImportLayerSection ()
 void            DwgImporter::InitUncategorizedCategory ()
     {
     static Utf8CP name = "0";
-    DictionaryModelR dictionaryModel = m_dgndb->GetDictionaryModel ();
-    DgnCode categoryCode = SpatialCategory::CreateCode (dictionaryModel, name);
-    m_uncategorizedCategoryId = DgnCategory::QueryCategoryId (*m_dgndb, categoryCode);
+    DefinitionModelP    definitionModel = this->GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == definitionModel)
+        {
+        this->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "SpartialCategory");
+        definitionModel = &m_dgndb->GetDictionaryModel ();
+        }
+
+    DgnCode categoryCode = SpatialCategory::CreateCode (*definitionModel, name);
+    m_uncategorizedCategoryId = SpatialCategory::QueryCategoryId (*definitionModel, categoryCode.GetValueUtf8());
 
     if (m_uncategorizedCategoryId.IsValid())
         return;
 
-    SpatialCategory category (dictionaryModel, name, DgnCategory::Rank::Application);
+    SpatialCategory category (*definitionModel, name, DgnCategory::Rank::Application);
     if (!category.Insert(DgnSubCategory::Appearance()).IsValid())
         {
         BeAssert(false);
@@ -344,8 +356,15 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
 
     // create a draw category code & retrieve the category from the db:
     DgnDbR          db = model.GetDgnDb ();
-    DgnCode         code = DrawingCategory::CreateCode (db.GetDictionaryModel(), name.c_str());
-    DgnCategoryId   categoryId = DgnCategory::QueryCategoryId (db, code);
+    DefinitionModelP definitionModel = this->GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == definitionModel)
+        {
+        this->ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "DrawingCategory");
+        definitionModel = &db.GetDictionaryModel();
+        }
+
+    DgnCode         code = DrawingCategory::CreateCode (*definitionModel, name.c_str());
+    DgnCategoryId   categoryId = DrawingCategory::QueryCategoryId (*definitionModel, code.GetValueUtf8());
     if (categoryId.IsValid())
         {
         // a drawing category found - check sub-category:
@@ -377,7 +396,7 @@ DgnCategoryId   DwgImporter::GetOrAddDrawingCategory (DgnSubCategoryId& subCateg
 
     // create a new drawing category:
     DgnDbStatus     status = DgnDbStatus::Success;
-    DrawingCategory category(db.GetDictionaryModel(), name, DgnCategory::Rank::Application, description);
+    DrawingCategory category(*definitionModel, name, DgnCategory::Rank::Application, description);
     if (category.Insert(appear, &status).IsValid() && DgnDbStatus::Success == status)
         {
         categoryId = category.GetCategoryId ();

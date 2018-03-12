@@ -113,6 +113,78 @@ void            DwgImportHost::_DebugPrintf (WCharCP format, ...) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool ResolveProjectWiseDms (WStringR outFile, BeFileNameCR inFile, WStringCR masterPath)
+    {
+    // looks for XML file, refs.prp, on the folder of the master file:
+    BeFileName  refprpFile(masterPath);
+    refprpFile.AppendToPath (L"refs.prp");
+
+    BeXmlStatus status = BEXML_Success;
+    IBeXmlReader::ReadResult result;
+    WString errmsg;
+
+    BeXmlReaderPtr  reader = BeXmlReader::CreateAndReadFromFile (status, refprpFile.c_str(), &errmsg);
+    if (!reader.IsValid() || status != BEXML_Success)
+        return  false;
+
+    // get the xref file name from the input file name:
+    BeFileName xrefName = inFile.GetBaseName ();
+
+    // popup a dir from master file's path:
+    BeFileName baseDir(masterPath);
+    baseDir.PopDir ();
+    baseDir.AppendSeparator ();
+
+    bool    started = false;
+    while ((result = reader->Read()) == IBeXmlReader::READ_RESULT_Success) 
+        {
+        if (reader->GetCurrentNodeType() != IBeXmlReader::NODE_TYPE_Element)
+            continue;
+
+        Utf8String  nodeName;
+        if (BEXML_Success != reader->GetCurrentNodeName(nodeName))
+            break;
+
+        // only care about node "References"
+        if (nodeName.EqualsI("References"))
+            {
+            started = true;
+            continue;
+            }
+
+        // walk through "Reference" nodes and parse and check their attributes:
+        if (started && nodeName.EqualsI("Reference"))
+            {
+            Utf8String  key, value, vaultId, docId;
+            while (BEXML_Success == reader->ReadToNextAttribute(&key, &value))
+                {
+                if (key.EqualsI("VaultID"))
+                    vaultId = value;
+                else if (key.EqualsI("DocID"))
+                    docId = value;
+
+                // if we have got both attribute values we need, stop reading rest of them:
+                if (vaultId.empty() || docId.empty())
+                    continue;
+
+                // build a full path candidate and check its existence
+                outFile = baseDir + WString(vaultId.c_str(), true) + L"_" + WString(docId.c_str(), true) + L"\\" + xrefName;
+                if (BeFileName::DoesPathExist(outFile.c_str()))
+                    return  true;
+
+                // try next node, if any.
+                outFile.clear ();
+                break;
+                }
+            }
+        }
+
+    return  false;    
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, DwgDbDatabaseP dwg)
@@ -132,8 +204,21 @@ bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, D
         return  false;
     
     // if looks like a relative path, try to resolve it
-    if (checkFile.StartsWith(L"..") && BSISUCCESS == BeFileName::ResolveRelativePath(outFile, inFile, basePath.c_str()))
-        return  true;
+    if (checkFile.StartsWith(L".."))
+        {
+        // if it seems like a PW downloaded folder ..\dms, try PW folders:
+        if (checkFile.StartsWith(L"..\\dms"))
+            return  ResolveProjectWiseDms (outFile, checkFile, basePath);
+
+        // otherwise, try resolving a true relative path:
+        BeFileName  resolved;
+        if (BSISUCCESS == BeFileName::ResolveRelativePath(resolved, inFile, basePath.c_str())&& resolved.DoesPathExist())
+            {
+            outFile.assign (resolved);
+            return  true;
+            }
+        // fall through to try other scenarios
+        }
 
     // look for the file on the same folder of the base file
     WString     name, ext;
@@ -148,6 +233,7 @@ bool            DwgImportHost::FindXrefFile (WStringR outFile, WCharCP inFile, D
         outFile.assign (checkFile.c_str());
         return  true;
         }
+
     return  false;
     }
 

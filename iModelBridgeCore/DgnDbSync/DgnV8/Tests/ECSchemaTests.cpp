@@ -1225,6 +1225,9 @@ struct TestVerifier : ISChemaImportVerifier
         }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            01/2018
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECSchemaTests, SkipSchemaUsingVerifier)
     {
     LineUpFiles(L"SkipSchemaWithVerifier.ibim", L"Test3d.dgn", false);
