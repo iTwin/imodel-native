@@ -345,7 +345,7 @@ public:
     UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
     UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
 
-    UNITS_EXPORT static const NumericFormatSpecCR DefaultFormat();
+    UNITS_EXPORT static NumericFormatSpecCR DefaultFormat();
 
     //======================================
     // Data Member Setters/Getters

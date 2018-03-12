@@ -938,7 +938,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
     return majT;
     }
 
-const NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
+NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
     {
     static NumericFormatSpec nfs;
     return nfs;
