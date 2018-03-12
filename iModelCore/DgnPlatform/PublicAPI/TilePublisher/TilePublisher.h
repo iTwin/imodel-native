@@ -362,7 +362,6 @@ protected:
     BeFileName GetTilesetFileName(DgnModelId modelId, ClassifierInfo const* classifier);
     Utf8String GetTilesetURL(DgnModelId modelId, ClassifierInfo const* classifier);
     void WriteModelTileset(TileNodeCR tile);
-    void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId);
     void GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId);
     void ExtractSchedules();
     void ExtractViewSelectors(DgnViewId& defaultViewId, DgnElementIdSet& allModelSelectors, T_CategorySelectorMap& allCategorySelectors, DgnElementIdSet& allDisplayStyles, DgnModelIdSet&   all2dModelIds);

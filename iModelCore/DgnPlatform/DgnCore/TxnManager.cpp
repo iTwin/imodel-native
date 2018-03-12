@@ -179,7 +179,7 @@ bool TxnManager::IsMultiTxnMember(TxnId rowid) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false)
+TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false), m_enableNotifyTxnMonitors(true)
     {
     m_action = TxnAction::None;
 
@@ -703,7 +703,8 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             return OnCommitStatus::Abort;
 
         // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-        T_HOST.GetTxnAdmin()._OnCommit(*this);
+        if (m_enableNotifyTxnMonitors)
+            T_HOST.GetTxnAdmin()._OnCommit(*this);
 
         OnEndValidate();
         }

@@ -554,7 +554,12 @@ BeSQLite::DbResult DgnDb::_OnAfterVerifyProfileVersion()
         }
 
     if (Txns().HasChanges())
-        return SaveChanges("Automatic Profile Upgrade");
+        {
+        Txns().EnableNotifyTxnMontiors(false);
+        DbResult r = SaveChanges("Automatic Profile Upgrade");
+        Txns().EnableNotifyTxnMontiors(true);
+        return r;
+        }
 
     return BE_SQLITE_OK;
     }

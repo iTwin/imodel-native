@@ -156,6 +156,8 @@
 #include "ECSqlStatementIterator.h"
 #include <Bentley/HeapZone.h>
 
+namespace IModelJsNative {struct JsInterop;}
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace dgn_ElementHandler {struct Physical;};
@@ -381,7 +383,7 @@ struct DgnModels : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnModel;
-    friend struct AddonUtils;
+    friend struct IModelJsNative::JsInterop;
     friend struct dgn_TxnTable::Model;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
