@@ -1,16 +1,39 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ECSchema schemaName="FileAccess" nameSpacePrefix="rest_fa" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
     <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECSchemaReference name="Bentley_Standard_Classes" version="01.00" prefix="bsm" />
+    <ECClass typeName="FileAccessKey" description="Single instance file access key." displayLabel="File Access Key" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="UploadConfirmation" description="Class used to POST upload confirmation messages." displayLabel="Upload Confirmation" isDomainClass="True">
+        <ECCustomAttributes>
+            <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
     <ECRelationshipClass typeName="FileAccessKeyTo" >
         <ECCustomAttributes>
             <!-- ECv3 does not support AnyClass relationships -->
             <DropClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
+        <Source cardinality="(0,N)" roleLabel="File access key which applies to instance." polymorphic="True">
+            <Class class="FileAccessKey" />
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="Instance to which file access keys applies." polymorphic="True">
+            <Class class="bsm:AnyClass" />
+        </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="UploadConfirmationInstance" >
         <ECCustomAttributes>
             <!-- ECv3 does not support AnyClass relationships -->
             <DropClass xmlns="ECv3ConversionAttributes.01.00" />
         </ECCustomAttributes>
+        <Source cardinality="(0,1)" roleLabel="Indicates confirmation operation." polymorphic="True">
+            <Class class="UploadConfirmation" />
+        </Source>
+        <Target cardinality="(1,1)" roleLabel="Instance which should be updated." polymorphic="True">
+            <Class class="bsm:AnyClass" />
+        </Target>
     </ECRelationshipClass>
 </ECSchema>
