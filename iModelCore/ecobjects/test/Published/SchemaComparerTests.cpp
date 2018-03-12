@@ -7,14 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "../ECObjectsTestPCH.h"
-#include "../../PublicApi/ECObjects/SchemaComparer.h"
 #include "../TestFixture/TestFixture.h"
+#include <ECObjects\SchemaComparer.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct CompareTestFixture : ECTestFixture 
+struct SchemaCompareTest : ECTestFixture 
     {
     ECSchemaPtr m_firstSchema;
     ECSchemaPtr m_secondSchema;
@@ -23,42 +23,6 @@ struct CompareTestFixture : ECTestFixture
         void CreateFirstSchema() {EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_firstSchema, "TestSchema", "ts", 1, 0, 0));}
         void CreateSecondSchema() {EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_secondSchema, "TestSchema", "ts", 1, 0, 0));}
     };
-
-struct SchemaCompareTest : CompareTestFixture
-    {
-    ECSchemaReadContextPtr   m_schemaContext;
-    SearchPathSchemaFileLocaterPtr m_schemaLocater;
-
-    protected:
-        void SetUp() override;
-        void TearDown() override;
-    };
-
-//=======================================================================================
-//! SchemaCompareTest
-//=======================================================================================
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    09/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-void SchemaCompareTest::SetUp()
-    {
-    CompareTestFixture::SetUp();
-    bvector<WString> searchPaths;
-    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
-    m_schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
-    m_schemaContext = ECSchemaReadContext::CreateContext();
-    m_schemaContext->AddSchemaLocater(*m_schemaLocater);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    09/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-void SchemaCompareTest::TearDown()
-    {
-    m_schemaContext->RemoveSchemaLocater(*m_schemaLocater);
-    CompareTestFixture::TearDown();
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                      03/2018
