@@ -8,13 +8,13 @@
 #include "RoadRailAlignmentInternal.h"
 #include <RoadRailAlignment/AlignmentReferent.h>
 
-HANDLER_DEFINE_MEMBERS(AlignmentReferentElementHandler)
+HANDLER_DEFINE_MEMBERS(LinearlyLocatedReferentElementHandler)
 HANDLER_DEFINE_MEMBERS(AlignmentStationHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentReferentElement::AlignmentReferentElement(CreateParams const& params, double distanceAlong) :
+LinearlyLocatedReferentElement::LinearlyLocatedReferentElement(CreateParams const& params, double distanceAlong) :
     T_Super(params), ILinearlyLocatedSingleAt(distanceAlong)
     {
     }

@@ -64,7 +64,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_CLASS_AlignmentCategoryModel                           "AlignmentCategoryModel"
 #define BRRA_CLASS_AlignmentModel                                   "AlignmentModel"
 #define BRRA_CLASS_AlignmentProfileViewDefinition                   "AlignmentProfileViewDefinition"
-#define BRRA_CLASS_AlignmentReferentElement                         "AlignmentReferentElement"
+#define BRRA_CLASS_LinearlyLocatedReferentElement                         "LinearlyLocatedReferentElement"
 #define BRRA_CLASS_AlignmentStation                                 "AlignmentStation"
 #define BRRA_CLASS_AlignmentXSViewDefinition                        "AlignmentXSViewDefinition"
 #define BRRA_CLASS_HorizontalAlignment                              "HorizontalAlignment"
@@ -147,7 +147,7 @@ ROADRAILALIGNMENT_TYPEDEFS(AlignmentCategoryModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentProfileViewDefinition)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentReferentElement)
+ROADRAILALIGNMENT_TYPEDEFS(LinearlyLocatedReferentElement)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentStation)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentXSViewDefinition)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignment)
