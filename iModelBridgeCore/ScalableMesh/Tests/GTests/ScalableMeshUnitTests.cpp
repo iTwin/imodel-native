@@ -639,6 +639,44 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestDrapePoints, IntersectRay)
 {
+    auto myScalableMesh = OpenMesh();
+    for (size_t i = 0; i < GetData().size(); ++i)
+    {
+        DPoint3d sourcePt = GetData()[i];
+        DPoint3d result = sourcePt;
+
+        DPoint3d expectedResult = GetResult().front();
+        for (auto&pt : GetResult())
+            if (fabs(pt.x - sourcePt.x) < 1e-6 && fabs(pt.y - sourcePt.y)< 1e-6)
+                expectedResult = pt;
+        DVec3d direction = DVec3d::From(0, 0, -1);
+        ASSERT_EQ(true, myScalableMesh->GetDTMInterface()->GetDTMDraping()->IntersectRay(result, direction, sourcePt));
+        EXPECT_EQ(fabs(result.z - expectedResult.z) < 1e-6, true);
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePoints, IntersectRayMultipleHits)
+{
+    auto myScalableMesh = OpenMesh();
+    for (size_t i = 0; i < GetData().size(); ++i)
+    {
+        DPoint3d sourcePt = GetData()[i];
+        DPoint3d result = sourcePt;
+
+        DPoint3d expectedResult = GetResult().front();
+        for (auto&pt : GetResult())
+            if (fabs(pt.x - sourcePt.x) < 1e-6 && fabs(pt.y - sourcePt.y)< 1e-6)
+                expectedResult = pt;
+        DVec3d direction = DVec3d::From(0, 0, -1);
+        bvector<DTMRayIntersection> results;
+        ASSERT_EQ(true, myScalableMesh->GetDTMInterface()->GetDTMDraping()->IntersectRay(results, direction, sourcePt));
+        ASSERT_EQ(results.size(),1);
+        ASSERT_TRUE(results[0].isOnMesh);
+        EXPECT_EQ(fabs(results[0].point.z - expectedResult.z) < 1e-6, true);
+    }
 }
 
 /*---------------------------------------------------------------------------------**//**
