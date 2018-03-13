@@ -121,7 +121,7 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
             {
             if(3 == ref.second->GetOriginalECXmlVersionMajor() && 2 == ref.second->GetOriginalECXmlVersionMinor())
                 {
-                LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", ref.first.GetFullSchemaName());
+                LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", ref.first.GetFullSchemaName().c_str());
                 schema.m_refSchemaList.erase(schema.m_refSchemaList.find(ref.first));
                 }
             }

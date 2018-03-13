@@ -3228,11 +3228,7 @@ private:
             return ECObjectsStatus::Error;
         return ECObjectsStatus::Success;
         }
-
-    template<typename T> ECObjectsStatus Add(T* toAdd, ECSchemaElementType unitType) {;}
-    template<> ECObjectsStatus Add<UnitSystem>(UnitSystemP toAdd, ECSchemaElementType unitType) {return AddToMap<UnitSystem, UnitSystemMap>(toAdd, &m_unitSystemMap, unitType);}
-    template<> ECObjectsStatus Add<Phenomenon>(PhenomenonP toAdd, ECSchemaElementType unitType) {return AddToMap<Phenomenon, PhenomenonMap>(toAdd, &m_phenomenonMap, unitType);}
-    template<> ECObjectsStatus Add<ECUnit>(ECUnitP toAdd, ECSchemaElementType unitType) {return AddToMap<ECUnit, UnitMap>(toAdd, &m_unitMap, unitType);}
+    template<typename T> ECObjectsStatus Add(T* toAdd, ECSchemaElementType unitType);
 
     template<typename T, typename T_MAP>
     ECObjectsStatus DeleteFromMap(T& child, T_MAP* map)
@@ -3245,11 +3241,7 @@ private:
         delete &child;
         return ECObjectsStatus::Success;
         }
-
-    template<typename T> ECObjectsStatus Delete(T& toDelete) {;}
-    template<> ECObjectsStatus Delete<UnitSystem>(UnitSystemR toDelete) {return DeleteFromMap<UnitSystem, UnitSystemMap>(toDelete, &m_unitSystemMap);}
-    template<> ECObjectsStatus Delete<Phenomenon>(PhenomenonR toDelete) {return DeleteFromMap<Phenomenon, PhenomenonMap>(toDelete, &m_phenomenonMap);}
-    template<> ECObjectsStatus Delete<ECUnit>(ECUnitR toDelete) {return DeleteFromMap<ECUnit, UnitMap>(toDelete, &m_unitMap);}
+    template<typename T> ECObjectsStatus Delete(T& toDelete);
 
     template<typename T, typename T_MAP>
     T* GetFromMap(Utf8CP name, T_MAP const* map) const
@@ -3259,11 +3251,7 @@ private:
             return iter->second;
         return nullptr;
         }
-
-    template<typename T> T* Get(Utf8CP name) const {;}
-    template<> UnitSystemP Get<UnitSystem>(Utf8CP name) const {return GetFromMap<UnitSystem, UnitSystemMap>(name, &m_unitSystemMap);}
-    template<> PhenomenonP Get<Phenomenon>(Utf8CP name) const {return GetFromMap<Phenomenon, PhenomenonMap>(name, &m_phenomenonMap);}
-    template<> ECUnitP Get<ECUnit>(Utf8CP name) const {return GetFromMap<ECUnit, UnitMap>(name, &m_unitMap);}
+    template<typename T> T* Get(Utf8CP name) const;
 
 protected:
     SchemaUnitContext(ECSchemaCR schema) : m_schema(schema), m_unitSystemContainer(m_unitSystemMap),
@@ -3400,19 +3388,7 @@ private:
         }
 
     template<typename T>
-    ECObjectsStatus DeleteUnitType(T& child)
-        {
-        // NOTE: This is probably a bad idea. Need to make a copy of the name, because it will be destructed in the following call to
-        // SchemaUnitContext. However, it will still be needed after to make sure it is removed from serialization order.
-        Utf8String name = child.GetName().c_str();
-
-        ECObjectsStatus status = m_unitsContext.Delete<T>(child);
-        if (ECObjectsStatus::Success != status)
-            return status;
-
-        m_serializationOrder.RemoveElement(name.c_str());
-        return ECObjectsStatus::Success;
-        }
+    ECObjectsStatus DeleteUnitType(T& child);
 
     template<typename T, typename T_MAP>
     T* GetSchemaChild(Utf8CP name, T_MAP* map)
@@ -3512,15 +3488,15 @@ public:
 
     UnitSystemContainerCR GetUnitSystems() const {return m_unitsContext.GetUnitSystems();} //!< Returns an iterable container of UnitSystems sorted by name.
     uint32_t GetUnitSystemCount() const {return m_unitsContext.GetUnitSystemCount();} //!< Gets the number of UnitSystems in the schema.
-    ECObjectsStatus DeleteUnitSystem(UnitSystemR unitSystem) {return DeleteUnitType<UnitSystem>(unitSystem);} //!< Removes a UnitSystem from this schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteUnitSystem(UnitSystemR unitSystem);//!< Removes a UnitSystem from this schema.
 
     PhenomenonContainerCR GetPhenomena() const {return m_unitsContext.GetPhenomena();} //!< Returns an iterable container of Phenomena sorted by name.
     uint32_t GetPhenomenonCount() const {return m_unitsContext.GetPhenomenonCount();} //!< Gets the number of Phenomena in the schema.
-    ECObjectsStatus DeletePhenomenon(PhenomenonR phenomenon) {return DeleteUnitType<Phenomenon>(phenomenon);}//!< Removes a Phenomenon from this schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeletePhenomenon(PhenomenonR phenomenon);//!< Removes a Phenomenon from this schema.
 
     UnitContainerCR GetUnits() const {return m_unitsContext.GetUnits();} //!< Returns an iterable container of ECUnits sorted by name.
     uint32_t GetUnitCount() const {return m_unitsContext.GetUnitCount();} //!< Gets the number of ECUnit in the schema.
-    ECObjectsStatus DeleteUnit(ECUnitR unit) {return DeleteUnitType<ECUnit>(unit);} //!< Removes a ECUnit from this schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteUnit(ECUnitR unit); //!< Removes a ECUnit from this schema.
     ECObjectsStatus DeleteInvertedUnit(ECUnitR unit) {return DeleteUnit(unit);} //!< Removes an inverted ECUnit from this schema.
     ECObjectsStatus DeleteConstant(ECUnitR constant) {return DeleteUnit(constant);} //!< Removes a constant from this schema.
 
@@ -3789,7 +3765,7 @@ public:
     //! Get a unit system by name within the context of this schema.
     //! @param[in]  name     The name of the unit system to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::UnitSystem if the named unit system exists in within the current schema; otherwise, nullptr
-    UnitSystemP GetUnitSystemP(Utf8CP name) const {return m_unitsContext.Get<UnitSystem>(name);}
+    ECOBJECTS_EXPORT UnitSystemP GetUnitSystemP(Utf8CP name) const;
 
     //! Get a Phenomenon by name within the context of this schema.
     //! @param[in]  name     The name of the phenomenon to lookup.  This must be an unqualified (short) name.
@@ -3799,7 +3775,7 @@ public:
     //! Get a Phenomenon by name within the context of this schema.
     //! @param[in]  name     The name of the phenomenon to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::Phenomenon if the named phenomenon exists in within the current schema; otherwise, nullptr
-    PhenomenonP GetPhenomenonP(Utf8CP name) const {return m_unitsContext.Get<Phenomenon>(name);}
+    ECOBJECTS_EXPORT PhenomenonP GetPhenomenonP(Utf8CP name) const;
 
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
@@ -3809,7 +3785,7 @@ public:
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
-    ECUnitP GetUnitP(Utf8CP name) const {return m_unitsContext.Get<ECUnit>(name);}
+    ECOBJECTS_EXPORT ECUnitP GetUnitP(Utf8CP name) const;
 
     //! Get an inverted ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.

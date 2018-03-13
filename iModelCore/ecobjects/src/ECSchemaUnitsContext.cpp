@@ -46,6 +46,30 @@ SchemaUnitContext::~SchemaUnitContext()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
+template<typename T> ECObjectsStatus SchemaUnitContext::Add(T* toAdd, ECSchemaElementType unitType) {;}
+template<> ECObjectsStatus SchemaUnitContext::Add<UnitSystem>(UnitSystemP toAdd, ECSchemaElementType unitType) {return AddToMap<UnitSystem, UnitSystemMap>(toAdd, &m_unitSystemMap, unitType);}
+template<> ECObjectsStatus SchemaUnitContext::Add<Phenomenon>(PhenomenonP toAdd, ECSchemaElementType unitType) {return AddToMap<Phenomenon, PhenomenonMap>(toAdd, &m_phenomenonMap, unitType);}
+template<> ECObjectsStatus SchemaUnitContext::Add<ECUnit>(ECUnitP toAdd, ECSchemaElementType unitType) {return AddToMap<ECUnit, UnitMap>(toAdd, &m_unitMap, unitType);}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+template<typename T> ECObjectsStatus SchemaUnitContext::Delete(T& toDelete) {;}
+template<> ECObjectsStatus SchemaUnitContext::Delete<UnitSystem>(UnitSystemR toDelete) {return DeleteFromMap<UnitSystem, UnitSystemMap>(toDelete, &m_unitSystemMap);}
+template<> ECObjectsStatus SchemaUnitContext::Delete<Phenomenon>(PhenomenonR toDelete) {return DeleteFromMap<Phenomenon, PhenomenonMap>(toDelete, &m_phenomenonMap);}
+template<> ECObjectsStatus SchemaUnitContext::Delete<ECUnit>(ECUnitR toDelete) {return DeleteFromMap<ECUnit, UnitMap>(toDelete, &m_unitMap); }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+template<typename T> T* SchemaUnitContext::Get(Utf8CP name) const {;}
+template<> UnitSystemP SchemaUnitContext::Get<UnitSystem>(Utf8CP name) const {return GetFromMap<UnitSystem, UnitSystemMap>(name, &m_unitSystemMap);}
+template<> PhenomenonP SchemaUnitContext::Get<Phenomenon>(Utf8CP name) const {return GetFromMap<Phenomenon, PhenomenonMap>(name, &m_phenomenonMap);}
+template<> ECUnitP SchemaUnitContext::Get<ECUnit>(Utf8CP name) const {return GetFromMap<ECUnit, UnitMap>(name, &m_unitMap);}
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
 ECUnitP SchemaUnitContext::_LookupUnitP(Utf8CP name) const
     {
     Utf8String unitAlias;

@@ -1845,6 +1845,72 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
     return ECObjectsStatus::SchemaNotFound;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+template<typename T>
+ECObjectsStatus ECSchema::DeleteUnitType(T& child)
+    {
+    // NOTE: This is probably a bad idea. Need to make a copy of the name, because it will be destructed in the following call to
+    // SchemaUnitContext. However, it will still be needed after to make sure it is removed from serialization order.
+    Utf8String name = child.GetName().c_str();
+
+    ECObjectsStatus status = m_unitsContext.Delete<T>(child);
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    m_serializationOrder.RemoveElement(name.c_str());
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+UnitSystemP ECSchema::GetUnitSystemP(Utf8CP name) const
+    {
+    return m_unitsContext.Get<UnitSystem>(name);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::DeleteUnitSystem(UnitSystemR unitSystem)
+    {
+    return DeleteUnitType<UnitSystem>(unitSystem);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+PhenomenonP ECSchema::GetPhenomenonP(Utf8CP name) const
+    {
+    return m_unitsContext.Get<Phenomenon>(name);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::DeletePhenomenon(PhenomenonR phenomenon)
+    {
+    return DeleteUnitType<Phenomenon>(phenomenon);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECUnitP ECSchema::GetUnitP(Utf8CP name) const
+    {
+    return m_unitsContext.Get<ECUnit>(name);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus ECSchema::DeleteUnit(ECUnitR unit)
+    {
+    return DeleteUnitType<ECUnit>(unit);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Kyle.Abramowitz                 02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
