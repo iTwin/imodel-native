@@ -56,19 +56,17 @@ BE_JSON_NAME(roll)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+// Arbitrary locale support is inconsistent / missing on other OSes.
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
 TEST(FormattingTest, Preliminary)
     {
     FormattingTestFixture::SetUpL10N();
     LOG.infov("================  Formatting Log ===========================");
 
     // Empirical evidence suggests that Windows wants hyphens, and Unix'ish system want underscores. It's not clear there's an industry standard...
-#if defined(BENTLEYCONFIG_OS_UNIX)
-    FormattingTestFixture::SetLocale("en_US");
-    FormattingTestFixture::SetLocale("de_DE");
-#else
     FormattingTestFixture::SetLocale("en-US");
     FormattingTestFixture::SetLocale("de-DE");
-#endif
+
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
     //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
 
@@ -219,7 +217,8 @@ TEST(FormattingTest, Preliminary)
     EXPECT_FALSE(Utils::IsJsonCandidate(" bbb}  "));
     FormattingTestFixture::TearDownL10N();
     }
-
+#endif
+    
 //#ifdef _WIN32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      11/17
