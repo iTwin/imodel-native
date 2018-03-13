@@ -119,6 +119,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor UsageTracking;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectXmpp;
             WSCLIENT_EXPORT static const UrlDescriptor RecommendationServiceUrl;
+            WSCLIENT_EXPORT static const UrlDescriptor ProjectSharedFederatedUIURL;
             };
     };
 
