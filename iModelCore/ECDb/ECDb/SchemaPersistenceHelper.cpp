@@ -643,7 +643,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR
             return ERROR;
             }
 
-        Utf8String presUnitStr = presUnit.ToText(false);
+        Utf8String presUnitStr = presUnit.ToText();
         if (presUnitStr.empty())
             {
             BeAssert(!presUnitStr.empty());

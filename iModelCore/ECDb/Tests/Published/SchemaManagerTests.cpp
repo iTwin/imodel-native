@@ -1599,12 +1599,12 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
         {
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
-        ASSERT_STREQ("CM(real)", actualKoq.GetPersistenceUnit().ToText(true).c_str());
+        ASSERT_STREQ("CM(DefaultRealU)", actualKoq.GetPersistenceUnit().ToText().c_str());
         ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
         bvector<Formatting::FormatUnitSet> const& actualPresentationUnits = actualKoq.GetPresentationUnitList();
         ASSERT_EQ(2, actualPresentationUnits.size());
-        ASSERT_STREQ("FT(real)", actualPresentationUnits[0].ToText(true).c_str());
-        ASSERT_STREQ("IN(real)", actualPresentationUnits[1].ToText(true).c_str());
+        ASSERT_STREQ("FT(DefaultRealU)", actualPresentationUnits[0].ToText().c_str());
+        ASSERT_STREQ("IN(DefaultRealU)", actualPresentationUnits[1].ToText().c_str());
         };
 
     std::vector<SchemaItem> testSchemas;
@@ -1676,12 +1676,12 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
         {
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDisplayLabel().c_str());
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
-        ASSERT_STREQ("CM(real)", actualKoq.GetPersistenceUnit().ToText(true).c_str());
+        ASSERT_STREQ("CM(DefaultReal)", actualKoq.GetPersistenceUnit().ToText().c_str());
         ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
         bvector<Formatting::FormatUnitSet> const& actualPresentationUnits = actualKoq.GetPresentationUnitList();
         ASSERT_EQ(2, actualPresentationUnits.size());
-        ASSERT_STREQ("FT(real)", actualPresentationUnits[0].ToText(true).c_str());
-        ASSERT_STREQ("IN(real)", actualPresentationUnits[1].ToText(true).c_str());
+        ASSERT_STREQ("FT(DefaultReal)", actualPresentationUnits[0].ToText().c_str());
+        ASSERT_STREQ("IN(DefaultReal)", actualPresentationUnits[1].ToText().c_str());
         };
 
     std::vector<SchemaItem> testSchemas;

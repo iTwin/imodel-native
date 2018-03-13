@@ -586,7 +586,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
 
         if (colName.EqualsI("PersistenceUnit"))
             {
-            ASSERT_STREQ(expectedKoq.GetPersistenceUnit().ToText(false).c_str(), val.GetText()) << "KindOfQuantityDef.PersistenceUnit";
+            ASSERT_STREQ(expectedKoq.GetPersistenceUnit().ToText().c_str(), val.GetText()) << "KindOfQuantityDef.PersistenceUnit";
             continue;
             }
 
@@ -607,7 +607,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
                 size_t i = 0;
                 for (IECSqlValue const& arrayElementVal : val.GetArrayIterable())
                     {
-                    ASSERT_STREQ(expectedKoq.GetPresentationUnitList()[i].ToText(false).c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.PresentationUnits";
+                    ASSERT_STREQ(expectedKoq.GetPresentationUnitList()[i].ToText().c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.PresentationUnits";
                     i++;
                     }
                 }

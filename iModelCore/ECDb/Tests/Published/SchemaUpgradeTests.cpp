@@ -7785,11 +7785,11 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
         EXPECT_STRCASEEQ(description, koq->GetDescription().c_str()) << name;
 
         EXPECT_DOUBLE_EQ(relError, koq->GetRelativeError()) << name;
-        EXPECT_STRCASEEQ(persUnit, koq->GetPersistenceUnit().ToText(false).c_str()) << name;
+        EXPECT_STRCASEEQ(persUnit, koq->GetPersistenceUnit().ToText().c_str()) << name;
         EXPECT_EQ(presUnits.size(), koq->GetPresentationUnitList().size()) << name;
         for (size_t i = 0; i < presUnits.size(); i++)
             {
-            EXPECT_STRCASEEQ(presUnits[i], koq->GetPresentationUnitList()[i].ToText(false).c_str()) << name;
+            EXPECT_STRCASEEQ(presUnits[i], koq->GetPresentationUnitList()[i].ToText().c_str()) << name;
             }
         };
 
