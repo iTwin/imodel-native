@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDomain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -462,7 +462,6 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     if (m_dgndb.IsBriefcase())
         m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
-    // SchemaManager::SchemaImportOptions importOptions = (allowedUpgrades == SchemaUpgradeOptions::DomainUpgradeOptions::CompatibleOnly) ? SchemaManager::SchemaImportOptions::None : SchemaManager::SchemaImportOptions::Poisoning;
     SchemaManager::SchemaImportOptions importOptions = SchemaManager::SchemaImportOptions::None;
     status = DoImportSchemas(importSchemas, importOptions);
     if (SchemaStatus::Success != status)
