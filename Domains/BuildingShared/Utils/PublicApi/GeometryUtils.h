@@ -18,6 +18,12 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 class GeometryUtils
     {
 public:    
+
+    //! @param[in] curve The CurveVector to clone
+    //! @param[in] transform The transform to apply to cloned curve
+    //! @return a "deep copy" with transform applied
+    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr CloneTransformed(CurveVectorCR curve, TransformCR transform);
+
     BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d>   ExtractSingleCurvePoints (CurveVectorCR curve);
     
 

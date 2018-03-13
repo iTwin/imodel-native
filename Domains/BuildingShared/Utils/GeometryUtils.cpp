@@ -13,6 +13,20 @@
 BEGIN_BUILDING_SHARED_NAMESPACE
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+CurveVectorPtr GeometryUtils::CloneTransformed
+(
+    CurveVectorCR curve, 
+    TransformCR transform
+)
+    {
+    CurveVectorPtr transformed = curve.Clone();
+    transformed->TransformInPlace(transform);
+    return transformed;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Jonas.Valiunas                  03/2018
 //---------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr GeometryUtils::GetProfileOnZeroPlane
@@ -26,10 +40,7 @@ CurveVectorCR profile
     DPlane3d surfacePlane;
     bsiTransform_getOriginAndVectors(&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
     Transform transToZeroPlane = Transform::From(0.0, 0.0, -surfacePlane.origin.z);
-
-    CurveVectorPtr transformed = profile.Clone();
-    transformed->TransformInPlace(transToZeroPlane);
-    return transformed;
+    return CloneTransformed(profile, transToZeroPlane);
     }
 
 //---------------------------------------------------------------------------------------
@@ -2063,7 +2074,7 @@ bool GeometryUtils::IsSameGeometry
             if (!geom1.GetBsplineCurveCP()->AlmostEqual(*geom2.GetBsplineCurveCP(), tolerance))
                 return false;
             break;
-#ifndef BUILDING_IRON_BUILD
+#ifndef DGNV8_BUILD
         case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Catenary:
             {
             DCatenary3dPlacement catenary1, catenary2;

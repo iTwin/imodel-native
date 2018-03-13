@@ -2,7 +2,9 @@
 #     $Source: Utils/BuildingUtils.mke $
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
-PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%if defined (DGNV8_BUILD)
+    PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%endif
 %include mdl.mki
 
 AppName = BuildingUtils
@@ -10,8 +12,8 @@ CCompPDBName = $(AppName)
 
 o = $(OutputRootDir)build/ConceptBuilding/BuildingUtils/
 
-%if defined (BUILDING_IRON_BUILD)
-    nameToDefine = BUILDING_IRON_BUILD
+%if defined (DGNV8_BUILD)
+    nameToDefine = DGNV8_BUILD
     %include cdefapnd.mki
 %endif
 
@@ -50,7 +52,7 @@ DLM_NOENTRY = 1
 DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
-%if defined (BUILDING_IRON_BUILD)
+%if defined (DGNV8_BUILD)
     DLM_NO_DLS = 1
     DLM_NO_DEF = 1
 %endif

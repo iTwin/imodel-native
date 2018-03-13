@@ -156,9 +156,16 @@
     </Bindings>
   </Part>
 
-    <!-- BuildingIron parts -->
-    <Part Name="BuildingUtils_ForBuildingIron" BentleyBuildMakeFile="Utils/BuildingUtils.mke" BentleyBuildMakeOptions="-dBUILDING_IRON_BUILD">
-        <SubPart PartName="BuildingSharedApi"/>
+    <!-- DgnV8 parts -->
+    <Part Name="BuildingSharedApi_DgnV8" BentleyBuildMakeFile="BuildingSharedApi.prewire.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
+        <Bindings>
+            <Directory SourceName="PublicApi/BuildingShared" ProductDirectoryName="BuildingSharedIncludes" />
+            <PublicAPI Domain="BuildingShared"/>
+        </Bindings>
+    </Part>
+    
+    <Part Name="BuildingUtils_DgnV8" BentleyBuildMakeFile="Utils/BuildingUtils.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
+        <SubPart PartName="BuildingSharedApi_DgnV8"/>
         <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
