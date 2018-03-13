@@ -16,17 +16,28 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 // CompositeValueSpec Methods
 //
 //===================================================
-
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//---------------------------------------------------------------------------------------
-void CompositeValueSpec::Init()
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+CompositeValueSpec::CompositeValueSpec()
+    : m_type(CompositeSpecType::Undefined)
+    , m_includeZero(true)
+    , m_spacer("")
+    , m_problem(FormatProblemDetail())
     {
     memset(m_ratio, 0, sizeof(m_ratio));
-    m_problem = FormatProblemDetail();
-    m_type = CompositeSpecType::Undefined;
-    m_includeZero = true;
-    m_spacer = "";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
+    : m_type(other.m_type)
+    , m_includeZero(other.m_includeZero)
+    , m_spacer(other.m_spacer)
+    , m_problem(other.m_problem)
+    {
+    memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
     }
 
 //---------------------------------------------------------------------------------------
@@ -184,25 +195,12 @@ Utf8CP CompositeValueSpec::GetUnitName(size_t indx, Utf8CP substitute) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//---------------------------------------------------------------------------------------
-void CompositeValueSpec::Clone(CompositeValueSpecCR other)
-    {
-    // m_unitProxy.Copy(other.m_unitProxy);
-    memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
-    m_problem = other.m_problem;
-    m_type = other.m_type;
-    m_includeZero = other.m_includeZero;
-    m_spacer = Utf8String(other.m_spacer);
-    }
-
-//---------------------------------------------------------------------------------------
 // Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
 CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit)
+    : CompositeValueSpec()
     {
-    Init();
 
     int count = 0;
     if (nullptr != majorUnit)

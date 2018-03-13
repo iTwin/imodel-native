@@ -5,8 +5,14 @@ USING_BENTLEY_FORMATTING
 
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
+//===================================================
+// CompositeValueSpec
+//===================================================
 struct CompositeValueSpecTest : FormattingTestFixture {};
 
+//===================================================
+// CompositeValue
+//===================================================
 struct CompositeValueTest : FormattingTestFixture {};
 
 //--------------------------------------------------------------------------------------

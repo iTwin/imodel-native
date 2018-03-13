@@ -12,16 +12,10 @@
 USING_BENTLEY_FORMATTING
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
-struct FormattingTest : public ::testing::Test
-    {
-    template <typename T, size_t N>
-    static constexpr size_t Countof(T const (&arr)[N]) { return std::extent<T[N]>::value; }
-    };
-
 //===================================================
 // NumericFormatSpec
 //===================================================
-struct NumericFormatSpecTest : public FormattingTest
+struct NumericFormatSpecTest : FormattingTestFixture
     {
     };
 
@@ -53,7 +47,7 @@ struct FormatDoubleTest : public NumericFormatSpecTest
 //===================================================
 // FormatUnitSet
 //===================================================
-struct FormatUnitSetTest : public FormattingTest
+struct FormatUnitSetTest : FormattingTestFixture
     {
     // Method for printing GTest FUS problem description error.
     Utf8String GetTestFusProblemDescription(FormatUnitSetCR fus)
@@ -63,15 +57,9 @@ struct FormatUnitSetTest : public FormattingTest
     };
 
 //===================================================
-// CompositeValueSpec
-//===================================================
-//===================================================
-// CompositeValue
-//===================================================
-//===================================================
 // NamedFormatSpec
 //===================================================
-struct NamedFormatSpecTest : public FormattingTest
+struct NamedFormatSpecTest : FormattingTestFixture
     {
     };
 

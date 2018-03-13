@@ -864,57 +864,30 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval)
         paramName = iter.memberName();
         JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_presentType()) == 0)
-            {
             m_presentationType = Utils::NameToPresentationType(val.asCString());
-            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
-            {
             m_roundFactor = val.asDouble();
-            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_decPrec()) == 0)
-            {
             m_decPrecision = Utils::DecimalPrecisionByIndex(val.asInt64());
-            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_fractPrec()) == 0)
-            {
             m_fractPrecision = Utils::FractionalPrecisionByDenominator(val.asInt64());
-            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_signOpt()) == 0)
-            {
             m_signOption = Utils::NameToSignOption(val.asCString());
-            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_barType()) == 0)
-            {
             m_barType = Utils::NameToFractionBarType(val.asCString());
-            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
-            {
-            str = val.asString();
-            m_decimalSeparator = str.c_str()[0];
-            }
+            m_decimalSeparator = val.asString().c_str()[0];
         else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
-            {
-            str = val.asString();
-            m_thousandsSeparator = str.c_str()[0];
-            }
+            m_thousandsSeparator = val.asString().c_str()[0];
         else if (BeStringUtilities::StricmpAscii(paramName, json_uomSeparator()) == 0)
-            {
             m_uomSeparator = val.asString();
-            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_statSeparator()) == 0)
-            {
-            str = val.asString();
-            m_statSeparator = str.c_str()[0];
-            }
+            m_statSeparator = val.asString().c_str()[0];
         else if (BeStringUtilities::StricmpAscii(paramName, json_minWidth()) == 0)
-            {
             m_minWidth = val.asInt();
-            }
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatTraits()) == 0)
-            {
             SetFormatTraitsFromJson(val);
-            }
-        } // for
+        }
     }
 
 //---------------------------------------------------------------------------------------
