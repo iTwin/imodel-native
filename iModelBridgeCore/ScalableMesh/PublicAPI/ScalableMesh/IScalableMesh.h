@@ -380,8 +380,8 @@ struct IScalableMesh abstract:  IRefCounted
                                                                         const DRange3d&                      extentInTargetGCS) const;
 
         BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
-
-        IScalableMeshEditPtr    GetMeshEditInterface() const;
+                
+        BENTLEY_SM_EXPORT IScalableMeshEditPtr        GetMeshEditInterface() const;
 
         BENTLEY_SM_EXPORT IScalableMeshAnalysisPtr    GetMeshAnalysisInterface();
 
