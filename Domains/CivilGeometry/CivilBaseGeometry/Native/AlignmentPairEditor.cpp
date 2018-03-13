@@ -2441,7 +2441,7 @@ CurveVectorPtr AlignmentPairEditor::MoveBSorES(size_t index, DPoint3dCR toPt, bo
         return nullptr;
 
     AlignmentPI::Type piType = pis[index].GetType();
-    if (AlignmentPI::TYPE_Arc != piType && AlignmentPI::TYPE_SCS != piType)
+    if (AlignmentPI::TYPE_SS != piType && AlignmentPI::TYPE_SCS != piType)
         return nullptr;
 
     if (index == 0 || index >= (pis.size() - 1))
