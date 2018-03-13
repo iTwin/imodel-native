@@ -216,4 +216,13 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
     for (auto entry : db->Elements().MakeAspectIterator(BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)))
         count++;
     EXPECT_EQ(2, count);
+
+    // check the default view: it should be the modelspace viewport and should be a SpatialView named "Model - Active":
+    DgnViewId   viewId = ViewDefinition::QueryDefaultViewId (*db);
+    EXPECT_TRUE (viewId.IsValid()) << "The default view is not set!";
+    ViewDefinitionCPtr  view = ViewDefinition::Get (*db, viewId);
+    EXPECT_TRUE (view.IsValid()) << "The default view is invalid!";
+    EXPECT_TRUE (view->IsSpatialView()) << "The default view is not a SpatialView!";
+    Utf8String  name = view->GetName ();
+    EXPECT_TRUE (name.EqualsI("Model - Active")) << "The default view should be \"Model - Active\"!";
     }
