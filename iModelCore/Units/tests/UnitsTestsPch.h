@@ -15,7 +15,7 @@
 #include <Units/Units.h>
 
 // For now this is in the PrivateAPI, it will be moved into the TestFixture soon
-#include "../../PrivateAPI/Units/UnitRegistry.h"
+#include "../PrivateAPI/Units/UnitRegistry.h"
 
 #define BEGIN_UNITS_UNITTESTS_NAMESPACE BEGIN_BENTLEY_UNITS_NAMESPACE namespace Tests {
 #define END_UNITS_UNITTESTS_NAMESPACE } END_BENTLEY_UNITS_NAMESPACE
