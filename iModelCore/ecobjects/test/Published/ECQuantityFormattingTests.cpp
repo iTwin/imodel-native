@@ -47,20 +47,19 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECQuantityFormattingTests, Preliminary)
     {
-    LOG.error("================  Quantity Formatting Log ===========================");
+    ShowQuantifiedValue("3ft 4in", "real", "IN");
+    ShowQuantifiedValue("3ft 4in", "realu", "IN", "_");
+    ShowQuantifiedValue("3ft4in", "realu", "IN", "_");
+    ShowQuantifiedValue("3ft4 1/8in", "realu", "IN", "_");
+    ShowQuantifiedValue("3ft4 1/8in", "fract16u", "IN", "_");
+    ShowQuantifiedValue("3ft4 1/8in", "fract16", "IN");
 
-    ShowQuantifiedValue("3' 4\"", "real", "IN");
-    ShowQuantifiedValue("3' 4\"", "realu", "IN", "_");
-    ShowQuantifiedValue("3'4\"", "realu", "IN", "_");
-    ShowQuantifiedValue("3'4 1/8\"", "realu", "IN", "_");
-    ShowQuantifiedValue("3'4 1/8\"", "fract16u", "IN", "_");
-    ShowQuantifiedValue("3'4 1/8\"", "fract16", "IN");
     ShowQuantifiedValue("3.5 FT", "fract16", "IN");
     ShowQuantifiedValue("3.6 FT", "real", "IN");
     ShowQuantifiedValue("3.75 FT", "realu", "IN", "-");
-    ShowQuantifiedValue("3 1/3'", "realu", "IN");
-    ShowQuantifiedValue("3 1/3'", "realu", "M");
-    ShowQuantifiedValue("3 1/3'", "realu", "MM");
+    ShowQuantifiedValue("3 1/3ft", "realu", "IN");
+    ShowQuantifiedValue("3 1/3ft", "realu", "M");
+    ShowQuantifiedValue("3 1/3ft", "realu", "MM");
     ShowQuantifiedValue("5:6", "fi8", "MM");
     ShowQuantifiedValue("5:6", "fi8", "IN");
     ShowQuantifiedValue("5:", "fi8", "MM");
@@ -68,7 +67,6 @@ TEST_F(ECQuantityFormattingTests, Preliminary)
     ShowQuantifiedValue(":6", "fi8", "MM");
     ShowQuantifiedValue(":6", "fi8", "IN");
     ShowQuantifiedValue("135:23:11", "dms8", "ARC_DEG");
-    LOG.error("================  End of Quantity Formatting Log  ===========================");
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
