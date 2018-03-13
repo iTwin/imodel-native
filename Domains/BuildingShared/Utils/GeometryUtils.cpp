@@ -26,7 +26,10 @@ CurveVectorCR profile
     DPlane3d surfacePlane;
     bsiTransform_getOriginAndVectors(&localToWorld, &surfacePlane.origin, NULL, NULL, &surfacePlane.normal);
     Transform transToZeroPlane = Transform::From(0.0, 0.0, -surfacePlane.origin.z);
-    return profile.Clone(transToZeroPlane);
+
+    CurveVectorPtr transformed = profile.Clone();
+    transformed->TransformInPlace(transToZeroPlane);
+    return transformed;
     }
 
 //---------------------------------------------------------------------------------------
@@ -151,19 +154,20 @@ DVec3d GeometryUtils::FindTranslationToNearestEndPoint(DPoint3d pointToFit, DSeg
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<DPoint3d> GeometryUtils::ExtractSingleCurvePoints
 (
-    CurveVectorPtr curve
+    CurveVectorCR curve
 )
     {
     bvector<DPoint3d> points;
+    CurveVectorPtr curveCopy = curve.Clone();
 
-    curve->ConsolidateAdjacentPrimitives(true);
-    if (!curve.IsValid())
+    curveCopy->ConsolidateAdjacentPrimitives(true);
+    if (!curveCopy.IsValid())
         return points;
 
-    if (curve->size() == 0)
+    if (curveCopy->size() == 0)
         return points;
 
-    ICurvePrimitivePtr boundaryCurve = curve->at(0);
+    ICurvePrimitivePtr boundaryCurve = curveCopy->at(0);
     if (!boundaryCurve.IsValid())
         return points;
 
@@ -244,7 +248,9 @@ Transform GeometryUtils::GetTransformForMoveOnLine(DVec3dR translation, Transfor
     translation = DVec3d::FromStartEnd(originPoint, newPosition);
 
     DVec3d elementDirection = elementRay.direction;
-    elementDirection.Multiply(toGlobal.Matrix(), elementDirection); //transfer element to global coordinates
+    RotMatrix toGlobalMatrix;
+    toGlobal.GetMatrix(toGlobalMatrix);
+    elementDirection.Multiply(toGlobalMatrix, elementDirection); //transfer element to global coordinates
 
     DVec3d boundingLineVector = DVec3d::FromStartEnd(bound1, bound2);
 
@@ -323,24 +329,24 @@ BentleyStatus GeometryUtils::ResizeLineToClosestPoint(DSegment3dR line, DSegment
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              07/2017
 //---------------------------------------------------------------------------------------
-CurveVectorPtr GeometryUtils::OffsetCurveInnerOuterChildren(CurveVectorCPtr originalCurve, double innerOffset, double outerOffset, bool mergeIntoDifference)
+CurveVectorPtr GeometryUtils::OffsetCurveInnerOuterChildren(CurveVectorCR originalCurve, double innerOffset, double outerOffset, bool mergeIntoDifference)
     {
-    CurveVectorPtr offsetedCurve = CurveVector::Create(originalCurve->GetBoundaryType());
+    CurveVectorPtr offsetedCurve = CurveVector::Create(originalCurve.GetBoundaryType());
 
-    if (CurveVector::BoundaryType::BOUNDARY_TYPE_Inner == originalCurve->GetBoundaryType())
+    if (CurveVector::BoundaryType::BOUNDARY_TYPE_Inner == originalCurve.GetBoundaryType())
         {
         // area offset uses area union/difference to get the offseted area shape, so we will need to convert the shape to outer boundary type first to get the right shape area
-        originalCurve = CurveVector::ReduceToCCWAreas(*originalCurve);
-        offsetedCurve = originalCurve->AreaOffset(innerOffset);
+        CurveVectorPtr ccwCurve = CurveVector::ReduceToCCWAreas(originalCurve);
+        offsetedCurve = ccwCurve->AreaOffset(innerOffset);
         if (!offsetedCurve.IsValid())
             return nullptr;
 
         offsetedCurve->SetBoundaryType(CurveVector::BoundaryType::BOUNDARY_TYPE_Inner);
         }
-    else if (CurveVector::BoundaryType::BOUNDARY_TYPE_Outer == originalCurve->GetBoundaryType())
+    else if (CurveVector::BoundaryType::BOUNDARY_TYPE_Outer == originalCurve.GetBoundaryType())
         {
-        originalCurve = CurveVector::ReduceToCCWAreas(*originalCurve);
-        offsetedCurve = originalCurve->AreaOffset(outerOffset);
+        CurveVectorPtr ccwCurve = CurveVector::ReduceToCCWAreas(originalCurve);
+        offsetedCurve = ccwCurve->AreaOffset(outerOffset);
         if (!offsetedCurve.IsValid())
             return nullptr;
 
@@ -348,10 +354,10 @@ CurveVectorPtr GeometryUtils::OffsetCurveInnerOuterChildren(CurveVectorCPtr orig
         }
     else
         {
-        for (ICurvePrimitivePtr curvePrimitive : *originalCurve)
+        for (ICurvePrimitivePtr curvePrimitive : originalCurve)
             {
-            CurveVectorCPtr child = curvePrimitive->GetChildCurveVectorCP();
-            CurveVectorPtr offsetedChild = OffsetCurveInnerOuterChildren(child, innerOffset, outerOffset)->Clone();
+            CurveVectorCP child = curvePrimitive->GetChildCurveVectorCP();
+            CurveVectorPtr offsetedChild = OffsetCurveInnerOuterChildren(*child, innerOffset, outerOffset)->Clone();
 
             if (offsetedChild.IsValid())
                 offsetedCurve->Add(offsetedChild);
@@ -373,9 +379,9 @@ CurveVectorPtr GeometryUtils::OffsetCurveInnerOuterChildren(CurveVectorCPtr orig
         {
         for (ICurvePrimitivePtr curvePrimitive : *offsetedCurve)
             {
-            CurveVectorCPtr child = curvePrimitive->GetChildCurveVectorCP();
-            if (!child.IsValid())
-                child = offsetedCurve; // if no children, use the actual curve
+            CurveVectorCP child = curvePrimitive->GetChildCurveVectorCP();
+            if (nullptr == child)
+                child = offsetedCurve.get(); // if no children, use the actual curve
 
             if (CurveVector::BoundaryType::BOUNDARY_TYPE_Inner == child->GetBoundaryType())
                 innerUnion = CurveVector::AreaUnion(*innerUnion, *child);
@@ -402,20 +408,20 @@ CurveVectorPtr GeometryUtils::OffsetCurveInnerOuterChildren(CurveVectorCPtr orig
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              06/2017
 //---------------------------------------------------------------------------------------
-DPoint3d GeometryUtils::FindFurthestPoint(CurveVectorCPtr curveVector, DPoint3d point)
+DPoint3d GeometryUtils::FindFurthestPoint(CurveVectorCR curveVector, DPoint3d point)
     {
     DPoint3d furthestPoint = point;
 
     // Project point on curve vector
     CurveLocationDetail hit;
-    curveVector->ClosestPointBounded(point, hit);
+    curveVector.ClosestPointBounded(point, hit);
     point = hit.point;
 
     DEllipse3d arc;
     bvector<DPoint3d> const* lineString;
     CurveVectorCP childCurveVector;
 
-    for (ICurvePrimitivePtr curvePrimitive : *curveVector.get())
+    for (ICurvePrimitivePtr curvePrimitive : curveVector)
         {
         if (curvePrimitive->TryGetArc(arc))
             {
@@ -430,7 +436,7 @@ DPoint3d GeometryUtils::FindFurthestPoint(CurveVectorCPtr curveVector, DPoint3d 
 
             DPoint3d furthestVertex = point;
             for (DPoint3d vertex : vertices)
-                if (furthestVertex.Distance(point) < vertex.Distance(point) && CurveVector::InOutClassification::INOUT_On == curveVector->PointInOnOutXY(vertex))
+                if (furthestVertex.Distance(point) < vertex.Distance(point) && CurveVector::InOutClassification::INOUT_On == curveVector.PointInOnOutXY(vertex))
                     furthestVertex = vertex;
 
             DVec3d centerToPoint = DVec3d::FromStartEnd(arc.center, point);
@@ -447,7 +453,7 @@ DPoint3d GeometryUtils::FindFurthestPoint(CurveVectorCPtr curveVector, DPoint3d 
                     furthestPoint = furthestVertex;
                 }
             else
-                if (furthestPoint.Distance(point) < diameterProjection.Distance(point) && CurveVector::InOutClassification::INOUT_On == curveVector->PointInOnOutXY(diameterProjection))
+                if (furthestPoint.Distance(point) < diameterProjection.Distance(point) && CurveVector::InOutClassification::INOUT_On == curveVector.PointInOnOutXY(diameterProjection))
                     furthestPoint = diameterProjection;
             }
         else if (nullptr != (lineString = curvePrimitive->GetLineStringCP()))
@@ -461,7 +467,7 @@ DPoint3d GeometryUtils::FindFurthestPoint(CurveVectorCPtr curveVector, DPoint3d 
             if (CurveVector::INOUT_Out == childCurveVector->PointInOnOutXY(point))
                 continue;
 
-            DPoint3d furthestChildPoint = FindFurthestPoint(childCurveVector, point);
+            DPoint3d furthestChildPoint = FindFurthestPoint(*childCurveVector, point);
             if (furthestChildPoint.Distance(point) > furthestPoint.Distance(point))
                 furthestPoint = furthestChildPoint;
             }
@@ -661,7 +667,7 @@ DgnExtrusionDetail GeometryUtils::CreateSplineExtrusionDetail(bvector<DPoint3d> 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-bool GeometryUtils::CheckIfLineIntersectsCurveVector(bvector<DSegment3d>& intersections, DSegment3d line, CurveVectorCPtr curveVector)
+bool GeometryUtils::CheckIfLineIntersectsCurveVector(bvector<DSegment3d>& intersections, DSegment3d line, CurveVectorCR curveVector)
     {
     intersections.clear();
 
@@ -671,7 +677,7 @@ bool GeometryUtils::CheckIfLineIntersectsCurveVector(bvector<DSegment3d>& inters
     bvector<DPoint3d> const * lineString;
     CurveVectorCP childCurveVector;
 
-    for (ICurvePrimitivePtr curvePrimitive : *curveVector)
+    for (ICurvePrimitivePtr curvePrimitive : curveVector)
         {
         if (curvePrimitive->TryGetArc(arc))
             {
@@ -704,7 +710,7 @@ bool GeometryUtils::CheckIfLineIntersectsCurveVector(bvector<DSegment3d>& inters
         else if (nullptr != (childCurveVector = curvePrimitive->GetChildCurveVectorCP()))
             {
             bvector<DSegment3d> childIntersections;
-            if (!CheckIfLineIntersectsCurveVector(childIntersections, line, childCurveVector))
+            if (!CheckIfLineIntersectsCurveVector(childIntersections, line, *childCurveVector))
                 continue;
 
             status = true;
@@ -896,7 +902,8 @@ bool GeometryUtils::CheckIfParallelLineSegmentsCoincide(DSegment3dR intersection
     line1.GetRange(range1);
     line2.GetRange(range2);
 
-    DRange3d intersection = DRange3d::FromIntersection(range1, range2, true);
+    DRange3d intersection = DRange3d::NullRange();
+    intersection.IntersectionOf(range1, range2);
 
     if (intersection.IsEmpty() || intersection.IsNull()) // segments do not intersect
         return false;
@@ -924,21 +931,21 @@ bool GeometryUtils::IsPointContainedInRangeToTolerance(DRange3d range, DPoint3d 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-void GeometryUtils::ExtractInnerOuterCurves(bvector<CurveVectorCPtr>& innerCurves, bvector<CurveVectorCPtr>& outerCurves, CurveVectorCPtr source)
+void GeometryUtils::ExtractInnerOuterCurves(bvector<CurveVectorPtr>& innerCurves, bvector<CurveVectorPtr>& outerCurves, CurveVectorCR source)
     {
-    if (CurveVector::BoundaryType::BOUNDARY_TYPE_Outer == source->GetBoundaryType())
-        outerCurves.push_back(source);
-    else if (CurveVector::BoundaryType::BOUNDARY_TYPE_Inner == source->GetBoundaryType())
-        innerCurves.push_back(source);
+    if (CurveVector::BoundaryType::BOUNDARY_TYPE_Outer == source.GetBoundaryType())
+        outerCurves.push_back(source.Clone());
+    else if (CurveVector::BoundaryType::BOUNDARY_TYPE_Inner == source.GetBoundaryType())
+        innerCurves.push_back(source.Clone());
     else
         {
-        for (ICurvePrimitivePtr curvePrimitive : *source.get())
+        for (ICurvePrimitivePtr curvePrimitive : source)
             {
-            CurveVectorCPtr child = curvePrimitive->GetChildCurveVectorCP();
-            if (!child.IsValid())
+            CurveVectorCP child = curvePrimitive->GetChildCurveVectorCP();
+            if (nullptr == child)
                 return;
 
-            ExtractInnerOuterCurves(innerCurves, outerCurves, child);
+            ExtractInnerOuterCurves(innerCurves, outerCurves, *child);
             }
         }
     }
@@ -946,9 +953,9 @@ void GeometryUtils::ExtractInnerOuterCurves(bvector<CurveVectorCPtr>& innerCurve
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-bvector<DPoint3d> GeometryUtils::ExtractLineString(CurveVectorCPtr curveVector)
+bvector<DPoint3d> GeometryUtils::ExtractLineString(CurveVectorCR curveVector)
     {
-    bvector<DPoint3d> const * cpLineString = (*curveVector)[0]->GetLineStringCP();
+    bvector<DPoint3d> const * cpLineString = curveVector[0]->GetLineStringCP();
     if (nullptr == cpLineString)
         return bvector<DPoint3d>();
 
@@ -1158,7 +1165,7 @@ void removeUnneededPoints(bvector<bvector<DPoint3d>>& lineStrings)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-void getCorrectionPointsByClosestIntersection(bvector<DPoint3d>& pointsToAdd, bvector<bvector<DPoint3d>> lineStrings, CurveVectorCPtr walkableShape, DPoint3d source, DPoint3d target)
+void getCorrectionPointsByClosestIntersection(bvector<DPoint3d>& pointsToAdd, bvector<bvector<DPoint3d>> lineStrings, CurveVectorCR walkableShape, DPoint3d source, DPoint3d target)
     {
     DSegment3d closestIntersectingSegment = findClosestLineStringSegmentThatIntersectsWithPath(lineStrings, DSegment3d::From(source, target));
 
@@ -1199,7 +1206,7 @@ void getCorrectionPointsByPointPositionInShapes(bvector<DPoint3d>& pointsToAdd, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-void findPathsNotIntersectingWithLineStringsFromPointToTarget(bvector<bvector<DPoint3d>>& paths, CurveVectorCPtr walkableShape, bvector<bvector<DPoint3d>> lineStrings, DPoint3d target)
+void findPathsNotIntersectingWithLineStringsFromPointToTarget(bvector<bvector<DPoint3d>>& paths, CurveVectorCR walkableShape, bvector<bvector<DPoint3d>> lineStrings, DPoint3d target)
     {
     // Find point with lowest distance
     auto itShortest = findShortestPath(paths.begin(), paths.end(), [&](bvector<DPoint3d> path) {return !path.back().AlmostEqual(target); });
@@ -1242,7 +1249,7 @@ void findPathsNotIntersectingWithLineStringsFromPointToTarget(bvector<bvector<DP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-void removeInnerPoints(bvector<bvector<DPoint3d>>& paths, CurveVectorCPtr walkableShape)
+void removeInnerPoints(bvector<bvector<DPoint3d>>& paths, CurveVectorCR walkableShape)
     {
     bool pointRemoved = true;
     while (pointRemoved)
@@ -1356,9 +1363,9 @@ Transform getTransformToSegmentAsXAxisXY(DSegment3d segment)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-void GeometryUtils::ExtractInnerOuterLineStrings(bvector<bvector<DPoint3d>>& innerLineStrings, bvector<bvector<DPoint3d>>& outerLineStrings, CurveVectorCPtr shape)
+void GeometryUtils::ExtractInnerOuterLineStrings(bvector<bvector<DPoint3d>>& innerLineStrings, bvector<bvector<DPoint3d>>& outerLineStrings, CurveVectorCR shape)
     {
-    bvector<CurveVectorCPtr> innerCurveVectors, outerCurveVectors;
+    bvector<CurveVectorPtr> innerCurveVectors, outerCurveVectors;
     GeometryUtils::ExtractInnerOuterCurves(innerCurveVectors, outerCurveVectors, shape);
 
     innerLineStrings = bvector<bvector<DPoint3d>>(innerCurveVectors.size());
@@ -1367,8 +1374,8 @@ void GeometryUtils::ExtractInnerOuterLineStrings(bvector<bvector<DPoint3d>>& inn
     auto itInnerCurves = innerCurveVectors.begin();
     auto itOuterCurves = outerCurveVectors.begin();
 
-    std::generate(innerLineStrings.begin(), innerLineStrings.end(), [&]() {return GeometryUtils::ExtractLineString(*(itInnerCurves++)); });
-    std::generate(outerLineStrings.begin(), outerLineStrings.end(), [&]() {return GeometryUtils::ExtractLineString(*(itOuterCurves++)); });
+    std::generate(innerLineStrings.begin(), innerLineStrings.end(), [&]() {return GeometryUtils::ExtractLineString(**(itInnerCurves++)); });
+    std::generate(outerLineStrings.begin(), outerLineStrings.end(), [&]() {return GeometryUtils::ExtractLineString(**(itOuterCurves++)); });
 
     // Remove failed linestrings
     auto itRemoveInner = std::remove_if(innerLineStrings.begin(), innerLineStrings.end(), [](bvector<DPoint3d> lineString) {return lineString.empty(); });
@@ -1484,20 +1491,20 @@ bool checkIfLinePositionInTransformedLineStringsIsCorrect(bvector<bvector<DPoint
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-bool GeometryUtils::CheckIfLineIsContainedInPolygonArea(CurveVectorCPtr area, DSegment3d line)
+bool GeometryUtils::CheckIfLineIsContainedInPolygonArea(CurveVectorCR area, DSegment3d line)
     {
-    if (CurveVector::INOUT_Out == area->PointInOnOutXY(line.point[0]) || CurveVector::INOUT_Out == area->PointInOnOutXY(line.point[1]))
+    if (CurveVector::INOUT_Out == area.PointInOnOutXY(line.point[0]) || CurveVector::INOUT_Out == area.PointInOnOutXY(line.point[1]))
         return false; // If either end point is outside the polygon, the line is not contained
 
      // 1. Transform line and curve vector in such way that line would be on X axis: {(x0, y0), (x1, y1)} = T{(0.0, 0.0), (1, 0)} and apply the transformation for the shape
     Transform newCoordinateSystem = getTransformToSegmentAsXAxisXY(line);
 
-    CurveVectorPtr transformedArea = area->Clone();
+    CurveVectorPtr transformedArea = area.Clone();
     transformedArea->TransformInPlace(newCoordinateSystem);
 
     // Convert shape into inner/outer line strings
     bvector<bvector<DPoint3d>> innerLineStrings, outerLineStrings;
-    ExtractInnerOuterLineStrings(innerLineStrings, outerLineStrings, transformedArea);
+    ExtractInnerOuterLineStrings(innerLineStrings, outerLineStrings, *transformedArea);
 
     // For outer line strings, line should be inside it and for all inner line strings, line should be out of it
     bool insideOuters = checkIfLinePositionInTransformedLineStringsIsCorrect(outerLineStrings, line, newCoordinateSystem, CurveVector::INOUT_In, false);
@@ -1535,7 +1542,7 @@ void restoreOriginalPathEnds(bvector<bvector<DPoint3d>>& paths, DPoint3d origina
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-void extractOriginalAndDeviationLineStrings(bvector<bvector<DPoint3d>>& originalLineStrings, bvector<bvector<DPoint3d>>& innerDeviationLineStrings, bvector<bvector<DPoint3d>>& outerDeviationLineStrings, CurveVectorCPtr originalCurve, CurveVectorCPtr deviatedCurve)
+void extractOriginalAndDeviationLineStrings(bvector<bvector<DPoint3d>>& originalLineStrings, bvector<bvector<DPoint3d>>& innerDeviationLineStrings, bvector<bvector<DPoint3d>>& outerDeviationLineStrings, CurveVectorCR originalCurve, CurveVectorCR deviatedCurve)
     {
     bvector<bvector<DPoint3d>> innerOriginal, outerOriginal;
     GeometryUtils::ExtractInnerOuterLineStrings(innerOriginal, outerOriginal, originalCurve);
@@ -1548,22 +1555,22 @@ void extractOriginalAndDeviationLineStrings(bvector<bvector<DPoint3d>>& original
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  07/17
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometryUtils::FindShortestPathBetweenPointsInCurveVector(bvector<DPoint3d>& pathLineString, CurveVectorPtr curveVector, DPoint3d source, DPoint3d destination)
+BentleyStatus GeometryUtils::FindShortestPathBetweenPointsInCurveVector(bvector<DPoint3d>& pathLineString, CurveVectorCR curveVector, DPoint3d source, DPoint3d destination)
     {
-    CurveVectorCPtr walkableShape = GeometryUtils::OffsetCurveInnerOuterChildren(curveVector, EGRESS_CORRECTION, -EGRESS_CORRECTION, true);
+    CurveVectorPtr walkableShape = GeometryUtils::OffsetCurveInnerOuterChildren(curveVector, EGRESS_CORRECTION, -EGRESS_CORRECTION, true);
     if (!walkableShape.IsValid())
         return BentleyStatus::ERROR;
 
     // Method:
     // 1.   Create deviated line strings by extracting them from walkable area
     bvector<bvector<DPoint3d>> innerDeviationLineStrings, outerDeviationLineStrings, originalLineStrings;
-    extractOriginalAndDeviationLineStrings(originalLineStrings, innerDeviationLineStrings, outerDeviationLineStrings, curveVector, walkableShape);
+    extractOriginalAndDeviationLineStrings(originalLineStrings, innerDeviationLineStrings, outerDeviationLineStrings, curveVector, *walkableShape);
 
     // If source and destination points are out of deviated outer line string, use their projections on the line string
     DPoint3d adjustedSource = adjustIfPositionNotCorrect(source, innerDeviationLineStrings, outerDeviationLineStrings);
     DPoint3d adjustedDestination = adjustIfPositionNotCorrect(destination, innerDeviationLineStrings, outerDeviationLineStrings);
 
-    BeAssert(CurveVector::InOutClassification::INOUT_Out != curveVector->PointInOnOutXY(adjustedSource) && CurveVector::InOutClassification::INOUT_Out != curveVector->PointInOnOutXY(adjustedDestination));
+    BeAssert(CurveVector::InOutClassification::INOUT_Out != curveVector.PointInOnOutXY(adjustedSource) && CurveVector::InOutClassification::INOUT_Out != curveVector.PointInOnOutXY(adjustedDestination));
 
     if (!checkIfPointsAreInTheSameSubarea(adjustedSource, adjustedDestination, outerDeviationLineStrings))
         return BentleyStatus::ERROR; // destination and source can't be in different areas
@@ -1574,11 +1581,11 @@ BentleyStatus GeometryUtils::FindShortestPathBetweenPointsInCurveVector(bvector<
     allDeviationLineStrings.insert(allDeviationLineStrings.end(), outerDeviationLineStrings.begin(), outerDeviationLineStrings.end());
 
     bvector<bvector<DPoint3d>> paths = { { adjustedSource } };
-    findPathsNotIntersectingWithLineStringsFromPointToTarget(paths, walkableShape, allDeviationLineStrings, adjustedDestination);
+    findPathsNotIntersectingWithLineStringsFromPointToTarget(paths, *walkableShape, allDeviationLineStrings, adjustedDestination);
 
     // 3.   Remove any inner points in paths. Inner point P is such that if you take points P- and P+ (where P- is point before P and P+ is point after P), 
     //      line {P-, P+} doesn't intersect any line strings
-    removeInnerPoints(paths, walkableShape);
+    removeInnerPoints(paths, *walkableShape);
 
     // 4.   Find the path with shortest length
 
@@ -1652,9 +1659,9 @@ void GeometryUtils::AddVertex(CurveVectorR cv, DPoint3d const& vertex)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas              09/2017
 //--------------+---------------+---------------+---------------+---------------+--------
-void GeometryUtils::LineStringAsWeightedCurve(CurveVectorPtr & curve, double weight)
+void GeometryUtils::LineStringAsWeightedCurve(CurveVectorPtr& curve, double weight)
     {
-    bvector<DPoint3d> lineString = ExtractLineString(curve);
+    bvector<DPoint3d> lineString = ExtractLineString(*curve);
     if (lineString.size() < 2)
         return;
 
@@ -1691,7 +1698,7 @@ void GeometryUtils::LineStringAsWeightedCurve(CurveVectorPtr & curve, double wei
         else
             {
             double rotAngle = dirBefore.AngleToXY(dirAfter) / 2;
-            offsetVec = DVec3d::FromRotateVectorAroundVector(dirBefore, DVec3d::From(0, 0, 1), Angle::FromRadians(rotAngle));
+            offsetVec.RotateXY(dirBefore, rotAngle);
             offsetVec.ScaleToLength((weight / 2) / std::sin(rotAngle));
             }
         DPoint3d toInsert = *itPoint;
@@ -1825,34 +1832,31 @@ bvector<DPoint3d> GeometryUtils::GetCircularArcPoints
 //---------------+---------------+---------------+---------------+---------------+------
 bvector<DPoint3d> GeometryUtils::GetCurvePrimitivePoints
 (
-    ICurvePrimitiveCPtr curvePrimitive,
+    ICurvePrimitiveCR curvePrimitive,
     double maxEdgeLength,
     bool keepSectorArea
 )
     {
-    if (!curvePrimitive.IsValid())
-        return bvector<DPoint3d>();
-
     BeAssert(maxEdgeLength >= 0);
 
-    if (curvePrimitive->GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc)
+    if (curvePrimitive.GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Arc)
         {
-        DEllipse3d arc = *curvePrimitive->GetArcCP();
+        DEllipse3d arc = *curvePrimitive.GetArcCP();
         if (arc.IsCircular())
             return GetCircularArcPoints(arc, maxEdgeLength, keepSectorArea);
         }
 
-    if (curvePrimitive->GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Line)
+    if (curvePrimitive.GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Line)
         {
-        DSegment3d line = *curvePrimitive->GetLineCP();
+        DSegment3d line = *curvePrimitive.GetLineCP();
         DPoint3d start, end;
         line.GetEndPoints(start, end);
         return {start, end};
         }
 
-    if (curvePrimitive->GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_LineString)
+    if (curvePrimitive.GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_LineString)
         {
-        bvector<DPoint3d> points = *curvePrimitive->GetLineStringCP();
+        bvector<DPoint3d> points = *curvePrimitive.GetLineStringCP();
         return points;
         }
 
@@ -1861,7 +1865,7 @@ bvector<DPoint3d> GeometryUtils::GetCurvePrimitivePoints
     facetOptions->SetMaxEdgeLength(maxEdgeLength);
 
     bvector<DPoint3d> points;
-    curvePrimitive->AddStrokes(points, *facetOptions);
+    curvePrimitive.AddStrokes(points, *facetOptions);
     return points;
     }
 
@@ -1870,18 +1874,13 @@ bvector<DPoint3d> GeometryUtils::GetCurvePrimitivePoints
 //---------------+---------------+---------------+---------------+---------------+------
 bvector<DPoint3d> GeometryUtils::GetCurveVectorPoints
 (
-    CurveVectorCPtr curveVectorPtr,
+    CurveVectorCR curveVectorPtr,
     double maxEdgeLength,
     bool keepSectorArea
 )
     {
-    if (!curveVectorPtr.IsValid())
-        {
-        return bvector<DPoint3d>();
-        }
-
-    CurveVectorCPtr target;
-    switch (curveVectorPtr->GetBoundaryType())
+    CurveVectorPtr target;
+    switch (curveVectorPtr.GetBoundaryType())
         {
         case CurveVector::BoundaryType::BOUNDARY_TYPE_None:
             return bvector<DPoint3d>();
@@ -1889,17 +1888,17 @@ bvector<DPoint3d> GeometryUtils::GetCurveVectorPoints
         case CurveVector::BoundaryType::BOUNDARY_TYPE_Outer:
         case CurveVector::BoundaryType::BOUNDARY_TYPE_Inner:
         case CurveVector::BoundaryType::BOUNDARY_TYPE_Open:
-            target = curveVectorPtr;
+            target = curveVectorPtr.Clone();
             break;
         default:
-            target = curveVectorPtr->at(0)->GetChildCurveVectorCP();
+            target = curveVectorPtr[0]->GetChildCurveVectorCP()->Clone();
             break;
         }
 
     bvector<DPoint3d> curveVectorPoints;
-    for (ICurvePrimitiveCPtr const& cp : *target)
+    for (ICurvePrimitivePtr const& cp : *target)
         {
-        bvector<DPoint3d> primitivePoints = GeometryUtils::GetCurvePrimitivePoints(cp, maxEdgeLength, keepSectorArea);
+        bvector<DPoint3d> primitivePoints = GeometryUtils::GetCurvePrimitivePoints(*cp, maxEdgeLength, keepSectorArea);
         curveVectorPoints.insert(curveVectorPoints.end(), primitivePoints.begin(), primitivePoints.end());
         }
 
@@ -1985,7 +1984,7 @@ bool GeometryUtils::IsSameSingleLoopGeometry
         {
         ICurvePrimitivePtr cv1Start = cv1->at(0);
         auto cv1StartInCv2 = std::find_if(cv2->begin(), cv2->end(),
-                                          [cv1Start, tolerance] (ICurvePrimitiveCPtr const& geom2)
+                                          [cv1Start, tolerance] (ICurvePrimitivePtr const& geom2)
             {
             return IsSameGeometry(*cv1Start, *geom2, tolerance);
             });
@@ -2064,6 +2063,7 @@ bool GeometryUtils::IsSameGeometry
             if (!geom1.GetBsplineCurveCP()->AlmostEqual(*geom2.GetBsplineCurveCP(), tolerance))
                 return false;
             break;
+#ifndef BUILDING_IRON_BUILD
         case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_Catenary:
             {
             DCatenary3dPlacement catenary1, catenary2;
@@ -2073,6 +2073,7 @@ bool GeometryUtils::IsSameGeometry
                 return false;
             break;
             }
+#endif
         case ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
             if (!geom1.GetInterpolationCurveCP()->AlmostEqual(*geom2.GetInterpolationCurveCP(), tolerance))
                 return false;

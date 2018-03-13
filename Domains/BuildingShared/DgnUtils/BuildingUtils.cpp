@@ -461,8 +461,8 @@ CurveVectorPtr BuildingUtils::CreateRoadwayCurveVector (const bvector<DPoint3d>&
     CurveOffsetOptions offsetOptionsLeft (-width / 2);
     CurveVectorPtr roadVectorLeft = centerLine->CloneOffsetCurvesXY (offsetOptionsLeft)->CloneReversed ();
 
-    bvector<DPoint3d> roadVectorRightPoints = GeometryUtils::ExtractSingleCurvePoints (roadVectorRight);
-    bvector<DPoint3d> roadVectorLeftPoints = GeometryUtils::ExtractSingleCurvePoints (roadVectorLeft);
+    bvector<DPoint3d> roadVectorRightPoints = GeometryUtils::ExtractSingleCurvePoints (*roadVectorRight);
+    bvector<DPoint3d> roadVectorLeftPoints = GeometryUtils::ExtractSingleCurvePoints (*roadVectorLeft);
 
     bvector<DPoint3d> roadVectorStartPoints = {
         roadVectorRightPoints.front (),
@@ -490,7 +490,7 @@ CurveVectorPtr BuildingUtils::CreateRoadwayCurveVector (const bvector<DPoint3d>&
 //--------------+---------------+---------------+---------------+---------------+-------- 
 void BuildingUtils::AppendRoadwayGeometry (Dgn::DgnElementPtr roadway, CurveVectorPtr horizAlignment, double width)
     {
-    bvector<DPoint3d> points = GeometryUtils::ExtractSingleCurvePoints (horizAlignment);
+    bvector<DPoint3d> points = GeometryUtils::ExtractSingleCurvePoints (*horizAlignment);
     CurveVectorPtr roadVector = CreateRoadwayCurveVector (points, width);
 
     GeometrySourceP roadwayGeomElem = roadway->ToGeometrySourceP ();

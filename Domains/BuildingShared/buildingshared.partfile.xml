@@ -155,5 +155,15 @@
       </Files>
     </Bindings>
   </Part>
-  
+
+    <!-- BuildingIron parts -->
+    <Part Name="BuildingUtils_ForBuildingIron" BentleyBuildMakeFile="Utils/BuildingUtils.mke" BentleyBuildMakeOptions="-dBUILDING_IRON_BUILD">
+        <SubPart PartName="BuildingSharedApi"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingUtils$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
 </BuildContext>

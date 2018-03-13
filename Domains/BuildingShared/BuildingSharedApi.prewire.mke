@@ -5,6 +5,7 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
+PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
 #link Public header file to build context    

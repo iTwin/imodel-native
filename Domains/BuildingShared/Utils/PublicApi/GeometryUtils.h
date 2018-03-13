@@ -18,7 +18,7 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 class GeometryUtils
     {
 public:    
-    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d>   ExtractSingleCurvePoints (CurveVectorPtr curve);
+    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d>   ExtractSingleCurvePoints (CurveVectorCR curve);
     
 
     //! transforms a curvevector onto zero plane
@@ -96,7 +96,7 @@ public:
     //! @param[in] curveVector a curve vector to look for the furthest point in
     //! @param[in] point a point in/on curve vector
     //! @return a furthest point from given point that is on curveVector
-    BUILDINGSHAREDUTILS_EXPORT static DPoint3d FindFurthestPoint(CurveVectorCPtr curveVector, DPoint3d point);
+    BUILDINGSHAREDUTILS_EXPORT static DPoint3d FindFurthestPoint(CurveVectorCR curveVector, DPoint3d point);
 
     //! Finds ellipse's tangent at given point
     //! @param[in] point a point on arc
@@ -180,7 +180,7 @@ public:
     //! @param[in]  line                line by two points
     //! @param[in]  curveVector         curveVector. Supports curve vector composed of line strings and arcs
     //! @return                         true if line intersects curve vector
-    BUILDINGSHAREDUTILS_EXPORT static bool CheckIfLineIntersectsCurveVector(bvector<DSegment3d>& intersections, DSegment3d line, CurveVectorCPtr curveVector);
+    BUILDINGSHAREDUTILS_EXPORT static bool CheckIfLineIntersectsCurveVector(bvector<DSegment3d>& intersections, DSegment3d line, CurveVectorCR curveVector);
 
     //! Checks if two lines intersect
     //! @param[out] intersectionSegment segment where lines intersect. 
@@ -233,7 +233,7 @@ public:
     //! @param[in]      source          starting point of path
     //! @param[in]      destination     end point of path
     //! @return         BentleyStatus::SUCCESS if path can be found in given curve vector
-    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus FindShortestPathBetweenPointsInCurveVector(bvector<DPoint3d>& pathLineString, CurveVectorPtr curveVector, DPoint3d source, DPoint3d destination);
+    BUILDINGSHAREDUTILS_EXPORT static BentleyStatus FindShortestPathBetweenPointsInCurveVector(bvector<DPoint3d>& pathLineString, CurveVectorCR curveVector, DPoint3d source, DPoint3d destination);
 
     //! Offsets children curves of curve vector by given amount and remerges the curves if needed
     //! @param[in]      originalCurve   curve to offset
@@ -241,24 +241,24 @@ public:
     //! @param[in]      outerOffset     offset for outer children
     //! @param[in]      mergeIntoDifference     true if new children should be merged
     //! @return         offseted curve vector
-    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr OffsetCurveInnerOuterChildren(CurveVectorCPtr originalCurve, double innerOffset, double outerOffset, bool mergeIntoDifference = false);
+    BUILDINGSHAREDUTILS_EXPORT static CurveVectorPtr OffsetCurveInnerOuterChildren(CurveVectorCR originalCurve, double innerOffset, double outerOffset, bool mergeIntoDifference = false);
 
     //! Checks if given segment is fully inside (or on) polygon area considering both inner and outer children
     //! @param[in]      area    polygon area to check. Supports only line strings ar curve vector children
     //! @param[in]      line    line to check
     //! @return         false the there exists a point out of outer polygon area or in inner polygon area
-    BUILDINGSHAREDUTILS_EXPORT static bool CheckIfLineIsContainedInPolygonArea(CurveVectorCPtr area, DSegment3d line);
+    BUILDINGSHAREDUTILS_EXPORT static bool CheckIfLineIsContainedInPolygonArea(CurveVectorCR area, DSegment3d line);
 
     //! Separates curve vector to inner and outer curves
     //! @param[out]     innerCurves     inner curve vector children
     //! @param[out]     outerCurves     outer curve vector children
     //! @param[in]      source          curve vector to separate
-    BUILDINGSHAREDUTILS_EXPORT static void ExtractInnerOuterCurves(bvector<CurveVectorCPtr>& innerCurves, bvector<CurveVectorCPtr>& outerCurves, CurveVectorCPtr source);
+    BUILDINGSHAREDUTILS_EXPORT static void ExtractInnerOuterCurves(bvector<CurveVectorPtr>& innerCurves, bvector<CurveVectorPtr>& outerCurves, CurveVectorCR source);
 
     //! Returns line string inside curve vector's first curve primitive if possible
     //! @param[in]  curveVector     curve vector to extract line string from
     //! @return     line string if it exists, else an empty vector of points.
-    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> ExtractLineString(CurveVectorCPtr curveVector);
+    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> ExtractLineString(CurveVectorCR curveVector);
 
     //! Returns distance between line and a point. 
     //! Note:   If point can be projected directly on the line segment, distance is calculated from that projected point.
@@ -280,7 +280,7 @@ public:
     //! @param[out] outerLineStrings    outer line strings in curve vector
     //! @param[in]  shape               curve vector to extract line strings from
     //! Note:   If any child of curve vector is not a line string, it will just be ignored.
-    BUILDINGSHAREDUTILS_EXPORT static void ExtractInnerOuterLineStrings(bvector<bvector<DPoint3d>>& innerLineStrings, bvector<bvector<DPoint3d>>& outerLineStrings, CurveVectorCPtr shape);
+    BUILDINGSHAREDUTILS_EXPORT static void ExtractInnerOuterLineStrings(bvector<bvector<DPoint3d>>& innerLineStrings, bvector<bvector<DPoint3d>>& outerLineStrings, CurveVectorCR shape);
 
     //! Returns sum of distances of given points sequence
     //! @param[in]  path    sequence of points
@@ -324,23 +324,23 @@ public:
     //! @param[in] maxEdgeLength  Maximum distance between points if the curvePrimitive was faceted.
     //! @param[in] keepSectorArea If true and curvePrimitive is a circular arc - its radius is increased so the returned points + arc's center produces
     //!                           a polygon that has the same area as the given section (see GetCircularArcPoints).
-    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> GetCurvePrimitivePoints(ICurvePrimitiveCPtr curvePrimitive, double maxEdgeLength = DEFAULT_MAX_EDGE_LENGTH, bool keepSectorArea = false);
+    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> GetCurvePrimitivePoints(ICurvePrimitiveCR curvePrimitive, double maxEdgeLength = DEFAULT_MAX_EDGE_LENGTH, bool keepSectorArea = false);
 
     //! @param[in] curveVectorPtr The curve from which to get the points.
     //! @param[in] maxEdgeLength  If the curveVectorPtr contains rounded shape - this is used for faceting.
     //! @param[in] keepSectorArea If true and curvevectorPtr contains circular arcs - their radius is increased so the returned points + arc's center produces
     //!                           a polygon that has the same area as the given section (see GetCircularArcPoints).
     //! @return                   Returns points of a curve vector. If it is a UnionRegion or a ParityRegion it returns points of a first contained CurveVector.
-    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> GetCurveVectorPoints(CurveVectorCPtr curveVectorPtr, double maxEdgeLength = DEFAULT_MAX_EDGE_LENGTH, bool keepSectorArea = false);
+    BUILDINGSHAREDUTILS_EXPORT static bvector<DPoint3d> GetCurveVectorPoints(CurveVectorCR curveVectorPtr, double maxEdgeLength = DEFAULT_MAX_EDGE_LENGTH, bool keepSectorArea = false);
     
     //! Checks if given closed ICurvePrimitives have same geometry (within tolerance). They are rotated to have the same start point before comparing
-    BUILDINGSHAREDUTILS_EXPORT static bool IsSameSingleLoopGeometry(ICurvePrimitiveCR geom1, ICurvePrimitiveCR geom2, double tolerance = DoubleOps::SmallMetricDistance());
+    BUILDINGSHAREDUTILS_EXPORT static bool IsSameSingleLoopGeometry(ICurvePrimitiveCR geom1, ICurvePrimitiveCR geom2, double tolerance = DoubleOps::SmallCoordinateRelTol());
 
     //! Checks if given CurveVectors have the same geometry (within tolerance). They are rotated to have the same start point before comparing.
-    BUILDINGSHAREDUTILS_EXPORT static bool IsSameSingleLoopGeometry(CurveVectorCR geom1, CurveVectorCR geom2, double tolerace = DoubleOps::SmallMetricDistance());
+    BUILDINGSHAREDUTILS_EXPORT static bool IsSameSingleLoopGeometry(CurveVectorCR geom1, CurveVectorCR geom2, double tolerace = DoubleOps::SmallCoordinateRelTol());
 
     //! Checks if given ICurvePrimitives have the same geometry (within tolerance).
-    BUILDINGSHAREDUTILS_EXPORT static bool IsSameGeometry(ICurvePrimitiveCR geom1, ICurvePrimitiveCR geom2, double tolerance = DoubleOps::SmallMetricDistance());
+    BUILDINGSHAREDUTILS_EXPORT static bool IsSameGeometry(ICurvePrimitiveCR geom1, ICurvePrimitiveCR geom2, double tolerance = DoubleOps::SmallCoordinateRelTol());
 
 
     //! Finds transform from one plane to another

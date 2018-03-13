@@ -345,21 +345,11 @@ TEST_F(GeometryUtilsTests, GetCircularArcPoints_NonCircularArcProducesEmptyColle
 //---------------------------------------------------------------------------------------
 // @betest                                      Mindaugas.Butkus                10/2017
 //--------------+---------------+---------------+---------------+---------------+--------
-TEST_F(GeometryUtilsTests, GetCurvePrimitivePoints_NullCurvePrimitiveProducesEmptyCollectionOfPoints)
-    {
-    bvector<DPoint3d> points = GeometryUtils::GetCurvePrimitivePoints(nullptr);
-
-    ASSERT_EQ(points.size(), 0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Mindaugas.Butkus                10/2017
-//--------------+---------------+---------------+---------------+---------------+--------
 TEST_F(GeometryUtilsTests, GetCurvePrimitivePoints_StrokesNotAddedToStraightSegments)
     {
     ICurvePrimitivePtr primitive = ICurvePrimitive::CreateLineString({{0,0,0},{10,0,0},{10,10,0}});
 
-    bvector<DPoint3d> points = GeometryUtils::GetCurvePrimitivePoints(primitive, 5);
+    bvector<DPoint3d> points = GeometryUtils::GetCurvePrimitivePoints(*primitive, 5);
 
     ASSERT_EQ(points.size(), 3);
     ASSERT_TRUE(points[0].AlmostEqual({0,0,0}));
@@ -374,7 +364,7 @@ TEST_F(GeometryUtilsTests, GetCurvePrimitivePoints_StrokesNotAddedToLine)
     {
     ICurvePrimitivePtr primitive = ICurvePrimitive::CreateLine(DSegment3d::From({0,0,0}, {10,0,0}));
 
-    bvector<DPoint3d> points = GeometryUtils::GetCurvePrimitivePoints(primitive, 5);
+    bvector<DPoint3d> points = GeometryUtils::GetCurvePrimitivePoints(*primitive, 5);
 
     ASSERT_EQ(points.size(), 2);
     ASSERT_TRUE(points[0].AlmostEqual({0,0,0}));

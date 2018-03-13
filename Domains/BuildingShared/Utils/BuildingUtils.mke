@@ -2,12 +2,18 @@
 #     $Source: Utils/BuildingUtils.mke $
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
+PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
 %include mdl.mki
 
 AppName = BuildingUtils
 CCompPDBName = $(AppName)
 
 o = $(OutputRootDir)build/ConceptBuilding/BuildingUtils/
+
+%if defined (BUILDING_IRON_BUILD)
+    nameToDefine = BUILDING_IRON_BUILD
+    %include cdefapnd.mki
+%endif
 
 nameToDefine = __BUILDINGSHAREDUTILS_BUILD__
 %include cdefapnd.mki
@@ -43,6 +49,11 @@ DLM_NAME = $(AppName)
 DLM_NOENTRY = 1
 DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
+
+%if defined (BUILDING_IRON_BUILD)
+    DLM_NO_DLS = 1
+    DLM_NO_DEF = 1
+%endif
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 
