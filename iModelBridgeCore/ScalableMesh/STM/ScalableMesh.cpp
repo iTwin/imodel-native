@@ -245,7 +245,7 @@ IScalableMeshMeshQueryPtr IScalableMesh::GetMeshQueryInterface(MeshQueryType que
 IScalableMeshNodeRayQueryPtr IScalableMesh::GetNodeQueryInterface() const
     {
     return _GetNodeQueryInterface();
-    }
+    } 
 
 IScalableMeshEditPtr IScalableMesh::GetMeshEditInterface() const
     {
