@@ -198,6 +198,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::RecommendationServiceUrl(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectSharedFederatedUIURL(
+    "ProjectSharedFederatedUI.URL",
+    "https://dev-projectshareportal.bentley.com/",
+    "https://qa-projectshareportal.bentley.com/",
+    "https://projectshareportal.bentley.com/",
+    &s_urlRegistry
+    );
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
