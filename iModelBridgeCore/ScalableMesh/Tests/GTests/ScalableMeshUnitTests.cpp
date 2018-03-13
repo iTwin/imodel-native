@@ -17,6 +17,8 @@
 #include "SMUnitTestDisplayQuery.h"
 
 
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
+
 
 class ScalableMeshEnvironment : public ::testing::Environment
     {
