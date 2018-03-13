@@ -239,6 +239,12 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
             return ERROR;
             }
 
+/* WIP_BACKWARDCOMPATIBILITY        if (!allowBackwardsCompatibleChanges && columnToAdd->DoNotAllowDbNull())
+            {
+            ecdb.GetImpl().Issues().ReportV("Failed to add column (%s) for an existing table. It would break compatibility with older software versions, because it has a NOT NULL constraint.", columnToAdd->GetName().c_str());
+            return ERROR;
+            }
+*/
         Utf8String ddl(alterDdlTemplate);
         if (SUCCESS != AppendColumnDdl(ddl, *columnToAdd))
             return ERROR;
@@ -260,6 +266,12 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
             if (fkConstraint->GetFkColumns().size() != 1 || fkConstraint->GetFkColumns()[0] != columnToAdd)
                 continue;
 
+            /* WIP_BACKWARDCOMPATIBILITY         if (!allowBackwardsCompatibleChanges)
+                {
+                ecdb.GetImpl().Issues().ReportV("Failed to Foreign Key to new column (%s) for an existing table. It would break compatibility with older software versions.", columnToAdd->GetName().c_str());
+                return ERROR;
+                }
+                */
             if (SUCCESS != AppendForeignKeyToColumnDdl(ddl, *fkConstraint, *columnToAdd))
                 return ERROR;
             }

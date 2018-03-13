@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaPersistenceHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,8 +73,9 @@ public:
     static BentleyStatus SerializeEnumerationValues(Utf8StringR jsonStr, ECN::ECEnumerationCR);
     static BentleyStatus DeserializeEnumerationValues(ECN::ECEnumerationR, Utf8CP jsonStr);
 
+    static BentleyStatus ParseFormatUnitSetDescriptor(Formatting::FormatUnitSet& fus, ECDbCR, Utf8CP fusDescriptor, ECN::KindOfQuantityCR);
     static BentleyStatus SerializeKoqPresentationUnits(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR);
-    static BentleyStatus DeserializeKoqPresentationUnits(ECN::KindOfQuantityR, Utf8CP jsonStr);
+    static BentleyStatus DeserializeKoqPresentationUnits(ECN::KindOfQuantityR, ECDbCR, Utf8CP jsonStr);
 
     //!Safe method to cast an integer value to the ECClassType enum.
     //!It makes sure the integer is a valid value for the enum.

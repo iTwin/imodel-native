@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/SchemaManagerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -118,7 +118,7 @@ TEST_F(SchemaManagerTests, ImportToken)
         ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(SchemaItem(ecschemaXml))) << "SchemaImport into unrestricted ECDb failed unexpectedly for: " << ecschemaXml;
         ecdb.CloseDb();
 
-        RestrictedSchemaImportECDb restrictedECDb(true, false);
+        RestrictedSchemaImportECDb restrictedECDb(true);
         ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_restricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
 
         ASSERT_EQ(ERROR, TestHelper(restrictedECDb).ImportSchema(SchemaItem(ecschemaXml))) << "SchemaImport into restricted ECDb. Expected to fail for: " << ecschemaXml;
@@ -307,7 +307,7 @@ TEST_F(SchemaManagerTests, AllowChangesetMergingIncompatibleECSchemaImport)
         ASSERT_EQ(expectedStat, TestHelper(ecdb).ImportSchema(SchemaItem(ecschemaXml))) << "SchemaImport into unrestricted ECDb failed unexpectedly for scenario " << scenario;
         ecdb.CloseDb();
 
-        RestrictedSchemaImportECDb restrictedECDb(false, false);
+        RestrictedSchemaImportECDb restrictedECDb(false);
         ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_restricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
 
         expectedStat = expectedToSucceed.second ? SUCCESS : ERROR;
@@ -1587,6 +1587,27 @@ TEST_F(SchemaManagerTests, GetEnumeration)
     ASSERT_EQ(4, ecEnum->GetEnumeratorCount());
     }
 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  02/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaManagerTests, ImportKindOfQuantityWithGarbageUnit)
+    {
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema" alias="s" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <KindOfQuantity typeName="MyKoq" persistenceUnit="Garbage" relativeError=".5" />
+                                     </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema" alias="s" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <KindOfQuantity typeName="MyKoq" persistenceUnit="M_PER_SEC" relativeError=".5" />
+                                     </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                     <ECSchema schemaName="Schema" alias="s" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <KindOfQuantity typeName="MyKoq" persistenceUnit="M/SEC" presentationUnits="CM_PER_SEC" relativeError=".5" />
+                                     </ECSchema>)xml")));
     }
 
 //---------------------------------------------------------------------------------------

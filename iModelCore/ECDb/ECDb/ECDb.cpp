@@ -32,9 +32,9 @@ ECDb::~ECDb()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                02/2017
 //---------------+---------------+---------------+---------------+---------------+------
-void ECDb::ApplyECDbSettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation, bool allowChangesetMergingIncompatibleECSchemaImport)
+void ECDb::ApplyECDbSettings(bool requireECCrudTokenValidation, bool requireECSchemaImportTokenValidation)
     {
-    m_pimpl->m_settingsManager.ApplySettings(requireECCrudTokenValidation, requireECSchemaImportTokenValidation, allowChangesetMergingIncompatibleECSchemaImport);
+    m_pimpl->m_settingsManager.ApplySettings(requireECCrudTokenValidation, requireECSchemaImportTokenValidation);
     }
 
 //--------------------------------------------------------------------------------------
@@ -302,9 +302,9 @@ ECDb::SettingsManager::~SettingsManager()
 //not inlined to prevent being called outside ECDb
 // @bsimethod                                                   Krischan.Eberle   10/2017
 //---------------------------------------------------------------------------------------
-void ECDb::SettingsManager::ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport)
+void ECDb::SettingsManager::ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken)
     {
-    m_settings = ECDb::Settings(requireECCrudWriteToken, requireECSchemaImportToken, allowChangesetMergingIncompatibleECSchemaImport);
+    m_settings = ECDb::Settings(requireECCrudWriteToken, requireECSchemaImportToken);
 
     if (requireECCrudWriteToken)
         m_crudWriteToken = new ECCrudWriteToken();
@@ -323,9 +323,7 @@ ECDb::Settings::Settings() {}
 //not inlined to prevent being called outside ECDb
 // @bsimethod                                                   Krischan.Eberle   10/2017
 //---------------------------------------------------------------------------------------
-ECDb::Settings::Settings(bool requiresECCrudWriteToken, bool requiresECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport)
-    : m_requiresECCrudWriteToken(requiresECCrudWriteToken), m_requiresECSchemaImportToken(requiresECSchemaImportToken), m_allowChangesetMergingIncompatibleSchemaImport(allowChangesetMergingIncompatibleECSchemaImport)
-    {}
+ECDb::Settings::Settings(bool requiresECCrudWriteToken, bool requiresECSchemaImportToken) : m_requiresECCrudWriteToken(requiresECCrudWriteToken), m_requiresECSchemaImportToken(requiresECSchemaImportToken) {}
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

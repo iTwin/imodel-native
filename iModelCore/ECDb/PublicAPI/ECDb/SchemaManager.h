@@ -77,8 +77,8 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         enum class SchemaImportOptions
             {
             None = 0,
-            DoNotFailSchemaValidationForLegacyIssues,
-            Poisoning //!< Currently not supported. Poisoning concept is being revisited.
+            DoNotFailSchemaValidationForLegacyIssues = 1,
+            DisallowMajorSchemaUpgrade = 2  //!< If specified, schema upgrades where the major version has changed, are not supported.
             };
 
         struct Dispatcher;

@@ -1935,6 +1935,190 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
     m_ecdb.AbandonChanges();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
+    {
+    //Future EC3.2 units (If this code has already EC3.2 we don't need to execute the test)
+    if (ECN::ECVersion::Latest > ECN::ECVersion::V3_1)
+        return;
+
+    ASSERT_EQ(SUCCESS, SetupECDb("ForwardCompatibilitySafeguards_KOQs.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="CM" presentationUnits="FT;IN;M" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    KindOfQuantityId koqId;
+    { 
+    KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKoq");
+    ASSERT_TRUE(koq != nullptr);
+    koqId = koq->GetId();
+    ASSERT_TRUE(koqId.IsValid());
+    }
+
+
+    auto setEC32Fus = [&koqId, this] (Utf8CP persistenceUnitStr, Utf8CP presentationUnitStr)
+        {
+        BeFileName ecdbPath(m_ecdb.GetDbFileName());
+        CloseECDb();
+
+        //bump up profile version (which is expected if the file format changes)
+        Db ecdb;
+        if (BE_SQLITE_OK != ecdb.OpenBeSQLiteDb(ecdbPath, Db::OpenParams(Db::OpenMode::ReadWrite)))
+            return ERROR;
+
+        if (BE_SQLITE_OK != IncrementProfileVersion(ecdb))
+            return ERROR;
+
+        CachedStatementPtr stmt = ecdb.GetCachedStatement("UPDATE ec_KindOfQuantity SET PersistenceUnit=?, PresentationUnits=? WHERE Id=?");
+        if (stmt == nullptr)
+            return ERROR;
+
+        stmt->BindText(1, persistenceUnitStr, Statement::MakeCopy::No);
+        if (!Utf8String::IsNullOrEmpty(presentationUnitStr))
+            stmt->BindText(2, presentationUnitStr, Statement::MakeCopy::No);
+
+        stmt->BindId(3, koqId);
+        if (BE_SQLITE_DONE != stmt->Step())
+            return ERROR;
+
+        stmt = nullptr;
+        if (BE_SQLITE_OK != ecdb.SaveChanges())
+            return ERROR;
+
+        ecdb.CloseDb();
+
+        if (BE_SQLITE_OK != OpenECDb(ecdbPath, ECDb::OpenParams(ECDb::OpenMode::Readonly)))
+            return ERROR;
+
+        return SUCCESS;
+        };
+
+    auto getKoq = [this] ()
+        {
+        KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKoq");
+        EXPECT_TRUE(koq != nullptr);
+        return koq;
+        };
+
+    auto getPropertyKoq = [this] ()
+        {
+        ECClassCP ecClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+        EXPECT_TRUE(ecClass != nullptr);
+        ECPropertyCP prop = ecClass->GetPropertyP("Prop");
+        EXPECT_TRUE(ecClass != nullptr);
+        KindOfQuantityCP koq = prop->GetKindOfQuantity();
+        EXPECT_TRUE(koq != nullptr);
+        return koq;
+        };
+
+    auto assertFus = [] (Formatting::FormatUnitSetCR fus, bool expectedIsValidUnit, Utf8CP expectedUnitName, Utf8CP expectedFusName)
+        {
+        EXPECT_EQ(expectedIsValidUnit, fus.GetUnit()->IsValid()) << fus.ToJsonString();
+        EXPECT_STRCASEEQ(expectedUnitName, fus.GetUnitName().c_str()) << fus.ToJsonString();
+        EXPECT_STRCASEEQ(expectedFusName, fus.GetNamedFormatSpec()->GetName()) << fus.ToJsonString();
+        };
+
+    //garbage units
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("garbage(unknownFormat)", nullptr));
+    KindOfQuantityCP koq = getKoq();
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultRealU");
+    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("garbage(unknownFormat)", R"json(["CM","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultRealU");
+    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["CM","garbage(unknownFormat)"])json"));
+    KindOfQuantityCP koq = getKoq();
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
+    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
+    assertFus(koq->GetPresentationUnitList().at(1), false, "garbage", "defaultRealU");
+    }
+
+    //User defined EC3.2 units
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("myalias:myunit(myformat)", R"json(["myalias:mydisplayunit1(myformat)","myalias:mydisplayunit2(myotherformat)"])json"));
+    KindOfQuantityCP koq = getKoq();
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), false, "myunit", "defaultRealU");
+    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("CM", R"json(["myalias:myunit(myformat)","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "CM", "defaultReal");
+    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "myunit", "defaultRealU");
+    assertFus(koq->GetPresentationUnitList().at(1), false, "M", "defaultReal");
+    }
+
+    //standard units
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("KM", nullptr));
+    KindOfQuantityCP koq = getKoq();
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
+    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("u:KM", nullptr));
+    KindOfQuantityCP koq = getKoq();
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
+    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["CM","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
+    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
+    assertFus(koq->GetPresentationUnitList().at(1), true, "M", "defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("u:KM", R"json(["u:CM","u:M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    EXPECT_EQ(koq, getPropertyKoq());
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
+    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
+    assertFus(koq->GetPresentationUnitList().at(1), true, "M", "defaultReal");
+    }
+
+    //standard units where ECName differs from unit name
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("u:CM_PER_SEC", R"json(["u:M_PER_SEC"])json"));
+    KindOfQuantityCP koq = getKoq();
+    assertFus(koq->GetPersistenceUnit(), true, "CM/SEC", "defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "M/SEC", "defaultReal");
+    }
+
+    }
+
 //*****************************************************************************************
 // FileFormatCompatibilityTests
 //*****************************************************************************************
