@@ -155,6 +155,11 @@ napi_status napi_create_function(napi_env env,
   return GET_RETURN_STATUS(env);
 }
 
+void class_constructor(JSContextRef ctx, JSObjectRef object)
+{
+    
+}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -166,15 +171,25 @@ napi_status napi_define_class(napi_env env,
                               size_t property_count,
                               const napi_property_descriptor* properties,
                               napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, result);
-  CHECK_ARG(env, constructor);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, result);
+    CHECK_ARG(env, constructor);
 
-  JSContextRef ctx = env->GetContext();
+    JSContextRef ctx = env->GetContext();
+    JSClassDefinition classDef = kJSClassDefinitionEmpty;
+    classDef.className = utf8name;
+    classDef.initialize = class_constructor;
 
-  // TODO
+    JSClassRef classRef = JSClassCreate(&classDef);
+    *result = JSObjectMake(ctx,classRef,NULL);
 
-  return GET_RETURN_STATUS(env);
+    for (int ii=0; ii< property_count; ii++)
+    {
+        napi_property_descriptor descriptor = properties[ii];
+    }
+    JSClassRelease(classRef);
+
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------

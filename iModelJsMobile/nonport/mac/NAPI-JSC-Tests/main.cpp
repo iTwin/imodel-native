@@ -8,11 +8,16 @@
 
 #include <iostream>
 #include <iModelJs/iModelJs.h>
+#include <iModelJs/iModelJsServicesTier.h>
+
 
 int main(int argc, const char * argv[]) {
     std::cout << "NAPI - JavaScriptCore Tests\n";
     
-    BentleyB0200::iModelJs::Js::Runtime runtime;
+    BentleyApi::iModelJs::Js::Runtime runtime;
+    BentleyApi::iModelJs::ServicesTier::UvHost host;
+    while (!host.IsReady()) { ; }
+    
     Napi::Env& env = runtime.Env();
 
     auto result = runtime.EvaluateScript ("1 + 1");

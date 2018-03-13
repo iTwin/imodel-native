@@ -128,7 +128,7 @@ DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 
-%include $(BuildContext)SubParts/imodeljs-addon-build-tools/addon_input_libs.mki
+%include $(BuildContext)SubParts/imodeljs-addon-build-tools/IModelJsNative_input_libs.mki
 
 %if $(TARGET_PLATFORM) == "Windows"
     LINKER_LIBRARIES + $(ContextLibPrefix)v8$(stlibext) $(ContextLibPrefix)v8_libbase$(stlibext) $(ContextLibPrefix)v8_libplatform$(stlibext)
