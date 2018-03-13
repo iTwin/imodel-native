@@ -3143,7 +3143,7 @@ bool TryGetKindOfQuantity(ECPropertyCP ecProp, KindOfQuantityCP& kindOfQuantity)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TryGetOldUnitFromNewName(Utf8CP newUnitName, UnitR oldUnit)
     {
-    Utf8CP oldUnitName = Units::UnitRegistry::TryGetOldName(newUnitName);
+    Utf8CP oldUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(newUnitName);
     return nullptr != oldUnitName && Unit::GetUnitByName(oldUnit, oldUnitName);
     }
 
