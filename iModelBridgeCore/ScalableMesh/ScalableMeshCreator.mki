@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ScalableMeshCoreLib.mki $
+#  $Source: ScalableMeshCreator.mki $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -10,7 +10,7 @@
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 # If we define appName and use it for DLM_NAME, MultiCppCompileRule.mki will use it for CCompPDBName, and linkLibrary.mki will use DLM_NAME for LIB_NAME.
 # PreCompiledHeader.mki uses CCompPDBName
-appName     = ScalableMeshCoreLib
+appName     = ScalableMeshCreator
 DLM_NAME    = $(appName)
 LIB_NAME    = $(appName)
 CCompPDBName = $(appName)
@@ -22,7 +22,7 @@ CCompPDBName = $(appName)
 #----------------------------------------------------------
 # Preprocessor definition.
 #----------------------------------------------------------
-nameToDefine = __BENTLEYSTM_BUILD__
+nameToDefine = __BENTLEYSTMIMPORT_BUILD__
 %include cdefapnd.mki
 
 nameToDefine = NO_IODEFS
