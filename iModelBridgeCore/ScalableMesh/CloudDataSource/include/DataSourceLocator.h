@@ -4,6 +4,9 @@
 #include "DataSourceURL.h"
 #include "DataSourceMode.h"
 
+#include <functional>
+#include <Bentley/WString.h>
+
 class DataSourceService;
 class DataSourceAccount;
 
@@ -12,16 +15,19 @@ class DataSourceSession
     {
     public:
 
-        typedef int64_t         SessionInstance;
-        typedef std::wstring    SessionKey;
+        typedef int64_t                         SessionInstance;
+        typedef std::wstring                    SessionKey;
+
+        typedef std::function<std::string(const Utf8String& docGuid)> KeyRemapFunction;
 
     protected:
 
-        static SessionInstance  instanceCounter;
+        static SessionInstance                  instanceCounter;
 
-        SessionInstance         sessionInstance;
-        SessionKey              sessionKey;
+        SessionInstance                         sessionInstance;
+        SessionKey                              sessionKey;
 
+        KeyRemapFunction                        keyRemapFunction;
 
     protected:
 
@@ -41,6 +47,9 @@ class DataSourceSession
         CLOUD_EXPORT    const SessionKey &      getSessionKey               (void) const;
 
         CLOUD_EXPORT    SessionInstance         getSessionInstance          (void) const;
+
+        CLOUD_EXPORT    void                    setKeyRemapFunction         (const KeyRemapFunction &f);
+        CLOUD_EXPORT    const KeyRemapFunction& getKeyRemapFunction         (void) const;
 
         CLOUD_EXPORT    DataSourceSession &     operator=                   (const DataSourceSession &other);
         CLOUD_EXPORT    DataSourceSession &     operator=                   (const SessionKey &key);
@@ -75,6 +84,7 @@ class DataSourceLocator : public DataSourceTypes
 
 protected:
 
+    DataSourceName                          m_name;
     DataSourceService                    *  m_service;
     DataSourceAccount                    *  m_account;
     SessionName                             m_session;
@@ -99,6 +109,9 @@ public:
                                            ~DataSourceLocator       () = default;
 
     void                                    getURL                  (DataSourceURL &url);
+
+    void                                    setName                 (const DataSourceName &name);
+    const DataSourceName                &   getName                 (void);
 
     void                                    setService              (DataSourceService *newService);
     DataSourceService                  *    getService              (void);

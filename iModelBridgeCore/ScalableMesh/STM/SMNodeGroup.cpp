@@ -287,7 +287,7 @@ DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffe
         }
 
     // Make sure caching is enabled for this DataSource
-    dataSource->setCachingEnabled(s_stream_enable_caching);
+//  dataSource->setCachingEnabled(s_stream_enable_caching);
 
     dest.reset(new unsigned char[destSize]);
 

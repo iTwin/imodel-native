@@ -30,25 +30,28 @@ bool DataSourceCached::isCached(void)
 
 DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
-//NEEDS_WORK_SM : Reinstate this to support caching
-
-/*
     DataSource           *  dataSource;
     DataSourceStatus        statusNotFound(DataSourceStatus::Status_Not_Found);
+    DataSourceAccount   *   cacheAccount;
 
     (void) destSize;
 
     if ((dataSource = getCacheDataSource()) == nullptr && getAccount())
     {
-        if (getAccount()->getCacheAccount())
-        {
-            if ((dataSource = getAccount()->getCacheAccount()->createDataSource()) == nullptr)
+        if (cacheAccount = getAccount()->getCacheAccount())
             {
+            DataSourceName dataSourceName(getName());
+            dataSourceName += L"-Cache";
+
+            DataSource::SessionName   sessionName;
+
+            if ((dataSource = cacheAccount->createDataSource(dataSourceName, sessionName)) == nullptr)
+                {
                 return DataSourceStatus(DataSourceStatus::Status_Error);
-            }
+                }
 
             setCacheDataSource(dataSource);
-        }
+            }
     }
 
     if ((dataSource->open(getCacheURL(), DataSourceMode_Read)).isFailed())
@@ -62,7 +65,7 @@ DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *d
 
     if (size > 0 && readSize != size)
         return DataSourceStatus(DataSourceStatus::Status_Error_EOF);
-*/
+
     return DataSourceStatus();
 
 }

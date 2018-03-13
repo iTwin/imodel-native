@@ -33,6 +33,16 @@ DataSourceSession::SessionInstance DataSourceSession::getSessionInstance(void) c
     return sessionInstance;
     }
 
+CLOUD_EXPORT void DataSourceSession::setKeyRemapFunction(const KeyRemapFunction &f)
+    {
+    keyRemapFunction = f;
+    }
+
+CLOUD_EXPORT const DataSourceSession::KeyRemapFunction &DataSourceSession::getKeyRemapFunction(void) const
+    {
+    return keyRemapFunction;
+    }
+
 void DataSourceSession::setSessionKey(const SessionKey &key)
     {
     initializeInstance();
@@ -60,6 +70,8 @@ DataSourceSession &DataSourceSession::operator=(const DataSourceSession &other)
     sessionKey = other.getSessionKey();
 
     setSessionInstance(other.getSessionInstance());
+
+    setKeyRemapFunction(other.getKeyRemapFunction());
 
     return *this;
     }
@@ -146,6 +158,16 @@ void DataSourceLocator::getURL(DataSourceURL &url)
 
     url.append(getSubPath());
 }
+
+void DataSourceLocator::setName(const DataSourceName & name)
+    {
+    m_name = name;
+    }
+
+const DataSourceLocator::DataSourceName & DataSourceLocator::getName(void)
+    {
+    return m_name;
+    }
 
 void DataSourceLocator::setService(DataSourceService * newService)
 {

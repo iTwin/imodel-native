@@ -155,8 +155,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource -c
-BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource </NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>call BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource -c
+call BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f CloudDataSource -r  ScalableMesh re  CloudDataSource -c</NMakeCleanCommandLine>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>

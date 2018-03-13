@@ -77,6 +77,10 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName &name, Dat
     if ((source = account.createDataSource(session)) == nullptr)
         return nullptr;
 
+    source->setName(name);
+                                                            // Inherit cache enabled state from Account's setting
+    source->setCachingEnabled(account.getCachingEnabled());
+
     if (Manager<DataSource, true>::create(name, source) == NULL)
     {
         account.destroyDataSource(source);

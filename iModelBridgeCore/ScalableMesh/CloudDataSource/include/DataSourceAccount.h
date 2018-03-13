@@ -8,7 +8,7 @@
 class DataSource;
 class DataSourceManager;
 
-unsigned int const DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS = 16;
+unsigned int const DATA_SOURCE_ACCOUNT_DEFAULT_TRANSFER_TASKS = 16;
 
 
 class DataSourceAccount : public DataSourceTypes
@@ -32,6 +32,8 @@ protected:
     AccountSSLCertificatePath           accountSSLCertificatePath;
     DataSourceURL                       prefixPath;
     PrefixPathType                      prefixPathType;
+
+    bool                                cachingEnabled;
 
 protected:
 
@@ -79,6 +81,9 @@ public:
     
     CLOUD_EXPORT virtual void           setWSGTokenGetterCallback       (const std::function<std::string(void)>& tokenGetter);
     CLOUD_EXPORT virtual void           SetSASTokenGetterCallback       (const std::function<std::string(const Utf8String& docGuid)>& tokenGetter);
+
+    CLOUD_EXPORT void                   setCachingEnabled               (bool enabled);
+    CLOUD_EXPORT bool                   getCachingEnabled               (void);
 
     virtual      DataSource       *     createDataSource                (const SessionName &session) = 0;
     CLOUD_EXPORT DataSource       *     createDataSource                (const DataSourceName &name, const SessionName &session);

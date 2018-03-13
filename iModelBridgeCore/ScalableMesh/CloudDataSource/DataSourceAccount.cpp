@@ -9,7 +9,11 @@
 
 DataSourceTransferScheduler::Ptr  DataSourceAccount::getTransferScheduler(void)
     {
-    dataSourceTransferScheduler = DataSourceTransferScheduler::Get();
+    if (dataSourceTransferScheduler == nullptr)
+        {
+        dataSourceTransferScheduler = new DataSourceTransferScheduler;
+        }
+    
     return dataSourceTransferScheduler;
     }
 
@@ -45,10 +49,21 @@ DataSourceAccount::~DataSourceAccount(void)
 
 bool DataSourceAccount::destroyAll(void)
     {
-        if (destroyDataSources().isOK())
-            return true;
+                                                            // Destroy all DataSources associated with this account (and cache DataSources)
+        if (destroyDataSources().isFailed())
+            return false;
 
-        return false;
+        if (getCacheAccount())
+            {
+                                                            // Get Cache Account's Service
+            DataSourceService *cacheService = getDataSourceManager().getService(getCacheAccount()->getServiceName());
+                                                            // Inform Service that Cache Account has been released
+            if (cacheService)
+                cacheService->releaseAccount(getCacheAccount()->getAccountName());
+
+            }
+
+        return true;
     }
 
 DataSourceStatus DataSourceAccount::destroyDataSources(void)
@@ -80,6 +95,8 @@ DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountN
     setServiceName(service);
 
     setAccountName(account);
+                                                            // Default to caching disabled
+    setCachingEnabled(false);
     }
 
 DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key) : DataSourceAccount()
@@ -170,6 +187,17 @@ void DataSourceAccount::setWSGTokenGetterCallback(const std::function<std::strin
 void DataSourceAccount::SetSASTokenGetterCallback(const std::function<std::string(const Utf8String& docGuid)>&)
     {
     // Nothing to do
+    }
+
+
+void DataSourceAccount::setCachingEnabled(bool enabled)
+    {
+    cachingEnabled = enabled;
+    }
+
+bool DataSourceAccount::getCachingEnabled(void)
+    {
+    return cachingEnabled;
     }
 
 DataSource * DataSourceAccount::createDataSource(const DataSourceName &name, const SessionName &session)

@@ -213,10 +213,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     else if (settings->IsDataFromRDS() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceAzureCURL";
-        //account_name = (L"AzureCURLAccount" + settings->GetGUID()).c_str();
         account_name = L"AzureCURLAccount";
 
-//      account_key = WString(settings->GetUtf8GUID().c_str(), BentleyCharEncoding::Utf8).c_str(); // the key is the reality data guid
         session_name = WString(settings->GetUtf8GUID().c_str(), BentleyCharEncoding::Utf8).c_str(); // the key is the reality data guid
 
         account_key = L"";
@@ -228,13 +226,14 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         WString url(m_smRDSProvider->GetAzureURLAddress().c_str(), BentleyCharEncoding::Utf8);
         m_masterFileName = BeFileName(m_smRDSProvider->GetRootDocument());
-        account_prefix = DataSourceURL(settings->GetGUID().c_str());
+
+        account_prefix = DataSourceURL(L"");
+
         auto firstSeparatorPos = url.find(L".");
         account_identifier = DataSourceAccount::AccountIdentifier(url.substr(8, firstSeparatorPos - 8).c_str());
 
         account_name += L"-";
         account_name += account_identifier;
-
         }
     else if (settings->IsDataFromAzure() && settings->IsUsingCURL())
         {
@@ -260,6 +259,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     // Get or Create an account on the file service streaming
     if ((account = service->getOrCreateAccount(account_name, account_identifier, account_key)) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
+
+    account->setCachingEnabled(s_stream_enable_caching);    // NEEDS_WORK_SM : Get this from a configuration system
     
     ScalableMeshAdmin::ProxyInfo proxyInfo(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetProxyInfo());
 
@@ -269,10 +270,13 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         static_cast<DataSourceAccountCURL*>(account)->setProxy(proxyInfo.m_user, proxyInfo.m_password, proxyInfo.m_serverUrl);
         }
 
+    if (sasCallback != nullptr)
+        session_name.setKeyRemapFunction(*sasCallback.get());
 
-    if (sasCallback != nullptr) account->SetSASTokenGetterCallback(*sasCallback.get());
     account->setAccountSSLCertificatePath(sslCertificatePath.c_str());
+
     account->setPrefixPath(account_prefix);
+
     auto* casted_account = dynamic_cast<DataSourceAccountWSG*>(account);
     if (casted_account != nullptr)
         {
@@ -280,7 +284,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         casted_account->setUseDirectAzureCalls(s_use_qa_azure);
         }
 
-    if (!settings->IsLocal())
+    if (!settings->IsLocal() && account->getCachingEnabled())
         {
         // Setup Caching service + set up local file based caching
         DataSourceService                       *   serviceCaching;
@@ -288,10 +292,9 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         if ((serviceCaching = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Unknown_Service);
 
-        DataSourceAccount::AccountName cacheAccountName(L"Cache-");
-        cacheAccountName += account_name;
+        DataSourceAccount::AccountName cacheAccountName(L"Cache");
 
-        if ((accountCaching = serviceCaching->createAccount(cacheAccountName, DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
+        if ((accountCaching = serviceCaching->getOrCreateAccount(cacheAccountName, DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
         accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\SMStreamingCache"));
@@ -1898,7 +1901,7 @@ template <class EXTENT> DataSource* SMStreamingStore<EXTENT>::InitializeDataSour
     if (dataSource == nullptr)
         return nullptr;
                                                     // Make sure caching is enabled for this DataSource
-    dataSource->setCachingEnabled(s_stream_enable_caching);
+//  dataSource->setCachingEnabled(s_stream_enable_caching);
 
     dest.reset(new unsigned char[destSize]);
                                                     // Return the DataSource
@@ -2271,7 +2274,7 @@ DataSource* StreamingDataBlock::initializeDataSource(DataSourceAccount *dataSour
     if (dataSource == nullptr)
         return nullptr;
                                                         // Make sure caching is enabled for this DataSource
-    dataSource->setCachingEnabled(s_stream_enable_caching);
+//  dataSource->setCachingEnabled(s_stream_enable_caching);
 
     dest.reset(new unsigned char[destSize]);
                                                         // Return the DataSource
