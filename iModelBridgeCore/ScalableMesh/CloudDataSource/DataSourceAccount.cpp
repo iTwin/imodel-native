@@ -184,12 +184,6 @@ void DataSourceAccount::setWSGTokenGetterCallback(const std::function<std::strin
     // Nothing to do
     }
 
-void DataSourceAccount::SetSASTokenGetterCallback(const std::function<std::string(const Utf8String& docGuid)>&)
-    {
-    // Nothing to do
-    }
-
-
 void DataSourceAccount::setCachingEnabled(bool enabled)
     {
     cachingEnabled = enabled;

@@ -317,16 +317,10 @@ DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & acco
     return DataSourceStatus();
     }
 
-void DataSourceAccountAzureCURL::SetSASTokenGetterCallback(const std::function<std::string(const Utf8String& docGuid)>& tokenGetter)
-    {
-// m_getSASToken = tokenGetter;
-    }
 
 DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &session)
     {
     auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
-
-//    auto azureToken = this->m_getSASToken(Utf8String(session.getSessionKey().c_str()));
 
     auto azureToken = session.getKeyRemapFunction()(Utf8String(session.getSessionKey().c_str()));
 

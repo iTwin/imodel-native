@@ -80,7 +80,6 @@ public:
 
     
     CLOUD_EXPORT virtual void           setWSGTokenGetterCallback       (const std::function<std::string(void)>& tokenGetter);
-    CLOUD_EXPORT virtual void           SetSASTokenGetterCallback       (const std::function<std::string(const Utf8String& docGuid)>& tokenGetter);
 
     CLOUD_EXPORT void                   setCachingEnabled               (bool enabled);
     CLOUD_EXPORT bool                   getCachingEnabled               (void);
