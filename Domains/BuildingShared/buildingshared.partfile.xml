@@ -172,5 +172,14 @@
             <Assemblies>Delivery/$(shlibprefix)BuildingUtils$(shlibext)</Assemblies>
         </Bindings>
     </Part>
+
+    <Part Name="BuildingUnits_DgnV8" BentleyBuildMakeFile="Units/BuildingUnits.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
+        <SubPart PartName="BuildingSharedApi_DgnV8"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)BuildingUnits$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
     
 </BuildContext>

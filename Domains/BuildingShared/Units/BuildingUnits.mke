@@ -2,6 +2,9 @@
 #     $Source: Units/BuildingUnits.mke $
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
+%if defined (DGNV8_BUILD)
+    PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%endif
 %include mdl.mki
 
 AppName = BuildingUnits
@@ -41,6 +44,11 @@ DLM_NAME = $(AppName)
 DLM_NOENTRY = 1
 DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
+
+%if defined (DGNV8_BUILD)
+    DLM_NO_DLS = 1
+    DLM_NO_DEF = 1
+%endif
 
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
 
