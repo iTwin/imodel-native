@@ -271,20 +271,20 @@ void CurveVectorManipulationStrategy::ConnectStartEnd
     if (cv.empty())
         return;
 
-    CurveLocationDetail start, end;
+    DPoint3d start, end;
     if (!cv.GetStartEnd(start, end))
         return;
-    if (!start.point.AlmostEqual(end.point))
+    if (!start.AlmostEqual(end))
         {
         ICurvePrimitivePtr lastPrimitive = cv.back();
         if (lastPrimitive.IsNull())
             return;
 
         if (nullptr != lastPrimitive->GetLineStringP())
-            lastPrimitive->GetLineStringP()->push_back(start.point);
+            lastPrimitive->GetLineStringP()->push_back(start);
         else
             {
-            ICurvePrimitivePtr endStart = ICurvePrimitive::CreateLine(end.point, start.point);
+            ICurvePrimitivePtr endStart = ICurvePrimitive::CreateLine(DSegment3d::From(end, start));
             cv.Add(endStart);
             }
         }

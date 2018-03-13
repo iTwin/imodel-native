@@ -53,8 +53,17 @@
 //-----------------------------------------------------------------------------------------
 // Define both RefCounterPtr/CPtr and (P, CP, R, CR) types
 //-----------------------------------------------------------------------------------------
+#ifdef DGNV8_BUILD
+#define BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(_name_) \
+    BEGIN_BUILDING_SHARED_NAMESPACE \
+        DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) \
+        DEFINE_REF_COUNTED_POINTER(_name_) \
+        typedef RefCountedPtr<_name_> _name_##CPtr; \
+    END_BUILDING_SHARED_NAMESPACE
+#else
 #define BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(_name_) \
     BEGIN_BUILDING_SHARED_NAMESPACE \
         DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) \
         DEFINE_REF_COUNTED_PTR(_name_) \
     END_BUILDING_SHARED_NAMESPACE
+#endif

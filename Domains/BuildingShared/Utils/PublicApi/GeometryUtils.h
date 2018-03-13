@@ -19,6 +19,10 @@ class GeometryUtils
     {
 public:    
 
+    //! A copy of DVec3d::FromRotateVectorAroundVector.
+    //! On bim0200dev calls the DVec3d::FromRotateVectorAroundVector and on older streams - uses the copied code.
+    BUILDINGSHAREDUTILS_EXPORT static ValidatedDVec3d CreateVectorFromRotateVectorAroundVector(DVec3dCR vector, DVec3dCR axis, Angle angle);
+
     //! @param[in] curve The CurveVector to clone
     //! @param[in] transform The transform to apply to cloned curve
     //! @return a "deep copy" with transform applied

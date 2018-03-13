@@ -15,6 +15,38 @@ BEGIN_BUILDING_SHARED_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                03/2018
 //---------------+---------------+---------------+---------------+---------------+------
+ValidatedDVec3d GeometryUtils::CreateVectorFromRotateVectorAroundVector
+(
+    DVec3dCR vector, 
+    DVec3dCR axis, 
+    Angle angle
+)
+    {
+#ifndef DGNV8_BUILD
+    return DVec3d::FromRotateVectorAroundVector(vector, axis, angle);
+#else
+    // Copied from DVec3d::FromRotateVectorAroundVector
+    // Rodriguez formulat, https://en.wikipedia.org/wiki/Rodrigues'_rotation_formula
+    auto unitAxis = axis.ValidatedNormalize();
+    if (unitAxis.IsValid())
+        {
+        double c = angle.Cos();
+        double s = angle.Sin();
+        DVec3d unit = unitAxis.Value();
+        return ValidatedDVec3d
+        (
+            c * vector + s * DVec3d::FromCrossProduct(unit, vector) + (unit.DotProduct(vector) * (1.0 - c)) * unit,
+            true
+        );
+        }
+    // unchanged vector if axis is null
+    return ValidatedDVec3d(vector, false);
+#endif
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
 CurveVectorPtr GeometryUtils::CloneTransformed
 (
     CurveVectorCR curve, 

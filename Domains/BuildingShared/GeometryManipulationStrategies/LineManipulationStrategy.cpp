@@ -17,8 +17,8 @@ ICurvePrimitivePtr LineManipulationStrategy::_FinishPrimitive() const
     bvector<DPoint3d> const& keyPoints = GetKeyPoints();
     if (keyPoints.size() < 2)
         return nullptr;
-
-    return ICurvePrimitive::CreateLine(keyPoints[0], keyPoints[1]);
+    
+    return ICurvePrimitive::CreateLine(DSegment3d::From(keyPoints[0], keyPoints[1]));
     }
 
 //--------------------------------------------------------------------------------------

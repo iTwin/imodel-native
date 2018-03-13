@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
+#include <BuildingShared/Utils/UtilsApi.h>
 
 #define INVALID_POINT DPoint3d::From(std::numeric_limits<double>::max(), std::numeric_limits<double>::max(), std::numeric_limits<double>::max())
 
@@ -73,8 +74,8 @@ ICurvePrimitivePtr ArcManipulationStrategy::_FinishPrimitive() const
         if (DoubleOps::AlmostEqual(centerToStart.Magnitude(), 0))
             return nullptr;
 
-        DVec3d centerToMid = DVec3d::FromRotateVectorAroundVector(centerToStart, normal, Angle::FromRadians(m_sweep / 4));
-        DVec3d centerToEnd = DVec3d::FromRotateVectorAroundVector(centerToStart, normal, Angle::FromRadians(m_sweep / 2));
+        DVec3d centerToMid = GeometryUtils::CreateVectorFromRotateVectorAroundVector(centerToStart, normal, Angle::FromRadians(m_sweep / 4));
+        DVec3d centerToEnd = GeometryUtils::CreateVectorFromRotateVectorAroundVector(centerToStart, normal, Angle::FromRadians(m_sweep / 2));
 
         DPoint3d start = GetStart();
         DPoint3d mid = GetCenter() + centerToMid;

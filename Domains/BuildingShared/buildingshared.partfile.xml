@@ -181,5 +181,16 @@
             <Assemblies>Delivery/$(shlibprefix)BuildingUnits$(shlibext)</Assemblies>
         </Bindings>
     </Part>
+
+    <Part Name="GeometryManipulationStrategies_DgnV8" BentleyBuildMakeFile="GeometryManipulationStrategies/GeometryManipulationStrategies.mke" BentleyBuildMakeOptions="-dDGNV8_BUILD">
+        <SubPart PartName="BuildingUtils_DgnV8"/>
+        <SubPart PartName="BuildingUnits_DgnV8"/>
+        <SubPart PartName="BuildingSharedApi_DgnV8"/>
+        <SubPart PartName="GeomDlls" Repository="geomlibs" PartFile="geomlibs"/>
+        <Bindings>
+            <Libs>Delivery/$(libprefix)GeometryManipulationStrategies$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
     
 </BuildContext>

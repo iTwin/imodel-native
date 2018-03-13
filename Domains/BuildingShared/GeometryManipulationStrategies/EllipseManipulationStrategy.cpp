@@ -23,7 +23,7 @@ ICurvePrimitivePtr EllipseManipulationStrategy::_FinishPrimitive() const
     DPoint3d start = GetStart();
     DPoint3d center = GetCenter();
     if (keyPoints.size() == 2)
-        return ICurvePrimitive::CreateArc(DEllipse3d::FromCenterRadiusXY(center, center.Distance(start)));
+        return ICurvePrimitive::CreateArc(DEllipse3d::FromCenterNormalRadius(center, m_normal, center.Distance(start)));
 
     DVec3d vec0 = GetVec0();
     DVec3d vec90 = GetVec90();
@@ -150,7 +150,7 @@ double EllipseManipulationStrategy::CalculateSweep
     {
     DVec3d vec0 = DVec3d::FromStartEnd(center, start);
     DVec3d endVec = DVec3d::FromStartEnd(center, end);
-    BeAssert(!m_normal.IsZero());
+    BeAssert(!DoubleOps::AlmostEqual(m_normal.Magnitude(), 0));
     return vec0.SignedAngleTo(endVec, m_normal);
     }
 

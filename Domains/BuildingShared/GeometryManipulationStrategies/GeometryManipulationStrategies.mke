@@ -2,12 +2,20 @@
 #     $Source: GeometryManipulationStrategies/GeometryManipulationStrategies.mke $
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
+%if defined (DGNV8_BUILD)
+    PolicyFile = $(SrcBsicommon)sharedmki/AssertCommonCompileLinkPolicy.mki
+%endif
 AppName = GeometryManipulationStrategies
 CCompPDBName = $(AppName)
 
 %include mdl.mki
 
 o = $(OutputRootDir)build/BuildingShared/GeometryManipulationStrategies/
+
+%if defined (DGNV8_BUILD)
+    nameToDefine = DGNV8_BUILD
+    %include cdefapnd.mki
+%endif
 
 nameToDefine = __GEOMETRYMANIPULATIONSTRATEGIES_BUILD__
 %include cdefapnd.mki
@@ -98,8 +106,13 @@ DLM_NOENTRY = 1
 DLM_OBJECT_DEST = $(o)
 DLM_OBJECT_FILES = $(objs)
 
+%if defined (DGNV8_BUILD)
+    DLM_NO_DLS = 1
+    DLM_NO_DEF = 1
+%endif
+
 LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(stlibext)
-LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(stlibext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUtils$(libext)
+LINKER_LIBRARIES + $(ContextSubpartsLibs)$(libprefix)BuildingUnits$(libext)
 
 %include $(sharedMki)linkLibrary.mki
