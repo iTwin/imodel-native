@@ -23,6 +23,7 @@ public final class ConnectInterface {
     private static boolean s_initialized       = false;
     private static Context s_appContext        = null;
 
+/* Do not log potentially sensitive information.
     private static void GetVariableValue(String args[]) {
         if( args.length == 0 ) {
             Properties p = System.getProperties();
@@ -39,6 +40,7 @@ public final class ConnectInterface {
             }
         }
     }
+*/
 
     private static void loadLibraries () {
             // insert "marker" into log
@@ -70,7 +72,8 @@ public final class ConnectInterface {
     // Used to load the 'native-lib' library on application startup.
     static {
         Log.d(TAG, "About to load the native library...");
-        GetVariableValue(new String[] {"java.library.path"});
+        // Do not log potentially sensitive information.
+        // GetVariableValue(new String[] {"java.library.path"});
         loadLibraries();
     }
 
