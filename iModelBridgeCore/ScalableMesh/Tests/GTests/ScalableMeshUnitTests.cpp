@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/BeTest.h>
+#include <Bentley/BeThread.h>
 #include "SMUnitTestUtil.h"
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMeshSaveAs.h>
@@ -15,6 +16,8 @@
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
 #include "SMUnitTestDisplayQuery.h"
+
+
 
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
@@ -792,12 +795,13 @@ TEST_P(ScalableMeshGenerationTestWithParams, FromSourceCreation)
     //EXPECT_EQ(smPtr->InSynchWithDataSources(), true);
 
     time_t lastSynchTime;
-    time_t currentTime;
-    time(&currentTime);
 
     smPtr->LastSynchronizationCheck(lastSynchTime);
 
-    EXPECT_EQ(lastSynchTime < currentTime, true);    
+    time_t currentTime;
+    time(&currentTime);
+
+    EXPECT_EQ(lastSynchTime <= currentTime, true);    
     }
 
 /*---------------------------------------------------------------------------------**//**
