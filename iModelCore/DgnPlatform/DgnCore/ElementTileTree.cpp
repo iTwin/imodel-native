@@ -406,7 +406,11 @@ protected:
     AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
-
+    bool _AnyPointVisible(DPoint3dCP pts, int nPts, double tolerance) override
+        {
+        DRange3d range = DRange3d::From(pts, nPts);
+        return range.IntersectsWith(m_range);
+        }
 public:
     TileContext(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, LoadContextCR loadContext)
         : TileContext(geometries, root, range, facetOptions, transformFromDgn, tolerance, tolerance, loadContext) { }
