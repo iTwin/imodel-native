@@ -1434,7 +1434,7 @@ private:
     //! Absolute Error divided by the measured value.
     double m_relativeError;
     //! Units which can be used for presentation.  First FUS is default.
-    bvector<Formatting::FormatUnitSet> m_presentationFUS;
+    bvector<Formatting::FormatUnitSet> m_presentationUnits;
 
     mutable KindOfQuantityId m_kindOfQuantityId;
 
@@ -1488,6 +1488,11 @@ public:
     Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description of this KindOfQuantity.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Get the description of this KindOfQuantity
 
+    //! Sets the Precision used for persisting the information. A precision of zero indicates that a default will be used.
+    //! @param[in]  value  The new value to apply
+    void SetRelativeError(double value) {m_relativeError = value;}
+    double GetRelativeError() const {return m_relativeError;}; //!< Gets the precision used for persisting the information. A precision of zero indicates that a default will be used.
+
     //! Sets the Unit of measurement used for persisting the information
     //! @param[in]  fusDescriptor  The new value to apply
     //! @returns true if the persistence FormatUnitSet is valid, false if not
@@ -1495,60 +1500,56 @@ public:
     ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
     //! Gets the Unit of measurement used for persisting the information
     Formatting::FormatUnitSetCR GetPersistenceUnit() const {return m_persistenceFUS;}
+    ECOBJECTS_EXPORT Utf8String GetPersistenceUnitDescriptor() const;
 
-    //! Sets the Precision used for persisting the information. A precision of zero indicates that a default will be used.
-    //! @param[in]  value  The new value to apply
-    void SetRelativeError(double value) {m_relativeError = value;}
-    double GetRelativeError() const {return m_relativeError;}; //!< Gets the precision used for persisting the information. A precision of zero indicates that a default will be used.
-        
     //! Sets the default presentation Unit of this KindOfQuantity
     //! @param[in]  value  The new value to apply
     //! @return true if the presentation FormatUnitSet is valid, false if not.
     ECOBJECTS_EXPORT bool SetDefaultPresentationUnit(Utf8StringCR fusDescriptor);
     //! Gets the default presentation FormatUnitSet of this KindOfQuantity.
-    Formatting::FormatUnitSetCR GetDefaultPresentationUnit() const {return 0 < m_presentationFUS.size() ? *(&m_presentationFUS[0]) : GetPersistenceUnit();}
-    //! Gets a specific presentation FormatUnitSet from this.
-    //! @param[in] indx The index of the presentation FUS to get.
-    //! @return A const pointer to the FormatUnitSet at the specified index if it exists; otherwise, nullptr.
-    ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(size_t indx) const;
+    Formatting::FormatUnitSetCR GetDefaultPresentationUnit() const {return 0 < m_presentationUnits.size() ? *(&m_presentationUnits[0]) : GetPersistenceUnit();}
 
-    Utf8String GetPresentationFUSDescriptor(size_t indx, bool useAlias) const {return GetPresentationFUS(indx)->ToText();}
+    ECOBJECTS_EXPORT Utf8String GetPresentationUnitDescriptor() const;
 
     //! Adds the FormatUnitSet to the list of presentation Units.
     //! @param[in]  value  The new FormatUnitSet to add to the list of presentation units
     //! @return ECObjectsStatus::InvalidFormatUnitSet if there is a problem detected, otherwise ECObjectsStatus::Success.
-    ECOBJECTS_EXPORT bool AddPresentationUnit(Utf8StringCR fusDescriptor);
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationUnit(Utf8StringCR fusDescriptor);
 
-    ECOBJECTS_EXPORT bool AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
+    //! Creates a FormatUnitSet with the provided unit and format and adds it as a presentation FUS to this.
+    //! @param[in] unit  The Unit to use in the newly created FUS.
+    //! @param[in] format  The format to use in the newly created FUS.
+    //! @return ECObjectsStatus::Succcess if FUS is successfully created and added as a presentation FUS; otherwise, ECObjectsStatus::Error.
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
 
-    //! Removes the specified presentation Unit from this KindOfQuantity
+    //! Removes the specified FUS as a presentation FUS of this.
     ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSetCR fus);
-    //! Removes all presentation Units from this KindOfQuantity
-    void RemoveAllPresentationUnits() {m_presentationFUS.clear();}
-    //! Gets a list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
-    bvector<Formatting::FormatUnitSet> const& GetPresentationUnitList() const {return m_presentationFUS;}
-    //! Returns true if one or more presentation units exist
-    bool HasPresentationUnits() const {return m_presentationFUS.size() > 0;}
+    //! Removes all presentation FUS from this KindOfQuantity
+    void RemoveAllPresentationUnits() {m_presentationUnits.clear();}
+    //! Gets a list of alternative FormatUnitSets appropriate for presenting quantities.
+    bvector<Formatting::FormatUnitSet> const& GetPresentationUnitList() const {return m_presentationUnits;}
+    //! Returns true if one or more presentation FormatUnitSets exist
+    bool HasPresentationUnits() const {return m_presentationUnits.size() > 0;}
 
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     KindOfQuantityId GetId() const {BeAssert(HasId()); return m_kindOfQuantityId;}
     //! Intended to be called by ECDb or a similar system
     void SetId(KindOfQuantityId id) {BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id;}
     bool HasId() const {return m_kindOfQuantityId.IsValid();}
-    ECOBJECTS_EXPORT Json::Value PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias = true) const;
 
     //! Return Json array of allowable presentation units.
-    ECOBJECTS_EXPORT Json::Value GetPresentationsJson(bool useAlias) const;
-    ECOBJECTS_EXPORT Json::Value ToJson(bool useAlias) const;
-    ECOBJECTS_EXPORT BEU::T_UnitSynonymVector* GetSynonymVector() const;
-    ECOBJECTS_EXPORT size_t GetSynonymCount() const;
-    ECOBJECTS_EXPORT BEU::PhenomenonCP GetPhenomenon() const;
+    ECOBJECTS_EXPORT Json::Value GetPresentationsJson() const;
+    //! Returns the Phenomenon supported by this KindOfQuantity.
+    //!
+    //! All Units within this KindOfQuantity must have the same Phenomenon.
+    ECOBJECTS_EXPORT PhenomenonCP GetPhenomenon() const;
+
     //! Write the KindOfQuantity as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
 
-    //! Given a FUS descriptor string, with format {unitName}({formatName}), it will be parsed and used to populate the unit and format. 
+    //! Given a FUS descriptor string, with format {unitName}({formatName}), it will be parsed and used to populate the unit and format.
     //!
     //! The Unit is populated within the context of the kind of quantity's schema. If the EC xml version is,
     //! - less than EC3.2, it will attempt to locate the unit within the standard Units schema. If found the Units schema will be added as a reference schema of the KindOfQuantity's schema.

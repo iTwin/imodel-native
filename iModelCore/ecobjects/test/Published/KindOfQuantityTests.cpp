@@ -12,7 +12,19 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct KindOfQuantityTest : ECTestFixture {};
+struct KindOfQuantityTest : ECTestFixture
+    {
+    ECSchemaPtr m_schema;
+
+    void CreateTestSchema(bool refUnitSchema = false)
+        {
+        EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_schema, "TestSchema", "TS", 1, 0, 0));
+        ASSERT_TRUE(m_schema.IsValid());
+
+        if (refUnitSchema)
+            EC_EXPECT_SUCCESS(m_schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema()));
+        }
+    };
 
 struct KindOfQuantityDeserializationTest : ECTestFixture {};
 
@@ -69,16 +81,16 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationUnits)
     {
     KindOfQuantityP kindOfQuantity;
 
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
-    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDescription("Kind of a Description here"));
-    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDisplayLabel("best quantity of all times"));
+    EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDescription("Kind of a Description here"));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDisplayLabel("best quantity of all times"));
     EXPECT_TRUE(kindOfQuantity->SetPersistenceUnit("u:CM"));
     EXPECT_FALSE(kindOfQuantity->SetPersistenceUnit("u:PI"));
     kindOfQuantity->SetRelativeError(10e-3);
     EXPECT_TRUE(kindOfQuantity->SetDefaultPresentationUnit("u:FT"));
-    EXPECT_FALSE(kindOfQuantity->AddPresentationUnit("u:PI"));
-    EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("u:IN"));
-    EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("u:MILLIINCH"));
+    EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationUnit("u:PI"));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:IN"));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:MILLIINCH"));
     }
 
     {
@@ -128,8 +140,8 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationUnits)
     kindOfQuantity->RemoveAllPresentationUnits();
     EXPECT_EQ(0, kindOfQuantity->GetPresentationUnitList().size());
 
-    EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("u:IN"));
-    EXPECT_TRUE(kindOfQuantity->AddPresentationUnit("u:MILLIINCH"));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:IN"));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:MILLIINCH"));
     EXPECT_EQ(2, kindOfQuantity->GetPresentationUnitList().size());
 
     kindOfQuantity->RemoveAllPresentationUnits();
@@ -151,25 +163,145 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationUnits)
     ECUnitCP milliGramUnit = StandardUnitsHelper::GetUnit("MG");
 
     KindOfQuantityP koq;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
+    EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
     EXPECT_TRUE(koq->SetPersistenceUnit(*meterUnit));
-    EXPECT_FALSE(koq->AddPresentationUnit(*milliGramUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the Persistence Unit.";
+    EXPECT_NE(ECObjectsStatus::Success, koq->AddPresentationUnit(*milliGramUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the Persistence Unit.";
 
     KindOfQuantityP koq2;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq2, "MyKindOfQuantity2"));
-    EXPECT_TRUE(koq2->AddPresentationUnit(*milliGramUnit));
+    EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq2, "MyKindOfQuantity2"));
+    EC_EXPECT_SUCCESS(koq2->AddPresentationUnit(*milliGramUnit));
     EXPECT_FALSE(koq2->SetPersistenceUnit(*meterUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the Presentation Unit.";
 
     KindOfQuantityP koq3;
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq3, "MyKindOfQuantity3"));
-    EXPECT_TRUE(koq3->AddPresentationUnit(*meterUnit));
+    EC_EXPECT_SUCCESS(koq3->AddPresentationUnit(*meterUnit));
     EXPECT_TRUE(koq3->SetPersistenceUnit(*centimeterUnit));
-    EXPECT_FALSE(koq3->AddPresentationUnit(*milliGramUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the existing Presentation and Persistence Unit.";
+    EXPECT_NE(ECObjectsStatus::Success, koq3->AddPresentationUnit(*milliGramUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the existing Presentation and Persistence Unit.";
 
     KindOfQuantityP koq4;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq4, "MyKindOfQuantity4"));
-    EXPECT_TRUE(koq4->AddPresentationUnit(*milliGramUnit));
-    EXPECT_FALSE(koq4->AddPresentationUnit(*meterUnit)) << "The Unit M is from the LENGTH Phenomenon which is different than the existing Presentation Unit.";
+    EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq4, "MyKindOfQuantity4"));
+    EC_EXPECT_SUCCESS(koq4->AddPresentationUnit(*milliGramUnit));
+    EXPECT_NE(ECObjectsStatus::Success, koq4->AddPresentationUnit(*meterUnit)) << "The Unit M is from the LENGTH Phenomenon which is different than the existing Presentation Unit.";
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityTest, PersistenceUnitDescriptor)
+    {
+    CreateTestSchema(true);
+
+    // already added as a reference schema
+    auto unitSchema = StandardUnitsHelper::GetSchema();
+
+    auto inchUnit = unitSchema->GetUnitCP("IN");
+
+    ECUnitP smoot;
+    m_schema->CreateUnit(smoot, "Smoot", "M", *unitSchema->GetPhenomenonCP("Length"), *unitSchema->GetUnitSystemCP("SI"), 1.7018);
+
+    auto defaultFormat = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
+
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "Inch_In_RefSchema_Without_Format");
+    koq->SetPersistenceUnit(*inchUnit);
+
+    EXPECT_STREQ("u:IN(DefaultRealU)", koq->GetPersistenceUnitDescriptor().c_str()) << "The descriptor should use the qualified persistence unit name";
+    }
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "Inch_In_RefSchema_With_Format");
+    koq->SetPersistenceUnit(*inchUnit, defaultFormat);
+
+    EXPECT_STREQ("u:IN(DefaultRealU)", koq->GetPersistenceUnitDescriptor().c_str()) << "The descriptor should use the qualified persistence unit name and the format name";
+    }
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "Smoot_In_Schema_Without_Format");
+    koq->SetPersistenceUnit(*smoot);
+
+    EXPECT_STREQ("Smoot(DefaultRealU)", koq->GetPersistenceUnitDescriptor().c_str()) << "The descriptor should use the qualified persistence unit name";
+    }
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "Smoot_In_Schema_With_Format");
+    koq->SetPersistenceUnit(*smoot, defaultFormat);
+
+    EXPECT_STREQ("Smoot(DefaultRealU)", koq->GetPersistenceUnitDescriptor().c_str()) << "The descriptor should use the qualified persistence unit name and the format name";
+    }
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "No_Unit_Or_Format");
+
+    EXPECT_STREQ("", koq->GetPersistenceUnitDescriptor().c_str()) << "The descriptor should be empty. This case should never happen in a KindOfQuantity";
+    }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
+    {
+    CreateTestSchema(true);
+
+    // already added as a reference schema
+    auto unitSchema = StandardUnitsHelper::GetSchema();
+
+    auto inchUnit = unitSchema->GetUnitCP("IN");
+    auto ftUnit = unitSchema->GetUnitCP("FT");
+
+    ECUnitP smoot;
+    m_schema->CreateUnit(smoot, "Smoot", "M", *unitSchema->GetPhenomenonCP("Length"), *unitSchema->GetUnitSystemCP("SI"), 1.7018);
+
+    auto defaultFormat = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
+
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "Inch_In_RefSchema_Without_Format");
+    koq->SetPersistenceUnit(*ftUnit);
+    koq->AddPresentationUnit(*inchUnit);
+
+    EXPECT_STREQ("u:IN(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name";
+    }
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "Inch_In_RefSchema_With_Format");
+    koq->SetPersistenceUnit(*ftUnit);
+    koq->AddPresentationUnit(*inchUnit, defaultFormat);
+
+    EXPECT_STREQ("u:IN(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
+    }
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "Smoot_In_Schema_Without_Format");
+    koq->SetPersistenceUnit(*ftUnit);
+    koq->AddPresentationUnit(*smoot);
+
+    EXPECT_STREQ("Smoot(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name";
+    }
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "Smoot_In_Schema_With_Format");
+    koq->SetPersistenceUnit(*ftUnit);
+    koq->AddPresentationUnit(*smoot, defaultFormat);
+
+    EXPECT_STREQ("Smoot(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
+    }
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "No_Unit_Or_Format");
+
+    EXPECT_STREQ("", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should be empty when no presentation Units are defined.";
+    }
+    {
+    KindOfQuantityP koq;
+    m_schema->CreateKindOfQuantity(koq, "Multiple_Units_and_Format");
+    koq->SetPersistenceUnit(*ftUnit);
+    koq->AddPresentationUnit(*smoot, defaultFormat);
+    koq->AddPresentationUnit(*inchUnit, defaultFormat);
+
+    EXPECT_STREQ("Smoot(DefaultRealU);u:IN(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
+    }
     }
 
 //---------------------------------------------------------------------------------------

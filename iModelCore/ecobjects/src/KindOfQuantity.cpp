@@ -40,7 +40,7 @@ bool KindOfQuantity::Verify() const
         isValid = false;
         }
     
-    for (Formatting::FormatUnitSetCR presFUS : m_presentationFUS)
+    for (Formatting::FormatUnitSetCR presFUS : m_presentationUnits)
         {
         if (presFUS.HasProblem())
             {
@@ -168,22 +168,6 @@ bool KindOfQuantity::SetPersistenceUnit(Utf8StringCR fusDescriptor)
     return true;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Kyle.Abramowitz                03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-//bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Utf8CP format)
-//    {
-//    if (unit.IsConstant())
-//        return false;
-//
-//    auto fus = Formatting::FormatUnitSet(&unit, format);
-//    if (fus.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
-//        return false;
-//    
-//    m_persistenceFUS = fus;
-//    return true;
-//    }
-
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
@@ -203,6 +187,25 @@ bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSp
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
+Utf8String KindOfQuantity::GetPersistenceUnitDescriptor() const
+    {
+    Utf8String descriptor = "";
+    if (nullptr != m_persistenceFUS.GetUnit())
+        descriptor += static_cast<ECUnitCP>(m_persistenceFUS.GetUnit())->GetQualifiedName(GetSchema()).c_str();
+
+    if (nullptr != m_persistenceFUS.GetNamedFormatSpec())
+        {
+        descriptor += "(";
+        descriptor += m_persistenceFUS.GetNamedFormatSpec()->GetName();
+        descriptor += ")";
+        }
+
+    return descriptor;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
 bool KindOfQuantity::SetDefaultPresentationUnit(Utf8StringCR fusDescriptor)
     {
     ECUnitCP unit;
@@ -216,20 +219,20 @@ bool KindOfQuantity::SetDefaultPresentationUnit(Utf8StringCR fusDescriptor)
     if (presFUS.HasProblem() ||
         ((nullptr != presFUS.GetUnit()) && presFUS.GetUnit()->IsConstant()))
         return false;
-    m_presentationFUS.insert(m_presentationFUS.begin(), presFUS);
+    m_presentationUnits.insert(m_presentationUnits.begin(), presFUS);
     return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-bool KindOfQuantity::AddPresentationUnit(Utf8StringCR fusDescriptor)
+ECObjectsStatus KindOfQuantity::AddPresentationUnit(Utf8StringCR fusDescriptor)
     {
     ECUnitCP unit;
     Formatting::NamedFormatSpecCP nfs;
     auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
     if (ECObjectsStatus::Success != status)
-        return false;
+        return status;
 
     Formatting::FormatUnitSet presFUS(nfs, unit);
 
@@ -237,38 +240,60 @@ bool KindOfQuantity::AddPresentationUnit(Utf8StringCR fusDescriptor)
         ((nullptr != presFUS.GetUnit()) && presFUS.GetUnit()->IsConstant()) ||
         (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presFUS.GetUnit(), m_persistenceFUS.GetUnit())) ||
         (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(presFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
-        return false;
+        return ECObjectsStatus::Error;
 
-    m_presentationFUS.push_back(presFUS);
-    return true;
+    m_presentationUnits.push_back(presFUS);
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                    03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-bool KindOfQuantity::AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format)
+ECObjectsStatus KindOfQuantity::AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format)
     {
     if (unit.IsConstant())
-        return false;
+        return ECObjectsStatus::Error;
 
     Formatting::FormatUnitSet fus(format, &unit);
     if (fus.HasProblem() ||
         (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), m_persistenceFUS.GetUnit())) ||
         (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(fus.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
-        return false;
+        return ECObjectsStatus::Error;
 
-    m_presentationFUS.push_back(fus);
-    return true;
+    m_presentationUnits.push_back(fus);
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-void KindOfQuantity::RemovePresentationUnit(Formatting::FormatUnitSetCR presentationFUS)
+void KindOfQuantity::RemovePresentationUnit(Formatting::FormatUnitSetCR presentationUnit)
     {
-    for (auto itor = m_presentationFUS.begin(); itor != m_presentationFUS.end(); itor++)
-        if (itor->IsIdentical(presentationFUS))
-            m_presentationFUS.erase(itor);
+    for (auto itor = m_presentationUnits.begin(); itor != m_presentationUnits.end(); itor++)
+        if (itor->IsIdentical(presentationUnit))
+            m_presentationUnits.erase(itor);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+Utf8String KindOfQuantity::GetPresentationUnitDescriptor() const
+    {
+    Utf8String descriptor = "";
+
+    bool first = true;
+    for(Formatting::FormatUnitSetCR fus : m_presentationUnits)
+        {
+        if (!first)
+            descriptor += ";";
+        descriptor += static_cast<ECUnitCP>(fus.GetUnit())->GetQualifiedName(GetSchema()).c_str();
+        descriptor += "(";
+        descriptor += fus.GetNamedFormatSpec()->GetName();
+        descriptor += ")";
+        first = false;
+        }
+
+    return descriptor;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -322,14 +347,14 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
             {
             if (fus.HasProblem())
                 {
-                LOG.errorv("Failed to write schema because presentation FUS for KindOfQuantity '%s' has problem: '%s'.", GetName().c_str(), fus.GetProblemDescription().c_str());
+                LOG.errorv("Failed to write schema because presentation FUS for KindOfQuantity '%s' has problem: '%s'.", GetFullName().c_str(), fus.GetProblemDescription().c_str());
                 return SchemaWriteStatus::FailedToSaveXml;
                 }
 
             presUnit = getUnitNameFromVersion((ECUnitCP)fus.GetUnit());
             if (presUnit.empty())
                 {
-                // LOG.errorv("Failed to write schema becasue presentation FUS for KindOfQuantity '%s' has problem: '%s'.", );
+                LOG.errorv("Failed to write schema becasue presentation FUS for KindOfQuantity '%s'.", GetFullName().c_str());
                 return SchemaWriteStatus::FailedToSaveXml;
                 }
 
@@ -423,7 +448,6 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
     SetRelativeError(relError);
 
     // Read Persistence FUS
-
     if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
         {
         LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), PERSISTENCE_UNIT_ATTRIBUTE);
@@ -449,7 +473,6 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
                      value.c_str(), GetName().c_str(), m_persistenceFUS.GetProblemDescription().c_str());
 
     // Read Presentation FUS'
-
     if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, PRESENTATION_UNITS_ATTRIBUTE))
         {
         bvector<Utf8String> presentationUnits;
@@ -475,7 +498,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
                 LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
                     value.c_str(), GetName().c_str(), presFUS.GetProblemDescription().c_str());
 
-            m_presentationFUS.push_back(presFUS);
+            m_presentationUnits.push_back(presFUS);
             }
         }
     return SchemaReadStatus::Success;
@@ -578,32 +601,10 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::N
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-@bsimethod                                David.Fox-Rabinovitz      05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Formatting::FormatUnitSetCP KindOfQuantity::GetPresentationFUS(size_t indx) const
-    {
-    BeAssert(indx >= m_presentationFUS.size());
-    if (indx >= m_presentationFUS.size())
-        return nullptr;
-
-    return &m_presentationFUS[indx];
-    }
-
-/*---------------------------------------------------------------------------------**//**
-@bsimethod                                David.Fox-Rabinovitz      06/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value KindOfQuantity::PresentationJson(BEU::QuantityCR qty, size_t indx, bool useAlias) const
-    {
-    Formatting::FormatUnitSetCP fusCP = GetPresentationFUS(indx);
-    Json::Value jval = fusCP->FormatQuantityJson(qty);
-    return jval;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  06/2017
 //---------------------------------------------------------------------------------------
-Json::Value KindOfQuantity::GetPresentationsJson(bool useAlias) const
+Json::Value KindOfQuantity::GetPresentationsJson() const
     {
     Json::Value arrayObj(Json::arrayValue);
 
@@ -621,45 +622,13 @@ Json::Value KindOfQuantity::GetPresentationsJson(bool useAlias) const
     return arrayObj;
     }
 
-/*---------------------------------------------------------------------------------**//**
-@bsimethod                                David.Fox-Rabinovitz      08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value KindOfQuantity::ToJson(bool useAlias) const
-    {
-    Json::Value jval;
-    jval[Formatting::json_KOQName()] = m_fullName.c_str();
-    jval[Formatting::json_schemaName()] = m_schema.GetName().c_str();
-    jval[Formatting::json_persistFUS()] = m_persistenceFUS.ToJson(useAlias);
-    jval[Formatting::json_relativeErr()] = GetPresentationsJson(useAlias);
-    return jval;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                David.Fox-Rabinovitz      08/2017
 //---------------------------------------------------------------------------------------
-BEU::T_UnitSynonymVector* KindOfQuantity::GetSynonymVector() const
-    {
-    BEU::PhenomenonCP php = GetPhenomenon();
-    return (nullptr == php) ? nullptr : php->GetSynonymVector();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                David.Fox-Rabinovitz      08/2017
-//---------------------------------------------------------------------------------------
-size_t KindOfQuantity::GetSynonymCount() const
-    {
-    BEU::PhenomenonCP php = GetPhenomenon();
-    return (nullptr == php) ? 0 : php->GetSynonymCount();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                David.Fox-Rabinovitz      08/2017
-//---------------------------------------------------------------------------------------
-BEU::PhenomenonCP KindOfQuantity::GetPhenomenon() const
+PhenomenonCP KindOfQuantity::GetPhenomenon() const
     {
     BEU::UnitCP un = GetPersistenceUnit().GetUnit();
-    BEU::PhenomenonCP php = (nullptr == un)? nullptr : un->GetPhenomenon();
-    return php;
+    return (nullptr == un) ? nullptr : static_cast<PhenomenonCP>(un->GetPhenomenon());
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

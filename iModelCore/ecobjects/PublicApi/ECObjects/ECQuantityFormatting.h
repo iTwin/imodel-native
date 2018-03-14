@@ -16,8 +16,6 @@ namespace BEF = BentleyApi::Formatting;
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-
-
 enum class ECQuantityFormattingStatus
     {
     Success = 0,
