@@ -93,10 +93,10 @@ Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantit
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, double* persist, KindOfQuantityCP koq, Formatting::FormatUnitSetR presentationFUS, Formatting::FormatProblemCode* probCode)
+BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, double* persist, KindOfQuantityCP koq, Formatting::FormatUnitSetR presentationFUS, Formatting::FormatProblemCode* probCode)
     {
     Formatting::FormatUnitSetCR persistFUS = koq->GetPersistenceUnit();
-    return Formatting::QuantityFormatting::CreateQuantity(input, start, persist, persistFUS, presentationFUS, probCode);
+    return Formatting::QuantityFormatting::CreateQuantity(input, persist, persistFUS, presentationFUS, probCode);
     }
 
 //----------------------------------------------------------------------------------------
@@ -105,9 +105,9 @@ BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, d
 //     context must be checked by the caller. When multiple Units are being used the Quantity Unit
 //   will be the "biggest", but in the first implementaiton the biggest is assumed to be the leftmost
 //----------------------------------------------------------------------------------------
-BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, Formatting::FormatUnitSetCR fus, Formatting::FormatProblemCode* probCode)
+BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, Formatting::FormatUnitSetCR fus, Formatting::FormatProblemCode* probCode)
     {
-    return Formatting::QuantityFormatting::CreateQuantity(input, start, fus, probCode);
+    return Formatting::QuantityFormatting::CreateQuantity(input, fus, probCode);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

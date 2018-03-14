@@ -32,8 +32,8 @@ public:
     ECOBJECTS_EXPORT static Utf8String FormatPersistedValue(double dval, KindOfQuantityCP koq, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat = nullptr);
     ECOBJECTS_EXPORT static Utf8String FormatPersistedValue(double dval, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::NamedFormatSpecCR formatSpec, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat = nullptr);
 
-    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, double* persist, KindOfQuantityCP koq, Formatting::FormatUnitSetR presentationFUS, Formatting::FormatProblemCode* probCode);
-    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, size_t start, Formatting::FormatUnitSetCR fus, Formatting::FormatProblemCode* probCode);
+    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, double* persist, KindOfQuantityCP koq, Formatting::FormatUnitSetR presentationFUS, Formatting::FormatProblemCode* probCode);
+    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, Formatting::FormatUnitSetCR fus, Formatting::FormatProblemCode* probCode);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
