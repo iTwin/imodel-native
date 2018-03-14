@@ -2884,7 +2884,7 @@ void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, T
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(DgnElementId elementId, bool allowLoad)
     {
-#define DEBUG_ELEMENT_FILTER
+//#define DEBUG_ELEMENT_FILTER
 #ifdef DEBUG_ELEMENT_FILTER
     static  DgnElementId s_debugId = DgnElementId((uint64_t) 73634);
 
@@ -3018,6 +3018,64 @@ struct MeshTileClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
     StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
     StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
 };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometry::TileStrokes clipSegments(TileGeometry::TileStrokes input, DRange3dCR tileRange) 
+    {
+    TileGeometry::TileStrokes output(*input.m_displayParams, false);
+    output.m_strokes.reserve(input.m_strokes.size());
+
+    for (auto const& points : input.m_strokes)
+        {
+        DRange3d    range = DRange3d::From(points);
+        DPoint3d    rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
+
+        DPoint3d prevPt = points.front();
+        bool prevOutside = !tileRange.IsContained(prevPt);
+        if (!prevOutside)
+            {
+            bvector<DPoint3d>   points(1, prevPt);
+            output.m_strokes.push_back(points);
+            }
+
+        for (size_t i = 1; i < points.size(); i++)
+            {
+            auto nextPt = points[i];
+            bool nextOutside = !tileRange.IsContained(nextPt);
+            DSegment3d clippedSegment;
+            if (prevOutside || nextOutside)
+                {
+                double param0, param1;
+                DSegment3d unclippedSegment = DSegment3d::From(prevPt, nextPt);
+                if (!tileRange.IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
+                    {
+                    // entire segment clipped
+                    prevPt = nextPt;
+                    continue;
+                    }
+                }
+
+            DPoint3d startPt = prevOutside ? clippedSegment.point[0] : prevPt;
+            DPoint3d endPt = nextOutside ? clippedSegment.point[1] : nextPt;
+
+            if (prevOutside)
+                {
+                bvector<DPoint3d>   points(1, startPt);
+                output.m_strokes.push_back(points);
+                }
+
+            output.m_strokes.back().push_back(endPt);
+
+            prevPt = nextPt;
+            prevOutside = nextOutside;
+            }
+
+        BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().size());
+        }
+
+    return output;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -3038,7 +3096,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
     for (auto& geom : geometries)
         {
-#ifndef NDEBUG
+#ifdef DEBUG_GEOMETRY_FILTER
         auto        entityId = geom->GetEntityId().GetValue();
         static      uint64_t    s_debugEntityId = 73634;
 
@@ -3109,8 +3167,9 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             {
             auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, TileGeometry::NormalMode::Never));
         
-            for (auto& tileStrokes : tileStrokesArray)
+            for (auto& inTileStrokes : tileStrokesArray)
                 {
+                auto    tileStrokes = clipSegments (inTileStrokes, myTileRange);
                 TileDisplayParamsCPtr   displayParams = tileStrokes.m_displayParams;
                 TileMeshMergeKey key(*displayParams, false, false, geom->GetEntityId().IsValid());
 
