@@ -2,7 +2,7 @@
 |
 |     $Source: include/json/value.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -614,14 +614,8 @@ class JSON_API Value
       /// Access an object value by name, returns null if there is no member with that name.
       JsonValueCR operator[](Utf8CP key) const
         {
-        if (isNull())
-            return GetNull();
-
-        if (type_ != objectValue)
-            {
-            BeAssert(false);
-            return GetNull();
-            }
+        if (isNull() || type_ != objectValue)
+            return GetNull(); // don't assert that this is a problem, it's not.
 
         auto it = value_.map_->find(CZString(key, CZString::noDuplication));
         return (it == value_.map_->end()) ? GetNull() : (*it).second;
