@@ -1480,21 +1480,6 @@ NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString)
     return nfs;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-void FormattingToken::Init()
-    {
-    m_cursorStart = (nullptr == m_cursor) ? 0 : m_cursor->GetCurrentPosition();
-    m_word.clear();
-    m_delim.clear();
-    m_tokenLength = 0;
-    m_tokenBytes = 0;
-    m_isASCII = true;
-    }
-
-
-
 //===================================================
 //
 // StdFormatSet Methods

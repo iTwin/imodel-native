@@ -242,7 +242,7 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
 
     if (NoProblem())  // don't try to decompose if the spec is not valid
         {
-        if (!Utils::AreUnitsComparable(uom, smallest))
+        if (BEU::Unit::AreCompatible(uom, smallest))
             {
             UpdateProblemCode(FormatProblemCode::CNS_UncomparableUnits);
             }

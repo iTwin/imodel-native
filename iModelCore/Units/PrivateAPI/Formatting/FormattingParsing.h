@@ -18,13 +18,11 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingDividers)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingWord)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingCursorSection)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CursorScanPoint)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericAccumulator)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumberGrabber)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParsingSegment)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParsingSet)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedQuantity)
 
 struct CursorScanPoint
     {
@@ -371,79 +369,6 @@ public:
     };
 
 //=======================================================================================
-// the cursor section describes a consistent part of the original text string where each character 
-//   belongs to the specific semantic group of characters/symbols regardless of their code page
-// Each of those groups is represented by an ASCII symbol: 0 - represents any digit, a - represents
-//  any letter, s - space, n - number, f -fraction, u -uom. This approach allows to create a compact signature of the given
-//    string that could be quickly investigated further by accessing a specific part that is already
-//   categorized
-// @bsiclass                                                    David.Fox-Rabinovitz
-//=======================================================================================
-struct FormattingCursorSection
-    {
-private:
-        size_t m_start;      // start index
-        size_t m_symbCount;  // logical length of the section
-        size_t m_byteCount;  // the actual - byte - length of the section 
-        NumericAccumulator m_numAcc;
-        CursorSectionType m_type;
-        Utf8Char m_symbol;
-
-        CursorSectionState TrySymbol(Utf8Char symb)
-            {
-            if (m_symbol == FormatConstant::EndOfLine() && m_symbCount == 0 && symb != FormatConstant::EndOfLine())
-                {
-                m_symbol = symb;
-                return CursorSectionState::Success;
-                }
-            if(m_symbol == symb)
-                return CursorSectionState::Success;
-
-            return CursorSectionState::RejectedSymbol;
-            }
-public:
-
-    FormattingCursorSection(size_t start)
-        {
-        m_start = start;
-        m_symbCount = 0;
-        m_byteCount = 0;
-        m_symbol = FormatConstant::EndOfLine();
-        m_type = CursorSectionType::Undefined;
-        }
-
-    Utf8Char GetSymbol() { return m_symbol; }
-    size_t GetStart() { return m_start; }
-    size_t GetSymbCount() { return m_symbCount; }
-    double GetReal() { return m_numAcc.GetReal(); }
-    double GetInteger() { return m_numAcc.GetInteger(); }
-    bool IsNumber() { return m_symbol == FormatConstant::NumberSymbol(); }
-    bool IsSpace() { return m_symbol == FormatConstant::SpaceSymbol(); }
-    bool IsWord() { return m_symbol == FormatConstant::WordSymbol(); }
-    bool HasProblem() { return m_numAcc.HasProblem(); }
-
-    UNITS_EXPORT CursorSectionState AddSymbol(size_t code, size_t byteLen);
-
-    };
-
-struct CursorSectionSet
-    {
-    private:
-        bvector<FormattingCursorSection> m_set;
-        FormattingCursorSectionCP m_current;
-        CursorSectionState m_stat;
-
-    public:
-        UNITS_EXPORT CursorSectionSet(Utf8CP input, size_t start);
-        CursorSectionSet():m_current(nullptr), m_stat(CursorSectionState::Success){}
-        void Reset() { m_set.clear(); }
-        CursorSectionState GetState() const { return m_stat; }
-        size_t GetCount() { return m_set.size(); }
-        UNITS_EXPORT CursorSectionState AddSymbol(size_t code, size_t byteLen);
-    };
-
-
-//=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz
 //=======================================================================================
 struct FormattingScannerCursor
@@ -462,7 +387,6 @@ private:
     char m_temp;
     CursorScanTriplet m_triplet;
     FormattingSignature m_traits;
-    CursorSectionSet m_sections;
 
     // takes an logical index to an array of ordered bytes representing an integer entity in memory and 
     // returns the physical index of the same array adjusted by endianness. The little endian is default 
@@ -483,18 +407,15 @@ public:
     size_t GetCurrentPosition() { return m_cursorPosition; }
     size_t GetLastLength() { return m_lastScannedCount; }
     bool CursorInRange() { return m_cursorPosition <= m_totalScanLength; }
-    //size_t IncrementCount(size_t delta) { return m_lastScannedCount + delta; }
     UNITS_EXPORT size_t GetNextSymbol();
     UNITS_EXPORT size_t GetNextReversed();
     bool IsError() { return (m_status != ScannerCursorStatus::Success); }
     bool IsSuccess() { return (m_status == ScannerCursorStatus::Success); }
     ScannerCursorStatus GetOperationStatus() { return m_status; }
     bool IsASCII() { return m_isASCII; }
-    UNITS_EXPORT int CodePointCount();
     UNITS_EXPORT void Rewind();
 
     UNITS_EXPORT size_t SkipBlanks();
-    UNITS_EXPORT Utf8String SelectKeyWord();
     void SetDividers(CharCP div) { m_dividers = FormattingDividers(div); }
     size_t GetEffectiveBytes() { return m_effectiveBytes; }
     UNITS_EXPORT FormattingWord ExtractWord();
@@ -503,9 +424,6 @@ public:
     UNITS_EXPORT FormattingWord ExtractSegment(size_t from, size_t to);
     UNITS_EXPORT Utf8CP GetSignature(bool refresh, bool compress);
     UNITS_EXPORT Utf8CP GetReversedSignature(bool refresh, bool compress);
-    UNITS_EXPORT size_t SetSections();
-    size_t GetSectionCount() { return m_sections.GetCount();}
-    UNITS_EXPORT  Utf8CP GetSectionPattern();
     Utf8CP GetPattern(bool refresh, bool compress) { GetSignature(refresh, compress); return m_traits.GetPattern(); }
     UNITS_EXPORT Utf8String CollapseSpaces(bool replace);
     Utf8String ReversedSignature() { return m_traits.ReversedSignature(); }
@@ -532,38 +450,6 @@ public:
     bool IsDelimeterOnly() { return ((0 == m_word.length()) && (0 != m_delim[0])); }
     bool IsEndLine() { return ((0 == m_word.length()) && (0 == m_delim[0])); }
     bool IsSeparator() { return ((0 == m_word.length()) && (',' == m_delim[0] || ' ' == m_delim[0])); }
-    };
-
-//=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz
-//=======================================================================================
-struct FormattingToken
-    {
-private:
-    FormattingScannerCursorP m_cursor;
-    size_t m_tokenLength;    // this is the number of logical symbols
-    size_t m_tokenBytes;     // this is the number of bytes containing the token
-    size_t m_cursorStart;    // the index of the first byte in token
-    bvector<size_t> m_word;
-    bvector<size_t> m_delim;
-    bool m_isASCII;
-    UNITS_EXPORT void Init();
-
-public:
-    UNITS_EXPORT FormattingToken(FormattingScannerCursorP cursor);
-    UNITS_EXPORT WCharCP GetNextTokenW();
-    UNITS_EXPORT CharCP GetASCII();
-    UNITS_EXPORT Utf8Char GetDelimeter();
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class NamedQuantityType
-    {
-    Quantity = 1,
-    Integer = 2,
-    String = 3
     };
 
 END_BENTLEY_FORMATTING_NAMESPACE

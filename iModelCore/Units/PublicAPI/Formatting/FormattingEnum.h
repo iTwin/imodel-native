@@ -24,127 +24,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatProblemDetail)
 //=======================================================================================
 // @bsienum
 //=======================================================================================
-enum class ParameterCode
-    {
-    FormatName = 50,   
-    NoSign = 101,            // no sign will prepend the number even if it is negative (like absolute value)
-    OnlyNegative = 102,      // sign is added only for negative numbers
-    SignAlways = 103,        // +23.0 - explicit sign even for positive numbers
-    NegativeParenths = 104,  // present a negative number as (243.45)  rather than -243.45 
-    Decimal = 151,
-    Fractional = 152,
-    Scientific = 153,
-    ScientificNorm = 154,
-    Binary = 155,
-    DefaultZeroes = 201,     // a combination of default "zero settings"
-    LeadingZeroes = 202,     // 00243.5  rather than 243.5 
-    TrailingZeroes = 203,    // 243.000 rather than 243.0 if precision is 3
-    KeepSingleZero = 204,    // 243.0 rather than 243 or 243.
-    KeepDecimalPoint = 205,  // 243.  if an insignifcant zero after point is not preserved - rather than 243
-    ExponentZero = 206,      // e05 instead of e5
-    ZeroEmpty = 207,         // formatter will return the empy string if the result is 0
-    FractionDash = 210,      // some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4
-    UseFractSymbol = 211,    // indicates that a limited set of fractional values can be presented by a single glyph
-    DecPrec0 = 300,
-    DecPrec1 = 301,
-    DecPrec2 = 302,
-    DecPrec3 = 303,
-    DecPrec4 = 304,
-    DecPrec5 = 305,
-    DecPrec6 = 306,
-    DecPrec7 = 307,
-    DecPrec8 = 308,
-    DecPrec9 = 309,
-    DecPrec10 = 310,
-    DecPrec11 = 311,
-    DecPrec12 = 312,
-    FractPrec1 = 331,
-    FractPrec2 = 332,
-    FractPrec4 = 333,
-    FractPrec8 = 334,
-    FractPrec16 = 335,
-    FractPrec32 = 336,
-    FractPrec64 = 337,
-    FractPrec128 = 338,
-    FractPrec256 = 339,
-    DecimalComma = 351,
-    DecimalPoint = 352,
-    DecimalSepar = 353,
-    ThousandSepComma = 354,
-    ThousandSepPoint = 355,
-    ThousandsSepar = 356,
-    RoundUp = 401,
-    RoundDown = 402,
-    RoundToward0 = 403,
-    RoundAwayFrom0 = 404,
-    FractBarHoriz = 451,
-    FractBarOblique = 452,
-    FractBarDiagonal = 453,
-    AngleRegular = 501,
-    AngleDegMin = 502,
-    AngleDegMinSec = 503,
-    PaddingSymbol = 504,
-    BoudaryLen = 601,
-    CenterAlign = 620,
-    LeftAlign = 621,
-    RightAlign = 622,
-    MapName = 651,
-    };
-
-//=======================================================================================
-//! Testing
-// @bsienum
-//=======================================================================================
-enum class ParameterDataType
-    {
-    Flag = 0,
-    BitFlag = 1,
-    Integer = 2,
-    Double = 3,
-    Symbol = 4,
-    String = 5
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class RoundingType
-    {
-    RoundUp = 1,
-    RoundDown = 2,
-    RoundToward0 = 3,
-    RoundAwayFrom0 = 4
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
 enum class FractionBarType
     {
     None = 0,
     Oblique = 1,
     Horizontal = 2,
     Diagonal = 3
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class AngleFormatType
-    {
-    AngleRegular = 0,
-    AngleDegMin = 1,
-    AngleDegMinSec = 2
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class FieldAlignment
-    {
-    Center = 0,
-    Left = 1,
-    Right = 2
     };
 
 //=======================================================================================
@@ -204,10 +89,10 @@ enum class NumSequenceTraits
     };
 
 //=======================================================================================
+//! Number of points after decimal point given significance in the scientific notation
+//! representation of floating point numbers.
 // @bsienum
 //=======================================================================================
-// Number of points after decimal point given significance in the scientific notation
-// representation of floating point numbers.
 // TODO: The double 100101.125 with Precision3 will be formatted as 1.001e+5, in line
 // with the current implimentation. @Caleb.Shafer mentioned that we may want to have that
 // same double/DecimalPrecision should concider the three points of decimal precision to
@@ -244,26 +129,6 @@ enum class FractionalPrecision
     Over_64 = 6,     //!< Ex. 30 1/64
     Over_128 = 7,    //!< Ex. 30 1/128
     Over_256 = 8,    //!< Ex. 30 1/256
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class ParameterCategory
-    {
-    DataType = 1,
-    Sign = 2,
-    Presentation = 3,
-    Zeroes = 4,
-    DecPrecision = 6,
-    FractPrecision = 7,
-    RoundType = 8,
-    FractionBar = 9,
-    AngleFormat = 10,
-    Alignment = 11,
-    Separator = 12,
-    Padding = 13,
-    Mapping = 14
     };
 
 //=======================================================================================
@@ -333,17 +198,6 @@ enum class FormatProblemLevel
     };
 
 //=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class CodepointSize
-    {
-    Zero = 0,
-    Single = 1,
-    Double = 2,
-    Quatro = 4
-    };
-
-//=======================================================================================
 //! Type of the ComboSpec describes one of allowable value transformations
 // @bsienum
 //=======================================================================================
@@ -391,28 +245,6 @@ enum class ParsingSegmentType
     Fraction = 3,
     NotNumber = 10,
     EndOfLine = 11
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class CursorSectionState
-    {
-    Success = 0,
-    Complete = 1,
-    Failure = 2,
-    RejectedSymbol = 10,
-    Undefined = 20
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class CursorSectionType
-    {
-    Undefined = 0,
-    Word = 1,
-    Numeric = 2
     };
 
 //=======================================================================================
@@ -494,19 +326,14 @@ struct Utils
     UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name);
     static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return Utf8String::IsNullOrEmpty(name) ? subs : name; }
     static Utf8CP SubstituteNull(Utf8CP name, Utf8CP subs) { return (nullptr == name) ? subs : name; }
-    UNITS_EXPORT static bool AreUnitsComparable(BEU::UnitCP un1, BEU::UnitCP u2);
     static size_t MinInt(size_t a, size_t b) { return(a <= b) ? a : b; }
     static size_t MaxInt(size_t a, size_t b) { return(a >= b) ? a : b; }
     UNITS_EXPORT static Utf8String AppendUnitName(Utf8CP txtValue, Utf8CP unitName = nullptr, Utf8CP space = nullptr);
-    UNITS_EXPORT static Utf8String HexDump(Utf8CP txt, int len);
-    UNITS_EXPORT static Utf8CP HexByte(Utf8Char c, Utf8P buf, size_t bufLen);
     UNITS_EXPORT static Utf8Char MatchingDivider(Utf8Char div);
     UNITS_EXPORT static int IndexOf(Utf8Char c, Utf8CP text);
-    UNITS_EXPORT static Utf8String AccumulatorStateName(AccumulatorState state);
     UNITS_EXPORT static Utf8String CharToString(Utf8Char c);
     UNITS_EXPORT static Utf8String FormatSpecTypeToName(FormatSpecType type);
     UNITS_EXPORT static FormatSpecType NameToFormatSpecType(Utf8CP name);
-    static Utf8CP GetCharsOrNull(Utf8StringCR str) { return str.empty() ? nullptr : str.c_str(); }
     UNITS_EXPORT static Utf8CP SkipBlanks(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetFirstSignificantChar(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetLastSignificantChar(Utf8CP str);
@@ -514,7 +341,6 @@ struct Utils
     UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
     UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
     UNITS_EXPORT static Utf8String GetCurrentGrouping();
-    //#endif
     };
 
 // A collection of important "global" constants that are used across the whole formatting domain

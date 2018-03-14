@@ -45,17 +45,11 @@ struct FormattingTestUtils
         static void SetUpL10N();
         static void TearDownL10N();
 
-        static void SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump);
+        static void SignaturePattrenCollapsing(Utf8CP txt, int tstN);
         static void ShowSignature(Utf8CP txt, int tstN);
-        static void ShowHexDump(Utf8String str, int len);
-        static void ShowHexDump(Utf8CP str, int len, Utf8CP message = nullptr);
-        static void ShowFUS(Utf8CP koq);
-        static void RegisterFUS(Utf8CP descr, Utf8CP name);
-        static void TestFUS(Utf8CP fusText, Utf8CP norm, Utf8CP aliased);
         static void CrossValidateFUS(Utf8CP descr1, Utf8CP descr2);
         static void ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space);
         static void ShowQuantityS(Utf8CP descr);
-        static NumericAccumulator* NumericAccState(NumericAccumulator* nacc, Utf8CP txt);
         static void TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space);
         static int FindLastDividerPos(Utf8CP txt, Utf8Char div);
         static void ShowSplitByDividers(Utf8CP txt, Utf8CP divDef);
@@ -74,11 +68,6 @@ struct FormattingTestUtils
         static void TestScanPointVector(Utf8CP str);
         static void TestScanTriplets(Utf8CP str);
         static void TestSegments(Utf8CP input, Utf8CP unitName, Utf8CP expectReduced=nullptr);
-        static void ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName = nullptr, Utf8CP formatName = nullptr);
-        static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer = nullptr);
-        static void NamedSpecToJson(Utf8CP stdName);
-        static void FormattingTraitsTest();
-        static void FormattingSpecTraitsTest(Utf8CP testName, NumericFormatSpecCR spec, bool verbose);
         static void StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue);
         static void NamedFormatJsonTest(int testNum, Utf8CP formatName, bool verbose, Utf8CP expected);
         static void NumericFormatSpecJsonTest(NumericFormatSpecCR nfs);
@@ -87,7 +76,6 @@ struct FormattingTestUtils
         static void StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint = false);
         static void StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result);
         static void FormatDoubleTest(double dval, Utf8CP formatName, int prec=-1.0, double round=-1.0, Utf8CP expect=nullptr);
-        static void VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName);
         static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
         static void ShowKnownPhenomena();
         static void ShowSynonyms();

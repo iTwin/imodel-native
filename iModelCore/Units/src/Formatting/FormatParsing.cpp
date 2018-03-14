@@ -727,7 +727,7 @@ size_t FormattingSignature::AppendSignature(Utf8Char c)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
-size_t FormattingSignature::AppendPattern(char c)
+size_t FormattingSignature::AppendPattern(Utf8Char c)
     { 
     if((m_patIndx < m_size) && (m_patIndx == 0 || m_pattern[m_patIndx-1] != c))
         m_pattern[m_patIndx++] = c;

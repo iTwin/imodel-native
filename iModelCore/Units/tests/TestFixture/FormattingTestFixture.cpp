@@ -58,7 +58,7 @@ void FormattingTestUtils::StdFormattingTest(Utf8CP formatName, double dval, Utf8
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestUtils::SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump)
+void FormattingTestUtils::SignaturePattrenCollapsing(Utf8CP txt, int tstN)
     {
     LOG.infov("Signature Test%02d  >%s<================", tstN, txt);
     FormattingScannerCursor curs1 = FormattingScannerCursor(txt, -1);
@@ -73,11 +73,6 @@ void FormattingTestUtils::SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool 
     sig = curs1.GetSignature(true, true);
     Utf8CP pat = curs1.GetPattern(false, true);
 
-    if (hexDump)
-        {
-        Utf8String hd = Utils::HexDump(cols.c_str(), 30);
-        LOG.infov(u8"CollapsedHEX: %s", hd.c_str());
-        }
     LOG.infov("   Collapsed%02d >%s< (len %d)", tstN, cols.c_str(), cols.length());
     LOG.infov("   Collapsed Signature%02d >%s< (src %d  sig %d) pattern: [%s]", tstN, sig, strlen(txt), strlen(sig), pat);
     LOG.info("=========");
@@ -94,26 +89,6 @@ void FormattingTestUtils::ShowSignature(Utf8CP txt, int tstN)
     sig = curs.GetReversedSignature(true, true);
     pat = curs.GetPattern(false, false);
     LOG.infov("Reversed Signature Test%02d  >%s< Signature >%s< Pattern >%s<", tstN, txt, sig, pat);
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::ShowHexDump(Utf8String str, int len)
-    {
-    Utf8String hd = Utils::HexDump(str.c_str(), 30);
-    LOG.infov(u8"COL: %s", hd.c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::ShowHexDump(Utf8CP str, int len, Utf8CP message)
-    {
-    Utf8String hd = Utils::HexDump(str, 30);
-    if(nullptr == message)
-        LOG.infov(u8"COL: %s", hd.c_str());
-    else
-        LOG.infov(u8"%s => %s", message, hd.c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -182,22 +157,6 @@ void FormattingTestUtils::ShowQuantityS(Utf8CP descr)
         Utf8CP space = parts[4];
         ShowQuantity(dval, uom, fusUnit, fusFormat, space);
         }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-NumericAccumulator* FormattingTestUtils::NumericAccState(NumericAccumulator* nacc, Utf8CP txt)
-    {
-    if (nullptr == nacc)
-    return nacc;
-    while (nacc->CanTakeNext(txt))
-        {
-        LOG.infov("Added[%d] %c  state %s", nacc->GetByteCount(), *txt, Utils::AccumulatorStateName(nacc->AddSymbol((size_t)*txt)).c_str());
-        ++txt;
-        }
-    nacc->SetComplete();
-    return nacc;
     }
 
 //----------------------------------------------------------------------------------------
