@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/RulesEngine/ECInstanceChangeHandlerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentation/RulesDriven/ECInstanceChangeHandlers.h>
@@ -126,7 +126,7 @@ TEST_F(DefaultECInstanceChangeHandlerTests, ChangesRelatedInstanceValue)
 +===============+===============+===============+===============+===============+======*/
 struct CustomECDb : ECDb
     {
-    CustomECDb() {ApplyECDbSettings(true, false, false);}
+    CustomECDb() {ApplyECDbSettings(true, false);}
     };
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                10/2017
