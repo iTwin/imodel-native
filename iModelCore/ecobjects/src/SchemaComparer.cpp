@@ -2981,17 +2981,17 @@ bool CustomAttributeValidator::Rule::Match(std::vector<Utf8String> const& source
 std::vector<std::unique_ptr<CustomAttributeValidator::Rule>> const& CustomAttributeValidator::GetRelevantRules(ECPropertyValueChange& change) const
     {
     if (!change.IsDefinition())
-        return m_rules.find(m_wildCard)->second;
+        return m_rules.find(m_wildcard)->second;
 
     Utf8String prefix = GetPrefix(change.GetAccessString());
     if (prefix.empty())
-        return m_rules.find(m_wildCard)->second;;
+        return m_rules.find(m_wildcard)->second;
 
     auto itor = m_rules.find(prefix);
     if (itor != m_rules.end())
         return itor->second;
 
-    return m_rules.find(m_wildCard)->second;
+    return m_rules.find(m_wildcard)->second;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3048,39 +3048,36 @@ CustomAttributeValidator::Policy CustomAttributeValidator::Validate(ECPropertyVa
 void CustomAttributeValidator::Reset()
     {
     m_rules.clear();
-    m_rules[m_wildCard].clear();
+    m_rules[m_wildcard].clear();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void CustomAttributeValidator::Accept(Utf8CP accessString)
+void CustomAttributeValidator::Accept(Utf8StringCR accessString)
     {
-    Utf8String path = GetPrefix(Utf8String(accessString));
+    Utf8String path = GetPrefix(accessString);
     if (path.empty())
         return;
 
-    m_rules[path].push_back(std::unique_ptr<Rule>(new Rule(Policy::Accept, accessString)));
+    m_rules[path].push_back(std::unique_ptr<Rule>(new Rule(Policy::Accept, accessString.c_str())));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-bool CustomAttributeValidator::HasAnyRuleForSchema(Utf8CP schemaName) const
-    {
-    return m_rules.find(schemaName) != m_rules.end();
-    }
+bool CustomAttributeValidator::HasAnyRuleForSchema(Utf8StringCR schemaName) const { return m_rules.find(schemaName) != m_rules.end(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void CustomAttributeValidator::Reject(Utf8CP accessString)
+void CustomAttributeValidator::Reject(Utf8StringCR accessString)
     {
-    Utf8String path = GetPrefix(Utf8String(accessString));
+    Utf8String path = GetPrefix(accessString);
     if (path.empty())
         return;
 
-    m_rules[path].push_back(std::unique_ptr<Rule>(new Rule(Policy::Reject, accessString)));
+    m_rules[path].push_back(std::unique_ptr<Rule>(new Rule(Policy::Reject, accessString.c_str())));
     }
 
 
