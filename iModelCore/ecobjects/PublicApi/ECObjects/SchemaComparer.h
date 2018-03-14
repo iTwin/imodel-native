@@ -1334,15 +1334,15 @@ struct CustomAttributeValidator final : NonCopyableClass
                 Policy GetPolicy() const { return m_policy; }
             };
 
-        Policy m_defaultPolicy;
+        Policy m_defaultPolicy = Policy::Accept;
         std::map<Utf8String, std::vector<std::unique_ptr<Rule>>> m_rules;
-        Utf8String m_wildCard;
+        Utf8String m_wildcard;
 
         std::vector<std::unique_ptr<Rule>> const& GetRelevantRules(ECPropertyValueChange& change) const;
         static Utf8String GetPrefix(Utf8StringCR path);
 
     public:
-        CustomAttributeValidator() :m_defaultPolicy(Policy::Accept), m_wildCard("*") { Reset(); }
+        CustomAttributeValidator() : m_wildcard("*") { Reset(); }
         ~CustomAttributeValidator() {}
 
         ECOBJECTS_EXPORT Policy Validate(ECPropertyValueChange&) const;
@@ -1350,9 +1350,9 @@ struct CustomAttributeValidator final : NonCopyableClass
         Policy GetDefaultPolicy() const { return m_defaultPolicy; }
         void SetDefaultPolicy(Policy defaultPolicy) { m_defaultPolicy = defaultPolicy; }
         ECOBJECTS_EXPORT void Reset();
-        ECOBJECTS_EXPORT void Accept(Utf8CP accessString);
-        ECOBJECTS_EXPORT bool HasAnyRuleForSchema(Utf8CP schemaName) const;
-        ECOBJECTS_EXPORT void Reject(Utf8CP accessString);
+        ECOBJECTS_EXPORT void Accept(Utf8StringCR accessString);
+        ECOBJECTS_EXPORT bool HasAnyRuleForSchema(Utf8StringCR schemaName) const;
+        ECOBJECTS_EXPORT void Reject(Utf8StringCR accessString);
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
 
