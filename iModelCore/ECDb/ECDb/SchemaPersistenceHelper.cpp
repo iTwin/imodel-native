@@ -545,7 +545,7 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
             if (fileUsesEC32Koqs)
                 continue; //drop presentation units if file uses EC3.2 or older
 
-            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName(), presUnitJson.GetString());
+            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), presUnitJson.GetString());
             return ERROR;
             }
 
