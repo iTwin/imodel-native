@@ -318,11 +318,14 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
         }
 
     auto getUnitNameFromVersion = [this, &ecXmlVersion](ECUnitCP unit) -> Utf8String {
-        if (GetSchema().GetECVersion() == ecXmlVersion)
+        if (ecXmlVersion > ECVersion::V3_1)
             return unit->GetQualifiedName(GetSchema());
 
         // EC3.0 and EC3.1
-        return Units::UnitNameMappings::TryGetNewNameFromECName(unit->GetFullName().c_str());
+        auto ecName = Units::UnitNameMappings::TryGetNewNameFromECName(unit->GetFullName().c_str());
+        if (nullptr != ecName)
+            return ecName;
+        return unit->GetQualifiedName(GetSchema());
     };
 
     Utf8String persistenceUnitString = getUnitNameFromVersion((ECUnitCP)GetPersistenceUnit().GetUnit());

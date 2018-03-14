@@ -47,7 +47,7 @@ struct SchemaItem final
 // @bsiclass
 //=======================================================================================
 struct ECTestFixture : ::testing::Test
-    {
+{
 protected:
     ECTestFixture();
     virtual void SetUp() override;
@@ -58,30 +58,25 @@ public:
     static WString GetTempDataPath(WCharCP fileName);
     static Utf8String GetDateTime();
 
-    static void DeserializeSchema(ECN::ECSchemaPtr& schema, ECN::ECSchemaReadContextR context, SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::Success);
-    static void ExpectSchemaDeserializationFailure(SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::InvalidECSchemaXml);
-    static void ExpectSchemaDeserializationFailure(Utf8CP schemaXml, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml) 
-        {
-        ExpectSchemaDeserializationFailure(SchemaItem(schemaXml), expectedError);
-        };
-    static void AssertSchemaDeserializationFailure(SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml);
-    static void AssertSchemaDeserializationFailure(Utf8CP schemaXml, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml)
-        {
-        AssertSchemaDeserializationFailure(SchemaItem(schemaXml), expectedError);
-        };
-    };
+    static void DeserializeSchema(ECN::ECSchemaPtr& schema, ECN::ECSchemaReadContextR context, SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::Success, Utf8CP failureMessage = "");
+    static void ExpectSchemaDeserializationFailure(SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::InvalidECSchemaXml, Utf8CP failureMessage = "");
+    static void ExpectSchemaDeserializationFailure(Utf8CP schemaXml, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml, Utf8CP failureMessage = "")
+        {ExpectSchemaDeserializationFailure(SchemaItem(schemaXml), expectedError, failureMessage);}
+    static void AssertSchemaDeserializationFailure(SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml, Utf8CP failureMessage = "");
+    static void AssertSchemaDeserializationFailure(Utf8CP schemaXml, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml, Utf8CP failureMessage = "")
+        {AssertSchemaDeserializationFailure(SchemaItem(schemaXml), expectedError, failureMessage);}
+    static void RoundTripSchemaToVersionAndBack(ECN::ECSchemaPtr& schema, SchemaItem item, ECN::ECVersion toVersion, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::Success, Utf8CP failureMessage = "");
+};
 
 //=======================================================================================
 // @bsiclass                                   Caleb.Shafer                     08/17
 //=======================================================================================
 struct ECTestUtility
-    {
+{
     static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
     static bool JsonDeepEqual(Json::Value const& a, Json::Value const& b);
     static Utf8String JsonSchemasComparisonString(Json::Value const& createdSchema, Json::Value const& testDataSchema);
     static bool CompareECInstances(ECN::IECInstanceCR expected, ECN::IECInstanceCR actual);
-    };
-
-
+};
 
 END_BENTLEY_ECN_TEST_NAMESPACE
