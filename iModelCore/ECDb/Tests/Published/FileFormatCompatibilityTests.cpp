@@ -2653,7 +2653,7 @@ BentleyStatus FileFormatCompatibilityTests::ImportSchemasFromFolder(BeFileName c
             return ERROR;
         }
 
-    if (SUCCESS != m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()))
+    if (SUCCESS != m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade))
         {
         m_ecdb.AbandonChanges();
         return ERROR;

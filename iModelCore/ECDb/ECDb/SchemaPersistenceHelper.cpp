@@ -521,7 +521,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQuantityR koq, ECDbCR ecdb, Utf8CP jsonStr, bool fileIsNewerThanSoftware)
+BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQuantityR koq, ECDbCR ecdb, Utf8CP jsonStr, bool fileUsesEC32Koqs)
     {
     rapidjson::Document presUnitsJson;
     if (presUnitsJson.Parse<0>(jsonStr).HasParseError())
@@ -539,10 +539,10 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
 
         Formatting::FormatUnitSet fus;
         bool hasDummyUnit = false;
-        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(fus, hasDummyUnit, presUnitJson.GetString(), koq, true, !fileIsNewerThanSoftware) ||
+        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(fus, hasDummyUnit, presUnitJson.GetString(), koq, true, !fileUsesEC32Koqs) ||
             hasDummyUnit)
             {
-            if (fileIsNewerThanSoftware)
+            if (fileUsesEC32Koqs)
                 continue; //drop presentation units if file uses EC3.2 or older
 
             LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName(), presUnitJson.GetString());

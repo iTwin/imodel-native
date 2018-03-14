@@ -46,7 +46,7 @@ struct SchemaWriter final
             void AddExistingSchema(ECN::ECSchemaCR schema) { m_existingSchemas.push_back(&schema); }
             ECN::SchemaChanges& Changes() { return m_changes; }
 
-            bool AreMajorSchemaVersionChangeAllowed() const { return !Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade); }
+            bool AreMajorSchemaVersionChangesAllowed() const { return !Enum::Contains(m_importCtx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade); }
             bool IsMajorSchemaVersionChange(ECN::ECSchemaId schemaId) const { return m_schemasWithMajorVersionChange.find(schemaId) != m_schemasWithMajorVersionChange.end(); }
             void AddSchemaWithMajorVersionChange(ECN::ECSchemaId schemaId) { m_schemasWithMajorVersionChange.insert(schemaId); }
             CachedStatementPtr GetCachedStatement(Utf8CP sql) { return m_ecdb.GetImpl().GetCachedSqliteStatement(sql); }

@@ -2137,7 +2137,7 @@ bool SchemaWriter::IsSpecifiedInRelationshipConstraint(Context& ctx, ECClassCR d
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteCustomAttributeClass(Context& ctx, ECCustomAttributeClassCR deletedClass)
     {
-    BeAssert(ctx.AreMajorSchemaVersionChangeAllowed() && ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId()) && "Should have been checked before");
+    BeAssert(ctx.AreMajorSchemaVersionChangesAllowed() && ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId()) && "Should have been checked before");
 
     Utf8StringCR schemaName = deletedClass.GetSchema().GetName();
     if (schemaName.EqualsI("ECDbMap") || schemaName.EqualsI("ECDbSchemaPolicies"))
@@ -2160,7 +2160,7 @@ BentleyStatus SchemaWriter::DeleteCustomAttributeClass(Context& ctx, ECCustomAtt
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteClass(Context& ctx, ClassChange& classChange, ECClassCR deletedClass)
     {
-    if (!ctx.AreMajorSchemaVersionChangeAllowed() || !ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId()))
+    if (!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedClass.GetSchema().GetId()))
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Cannot delete ECClass '%s'. This is a major ECSchema change. Either major schema version changes are disabled "
                          "or the 'Read' version number of the ECSchema was not incremented.",
@@ -2303,7 +2303,7 @@ BentleyStatus SchemaWriter::DeleteProperty(Context& ctx, ECPropertyChange& prope
     {
     ECClassCR ecClass = deletedProperty.GetClass();
     
-    if (!ctx.AreMajorSchemaVersionChangeAllowed() || !ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()))
+    if (!ctx.AreMajorSchemaVersionChangesAllowed() || !ctx.IsMajorSchemaVersionChange(deletedProperty.GetClass().GetSchema().GetId()))
         {
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Cannot delete ECProperty '%s.%s'. This is a major ECSchema change. Either major schema version changes are disabled "
                              "or the 'Read' version number of the ECSchema was not incremented.",
@@ -2934,7 +2934,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
             return ERROR;
             }
 
-        if (!ctx.AreMajorSchemaVersionChangeAllowed())
+        if (!ctx.AreMajorSchemaVersionChangesAllowed())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Major schema version changes are disabled.",
                                  oldSchema.GetFullSchemaName().c_str());
