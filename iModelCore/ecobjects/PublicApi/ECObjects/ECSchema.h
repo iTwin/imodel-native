@@ -3694,7 +3694,7 @@ public:
     //! @param[in] denominator  Denominator for unit factor
     //! @param[in] label        Display label of the constant
     //! @param[in] description  Description of the constant
-    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, Nullable<double> denominator, Utf8CP label = nullptr, Utf8CP description = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, double numerator, Nullable<double> denominator, Utf8CP label = nullptr, Utf8CP description = nullptr);
 
     //! Creates a new constant ECUnit and adds it to the schema.
     //! @param[out] constant    If successful, will contain a new constant ECUnit object
@@ -3705,8 +3705,8 @@ public:
     //! @param[in] numerator    Numerator for unit factor
     //! @param[in] label        Display label of the constant
     //! @param[in] description  Description of the constant
-    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, Utf8CP label = nullptr, Utf8CP description = nullptr) 
-        {return CreateConstant(constant, name, definition, phenom, unitSystem, numerator, nullptr, label, description);}
+    ECOBJECTS_EXPORT ECObjectsStatus CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, double numerator, Utf8CP label = nullptr, Utf8CP description = nullptr) 
+        {return CreateConstant(constant, name, definition, phenom, numerator, nullptr, label, description);}
 
     //! Get a schema by alias within the context of this schema and its referenced schemas.
     //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.

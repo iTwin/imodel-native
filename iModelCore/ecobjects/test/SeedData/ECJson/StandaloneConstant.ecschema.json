@@ -9,6 +9,5 @@
   "description": "ExampleConstantDescription",
   "numerator": 10.0,
   "denominator": 1.0,
-  "phenomenon": "ExampleSchema.ExamplePhenomenon",
-  "unitSystem": "ExampleSchema.ExampleUnitSystem"
+  "phenomenon": "ExampleSchema.ExamplePhenomenon"
 }

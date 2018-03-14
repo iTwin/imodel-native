@@ -87,7 +87,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
     }
     {
     ECUnitP constant;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateConstant(constant, "Constant", "M", *phenom, *system, 10.0, 1.0, "Constant", "Constant"));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateConstant(constant, "Constant", "M", *phenom, 10.0, 1.0, "Constant", "Constant"));
     EXPECT_TRUE(nullptr != constant);
     }
 
@@ -105,7 +105,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("Constant", unit->GetName().c_str());
                 EXPECT_STREQ("M", unit->GetDefinition().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
-                EXPECT_EQ(system, unit->GetUnitSystem());
+                EXPECT_EQ(nullptr, unit->GetUnitSystem());
                 EXPECT_DOUBLE_EQ(10.0, unit->GetNumerator());
                 EXPECT_DOUBLE_EQ(1.0, unit->GetDenominator());
                 break;
@@ -826,7 +826,7 @@ TEST_F(ConstantTests, StandaloneSchemaChild)
     schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
     schema->CreateUnitSystem(system, "ExampleUnitSystem");
     ECUnitP unit;
-    schema->CreateConstant(unit, "ExampleConstant", "M", *phenom, *system, 10.0, 1.0, "ExampleConstantLabel", "ExampleConstantDescription");
+    schema->CreateConstant(unit, "ExampleConstant", "M", *phenom, 10.0, 1.0, "ExampleConstantLabel", "ExampleConstantDescription");
 
     Json::Value schemaJson;
     EXPECT_EQ(SchemaWriteStatus::Success, unit->WriteConstantJson(schemaJson, true));
@@ -897,12 +897,11 @@ TEST_F(ConstantDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonA
     Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="refSchema" version="01.00" alias="rs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
-            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         </ECSchema>)xml";
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="refSchema" version="01.00" alias="rs"/>
-            <Constant typeName="TestConstant" phenomenon="rs:TestPhenomenon" unitSystem="rs:TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
+            <Constant typeName="TestConstant" phenomenon="rs:TestPhenomenon" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
         </ECSchema>)xml";
 
     Utf8String serializedSchemaXml;
@@ -923,7 +922,6 @@ TEST_F(ConstantDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonA
     EXPECT_STREQ("This is an awesome new Constant", unit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", unit->GetDefinition().c_str());
     EXPECT_STREQ("LENGTH*LENGTH", unit->GetPhenomenon()->GetDefinition().c_str());
-    EXPECT_STREQ("Unit System", ((ECN::UnitSystemCP)unit->GetUnitSystem())->GetInvariantDisplayLabel().c_str());
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
     EXPECT_EQ(SchemaWriteStatus::Success, refSchema->WriteToXmlString(serializedRefSchemaXml));
     }
@@ -941,7 +939,6 @@ TEST_F(ConstantDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonA
     EXPECT_STREQ("This is an awesome new Constant", serializedUnit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", serializedUnit->GetDefinition().c_str());
     EXPECT_STREQ("LENGTH*LENGTH", serializedUnit->GetPhenomenon()->GetDefinition().c_str());
-    EXPECT_STREQ("Unit System", ((ECN::UnitSystemCP)serializedUnit->GetUnitSystem())->GetInvariantDisplayLabel().c_str());
     EXPECT_DOUBLE_EQ(10.0, serializedUnit->GetNumerator());
     EXPECT_DOUBLE_EQ(1.0, serializedUnit->GetDenominator());
     }

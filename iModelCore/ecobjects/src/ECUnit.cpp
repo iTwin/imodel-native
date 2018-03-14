@@ -29,6 +29,15 @@ ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
+ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator) :
+    Units::Unit(phenomenon, name, definition, numerator, denominator), m_isDisplayLabelExplicitlyDefined(false), m_schema(schema)
+    {
+    m_unitsContext = &schema.GetUnitsContext();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
 ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) :
     Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false),m_schema(schema)
     {
@@ -160,48 +169,50 @@ SchemaReadStatus ECUnit::ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR conte
         }
 
     // Read UnitSystem
-
-    Utf8String qualifiedSystemName;
-    if(BEXML_Success != unitNode.GetAttributeStringValue(qualifiedSystemName, UNIT_SYSTEM_NAME_ATTRIBUTE) || Utf8String::IsNullOrEmpty(qualifiedSystemName.c_str()))
+    if (unitType != ECSchemaElementType::Constant) 
         {
-        LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", unitNode.GetName(), UNIT_SYSTEM_NAME_ATTRIBUTE);
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    Utf8String systemAlias;
-    Utf8String systemName;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(systemAlias, systemName, qualifiedSystemName))
-        {
-        LOG.errorv("Invalid ECSchemaXML: The ECUnit '%s' contains a %s element with the value '%s' that can not be parsed.",
-            GetName().c_str(), UNIT_SYSTEM_NAME_ATTRIBUTE, qualifiedSystemName.c_str());
-
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    UnitSystemCP system;
-    if (systemAlias.empty())
-        system = GetSchema().GetUnitSystemCP(systemName.c_str());
-    else
-        {
-        ECSchemaCP resolvedSystemSchema = GetSchema().GetSchemaByAliasP(systemAlias);
-        if (nullptr == resolvedSystemSchema)
+        Utf8String qualifiedSystemName;
+        if(BEXML_Success != unitNode.GetAttributeStringValue(qualifiedSystemName, UNIT_SYSTEM_NAME_ATTRIBUTE) || Utf8String::IsNullOrEmpty(qualifiedSystemName.c_str()))
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECUnit '%s' contains a %s attribute with the alias '%s' that can not be resolved to a referenced schema.",
-                GetName().c_str(), UNIT_SYSTEM_NAME_ATTRIBUTE, systemAlias.c_str());
+            LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", unitNode.GetName(), UNIT_SYSTEM_NAME_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-        system = resolvedSystemSchema->GetUnitSystemCP(systemName.c_str());
-        }
+        Utf8String systemAlias;
+        Utf8String systemName;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(systemAlias, systemName, qualifiedSystemName))
+            {
+            LOG.errorv("Invalid ECSchemaXML: The ECUnit '%s' contains a %s element with the value '%s' that can not be parsed.",
+                GetName().c_str(), UNIT_SYSTEM_NAME_ATTRIBUTE, qualifiedSystemName.c_str());
 
-    if (nullptr == system)
-        {
-        LOG.errorv("Invalid ECSchemaXML: The ECUnit '%s' contains a %s attribute with the value '%s' that can not be resolved to an UnitSystem named '%s' in the ECSchema '%s' or any of its references.",
-            GetName().c_str(), UNIT_SYSTEM_NAME_ATTRIBUTE, qualifiedSystemName.c_str(), systemName.c_str(), GetSchema().GetName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
-    SetSystem(*system);
+        UnitSystemCP system;
+        if (systemAlias.empty())
+            system = GetSchema().GetUnitSystemCP(systemName.c_str());
+        else
+            {
+            ECSchemaCP resolvedSystemSchema = GetSchema().GetSchemaByAliasP(systemAlias);
+            if (nullptr == resolvedSystemSchema)
+                {
+                LOG.errorv("Invalid ECSchemaXML: The ECUnit '%s' contains a %s attribute with the alias '%s' that can not be resolved to a referenced schema.",
+                    GetName().c_str(), UNIT_SYSTEM_NAME_ATTRIBUTE, systemAlias.c_str());
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+
+            system = resolvedSystemSchema->GetUnitSystemCP(systemName.c_str());
+            }
+
+        if (nullptr == system)
+            {
+            LOG.errorv("Invalid ECSchemaXML: The ECUnit '%s' contains a %s attribute with the value '%s' that can not be resolved to an UnitSystem named '%s' in the ECSchema '%s' or any of its references.",
+                GetName().c_str(), UNIT_SYSTEM_NAME_ATTRIBUTE, qualifiedSystemName.c_str(), systemName.c_str(), GetSchema().GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+
+        SetSystem(*system);
+        }
 
     // Read optional properties
     Utf8String value;
@@ -403,7 +414,6 @@ SchemaWriteStatus ECUnit::WriteConstantXml(BeXmlWriterR xmlWriter, ECVersion ecX
         xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
 
     xmlWriter.WriteAttribute(PHENOMENON_NAME_ATTRIBUTE, GetPhenomenon()->GetQualifiedName(GetSchema()).c_str());
-    xmlWriter.WriteAttribute(UNIT_SYSTEM_NAME_ATTRIBUTE, GetUnitSystem()->GetQualifiedName(GetSchema()).c_str());
     xmlWriter.WriteAttribute(DEFINITION_ATTRIBUTE, GetDefinition().c_str());
     xmlWriter.WriteAttribute(NUMERATOR_ATTRIBUTE, GetNumerator());
     xmlWriter.WriteAttribute(DENOMINATOR_ATTRIBUTE, GetDenominator());
@@ -544,7 +554,6 @@ SchemaWriteStatus ECUnit::WriteConstantJson(Json::Value& outValue, bool standalo
 
     outValue[ECJSON_SCHEMA_CHILD_TYPE] = CONSTANT_ELEMENT;
     outValue[PHENOMENON_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::PhenomenonCP)GetPhenomenon());
-    outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::UnitSystemCP)GetUnitSystem());
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
     outValue[NUMERATOR_ATTRIBUTE] = GetNumerator();
     outValue[DENOMINATOR_ATTRIBUTE] = GetDenominator();

@@ -1187,7 +1187,7 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 02/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, UnitSystemCR unitSystem, double numerator, Nullable<double> denominator, Utf8CP label, Utf8CP description)
+ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP definition, PhenomenonCR phenom, double numerator, Nullable<double> denominator, Utf8CP label, Utf8CP description)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
@@ -1202,14 +1202,8 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
         };
 
     Utf8String fullName = GetName() + ":" + name;
-    const auto* systemSchema = &unitSystem.GetSchema();
     const auto* phenomSchema = &phenom.GetSchema();
 
-    if ((this != systemSchema) && !ECSchema::IsSchemaReferenced(*this, *systemSchema))
-        {
-        LOG.errorv("UnitSystem %s with schema %s is not in this or any schema referenced by schema %s", unitSystem.GetName().c_str(), systemSchema->GetName().c_str(), this->GetName().c_str());
-        return ECObjectsStatus::SchemaNotFound;
-        }
     if ((this != phenomSchema) && !ECSchema::IsSchemaReferenced(*this, *phenomSchema))
         {
         LOG.errorv("Phenomenon %s with schema %s is not in this or any schema referenced by schema %s", phenom.GetName().c_str(), phenomSchema->GetName().c_str(), this->GetName().c_str());
@@ -1218,7 +1212,7 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
 
     double localDenominator = denominator.IsValid() ? denominator.Value() : 1.0;
 
-    constant = new ECUnit(*this, unitSystem, phenom, name, definition, numerator, localDenominator, 0, true);
+    constant = new ECUnit(*this, phenom, name, definition, numerator, localDenominator);
 
     if (nullptr != label)
         { 
@@ -1679,7 +1673,7 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit)
 
     if (sourceUnit.IsConstant())
         {
-        status = CreateConstant(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *phenom, *system, sourceUnit.GetNumerator());
+        status = CreateConstant(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *phenom, sourceUnit.GetNumerator());
         }
     else if (sourceUnit.IsInvertedUnit())
         {

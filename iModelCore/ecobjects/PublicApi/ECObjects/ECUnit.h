@@ -167,8 +167,9 @@ private:
     SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     ECUnit(ECSchemaCR schema, Utf8CP name);
-    ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName);
-    ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
+    ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName); //!< Creates and inverted unit
+    ECUnit(ECSchemaCR schema, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator); //!< Creates a constat.
+    ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant); //! Creates a unit.
 
     ECSchemaR GetSchemaR() const {return const_cast<ECSchemaR>(m_schema);}
 
