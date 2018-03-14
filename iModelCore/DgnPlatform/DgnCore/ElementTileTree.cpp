@@ -551,9 +551,9 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR lsSymb, IFacetOptionsPtr&
         return false;
 
     // We need to stroke if either the stroke length or width exceeds tolerance...
-    ILineStyleCP    lineStyle;
-    double          maxDimension = (nullptr == (lineStyle = lsSymb.GetILineStyle())) ? 0.0 : std::max(lineStyle->GetMaxWidth(), lineStyle->GetLength());
-    constexpr   double  s_strokeLineStylePixels = 5.0;
+    ILineStyleCP        lineStyle;
+    double              maxDimension = (nullptr == (lineStyle = lsSymb.GetILineStyle())) ? 0.0 : std::max(lineStyle->GetMaxWidth(), lineStyle->GetLength());
+    constexpr double    s_strokeLineStylePixels = 5.0;      // Stroke if max dimension exceeds 5 pixels.
 
     if (maxDimension > s_strokeLineStylePixels * m_context.GetTolerance())
         {
@@ -1960,7 +1960,20 @@ public:
     DRange3dCR GetTileRange() const { return m_builderMap.GetRange(); }
     TileCR GetTile() const { return m_tile; }
     void SetLoadContext(LoadContextCR context) { m_loadContext = context; }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance) override
+    {
+    DRange3d        pointRange = DRange3d::From(worldPoints, nPts);
+
+    return pointRange.IntersectsWith(m_tile.GetRange());
+    }
+
 };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
@@ -2217,7 +2230,6 @@ Strokes MeshGenerator::ClipSegments(StrokesCR input) const
                 if (!GetTileRange().IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
                     {
                     // entire segment clipped
-                    BeAssert(prevOutside && nextOutside);
                     prevPt = nextPt;
                     continue;
                     }
