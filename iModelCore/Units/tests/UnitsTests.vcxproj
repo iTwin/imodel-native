@@ -48,7 +48,7 @@
     <ClInclude Include="TestFixture\FormattingTestFixture.h" />
     <ClInclude Include="TestFixture\QuantityTestFixture.h" />
     <ClInclude Include="TestFixture\UnitsTestFixture.h" />
-    <ClInclude Include="UnitsTestsPch.h" />
+    <ClInclude Include="TestFixture\UnitsTests.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0F533B32-AC1E-480A-BDC3-5B1B664D7843}</ProjectGuid>

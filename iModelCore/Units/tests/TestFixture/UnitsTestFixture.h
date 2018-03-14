@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "../UnitsTestsPch.h"
+#include "UnitsTests.h"
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 

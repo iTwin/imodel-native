@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PrivateAPI/Units/UnitRegistry.h $
+|     $Source: PublicAPI/Units/UnitRegistry.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -41,17 +41,15 @@ private:
     void AddBaseUnits();
     void AddBasePhenomena();
 
-    void InsertUnique(Utf8Vector &vec, Utf8String &str);
+    void InsertUnique(bvector<Utf8String> &vec, Utf8String &str);
     
     void AddSystem(UnitSystemR unitSystem); // Used for creating the static definitions.
     
     void AddBasePhenomenon(Utf8CP basePhenomenonName) {AddPhenomenon(basePhenomenonName, basePhenomenonName);}
     UnitCP AddUnitForBasePhenomenon(Utf8CP unitName, Utf8CP basePhenomenonName);
 
-    template <typename PHENOM_TYPE>
-    PHENOM_TYPE* AddPhenomenonInternal(Utf8CP phenomenaName, Utf8CP definition)
+    PhenomenonP AddPhenomenonInternal(Utf8CP phenomenaName, Utf8CP definition)
         {
-        static_assert((std::is_base_of<Phenomenon, PHENOM_TYPE>::value), "PHENOM_TYPE must derive from Units::Phenomenon");
         if (Utf8String::IsNullOrEmpty(phenomenaName))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Failed to create Phenomenon because name is null");
@@ -76,19 +74,18 @@ private:
             return nullptr;
             }
 
-        auto phenomena = PHENOM_TYPE::_Create(phenomenaName, definition);
+        auto phenomena = Phenomenon::_Create(phenomenaName, definition);
 
         phenomena->m_unitsContext = this;
 
-        m_phenomena.insert(bpair<Utf8CP, PHENOM_TYPE*>(phenomena->GetName().c_str(), phenomena));
+        m_phenomena.insert(bpair<Utf8CP, PhenomenonP>(phenomena->GetName().c_str(), phenomena));
 
         return phenomena;
         }
 
-    template <typename UNIT_TYPE>
-    UNIT_TYPE* AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant)
+    
+    UnitP AddUnitInternal(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant)
         {
-        static_assert((std::is_base_of<Unit, UNIT_TYPE>::value), "UNIT_TYPE must derive from Units::Unit.");
         if (Utf8String::IsNullOrEmpty(unitName))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Cannot create base unit because the input name is null");
@@ -121,7 +118,7 @@ private:
             return nullptr;
             }
 
-        UNIT_TYPE* unit = UNIT_TYPE::_Create(*system, *phenomenon, unitName, definition, numerator, denominator, offset, isConstant);
+        UnitP unit = Unit::_Create(*system, *phenomenon, unitName, definition, numerator, denominator, offset, isConstant);
         if (nullptr == unit)
             return nullptr;
 
@@ -132,15 +129,13 @@ private:
         unit->m_unitsContext = this;
         phenomenon->AddUnit(*unit);
 
-        m_units.insert(bpair<Utf8CP, UnitP>(unit->GetName().c_str(), (UnitP) unit));
+        m_units.insert(bpair<Utf8CP, UnitP>(unit->GetName().c_str(), unit));
 
         return unit;
         }
 
-    template<typename UNIT_TYPE>
-    UNIT_TYPE* AddInvertedUnitInternal(Utf8CP parentUnitName, Utf8CP unitName, Utf8CP unitSystemName)
+    UnitP AddInvertedUnitInternal(Utf8CP parentUnitName, Utf8CP unitName, Utf8CP unitSystemName)
         {
-        static_assert((std::is_base_of<Unit, UNIT_TYPE>::value), "UNIT_TYPE must derive from Units::Unit.");
         if (Utf8String::IsNullOrEmpty(unitName))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Cannot create unit because the input name is null");
@@ -179,7 +174,7 @@ private:
             return nullptr;
             }
 
-        auto unit = UNIT_TYPE::_Create(*parentUnit, *unitSystem, unitName);
+        auto unit = Unit::_Create(*parentUnit, *unitSystem, unitName);
         if (nullptr == unit)
             return nullptr;
 
@@ -188,15 +183,13 @@ private:
         PhenomenonP phenomenon = _LookupPhenomenonP(parentUnit->GetPhenomenon()->GetName().c_str());
         phenomenon->AddUnit(*unit);
 
-        m_units.insert(bpair<Utf8CP, UnitP>(unit->GetName().c_str(), (UnitP) unit));
+        m_units.insert(bpair<Utf8CP, UnitP>(unit->GetName().c_str(), unit));
 
         return unit;
         }
 
-    template<typename SYSTEM_TYPE>
-    SYSTEM_TYPE* AddSystemInternal(Utf8CP name)
+    UnitSystemP AddSystemInternal(Utf8CP name)
         {
-        static_assert((std::is_base_of<UnitSystem, SYSTEM_TYPE>::value), "SYSTEM_TYPE must derive from Units::UnitSystem.");
         if (Utf8String::IsNullOrEmpty(name))
             {
             NativeLogging::LoggingManager::GetLogger(L"UnitsNative")->error("Cannot create UnitSystem because name is null");
@@ -208,7 +201,7 @@ private:
             return nullptr;
             }
 
-        auto unitSystem = SYSTEM_TYPE::_Create(name);
+        auto unitSystem = UnitSystem::_Create(name);
         unitSystem->m_unitsContext = this;
 
         m_systems.Insert(unitSystem->GetName().c_str(), unitSystem);
@@ -250,20 +243,6 @@ public:
     //! @return A dummy Unit if successfully created and added to this registry, nullptr otherwise.
     UNITS_EXPORT UnitCP AddDummyUnit(Utf8CP unitName) {return CreateDummyUnit(unitName);}
 
-    //! Creates a Unit, of the provided UNIT_TYPE, and adds it to the registry.
-    //! @param[in] phenomName Name of the Phenomenon the Unit must be added to.
-    //! @param[in] systemName Name of the UnitSystem the Unit must be added to.
-    //! @param[in] unitName Name of the Unit to be created.
-    //! @param[in] definition
-    //! @param[in] numerator    Numerator for factor
-    //! @param[in] denominator  Denominator for factor
-    //! @param[in] offset
-    //! @note The UNIT_TYPE provided must derive from Units::Unit
-    //! @return A UNIT_TYPE if successfully created and added to this registry, nullptr otherwise.
-    template <typename UNIT_TYPE> 
-    UNIT_TYPE* AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double numerator = 1, double denominator = 1, double offset = 0)
-        {return AddUnitInternal<UNIT_TYPE>(phenomName, systemName, unitName, definition, numerator, denominator, offset, false);}
-
     //! Creates a Unit and adds it to the registry.
     //! @param[in] phenomName Name of the Phenomenon the Unit must be added to.
     //! @param[in] systemName Name of the UnitSystem the Unit must be added to.
@@ -274,36 +253,14 @@ public:
     //! @param[in] offset
     //! @return A Unit if successfully created and added to this registry, nullptr otherwise.
     UnitCP AddUnit(Utf8CP phenomName, Utf8CP systemName, Utf8CP unitName, Utf8CP definition, double numerator = 1, double denominator = 1, double offset = 0) 
-        {return AddUnit<Unit>(phenomName, systemName, unitName, definition, numerator, denominator, offset);}
-
-    //! Creates an inverted Unit, of the provided UNIT_TYPE, for the parent Unit and adds it to this registry.
-    //! @param[in] parentUnitName Name of the Unit we are creating the inverted Unit for
-    //! @param[in] unitName Name of the Inversting Unit to be created
-    //! @param[in] unitSystemName Name of the unit system this inverted unit belongs to
-    //! @note The UNIT_TYPE provided must derive from Units::Unit
-    //! @return An inverted UNIT_TYPE if successfully created and added to this registry, nullptr otherwise.
-    template<typename UNIT_TYPE>
-    UNIT_TYPE* AddInvertedUnit(Utf8CP parentUnitName, Utf8CP unitName, Utf8CP unitSystemName) {return AddInvertedUnitInternal<UNIT_TYPE>(parentUnitName, unitName, unitSystemName);}
+        {return AddUnitInternal(phenomName, systemName, unitName, definition, numerator, denominator, offset, false);}
 
     //! Creates an inverted Unit for the parent Unit and adds it to this registry.
     //! @param[in] parentUnitName Name of the Unit we are creating the inverted Unit for
     //! @param[in] unitName Name of the Inversting Unit to be created
     //! @param[in] unitSystemName Name of the unit system this inverted unit belongs to
     //! @return An inverted Unit if successfully created and added to this registry, nullptr otherwise.
-    UnitCP AddInvertedUnit(Utf8CP parentUnitName, Utf8CP unitName, Utf8CP unitSystemName) {return AddInvertedUnit<Unit>(parentUnitName, unitName, unitSystemName);}
-
-    //! Creates a Constant, of the provided UNIT_TYPE, and adds it to this registry.
-    //! @param[in] phenomName Name of the Phenomenon the new Constant needs to be added to
-    //! @param[in] systemName Name of the UnitSystem the new Constant belongs to
-    //! @param[in] constantName Name of the Constant to be created
-    //! @param[in] definition
-    //! @param[in] numerator    Numerator for factor
-    //! @param[in] denominator  Denominator for factor
-    //! @note The UNIT_TYPE provided must derive from Units::Unit
-    //! @return A constant UNIT_TYPE if successfully created and added to the registry, nullptr otherwise.
-    template <typename UNIT_TYPE>
-    UNIT_TYPE* AddConstant(Utf8CP phenomName, Utf8CP systemName, Utf8CP constantName, Utf8CP definition, double numerator, double denominator = 1)
-        {return AddUnitInternal<UNIT_TYPE>(phenomName, systemName, constantName, definition, numerator, denominator, 0, true);}
+    UnitCP AddInvertedUnit(Utf8CP parentUnitName, Utf8CP unitName, Utf8CP unitSystemName) {return AddInvertedUnitInternal(parentUnitName, unitName, unitSystemName);}
 
     //! Creates a Constant and adds it to this registry.
     //! @param[in] phenomName Name of the Phenomenon the new Constant is needs to be added to
@@ -314,33 +271,18 @@ public:
     //! @param[in] denominator  Denominator for factor
     //! @return A constant Unit if successfully created and added to the registry, nullptr otherwise.
     UnitCP AddConstant(Utf8CP phenomName, Utf8CP systemName, Utf8CP constantName, Utf8CP definition, double numerator, double denominator = 1) 
-        {return AddConstant<Unit>(phenomName, systemName, constantName, definition, numerator, denominator);}
-
-    //! Creates a Phenomenon and adds it to this registry.
-    //! @param[in] name Name of the Phenomenon to be created.
-    //! @param[in] definition
-    //! @note The PHENOM_TYPE provided must derive from Units::Phenomenon
-    //! @return A Phenomenon if successfully created and added to the registry, nullptr otherwise.
-    template <typename PHENOM_TYPE>
-    PHENOM_TYPE* AddPhenomenon(Utf8CP name, Utf8CP definition) {return AddPhenomenonInternal<PHENOM_TYPE>(name, definition);}
+        {return AddUnitInternal(phenomName, systemName, constantName, definition, numerator, denominator, 0, true);}
 
     //! Creates a Phenomenon and adds it to this registry.
     //! @param[in] name Name of the Phenomenon to be created.
     //! @param[in] definition
     //! @return A Phenomenon if successfully created and added to the registry, nullptr otherwise.
-    PhenomenonCP AddPhenomenon(Utf8CP name, Utf8CP definition) {return AddPhenomenon<Phenomenon>(name, definition);}
-
-    //! Creates a system, of the provided SYSTEM_TYPE, and adds it to this registry.
-    //! @param[in] name Name of the System to be created
-    //! @note The SYSTEM_TYPE provided must derive from Units::UnitSystem.
-    //! @return A SYSTEM_TYPE if successfully created and added to the registry, nullptr otherwise.
-    template<typename SYSTEM_TYPE>
-    SYSTEM_TYPE* AddSystem(Utf8CP name) {return AddSystemInternal<SYSTEM_TYPE>(name);}
+    PhenomenonCP AddPhenomenon(Utf8CP name, Utf8CP definition) {return AddPhenomenonInternal(name, definition);}
 
     //! Creates a UnitSystem and adds it to this registry.
     //! @param[in] name Name of the System to be created
     //! @return A UnitSystem if successfully created and added to the registry, nullptr otherwise.
-    UnitSystemCP AddSystem(Utf8CP name) {return AddSystem<UnitSystem>(name);}
+    UnitSystemCP AddSystem(Utf8CP name) {return AddSystemInternal(name);}
 
     //! Gets the Constant from this registry.
     //! @param[in] name Name of the Constant to retrieve.
@@ -378,31 +320,6 @@ public:
     //! It does not delete the constant rather just removes it from the registry.
     //! @return A pointer to the constant that is no longer within this registry.
     UNITS_EXPORT UnitP RemoveConstant(Utf8CP constantName);
-
-    //! Gets the "new" unit name from a "old" unit name
-    //! @see UnitNameMappings for information on the difference between a old and new unit name.
-    //! @return The "new" name if found, otherwise nullptr
-    UNITS_EXPORT static Utf8CP TryGetNewName(Utf8CP oldName);
-
-    //! Gets the "old" unit name for a new unit name
-    //! @see UnitNameMappings for information on the difference between a old and new unit name.
-    //! @return The "old" name if found, otherwise nullptr
-    UNITS_EXPORT static Utf8CP TryGetOldName(Utf8CP newName);
-
-    //! Gets the EC compatible name for a new unit name
-    //! @see UnitNameMappings for information on the difference between an EC and a new unit name.
-    //! @return The EC name if found, otherwise nullptr
-    UNITS_EXPORT static Utf8CP TryGetECName(Utf8CP name);
-
-    //! Gets the new unit name for an EC compatible name
-    //! @see UnitNameMappings for information on the difference between an EC and a new unit name.
-    //! @return The new unit name if found, otherwise nullptr
-    UNITS_EXPORT static Utf8CP TryGetNameFromECName(Utf8CP ecName);
-
-    //! Gets the old unit name for an EC compatible name
-    //! @see UnitNameMappings for information on the difference between an EC and a old unit name.
-    //! @return The old unit name if found, otherwise nullptr
-    UNITS_EXPORT static Utf8CP TryGetOldNameFromECName(Utf8CP ecName);
 
     //! Gets the Unit by the old name
     //! @see UnitNameMappings

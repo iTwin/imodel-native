@@ -37,8 +37,6 @@ enum class ComparisonCode
     Uncomparable  = 100    //!< Units provided on the argument list are not comparable
     };
 
-typedef bvector<Utf8String> Utf8Vector;
-
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
@@ -85,7 +83,7 @@ friend struct UnitRegistry;
 private:
     Utf8String m_name;
 
-    // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
+    // Lifecycle is managed by a IUnitsContext.
     UnitSystem() = delete;
     UnitSystem(UnitSystemCR system) = delete;
     UnitSystemR operator=(UnitSystemCR unit) = delete;
@@ -198,7 +196,7 @@ private:
 
     Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true), m_dummyUnit(false) {}
 
-    // Lifecycle is managed by the UnitRegistry so we don't allow copies or assignments.
+    // Lifecycle is managed by a IUnitsContext.
     Unit(UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: tests/UnitsTestsPch.h $
+|  $Source: tests/TestFixture/UnitsTests.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,9 +13,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Logging/bentleylogging.h>
 #include <Units/Units.h>
-
-// For now this is in the PrivateAPI, it will be moved into the TestFixture soon
-#include "../PrivateAPI/Units/UnitRegistry.h"
+#include <Units/UnitRegistry.h>
 
 #define BEGIN_UNITS_UNITTESTS_NAMESPACE BEGIN_BENTLEY_UNITS_NAMESPACE namespace Tests {
 #define END_UNITS_UNITTESTS_NAMESPACE } END_BENTLEY_UNITS_NAMESPACE

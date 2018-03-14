@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
-#include "../../PrivateAPI/Units/UnitRegistry.h"
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -25,7 +24,6 @@ StdFormatSetP StdFormatSet::Set()
     if (nullptr == set)
         {
         set = new StdFormatSet();
-        set->m_unitsRegistry = &BEU::UnitRegistry::Get();
         set->StdInit();
         set->CustomInit();
         }

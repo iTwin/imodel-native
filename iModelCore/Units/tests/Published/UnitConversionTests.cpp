@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "../UnitsTestsPch.h"
 #include "../TestFixture/UnitsTestFixture.h"
 
 #include <sstream>

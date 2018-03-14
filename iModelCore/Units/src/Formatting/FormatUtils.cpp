@@ -13,7 +13,6 @@
 #include "../../Localization/xliffs/Units.xliff.h"
 #include <BeSQLite/L10N.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
-#include "../../PrivateAPI/Units/UnitRegistry.h" // temporary
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -1262,30 +1261,6 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cl
         }
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                  Kyle.Abramowitz 03/2018
-//----------------------------------------------------------------------------------------
-//FormatUnitSet::FormatUnitSet(Utf8CP formatName, BEU::UnitCP unit)
-//    {
-//    m_unit = unit;
-//    if (Utils::IsNameNullOrEmpty(formatName))
-//        formatName = FormatConstant::DefaultFormatName();
-//
-//    m_formatSpec = StdFormatSet::FindFormatSpec(formatName);
-//    if (nullptr == m_formatSpec)
-//        m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
-//    else
-//        {
-//        if (nullptr == m_unit)
-//            m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
-//        else
-//            {
-//            m_unitName = m_unit->GetName();
-//            m_problem.UpdateProblemCode(FormatProblemCode::NoProblems);
-//            }
-//        }
-//    }
-
 FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
     {
     if (this != &other)
@@ -1335,14 +1310,14 @@ void FormatUnitSet::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
             if (nullptr == context)
                 {
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
-                return;
+                continue;
                 }
 
             m_unit = context->LookupUnit(m_unitName.c_str());
             if (nullptr == m_unit)
                 {
                 m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
-                return;
+                continue;
                 }
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatName()) == 0)
@@ -1582,43 +1557,6 @@ Utf8String FormatUnitSet::ToJsonString(bool verbose) const
     Json::Value jval = ToJson(verbose);
     str = jval.ToString();
     return str;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormatUnitSet::LoadJsonData(Json::Value jval)
-    {
-    if (jval.empty())
-        return;
-    Utf8CP paramName;
-    Utf8String formatName;
-    m_problem = FormatProblemDetail();
-    m_unit = nullptr;
-    m_formatSpec = nullptr;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
-            {
-            m_unitName = val.asString();
-            m_unit = BEU::UnitRegistry::Get().LookupUnit(m_unitName.c_str());
-            if (nullptr == m_unit)
-                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_formatName()) == 0)
-            {
-            formatName = val.asString();
-            m_formatSpec = StdFormatSet::FindFormatSpec(formatName.c_str());
-            if (nullptr == m_formatSpec)
-                m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_fusName()) == 0)
-            {
-            m_fusName = val.asString();
-            }
-        }
     }
 
 //===================================================

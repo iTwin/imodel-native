@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include "../PrivateAPI/Units/UnitRegistry.h"
+#include <Units/UnitRegistry.h>
 
 using namespace std;
 
@@ -54,7 +54,7 @@ UnitRegistry::UnitRegistry()
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UnitRegistry::InsertUnique (Utf8Vector &vec, Utf8String &str)
+void UnitRegistry::InsertUnique(bvector<Utf8String> &vec, Utf8String &str)
     {
     // Don't insert duplicates.
     auto iter = find (vec.begin(), vec.end(), str);
@@ -81,7 +81,7 @@ UnitCP UnitRegistry::CreateDummyUnit(Utf8CP unitName)
     LOG.warningv("Creating Dummy unit with name '%s'", unitName);
     Utf8PrintfString dummyPhenName("%s_%s", "DUMMY", unitName);
     AddPhenomenon(dummyPhenName.c_str(), "ONE");
-    auto dummy = AddUnit<Unit>(dummyPhenName.c_str(), DUMMY, unitName, "ONE", 1.0, 0.0);
+    auto dummy = AddUnitInternal(dummyPhenName.c_str(), DUMMY, unitName, "ONE", 1.0, 0.0, 0.0, false);
     dummy->m_dummyUnit = true;
     return dummy;
     }
@@ -143,7 +143,7 @@ UnitCP UnitRegistry::AddUnitForBasePhenomenon(Utf8CP unitName, Utf8CP basePhenom
         return nullptr;
         }
 
-    return AddUnitInternal<Unit>(basePhenomenonName, SI, unitName, unitName, 1, 1, 0, false);
+    return AddUnitInternal(basePhenomenonName, SI, unitName, unitName, 1, 1, 0, false);
     }
 
 //--------------------------------------------------------------------------------------
@@ -268,54 +268,9 @@ void UnitRegistry::_AllSystems(bvector<UnitSystemCP>& allUnitSystems) const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Robert.Schili     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-// static
-Utf8CP UnitRegistry::TryGetNewName(Utf8CP oldName)
-    {
-    return UnitNameMappings::TryGetNewNameFromOldName(oldName);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Robert.Schili     03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static
-Utf8CP UnitRegistry::TryGetOldName(Utf8CP newName)
-    {
-    return UnitNameMappings::TryGetOldNameFromNewName(newName);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                              Robert.Schili     01/18
-//--------------------------------------------------------------------------------------
-// static
-Utf8CP UnitRegistry::TryGetECName(Utf8CP name)
-    {
-    return UnitNameMappings::TryGetECNameFromNewName(name);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                              Robert.Schili     01/18
-//--------------------------------------------------------------------------------------
-// static
-Utf8CP UnitRegistry::TryGetNameFromECName(Utf8CP ecName)
-    {
-    return UnitNameMappings::TryGetNewNameFromECName(ecName);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                        Kyle.Abramowitz        03/2018
-//--------------------------------------------------------------------------------------
-// static
-Utf8CP UnitRegistry::TryGetOldNameFromECName(Utf8CP ecName)
-    {
-    return UnitNameMappings::TryGetOldNameFromECName(ecName);
-    }
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Robert.Schili     03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 UnitCP UnitRegistry::LookupUnitUsingOldName(Utf8CP oldName) const
     {
-    auto newName = UnitRegistry::TryGetNewName(oldName);
+    auto newName = UnitNameMappings::TryGetNewNameFromOldName(oldName);
     if (nullptr == newName)
         return nullptr;
     return LookupUnit(newName);

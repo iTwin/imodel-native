@@ -6,12 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "../UnitsTestsPch.h"
 #include "../TestFixture/UnitsTestFixture.h"
 #include <fstream>
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
-struct UnitRegistryTests : UnitsTestFixture 
+struct UnitRegistryTests : UnitsTestFixture
     {
     void SetUp() override
         {
@@ -25,41 +24,6 @@ struct UnitRegistryTests : UnitsTestFixture
         UnitsTestFixture::TearDown();
         UnitRegistry::Clear();
         }
-
-    struct TestUnitSystem : UnitSystem
-        {
-        friend struct UnitRegistry;
-        private:
-            TestUnitSystem(Utf8CP name) : UnitSystem(name) {}
-        public:
-            static TestUnitSystem* _Create(Utf8CP name) {return new TestUnitSystem(name);}
-        };
-
-    struct TestPhenomenon : Phenomenon
-        {
-        friend struct UnitRegistry;
-        public:
-            TestPhenomenon(Utf8CP name, Utf8CP definition) : Phenomenon(name, definition) {}
-        public:
-            static TestPhenomenon* _Create(Utf8CP name, Utf8CP definition) {return new TestPhenomenon(name, definition);}
-        };
-
-    struct TestUnit : Unit
-        {
-        friend struct UnitRegistry;
-        private:
-            TestUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) :
-                Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant) {}
-
-            TestUnit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name)
-            : TestUnit(system, *(parentUnit.GetPhenomenon()), name, parentUnit.GetDefinition().c_str(), 0, 0, 0, false) {}
-
-        public:
-            static TestUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant)
-            {return new TestUnit(sysName, phenomenon, unitName, definition, numerator, denominator, offset, isConstant);}
-
-            static TestUnit* _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName) {return new TestUnit(parentUnit, system, unitName);}
-        };
     };
 
 //--------------------------------------------------------------------------------------
@@ -244,52 +208,6 @@ TEST_F(UnitRegistryTests, TestAllBaseUnitSystemsAdded)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-TEST_F(UnitRegistryTests, TestAddingDerivedUnits)
-    {
-    TestUnit const* testConstant = UnitRegistry::Get().AddConstant<TestUnit>("NUMBER", "SI", "TestConstant", "ONE", 42);
-    ASSERT_NE(nullptr, testConstant);
-    UnitCP retrievedConstant = UnitRegistry::Get().LookupUnit("TestConstant");
-    EXPECT_EQ(retrievedConstant, testConstant);
-    TestUnit const* retrievedTestConstant = dynamic_cast<TestUnit const*>(retrievedConstant);
-    EXPECT_NE(nullptr, retrievedTestConstant);
-
-    TestUnit const* smoot = UnitRegistry::Get().AddUnit<TestUnit>("LENGTH", "USCustom", "Smoot", "M", 1.7);
-    ASSERT_NE(nullptr, smoot);
-    UnitCP retrievedSmoot = UnitRegistry::Get().LookupUnit("Smoot");
-    EXPECT_EQ(retrievedSmoot, smoot);
-    TestUnit const* retrievedSmootAsTestUnit = dynamic_cast<TestUnit const*>(retrievedSmoot);
-    EXPECT_NE(nullptr, retrievedSmootAsTestUnit);
-    
-    TestUnit const* testUnit = UnitRegistry::Get().AddUnit<TestUnit>("LENGTH", "SI", "TestUnit", "ONE");
-    ASSERT_NE(nullptr, testUnit);
-    UnitCP retrievedUnit = UnitRegistry::Get().LookupUnit("TestUnit");
-    EXPECT_EQ(retrievedUnit, testUnit);
-    TestUnit const* retrievedTestUnit = dynamic_cast<TestUnit const*>(retrievedUnit);
-    EXPECT_NE(nullptr, retrievedTestUnit);
-
-    TestUnit const* testInverseUnit = UnitRegistry::Get().AddInvertedUnit<TestUnit>("TestUnit", "InverseTestUnit", "SI");
-    ASSERT_NE(nullptr, testInverseUnit);
-    UnitCP retrievedInverseUnit = UnitRegistry::Get().LookupUnit("InverseTestUnit");
-    EXPECT_EQ(retrievedInverseUnit, testInverseUnit);
-    TestUnit const* retrievedInverseTestUnit = dynamic_cast<TestUnit const*>(retrievedInverseUnit);
-    EXPECT_NE(nullptr, retrievedInverseTestUnit);
-
-    TestUnit const* smootPerSmoot = UnitRegistry::Get().AddUnit<TestUnit>("SLOPE", "USCustom", "SmootPerSmoot", "Smoot*Smoot(-1)");
-    ASSERT_NE(nullptr, smootPerSmoot);
-    UnitCP retrievedSmootPerSmoot = UnitRegistry::Get().LookupUnit("SmootPerSmoot");
-    EXPECT_EQ(retrievedSmootPerSmoot, smootPerSmoot);
-
-    TestUnit const* inverseSmootPerSmoot = UnitRegistry::Get().AddInvertedUnit<TestUnit>("SmootPerSmoot", "InverseSmootPerSmoot", "USCustom");
-    ASSERT_NE(nullptr, inverseSmootPerSmoot);
-    UnitCP retrievedInverseSmootPerSmoot = UnitRegistry::Get().LookupUnit("InverseSmootPerSmoot");
-    EXPECT_EQ(retrievedInverseSmootPerSmoot, inverseSmootPerSmoot);
-    TestUnit const* retrievedInverseSmootPerSmootAsTestUnit = dynamic_cast<TestUnit const*>(retrievedInverseSmootPerSmoot);
-    EXPECT_NE(nullptr, retrievedInverseSmootPerSmootAsTestUnit);
-    }
-
-//--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                    02/2018
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, TestAddingNewBasePhenomenonAndUnit)
@@ -308,37 +226,6 @@ TEST_F(UnitRegistryTests, TestAddingNewBasePhenomenonAndUnit)
 
     Quantity laughs(42, *megaLaughUnit);
     EXPECT_EQ(42000000, laughs.ConvertTo(laughUnit).GetMagnitude());
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
-TEST_F(UnitRegistryTests, TestAddingDerivedUnitSystems)
-    {
-    TestUnitSystem const* testSystem = UnitRegistry::Get().AddSystem<TestUnitSystem>("TestSystem");
-    ASSERT_NE(nullptr, testSystem);
-    UnitSystemCP retrievedSystem = UnitRegistry::Get().LookupUnitSystem("TestSystem");
-    ASSERT_EQ(testSystem, retrievedSystem);
-
-    TestUnitSystem const* retrievedTestSystem = dynamic_cast<TestUnitSystem const*>(retrievedSystem);
-    EXPECT_NE(nullptr, retrievedTestSystem);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-TEST_F(UnitRegistryTests, TestAddingDerivedPhenomenon)
-    {
-    TestPhenomenon const* testPhenom = UnitRegistry::Get().AddPhenomenon<TestPhenomenon>("TestPhenomenon", "LENGTH*LENGTH");
-    ASSERT_NE(nullptr, testPhenom);
-    PhenomenonCP retrievedPhenom = UnitRegistry::Get().LookupPhenomenon("TestPhenomenon");
-    ASSERT_EQ(testPhenom, retrievedPhenom);
-
-    TestPhenomenon const* retrievedTestPhenom = dynamic_cast<TestPhenomenon const*>(retrievedPhenom);
-    EXPECT_NE(nullptr, retrievedTestPhenom);
-
-    bool hasDerivedPhenomenon = UnitRegistry::Get().HasPhenomenon("TestPhenomenon");
-    ASSERT_TRUE(hasDerivedPhenomenon);
     }
 
 //--------------------------------------------------------------------------------------
@@ -376,42 +263,29 @@ TEST_F(UnitRegistryTests, RemoveUnitSystem)
 //--------------------------------------------------------------------------------------
 TEST_F(UnitRegistryTests, AddDuplicateItems)
     {
-    UnitSystemCP testSystem = UnitRegistry::Get().AddSystem("TestSystem");
-    ASSERT_NE(nullptr, testSystem);
+    // Add test setup, with a named thing of each item
+    ASSERT_NE(nullptr, UnitRegistry::Get().AddSystem("TestSystem"));
+    ASSERT_NE(nullptr, UnitRegistry::Get().AddPhenomenon("TestPhenomenon", "LENGTH"));
+    ASSERT_NE(nullptr, UnitRegistry::Get().AddUnit("TestPhenomenon", "TestSystem", "TestUnit", "M"));
+    ASSERT_NE(nullptr, UnitRegistry::Get().AddInvertedUnit("TestUnit", "TestInvertedUnit", "TestSystem"));
+    ASSERT_NE(nullptr, UnitRegistry::Get().AddConstant("TestPhenomenon", "TestSystem", "TestConstant", "M", 10.0));
 
-    PhenomenonCP testPhenom = UnitRegistry::Get().AddPhenomenon("TestPhenomenon", "LENGTH");
-    ASSERT_NE(nullptr, testPhenom);
-
-    UnitCP testUnit = UnitRegistry::Get().AddUnit<Unit>("TestPhenomenon", "TestSystem", "TestUnit", "M");
-    ASSERT_NE(nullptr, testUnit);
-
-    UnitCP testConstant = UnitRegistry::Get().AddConstant<Unit>("NUMBER", "SI", "TestConstant", "ONE", 42);
-    ASSERT_NE(nullptr, testConstant);
-
-    UnitCP testInvUnit = UnitRegistry::Get().AddInvertedUnit<Unit>("TestUnit", "TestInvertedUnit", "TestSystem");
-    ASSERT_NE(nullptr, testInvUnit);
-
+    // Take the names and attempt to add all types
     auto names = {"TestSystem", "TestPhenomenon", "TestUnit", "TestConstant", "TestInvertedUnit"};
     for(const auto& name : names)
-        {
-        ASSERT_EQ(nullptr, UnitRegistry::Get().AddUnit("TestPhenomenon","TestSystem", name, "M"));
-        }
+        EXPECT_EQ(nullptr, UnitRegistry::Get().AddUnit("TestPhenomenon","TestSystem", name, "M"));
+
     for(const auto& name : names)
-        {
-        ASSERT_EQ(nullptr, UnitRegistry::Get().AddConstant("TestPhenomenon","TestSystem", name, "M", 10.0));
-        }
+        EXPECT_EQ(nullptr, UnitRegistry::Get().AddConstant("TestPhenomenon","TestSystem", name, "M", 10.0));
+
     for(const auto& name : names)
-        {
-        ASSERT_EQ(nullptr, UnitRegistry::Get().AddInvertedUnit("TestUnit", name, "TestSystem"));
-        }
+        EXPECT_EQ(nullptr, UnitRegistry::Get().AddInvertedUnit("TestUnit", name, "TestSystem"));
+
     for(const auto& name : names)
-        {
-        ASSERT_EQ(nullptr, UnitRegistry::Get().AddSystem(name));
-        }
+        EXPECT_EQ(nullptr, UnitRegistry::Get().AddSystem(name));
+
     for(const auto& name : names)
-        {
-        ASSERT_EQ(nullptr, UnitRegistry::Get().AddPhenomenon(name, "LENGTH"));
-        }
+        EXPECT_EQ(nullptr, UnitRegistry::Get().AddPhenomenon(name, "LENGTH"));
     }
 
 
@@ -429,26 +303,6 @@ TEST_F(UnitRegistryTests, TestCaseInsensitiveLookup)
     ASSERT_NE(nullptr, testPhenom);
     PhenomenonCP retrievedPhenomenon = UnitRegistry::Get().LookupPhenomenon("TESTPHENOMENOn");
     ASSERT_EQ(retrievedPhenomenon, testPhenom);
-
-    TestUnit const* testConstant = UnitRegistry::Get().AddConstant<TestUnit>("NUMBER", "SI", "TestConstant", "ONE", 42);
-    ASSERT_NE(nullptr, testConstant);
-    UnitCP retrievedConstant = UnitRegistry::Get().LookupUnit("testconstant");
-    EXPECT_EQ(retrievedConstant, testConstant);
-
-    TestUnit const* smoot = UnitRegistry::Get().AddUnit<TestUnit>("LENGTH", "USCustom", "Smoot", "M", 1.7);
-    ASSERT_NE(nullptr, smoot);
-    UnitCP retrievedSmoot = UnitRegistry::Get().LookupUnit("SmOoT");
-    EXPECT_EQ(retrievedSmoot, smoot);
-
-    TestUnit const* smootPerSmoot = UnitRegistry::Get().AddUnit<TestUnit>("SLOPE", "USCustom", "SmootPerSmoot", "Smoot*Smoot(-1)");
-    ASSERT_NE(nullptr, smootPerSmoot);
-    UnitCP retrievedSmootPerSmoot = UnitRegistry::Get().LookupUnit("SmootPerSmoot");
-    EXPECT_EQ(retrievedSmootPerSmoot, smootPerSmoot);
-
-    TestUnit const* inverseSmootPerSmoot = UnitRegistry::Get().AddInvertedUnit<TestUnit>("SmootPerSmoot", "InverseSmootPerSmoot", "USCustom");
-    ASSERT_NE(nullptr, inverseSmootPerSmoot);
-    UnitCP retrievedInverseSmootPerSmoot = UnitRegistry::Get().LookupUnit("INVERSESMOOTPERSMOOT");
-    EXPECT_EQ(retrievedInverseSmootPerSmoot, inverseSmootPerSmoot);
     }
 
 //--------------------------------------------------------------------------------------
@@ -471,7 +325,7 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
             }
         if(!ignore)
             { 
-            auto mapped = UnitRegistry::TryGetECName(line.c_str());
+            auto mapped = UnitNameMappings::TryGetECNameFromNewName(line.c_str());
             EXPECT_NE(nullptr, mapped) << "Unit with new Name " << line << " not mapped to an ec Name";
             if(0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:DECA"))
                 line = "DECA";
@@ -482,7 +336,7 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
             if (0 == BeStringUtilities::StricmpAscii(mapped, "UNITS:PERSON"))
                 line = "PERSON";
             auto newUnit = UnitRegistry::Get().LookupUnit(line.c_str());
-            auto roundtrippedName = UnitRegistry::TryGetNameFromECName(mapped);
+            auto roundtrippedName = UnitNameMappings::TryGetNewNameFromECName(mapped);
             EXPECT_NE(nullptr, roundtrippedName) << "Can't get name from ecname for unit " << mapped;
             if(0 == BeStringUtilities::StricmpAscii(roundtrippedName, "DEKA"))
                 roundtrippedName = "DECA";
@@ -498,59 +352,5 @@ TEST_F(UnitRegistryTests, AllNewNamesMapToECNames)
         ignore=false;
         }
     }
-
-// TODO: find a way to test compile time assertions.. Interesting talk on it, https://www.youtube.com/watch?time_continue=2105&v=zxDzMjfsgjg. Maybe try to use this style? 
-#if 0
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-TEST_F(UnitRegistryTests, TestAddingBadUnits)
-    {
-    struct NotAUnit
-        {
-        private:
-            NotAUnit(UnitSystemCR unitSystem, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant) { }
-
-        protected:
-        // Want to verify that just having a proper API does not allow the template to work.
-        static NotAUnit* _Create(UnitSystemCR sysName, PhenomenonCR phenomenon, Utf8CP unitName, uint32_t id, Utf8CP definition, Utf8Char baseSymbol, double factor, double offset, bool isConstant)
-            {return new NotAUnit(sysName, phenomenon, unitName, id, definition, baseSymbol, factor, offset, isConstant);}
-        };
-
-    UnitRegistry::Get().AddUnit<NotAUnit>("NUMBER", "SI", "TestUnit", "TEST");
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    01/2018
-//--------------------------------------------------------------------------------------
-TEST_F(UnitRegistryTests, TestAddingBadUnitSystem)
-    {
-    struct BadUnitSystem
-        {
-        private:
-            BadUnitSystem(Utf8CP name) {}
-        protected:
-            static BadUnitSystem* _Create(Utf8CP name) {return new BadUnitSystem(name);}
-        };
-
-    UnitRegistry::Get().AddSystem<BadUnitSystem>("TestUnitSystem");
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Kyle.Abramowitz                 02/2018
-//--------------------------------------------------------------------------------------
-TEST_F(UnitRegistryTests, TestAddingBadPhenomenon)
-    {
-    struct BadPhenomenon
-        {
-        private:
-            BadPhenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) {}
-        protected:
-            static BadPhenomenon* _Create(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) { return new BadPhenomenon(name, definition, baseSymbol, id); }
-        };
-
-    UnitRegistry::Get().AddPhenomenon<BadPhenomenon>("TestPhenomenon");
-    }
-#endif
 
 END_UNITS_UNITTESTS_NAMESPACE

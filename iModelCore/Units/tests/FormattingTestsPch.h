@@ -14,7 +14,7 @@
 #include <Logging/bentleylogging.h>
 #include <Formatting/FormattingApi.h>
 #include "../PrivateAPI/Formatting/FormattingParsing.h"
-#include "UnitsTestsPch.h"
+#include "TestFixture/UnitsTests.h"
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
 

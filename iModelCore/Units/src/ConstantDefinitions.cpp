@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "UnitsPCH.h"
-#include "../PrivateAPI/Units/UnitRegistry.h"
+#include <Units/UnitRegistry.h>
 
 USING_NAMESPACE_BENTLEY_UNITS
 

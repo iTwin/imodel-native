@@ -10,7 +10,6 @@
 #include <locale>
 #include <BeSQLite/L10N.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
-#include "../../PrivateAPI/Units/UnitRegistry.h" // temporary
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -1678,25 +1677,6 @@ FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, BEU::UnitCP unit, Utf8CP
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
-FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP descriptor, Utf8CP fusName)
-    {
-    FormatUnitSetCP fusP;
-    if (Set()->HasDuplicate(fusName, &fusP))
-        return nullptr;
-    fusP = new FormatUnitSet(descriptor, &BEU::UnitRegistry::Get()); // make FUS
-    if (fusP->HasProblem())
-        {
-        Set()->m_problem.UpdateProblemCode(FormatProblemCode::SFS_FailedToMakeFUS);
-        return nullptr;
-        }
-    fusP->SetFusName(fusName);
-    Set()->m_fusSet.push_back(fusP);
-    return Set()->m_fusSet.back();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
 // static
 NamedFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString, FormatProblemDetailR problem)
     {

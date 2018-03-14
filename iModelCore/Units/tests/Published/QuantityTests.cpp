@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "../UnitsTestsPch.h"
 #include "../TestFixture/QuantityTestFixture.h"
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE

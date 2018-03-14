@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "../UnitsTestsPch.h"
 #include "../TestFixture/UnitsTestFixture.h"
+
 #include <fstream>
 #include <sstream>
 #include <Bentley/BeNumerical.h>
@@ -17,7 +17,6 @@
 #include <BeSQLite/L10N.h>
 #include <Bentley/md5.h>
 #endif
-
 
 USING_NAMESPACE_BENTLEY_UNITS
 

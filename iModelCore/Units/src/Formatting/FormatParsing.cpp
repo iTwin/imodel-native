@@ -8,7 +8,6 @@
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
-#include "../../PrivateAPI/Units/UnitRegistry.h"
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -1793,8 +1792,6 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
             BEU::PhenomenonCP ph = refUnit->GetPhenomenon();
             m_unit = ph->LookupUnit(m_name.c_str());
             }
-        if(nullptr == m_unit)
-            m_unit = BEU::UnitRegistry::Get().LookupUnit(m_name.c_str());
          }
     }
 POP_MSVC_IGNORE
@@ -2331,38 +2328,6 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
             break;
         }
     return qty;
-    }
-
-
-//===================================================
-//
-// NamedQuantity Methods
-//
-//===================================================
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-NamedQuantity::NamedQuantity(Utf8CP quantName, double dval, Utf8CP uom)
-    {
-    Init(quantName, NamedQuantityType::Quantity);
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
-    if (nullptr == unit)
-        {
-        LOG.infov("Invalid UOM: >%s<", uom);
-        return;
-        }
-    m_quant = BEU::Quantity(dval, *unit);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-Utf8String NamedQuantity::ToText(int prec)
-    {
-    Utf8String txt;
-    txt.Sprintf("%s = %s of %s", m_name.c_str(),  
-        NumericFormatSpec::StdFormatDouble("real", m_quant.GetMagnitude(), prec).c_str(), m_quant.GetUnitName());
-    return txt;
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

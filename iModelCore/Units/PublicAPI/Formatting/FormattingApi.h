@@ -786,7 +786,6 @@ struct FormatUnitSet
         FormatUnitSet(BEU::UnitCP unit) : FormatUnitSet(nullptr, unit) {}
         FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit) : FormatUnitSet(format, unit, false) {}
         FormatUnitSet(FormatUnitSetCR other) : m_formatSpec(other.m_formatSpec), m_unitName(other.m_unitName), m_unit(other.m_unit), m_problem(other.m_problem) {}
-        // UNITS_EXPORT FormatUnitSet(Utf8CP formatName, BEU::UnitCP unit);
         UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData);
         
         UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
@@ -826,7 +825,7 @@ struct FormatUnitSet
         //!     - FormatProblemCode::NFS_InvalidJsonObject,
         //!         - When Json value is empty
         //!     - FormatProblemCode::UnknownUnitName
-        //!         - If the unitName is provided but cannot be found in the UnitRegistry
+        //!         - If the unitName is provided but cannot be found in the context.
         //!
         //! @note If a formatName or formatSpec is not defined in the JSON value the FormatConstant::DefaultFormatName is used.
         //! @note If a formatName and formatSpec are provided in the JSON the last will be used.
@@ -856,25 +855,6 @@ struct FormatUnitSet
         UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, Utf8CP space="") const;
         BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
 
-        //! Populates this FormatUnitSet with the provided Json data. 
-        //! 
-        //! Supported JSON format is:
-        //!     <code>
-        //!     {
-        //!         fusName: "SampleFUS"
-        //!         unitName: "SampleUnit"
-        //!         formatName: "SampleFormat"
-        //!     }
-        //!     </code>
-        //!
-        //! Potential problem code:
-        //!     - FormatProblemCode::UnknownUnitName
-        //!         - If an unitName is provided but cannot be found in the UnitRegistry
-        //!     - FormatProblemCode::UnknownStdFormatName
-        //!         - If a formatName is provided but cannot be found in the StdFormatSet
-        //!
-        //! @param[in] jval Json to use to populate this.
-        UNITS_EXPORT void LoadJsonData(Json::Value jval);
         UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         
         bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
@@ -968,6 +948,8 @@ public:
     //! Whether or not the StdFormatSet has a problem.
     //! @return true if the Set has a problem; false, otherwise.
     static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
+    //! Adds the provided IUnitContext to the StdFormatSet.
+    static void AddUnitContext(BEU::IUnitsContextCP context) {Set()->m_unitsRegistry = context;}
     };
 
 struct QuantityFormatting
