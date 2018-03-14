@@ -2925,7 +2925,8 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
             updateBuilder.AddSetExp("Description", schemaChange.GetDescription().GetNew().Value().c_str());
         }
 
-    if (schemaChange.GetVersionRead().IsValid())
+    const bool readVersionHasChanged = schemaChange.GetVersionRead().IsValid();
+    if (readVersionHasChanged)
         {
         if (schemaChange.GetVersionRead().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionRead().GetValue(ValueId::New).Value())
             {
@@ -2945,9 +2946,10 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         updateBuilder.AddSetExp("VersionDigit1", schemaChange.GetVersionRead().GetNew().Value());
         }
 
-    if (schemaChange.GetVersionWrite().IsValid())
+    const bool writeVersionHasChanged = schemaChange.GetVersionWrite().IsValid();
+    if (writeVersionHasChanged)
         {
-        if (schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
+        if (!readVersionHasChanged && schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionWrite' of an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());
@@ -2959,7 +2961,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
 
     if (schemaChange.GetVersionMinor().IsValid())
         {
-        if (schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
+        if (!readVersionHasChanged && !writeVersionHasChanged && schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionMinor' of an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());

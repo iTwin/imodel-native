@@ -207,6 +207,68 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECSchemaAttributes)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                  03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ModifySchemaVersion)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SchemaUpgrade_ModifySchemaVersion.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='10.11.9' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor version when write version was incremented is supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='11.10.9' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing write version when read version was incremented is supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='12.10.8' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor version when read version was incremented is supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='13.1.7' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor and write version when read version was incremented is supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='12.1.7' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing read version is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='13.0.7' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing write version is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='13.1.6' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor version is not supported";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, UpdateECClassAttributes)
