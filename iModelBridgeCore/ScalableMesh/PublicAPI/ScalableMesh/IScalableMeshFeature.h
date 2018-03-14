@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -40,19 +40,19 @@ struct IScalableMeshFeature : RefCountedBase
     /*__PUBLISH_SECTION_START__*/
     public:
 
-        BENTLEY_SM_EXPORT static IScalableMeshFeaturePtr Create ();
+        BENTLEY_SM_IMPORT_EXPORT static IScalableMeshFeaturePtr Create ();
 
-        BENTLEY_SM_EXPORT static IScalableMeshFeaturePtr CreateFor (const size_t& type, const DPoint2d* pointsPtr, const size_t& numPoints);
+        BENTLEY_SM_IMPORT_EXPORT static IScalableMeshFeaturePtr CreateFor (const size_t& type, const DPoint2d* pointsPtr, const size_t& numPoints);
 
-        BENTLEY_SM_EXPORT size_t   GetType() const;
+        BENTLEY_SM_IMPORT_EXPORT size_t   GetType() const;
 
-        BENTLEY_SM_EXPORT size_t   GetSize() const;
+        BENTLEY_SM_IMPORT_EXPORT size_t   GetSize() const;
 
-        BENTLEY_SM_EXPORT DPoint2d GetPoint(size_t idx) const;
+        BENTLEY_SM_IMPORT_EXPORT DPoint2d GetPoint(size_t idx) const;
 
-        BENTLEY_SM_EXPORT void     SetType (const size_t type);
+        BENTLEY_SM_IMPORT_EXPORT void     SetType (const size_t type);
 
-        BENTLEY_SM_EXPORT void     AppendPoint (const DPoint2d& point);
+        BENTLEY_SM_IMPORT_EXPORT void     AppendPoint (const DPoint2d& point);
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

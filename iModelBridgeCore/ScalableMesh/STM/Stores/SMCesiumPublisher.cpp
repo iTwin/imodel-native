@@ -1,7 +1,11 @@
 #include "ScalableMeshPCH.h"
+#include "..\ImagePPHeaders.h"
 #include "SMCesiumPublisher.h"
 #include "TilePublisher\MeshTile.h"
 #include "TilePublisher\TilePublisher.h"
+#include "..\ScalableMeshQuery.h"
+#include "SMStreamingDataStore.h"
+#include "..\ScalableMesh.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -31,4 +35,34 @@ void SMCesiumPublisher::_Publish(IScalableMeshNodePtr nodePtr, ClipVectorPtr cli
     TileNodePtr tileNode = new ScalableMeshTileNode(nodePtr, nodePtr->GetNodeExtent(), Transform::FromIdentity(), siblingIndex, parent, clips, coverageID, isClipBoundary, outputTexture);
     TilePublisher publisher(*tileNode, sourceGCS, destinationGCS);
     publisher.Publish(outData);
+    }
+
+void SMCesiumPublisher::_ExtractPublishNodeHeader(IScalableMeshNodePtr nodePtr, Json::Value& smJsonHeader)
+    {
+    auto smNodeHeader = dynamic_cast<ScalableMeshNode<DPoint3d>*>(nodePtr.get())->GetNodePtr()->m_nodeHeader;
+    SMStreamingStore<DRange3d>::SerializeHeaderToJSON(&smNodeHeader, smNodeHeader.m_id, smJsonHeader/*["node"]*/);
+    }
+
+void SMCesiumPublisher::_ExtractPublishMasterHeader(IScalableMeshPtr smPtr, Json::Value& smJsonMasterHeader)
+    {
+    if (smPtr == nullptr)
+        {
+        BeAssert(!"Trying to extract the master header of an invalid ScalableMesh");
+        return;
+        }
+
+    auto& sm = static_cast<ScalableMesh<DPoint3d>&>(*smPtr);
+    auto const& index = sm.GetMainIndexP();
+    smJsonMasterHeader["Balanced"] = index->IsBalanced();
+    smJsonMasterHeader["SplitTreshold"] = index->GetSplitTreshold();
+    smJsonMasterHeader["Depth"] = index->GetDepth();
+    smJsonMasterHeader["MeshDataDepth"] = index->GetTerrainDepth();
+    smJsonMasterHeader["IsTerrain"] = index->IsTerrain();
+    smJsonMasterHeader["DataResolution"] = index->GetResolution();
+    smJsonMasterHeader["IsTextured"] = (uint32_t)index->IsTextured();
+
+    WString wktString;
+    sm.GetDbFile()->GetWkt(wktString);
+    if (!wktString.empty())
+        smJsonMasterHeader["GCS"] = Utf8String(wktString.c_str());
     }

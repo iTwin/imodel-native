@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMMemoryPool.h $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -114,16 +114,16 @@ class SMMemoryPoolItemBase : public RefCountedBase
 
         //type_info m_dataType;
         
-        virtual void NotifySizeChangePoolItem(int64_t sizeDelta, int64_t nbItemDelta);
+        BENTLEY_SM_EXPORT virtual void NotifySizeChangePoolItem(int64_t sizeDelta, int64_t nbItemDelta);
         
     public :
 
-        virtual uint32_t AddRef() const;
-        virtual uint32_t Release() const;
+        BENTLEY_SM_EXPORT virtual uint32_t AddRef() const;
+        BENTLEY_SM_EXPORT virtual uint32_t Release() const;
 
-        SMMemoryPoolItemBase();
+        BENTLEY_SM_EXPORT SMMemoryPoolItemBase();
             
-        SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMStoreDataType& dataType, uint64_t smId);
+        BENTLEY_SM_EXPORT SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t nodeId, SMStoreDataType& dataType, uint64_t smId);
                     
         template<typename T>
         RefCountedPtr<SMMemoryPoolVectorItem<T>> GetAsPoolVector()
@@ -149,15 +149,15 @@ class SMMemoryPoolItemBase : public RefCountedBase
             return dynamic_cast<SMMemoryPoolGenericBlobItem<T>*>(this);
             }        
         
-        virtual ~SMMemoryPoolItemBase();
+        BENTLEY_SM_EXPORT virtual ~SMMemoryPoolItemBase();
 
-        void AddListener(SizeChangePoolItemListener* listener)
+        BENTLEY_SM_EXPORT void AddListener(SizeChangePoolItemListener* listener)
             {
             std::lock_guard<std::mutex> lock(m_listenerMutex);            
             m_listeners.push_back(listener);
             }        
 
-        void RemoveListener(SizeChangePoolItemListener* toRemoveListener)
+        BENTLEY_SM_EXPORT void RemoveListener(SizeChangePoolItemListener* toRemoveListener)
             {
             std::lock_guard<std::mutex> lock(m_listenerMutex);
             auto iter(m_listeners.begin());
@@ -177,25 +177,25 @@ class SMMemoryPoolItemBase : public RefCountedBase
             assert(!"Listener not found");
             }
 
-        SMStoreDataType GetDataType() const { return m_dataType; }
+        BENTLEY_SM_EXPORT SMStoreDataType GetDataType() const { return m_dataType; }
                     
-        uint64_t GetSize();        
+        BENTLEY_SM_EXPORT uint64_t GetSize();
 
-        bool IsCorrect(uint64_t nodeId, SMStoreDataType& dataType);
+        BENTLEY_SM_EXPORT bool IsCorrect(uint64_t nodeId, SMStoreDataType& dataType);
 
-        bool IsCorrect(uint64_t nodeId, SMStoreDataType& dataType, uint64_t smId);
+        BENTLEY_SM_EXPORT bool IsCorrect(uint64_t nodeId, SMStoreDataType& dataType, uint64_t smId);
 
-        virtual bool IsDirty () const { return m_dirty; } 
+        BENTLEY_SM_EXPORT virtual bool IsDirty () const { return m_dirty; }
             
-        SMMemoryPoolItemId GetPoolItemId() const;
+        BENTLEY_SM_EXPORT SMMemoryPoolItemId GetPoolItemId() const;
 
-        uint64_t GetNodeId() { return m_nodeId;  }
+        BENTLEY_SM_EXPORT uint64_t GetNodeId() { return m_nodeId;  }
             
-        void SetPoolItemId(SMMemoryPoolItemId poolItemId);
+        BENTLEY_SM_EXPORT  void SetPoolItemId(SMMemoryPoolItemId poolItemId);
 
-        void SetDirty(bool dirty = true) { m_dirty = dirty; }
+        BENTLEY_SM_EXPORT void SetDirty(bool dirty = true) { m_dirty = dirty; }
 
-        bool IsCompressedType()
+        BENTLEY_SM_EXPORT bool IsCompressedType()
             {
             return m_dataType == SMStoreDataType::TextureCompressed;
             }
@@ -1266,7 +1266,7 @@ class SMMemoryPool : public RefCountedBase
 
     public : 
 
-        static SMMemoryPoolItemId s_UndefinedPoolItemId;
+        static BENTLEY_SM_EXPORT SMMemoryPoolItemId s_UndefinedPoolItemId;
 
         
             
@@ -1360,17 +1360,17 @@ class SMMemoryPool : public RefCountedBase
             }  
 
                
-        bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);
+        BENTLEY_SM_EXPORT bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);
             
-        bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
+        BENTLEY_SM_EXPORT bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
 
         uint64_t RemoveAllItemsOfType(SMStoreDataType dataType, uint64_t smId);
             
-        SMMemoryPoolItemId AddItem(SMMemoryPoolItemBasePtr& poolItem);
+        BENTLEY_SM_EXPORT SMMemoryPoolItemId AddItem(SMMemoryPoolItemBasePtr& poolItem);
 
-        void ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
+        BENTLEY_SM_EXPORT void ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
 
-        void NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int64_t sizeDelta);
+        BENTLEY_SM_EXPORT void NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int64_t sizeDelta);
 
         size_t GetCurrentlyUsed()
             {
@@ -1391,7 +1391,7 @@ class SMMemoryPool : public RefCountedBase
             return true;
             }
 
-        static SMMemoryPoolPtr GetInstance()
+        BENTLEY_SM_EXPORT static SMMemoryPoolPtr GetInstance()
             {
             if (s_memoryPool == 0) 
                 s_memoryPool = new SMMemoryPool(SMMemoryPoolType::CPU);     
@@ -1399,7 +1399,7 @@ class SMMemoryPool : public RefCountedBase
             return s_memoryPool;
             }
 
-        static SMMemoryPoolPtr GetInstanceVideo()
+        BENTLEY_SM_EXPORT static SMMemoryPoolPtr GetInstanceVideo()
         {
             if (s_videoMemoryPool == 0)
                 s_videoMemoryPool = new SMMemoryPool(SMMemoryPoolType::GPU);

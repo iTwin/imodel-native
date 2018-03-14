@@ -6,7 +6,7 @@
 //:>       $Date: 2011/04/27 17:17:56 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #include <windows.h> //for showing info.
@@ -542,60 +542,62 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		otherNewTypes.clear();
 		newLines.clear();
 
+        if (polylines.size() > 0)
+            {
+		    for (size_t i = polylines.size() - 1; i > 0; i--)
+		        {
+			    bvector<bvector<DPoint3d>> defsHull;
+			    defsHull.push_back(polylines[i]);
+			    defsHull.push_back(polylines[i - 1]);
+			    MergePolygonSets(defsHull, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
+			        {
+				    if (types[i] != DTMFeatureType::Hull)
+				        {
+					    newLines.push_back(vec);
+					    newTypes.push_back(types[i]);
+					    return false;
+				    }
+				    else return true;
+			        },
+				    [&otherNewTypes](const bvector<DPoint3d>& vec)
+			        {
+				    otherNewTypes.push_back(DTMFeatureType::Hull);
+			        });
+			    if (defsHull.size() > 0)
+			        {
+				    polylines[i - 1] = defsHull[0];
+				    types[i - 1] = otherNewTypes[0];
+			        }
+			    if (defsHull.size() > 1)
+			        {
+				    polylines[i] = defsHull[1];
+				    types[i] = otherNewTypes[1];
+			        }
+			    if (newLines.size() > 0)
+			        {
+				    polylines[i] = newLines[0];
+				    types[i] = newTypes[0];
+			        }
+			    if (newLines.size() > 1)
+			        {
+				    polylines[i - 1] = newLines[1];
+				    types[i - 1] = newTypes[1];
+			        }
+			    if (defsHull.size() + newLines.size() < 2) polylines[i].clear();
+		        }
 
-		for (size_t i = polylines.size() - 1; i > 0; i--)
-		{
-			bvector<bvector<DPoint3d>> defsHull;
-			defsHull.push_back(polylines[i]);
-			defsHull.push_back(polylines[i - 1]);
-			MergePolygonSets(defsHull, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
-			{
-				if (types[i] != DTMFeatureType::Hull)
-				{
-					newLines.push_back(vec);
-					newTypes.push_back(types[i]);
-					return false;
-				}
-				else return true;
-			},
-				[&otherNewTypes](const bvector<DPoint3d>& vec)
-			{
-				otherNewTypes.push_back(DTMFeatureType::Hull);
-			});
-			if (defsHull.size() > 0)
-			{
-				polylines[i - 1] = defsHull[0];
-				types[i - 1] = otherNewTypes[0];
-			}
-			if (defsHull.size() > 1)
-			{
-				polylines[i] = defsHull[1];
-				types[i] = otherNewTypes[1];
-			}
-			if (newLines.size() > 0)
-			{
-				polylines[i] = newLines[0];
-				types[i] = newTypes[0];
-			}
-			if (newLines.size() > 1)
-			{
-				polylines[i - 1] = newLines[1];
-				types[i - 1] = newTypes[1];
-			}
-			if (defsHull.size() + newLines.size() < 2) polylines[i].clear();
-		}
+		    newLines = polylines;
+		    SimplifyPolylines(polylines);
+		    std::transform(polylines.begin(), polylines.end(), newLines.begin(), polylines.begin(),
+			    [&types, &polylines](const bvector<DPoint3d>&vec, const bvector<DPoint3d>& vec2)
+		        {
+			    if (types[&vec - &polylines[0]] == DTMFeatureType::Hull)
+				    return vec2;
+			    else return vec;
+		        });
+            }
 
-		newLines = polylines;
-		SimplifyPolylines(polylines);
-		std::transform(polylines.begin(), polylines.end(), newLines.begin(), polylines.begin(),
-			[&types, &polylines](const bvector<DPoint3d>&vec, const bvector<DPoint3d>& vec2)
-		{
-			if (types[&vec - &polylines[0]] == DTMFeatureType::Hull)
-				return vec2;
-			else return vec;
-		});
-
-	}
+	    }
 
 	std::unique(polylines.begin(), polylines.end(), [](const bvector<DPoint3d>& a, const bvector<DPoint3d>&b) {
 		if (a.size() != b.size()) return false;

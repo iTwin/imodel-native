@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,6 +25,7 @@ typedef uint8_t byte;
 #include <ScalableMesh/IScalableMeshSources.h>
 #include <ScalableMesh/GeoCoords/GCS.h>
 #include <ScalableMesh/ITextureProvider.h>
+#include <ScalableMesh/Import/SourceReference.h>
 
 #ifndef VANCOUVER_API
 namespace BENTLEY_NAMESPACE_NAME
@@ -60,13 +61,13 @@ private:
         struct                              Impl;
         std::auto_ptr<Impl>                 m_implP;               
                 
-        explicit                            IScalableMeshCreator              (Impl*                       implP);
+        BENTLEY_SM_EXPORT explicit                            IScalableMeshCreator              (Impl*                       implP);
 
 /*__PUBLISH_SECTION_START__*/
       
         // Disable copy
-                                            IScalableMeshCreator              (const IScalableMeshCreator&);
-        IScalableMeshCreator&                      operator=                  (const IScalableMeshCreator&);
+        BENTLEY_SM_EXPORT                    IScalableMeshCreator              (const IScalableMeshCreator&);
+       BENTLEY_SM_EXPORT IScalableMeshCreator&                      operator=                  (const IScalableMeshCreator&);
 
 public:
         BENTLEY_SM_EXPORT virtual                 ~IScalableMeshCreator             ();
@@ -133,8 +134,6 @@ public:
 
         BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&   scmPtr);*/
 
-
-
 #ifdef SCALABLE_MESH_ATP
 
         BENTLEY_SM_EXPORT static unsigned __int64 GetNbImportedPoints();    
@@ -151,5 +150,6 @@ public:
 #endif                           
     };
 
+BENTLEY_SM_EXPORT Import::SourceRef CreateSourceRefFromIDTMSource(const IDTMSource& source, const WString& stmPath);
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

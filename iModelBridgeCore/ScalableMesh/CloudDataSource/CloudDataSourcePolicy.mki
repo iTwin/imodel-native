@@ -2,7 +2,7 @@
 #
 #     $Source: CloudDataSource/CloudDataSourcePolicy.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__CloudDataSourcePolicy_mki__)

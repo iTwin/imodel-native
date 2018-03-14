@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>   
@@ -799,12 +799,12 @@ void swap  (GCS&    lhs,
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct GCSFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
     {
-    Log&                            m_warningLog;
+   // Log&                            m_warningLog;
     bool                            m_throwOnUnhandledErrors;
 
 
-    explicit                        Impl                               (Log& log)
-        :   m_warningLog(log),
+    explicit                        Impl                               (/*Log& log*/)
+        :   //m_warningLog(log),
             m_throwOnUnhandledErrors(true) // TDORAY: Extract from policy when one is available
         {
         }
@@ -817,8 +817,8 @@ struct GCSFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
         CustomError error(L"Error creating gcs!");
         if (m_throwOnUnhandledErrors)
             throw error;
-        else
-            m_warningLog.Add(error);
+       // else
+           // m_warningLog.Add(error);
         }
 
     template <typename Arg1T, typename Arg2T>
@@ -896,8 +896,8 @@ struct GCSFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-GCSFactory::GCSFactory (Log& log)
-    :   m_implP(new Impl(log))
+GCSFactory::GCSFactory (/*Log& log*/)
+    :   m_implP(new Impl(/*log*/))
     {
     }
 

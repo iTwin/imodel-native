@@ -5,6 +5,8 @@
 #include "..\ScalableMeshProgress.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
+	
+#pragma optimize("", off)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois   11/17
@@ -24,9 +26,16 @@ IScalableMeshPublishParamsPtr IScalableMeshPublishParams::Create(const SMPublish
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Richard.Bois   11/17
-+---------------+---------------+---------------+---------------+---------------+------*/
+void IScalableMeshPublisher::ExtractPublishNodeHeader(IScalableMeshNodePtr nodePtr, Json::Value& smHeader)
+    {
+    _ExtractPublishNodeHeader(nodePtr, smHeader);
+    }
+
+void IScalableMeshPublisher::ExtractPublishMasterHeader(IScalableMeshPtr smPtr, Json::Value& smMasterHeader)
+    {
+    _ExtractPublishMasterHeader(smPtr, smMasterHeader);
+    }
+
 IScalableMeshPublisherPtr IScalableMeshPublisher::Create(const SMPublishType& type)
     {
     switch (type)
@@ -83,7 +92,9 @@ SM3SMPublisher::SMPublishThreadPoolPtr SM3SMPublisher::GetPublishThreadPool()
         {
         // Setup multithreaded publishing
         static const uint64_t nbThreads = std::max((uint64_t)1, (uint64_t)(std::thread::hardware_concurrency() - 2));
+		//static const uint64_t nbThreads = 1;
         typedef std::function<void(LocalThreadPublishInfo&)> work_func_type;
+		typedef std::function<bool(LocalThreadPublishInfo&)> pred_func_type;
         work_func_type func = [](LocalThreadPublishInfo& info)
             {
             BeAssert(info.m_publisher != nullptr && info.m_destParentFuture != nullptr && info.m_destNodePromise != nullptr);
@@ -106,8 +117,13 @@ SM3SMPublisher::SMPublishThreadPoolPtr SM3SMPublisher::GetPublishThreadPool()
                 BeAssert(false); // Error processing node for publishing
                 }
             };
-        s_publishThreadPool = new SMPublishThreadPool(func, nbThreads, MAX_QUEUE_SIZE);
+		pred_func_type is_ready_func = [](LocalThreadPublishInfo& info)
+		{
+			return info.m_destParentFuture->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+		};
+        s_publishThreadPool = new SMPublishThreadPool(func, is_ready_func, nbThreads, MAX_QUEUE_SIZE);
         }
+
     return s_publishThreadPool;
     }
 
@@ -380,6 +396,8 @@ SM3SMPublisher::SMNodeEditPromisePtr SM3SMPublisher::AddWorkItem(IScalableMeshNo
 
 bool SM3SMPublisher::IsNodeClippedOut(IScalableMeshNodePtr sourceNode)
     {
+		return false;
+#if 0 
     auto sourceRange = sourceNode->GetNodeExtent();
     if (sourceRange.IsNull() || sourceRange.IsEmpty()) return true;
     for (auto const& clipRangeInfo : m_clipRanges)
@@ -413,4 +431,7 @@ bool SM3SMPublisher::IsNodeClippedOut(IScalableMeshNodePtr sourceNode)
             return true;
         }
     return false;
+#endif
     }
+
+

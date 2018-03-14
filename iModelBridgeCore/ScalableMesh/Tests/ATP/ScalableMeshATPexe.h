@@ -11,27 +11,34 @@
 #include <Bentley/BeFileListIterator.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
-#include <DgnView/DgnViewLib.h>
-
 #ifndef VANCOUVER_API   
-#include <DgnView/ViewManager.h>
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform\DesktopTools\KnownDesktopLocationsAdmin.h>
 #define VIEWMANAGER ViewManager
 #else
 #define VIEWMANAGER IViewManager
+#include <DgnView\IViewManager.h>
 #include <DgnGeoCoord/DgnGeoCoord.h>
+#include <DgnView\DgnViewLib.h>
 
 using namespace Bentley::GeoCoordinates;
 #endif
 
 #include <BeXml/BeXml.h>
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 namespace ScalableMeshATPexe
 {
+
+#ifdef VANCOUVER_API
 
 struct ExeViewManager : VIEWMANAGER
     {
@@ -53,20 +60,28 @@ struct ExeViewManager : VIEWMANAGER
         ~ExeViewManager() {}
     };
 
+#endif
+
+#ifdef VANCOUVER_API
 struct ScalableMeshATPexe : DgnViewLib::Host
+#else
+struct ScalableMeshATPexe : DgnPlatformLib::Host
+#endif
     {
     protected:
         enum class ParseStatus { Success, Error, NotRecognized };
 
 #ifndef VANCOUVER_API   
-        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new BentleyApi::Dgn::WindowsKnownLocationsAdmin(); }
+        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::KnownDesktopLocationsAdmin(); }
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() { return BeSQLite::L10N::SqlangFiles(BeFileName()); }
         virtual void _SupplyProductName(Utf8StringR name) override { name.assign("ScalableMeshATPexe"); }
 #else
         virtual void _SupplyProductName(WStringR name) override { name.assign(L"ScalableMeshATPexe"); }
 #endif
 
+#ifdef VANCOUVER_API
         virtual VIEWMANAGER& _SupplyViewManager() override { return *new ExeViewManager(); }
+#endif
         virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin();
 
         BeFileName          m_inputFileName;

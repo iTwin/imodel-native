@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/GeoCoords/DGNModelGeoref.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,14 +36,14 @@ inline const TransfoMatrix& FromBSITransform (const Transform& transform)
     return reinterpret_cast<const TransfoMatrix&>(transform);
     }
 
-BENTLEY_SM_EXPORT GCS                   GetBSIElementGCSFromRootPerspective    (DgnModelRefP            modelRef);
+BENTLEY_SM_IMPORT_EXPORT GCS                   GetBSIElementGCSFromRootPerspective    (DgnModelRefP            modelRef);
 
 GCS                                     ReinterpretModelGCSFromRootPerspective (const GCS&              elementAsSeenFromModelGCS,
                                                                                 DgnModelRefP            elementModelRefP);
 
-BENTLEY_SM_EXPORT GCS                   GetModelMasterGCS                      (DgnModelRefP            modelRef);
+BENTLEY_SM_IMPORT_EXPORT GCS                   GetModelMasterGCS                      (DgnModelRefP            modelRef);
 
-BENTLEY_SM_EXPORT GCS                   GetModelActiveGCS                      (DgnModelRefP            modelRef);
+BENTLEY_SM_IMPORT_EXPORT GCS                   GetModelActiveGCS                      (DgnModelRefP            modelRef);
 
 Unit                                    GetModelGlobalUnit                     (DgnModelRefP            modelRef);
 
@@ -51,9 +51,9 @@ Unit                                    GetModelMasterUnit                     (
 
 Unit                                    GetModelUOR                            (DgnModelRefP            modelRef);
 
-BENTLEY_SM_EXPORT bool                  IsModelAttachedReprojected             (DgnModelRefP            modelRef);
+BENTLEY_SM_IMPORT_EXPORT bool                  IsModelAttachedReprojected             (DgnModelRefP            modelRef);
 
-BENTLEY_SM_EXPORT bool                  IsModelGeoreferenced                   (DgnModelRefP            modelRef);
+BENTLEY_SM_IMPORT_EXPORT bool                  IsModelGeoreferenced                   (DgnModelRefP            modelRef);
 
 
 

@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -19,6 +19,7 @@
 #include <ScalableMesh/IScalableMeshAnalysis.h>
 #include <ScalableMesh/IScalableMeshInfo.h>
 #include <ScalableMesh/IScalableMeshClippingOptions.h>
+#include "ScalableMeshDefs.h"
 
 #undef static_assert
 
@@ -37,6 +38,13 @@ namespace BENTLEY_NAMESPACE_NAME
 #else 
 #define MOSAIC_TYPE HIMMosaic
 #endif
+
+#ifdef VANCOUVER_API
+#define DGN_NAMESPACE BENTLEY_NAMESPACE_NAME::DgnPlatform
+#else
+#define DGN_NAMESPACE BENTLEY_NAMESPACE_NAME::Dgn
+#endif
+
 //ADD_BENTLEY_TYPEDEFS (BENTLEY_NAMESPACE_NAME::ScalableMesh, IDTMVolume)
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -112,11 +120,11 @@ protected:
     
 public:
 
-    BENTLEY_SM_EXPORT bool      IsCurrentPreviewEnough() const;
+    BENTLEY_SM_IMPORT_EXPORT bool      IsCurrentPreviewEnough() const;
 
-    BENTLEY_SM_EXPORT StatusInt UpdatePreview(PolyfaceQueryCR currentGround);
+    BENTLEY_SM_IMPORT_EXPORT StatusInt UpdatePreview(PolyfaceQueryCR currentGround);
 
-    BENTLEY_SM_EXPORT bool UpdateProgress(IScalableMeshProgress* progress);
+    BENTLEY_SM_IMPORT_EXPORT bool UpdateProgress(IScalableMeshProgress* progress);
         
 };
 
@@ -329,7 +337,7 @@ struct IScalableMesh abstract:  IRefCounted
         //! Gets the draping interface.
         //! @return The draping interface.
 
-        void TextureFromRaster(ITextureProviderPtr provider);
+        BENTLEY_SM_EXPORT void TextureFromRaster(ITextureProviderPtr provider);
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 
@@ -372,8 +380,8 @@ struct IScalableMesh abstract:  IRefCounted
                                                                         const DRange3d&                      extentInTargetGCS) const;
 
         BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
-
-        BENTLEY_SM_EXPORT IScalableMeshEditPtr    GetMeshEditInterface() const;
+                
+        BENTLEY_SM_EXPORT IScalableMeshEditPtr        GetMeshEditInterface() const;
 
         BENTLEY_SM_EXPORT IScalableMeshAnalysisPtr    GetMeshAnalysisInterface();
 
@@ -414,9 +422,9 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshNodePtr  GetRootNode();
 
-        BENTLEY_SM_EXPORT int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
+        int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
-        BENTLEY_SM_EXPORT Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
+        Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
 
         BENTLEY_SM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
 
@@ -502,26 +510,28 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
                                                                 const Utf8String&      baseEditsFilePath,
-                                                                bool                    openReadOnly,
-                                                                bool                    openShareable,
-                                                                StatusInt&              status);
+                                                                bool                   useTempFolderForEditFiles,
+                                                                bool                   openReadOnly,
+                                                                bool                   openShareable,
+                                                                StatusInt&             status);
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
-                                                                const Utf8String&      baseEditsFilePath,
-                                                                bool                   needsNeighbors,
-                                                                bool                    openReadOnly,
-                                                                bool                    openShareable,
-                                                                StatusInt&              status);
+                                                                const Utf8String&     baseEditsFilePath,
+                                                                bool                  useTempFolderForEditFiles,
+                                                                bool                  needsNeighbors,
+                                                                bool                  openReadOnly,
+                                                                bool                  openShareable,
+                                                                StatusInt&            status);
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,
                                                                                  bool                    openShareable);
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
-                                                                const Utf8String&      baseEditsFilePath,
-                                                                bool                    openReadOnly,
-                                                                bool                    openShareable);
-
+                                                                const Utf8String&     baseEditsFilePath,
+                                                                bool                  openReadOnly,
+                                                                bool                  openShareable);
+        
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor(const WChar*          filePath,
                                                                 bool                  needsNeighbors,
                                                                 bool                    openReadOnly,
@@ -550,8 +560,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void  GetAllTextures(bvector<IScalableMeshTexturePtr>& textures);
 #endif
 
-        BENTLEY_SM_EXPORT static void SetUserFilterCallback(MeshUserFilterCallback callback);
-        BENTLEY_SM_EXPORT void ReFilter();
+        static void SetUserFilterCallback(MeshUserFilterCallback callback);
+        void ReFilter();
 
     };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/MeshTile.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -579,10 +579,13 @@ ImageSource::ImageSource(ImageCR image, Format format, int quality, Image::Botto
         typedef ByteStream stream_type;
 #endif
         stream_type stream;
+		
+#if 0 //NEEDS_WORK_SM_CESIUM_B0200
         if (SUCCESS == writer.Compress(stream, image.GetByteStream().GetData(), image.GetWidth(), image.GetHeight(),
                                        image.GetFormat() == Image::Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA,
                                        quality/*,
                                        Image::BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No*/))
+#endif									   
             {
             m_stream.Resize((uint32_t)stream.size());
             memcpy(m_stream.data(), stream.data(), stream.size());

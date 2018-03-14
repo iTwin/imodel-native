@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:50:41 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -429,7 +429,7 @@ void ImportWarningLog::_Add (const Message& message)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourceFactory CreateSourceFactory ()
     {
-    const SourceFactory sourceFactory(Plugin::SourceRegistry::GetInstance(), GetLog());
+    const SourceFactory sourceFactory(Plugin::SourceRegistry::GetInstance()/*, GetLog()*/);
     return sourceFactory;
     }
 
@@ -448,8 +448,8 @@ ImporterFactory CreateImporterFactory ()
 
     const ImporterFactory importerFactory(importPolicy,
                                           Plugin::ExtractorRegistry::GetInstance(),
-                                          filterFactory,
-                                          GetLog());
+                                          filterFactory/*,
+                                          GetLog()*/);
 
     return importerFactory;
     }
@@ -466,8 +466,8 @@ ReprojectionFactory CreateReprojectionFactory ()
                                     AllowConversionBetweenUnitBases(true).
                                     AllowGCSToLCS(true).
                                     AllowLCSToGCS(true).
-                                    SetAngularToLinearUnitRatio(angularToLinearUnitRatio), 
-                               GetLog());
+                                    SetAngularToLinearUnitRatio(angularToLinearUnitRatio)/*, 
+                               GetLog()*/);
     }
 
 
@@ -477,7 +477,7 @@ ReprojectionFactory CreateReprojectionFactory ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 GCSFactory CreateGCSFactory ()
     {
-    const GCSFactory gcsFactory(GetLog());
+    const GCSFactory gcsFactory/*(GetLog())*/;
     return gcsFactory;
     }
 

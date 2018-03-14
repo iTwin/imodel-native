@@ -10,7 +10,6 @@
 #include "InternalUtilityFunctions.h"
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HIMMosaic.h>
-#include <ImagePP/all/h/HPMPooledVector.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
 #include <TerrainModel/Core/DTMIterators.h>
@@ -51,7 +50,7 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 extern ScalableMeshScheduler* s_clipScheduler;
 extern std::mutex s_schedulerLock;
 
-template<> struct PoolItem<DifferenceSet>
+/*template<> struct PoolItem<DifferenceSet>
     {
     typedef HPMIndirectCountLimitedPoolItem<DifferenceSet> Type;
     typedef HPMIndirectCountLimitedPool<DifferenceSet> PoolType;
@@ -66,7 +65,7 @@ inline void HPMIndirectCountLimitedPoolItem<DifferenceSet>::RecomputeCount() con
         m_deepCount += sizeof(set) + set->addedFaces.size()*sizeof(DPoint3d) + set->addedVertices.size() * sizeof(int32_t) +
             set->removedFaces.size() * sizeof(int32_t) + set->removedVertices.size() * sizeof(int32_t);
         }
-    }
+    }*/
 
 template<class POINT, class EXTENT> class ISMPointIndexMesher;
 template<class POINT, class EXTENT> class ISMMeshIndexFilter;
@@ -200,7 +199,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         m_graphMutex.unlock();
         }
 
-    ISMMTGGraphDataStorePtr GetGraphStore() const;
+    BENTLEY_SM_EXPORT ISMMTGGraphDataStorePtr GetGraphStore() const;
         
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> GetGraphPtr(bool loadGraph = true);       
 
@@ -252,7 +251,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     @return Pointer to mesher or NULL if none is set.
     -----------------------------------------------------------------------------*/
-    ISMPointIndexMesher<POINT, EXTENT>*
+    BENTLEY_SM_EXPORT  ISMPointIndexMesher<POINT, EXTENT>*
         GetMesher2_5d() const;
 
     /**----------------------------------------------------------------------------
@@ -260,7 +259,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     @return Pointer to mesher or NULL if none is set.
     -----------------------------------------------------------------------------*/
-    ISMPointIndexMesher<POINT, EXTENT>*
+    BENTLEY_SM_EXPORT ISMPointIndexMesher<POINT, EXTENT>*
         GetMesher3d() const;
 
 
@@ -275,7 +274,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         }
 
 
-    void UpdateFromGraph(MTGGraph * graph, bvector<DPoint3d>& pointList);
+    BENTLEY_SM_EXPORT void UpdateFromGraph(MTGGraph * graph, bvector<DPoint3d>& pointList);
 
     void CollectFeatureDefinitionsFromGraph(MTGGraph* graph, size_t maxPtID);
 
@@ -309,9 +308,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
     void                TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
-    void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
+    BENTLEY_SM_EXPORT void                  ReadFeatureDefinitions(bvector<bvector<DPoint3d>>& points, bvector<DTMFeatureType> & types);
 
-    size_t                AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+    BENTLEY_SM_EXPORT size_t                AddFeatureDefinitionSingleNode(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
     size_t                AddFeatureDefinitionUnconditional(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
     size_t                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent, bool ExtentFixed);
 
@@ -397,13 +396,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     -----------------------------------------------------------------------------*/
     virtual void Stitch(int pi_levelToStitch, vector<SMMeshIndexNode<POINT, EXTENT>*>* nodesToStitch);
             
-    void PushPtsIndices(const int32_t* indices, size_t size);
+    BENTLEY_SM_EXPORT void PushPtsIndices(const int32_t* indices, size_t size);
 
-    void ReplacePtsIndices(const int32_t* indices, size_t size);
+    BENTLEY_SM_EXPORT void ReplacePtsIndices(const int32_t* indices, size_t size);
 
-    void ClearPtsIndices();                
+    BENTLEY_SM_EXPORT void ClearPtsIndices();
     
-    virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetPtsIndicePtr();
+    BENTLEY_SM_EXPORT virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetPtsIndicePtr();
         
     virtual RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> GetLinearFeaturesPtr();
         
@@ -772,7 +771,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
-    virtual void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly) override;
+    virtual void LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly) override;
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -928,7 +927,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     {
     friend class SMMeshIndexNode < POINT, EXTENT > ;
     public:
-        SMMeshIndex(ISMDataStoreTypePtr<EXTENT>& smDataStore,
+        BENTLEY_SM_EXPORT SMMeshIndex(ISMDataStoreTypePtr<EXTENT>& smDataStore,
                     SMMemoryPoolPtr& smMemoryPool,
                     size_t SplitTreshold, 
                     ISMPointIndexFilter<POINT, EXTENT>* filter, 
@@ -939,7 +938,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d, 
                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d);
 
-        virtual             ~SMMeshIndex<POINT, EXTENT>();
+        BENTLEY_SM_EXPORT virtual             ~SMMeshIndex<POINT, EXTENT>();
 
 
         ISMPointIndexMesher<POINT, EXTENT>*
@@ -968,28 +967,28 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ClipRegistry* GetClipRegistry()
             {
             return m_clipRegistry.GetPtr();
-            }        
+            }
         
 
         //ISMStore::FeatureType is the same as DTMFeatureType defined in TerrainModel.h.
-        void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
+        BENTLEY_SM_EXPORT void                AddFeatureDefinition(ISMStore::FeatureType type, bvector<DPoint3d>& points, DRange3d& extent);
 #ifdef WIP_MESH_IMPORT
         void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata="");
 
         void                AddMeshDefinition(const DPoint3d* pts, size_t nPts, const int32_t* indices, size_t nIndices, DRange3d extent, const char* metadata, const uint8_t* texData, size_t texSize, const DPoint2d* uvs);
 #endif
 
-        void PropagateFullMeshDown();
+        BENTLEY_SM_EXPORT void PropagateFullMeshDown();
 
 
-        void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
+        BENTLEY_SM_EXPORT void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
         void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true, Transform tr = Transform::FromIdentity());
-        void                RefreshMergedClips();
+        BENTLEY_SM_EXPORT void                RefreshMergedClips();
 
-        size_t GetNextTextureId();
+        BENTLEY_SM_EXPORT size_t GetNextTextureId();
 
 
-        void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
+        BENTLEY_SM_EXPORT void                TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform = Transform::FromIdentity());
 
         int                 RemoveWithin(ClipVectorCP boundariesToRemoveWithin, const bvector<IScalableMeshNodePtr>& priorityNodes);
 #ifdef ACTIVATE_TEXTURE_DUMP

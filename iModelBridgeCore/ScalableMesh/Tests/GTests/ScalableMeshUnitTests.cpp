@@ -2,18 +2,26 @@
 |
 |  $Source: Tests/GTests/ScalableMeshUnitTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/BeTest.h>
+#include <Bentley/BeThread.h>
 #include "SMUnitTestUtil.h"
-#include <ScalableMesh/IScalableMeshProgress.h>
 #include <ScalableMesh/ScalableMeshDefs.h>
+#include <ScalableMesh/IScalableMeshSaveAs.h>
+#include <ScalableMesh/IScalableMeshSourceCreator.h>
 #include <TerrainModel/Core/IDTM.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
 #include "SMUnitTestDisplayQuery.h"
+
+
+
+
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
+
 
 class ScalableMeshEnvironment : public ::testing::Environment
     {
@@ -121,8 +129,31 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
         virtual void TearDown() { }
         BeFileName GetFileName() { return m_filename; }
         ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
-
+        ScalableMesh::IScalableMeshPtr OpenMesh()
+            {
+            StatusInt status;
+            ScalableMesh::IScalableMeshPtr myScalableMesh = ScalableMesh::IScalableMesh::GetFor(m_filename, true, true, status);
+            BeAssert(status == SUCCESS);
+            return myScalableMesh;
+            }
     };
+
+
+class ScalableMeshGenerationTestWithParams : public ::testing::TestWithParam<BeFileName>
+{
+protected:
+    BeFileName m_filename;
+
+public:
+    virtual void SetUp()
+    {
+        m_filename = GetParam();
+    }
+    virtual void TearDown() { }
+    BeFileName GetFileName() { return m_filename; }
+    ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
+
+};
 
 
 class ScalableMeshTestDrapePoints : public ::testing::TestWithParam<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>>
@@ -190,9 +221,8 @@ public:
     bvector<double>& GetExpectedResults() { return m_expectedResults; }
 
     ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
-
-
 };
+
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -201,8 +231,7 @@ public:
 TEST_P(ScalableMeshTestWithParams, CanOpen)
     {
     auto typeStr = ScalableMeshGTestUtil::SMMeshType::TYPE_3SM == GetType() ? L"3sm" : L"3dTiles";
-
-    EXPECT_EQ(ScalableMeshTest::OpenMesh(m_filename).IsValid(), true ) << "\n Error opening "<< typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
+    EXPECT_EQ(OpenMesh().IsValid(), true) << "\n Error opening " << typeStr << ": " << GetFileName().c_str() << std::endl << std::endl;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -262,7 +291,8 @@ TEST_P(ScalableMeshTestWithParams, CanGenerate3DTiles)
     BeFileNameStatus statusFile = BeFileName::CreateNewDirectory(tempPath.c_str());
     ASSERT_EQ(statusFile == BeFileNameStatus::Success || statusFile == BeFileNameStatus::AlreadyExists, true);
 
-    auto ret = myScalableMesh->Generate3DTiles(tempPath);
+    auto ret = IScalableMeshSaveAs::Generate3DTiles(myScalableMesh, tempPath, L"", SMCloudServerType::LocalDisk, nullptr, nullptr, (uint64_t)-1);
+    //auto ret = myScalableMesh->Generate3DTiles(tempPath);
 
     ASSERT_TRUE(SUCCESS == ret);
     
@@ -485,6 +515,11 @@ TEST_P(ScalableMeshTestWithParams, VerifyMeshNodeInfo)
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestWithParams, ::testing::ValuesIn(ScalableMeshGTestUtil::GetFiles(BeFileName(SM_DATA_PATH))));
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshGenerationTestWithParams, ::testing::ValuesIn(ScalableMeshGTestUtil::GetFiles(BeFileName(SM_DATA_SOURCE_PATH), true)));
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
@@ -503,7 +538,7 @@ TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     BeFileName destination = ScalableMeshGTestUtil::GetUserSMTempDir();
-    destination.append(testFile.c_str());
+    destination.AppendToPath(testFile.c_str());
 
     if (BeFileName::DoesPathExist(destination.c_str()))
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
@@ -524,7 +559,8 @@ TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
 
     auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
 
-    auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
+    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/);
+    //auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
 
     EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
 
@@ -551,7 +587,7 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
     ASSERT_EQ(myScalableMesh.IsValid(), true);
 
     BeFileName destination = ScalableMeshGTestUtil::GetUserSMTempDir();
-    destination.append(testFile.c_str());
+    destination.AppendToPath(testFile.c_str());
 
     if (BeFileName::DoesPathExist(destination.c_str()))
         ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(destination.c_str()));
@@ -572,7 +608,8 @@ TEST_F(ScalableMeshTest, SaveAsWithClipMask)
 
     auto clip = DgnPlatform::ClipVector::CreateFromPrimitive(clipPrimitive);
 
-    auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
+    auto ret = IScalableMeshSaveAs::DoSaveAs(myScalableMesh, destination, clip, nullptr/*progressSM*/);
+    //auto ret = myScalableMesh->SaveAs(destination, clip, nullptr/*progressSM*/);
 
     EXPECT_EQ(SUCCESS == ret && BeFileName::DoesPathExist(destination.c_str()), true) << "\n Error saving to new 3sm" << std::endl << std::endl;
 
@@ -584,6 +621,9 @@ INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDrapePoints, ::testing::Va
 
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestDisplayQuery, ::testing::ValuesIn(ScalableMeshGTestUtil::GetListOfDisplayQueryValues(BeFileName(SM_DISPLAY_QUERY_TEST_CASES))));
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis   12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 {
 	auto myScalableMesh = OpenMesh();
@@ -603,6 +643,9 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeSinglePoint)
 	}
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis   12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 {   
 	auto myScalableMesh = OpenMesh();
@@ -621,36 +664,88 @@ TEST_P(ScalableMeshTestDrapePoints, DrapeLinear)
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePoints, IntersectRay)
+{
+    auto myScalableMesh = OpenMesh();
+    for (size_t i = 0; i < GetData().size(); ++i)
+    {
+        DPoint3d sourcePt = GetData()[i];
+        DPoint3d result = sourcePt;
+
+        DPoint3d expectedResult = GetResult().front();
+        for (auto&pt : GetResult())
+            if (fabs(pt.x - sourcePt.x) < 1e-6 && fabs(pt.y - sourcePt.y)< 1e-6)
+                expectedResult = pt;
+        DVec3d direction = DVec3d::From(0, 0, -1);
+        ASSERT_EQ(true, myScalableMesh->GetDTMInterface()->GetDTMDraping()->IntersectRay(result, direction, sourcePt));
+        EXPECT_EQ(fabs(result.z - expectedResult.z) < 1e-6, true);
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePoints, IntersectRayMultipleHits)
+{
+    auto myScalableMesh = OpenMesh();
+    for (size_t i = 0; i < GetData().size(); ++i)
+    {
+        DPoint3d sourcePt = GetData()[i];
+        DPoint3d result = sourcePt;
+
+        DPoint3d expectedResult = GetResult().front();
+        for (auto&pt : GetResult())
+            if (fabs(pt.x - sourcePt.x) < 1e-6 && fabs(pt.y - sourcePt.y)< 1e-6)
+                expectedResult = pt;
+        DVec3d direction = DVec3d::From(0, 0, -1);
+        bvector<DTMRayIntersection> results;
+        ASSERT_EQ(true, myScalableMesh->GetDTMInterface()->GetDTMDraping()->IntersectRay(results, direction, sourcePt));
+        ASSERT_EQ(results.size(),1);
+        ASSERT_TRUE(results[0].isOnMesh);
+        EXPECT_EQ(fabs(results[0].point.z - expectedResult.z) < 1e-6, true);
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePoints, DrapeAlongVector)
+{
+}
+
+#if 0
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestProjectPoints, ProjectPoint)
+{
+}
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePointsFast, DrapeSinglePoint)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Elenie.Godzaridis  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestDrapePointsFast, DrapeLinear)
+{
+}
+#endif
+
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Mathieu.St-Pierre   11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
-    {
-
-    /*
-    BeFileName GetFileName() { return m_filename; }
-    const DMatrix4d& GetRootToViewMatrix() { return m_rootToViewMatrix; }
-    const bvector<DPoint4d>& GetClipPlanes() { return m_clipPlanes; }
-    bvector<double>& GetExpectedResults() { return m_expectedResults; }
-    */
-
-
-    //auto myScalableMesh = OpenMesh();
-
-    /*
-    bvector<DPoint3d> sourcePts = GetData();
-    TerrainModel::DTMDrapedLinePtr result;
-    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetDTMInterface()->GetDTMDraping()->DrapeLinear(result, sourcePts.data(), (int)sourcePts.size()));
-    ASSERT_EQ(result.IsValid(), true);
-    for (size_t i = 0; i < GetResult().size(); ++i)
-    {
-    DPoint3d pt;
-    result->GetPointByIndex(pt, nullptr, nullptr, (unsigned int)i);
-    EXPECT_EQ(fabs(pt.z - GetResult()[i].z) < 1e-6, true);
-    EXPECT_EQ(fabs(pt.x - GetResult()[i].x) < 1e-6, true);
-    EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
-    }*/
-    
-
+    {      
     DisplayQueryTester queryTester;
 
     bool result = queryTester.SetQueryParams(GetFileName(), GetRootToViewMatrix(), GetClipPlanes(), GetExpectedResults());
@@ -661,6 +756,311 @@ TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
         queryTester.DoQuery();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Mathieu.St-Pierre   03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshGenerationTestWithParams, FromSourceCreation)
+    {
+    //m_filename.c_str()
+    BeFileName newSmFileName = ScalableMeshGTestUtil::GetUserSMTempDir();
+
+    BeFileNameStatus statusFile = BeFileName::CreateNewDirectory(newSmFileName.c_str());
+    ASSERT_EQ(statusFile == BeFileNameStatus::Success || statusFile == BeFileNameStatus::AlreadyExists, true);
+
+    newSmFileName = BeFileName((newSmFileName + WString(L"\\fromSourceCreation.3sm")).c_str());
+
+    if (BeFileName::DoesPathExist(newSmFileName.c_str()))
+        ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(newSmFileName.c_str()));
+    
+    StatusInt status;
+    IScalableMeshSourceCreatorPtr smCreatorPtr(IScalableMeshSourceCreator::GetFor(newSmFileName.c_str(), status));
+
+    EXPECT_EQ(status == SUCCESS, true);    
+
+    ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_POINT, m_filename.c_str());        
+    smCreatorPtr->EditSources().Add(sourceP);
+    smCreatorPtr->SaveToFile();
+    SMStatus smStatus = smCreatorPtr->Create();
+
+    EXPECT_EQ(smStatus == S_SUCCESS, true);
+
+    smCreatorPtr = nullptr;
+
+    IScalableMeshPtr smPtr(IScalableMesh::GetFor(newSmFileName.c_str(), false, true, status));    
+
+    EXPECT_EQ(status == SUCCESS && smPtr.IsValid(), true);
+
+    //smPtr->SynchWithSources();
+    //EXPECT_EQ(smPtr->InSynchWithSources(), true);
+    //EXPECT_EQ(smPtr->InSynchWithDataSources(), true);
+
+    time_t lastSynchTime;
+
+    smPtr->LastSynchronizationCheck(lastSynchTime);
+
+    time_t currentTime;
+    time(&currentTime);
+
+    EXPECT_EQ(lastSynchTime <= currentTime, true);    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetNodeQueryInterface)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    ASSERT_EQ(ptr.IsValid(), true);
+    
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQuerySingleNode)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    params->SetDirection(direction);
+
+    IScalableMeshNodePtr node = nullptr;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    DPoint3d testPt = DPoint3d::From(range.low.x + range.XLength() / 2, range.low.y + range.YLength() / 2, range.high.z);
+    ptr->Query(node, &testPt, NULL, 0, params);
+
+    ASSERT_TRUE(node != nullptr);
+    ASSERT_TRUE(node->GetContentExtent().low.x <= testPt.x);
+    ASSERT_TRUE(node->GetContentExtent().low.y <= testPt.y);
+    ASSERT_TRUE(node->GetContentExtent().high.x >= testPt.x);
+    ASSERT_TRUE(node->GetContentExtent().high.y >= testPt.y);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQueryMultipleNode)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    params->SetDirection(direction);
+
+    DVec3d testDirection = params->GetDirection();
+    ASSERT_TRUE(testDirection.IsEqual(direction));
+
+    bvector<IScalableMeshNodePtr> nodes;
+    IScalableMeshNodePtr node = nullptr;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    DPoint3d testPt = DPoint3d::From(range.low.x + range.XLength() / 2, range.low.y + range.YLength() / 2, range.high.z);
+    ptr->Query(nodes, &testPt, NULL, 0, params);
+
+    ASSERT_TRUE(!nodes.empty());
+
+    ptr->Query(node, &testPt, NULL, 0, params);
+    ASSERT_TRUE(std::find_if(nodes.begin(), nodes.end(), [&node](const IScalableMeshNodePtr& val)
+    {
+        return val->GetNodeId() == node->GetNodeId();
+    }) != nodes.end());
+
+    nodes.clear();
+    testPt = DPoint3d::From(range.high.x + range.XLength() / 2, range.high.y + range.YLength() / 2, range.high.z);
+    ptr->Query(nodes, &testPt, NULL, 0, params);
+    ASSERT_TRUE(nodes.empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQueryByDepth)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    params->SetDirection(direction);
+
+    bvector<IScalableMeshNodePtr> nodes1;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    DPoint3d testPt = DPoint3d::From(range.low.x + range.XLength() / 2, range.low.y + range.YLength() / 2, range.high.z+100);
+    ptr->Query(nodes1, &testPt, NULL, 0, params);
+
+    DRay3d toRange = DRay3d::FromOriginAndVector(testPt, direction);
+    DRange1d fraction;
+    DSegment3d segment;
+    toRange.ClipToRange(nodes1.front()->GetContentExtent(), segment, fraction);
+
+    params->SetDepth(fraction.low * 0.75);
+    ASSERT_EQ(params->GetDepth(), fraction.low * 0.75);
+    bvector<IScalableMeshNodePtr> nodes2;
+    ptr->Query(nodes2, &testPt, NULL, 0, params);
+
+    ASSERT_TRUE(nodes2.empty() || nodes2.front()->GetNodeId() != nodes1.front()->GetNodeId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQueryByLevel)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    params->SetDirection(direction);
+
+    IScalableMeshNodePtr node = nullptr;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    DPoint3d testPt = DPoint3d::From(range.low.x + range.XLength() / 2, range.low.y + range.YLength() / 2, range.high.z);
+
+    for (size_t i = 0; i < myScalableMesh->GetNbResolutions(); ++i)
+    {
+        params->SetLevel(i);
+        ptr->Query(node, &testPt, NULL, 0, params);
+        EXPECT_TRUE(node->GetLevel() == i || (node->GetLevel() <= i && node->GetChildrenNodes().empty()));
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQueryUsing2dProjectedRays)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, LoadMeshWithTexture)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false);
+
+    auto mesh = nodeP->GetMesh(flags);
+    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+        ASSERT_TRUE(mesh.IsValid());
+    if (mesh.IsValid())
+    {
+        if (nodeP->IsTextured())
+            ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() != nullptr);
+        else
+            ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() == nullptr);
+
+        ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
+        ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
+        ASSERT_EQ(nodeP->GetPointCount(), mesh->GetNbPoints());
+
+        flags = IScalableMeshMeshFlags::Create(false, false);
+        mesh = nodeP->GetMesh(flags);
+        ASSERT_TRUE(mesh->GetPolyfaceQuery()->GetParamCP() == nullptr);
+
+        ASSERT_EQ(mesh->GetNbPoints(), mesh->GetPolyfaceQuery()->GetPointCount());
+        ASSERT_EQ(mesh->GetNbFaces(), mesh->GetPolyfaceQuery()->GetPointIndexCount() / 3);
+        ASSERT_EQ(nodeP->GetPointCount(), mesh->GetNbPoints());
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, LoadMeshWithGraph)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    //not supported for the cesium data
+    if (myScalableMesh->IsCesium3DTiles())
+        return;
+
+    IScalableMeshNodePtr nodeP = myScalableMesh->GetRootNode();
+
+    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(false, true);
+
+    auto mesh = nodeP->GetMesh(flags);
+    if (!nodeP->GetContentExtent().IsNull() && nodeP->GetPointCount() > 4)
+        ASSERT_TRUE(mesh.IsValid());
+    if (mesh.IsValid())
+    {
+        if (!myScalableMesh->IsTerrain())
+            return;
+
+        ASSERT_TRUE(flags->ShouldLoadGraph());
+        bvector<DPoint3d> pts;
+        ASSERT_EQ(mesh->GetBoundary(pts), DTM_SUCCESS);
+
+        flags->SetLoadGraph(false);
+        ASSERT_FALSE(flags->ShouldLoadGraph());
+        mesh = nodeP->GetMesh(flags);
+        ASSERT_EQ(mesh->GetBoundary(pts), DTM_ERROR);
+    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, AddSkirt)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, ModifySkirt)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, RemoveSkirt)
+{
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
+{
+}
+
 
 // Wrap Google's ASSERT_TRUE macro into a lambda because it returns a "success" error code.
 // When calling from main function, we actually want to return an error.
@@ -670,6 +1070,7 @@ TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
     [&]() { ASSERT_TRUE(isTrue); }(); \
     if (!(isTrue)) return 1; \
     }
+
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                                    Richard.Bois      10/2017

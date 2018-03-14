@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:24:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -72,11 +72,11 @@ const WKTKeyword&                       GetWKTKeyword                           
 const WKTKeyword&                       GetWKTKeyword                              (WKTKeyword::Type    type);
 
 
-ISMStore::WktFlavor                     GetWKTFlavor                       (WString* wktWithoutFlavorStr, const WString& wktStr);
+BENTLEY_SM_EXPORT ISMStore::WktFlavor                     GetWKTFlavor                       (WString* wktWithoutFlavorStr, const WString& wktStr);
 
 WKTKeyword::Type                        GetWktType                         (WString wkt);
 
-bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, ISMStore::WktFlavor fileWktFlavor);
+BENTLEY_SM_EXPORT bool MapWktFlavorEnum(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::WktFlavor& baseGcsWktFlavor, ISMStore::WktFlavor fileWktFlavor);
 
 
 END_BENTLEY_SCALABLEMESH_GEOCOORDINATES_NAMESPACE

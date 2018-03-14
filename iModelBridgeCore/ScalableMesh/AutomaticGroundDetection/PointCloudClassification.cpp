@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PointCloudClassification.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshPCH.h" //always first
@@ -14,7 +14,6 @@
 #include <DgnPlatform\ModelAccess.h>
 #include <DgnPlatform\DelegatedElementECEnabler.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 #include <DgnPlatform\PointCloudHandler.h>
 

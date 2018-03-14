@@ -578,7 +578,7 @@ void DimensionOrg::push_back (const DimensionDef& pi_rDimension)
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DimensionOrg::Impl::ComputeTypeSize () const
-    {
+    {        
     size_t TotalSize = 0;
 
     for (auto& dimension : m_dimensions)

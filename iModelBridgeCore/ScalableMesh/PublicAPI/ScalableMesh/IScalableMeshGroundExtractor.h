@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -47,19 +47,19 @@ struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
           
     public:
       
-        BENTLEY_SM_EXPORT SMStatus ExtractAndEmbed(const BeFileName& coverageTempDataFolder);
+        BENTLEY_SM_IMPORT_EXPORT SMStatus ExtractAndEmbed(const BeFileName& coverageTempDataFolder);
 
-        BENTLEY_SM_EXPORT StatusInt SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs);
+        BENTLEY_SM_IMPORT_EXPORT StatusInt SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs);
         
-        BENTLEY_SM_EXPORT StatusInt SetExtractionArea(const bvector<DPoint3d>& area);
+        BENTLEY_SM_IMPORT_EXPORT StatusInt SetExtractionArea(const bvector<DPoint3d>& area);
 
-		BENTLEY_SM_EXPORT StatusInt SetLimitTextureResolution(bool limitTextureResolution);
+        BENTLEY_SM_IMPORT_EXPORT StatusInt SetLimitTextureResolution(bool limitTextureResolution);
 
-        BENTLEY_SM_EXPORT StatusInt SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer);
+        BENTLEY_SM_IMPORT_EXPORT StatusInt SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer);
         
-        BENTLEY_SM_EXPORT static IScalableMeshGroundExtractorPtr Create(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh);        
+        BENTLEY_SM_IMPORT_EXPORT static IScalableMeshGroundExtractorPtr Create(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh);
 
-        BENTLEY_SM_EXPORT static void GetTempDataLocation(BeFileName& textureSubFolderName , BeFileName& extraLinearFeatureFileName);        
+        BENTLEY_SM_IMPORT_EXPORT static void GetTempDataLocation(BeFileName& textureSubFolderName , BeFileName& extraLinearFeatureFileName);
 
     };
 

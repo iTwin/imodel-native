@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:05 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -29,14 +29,14 @@ class ClipMaskFilterFactory : public Import::Plugin::V0::CustomFilterFactoryBase
     struct Impl;
     auto_ptr<Impl>                      m_pImpl;
 
-    explicit                            ClipMaskFilterFactory  (Impl*                               implP);
+    BENTLEY_SM_EXPORT explicit                            ClipMaskFilterFactory  (Impl*                               implP);
                                         ~ClipMaskFilterFactory ();
 
     virtual const FilterCreatorBase*    _FindCreatorFor        (const DataType&                     sourceType,
                                                                 Log&                                log) const override;
 
 public:
-    static Import::CustomFilterFactory  CreateFrom             (const HFCPtr<HVEClipShape>&         shapePtr);
+    BENTLEY_SM_EXPORT static Import::CustomFilterFactory  CreateFrom             (const HFCPtr<HVEClipShape>&         shapePtr);
     };
 
 

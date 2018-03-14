@@ -8,7 +8,6 @@
 #include <ImagePP\all\h\HRPPixelTypeV32R8G8B8A8.h>
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HIMMosaic.h>
-#include <ImagePP/all/h/HPMPooledVector.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
 #include <ImagePP/all/h/HCDCodecIJG.h>
@@ -33,7 +32,13 @@ HPMPool* RasterUtilities::s_rasterMemPool = nullptr;
 HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     {
     HFCPtr<HRFRasterFile> pRasterFile;
-    HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
+    HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(
+#ifndef VANCOUVER_API
+		Utf8String(path)
+#else
+		path
+#endif
+	));
 
 #ifndef VANCOUVER_API
 /*
@@ -68,8 +73,11 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
                 {
                 localFilePath.append(path);
                 }
-            
+#ifdef VANCOUVER_API            
             pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(localFilePath), TRUE);
+#else
+			pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(Utf8String(localFilePath)), TRUE);
+#endif
             }
 
         pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
@@ -82,8 +90,10 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
             }
     #endif
         }
-    catch (HFCException& )
+    catch (HFCException& e)
         {
+        BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger*   logger = BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger("ScalableMesh");
+        logger->debugv(e.GetExceptionMessage().c_str());
         pRasterFile = nullptr;
         }
 
@@ -435,7 +445,12 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
                ind++);
 
 
+    // NEEDS_WORK_SM : Imagepp needs update on bim02
+#ifdef VANCOUVER_API
     HFCPtr<HFCURL> pFileName(HFCURL::Instanciate(outputFileName));
+#else
+    HFCPtr<HFCURL> pFileName(HFCURL::Instanciate(Utf8String(outputFileName)));
+#endif
 
     HFCPtr<HRPPixelType> pPixelTypeBMP(new HRPPixelTypeV24B8G8R8());
 

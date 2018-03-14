@@ -6,7 +6,7 @@
 |       $Date: 2016/08/24 13:32:17 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -16,7 +16,6 @@
 #include <Bentley/RefCounted.h>
 #include <DgnPlatform/ClipVector.h>
 #include <Geom/Polyface.h>
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 struct EditOperation : RefCountedBase
     {

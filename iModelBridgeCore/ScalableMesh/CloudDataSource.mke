@@ -2,7 +2,7 @@
 #
 #     $Source: CloudDataSource.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
@@ -13,7 +13,7 @@ OPTIMIZE_FOR_SPEED=1
 
 %include  mdl.mki
 %include $(baseDir)mki/ScalableMeshPolicy.mki
-%include $(baseDir)CloudDataSource/CloudDataSourcePolicy.mki
+%include $(baseDir)CloudDataSource/CloudDataSourcePolicy_Bim.mki
 
 
 CCompOpts + $(PublicApiIncludes)

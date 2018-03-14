@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 00:36:54 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -250,7 +250,7 @@ struct ReprojectionFilterFactory::Impl : public ShareableObjectTypeTrait<Impl>::
     explicit                                Impl                           (const FilterRegistry&           registry,
                                                                             Log&                            log)
         :   m_registry(registry),
-            m_reprojectionFactory(log),
+            m_reprojectionFactory(/*log*/),
             m_log(log)
         {
         }

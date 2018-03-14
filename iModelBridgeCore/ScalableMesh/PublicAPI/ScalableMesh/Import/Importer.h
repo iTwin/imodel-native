@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:20:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,15 +66,15 @@ public:
     typedef Plugin::ExtractorRegistry       ExtractorRegistry;
 
 
-    IMPORT_DLLE explicit                    ImporterFactory            (Log&                            log = GetDefaultLog());
+    IMPORT_DLLE explicit                    ImporterFactory            (/*Log&                            log = GetDefaultLog()*/);
 
-    IMPORT_DLLE explicit                    ImporterFactory            (const ImportPolicy&             policy,
-                                                                        Log&                            log = GetDefaultLog());
+    IMPORT_DLLE explicit                    ImporterFactory            (const ImportPolicy&             policy/*,
+                                                                        Log&                            log = GetDefaultLog()*/);
 
     IMPORT_DLLE explicit                    ImporterFactory            (const ImportPolicy&             policy,
                                                                         const ExtractorRegistry&        extractorRegistry,
-                                                                        const FilterFactory&            filterFactory,
-                                                                        Log&                            log = GetDefaultLog());
+                                                                        const FilterFactory&            filterFactory/*,
+                                                                        Log&                            log = GetDefaultLog()*/);
 
 
     IMPORT_DLLE                             ImporterFactory            (const ImporterFactory&          rhs);

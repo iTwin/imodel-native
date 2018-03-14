@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:35:02 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -40,52 +40,52 @@ struct IScalableMeshSourceCreator : public IScalableMeshCreator
         /*__PUBLISH_SECTION_START__*/
 
     public:
-        BENTLEY_SM_EXPORT virtual                 ~IScalableMeshSourceCreator();
+        BENTLEY_SM_IMPORT_EXPORT virtual                 ~IScalableMeshSourceCreator();
 
-        BENTLEY_SM_EXPORT static IScalableMeshSourceCreatorPtr GetFor(const WChar*              filePath,
+        BENTLEY_SM_IMPORT_EXPORT static IScalableMeshSourceCreatorPtr GetFor(const WChar*              filePath,
                                                                     StatusInt&                status);
 
-        BENTLEY_SM_EXPORT static IScalableMeshSourceCreatorPtr GetFor(const IScalableMeshPtr&     scmPtr,
+        BENTLEY_SM_IMPORT_EXPORT static IScalableMeshSourceCreatorPtr GetFor(const IScalableMeshPtr&     scmPtr,
                                                                     StatusInt&                  status);
         // TDORAY: For next versions: Add overloads taking as parameters a working dir path and maybe a listing 
         //         of environment variables. This supplementary information will enable STM relocation without 
         //         sources relocation (by specifying previous STM dir as working dir). Another solution could
         //         be to provide a Relocate functionality.
 
-        BENTLEY_SM_EXPORT const IDTMSourceCollection& GetSources() const;
-        BENTLEY_SM_EXPORT IDTMSourceCollection&       EditSources();
+        BENTLEY_SM_IMPORT_EXPORT const IDTMSourceCollection& GetSources() const;
+        BENTLEY_SM_IMPORT_EXPORT IDTMSourceCollection&       EditSources();
 
-        BENTLEY_SM_EXPORT void                    SetSourcesDirty();
-        BENTLEY_SM_EXPORT bool                    HasDirtySources() const;
+        BENTLEY_SM_IMPORT_EXPORT void                    SetSourcesDirty();
+        BENTLEY_SM_IMPORT_EXPORT bool                    HasDirtySources() const;
 
-        BENTLEY_SM_EXPORT bool                    AreAllSourcesReachable() const;
+        BENTLEY_SM_IMPORT_EXPORT bool                    AreAllSourcesReachable() const;
 
-        BENTLEY_SM_EXPORT StatusInt               UpdateLastModified();
+        BENTLEY_SM_IMPORT_EXPORT StatusInt               UpdateLastModified();
 
-        BENTLEY_SM_EXPORT void                    ResetLastModified();
+        BENTLEY_SM_IMPORT_EXPORT void                    ResetLastModified();
 
-        BENTLEY_SM_EXPORT void                    SetSourceImportExtent(const DRange2d& ext);
+        BENTLEY_SM_IMPORT_EXPORT void                    SetSourceImportExtent(const DRange2d& ext);
 
-        BENTLEY_SM_EXPORT void                    SetSourceImportPolygon(const DPoint3d* polygon, size_t nPts);
+        BENTLEY_SM_IMPORT_EXPORT void                    SetSourceImportPolygon(const DPoint3d* polygon, size_t nPts);
 
 #ifdef SCALABLE_MESH_ATP
 
-        BENTLEY_SM_EXPORT static unsigned __int64 GetNbImportedPoints();
+        BENTLEY_SM_IMPORT_EXPORT static unsigned __int64 GetNbImportedPoints();
 
-        BENTLEY_SM_EXPORT static double GetImportPointsDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetImportPointsDuration();
 
-        BENTLEY_SM_EXPORT static double GetLastBalancingDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastBalancingDuration();
 
-        BENTLEY_SM_EXPORT static double GetLastMeshingDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastMeshingDuration();
 
-        BENTLEY_SM_EXPORT static double GetLastFilteringDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastFilteringDuration();
 
-        BENTLEY_SM_EXPORT static double GetLastStitchingDuration();
+        BENTLEY_SM_IMPORT_EXPORT static double GetLastStitchingDuration();
 
-        BENTLEY_SM_EXPORT        void   ImportRastersTo(const IScalableMeshPtr& scmPtr);
+        BENTLEY_SM_IMPORT_EXPORT        void   ImportRastersTo(const IScalableMeshPtr& scmPtr);
 #endif   
 
-        BENTLEY_SM_EXPORT void SetUserFilterCallback(MeshUserFilterCallback callback);
+        BENTLEY_SM_IMPORT_EXPORT void SetUserFilterCallback(MeshUserFilterCallback callback);
 
 
     };

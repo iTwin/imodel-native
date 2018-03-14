@@ -2,7 +2,7 @@
 #
 #     $Source: Tests/ATP/ScalableMeshATPexe_Vancouver.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
@@ -82,10 +82,12 @@ LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyAllocator.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnGeoCoord.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMeshCore.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMeshCreator.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppGraLibs.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)IppUtlLibs.lib

@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PointCloudClassification.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma  once
@@ -10,7 +10,7 @@
 #include "PointCloudSisterFileManager.h"
 
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
 USING_NAMESPACE_BENTLEY
 
 

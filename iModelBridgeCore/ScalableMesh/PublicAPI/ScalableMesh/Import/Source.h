@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:23:59 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,9 +61,9 @@ public:
 
     typedef Plugin::SourceRegistry          Registry;
 
-    IMPORT_DLLE explicit                    SourceFactory                  (Log&                    log = GetDefaultLog());
-    IMPORT_DLLE explicit                    SourceFactory                  (const Registry&         registry,
-                                                                            Log&                    log = GetDefaultLog());
+    IMPORT_DLLE explicit                    SourceFactory                  (/*Log&                    log = GetDefaultLog()*/);
+    IMPORT_DLLE explicit                    SourceFactory                  (const Registry&         registry/*,
+                                                                            Log&                    log = GetDefaultLog()*/);
 
     IMPORT_DLLE                             SourceFactory                  (const SourceFactory&    rhs);
 
@@ -154,13 +154,13 @@ public:
 
 
 IMPORT_DLLE SourcePtr                       Configure                      (const SourcePtr&                sourcePtr,
-                                                                            const ContentConfig&            config,
-                                                                            Log&                            log = GetDefaultLog());
+                                                                            const ContentConfig&            config/*,
+                                                                            Log&                            log = GetDefaultLog()*/);
 
 
 IMPORT_DLLE SourcePtr                       Configure                      (const SourcePtr&                sourcePtr,
                                                                             const ContentConfig&            config,
-                                                                            const ContentConfigPolicy&      policy, 
-                                                                            Log&                            log = GetDefaultLog());
+                                                                            const ContentConfigPolicy&      policy/*, 
+                                                                            Log&                            log = GetDefaultLog()*/);
 
 END_BENTLEY_SCALABLEMESH_IMPORT_NAMESPACE

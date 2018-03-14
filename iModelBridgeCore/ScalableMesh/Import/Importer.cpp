@@ -6,7 +6,7 @@
 |       $Date: 2011/09/07 14:21:05 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -592,16 +592,16 @@ struct ImporterFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
     const ImportPolicy                  m_policy;                 
     const ExtractorRegistry&            m_extractorRegistry;
     const FilterFactory                 m_filterFactory;
-    Log&                         m_warningLog;
+   // Log&                         m_warningLog;
 
     explicit                            Impl                               (const ImportPolicy&             policy,
                                                                             const ExtractorRegistry&        extractorRegistry,
-                                                                            const FilterFactory&            filterFactory,
-                                                                            Log&                     log)
+                                                                            const FilterFactory&            filterFactory/*,
+                                                                            Log&                     log*/)
         :   m_policy(policy),
             m_extractorRegistry(extractorRegistry),
-            m_filterFactory(filterFactory),
-            m_warningLog(log)
+            m_filterFactory(filterFactory)/*,
+            m_warningLog(log)*/
         {
 
         }
@@ -618,8 +618,8 @@ struct ImporterFactory::Impl : public ShareableObjectTypeTrait<Impl>::type
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   10/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImporterFactory::ImporterFactory (Log& log)
-    :   m_pImpl(new Impl (ImportPolicy(), Plugin::ExtractorRegistry::GetInstance(), FilterFactory(log), log))
+ImporterFactory::ImporterFactory (/*Log& log*/)
+    :   m_pImpl(new Impl (ImportPolicy(), Plugin::ExtractorRegistry::GetInstance(), FilterFactory(GetDefaultLog())/*, log*/))
     {
     }
 
@@ -628,9 +628,9 @@ ImporterFactory::ImporterFactory (Log& log)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   08/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-ImporterFactory::ImporterFactory   (const ImportPolicy& policy,
-                                    Log&         log)
-    :   m_pImpl(new Impl (policy, Plugin::ExtractorRegistry::GetInstance(), FilterFactory(log), log))
+ImporterFactory::ImporterFactory   (const ImportPolicy& policy/*,
+                                    Log&         log*/)
+    :   m_pImpl(new Impl (policy, Plugin::ExtractorRegistry::GetInstance(), FilterFactory(GetDefaultLog())/*, log*/))
     {
     }
 
@@ -640,9 +640,9 @@ ImporterFactory::ImporterFactory   (const ImportPolicy& policy,
 +---------------+---------------+---------------+---------------+---------------+------*/
 ImporterFactory::ImporterFactory   (const ImportPolicy&         policy,
                                     const ExtractorRegistry&    extractorRegistry,
-                                    const FilterFactory&        filterFactory,
-                                    Log&                 log)
-    :   m_pImpl(new Impl (policy, extractorRegistry, filterFactory, log))
+                                    const FilterFactory&        filterFactory/*,
+                                    Log&                 log*/)
+    :   m_pImpl(new Impl (policy, extractorRegistry, filterFactory/*, log*/))
     {
     }
 
@@ -703,7 +703,7 @@ ImporterPtr ImporterFactory::Impl::CreateImporterFor   (const SourceCPtr&       
             return 0; 
             }
 
-        return new Importer(new ImporterImpl(foundCreatorRange, sourcePtr, sinkPtr, m_policy, m_filterFactory, m_warningLog));
+        return new Importer(new ImporterImpl(foundCreatorRange, sourcePtr, sinkPtr, m_policy, m_filterFactory, GetDefaultLog()));
 
         }
     catch (const Exception&)

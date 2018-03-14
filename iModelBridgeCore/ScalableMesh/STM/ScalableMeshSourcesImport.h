@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:47:44 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -52,29 +52,29 @@ public:
 
 
 
-    explicit                            SourcesImporter                    (const Import::LocalFileSourceRef&       sinkSourceRef,
+    BENTLEY_SM_EXPORT explicit                            SourcesImporter                    (const Import::LocalFileSourceRef&       sinkSourceRef,
                                                                             const Import::SinkPtr&                  sinkPtr);
 
     
-                                        ~SourcesImporter                   ();
+    BENTLEY_SM_EXPORT                                   ~SourcesImporter                   ();
     
 
-    void                                AddSource                          (const Import::SourceRef&                sourceRef,
+    BENTLEY_SM_EXPORT void                                AddSource                          (const Import::SourceRef&                sourceRef,
                                                                             const Import::ContentConfig&            contentConfig,
                                                                             const Import::ImportConfig*             config,
                                                                             const Import::ImportSequence&           sequence,
                                                                             SourceImportConfig&                     sourceImportConf);
 
-    void                                AddSDKSource(const Import::SourceRef&                sourceRef,
+    BENTLEY_SM_EXPORT void                                AddSDKSource(const Import::SourceRef&                sourceRef,
                                                   const Import::ContentConfig&            contentConfig,
                                                   const Import::ImportConfig*             config,
                                                   const Import::ImportSequence&           sequence,
                                                   SourceImportConfig&                     sourceImportConf);
 
-    bool                                IsEmpty                            () const;
+    BENTLEY_SM_EXPORT bool                                IsEmpty                            () const;
 
 
-    SMStatus                              Import() const;
+    BENTLEY_SM_EXPORT SMStatus                              Import() const;
 
     };
 

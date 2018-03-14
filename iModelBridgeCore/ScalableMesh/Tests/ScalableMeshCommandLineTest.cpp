@@ -25,6 +25,21 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include "..\STM\ScalableMesh\ScalableMeshGraph.h"
 #include "..\STM\Edits\ClipUtilities.h"
 #include <json/json.h>
+#undef static_assert
+#include <DgnPlatform/DgnPlatformApi.h>
+#include <DgnPlatform/DgnPlatformLib.h>
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
+#include <DgnPlatform/TileTree.h>
+#include <DgnPlatform/MeshTile.h>
+#include <ScalableMeshSchema/ScalableMeshHandler.h>
+#include <ScalableMeshSchema\ScalableMeshDomain.h>
+#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <ImagePP/h/HStlStuff.h>
 #include <ImagePP/h/HTraits.h>
 #include <ImagePP/h/HIterators.h>
@@ -1640,10 +1655,33 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         return *new ScalableMesh::ScalableMeshAdmin();
         };
     };
+
+struct Host : Dgn::DgnPlatformLib::Host
+    {
+    private:
+        virtual void _SupplyProductName(Utf8StringR name) override { name.assign("TilePublisher"); }
+        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); }
+        virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
+            {
+            BeFileName sqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
+            sqlang.AppendToPath(L"sqlang/DgnPlatform_en.sqlang.db3");
+            return BeSQLite::L10N::SqlangFiles(sqlang);
+            }
+
+        static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
+            {
+            printf("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
+            }
+    public:
+        Host() { BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert); }
+    };
+
+Host host;
+Dgn::DgnPlatformLib::Initialize(host, false);
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
-
+    DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain());
 #if 0
     if(argc < 2) 
         {
@@ -1815,11 +1853,23 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
     /*WString stmFileName(argv[1]);
     RunWriteTileTest(stmFileName, argv[2]);*/
 
-   // RunClipPlaneTest();
-   // RunClipMeshTest();
-    //WString stmFileName(argv[1]);
-    //RunGetMeshParts(stmFileName);
-   // RunUpdateTest(stmFileName);
+    BeFileName name("E:\\SMTest.bim");
+    BeSQLite::DbResult status;
+    CreateDgnDbParams params("SM_Test");
+
+    DgnDbPtr myDgnDb = DgnDb::CreateDgnDb(&status, name, params);
+
+    BeFileName schemaRootDir = host.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemaRootDir.AppendToPath(L"ECSchemas/Domain/");
+
+    BeFileName schemaFileName = schemaRootDir;
+    schemaFileName.AppendToPath(L"ScalableMesh.01.00.ecschema.xml");
+    ScalableMeshSchema::ScalableMeshDomain::GetDomain().ImportSchema(*myDgnDb, schemaFileName);
+
+    Utf8String modelName("terrain");
+    BeFileName smName = BeFileName(Utf8String("E:\\data\\CCScalableMeshColoradoSprings\\output_SCM\\root.stm"));
+    ScalableMeshSchema::IMeshSpatialModelP meshSpatialModelP = ScalableMeshSchema::ScalableMeshModelHandler::AttachTerrainModel(*myDgnDb, modelName,smName);
+
     std::cout << "THE END" << std::endl;
     return 0;
 }

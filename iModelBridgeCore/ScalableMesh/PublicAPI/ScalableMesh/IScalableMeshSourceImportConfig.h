@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:38 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -56,18 +56,18 @@ private:
 public:
 
 /*__PUBLISH_SECTION_END__*/
-    explicit                                    SourceImportConfig         (const Import::ImportSequence&               defaultSequence);
+    BENTLEY_SM_EXPORT explicit                                    SourceImportConfig         (const Import::ImportSequence&               defaultSequence);
 
-                                                SourceImportConfig         (const SourceImportConfig&                   rhs);
+    BENTLEY_SM_EXPORT                                            SourceImportConfig         (const SourceImportConfig&                   rhs);
 
-                                                ~SourceImportConfig        ();
+    BENTLEY_SM_EXPORT                                            ~SourceImportConfig        ();
 
     void                                        SetInternalContentConfig   (const Import::ContentConfig&                config);
     void                                        SetInternalSequence        (const Import::ImportSequence&               sequence);
     void                                        SetInternalConfig          (const Import::ImportConfig*                 config);
 
-    void                                        RegisterEditListener       (EditListener&                               listener);
-    void                                        UnregisterEditListener     (const EditListener&                         listener);
+    BENTLEY_SM_EXPORT void                                        RegisterEditListener       (EditListener&                               listener);
+    BENTLEY_SM_EXPORT void                                        UnregisterEditListener     (const EditListener&                         listener);
 
 /*__PUBLISH_SECTION_START__*/
 

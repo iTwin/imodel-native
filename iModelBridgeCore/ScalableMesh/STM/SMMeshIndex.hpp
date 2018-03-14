@@ -525,11 +525,11 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
 
                 auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
                 IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
-
-                IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
                 bvector<Byte> cesiumData;
+#if NEED_SAVE_AS_IN_IMPORT_DLL
+                IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
                 cesiumPublisher->Publish(nodeP, (hasMSClips ? clips : nullptr), coverageID, isClipBoundary, sourceGCS, destinationGCS, cesiumData, outputTexture);
-
+#endif
 
                 convertTime += clock() - t;
 
@@ -563,7 +563,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
                 ++nbProcessedNodes;
                 }
             };
-        distributor = new Distribution_Type(nodeDataSaver, nbThreads, maxQueueSize);
+		distributor = new Distribution_Type(nodeDataSaver, [](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node) {return true; }, nbThreads, maxQueueSize);
         }
 
     static auto loadChildExtentHelper = [](SMPointIndexNode<POINT, EXTENT>* parent, SMPointIndexNode<POINT, EXTENT>* child) ->void
@@ -659,11 +659,10 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
             Load();
 
         this->m_nodeHeader.m_geometryResolution = newGeometricErrorValue;
-
+#ifndef VANCOUVER_API
         typedef SMNodeDistributor<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> Distribution_Type;
         static Distribution_Type* distributor = new Distribution_Type([&pi_pDataStore](HFCPtr<SMPointIndexNode<POINT, EXTENT>> node)
             {
-#ifndef VANCOUVER_API
             auto loadChildExtentHelper = [](HFCPtr<SMPointIndexNode<POINT, EXTENT>> parent, HFCPtr<SMPointIndexNode<POINT, EXTENT>> child) ->void
                 {
                 if (!child->IsLoaded())
@@ -696,12 +695,12 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
             pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
 
             //node->Unload();
-#else
-            assert(false && "Make this compile on Vancouver!");
-#endif
             });
 
         distributor->AddWorkItem(this);
+#else
+        assert(false && "Make this compile on Vancouver!");
+#endif
 
         if (m_pSubNodeNoSplit != nullptr)
             {
@@ -722,11 +721,14 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
 
         if (m_nodeHeader.m_level == 0)
             {
+#ifndef VANCOUVER_API
             delete distributor;
+#else
+#endif
             }
         }
     
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly)
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly)
     {
 
     static std::atomic<uint64_t> loadHeaderTime = 0;
@@ -772,7 +774,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadInd
                 node->GetTexturePtr();
                 }
             loadDataTime += clock() - loadTime;
-        }));
+        }, std::thread::hardware_concurrency(), 5000));
 
     if (!m_nodeHeader.m_IsLeaf)
         {
@@ -1629,8 +1631,11 @@ template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EX
             bool isPointInRange = nodeRange.IsContained(origPoints[pt]);
             if (!withinExtent && isPointInRange && pt > 0)
                 {
-                points.push_back(origPoints[pt - 1]);
+                if (points.size() == 0) extent = DRange3d::From(origPoints[pt]);
+
+                points.push_back(origPoints[pt - 1]);                
                 }
+
             if (isPointInRange)
                 {
                 if (points.size() == 0) extent = DRange3d::From(origPoints[pt]);
@@ -5323,7 +5328,6 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
-#ifdef VANCOUVER_API
     DataSource::SessionName dataSourceSessionName(settings->GetGUID().c_str());
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount(), dataSourceSessionName);
     SMGroupCache::Ptr groupCache = nullptr;
@@ -5355,9 +5359,6 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     saveGroupsThread.join();
 
     strategy->Clear();
-#else
-	assert(!"Not yet available on dgndb, missing SMNodeGroup::Create overload");
-#endif
 
 
     if (m_progress != nullptr && m_progress->IsCanceled()) return SUCCESS;

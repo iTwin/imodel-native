@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -41,56 +41,33 @@ class BingMapLogoRetriever
         +---------------+---------------+---------------+---------------+---------------+------*/
         bool DownloadBitmapToRgba(bvector<Byte>& imageData, DPoint2d& size, WChar const* pURI, DPoint2d* pRequestedSize)
             {
-
             WChar localFilename[MAX_PATH];
 
             if (0 != URLDownloadToCacheFileW(NULL, pURI, localFilename, MAX_PATH, 0, NULL))
                 return false;
 
-#ifndef VANCOUVER_API
-            ImageUtilities::RgbImageInfo info;
-            BeFile pngFile;
-
-            BeFileStatus fileStatus = pngFile.Open(localFilename, BeFileAccess::Read);
-
-            if (fileStatus != BeFileStatus::Success)
-                return false;
-
-            BentleyStatus status = ImageUtilities::ReadImageFromPngFile(imageData, info, pngFile);
-
-            if (status != SUCCESS)
-                {
-                return false;
-                }
-
-            size.x = info.width;
-            size.y = info.height;
-
-            return true;
-#else       
-
-
             DRange2d extentInTargetCS(DRange2d::NullRange());
             GCSCPTR targetCS(nullptr);
             HFCPtr<HRFRasterFile> pRasterFile;
 
-            HFCPtr<HRARASTER> pRaster(RasterUtilities::LoadRaster(pRasterFile, WString(localFilename), targetCS, extentInTargetCS));
-           
-            HRFResolutionEditor* pResEditor(pRasterFile->CreateResolutionEditor(0, 0, HFC_SHARE_READ_ONLY));           
+            WString localFileUrl(L"file://");
+            localFileUrl += WString(localFilename);
+
+            HFCPtr<HRARASTER> pRaster(RasterUtilities::LoadRaster(pRasterFile, localFileUrl, targetCS, extentInTargetCS));
+
+            HRFResolutionEditor* pResEditor(pRasterFile->CreateResolutionEditor(0, 0, HFC_SHARE_READ_ONLY));
 
             size.x = pResEditor->GetResolutionDescriptor()->GetWidth();
             size.y = pResEditor->GetResolutionDescriptor()->GetHeight();
 
-            DRange2d area(DRange2d::From(0, 0, size.x, -size.y));            
+            DRange2d area(DRange2d::From(0, 0, size.x, -size.y));
 
             StatusInt status = RasterUtilities::CopyFromArea(imageData, size.x, size.y, area, nullptr, *pRaster, true, false);
 
             if (status == SUCCESS)
                 return true;
 
-            return false;
-               
-#endif
+            return false;               
             }
 
     public : 

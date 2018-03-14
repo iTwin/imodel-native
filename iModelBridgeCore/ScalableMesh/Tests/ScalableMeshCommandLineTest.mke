@@ -32,11 +32,12 @@ EXE_NAME     = $(appname)
 EXE_OBJS     = $(MultiCompileObjectList)
 EXE_LOPT1 = -ENTRY:wmainCRTStartup
 
-LINKER_LIBRARIES  = $(ContextSubpartsLibs)BentleyAllocator.lib
+LINKER_LIBRARIES  = $(ContextSubpartsLibs)ScalableMeshSchema.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)TerrainModelCore.lib

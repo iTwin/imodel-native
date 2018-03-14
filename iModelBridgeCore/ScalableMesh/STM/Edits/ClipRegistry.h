@@ -6,7 +6,7 @@
 |       $Date: 2015/09/14 15:28:03 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -54,7 +54,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         
     void GetClip(uint64_t id, bvector<DPoint3d>& clip);
 
-    void GetClipWithParameters(uint64_t id, bvector<DPoint3d>& clip, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive);
+    BENTLEY_SM_EXPORT void GetClipWithParameters(uint64_t id, bvector<DPoint3d>& clip, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive);
         
     uint64_t AddSkirts(const bvector<bvector<DPoint3d>>& skirts);
         
@@ -68,13 +68,13 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
 
     void GetCoverage(uint64_t id, bvector<DPoint3d>& clip);    
 
-    void GetCoverageName(uint64_t id, Utf8String& coverageName);
+    BENTLEY_SM_EXPORT  void GetCoverageName(uint64_t id, Utf8String& coverageName);
 
     bool HasCoverage(uint64_t id);
 
     void GetAllCoveragePolygons(bvector<bvector<DPoint3d>>& allPolys);
 
-    void GetAllCoverageIds(bvector<uint64_t>& ids);
+    BENTLEY_SM_EXPORT void GetAllCoverageIds(bvector<uint64_t>& ids);
 
     void DeleteCoverage(uint64_t id);
         

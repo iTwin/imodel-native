@@ -6,7 +6,7 @@
 |       $Date: 2011/11/18 15:50:56 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -474,10 +474,10 @@ void LayerCfgVisitor::_Visit (const GCSExtendedConfig& config)
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMStatus ContentDescriptor::Configure(const ContentConfig&    config,
-                                                        Log&                    log)
+SMStatus ContentDescriptor::Configure(const ContentConfig&    config/*,
+                                                        Log&                    log*/)
     {
-    return Configure(config, ContentConfigPolicy(), log);
+    return Configure(config, ContentConfigPolicy()/*, log*/);
     }
 
 
@@ -486,8 +486,8 @@ SMStatus ContentDescriptor::Configure(const ContentConfig&    config,
 * @bsimethod                                                  Raymond.Gauthier   10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SMStatus ContentDescriptor::Configure(const ContentConfig&            config,
-                                                        const ContentConfigPolicy&   policy,
-                                                        Log&                            log)
+                                                        const ContentConfigPolicy&   policy/*,
+                                                        Log&                            log*/)
     {
     ContentDescriptorImpl::UpdateForEdit(m_pImpl);
 

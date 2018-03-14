@@ -6,7 +6,7 @@
 |       $Date: 2011/11/23 21:47:17 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -140,7 +140,8 @@ LocalTransform LocalTransform::CreateDuplexFromToGlobal (const TransfoModel& loc
     TransfoModel globalToLocal(InverseOf(localToGlobal, inverseOfStatus));
 
     if (SMStatus::S_SUCCESS != inverseOfStatus)
-        throw CustomException(L"Error computing inverse transformation model!");
+        // throw CustomException(L"Error computing inverse transformation model!");
+        assert(false && L"Error computing inverse transformation model!");
 
     return LocalTransform(new Impl(localToGlobal, globalToLocal, STATE_DUPLEX));
     }
@@ -155,7 +156,8 @@ LocalTransform LocalTransform::CreateDuplexFromToLocal (const TransfoModel& glob
     TransfoModel localToGlobal(InverseOf(globalToLocal, inverseOfStatus));
 
     if (SMStatus::S_SUCCESS != inverseOfStatus)
-        throw CustomException(L"Error computing inverse transformation model!");
+        // throw CustomException(L"Error computing inverse transformation model!");
+        assert(false && L"Error computing inverse transformation model!");
 
     return LocalTransform(new Impl(localToGlobal, globalToLocal, STATE_DUPLEX));
     }
@@ -469,7 +471,8 @@ LocalTransform Combine (const LocalTransform&   lhs,
     SMStatus status;
     LocalTransform result(Combine(lhs, rhs, status));
     if (SMStatus::S_SUCCESS != status)
-        throw CustomException(L"Error combining local transforms!");
+        // throw CustomException(L"Error combining local transforms!");
+        assert(false && L"Error combining local transforms!");
     
     return result;
     }

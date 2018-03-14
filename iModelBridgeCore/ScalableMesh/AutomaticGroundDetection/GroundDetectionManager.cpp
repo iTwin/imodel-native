@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/GroundDetectionManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshPCH.h"
@@ -19,7 +19,7 @@
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>
 #endif
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_LOGGING

@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/DEMRasterImporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -115,7 +115,13 @@ HUTDEMRasterXYZPointsExtractor*     CreateDEMExtractor                     (cons
 
     try
         {
-        return new HUTDEMRasterXYZPointsExtractor(adaptedPath, GetPoolInstance(), false);
+        return new HUTDEMRasterXYZPointsExtractor(
+#ifndef VANCOUVER_API
+			Utf8String(adaptedPath.c_str())
+#else
+			adaptedPath
+#endif
+			, GetPoolInstance(), false);
         }
     catch (...) // TDORAY: Catch only IPP exceptions
         {
@@ -230,7 +236,13 @@ class DEMRasterFileSourceCreator : public LocalFileSourceCreatorBase
         {
         try
             {
-            const HFCPtr<HFCURL> urlPtr = new HFCURLFile(WString(L"file://") + pi_rSourceRef.GetPathCStr());
+            const HFCPtr<HFCURL> urlPtr = HFCURL::Instanciate(
+#ifndef VANCOUVER_API
+				Utf8String("file://") + Utf8String(pi_rSourceRef.GetPathCStr())
+#else
+				WString(L"file://") + WString(pi_rSourceRef.GetPathCStr())
+#endif
+			);
                         
             HUTDEMRasterXYZPointsExtractor extractor(urlPtr->GetURL(), GetPoolInstance(), false);
 
@@ -640,7 +652,13 @@ class DEMRasterPointExtractorCreator : public InputExtractorCreatorMixinBase<DEM
         
         // TDORAY: CreateXYZPointsIterator should take a const WString as input but could not be changed due to 8.11.7 backward compatibility issues
         auto_ptr<HUTDEMRasterXYZPointsIterator>
-            pIterator(sourceBase.GetPointExtractor().CreateXYZPointsIteratorWithNoDataValueRemoval(const_cast<WString&>(DestCoordSysKeyName), scaleFactor));
+            pIterator(sourceBase.GetPointExtractor().CreateXYZPointsIteratorWithNoDataValueRemoval(
+#ifndef VANCOUVER_API
+				Utf8String(const_cast<WString&>(DestCoordSysKeyName).c_str())
+#else
+				const_cast<WString&>(DestCoordSysKeyName)
+#endif
+				, scaleFactor));
         if (0 == pIterator.get())
             return 0;
 

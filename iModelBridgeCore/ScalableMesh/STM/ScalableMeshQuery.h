@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -58,7 +58,6 @@ typedef HGF3DExtent<double> YProtFeatureExtentType;
 
 struct ScalableMeshExtentQuery;
 typedef RefCountedPtr<ScalableMeshExtentQuery> ScalableMeshExtentQueryPtr;
-
 
 /*==================================================================*/
 /*        QUERY PARAMETERS IMPLEMENTATION SECTION - START           */
@@ -370,10 +369,6 @@ class ScalableMeshPointQuery : public IScalableMeshPointQuery
         virtual int _RemoveAllClip();    
 
     public :
-       
-        //NEEDS_WORK_SM - TEMP in public
-        template <class POINT> static int AddPoints(bvector<DPoint3d>&                   points, 
-                                                    const HPMMemoryManagedVector<POINT>& pointList) /*const*/;
 
         template<class EXTENT> static EXTENT GetExtentFromClipShape(const DPoint3d* pClipShapePts, 
                                                                    int             nbClipShapePts, 
@@ -609,7 +604,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
               size_t GetNbFaceIndexes() const {return m_nbFaceIndexes;}
         const int32_t* GetFaceIndexes() const {return m_faceIndexes;}
 
-        int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, const DPoint2d* pUv, const int32_t* pUvIndex);
+        BENTLEY_SM_EXPORT int AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, const int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, size_t uvCount, const DPoint2d* pUv, const int32_t* pUvIndex);
 
         void ApplyDifferenceSet(const DifferenceSet& d);
 
@@ -911,7 +906,7 @@ struct ScalableMeshMeshQueryParams : public IScalableMeshMeshQueryParams
             {}
     };
 
-int draw(DTMFeatureType dtmFeatureType,int numTriangles, int numMeshPts,DPoint3d *meshPtsP,DPoint3d *meshVectorsP,int numMeshFaces, long *meshFacesP,void *userP);
+//int draw(DTMFeatureType dtmFeatureType,int numTriangles, int numMeshPts,DPoint3d *meshPtsP,DPoint3d *meshVectorsP,int numMeshFaces, long *meshFacesP,void *userP);
 
 template <class POINT> class ScalableMeshFullResolutionMeshQuery : public IScalableMeshMeshQuery
     {   
@@ -1294,19 +1289,27 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
         bool m_saveToCache;
         bool m_precomputeBoxes;
 
+        bool           m_useClipsToShow; 
+        bset<uint64_t> m_clipsToShow;
+        bool           m_shouldInvertClips;
+
         virtual bool _ShouldLoadClips() const override;
         virtual bool _ShouldLoadTexture() const override;
         virtual bool _ShouldLoadIndices() const override;
         virtual bool _ShouldLoadGraph() const override;
         virtual bool _ShouldSaveToCache() const override;
         virtual bool _ShouldPrecomputeBoxes() const override;
-
+        virtual bool _ShouldUseClipsToShow() const override;
+        virtual bool _ShouldInvertClips() const override;
+        virtual void _GetClipsToShow(bset<uint64_t>& clipsToShow) const override;         
+        
         virtual void _SetLoadClips(bool loadClips) override;
         virtual void _SetLoadTexture(bool loadTexture) override;
         virtual void _SetLoadIndices(bool loadIndices) override;
         virtual void _SetLoadGraph(bool loadGraph) override;
         virtual void _SetSaveToCache(bool saveToCache) override;
         virtual void _SetPrecomputeBoxes(bool precomputeBoxes) override;
+        virtual void _SetClipsToShow(bset<uint64_t>& clipsToShow, bool shouldInvertClips) override;
 
     public:
         ScalableMeshMeshFlags()
@@ -1317,6 +1320,7 @@ class ScalableMeshMeshFlags : public virtual IScalableMeshMeshFlags
             m_loadIndices = true;
             m_saveToCache = false;
             m_precomputeBoxes = false;
+            m_useClipsToShow = false;
             }
 
         virtual ~ScalableMeshMeshFlags() {}
@@ -1337,7 +1341,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual bool    _ArePointsFullResolution() const override;
 
         virtual IScalableMeshMeshPtr _GetMesh(IScalableMeshMeshFlagsPtr& flags) const override;
-
+        
         virtual IScalableMeshMeshPtr _GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const override;
 
         virtual IScalableMeshMeshPtr _GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, ClipVectorPtr clips, uint64_t coverageID, bool isClipBoundary) const override;
@@ -1400,6 +1404,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
 		virtual void _ClearCachedData() override;
 
+        SMNodeViewStatus _IsCorrectForView(IScalableMeshViewDependentMeshQueryParamsPtr& viewDependentQueryParams) const override;
+
 #ifdef WIP_MESH_IMPORT
         virtual bool _IntersectRay(DPoint3d& pt, const DRay3d& ray, Json::Value& retrievedMetadata) override;
 
@@ -1416,10 +1422,10 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
             return new ScalableMeshNode<POINT>(nodePtr);
             }
 #endif
-        ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
-        ScalableMeshNode() {};
+        BENTLEY_SM_EXPORT ScalableMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
+        BENTLEY_SM_EXPORT ScalableMeshNode() {};
 
-        ~ScalableMeshNode() { m_node = nullptr; }
+        BENTLEY_SM_EXPORT ~ScalableMeshNode() { m_node = nullptr; }
 
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> GetNodePtr()
             {
@@ -1645,8 +1651,8 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
         virtual IScalableMeshNodeEditPtr _EditParentNode() override;
 
     public:
-        ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
-        ScalableMeshNodeEdit() {};
+        BENTLEY_SM_EXPORT ScalableMeshNodeEdit(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
+        BENTLEY_SM_EXPORT ScalableMeshNodeEdit() {};
 
         HFCPtr<SMPointIndexNode<POINT, Extent3dType>> GetNodePtr()
             {
@@ -1673,6 +1679,15 @@ template<class POINT> class ScalableMeshNodeWithReprojection : public ScalableMe
 /*==================================================================*/
 /*        3D MESH RELATED CODE - END                                */
 /*==================================================================*/
+
+
+template <class POINT> int BuildQueryObject(
+        ISMPointIndexQuery<POINT, Extent3dType>*&                        pQueryObject,
+        const DPoint3d*                                                       pQueryExtentPts,
+        int                                                                   nbQueryExtentPts,
+        IScalableMeshViewDependentMeshQueryParamsPtr                          queryParam,
+        IScalableMesh*                                                        smP);
+
 
 
 //#include "ScalableMeshPointQuery.hpp"

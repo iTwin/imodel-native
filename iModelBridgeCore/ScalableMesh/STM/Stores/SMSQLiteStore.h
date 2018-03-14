@@ -40,6 +40,8 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
 
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
 
+        virtual bool SetUseTempPath(bool useTempPath) override;
+
         virtual void SaveProjectFiles() override;
 
 		virtual void CompactProjectFiles() override;

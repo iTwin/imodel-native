@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/STMSource.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -74,7 +74,7 @@ class STMElementSourceDecorator : public SourceBase
              contentConfig.SetGCSConfig(gcsConfig);
             }
 
-        if (SMStatus::S_SUCCESS != descriptor.Configure(contentConfig, GetLog()))
+        if (SMStatus::S_SUCCESS != descriptor.Configure(contentConfig))
             throw CustomError(L"Error configuring descriptor!");
 
         return descriptor;

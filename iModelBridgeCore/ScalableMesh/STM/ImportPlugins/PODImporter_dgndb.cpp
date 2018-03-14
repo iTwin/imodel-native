@@ -8,10 +8,12 @@
 
 #include <ScalableMeshPCH.h>
 #include "../ImagePPHeaders.h"
+/*
 #include <PointoolsVortexAPI_DLL/vortexLicense.c>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_ResultCodes.h>
 #include <PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp>
+*/
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
 #include <ScalableMesh\Import\Plugin\TypeConversionFilterV0.h>
@@ -45,7 +47,6 @@
 using namespace std;
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT_PLUGIN_VERSION(0)
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD

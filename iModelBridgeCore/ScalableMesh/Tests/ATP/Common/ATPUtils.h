@@ -12,7 +12,11 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <ScalableMesh/IScalableMesh.h>
 #include <TerrainModel/TerrainModel.h>
+
+USING_NAMESPACE_BENTLEY_SCALABLEMESH
+
 
 #ifdef VANCOUVER_API
 #define OPEN_FILE(beFile, pathStr, accessMode) beFile.Open(pathStr, accessMode, BeFileSharing::None)
@@ -49,11 +53,13 @@ typedef enum
     EXPORT_VOLUME,
     IMPORT_VOLUME,
     TEST_GROUP_NODE_HEADERS,
-    TEST_DC_GROUND_DETECTION,
+    TEST_GROUND_EXTRACTION,
     ADD_TEXTURES_TO_MESH,
     EXPORT_TO_UNITY,
     TEST_SQL_FILE_UPDATE,
-    TEST_MAPBOX
+    TEST_MAPBOX,
+    DRAPE_TEST_LNS_FILE_CREATION, 
+    TEST_3MX_TO_3SM_CONVERSION,     
     } TestType;
 
 
@@ -63,3 +69,6 @@ void ReadLinesFile(std::ifstream& file, bvector<bvector<DPoint3d>>& lineDefs);
 void ReadLinesFromDgnFile(WString& fileName, bvector<bvector<DPoint3d>>& lineDefs);
 void ReadFeatureFile(std::ifstream& file, std::vector<std::pair<std::vector<DPoint3d>, DTMFeatureType>>& features);
 bool DPoint3dEqualityTest(const DPoint3d& point1, const DPoint3d& point2);
+void SetReprojectionMatrixForMeterData(IScalableMeshPtr& stmFile);
+bool GetLinePointsFromLnsFile(bvector<bvector<DPoint3d>>& lines, WString& lnsFileName);
+void CreateBreaklines(BeFileNameCR extraLinearFeatureAbsFileName, bvector<DPoint3d> const& closedPolygonPoints, ScalableMesh::IScalableMeshPtr& scalableMeshModel, Transform& uorToDestUnits);

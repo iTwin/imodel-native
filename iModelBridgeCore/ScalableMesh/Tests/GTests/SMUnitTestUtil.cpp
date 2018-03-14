@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/GTests/SMUnitTestUtil.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -33,7 +33,7 @@ bool ScalableMeshGTestUtil::GetDataPath(BeFileName& dataPath)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<BeFileName> ScalableMeshGTestUtil::GetFiles(BeFileName dataPath)
+bvector<BeFileName> ScalableMeshGTestUtil::GetFiles(BeFileName dataPath, bool wantDataSource)
     {
     bool pathExists = GetDataPath(dataPath);
 
@@ -44,7 +44,7 @@ bvector<BeFileName> ScalableMeshGTestUtil::GetFiles(BeFileName dataPath)
         bool        isDir;
         for (BeDirectoryIterator dirIter(dataPath); dirIter.GetCurrentEntry(entryName, isDir) == SUCCESS; dirIter.ToNext())
             {
-            if (FilterEntry(entryName, isDir)) fileList.push_back(entryName);
+            if (FilterEntry(entryName, isDir, wantDataSource)) fileList.push_back(entryName);
             }
         }
     return fileList;
@@ -94,6 +94,10 @@ SMMeshType ScalableMeshGTestUtil::GetFileType(BeFileName file)
         {
         type = SMMeshType::TYPE_3DTILES_B3DM;
         }
+    else if (extension == L"xyz")
+        {
+        type = SMMeshType::TYPE_3SM_SOURCE;
+        }
     else
         {
         BeAssert(!"Unknown file type for ScalableMesh");
@@ -104,7 +108,7 @@ SMMeshType ScalableMeshGTestUtil::GetFileType(BeFileName file)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScalableMeshGTestUtil::FilterEntry(BeFileName& entry, bool isDir)
+bool ScalableMeshGTestUtil::FilterEntry(BeFileName& entry, bool isDir, bool wantDataSource)
     {
     if (isDir)
         {
@@ -115,11 +119,24 @@ bool ScalableMeshGTestUtil::FilterEntry(BeFileName& entry, bool isDir)
         }
     else
         {
-        if (BeFileName::DoesPathExist(entry) && SMMeshType::TYPE_3SM == GetFileType(entry))
+        if (!BeFileName::DoesPathExist(entry))
             {
+            return false;                        
+            }
+
+        SMMeshType fileType = GetFileType(entry);
+
+        if (SMMeshType::TYPE_3SM == fileType && !wantDataSource)
+            { 
             return true;
             }
+
+        if (SMMeshType::TYPE_3SM_SOURCE == fileType && wantDataSource)
+            {
+            return true;
+            }        
         }
+
     return false;
     }
 

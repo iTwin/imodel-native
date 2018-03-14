@@ -9,7 +9,6 @@
 #include <array>
 #include "..\ScalableMeshQuery.h"
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
 #define SM_TRACE_CLIPS_FULL 0
@@ -1194,7 +1193,20 @@ bool Process3dRegions(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, PolyfaceHe
         for (auto it = clipPolys.rbegin(); it != clipPolys.rend(); it++)
             {            
             ClipVectorPtr& clip = *it;
-            if (clip.IsValid() && clip->PointInside(centroids[idxFace], 1e-8))
+            if (!clip.IsValid())
+				continue;
+			bool isInsideAPrimitive = false;
+			for (auto& primitive : *clip)
+			{
+				bool pointInside = primitive->PointInside(centroids[idxFace], 1e-8);
+				if ((primitive->IsMask() && !pointInside) || (!primitive->IsMask() && pointInside))
+				{
+					isInsideAPrimitive = true;
+					break;
+				}
+			}
+
+			if(isInsideAPrimitive)
                 {
                 idxOfFaces[&clip - &clipPolys.front()].push_back((int)idxFace);
                 nCrossingPolys[idxFace]++;
@@ -1310,14 +1322,19 @@ void CreatePlanes(bvector<DPlane3d>& planes, const bvector<DPoint3d>& lineSegmen
         }
     }
 
-bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& plane, const DPoint3d* tri, bvector<bvector<double>>& pointDistanceTable, int* pointIdxTri, size_t planeIdx)
+bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& plane, const DPoint3d* tri, bvector<bvector<double>>* pointDistanceTable, int* pointIdxTri, size_t planeIdx)
     {
     double sign = 0;
     bool planeCutsTriangle = false;
     for (size_t j = 0; j < 3 && !planeCutsTriangle; j++)
         {
-        if (pointDistanceTable[pointIdxTri[j]][planeIdx] == DBL_MAX)pointDistanceTable[pointIdxTri[j]][planeIdx] = plane.Evaluate(tri[j]);
-        double sideOfPoint = pointDistanceTable[pointIdxTri[j]][planeIdx];
+		double sideOfPoint;
+		if (pointDistanceTable != nullptr && (*pointDistanceTable)[pointIdxTri[j]][planeIdx] == DBL_MAX)
+		{
+			(*pointDistanceTable)[pointIdxTri[j]][planeIdx] = plane.Evaluate(tri[j]);
+			sideOfPoint = (*pointDistanceTable)[pointIdxTri[j]][planeIdx];
+		}
+		else sideOfPoint = plane.Evaluate(tri[j]);
         if (fabs(sideOfPoint) < 1e-8) sideOfPoint = 0;
         if (sign == 0) sign = sideOfPoint;
         else if ((sign > 0 && sideOfPoint < 0) || (sign < 0 && sideOfPoint > 0))
@@ -1357,14 +1374,19 @@ bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& 
     else return false;
     }
 
-bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& plane, const DPoint3d& pt0, const DPoint3d& pt1, const DPoint3d* tri, bvector<bvector<double>>& pointDistanceTable, int* pointIdxTri, size_t planeIdx)
+bool ComputeCut(bvector<IntersectionLocation>& foundIntersects, const DPlane3d& plane, const DPoint3d& pt0, const DPoint3d& pt1, const DPoint3d* tri, bvector<bvector<double>>* pointDistanceTable, int* pointIdxTri, size_t planeIdx)
     {
     double sign = 0;
     bool planeCutsTriangle = false;
     for (size_t j = 0; j < 3 && !planeCutsTriangle; j++)
         {
-        if (pointDistanceTable[pointIdxTri[j]][planeIdx] == DBL_MAX)pointDistanceTable[pointIdxTri[j]][planeIdx] = plane.Evaluate(tri[j]);
-        double sideOfPoint = pointDistanceTable[pointIdxTri[j]][planeIdx];
+		double sideOfPoint;
+		if (pointDistanceTable != nullptr && (*pointDistanceTable)[pointIdxTri[j]][planeIdx] == DBL_MAX)
+		{
+			(*pointDistanceTable)[pointIdxTri[j]][planeIdx] = plane.Evaluate(tri[j]);
+			sideOfPoint = (*pointDistanceTable)[pointIdxTri[j]][planeIdx];
+		}
+		else sideOfPoint = plane.Evaluate(tri[j]);
         if (fabs(sideOfPoint) < 1e-8) sideOfPoint = 0;
         if (sign == 0) sign = sideOfPoint;
         else if ((sign > 0 && sideOfPoint < 0) || (sign < 0 && sideOfPoint > 0))
@@ -1472,14 +1494,14 @@ void ComputeReplacementFacets(bvector<bvector<int32_t>>& newFacets, bvector<Inte
         }
     }
 
-void InsertCutPoints(PolyfaceHeaderPtr& inOutMesh, bvector<IntersectionLocation>& foundIntersects, const DPoint3d* tri, const int* paramIndex, const int* pointIndex, bool isTexturedMesh, bvector<bvector<double>>& pointDistanceTable, size_t nOfDistsPerPoint)
+void InsertCutPoints(PolyfaceHeaderPtr& inOutMesh, bvector<IntersectionLocation>& foundIntersects, const DPoint3d* tri, const int* paramIndex, const int* pointIndex, bool isTexturedMesh, bvector<bvector<double>>* pointDistanceTable, size_t nOfDistsPerPoint)
     {
     for (auto& intersect : foundIntersects)
         {
         if (intersect.onVertex == -1)
             {
             intersect.newPtIdx = (int)inOutMesh->Point().AppendAndReturnIndex(intersect.pt);
-            pointDistanceTable.push_back(bvector<double>(nOfDistsPerPoint, DBL_MAX));
+            if(pointDistanceTable != nullptr) pointDistanceTable->push_back(bvector<double>(nOfDistsPerPoint, DBL_MAX));
             if (isTexturedMesh)
                 {
                 DPoint3d barycentric;
@@ -1520,7 +1542,7 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, bvect
                 {
                 bvector<IntersectionLocation> results;
                 if (!pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]]) continue;
-                if (ComputeCut(results, plane, clipSegments[&plane - &planesFromSegments[0]], clipSegments[&plane - &planesFromSegments[0] + 1], tri, pointToPlaneDists, pointIndex.data(), &plane - &planesFromSegments[0]))
+                if (ComputeCut(results, plane, clipSegments[&plane - &planesFromSegments[0]], clipSegments[&plane - &planesFromSegments[0] + 1], tri, &pointToPlaneDists, pointIndex.data(), &plane - &planesFromSegments[0]))
                     {
 
                     assert(results.size() == 2);
@@ -1528,7 +1550,7 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, bvect
                     //don't cut if both cut points are the same (the intersection is on a vertex only)
                     if (results.size() == 2 && DVec3d::FromStartEnd(results[0].pt, results[1].pt).MagnitudeSquared() > 1e-10 && (results[0].onVertex == -1 || results[1].onVertex == -1))
                         {
-                        InsertCutPoints(inOutMesh, results, tri, meshHasTexture ? param.data() : nullptr, pointIndex.data(), meshHasTexture, pointToPlaneDists, planesFromSegments.size());
+                        InsertCutPoints(inOutMesh, results, tri, meshHasTexture ? param.data() : nullptr, pointIndex.data(), meshHasTexture, &pointToPlaneDists, planesFromSegments.size());
                         pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]] = false;
                         bvector<bvector<int32_t>> newFaces;
                         ComputeReplacementFacets(newFaces, results, pointIndex);
@@ -1595,36 +1617,58 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
     {
     bvector<DPlane3d> planesFromSegments;
     bool meshHasTexture = inOutMesh->Param().size() > 0 && inOutMesh->ParamIndex().size() > 0;
-    for (auto& primitive : *clipSegments)
-        for (auto& planes : *(primitive->GetClipPlanes()))
-            for (auto& plane : planes)
-                planesFromSegments.push_back(plane.GetDPlane3d());
+	DRange3d meshRange = DRange3d::From(inOutMesh->GetPointCP(), (int)inOutMesh->GetPointCount());
+	for (auto& primitive : *clipSegments)
+	{
+		DRange3d        thisRange;
+
+		if (!primitive->IsMask())
+			continue;
+		if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
+		{
+			//if node and primitive are fully disjoint, do not count this primitive
+			if (!thisRange.IntersectsWith(meshRange) && !thisRange.IsContained(meshRange.low) && !meshRange.IsContained(thisRange.low))
+				continue;
+			for (auto& planes : *(primitive->GetClipPlanes()))
+				for (auto& plane : planes)
+					planesFromSegments.push_back(plane.GetDPlane3d());
+		}
+	}
+
+	bool doNotOptimizeDistanceChecks = false;
+	if (planesFromSegments.size() > 500)
+		doNotOptimizeDistanceChecks = true;
     bvector<bvector<double>> pointToPlaneDists(inOutMesh->GetPointCount());
-    for (auto& dist : pointToPlaneDists)dist.resize(planesFromSegments.size(), DBL_MAX);
+
+	if(!doNotOptimizeDistanceChecks)
+		for (auto& dist : pointToPlaneDists)dist.resize(planesFromSegments.size(), DBL_MAX);
     // for (auto& plane : planesFromSegments)
     //      {
     //      size_t originalNIdx = inOutMesh->GetPointIndexCount() - 1;
     bvector<int> &pointIndex = vis->ClientPointIndex();
     bvector<int> &param = vis->ClientParamIndex();
     bvector<bvector<bool>> pointToPlaneChecks(inOutMesh->GetPointIndexCount() / 3);
-    for (auto& check : pointToPlaneChecks)check.resize(planesFromSegments.size(), true);
+	if (!doNotOptimizeDistanceChecks)
+	 for (auto& check : pointToPlaneChecks)check.resize(planesFromSegments.size(), true);
 
     for (vis->Reset(); vis->AdvanceToNextFace();)// && vis->GetReadIndex() <= originalNIdx;)
         {
         DPoint3d tri[3] = { inOutMesh->GetPointCP()[pointIndex[0]], inOutMesh->GetPointCP()[pointIndex[1]], inOutMesh->GetPointCP()[pointIndex[2]] };
         if (faceRanges[vis->GetReadIndex() / 3].IsNull())faceRanges[vis->GetReadIndex() / 3] = DRange3d::From(tri, 3);
         if (!faceRanges[vis->GetReadIndex() / 3].IntersectsWith(polyRange)) continue;
+		if (inOutMesh->GetPointIndexCount() > 1000000) break;
         for (auto& plane : planesFromSegments)
             {
             bvector<IntersectionLocation> results;
-            if (!pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]]) continue;
-            if (ComputeCut(results, plane, tri, pointToPlaneDists, pointIndex.data(), &plane - &planesFromSegments[0]))
+            if (!doNotOptimizeDistanceChecks && !pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]]) continue;
+            if (ComputeCut(results, plane, tri, doNotOptimizeDistanceChecks? nullptr : &pointToPlaneDists, pointIndex.data(), &plane - &planesFromSegments[0]))
                 {
 
 
                 assert(results.size() == 2);
-                InsertCutPoints(inOutMesh, results, tri, meshHasTexture ? param.data() : nullptr, pointIndex.data(), meshHasTexture, pointToPlaneDists, planesFromSegments.size());
-                pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]] = false;
+                InsertCutPoints(inOutMesh, results, tri, meshHasTexture ? param.data() : nullptr, pointIndex.data(), meshHasTexture, doNotOptimizeDistanceChecks ? nullptr : &pointToPlaneDists, planesFromSegments.size());
+                if(!doNotOptimizeDistanceChecks)
+					pointToPlaneChecks[vis->GetReadIndex() / 3][&plane - &planesFromSegments[0]] = false;
                 bvector<bvector<int32_t>> newFaces;
                 ComputeReplacementFacets(newFaces, results, pointIndex);
                 assert(!newFaces.empty());
@@ -1648,8 +1692,11 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
                         inOutMesh->PointIndex().push_back(newFaces[i][1] + 1);
                         inOutMesh->PointIndex().push_back(newFaces[i][2] + 1);
                         faceRanges.push_back(DRange3d::NullRange());
-                        pointToPlaneChecks.push_back(pointToPlaneChecks[vis->GetReadIndex() / 3]);
-                        pointToPlaneChecks[(inOutMesh->PointIndex().size() - 3) / 3][&plane - &planesFromSegments[0]] = false;
+						if (!doNotOptimizeDistanceChecks)
+						{
+							pointToPlaneChecks.push_back(pointToPlaneChecks[vis->GetReadIndex() / 3]);
+							pointToPlaneChecks[(inOutMesh->PointIndex().size() - 3) / 3][&plane - &planesFromSegments[0]] = false;
+						}
                         }
                     }
 
@@ -1690,12 +1737,18 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
     DRange3d polyBox;
     polyBox.Init();
 
+	DRange3d meshRange = DRange3d::From(clippedMesh->GetPointCP(), (int)clippedMesh->GetPointCount());
     for (ClipPrimitivePtr const& primitive : *clip)
         {
         DRange3d        thisRange;
 
+		if (!primitive->IsMask())
+			continue;
         if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
             {
+			//if node and primitive are fully disjoint, do not count this primitive
+			if (!thisRange.IntersectsWith(meshRange) && !thisRange.IsContained(meshRange.low) && !meshRange.IsContained(thisRange.low))
+				continue;
             if (polyBox.IsEmpty())
                 polyBox = thisRange;
             else
@@ -1705,7 +1758,31 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
     ClipVectorPtr currentClip(const_cast<ClipVector*>(clip));
     InsertMeshCuts(clippedMesh, vis, currentClip, triangleBoxes, polyBox);
     bvector<ClipVectorPtr> clipPolys;
-    clipPolys.push_back(currentClip);
+	bool shouldUseClipPrimitives = true;
+	if(!shouldUseClipPrimitives)
+		clipPolys.push_back(currentClip);
+	else
+	{
+		for (ClipPrimitivePtr const& primitive : *clip)
+		{
+			DRange3d        thisRange;
+
+			if (!primitive->IsMask())
+				continue;
+			if (primitive->GetRange(thisRange, nullptr, primitive->IsMask()))
+			{
+				//if node and primitive are fully disjoint, do not count this primitive
+				if (!thisRange.IntersectsWith(meshRange) && !thisRange.IsContained(meshRange.low) && !meshRange.IsContained(thisRange.low))
+					continue;
+				else
+				{
+					ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
+					clipPolys.push_back(newClip);
+				}
+			}
+		}
+		polyfaces.resize(clipPolys.size() + 1);
+	}
     return Process3dRegions(polyfaces, clippedMesh, clipPolys);
     }
 

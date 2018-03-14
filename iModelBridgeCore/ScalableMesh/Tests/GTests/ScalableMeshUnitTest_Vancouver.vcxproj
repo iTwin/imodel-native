@@ -301,6 +301,9 @@ bb -ax64 -p ScalableMesh-Tested -f  ScalableMeshCoreUnitTests -r  ScalableMesh r
     <ClInclude Include="SMUnitTestDisplayQuery.h" />
     <ClInclude Include="SMUnitTestUtil.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\ScalableMeshCoreUnitTests.PartFile.xml" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

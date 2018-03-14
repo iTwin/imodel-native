@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 15:00:33 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,12 +31,12 @@ private:
     std::auto_ptr<Impl>                 m_implP;
 
 public:
-    explicit                            DocumentEnv                        (const WChar*          currentDir);
+    BENTLEY_SM_EXPORT  explicit                            DocumentEnv                        (const WChar*          currentDir);
 
-                                        ~DocumentEnv                       ();
+    BENTLEY_SM_EXPORT                                    ~DocumentEnv                       ();
 
-                                        DocumentEnv                        (const DocumentEnv&      rhs);
-    DocumentEnv&                        operator=                          (const DocumentEnv&      rhs);
+    BENTLEY_SM_EXPORT                                    DocumentEnv                        (const DocumentEnv&      rhs);
+    BENTLEY_SM_EXPORT DocumentEnv&                        operator=                          (const DocumentEnv&      rhs);
 
 
     BENTLEY_SM_EXPORT const WString&     GetCurrentDir                      () const;

@@ -6,13 +6,13 @@
 |       $Date: 2011/11/07 14:26:49 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "../STM/ImagePPHeaders.h"
 #include <ScalableMesh/GeoCoords/Transformation.h>
-#include <ScalableMesh/Foundations/Exception.h>
+//#include <ScalableMesh/Foundations/Exception.h>
 #include <STMInternal/Foundations/FoundationsPrivateTools.h>
 #include "TransformationUtils.h"
 #include "TransformationInternal.h"
@@ -101,7 +101,8 @@ TransfoModel TransfoModel::CreateFrom (const TransfoMatrix& transfoMatrix)
     const TransfoModel resulting(CreateFrom(transfoMatrix, status));
 
     if (S_SUCCESS != status)
-        throw CustomException(L"Could not create from specified matrix");
+        //throw CustomException(L"Could not create from specified matrix");
+        assert(false && L"Could not create from specified matrix");
 
     return resulting;
     }
@@ -353,7 +354,8 @@ TransfoModel InverseOf (const TransfoModel& transform)
     TransfoModel resulting(InverseOf(transform, status));
 
     if (SMStatus::S_SUCCESS != status)
-        throw CustomException(L"Inverse of specified transform does not exist");
+       // throw CustomException(L"Inverse of specified transform does not exist");
+        assert(false && L"Inverse of specified transform does not exist");
 
     return resulting;
     }
@@ -387,7 +389,8 @@ TransfoModel Combine   (const TransfoModel& lhs,
     TransfoModel result(Combine(lhs, rhs, status));
 
     if (SMStatus::S_SUCCESS != status)
-        throw CustomException(L"Error combining transfo models!"); 
+        assert(false && L"Error combining transfo models!");
+       // throw CustomException(L"Error combining transfo models!"); 
     return result;
     }
 
@@ -489,7 +492,8 @@ GEOCOORDS_DLLE TransfoMatrix InverseOf (const TransfoMatrix&    matrix)
     {
     Transform transform(ToTransform3d(matrix));
     if (!transform.InverseOf(transform))
-        throw CustomException(L"Could not invert matrix");
+        //throw CustomException(L"Could not invert matrix");
+        assert(false && L"Could not invert matrix");
 
     return FromTransform3d(transform);
     }

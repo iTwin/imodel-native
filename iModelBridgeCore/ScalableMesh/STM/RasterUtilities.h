@@ -34,13 +34,13 @@ class RasterUtilities
 
     public:
 
-        static HPMPool* s_rasterMemPool;
+        BENTLEY_SM_EXPORT static HPMPool* s_rasterMemPool;
 
-        static HMRWORLDCLUSTER* GetWorldCluster();
+        BENTLEY_SM_EXPORT static HMRWORLDCLUSTER* GetWorldCluster();
         static HFCPtr<HRFRasterFile> LoadRasterFile(WString path);
-        static HFCPtr<HRARASTER> LoadRaster(WString path);
-        static HFCPtr<HRARASTER> LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS);
-        static HFCPtr<HRARASTER> LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS, bool forceProjective = false);
+        BENTLEY_SM_EXPORT static HFCPtr<HRARASTER> LoadRaster(WString path);
+        BENTLEY_SM_EXPORT static HFCPtr<HRARASTER> LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS);
+        BENTLEY_SM_EXPORT static HFCPtr<HRARASTER> LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS, bool forceProjective = false);
 
         static StatusInt CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster, bool isRGBA = false, bool addHeader = true);
     };

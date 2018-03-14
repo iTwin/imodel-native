@@ -6,7 +6,7 @@
 |       $Date: 2012/01/19 20:04:51 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,10 +16,10 @@
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-Time::TimeType              GetCTimeFor                        (const Time&                 time);
-Time                        CreateTimeFrom                     (Time::TimeType              time);
+BENTLEY_SM_EXPORT Time::TimeType              GetCTimeFor                        (const Time&                 time);
+BENTLEY_SM_EXPORT Time                        CreateTimeFrom                     (Time::TimeType              time);
 
-Time                        CreateUnknownModificationTime      ();
+BENTLEY_SM_EXPORT Time                        CreateUnknownModificationTime      ();
 
 Time                        GetFileLastModificationTimeFor     (const WChar*              filePath);
 

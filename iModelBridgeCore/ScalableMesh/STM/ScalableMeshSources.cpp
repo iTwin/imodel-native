@@ -6,12 +6,13 @@
 |       $Date: 2012/02/23 01:54:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
+#include "InternalUtilityFunctions.h"
 #include "ScalableMeshSources.h"
 #include <ScalableMesh/IScalableMeshSourceVisitor.h>
 
@@ -453,14 +454,20 @@ void IDTMSource::Impl::_NotifyOfLastEditUpdate (Time updatedLastEditTime)
 +----------------------------------------------------------------------------*/ 
 bool IDTMSource::Impl::_IsReachable () const
     {
-    if (BeFileName::IsUrl(m_path.c_str()))
+    if (IsUrl(m_path.c_str()))
         {
         
         assert(m_sourceDataType == DTM_SOURCE_DATA_IMAGE);        
 
         try
             {
-            HFCPtr<HFCURL> pUrl(HFCURL::Instanciate(m_path));
+			HFCPtr<HFCURL> pUrl(
+#ifndef VANCOUVER_API
+				HFCURL::Instanciate(Utf8String(m_path))
+#else
+				HFCURL::Instanciate(m_path)
+#endif
+			);
 
             assert(pUrl != nullptr);
             //Currently only Bing, use Image++ to ensure the URL can be accessed.
@@ -612,13 +619,19 @@ LocalFileURL IDTMLocalFileSource::Impl::GetURL (StatusInt& status) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 const WString& IDTMLocalFileSource::Impl::GetPath (StatusInt& status) const
     {
-    if (BeFileName::IsUrl(m_path.c_str()))
+    if (IsUrl(m_path.c_str()))
         {
         assert(m_sourceDataType == DTM_SOURCE_DATA_IMAGE);
 
         try
             {
-            HFCPtr<HFCURL> pUrl(HFCURL::Instanciate(m_path));
+            HFCPtr<HFCURL> pUrl(
+#ifndef VANCOUVER_API
+				HFCURL::Instanciate(Utf8String(m_path))
+#else
+				HFCURL::Instanciate(m_path)
+#endif
+			);
 
             assert(pUrl != nullptr);
             //Currently only Bing, use Image++ to ensure the URL can be accessed.

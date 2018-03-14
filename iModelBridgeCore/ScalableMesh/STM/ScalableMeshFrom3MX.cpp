@@ -2,12 +2,11 @@
 #include <ScalableMesh/ScalableMeshFrom3MX.h>
 #include <ScalableMesh/ScalableMeshLib.h>
 #ifndef VANCOUVER_API
-    #include <ThreeMxReader/ThreeMXReader.h>
-    #include <DgnPlatform/ImageUtilities.h>
+    #include <ThreeMxReader/ThreeMXReader.h>    
 #else
-    #include <Acute3d/ThreeMXReader.h>
-    #include    <FreeImage/FreeImage.h>
+    #include <Acute3d/ThreeMXReader.h>    
 #endif
+#include    <FreeImage/FreeImage.h>
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/IScalableMeshCreator.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
@@ -171,37 +170,6 @@ private:
         m_nodeArray.push_back(std::move(node));
     }
 
-#ifndef VANCOUVER_API
-    void _DecodeJpegData(Byte const* data, size_t dataSize, bvector<Byte>& rgb, int& width, int& height)
-    {
-        // Decode the JPEG buffer
-        ImageUtilities::RgbImageInfo outInfo, inInfo;
-        memset(&inInfo, 0, sizeof(inInfo));
-        inInfo.hasAlpha = true;
-        inInfo.isBGR = true;
-        inInfo.isTopDown = true;
-
-        bvector<Byte> bgra;
-        if (SUCCESS != ImageUtilities::ReadImageFromJpgBuffer(bgra, outInfo, data, dataSize, inInfo))
-        {
-            m_convertStatus = SMFrom3MXStatus::ReadJPEGError;
-            return;
-        }
-
-        // Transform the BGRA buffer into an RGB buffer
-        width  = outInfo.width;
-        height = outInfo.height;
-        size_t nPixels = width * height;
-        rgb.resize(nPixels * 3);
-        for (size_t i = 0; i < nPixels; i++)
-        {
-            rgb[3 * i] = bgra[4 * i + 2];
-            rgb[3 * i + 1] = bgra[4 * i + 1];
-            rgb[3 * i + 2] = bgra[4 * i];
-        }
-        bgra.clear(); // Free memory asap
-    }
-#else
     void _DecodeJpegData(Byte const* data, size_t dataSize, bvector<Byte>& rgb, int& width, int& height)
     {
         // Decode the JPEG buffer using freeimage
@@ -216,22 +184,23 @@ private:
             size_t bufferSize = 3 * width * height;
             rgb.resize(bufferSize);
             byte* outP = &rgb.front();
-            for (unsigned int y = 0; y < height; y++) for (unsigned int x = 0; x < width; x++)
-            {
+            for (int y = 0; y < height; y++) 
+                for (int x = 0; x < width; x++)
+                {
                 RGBQUAD rgba;
                 FreeImage_GetPixelColor(bitmap, x, height-1-y, &rgba);
                 outP[0] = rgba.rgbRed;
                 outP[1] = rgba.rgbGreen;
                 outP[2] = rgba.rgbBlue;
                 outP += 3;
-            }
+                }
 
             FreeImage_Unload(bitmap);
         }
 
         FreeImage_CloseMemory(memory);
     }
-#endif
+
 
     virtual void _PushJpegTexture(Byte const* data, size_t dataSize)
     {

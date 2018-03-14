@@ -49,7 +49,7 @@ public:
 };
 
 // Conversion function. It has different variants to offer control on the GCS operations and the handling of progress
-BENTLEY_SM_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
+BENTLEY_SM_IMPORT_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
 (
     BeFileNameCR input3MXPath,									// Path to the master 3MX file of the 3MX model
     BeFileNameCR output3SMPath,									// Path to the output 3SM file
@@ -59,7 +59,7 @@ BENTLEY_SM_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
 );
 
 // Reprojection to specified GCS; No progress handling
-BENTLEY_SM_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
+BENTLEY_SM_IMPORT_EXPORT SMFrom3MXStatus createScalableMeshFrom3MX
 (
     BeFileNameCR input3MXPath,									// Path to the master 3MX file of the 3MX model
     BeFileNameCR output3SMPath,									// Path to the output 3SM file

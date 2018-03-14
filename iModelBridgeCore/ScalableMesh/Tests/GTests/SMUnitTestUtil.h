@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/GTests/SMUnitTestUtil.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,6 +18,11 @@
 #define SM_DATA_PATH L"SMData"
 #define SM_LISTING_FILE_NAME L"list.txt"
 #endif
+
+#ifndef SM_DATA_SOURCE_PATH
+#define SM_DATA_SOURCE_PATH L"SMDataSource"
+#endif
+
 
 #ifndef SM_DISPLAY_QUERY_TEST_CASES
 #define SM_DISPLAY_QUERY_TEST_CASES L"displayQueryTestCases.txt"
@@ -38,7 +43,7 @@ using namespace Bentley::GeoCoordinates;
 
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh/ScalableMeshLib.h>
-//#include <ScalableMesh/IScalableMeshProgress.h>
+#include <ScalableMesh/IScalableMeshProgress.h>
 //#include <iostream>
 
 namespace ScalableMeshGTestUtil
@@ -56,10 +61,11 @@ namespace ScalableMeshGTestUtil
         TYPE_3SM,
         TYPE_3DTILES_TILESET,
         TYPE_3DTILES_B3DM,
+        TYPE_3SM_SOURCE,
         TYPE_UNKNOWN
         };
     
-    bvector<BeFileName> GetFiles(BeFileName dataPath);
+    bvector<BeFileName> GetFiles(BeFileName dataPath, bool wantSource = false);
 
     size_t GetFileCount(BeFileName dataPath);
 
@@ -71,7 +77,7 @@ namespace ScalableMeshGTestUtil
     
     SMMeshType GetFileType(BeFileName file);
 
-    bool FilterEntry(BeFileName& entry, bool isDir);
+    bool FilterEntry(BeFileName& entry, bool isDir, bool wantSource = false);
 
 #ifdef VANCOUVER_API
     struct ScalableMeshModule : DgnViewLib::Host
@@ -104,15 +110,5 @@ namespace ScalableMeshGTestUtil
         };
 
     bool InitScalableMesh();
-
-    //struct TestProgressListener : ScalableMesh::IScalableMeshProgressListener
-    //    {
-    //    virtual void CheckContinueOnProgress(ScalableMesh::IScalableMeshProgress* progress) const override
-    //        {
-    //        auto progress_percent = progress->GetProgress() * 100;
-    //        std::cout << "\r" << progress_percent <<"%";
-    //        if (progress_percent >= 100) std::cout << std::endl;
-    //        };
-    //    };
 
     }

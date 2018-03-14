@@ -47,17 +47,17 @@ class SMSQLiteClipDefinitionsFile : public SMSQLiteFile
     virtual void GetAllPolys(bvector<bvector<uint8_t>>& polys, bvector<size_t>& sizes);
 
 
-    static const SchemaVersion CURRENT_VERSION;
+    static const BESQL_VERSION_STRUCT CURRENT_VERSION;
 
     protected:
-        virtual SchemaVersion GetCurrentVersion() override
+        virtual BESQL_VERSION_STRUCT GetCurrentVersion() override
             {
             return SMSQLiteClipDefinitionsFile::CURRENT_VERSION;
             }
     virtual DbResult CreateTables() override;
 
     virtual size_t GetNumberOfReleasedSchemas() override;
-    virtual const SchemaVersion* GetListOfReleasedVersions() override;
+    virtual const BESQL_VERSION_STRUCT* GetListOfReleasedVersions() override;
     virtual double* GetExpectedTimesForUpdateFunctions() override;
     virtual std::function<void(BeSQLite::Db*)>* GetFunctionsForAutomaticUpdate() override;
 

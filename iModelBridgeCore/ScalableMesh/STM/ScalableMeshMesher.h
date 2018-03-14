@@ -6,7 +6,7 @@
 //:>       $Date: 2010/12/15 18:23:19 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -19,7 +19,7 @@
 
 #include "SMPointIndex.h"
 #include <Mtg/MtgStructs.h>
-
+#include "ScalableMesh.h"
 
 
 
@@ -163,8 +163,5 @@ template<class POINT, class EXTENT> class ScalableMesh2DDelaunayMesher : public 
         private:
             bool m_tetGen;
         };
-
-        void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons);
-        void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(const size_t i, const bvector<DPoint3d>& element)> choosePolygonInSet, std::function<void(const bvector<DPoint3d>& element)> afterPolygonAdded);
 
 //#include "ScalableMeshMesher.hpp"
