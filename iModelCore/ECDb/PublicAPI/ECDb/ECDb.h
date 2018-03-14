@@ -97,17 +97,15 @@ public:
         private:
             bool m_requiresECCrudWriteToken = false;
             bool m_requiresECSchemaImportToken = false;
-            bool m_allowChangesetMergingIncompatibleSchemaImport = true;
 
         public:
 #if !defined (DOCUMENTATION_GENERATOR)
             //not inlined as ctors are only needed internally
             Settings();
-            Settings(bool requiresECCrudWriteToken, bool m_requiresECSchemaImportToken, bool allowChangesetMergingIncompatibleSchemaImport);
+            Settings(bool requiresECCrudWriteToken, bool m_requiresECSchemaImportToken);
 #endif
             bool RequiresECCrudWriteToken() const { return m_requiresECCrudWriteToken; }
             bool RequiresECSchemaImportToken() const { return m_requiresECSchemaImportToken; }
-            bool AllowChangesetMergingIncompatibleSchemaImport() const { return m_allowChangesetMergingIncompatibleSchemaImport; }
         };
 
     struct SettingsManager final
@@ -121,7 +119,7 @@ public:
 #if !defined (DOCUMENTATION_GENERATOR)
         //not inlined as ctors are only needed internally
         SettingsManager();
-        void ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
+        void ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken);
 #endif
         ECDB_EXPORT ~SettingsManager();
 
@@ -190,7 +188,7 @@ private:
 protected:
     //! To be called during construction of the ECDb subclass.
     //This is only a separate method because DgnDb is not a direct subclass of ECDb, but of RefCounted<ECDb>. So DgnDb's ctor cannot call ECDb's ctor.
-    ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
+    ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken);
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
@@ -234,6 +232,10 @@ public:
     //! @param[in] logSqliteErrors If Yes, then SQLite error messages are logged. Note that some SQLite errors are intentional. Turn this option on only for limited debuging purposes.
     //! @return ::BE_SQLITE_OK in case of success, error code otherwise, e.g. if @p ecdbTempDir does not exist
     ECDB_EXPORT static DbResult Initialize(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir = nullptr, BeSQLiteLib::LogErrors logSqliteErrors=BeSQLiteLib::LogErrors::No);
+
+    //! Check if the ECDb::Initialize() method was successfully called for current process or not.
+    //! @return return true if ECDb::Initialize() method was successfully called.
+    ECDB_EXPORT static bool IsInitialized();
 
     //! Initializes a new instance of the ECDb class.
     ECDB_EXPORT ECDb();

@@ -521,7 +521,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQuantityR koq, Utf8CP jsonStr)
+BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQuantityR koq, ECDbCR ecdb, Utf8CP jsonStr, bool fileUsesEC32Koqs)
     {
     rapidjson::Document presUnitsJson;
     if (presUnitsJson.Parse<0>(jsonStr).HasParseError())
@@ -532,14 +532,34 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
 
     BeAssert(presUnitsJson.IsArray());
 
+    const bool persUnitIsDummy = !koq.GetPersistenceUnit().GetUnit()->IsValid();
     for (rapidjson::Value const& presUnitJson : presUnitsJson.GetArray())
         {
         BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
-        koq.AddPresentationUnit(Formatting::FormatUnitSet(presUnitJson.GetString()));
-        BeAssert(!koq.GetPresentationUnitList().back().HasProblem() && "KOQ PresentationUnit could not be read. Its format is invalid");
+
+        Formatting::FormatUnitSet fus;
+        bool hasDummyUnit = false;
+        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(fus, hasDummyUnit, presUnitJson.GetString(), koq, true, !fileUsesEC32Koqs) ||
+            hasDummyUnit)
+            {
+            if (fileUsesEC32Koqs)
+                continue; //drop presentation units if file uses EC3.2 or older
+
+            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), presUnitJson.GetString());
+            return ERROR;
+            }
+
+        if (!koq.AddPresentationUnit(fus))
+            {
+            if (!persUnitIsDummy) //if pers unit is dummy, we cannot have presentation units, so ignore errors in that case
+                return ERROR;
+            }
+
+        BeAssert(!fus.HasProblem() && "KOQ PresentationUnit could not be read. Its format is invalid");
         }
 
     return SUCCESS;
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

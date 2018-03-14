@@ -77,7 +77,7 @@ BentleyStatus TestHelper::ImportSchemas(std::vector<SchemaItem> const& schemas) 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  07/15
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TestHelper::ImportSchema(SchemaItem const& testItem) const
+BentleyStatus TestHelper::ImportSchema(SchemaItem const& testItem, SchemaManager::SchemaImportOptions options) const
     {
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
 
@@ -93,7 +93,7 @@ BentleyStatus TestHelper::ImportSchema(SchemaItem const& testItem) const
         return ERROR;
 
     Savepoint sp(const_cast<ECDb&>(m_ecdb), "ECSchema Import");
-    if (SUCCESS == m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
+    if (SUCCESS == m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), options))
         {
         sp.Commit();
         return SUCCESS;

@@ -272,6 +272,19 @@
     - @b CustomAttributes on the ECClass
         - @b Add, @b delete, @b modify
 
+    ### PropertyCategory
+    - @b Modify 
+        - @ref BentleyApi::ECN::PropertyCategory::GetPriority "Priority"
+        - @ref BentleyApi::ECN::PropertyCategory::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::PropertyCategory::GetDescription "Description"
+
+    ### KindOfQuantity
+    - @b Modify 
+        - @ref BentleyApi::ECN::KindOfQuantity::GetRelativeError "RelativeError"
+        - @ref BentleyApi::ECN::KindOfQuantity::GetPresentationUnitList "PresentationUnit"
+        - @ref BentleyApi::ECN::KindOfQuantity::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::KindOfQuantity::GetDescription "Description"
+
     ### ECProperty
     - @b Modify 
         - @ref BentleyApi::ECN::ECProperty::GetDescription "Description"

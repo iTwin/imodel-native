@@ -509,7 +509,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
             {
             NativeSqlBuilder classViewSql;
             if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.IsPolymorphic(), exp.GetMemberFunctionCallExp()))
-                return ECSqlStatus::Error;
+                return ECSqlStatus::InvalidECSql;
 
             classViewSql.AppendSpace().AppendEscaped(exp.GetId());
             nativeSqlSnippets.push_back(classViewSql);

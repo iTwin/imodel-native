@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECCrudWriteTokenTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -20,11 +20,7 @@ protected:
     struct RestrictedECDb : ECDb
         {
         public:
-            explicit RestrictedECDb() : ECDb()
-                {
-                ApplyECDbSettings(true, false, true);
-                }
-
+            explicit RestrictedECDb() : ECDb() { ApplyECDbSettings(true, false); }
             ECCrudWriteToken const* GetToken() const { return GetECDbSettingsManager().GetCrudWriteToken(); }
         };
     };

@@ -83,10 +83,12 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
 BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, ClassMap const& contextClassMap)
     {
     TableSpaceSchemaManager const& schemaManager = contextClassMap.GetSchemaManager(); //class hierarchy is always in a single table space
-    if (SUCCESS != schemaManager.LoadDerivedClasses(contextClassMap.GetClass()))
+
+    ECDerivedClassesList const* subClasses = schemaManager.GetDerivedClasses(contextClassMap.GetClass());
+    if (subClasses == nullptr)
         return ERROR;
 
-    for (ECN::ECClassCP derivedClass : contextClassMap.GetClass().GetDerivedClasses())
+    for (ECN::ECClassCP derivedClass : *subClasses)
         {
         if (ClassMap const* derivedClassMap = schemaManager.GetClassMap(*derivedClass))
             {

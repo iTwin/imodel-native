@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/FileInfoTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -27,10 +27,10 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
               </ECEntityClass>
             </ECSchema>)xml"
 
-    //---------------------------------------------------------------------------------------
-    // @bsiclass                                     Krischan.Eberle                  11/15
-    //+---------------+---------------+---------------+---------------+---------------+------
-    struct FileInfoTestFixture : ECDbTestFixture {};
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  11/15
+//+---------------+---------------+---------------+---------------+---------------+------
+struct FileInfoTestFixture : ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/14

@@ -599,7 +599,6 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ec
 
     ClassDbEntry* entry = m_cache.Find(ecClassId);
     entry->m_ensureDerivedClassesExist = true;
-
     return SUCCESS;
     }
 
@@ -728,20 +727,63 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
         koq->SetDisplayLabel(displayLabel);
 
     koq->SetDescription(description);
+    koq->SetRelativeError(relError);
 
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
-    if (!koq->SetPersistenceUnit(Formatting::FormatUnitSet(persUnitStr)))
+
+    // Reading the units of the KOQ has some specific rules to be resilient with EC32 unit changes. The rules were defined
+    // in ECObjects and implemented here. Here are the rules:
+    // if Unit
+    //    <= 3.1
+    //      If unknown Persistence or Presentation: fail
+    //    > 3.1
+    //       If unknown Pers.Or Pres.:
+    //        - Drop ':' from unit name and use ecName->newName mapping.Use newName to find unit
+    //        - Use original name provided to find unit
+    //        - If unit is still unknown:
+    //            -If Pers.: create dummy unit
+    //            - If Pres: drop
+    // if Format
+    //    <= 3.1
+    //        If unknown Pers. or Pres.: fail
+    //    > 3.1
+    //        If unknown Pers. or Pres.: use "DefaultRealU"
+    //    All
+    //        If empty: use "DefaultReal" (Note: Need this to not break current API)
+    bool fileUsesEC32Koqs = false;
+    {
+    ProfileVersion fileProfileVersion(0, 0, 0, 0);
+    if (BE_SQLITE_OK != ProfileManager::ReadProfileVersion(fileProfileVersion, GetECDb()))
         {
-        BeAssert(!koq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
+        BeAssert(false && "Could not read profile version of the file");
+        return ERROR;
+        }
+    // 4.0.0.1 is the last EC3.1 profile version. 4.0.0.2 includes EC3.2 units
+    if (fileProfileVersion > ProfileVersion(4, 0, 0, 1))
+        fileUsesEC32Koqs = true;
+    }
+
+    Formatting::FormatUnitSet persistenceFus;
+    bool hasDummyUnit = false; // unused
+    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(persistenceFus, hasDummyUnit, persUnitStr, *koq, !fileUsesEC32Koqs, !fileUsesEC32Koqs))
+        {
+        LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit's FormatUnitSet descriptor '%s' could not be parsed.", koq->GetFullName().c_str(), persUnitStr);
         return ERROR;
         }
 
-    koq->SetRelativeError(relError);
+    if (!koq->SetPersistenceUnit(persistenceFus))
+        {
+        BeAssert(!koq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be added to the KOQ.");
+        return ERROR;
+        }
 
     if (!Utf8String::IsNullOrEmpty(presUnitsStr))
         {
-        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationUnits(*koq, presUnitsStr))
+        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationUnits(*koq, GetECDb(), presUnitsStr, fileUsesEC32Koqs))
+            {
+            LOG.errorv("Failed to read KindOfQuantity '%s'. One of its presentation units' FormatUnitSet descriptors could not be parsed: %s.", koq->GetFullName().c_str(), presUnitsStr);
             return ERROR;
+            }
         }
 
     //cache the koq

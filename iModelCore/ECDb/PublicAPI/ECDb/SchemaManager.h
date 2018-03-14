@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/SchemaManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -70,17 +70,16 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
     {
     public:
 
-#if !defined (DOCUMENTATION_GENERATOR)
-
         //! Schema import options. Not needed by regular callers. They are specific to certain
         //! exceptional workflows and therefore only used by them.
         enum class SchemaImportOptions
             {
             None = 0,
-            DoNotFailSchemaValidationForLegacyIssues,
-            Poisoning //!< Currently not supported. Poisoning concept is being revisited.
+            DoNotFailSchemaValidationForLegacyIssues = 1, //! Not needed by regular caller
+            DisallowMajorSchemaUpgrade = 2  //!< If specified, schema upgrades where the major version has changed, are not supported.
             };
 
+#if !defined (DOCUMENTATION_GENERATOR)
         struct Dispatcher;
 #endif
 
@@ -126,10 +125,27 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! @see @ref ECDbECSchemaImportAndUpgrade
         BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportToken const* token = nullptr) const { return ImportSchemas(schemas, SchemaImportOptions::None, token); }
 
-#if !defined (DOCUMENTATION_GENERATOR)
-        //only for legacy support which cannot yet follow the strict BIS rules
-        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions, SchemaImportToken const* token = nullptr) const;
-#endif
+        //! Imports the list of @ref ECN::ECSchema "ECSchemas" (which must include all its references)
+        //! into the @ref ECDbFile "ECDb file".
+        //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpgradeSupportedFeatures).
+        //! @note After importing the schemas, any pointers to the existing schemas should be discarded and
+        //! they should be obtained as needed through the SchemaManager API.
+        //! @remarks ECDb always persists ECSchemas in their invariant culture. That means localization ECSchemas are ignored
+        //! during the import.
+        //! @param[in] schemas  List of ECSchemas to import, including all referenced ECSchemas.
+        //!                     If the referenced ECSchemas are known to have already been imported, they are not required, but it does no harm to include them again
+        //!                     (the method detects that they are already imported, and simply skips them)
+        //!                     All schemas should have been deserialized from a single ECN::ECSchemaReadContext. 
+        //!                     If any duplicates are found in @p schemas an error will returned.
+        //! @param [in] options Schema import options
+        //! @param [in] token Token required to perform ECSchema imports if the
+        //! the ECDb file was set-up with the option "ECSchema import token validation".
+        //! If the option is set, the schema import will fail without a valid token.
+        //! If the option is not set, nullptr can be passed for @p token.
+        //! See documentation of the respective ECDb subclass to find out whether the option is enabled or not.
+        //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
+        //! @see @ref ECDbECSchemaImportAndUpgrade
+        ECDB_EXPORT BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP> const& schemas, SchemaImportOptions options, SchemaImportToken const* token = nullptr) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @remarks If called with @p loadSchemaEntities = true this can be a costly call as all schemas and their content would be loaded into memory.
@@ -241,12 +257,15 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         ECDB_EXPORT BentleyStatus RepopulateCacheTables() const;
         void ClearCache(Utf8CP tableSpace) const;
 
+        ECN::ECDerivedClassesList const* GetDerivedClassesInternal(ECN::ECClassCR baseClass, Utf8CP tableSpace = nullptr) const;
         Dispatcher const& GetDispatcher() const;
         struct MainSchemaManager const& Main() const;
 #endif
     };
 
 typedef SchemaManager const& SchemaManagerCR;
+
+ENUM_IS_FLAGS(SchemaManager::SchemaImportOptions);
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

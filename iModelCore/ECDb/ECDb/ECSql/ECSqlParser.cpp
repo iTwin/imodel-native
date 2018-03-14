@@ -2823,31 +2823,43 @@ int ECSqlParseContext::TrackECSqlParameter(ParameterExp& parameterExp)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlParseContext::GetSubclasses(ClassListById& classes, ECClassCR ecClass)
+BentleyStatus ECSqlParseContext::GetSubclasses(ClassListById& classes, ECClassCR ecClass)
     {
-    for (auto derivedClass : Schemas().GetDerivedClasses(const_cast<ECClassR>(ecClass)))
+    ECDerivedClassesList const* subclasses = Schemas().GetDerivedClassesInternal(const_cast<ECClassR>(ecClass));
+    if (subclasses == nullptr)
+        return ERROR;
+
+    for (ECClassCP derivedClass : *subclasses)
         {
         if (classes.find(derivedClass->GetId()) == classes.end())
             {
             classes[derivedClass->GetId()] = derivedClass;
-            GetSubclasses(classes, *derivedClass);
+            if (SUCCESS != GetSubclasses(classes, *derivedClass))
+                return ERROR;
             }
         }
+
+    return SUCCESS;
     }
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlParseContext::GetConstraintClasses(ClassListById& classes, ECRelationshipConstraintCR constraintEnd)
+BentleyStatus ECSqlParseContext::GetConstraintClasses(ClassListById& classes, ECRelationshipConstraintCR constraintEnd)
     {
-    for (auto ecClass : constraintEnd.GetConstraintClasses())
+    for (ECClassCP ecClass : constraintEnd.GetConstraintClasses())
         {
         if (classes.find(ecClass->GetId()) == classes.end())
             {
             classes[ecClass->GetId()] = ecClass;
             if (constraintEnd.GetIsPolymorphic())
-                GetSubclasses(classes, *ecClass);
+                {
+                if (SUCCESS != GetSubclasses(classes, *ecClass))
+                    return ERROR;
+                }
             }
         }
+
+    return SUCCESS;
     }
 
 

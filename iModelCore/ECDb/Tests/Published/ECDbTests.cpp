@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -12,19 +12,31 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Affan.Khan                      03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(ECDbInit, Initialize)
+    {
+    BeFileName applicationSchemaDir;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
+    BeFileName temporaryDir;
+    BeTest::GetHost().GetOutputRoot(temporaryDir);
+    ECDb::Initialize(temporaryDir, &applicationSchemaDir);
+    ASSERT_EQ(true, ECDb::IsInitialized());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  10/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, Settings)
     {
     EXPECT_FALSE(ECDb().GetECDbSettings().RequiresECCrudWriteToken());
     EXPECT_FALSE(ECDb().GetECDbSettings().RequiresECSchemaImportToken());
-    EXPECT_TRUE(ECDb().GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport());
 
     struct RestrictableECDb final : ECDb
         {
-        RestrictableECDb(bool requireCrudToken, bool requireSchemaImportToken, bool allowChangeSetMergeIncompatibleSchemaImport) : ECDb()
+        RestrictableECDb(bool requireCrudToken, bool requireSchemaImportToken) : ECDb()
             {
-            ApplyECDbSettings(requireCrudToken, requireSchemaImportToken, allowChangeSetMergeIncompatibleSchemaImport);
+            ApplyECDbSettings(requireCrudToken, requireSchemaImportToken);
             }
 
         ~RestrictableECDb() {}
@@ -68,66 +80,49 @@ TEST_F(ECDbTestFixture, Settings)
         {
         for (bool requiresSchemaImportToken : {false, true})
             {
-            for (bool allowChangesetMergingIncompatibleSchemaImport : {false, true})
+            RestrictableECDb ecdb(requiresECCrudWriteToken, requiresSchemaImportToken);
+            EXPECT_EQ(requiresECCrudWriteToken, ecdb.GetECDbSettings().RequiresECCrudWriteToken());
+            EXPECT_EQ(requiresSchemaImportToken, ecdb.GetECDbSettings().RequiresECSchemaImportToken());
+
+            ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+            Utf8CP ecsql = "INSERT INTO ecdbf.ExternalFileInfo(Name) VALUES('foofile.txt')";
+            if (requiresECCrudWriteToken)
                 {
-                RestrictableECDb ecdb(requiresECCrudWriteToken, requiresSchemaImportToken, allowChangesetMergingIncompatibleSchemaImport);
-                EXPECT_EQ(requiresECCrudWriteToken, ecdb.GetECDbSettings().RequiresECCrudWriteToken());
-                EXPECT_EQ(requiresSchemaImportToken, ecdb.GetECDbSettings().RequiresECSchemaImportToken());
-                EXPECT_EQ(allowChangesetMergingIncompatibleSchemaImport, ecdb.GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport());
-
-                ASSERT_EQ(BE_SQLITE_OK, ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-                Utf8CP ecsql = "INSERT INTO ecdbf.ExternalFileInfo(Name) VALUES('foofile.txt')";
-                if (requiresECCrudWriteToken)
-                    {
-                    ECSqlStatement stmt;
-                    ASSERT_TRUE(ecdb.GetCrudToken() != nullptr) << "RequiresECCrudWriteToken == true";
-                    ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdb, ecsql, nullptr)) << "RequiresECCrudWriteToken == true";
-                    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql, ecdb.GetCrudToken())) << "RequiresECCrudWriteToken == true";
-                    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "RequiresECCrudWriteToken == true";
-                    }
-                else
-                    {
-                    ECSqlStatement stmt;
-                    ASSERT_TRUE(ecdb.GetCrudToken() == nullptr) << "RequiresECCrudWriteToken == false";
-                    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql, nullptr)) << "RequiresECCrudWriteToken == false";
-                    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "RequiresECCrudWriteToken == false";
-                    }
-
-                if (requiresSchemaImportToken)
-                    {
-                    ASSERT_TRUE(ecdb.GetImportToken() != nullptr) << "RequiresSchemaImportToken == true";
-                    ECSchemaPtr schema = createSchemaV1();
-                    ASSERT_EQ(ERROR, ecdb.Schemas().ImportSchemas({schema.get()}, nullptr)) << "RequiresSchemaImportToken == true";
-                    ecdb.AbandonChanges();
-                    schema = createSchemaV1();
-                    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({schema.get()}, ecdb.GetImportToken())) << "RequiresSchemaImportToken == true";
-                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo1") != nullptr) << "RequiresSchemaImportToken == true";
-                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo2") != nullptr) << "RequiresSchemaImportToken == true";
-                    }
-                else
-                    {
-                    ECSchemaPtr schema = createSchemaV1();
-                    ASSERT_TRUE(ecdb.GetImportToken() == nullptr) << "RequiresSchemaImportToken == false";
-                    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({schema.get()}, nullptr)) << "RequiresSchemaImportToken == false";
-                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo1") != nullptr) << "RequiresSchemaImportToken == false";
-                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo2") != nullptr) << "RequiresSchemaImportToken == false";
-                    }
-
-                if (allowChangesetMergingIncompatibleSchemaImport)
-                    {
-                    ECSchemaPtr schema = createSchemaV2();
-                    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({schema.get()}, ecdb.GetImportToken())) << "AllowChangesetMergingIncompatibleSchemaImport == true";
-                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo1") == nullptr) << "AllowChangesetMergingIncompatibleSchemaImport == true";
-                    ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo2") != nullptr) << "AllowChangesetMergingIncompatibleSchemaImport == true";
-                    }
-                else
-                    {
-                    ECSchemaPtr schema = createSchemaV2();
-                    ASSERT_EQ(ERROR, ecdb.Schemas().ImportSchemas({schema.get()}, ecdb.GetImportToken())) << "AllowChangesetMergingIncompatibleSchemaImport == false";
-                    }
-
-                ecdb.AbandonChanges();
+                ECSqlStatement stmt;
+                ASSERT_TRUE(ecdb.GetCrudToken() != nullptr) << "RequiresECCrudWriteToken == true";
+                ASSERT_EQ(ECSqlStatus::Error, stmt.Prepare(ecdb, ecsql, nullptr)) << "RequiresECCrudWriteToken == true";
+                ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql, ecdb.GetCrudToken())) << "RequiresECCrudWriteToken == true";
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "RequiresECCrudWriteToken == true";
                 }
+            else
+                {
+                ECSqlStatement stmt;
+                ASSERT_TRUE(ecdb.GetCrudToken() == nullptr) << "RequiresECCrudWriteToken == false";
+                ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql, nullptr)) << "RequiresECCrudWriteToken == false";
+                ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "RequiresECCrudWriteToken == false";
+                }
+
+            if (requiresSchemaImportToken)
+                {
+                ASSERT_TRUE(ecdb.GetImportToken() != nullptr) << "RequiresSchemaImportToken == true";
+                ECSchemaPtr schema = createSchemaV1();
+                ASSERT_EQ(ERROR, ecdb.Schemas().ImportSchemas({schema.get()}, nullptr)) << "RequiresSchemaImportToken == true";
+                ecdb.AbandonChanges();
+                schema = createSchemaV1();
+                ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({schema.get()}, ecdb.GetImportToken())) << "RequiresSchemaImportToken == true";
+                ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo1") != nullptr) << "RequiresSchemaImportToken == true";
+                ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo2") != nullptr) << "RequiresSchemaImportToken == true";
+                }
+            else
+                {
+                ECSchemaPtr schema = createSchemaV1();
+                ASSERT_TRUE(ecdb.GetImportToken() == nullptr) << "RequiresSchemaImportToken == false";
+                ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas({schema.get()}, nullptr)) << "RequiresSchemaImportToken == false";
+                ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo1") != nullptr) << "RequiresSchemaImportToken == false";
+                ASSERT_TRUE(ecdb.Schemas().GetClass("Test", "Foo2") != nullptr) << "RequiresSchemaImportToken == false";
+                }
+
+            ecdb.AbandonChanges();
             }
         }
     }

@@ -37,10 +37,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
         //---------------------------------------------------------------------------------------
         // @bsimethod                                   Muhammad.Hassan                     06/16
         //+---------------+---------------+---------------+---------------+---------------+------
-        DbResult OpenBesqliteDb(Utf8CP dbPath)
-            {
-            return m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-            }
+        DbResult OpenBesqliteDb(Utf8CP dbPath) { return m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)); }
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                   Muhammad.Hassan                     06/16
@@ -49,7 +46,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             {
             //test 1: unrestricted ECDb
             ECDb ecdb;
-            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupdate_unrestricted.ecdb", seedFilePath));
+            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupgrade_unrestricted.ecdb", seedFilePath));
 
             bool expectedToSucceed = expectedToSucceedList.first;
             Utf8String assertMessageFull("[Unrestricted schema import] ");
@@ -66,21 +63,20 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             ecdb.CloseDb();
 
             //test 2: restricted ECDb
-            RestrictedSchemaImportECDb restrictedECDb(false, false);
-            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, "schemaupdate_changemergecomtapible.ecdb", seedFilePath));
+            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupgrade_disallowmajorschemachange.ecdb", seedFilePath));
 
             expectedToSucceed = expectedToSucceedList.second;
-            assertMessageFull.assign("[Changeset-merging compatible schema import] ").append(assertMessage);
+            assertMessageFull.assign("[schema import with disallowed major schema changes] ").append(assertMessage);
 
             if (expectedToSucceed)
-                ASSERT_EQ(SUCCESS, TestHelper(restrictedECDb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << assertMessageFull.c_str();
             else
-                ASSERT_EQ(ERROR, TestHelper(restrictedECDb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(ERROR, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << assertMessageFull.c_str();
 
             if (expectedToSucceed)
-                m_updatedDbs.push_back((Utf8String) restrictedECDb.GetDbFileName());
+                m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
 
-            restrictedECDb.CloseDb();
+            ecdb.CloseDb();
             }
     };
 
@@ -208,6 +204,68 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECSchemaAttributes)
     ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
     ASSERT_STREQ("modified test schema", statement.GetValueText(1));
     ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                  03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ModifySchemaVersion)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SchemaUpgrade_ModifySchemaVersion.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='10.11.9' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor version when write version was incremented is supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='11.10.9' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing write version when read version was incremented is supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='12.10.8' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor version when read version was incremented is supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='13.1.7' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor and write version when read version was incremented is supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='12.1.7' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing read version is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='13.0.7' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing write version is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='13.1.6' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor version is not supported";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1695,7 +1753,7 @@ TEST_F(SchemaUpgradeTestFixture, AddDeleteVirtualColumns)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaItem, filePath, {true, true}, "Addition or deletion of virtual column");
+    AssertSchemaUpdate(editedSchemaItem, filePath, {true, false}, "Addition or deletion of virtual column");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1952,7 +2010,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewSubClassForBaseWithTPH)
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
 
-    RestrictedSchemaImportECDb restrictedECDb(false, false);
+    RestrictedSchemaImportECDb restrictedECDb(false);
     ASSERT_EQ(BE_SQLITE_OK, restrictedECDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     TestHelper restrictedECDbTest(restrictedECDb);
     SchemaItem schemaWithNewSubClass(
@@ -2026,7 +2084,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
 
-    RestrictedSchemaImportECDb restrictedECDb(false, false);
+    RestrictedSchemaImportECDb restrictedECDb(false);
     ASSERT_EQ(BE_SQLITE_OK, restrictedECDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     SchemaItem schemaWithNewSubClassWithProperty(
@@ -2823,7 +2881,7 @@ TEST_F(SchemaUpgradeTestFixture, Add_Delete_ECProperty_ShareColumns)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add Delete Property mapped to shared column");
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Add Delete Property mapped to shared column");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -4959,7 +5017,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSubclassOfRelationshipConstraintConstrain
         "     </ECRelationshipClass>"
         "</ECSchema>";
 
-    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, true}, "Deleting subclass of ECRel ConstraintClass");
+    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, false}, "Deleting subclass of ECRel ConstraintClass");
     }
 
 //---------------------------------------------------------------------------------------
@@ -5049,7 +5107,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteConcreteImplementationOfAbstractConstrain
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>";
-    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, true}, "delete subclass of abstract rel constraint class");
+    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, false}, "delete subclass of abstract rel constraint class");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -5490,7 +5548,7 @@ TEST_F(SchemaUpgradeTestFixture, Add_Class_NavigationProperty_RelationshipClass)
 
     Utf8CP schemaWithNavProperty=
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName='A'>"
         "        <ECProperty propertyName='PA' typeName='int' />"
         "    </ECEntityClass>"
@@ -5549,7 +5607,7 @@ TEST_F(SchemaUpgradeTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppo
 
     SchemaItem schemaWithDeletedBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass0' modifier='None' />"
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "   <ECEntityClass typeName='Sub' modifier='None' >"
@@ -5559,7 +5617,7 @@ TEST_F(SchemaUpgradeTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppo
 
     SchemaItem schemaWithModifedBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass0' modifier='None' />"
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "   <ECEntityClass typeName='Sub' modifier='None' >"
@@ -5570,7 +5628,7 @@ TEST_F(SchemaUpgradeTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppo
 
     SchemaItem schemaWithNewBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass0' modifier='None' />"
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "   <ECEntityClass typeName='Sub' modifier='None' >"
@@ -6674,7 +6732,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass_Simple)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(deleteECCustomAttribute, filePath, {true, true}, "Deleting a ECCustomAttributeClass");
+    AssertSchemaUpdate(deleteECCustomAttribute, filePath, {true, false}, "Deleting a ECCustomAttributeClass");
     }
 
 //---------------------------------------------------------------------------------------
@@ -7273,7 +7331,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECArrayProperty)
 
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
         "                    displayLabel='MyKindOfQuantity' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
@@ -7324,7 +7382,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
 
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
         "                    displayLabel='MyKindOfQuantity' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
@@ -7448,6 +7506,124 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantityAddUpdateDelete)
                 <ECProperty propertyName='L3' typeName='double' />
             </ECEntityClass>
         </ECSchema>)xml")));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_KindOfQuantity.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                    <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
+                                    <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN" relativeError="2" />
+                                    <KindOfQuantity typeName="K3" description="My KOQ 3" displayLabel="KOQ 3" persistenceUnit="KG" presentationUnits="KG" relativeError="3" />
+                                    <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="KOQ 4" persistenceUnit="G" presentationUnits="MG" relativeError="4" />
+                            </ECSchema>)xml")));
+
+    auto assertKoq = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, Utf8CP persUnit, std::vector<Utf8CP> const& presUnits, double relError)
+        {
+        KindOfQuantityCP koq = schema.GetKindOfQuantityCP(name);
+        ASSERT_TRUE(koq != nullptr) << name;
+        EXPECT_STRCASEEQ(name, koq->GetName().c_str()) << name;
+        if (Utf8String::IsNullOrEmpty(displayLabel))
+            EXPECT_FALSE(koq->GetIsDisplayLabelDefined()) << name;
+        else
+            EXPECT_STRCASEEQ(displayLabel, koq->GetDisplayLabel().c_str()) << name;
+
+        if (Utf8String::IsNullOrEmpty(description))
+            description = "";
+
+        EXPECT_STRCASEEQ(description, koq->GetDescription().c_str()) << name;
+
+        EXPECT_DOUBLE_EQ(relError, koq->GetRelativeError()) << name;
+        EXPECT_STRCASEEQ(persUnit, koq->GetPersistenceUnit().ToText(false).c_str()) << name;
+        EXPECT_EQ(presUnits.size(), koq->GetPresentationUnitList().size()) << name;
+        for (size_t i = 0; i < presUnits.size(); i++)
+            {
+            EXPECT_STRCASEEQ(presUnits[i], koq->GetPresentationUnitList()[i].ToText(false).c_str()) << name;
+            }
+        };
+
+    {
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "CM(DefaultReal)", {}, 1);
+    assertKoq(*schema, "K2", "KOQ 2", "My KOQ 2", "M(DefaultReal)", {"FT(DefaultReal)","IN(DefaultReal)"}, 2);
+    assertKoq(*schema, "K3", "KOQ 3", "My KOQ 3", "KG(DefaultReal)", {"KG(DefaultReal)"}, 3);
+    assertKoq(*schema, "K4", "KOQ 4", "My KOQ 4", "G(DefaultReal)", {"MG(DefaultReal)"}, 4);
+    }
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                    <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
+                                    <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN" relativeError="2" />
+                                    <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="KOQ 4" persistenceUnit="G" presentationUnits="MG" relativeError="4" />
+                                    </ECSchema>)xml"))) << "Deleting a KOQ is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                    <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
+                                    <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="CM" presentationUnits="FT;IN"  relativeError="3"/>
+                                    <KindOfQuantity typeName="K3" description="My KOQ 3" displayLabel="KOQ 3" persistenceUnit="KG" presentationUnits="KG" relativeError="3" />
+                                    <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="KOQ 4" persistenceUnit="G" presentationUnits="MG" relativeError="4" />
+                                    </ECSchema>)xml"))) << "Modifying the persistence unit is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                    <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
+                                    <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN"/>
+                                    <KindOfQuantity typeName="K3" description="My KOQ 3" displayLabel="KOQ 3" persistenceUnit="KG" presentationUnits="KG" relativeError="3" />
+                                    <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="KOQ 4" persistenceUnit="G" presentationUnits="MG" relativeError="4" />
+                                    </ECSchema>)xml"))) << "Removing the relative error is not supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.1" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                    <KindOfQuantity typeName="K1" description="My KOQ 1" displayLabel="KOQ 1" persistenceUnit="CM" relativeError="1" />
+                                    <KindOfQuantity typeName="K2" description="My KOQ 2" displayLabel="KOQ 2" persistenceUnit="M" presentationUnits="FT;IN" relativeError="2" />
+                                    <KindOfQuantity typeName="K3" description="My KOQ 3" displayLabel="KOQ 3" persistenceUnit="KG" presentationUnits="KG" relativeError="3" />
+                                    <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="KOQ 4" persistenceUnit="G" presentationUnits="MG" relativeError="4" />
+                                    <KindOfQuantity typeName="K5" description="My KOQ 5" displayLabel="KOQ 5" persistenceUnit="M" presentationUnits="M(Meters4u);IN(Inches4u);FT(fi8);FT(feet4u)" relativeError="5" />
+                                    <KindOfQuantity typeName="K6" description="My KOQ 6" displayLabel="KOQ 6" persistenceUnit="M" presentationUnits="M(Meters4u);IN(Inches4u);FT(fi8);FT(feet4u)" relativeError="6" />
+                                    </ECSchema>)xml"))) << "Adding a KOQ is supported";
+
+    {
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    assertKoq(*schema, "K1", "KOQ 1", "My KOQ 1", "CM(DefaultReal)", {}, 1);
+    assertKoq(*schema, "K2", "KOQ 2", "My KOQ 2", "M(DefaultReal)", {"FT(DefaultReal)","IN(DefaultReal)"}, 2);
+    assertKoq(*schema, "K3", "KOQ 3", "My KOQ 3", "KG(DefaultReal)", {"KG(DefaultReal)"}, 3);
+    assertKoq(*schema, "K4", "KOQ 4", "My KOQ 4", "G(DefaultReal)", {"MG(DefaultReal)"}, 4);
+    assertKoq(*schema, "K5", "KOQ 5", "My KOQ 5", "M(DefaultReal)", {"M(Meters4u)","IN(Inches4u)","FT(AmerFI8)","FT(feet4u)"}, 5);
+    assertKoq(*schema, "K6", "KOQ 6", "My KOQ 6", "M(DefaultReal)", {"M(Meters4u)","IN(Inches4u)","FT(AmerFI8)","FT(feet4u)"}, 6);
+    }
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                    <KindOfQuantity typeName="K1" displayLabel="KOQ 1" persistenceUnit="CM" presentationUnits="IN;FT" relativeError="1" />
+                                    <KindOfQuantity typeName="K2" description="My KOQ 2" persistenceUnit="M" presentationUnits="IN;FT" relativeError="2" />
+                                    <KindOfQuantity typeName="K3" description="My Nice KOQ 3" displayLabel="KOQ 3" persistenceUnit="KG" presentationUnits="G" relativeError="3" />
+                                    <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="Nice KOQ 4" persistenceUnit="G" presentationUnits="KG;MG;G" relativeError="40" />
+                                    <KindOfQuantity typeName="K5" description="My KOQ 5" displayLabel="KOQ 5" persistenceUnit="M" presentationUnits="M(Meters4u);FT(fi8);FT(feet4u)" relativeError="5" />
+                                    <KindOfQuantity typeName="K6" description="My KOQ 6" displayLabel="KOQ 6" persistenceUnit="M" relativeError="6" />
+                                    </ECSchema>)xml"))) << "Modifying a KOQ is supported";
+
+    {
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    assertKoq(*schema, "K1", "KOQ 1", nullptr, "CM(DefaultReal)", {"IN(DefaultReal)","FT(DefaultReal)"}, 1);
+    //changing the order of pres units is supported
+    assertKoq(*schema, "K2", nullptr, "My KOQ 2", "M(DefaultReal)", {"IN(DefaultReal)","FT(DefaultReal)"}, 2);
+    assertKoq(*schema, "K3", "KOQ 3", "My Nice KOQ 3", "KG(DefaultReal)", {"G(DefaultReal)"}, 3);
+    //changing the order of pres units and adding a pres unit is supported
+    assertKoq(*schema, "K4", "Nice KOQ 4", "My KOQ 4", "G(DefaultReal)", {"KG(DefaultReal)","MG(DefaultReal)","G(DefaultReal)"}, 40);
+    assertKoq(*schema, "K5", "KOQ 5", "My KOQ 5", "M(DefaultReal)", {"M(Meters4u)","FT(AmerFI8)","FT(feet4u)"}, 5);
+    assertKoq(*schema, "K6", "KOQ 6", "My KOQ 6", "M(DefaultReal)", {}, 6);
+    }
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -8822,7 +8998,100 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
                                     </ECSchema>)xml")));
     }
 
-    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, PropertyCategory)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_PropertyCategory.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <PropertyCategory typeName="C1" description="My Category 1" displayLabel="Category 1" priority="1" />
+                                        <PropertyCategory typeName="C2" description="My Category 2" displayLabel="Category 2" priority="2" />
+                                        <PropertyCategory typeName="C3" description="My Category 3" displayLabel="Category 3" priority="3" />
+                                        <PropertyCategory typeName="C4" description="My Category 4" displayLabel="Category 4" priority="4" />
+                                </ECSchema>)xml")));
+
+    auto assertCategory = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, uint32_t priority)
+        {
+        PropertyCategoryCP cat = schema.GetPropertyCategoryCP(name);
+        ASSERT_TRUE(cat != nullptr) << name;
+        EXPECT_STREQ(name, cat->GetName().c_str()) << name;
+        EXPECT_EQ(priority, cat->GetPriority()) << name;
+        if (Utf8String::IsNullOrEmpty(displayLabel))
+            EXPECT_FALSE(cat->GetIsDisplayLabelDefined()) << name;
+        else
+            EXPECT_STREQ(displayLabel, cat->GetDisplayLabel().c_str()) << name;
+
+        if (Utf8String::IsNullOrEmpty(description))
+            description = "";
+
+        EXPECT_STREQ(description, cat->GetDescription().c_str()) << name;
+        };
+
+    {
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    assertCategory(*schema, "C1", "Category 1", "My Category 1", 1);
+    assertCategory(*schema, "C2", "Category 2", "My Category 2", 2);
+    assertCategory(*schema, "C3", "Category 3", "My Category 3", 3);
+    assertCategory(*schema, "C4", "Category 4", "My Category 4", 4);
+    }
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                        <PropertyCategory typeName="C1" description="My Category 1" displayLabel="Category 1" priority="1" />
+                                        <PropertyCategory typeName="C2" description="My Category 2" displayLabel="Category 2" priority="2" />
+                                        <PropertyCategory typeName="C4" description="My Category 4" displayLabel="Category 4" priority="4" />
+                                    </ECSchema>)xml"))) << "Deleting a category is not supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                        <PropertyCategory typeName="C1" description="My Category 1" displayLabel="Category 1" priority="1" />
+                                        <PropertyCategory typeName="C2" description="My Category 2" displayLabel="Category 2" priority="2" />
+                                        <PropertyCategory typeName="C3" description="My Category 3" displayLabel="Category 3" priority="3" />
+                                        <PropertyCategory typeName="C4" description="My Category 4" displayLabel="Category 4" priority="4" />
+                                        <PropertyCategory typeName="C5" description="My Category 5" displayLabel="Category 5" priority="5" />
+                                        <PropertyCategory typeName="C6" description="My Category 6" displayLabel="Category 6" priority="6" />
+                                    </ECSchema>)xml"))) << "Adding a category is supported";
+
+    {
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    assertCategory(*schema, "C1", "Category 1", "My Category 1", 1);
+    assertCategory(*schema, "C2", "Category 2", "My Category 2", 2);
+    assertCategory(*schema, "C3", "Category 3", "My Category 3", 3);
+    assertCategory(*schema, "C4", "Category 4", "My Category 4", 4);
+    assertCategory(*schema, "C5", "Category 5", "My Category 5", 5);
+    assertCategory(*schema, "C6", "Category 6", "My Category 6", 6);
+    }
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                        <PropertyCategory typeName="C1" displayLabel="Category 1" priority="1" />
+                                        <PropertyCategory typeName="C2" description="My Category 2" priority="2" />
+                                        <PropertyCategory typeName="C3" description="My nice Category 3" displayLabel="Category 3" priority="3" />
+                                        <PropertyCategory typeName="C4" description="My Category 4" displayLabel="Nice Category 4" priority="4" />
+                                        <PropertyCategory typeName="C5" description="My Category 5" displayLabel="Category 5" priority="50" />
+                                        <PropertyCategory typeName="C6" description="My Category 6" displayLabel="Category 6" />
+                                    </ECSchema>)xml"))) << "Modifying a category is supported";
+
+    {
+    ECSchemaCP schema = m_ecdb.Schemas().GetSchema("Schema1");
+    ASSERT_TRUE(schema != nullptr);
+
+    assertCategory(*schema, "C1", "Category 1", nullptr, 1);
+    assertCategory(*schema, "C2", nullptr, "My Category 2", 2);
+    assertCategory(*schema, "C3", "Category 3", "My nice Category 3", 3);
+    assertCategory(*schema, "C4", "Nice Category 4", "My Category 4", 4);
+    assertCategory(*schema, "C5", "Category 5", "My Category 5", 50);
+    //deleting the priority from the schema amounts to setting it to 0
+    assertCategory(*schema, "C6", "Category 6", "My Category 6", 0);
+    }
+
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -9201,74 +9470,309 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
         }
     }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                   Muhammad Hassan                     04/16
-    //+---------------+---------------+---------------+---------------+---------------+------
-    TEST_F(SchemaUpgradeTestFixture, UpdateClass_AddStructProperty)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad Hassan                     04/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UpdateClass_AddStructProperty)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "   <ECStructClass typeName='ST' modifier='None'>"
+        "       <ECProperty propertyName='S1' typeName='int' readOnly='false' />"
+        "       <ECProperty propertyName='S2' typeName='int' readOnly='false' />"
+        "       <ECProperty propertyName='S3' typeName='int' readOnly='false' />"
+        "       <ECProperty propertyName='S4' typeName='int' readOnly='false' />"
+        "       <ECProperty propertyName='S5' typeName='int' readOnly='false' />"
+        "   </ECStructClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "           <ShareColumns xmlns='ECDbMap.02.00'>"
+        "               <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
+        "               <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+        "           </ShareColumns>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "       <ECProperty propertyName='P2' typeName='int' />"
+        "       <ECProperty propertyName='P3' typeName='int' />"
+        "   </ECEntityClass>"
+        "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "   <ECStructClass typeName='ST' modifier='None'>"
+        "       <ECProperty propertyName='S1' typeName='int' readOnly='false' />"
+        "       <ECProperty propertyName='S2' typeName='int' readOnly='false' />"
+        "       <ECProperty propertyName='S3' typeName='int' readOnly='false' />"
+        "       <ECProperty propertyName='S4' typeName='int' readOnly='false' />"
+        "       <ECProperty propertyName='S5' typeName='int' readOnly='false' />"
+        "   </ECStructClass>"
+        "   <ECEntityClass typeName='Foo' modifier='None' >"
+        "       <ECCustomAttributes>"
+        "           <ClassMap xmlns='ECDbMap.02.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "           </ClassMap>"
+        "           <ShareColumns xmlns='ECDbMap.02.00'>"
+        "               <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
+        "               <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+        "           </ShareColumns>"
+        "       </ECCustomAttributes>"
+        "       <ECProperty propertyName='P1' typeName='int' />"
+        "       <ECProperty propertyName='P2' typeName='int' />"
+        "       <ECProperty propertyName='P3' typeName='int' />"
+        "       <ECStructProperty propertyName='S' typeName='ST'/>"
+        "   </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Adding StructProperty is supported");
+    OpenECDb(filePath);
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+/*TEST_F(SchemaUpgradeTestFixture, BackwardIncompatibleSchemaImport)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_BackwardIncompatibleSchemaImport.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml")));
+
+    auto assertImport = [this] (bool allowMajorSchemaChange, SchemaItem const& schema)
         {
-        SchemaItem schemaItem(
-            "<?xml version='1.0' encoding='utf-8'?>"
-            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-            "   <ECStructClass typeName='ST' modifier='None'>"
-            "       <ECProperty propertyName='S1' typeName='int' readOnly='false' />"
-            "       <ECProperty propertyName='S2' typeName='int' readOnly='false' />"
-            "       <ECProperty propertyName='S3' typeName='int' readOnly='false' />"
-            "       <ECProperty propertyName='S4' typeName='int' readOnly='false' />"
-            "       <ECProperty propertyName='S5' typeName='int' readOnly='false' />"
-            "   </ECStructClass>"
-            "   <ECEntityClass typeName='Foo' modifier='None' >"
-            "       <ECCustomAttributes>"
-            "           <ClassMap xmlns='ECDbMap.02.00'>"
-            "               <MapStrategy>TablePerHierarchy</MapStrategy>"
-            "           </ClassMap>"
-            "           <ShareColumns xmlns='ECDbMap.02.00'>"
-            "               <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
-            "               <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
-            "           </ShareColumns>"
-            "       </ECCustomAttributes>"
-            "       <ECProperty propertyName='P1' typeName='int' />"
-            "       <ECProperty propertyName='P2' typeName='int' />"
-            "       <ECProperty propertyName='P3' typeName='int' />"
-            "   </ECEntityClass>"
-            "</ECSchema>");
+        BentleyStatus stat = GetHelper().ImportSchema(schema, allowMajorSchemaChange ? SchemaManager::SchemaImportOptions::None : SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade);
+        EXPECT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
+        return stat;
+        };
 
-        ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    SchemaItem newSchema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                    <ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" >
+                                        <ECCustomAttributes>
+                                           <PropertyMap xmlns="ECDbMap.02.00">
+                                             <IsNullable>false</IsNullable>
+                                           </PropertyMap>
+                                        <ECCustomAttributes>
+                                    </ECProperty>
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml");
 
-        BeFileName filePath(m_ecdb.GetDbFileName());
-        m_ecdb.CloseDb();
+    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "IsNullable on existing property";
+    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "IsNullable on existing property";
 
-        Utf8CP editedSchemaXml =
-            "<?xml version='1.0' encoding='utf-8'?>"
-            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-            "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-            "   <ECStructClass typeName='ST' modifier='None'>"
-            "       <ECProperty propertyName='S1' typeName='int' readOnly='false' />"
-            "       <ECProperty propertyName='S2' typeName='int' readOnly='false' />"
-            "       <ECProperty propertyName='S3' typeName='int' readOnly='false' />"
-            "       <ECProperty propertyName='S4' typeName='int' readOnly='false' />"
-            "       <ECProperty propertyName='S5' typeName='int' readOnly='false' />"
-            "   </ECStructClass>"
-            "   <ECEntityClass typeName='Foo' modifier='None' >"
-            "       <ECCustomAttributes>"
-            "           <ClassMap xmlns='ECDbMap.02.00'>"
-            "               <MapStrategy>TablePerHierarchy</MapStrategy>"
-            "           </ClassMap>"
-            "           <ShareColumns xmlns='ECDbMap.02.00'>"
-            "               <MaxSharedColumnsBeforeOverflow>4</MaxSharedColumnsBeforeOverflow>"
-            "               <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
-            "           </ShareColumns>"
-            "       </ECCustomAttributes>"
-            "       <ECProperty propertyName='P1' typeName='int' />"
-            "       <ECProperty propertyName='P2' typeName='int' />"
-            "       <ECProperty propertyName='P3' typeName='int' />"
-            "       <ECStructProperty propertyName='S' typeName='ST'/>"
-            "   </ECEntityClass>"
-            "</ECSchema>";
+    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                    <ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent<BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" >
+                                        <ECCustomAttributes>
+                                           <PropertyMap xmlns="ECDbMap.02.00">
+                                             <IsNullable>false</IsNullable>
+                                           </PropertyMap>
+                                        <ECCustomAttributes>
+                                    </ECProperty>
+                                </ECEntityClass>
+                            </ECSchema>)xml");
 
-        m_updatedDbs.clear();
-        AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Adding StructProperty is supported");
-        OpenECDb(filePath);
-        ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
-        }
+    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "IsNullable on property on new subclass";
+    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "IsNullable on property on new subclass";
+
+
+    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                    <ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" >
+                                        <ECCustomAttributes>
+                                           <PropertyMap xmlns="ECDbMap.02.00">
+                                             <IsUnique>true</IsUnique>
+                                           </PropertyMap>
+                                        <ECCustomAttributes>
+                                    </ECProperty>
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "IsUnique on existing property";
+    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "IsUnique on existing property";
+
+    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                    <ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent<BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" >
+                                        <ECCustomAttributes>
+                                           <PropertyMap xmlns="ECDbMap.02.00">
+                                             <IsUnique>true</IsUnique>
+                                           </PropertyMap>
+                                        <ECCustomAttributes>
+                                    </ECProperty>
+                                </ECEntityClass>
+                            </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "IsUnique on property on new subclass";
+    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "IsUnique on property on new subclass";
+
+    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <DbIndexList xmlns="ECDbMap.02.00">
+                                            <Indexes>
+                                                <DbIndex>
+                                                    <IsUnique>true</IsUnique>
+                                                    <Properties>
+                                                        <string>Code</string>
+                                                    </Properties>
+                                                </DbIndex>
+                                            </Indexes>
+                                       </DbIndexList>
+                                    <ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "Unique index on existing property";
+    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "Unique index on existing property";
+
+    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                    <ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                   <ECCustomAttributes>
+                                       <DbIndexList xmlns="ECDbMap.02.00">
+                                            <Indexes>
+                                                <DbIndex>
+                                                    <IsUnique>true</IsUnique>
+                                                    <Properties>
+                                                        <string>NewProp</string>
+                                                    </Properties>
+                                                </DbIndex>
+                                            </Indexes>
+                                       </DbIndexList>
+                                    <ECCustomAttributes>
+                                    <BaseClass>Parent<BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "Unique index on property on new subclass";
+    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "Unique index on property on new subclass";
+
+    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                    <ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Child" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                    <ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="backward">
+                                        <ECCustomAttributes>
+                                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                                         <ECCustomAttributes>
+                                    </ECNavigationProperty>
+                                </ECEntityClass>
+                                <ECRelationshipClass typeName="ParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward" >
+                                    <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                                        <Class class="Parent" />
+                                    </Source>
+                                    <Target multiplicity="(0..1)" polymorphic="True"  roleLabel="is contained by">
+                                        <Class class="Child" />
+                                    </Target>
+                                 </ECRelationshipClass>
+                            </ECSchema>)xml");
+
+    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "Physical FK";
+    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "Physical FK";
+    }
+    */
 END_ECDBUNITTESTS_NAMESPACE

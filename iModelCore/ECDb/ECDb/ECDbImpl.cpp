@@ -12,6 +12,12 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                               Affan.Khan               03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDb::Impl::s_isInitalized = false;
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDb::Impl::OnDbCreated() const
@@ -473,6 +479,9 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, Utf8CP tableSpaceName, ECN:
 //static
 DbResult ECDb::Impl::InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors)
     {
+    if (s_isInitalized)
+        return BE_SQLITE_OK;
+    
     const DbResult stat = BeSQLiteLib::Initialize(ecdbTempDir, logSqliteErrors);
     if (stat != BE_SQLITE_OK)
         return stat;
@@ -488,6 +497,7 @@ DbResult ECDb::Impl::InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAs
         ECN::ECSchemaReadContext::Initialize(*hostAssetsDir);
         }
 
+    s_isInitalized = true;
     return BE_SQLITE_OK;
     }
 

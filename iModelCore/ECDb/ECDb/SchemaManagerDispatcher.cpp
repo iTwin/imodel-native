@@ -303,19 +303,20 @@ ClassMap const* SchemaManager::Dispatcher::GetClassMap(ECClassCR ecClass, Utf8CP
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaManager::Dispatcher::LoadDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const
+ECDerivedClassesList const* SchemaManager::Dispatcher::GetDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const
     {
     Iterable iterable = GetIterable(tableSpace);
     if (!iterable.IsValid())
-        return ERROR;
+        return nullptr;
 
     for (TableSpaceSchemaManager const* manager : iterable)
         {
-        if (SUCCESS == manager->LoadDerivedClasses(baseClass))
-            return SUCCESS;
+        ECDerivedClassesList const* subClasses = manager->GetDerivedClasses(baseClass);
+        if (subClasses != nullptr)
+            return subClasses;
         }
 
-    return ERROR;
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -432,16 +433,22 @@ ECSchemaPtr TableSpaceSchemaManager::LocateSchema(ECN::SchemaKeyR key, ECN::Sche
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TableSpaceSchemaManager::LoadDerivedClasses(ECN::ECClassCR baseClass) const
+ECDerivedClassesList const* TableSpaceSchemaManager::GetDerivedClasses(ECN::ECClassCR baseClass) const
     {
     ECClassId id = m_reader.GetClassId(baseClass);
     if (!id.IsValid())
         {
-        LOG.errorv("Cannot call SchemaManager::GetDerivedClasses on ECClass %s. The ECClass does not exist.", baseClass.GetFullName());
-        return ERROR;
+        LOG.errorv("SchemaManager::GetDerivedClasses failed for ECClass %s. The ECClass does not exist.", baseClass.GetFullName());
+        return nullptr;
         }
 
-    return m_reader.EnsureDerivedClassesExist(id);
+    if (SUCCESS != m_reader.EnsureDerivedClassesExist(id))
+        {
+        LOG.errorv("SchemaManager::GetDerivedClasses failed for ECClass %s. Its subclasses could not be loaded.", baseClass.GetFullName());
+        return nullptr;
+        }
+
+    return &baseClass.GetDerivedClasses();
     }
 
 //---------------------------------------------------------------------------------------
@@ -585,12 +592,6 @@ BentleyStatus MainSchemaManager::ImportSchemas(bvector<ECN::ECSchemaCP> const& s
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus MainSchemaManager::ImportSchemas(SchemaImportContext& ctx, bvector<ECSchemaCP> const& schemas, SchemaImportToken const* schemaImportToken) const
     {
-    if (ctx.GetOptions() == SchemaManager::SchemaImportOptions::Poisoning)
-        {
-        LOG.error("Failed to import ECSchemas. SchemaImportOption::Poisoning is not supported.");
-        return ERROR;
-        }
-
     Policy policy = PolicyManager::GetPolicy(SchemaImportPermissionPolicyAssertion(m_ecdb, schemaImportToken));
     if (!policy.IsSupported())
         {
@@ -728,11 +729,8 @@ BentleyStatus MainSchemaManager::PersistSchemas(SchemaImportContext& context, bv
     bvector<ECSchemaCP> primarySchemasOrderedByDependencies = Sort(primarySchemas);
     primarySchemas.clear(); // Just make sure no one tries to use it anymore
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
-    SchemaWriter schemaWriter(m_ecdb, context);
-    return schemaWriter.ImportSchemas(schemasToMap, primarySchemasOrderedByDependencies);
+    return SchemaWriter::ImportSchemas(schemasToMap, m_ecdb, context, primarySchemasOrderedByDependencies);
     }
-
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
@@ -771,7 +769,7 @@ BentleyStatus MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvector<EC
     PERFLOG_FINISH("ECDb", "Schema import> Create or update indexes");
 
     PERFLOG_START("ECDb", "Schema import> Purge orphan tables");
-    if (SUCCESS != PurgeOrphanTables())
+    if (SUCCESS != PurgeOrphanTables(ctx))
         {
         ClearCache();
         return ERROR;
@@ -791,14 +789,11 @@ BentleyStatus MainSchemaManager::MapSchemas(SchemaImportContext& ctx, bvector<EC
     }
 
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         09/2012
 //---------------------------------------------------------------------------------------
 BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
-    ctx.SetPhase(SchemaImportContext::Phase::MappingSchemas);
-
     // Identify root classes/relationship-classes
     std::set<ECClassCP> doneList;
     std::set<ECClassCP> rootClassSet;
@@ -828,7 +823,6 @@ BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<
 
     // Map mixin hierarchy before everything else. It does not map primary hierarchy and all classes map to virtual tables.
     PERFLOG_START("ECDb", "Schema import> Map mixins");
-    ctx.SetPhase(SchemaImportContext::Phase::MappingMixins);
     for (ECEntityClassCP mixin : rootMixins)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *mixin))
@@ -838,7 +832,6 @@ BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<
 
     // Starting with the root, recursively map the entire class hierarchy. 
     PERFLOG_START("ECDb", "Schema import> Map entity classes");
-    ctx.SetPhase(SchemaImportContext::Phase::MappingEntities);
     for (ECClassCP rootClass : rootClassList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootClass))
@@ -847,7 +840,6 @@ BentleyStatus MainSchemaManager::DoMapSchemas(SchemaImportContext& ctx, bvector<
     PERFLOG_FINISH("ECDb", "Schema import> Map entity classes");
 
     PERFLOG_START("ECDb", "Schema import> Map relationships");
-    ctx.SetPhase(SchemaImportContext::Phase::MappingRelationships);
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootRelationshipClass))
@@ -1130,7 +1122,7 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2016
 //---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus MainSchemaManager::PurgeOrphanTables() const
+BentleyStatus MainSchemaManager::PurgeOrphanTables(SchemaImportContext& ctx) const
     {
     //skip ExistingTable and NotMapped
     Statement stmt;
@@ -1177,7 +1169,7 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables() const
     if (tablesToDrop.empty())
         return SUCCESS;
 
-    if (!m_ecdb.GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport())
+    if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade))
         {
         Utf8String tableNames;
         bool isFirstTable = true;
@@ -1190,7 +1182,7 @@ BentleyStatus MainSchemaManager::PurgeOrphanTables() const
             isFirstTable = false;
             }
 
-        m_ecdb.GetImpl().Issues().ReportV("Failed to import schemas: it would change the database schema in a changeset-merging incompatible way. ECDb would have to delete these tables: %s", tableNames.c_str());
+        m_ecdb.GetImpl().Issues().ReportV("Failed to import schemas: it would change the database schema in a backwards incompatible way, so that older versions of the software could not work with the file anymore. ECDb would have to delete these tables: %s", tableNames.c_str());
         return ERROR;
         }
 
@@ -1341,7 +1333,11 @@ BentleyStatus MainSchemaManager::GetRelationshipConstraintClassMaps(SchemaImport
     if (!recursive)
         return SUCCESS;
 
-    for (ECClassCP subclass : m_ecdb.Schemas().GetDerivedClasses(ecClass))
+    ECDerivedClassesList const* subclasses = m_ecdb.Schemas().GetDerivedClassesInternal(ecClass);
+    if (subclasses == nullptr)
+        return ERROR;
+
+    for (ECClassCP subclass : *subclasses)
         {
         if (SUCCESS != GetRelationshipConstraintClassMaps(ctx, classMaps, *subclass, recursive))
             return ERROR;

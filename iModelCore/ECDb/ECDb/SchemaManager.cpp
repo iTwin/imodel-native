@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -72,10 +72,19 @@ ECClassId SchemaManager::GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR
 // @bsimethod                                 Krischan.Eberle                       12/13
 //---------------------------------------------------------------------------------------
 ECDerivedClassesList const& SchemaManager::GetDerivedClasses(ECClassCR ecClass, Utf8CP tableSpace) const 
-    { 
-    m_dispatcher->LoadDerivedClasses(ecClass, tableSpace); 
+    {
+    if (GetDerivedClassesInternal(ecClass, tableSpace) == nullptr)
+        {
+        BeAssert(false && "SchemaManager::GetDerivedClasses failed");
+        }
+
     return ecClass.GetDerivedClasses();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                       12/13
+//---------------------------------------------------------------------------------------
+ECDerivedClassesList const* SchemaManager::GetDerivedClassesInternal(ECClassCR ecClass, Utf8CP tableSpace) const { return m_dispatcher->GetDerivedClasses(ecClass, tableSpace); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    12/2015

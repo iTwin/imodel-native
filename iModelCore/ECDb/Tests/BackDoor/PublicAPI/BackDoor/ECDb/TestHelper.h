@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/TestHelper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,7 +47,7 @@ struct TestHelper final
 
         //! Imports the specified schema into this Test's ECDb
         //! Changes are committed in case of success, and rolled back in case of error
-        BentleyStatus ImportSchema(SchemaItem const&) const;
+        BentleyStatus ImportSchema(SchemaItem const&, SchemaManager::SchemaImportOptions options = SchemaManager::SchemaImportOptions::None) const;
         //! Imports the specified schemas into this Test's ECDb
         //! Changes are committed in case of success, and rolled back in case of error
         BentleyStatus ImportSchemas(std::vector<SchemaItem> const&) const;

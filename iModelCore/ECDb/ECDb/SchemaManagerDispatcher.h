@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SchemaManagerDispatcher.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,7 +42,6 @@ protected:
     BentleyStatus TryGetClassMap(ClassMap*&, ClassMapLoadContext&, ECN::ECClassCR) const;
     ClassMap* AddClassMap(std::unique_ptr<ClassMap>) const;
 
-
 public:
     TableSpaceSchemaManager(ECDbCR ecdb, DbTableSpace const& tableSpace) : m_ecdb(ecdb), m_tableSpace(tableSpace), m_reader(*this), m_dbSchema(*this), m_lightweightCache(*this) {}
     virtual ~TableSpaceSchemaManager() {}
@@ -58,7 +57,8 @@ public:
     ECN::ECClassId GetClassId(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetClassId(schemaNameOrAlias, className, mode); }
     ECN::ECClassId GetClassId(ECN::ECClassCR ecClass) const { return m_reader.GetClassId(ecClass); }
 
-    BentleyStatus LoadDerivedClasses(ECN::ECClassCR baseClass) const;
+    // returns nullptr in case of errors
+    ECN::ECDerivedClassesList const* GetDerivedClasses(ECN::ECClassCR baseClass) const;
 
     ECN::ECPropertyId GetPropertyId(ECN::ECPropertyCR prop) const { return m_reader.GetPropertyId(prop); }
 
@@ -105,7 +105,7 @@ private:
     BentleyStatus SaveDbSchema(SchemaImportContext&) const;
     BentleyStatus CreateOrUpdateRequiredTables() const;
     BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
-    BentleyStatus PurgeOrphanTables() const;
+    BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
 
     std::set<ClassMap const*> GetRelationshipConstraintClassMaps(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     BentleyStatus GetRelationshipConstraintClassMaps(SchemaImportContext&, std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
@@ -238,7 +238,8 @@ struct SchemaManager::Dispatcher final
         ClassMap const* GetClassMap(Utf8StringCR schemaNameOrAlias, Utf8StringCR className, SchemaLookupMode, Utf8CP tableSpace) const;
         ClassMap const* GetClassMap(ECN::ECClassCR, Utf8CP tableSpace) const;
 
-        BentleyStatus LoadDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const;
+        // returns nullptr in case of errors
+        ECN::ECDerivedClassesList const* GetDerivedClasses(ECN::ECClassCR baseClass, Utf8CP tableSpace) const;
 
         ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode, Utf8CP tableSpace) const;
         ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode, Utf8CP tableSpace) const;

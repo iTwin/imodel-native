@@ -20,16 +20,22 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static 
 BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery, MemberFunctionCallExp const* memberFunctionCallExp)
     {
-    //ECSQL-OPT: Following is a optimization that allow ECSQL to convert a polymorphic query to a none-polymorphic query (which is fast) if the class
-    //           queried has no dervied classes. Decision is taken independent of if class is sealed or not sealed.
+    // Turn a polymorphic query into a non-polymorphic query if the class is sealed or has no subclasses.
+    // This will speed up the query
     if (isPolymorphicQuery)
         {
         if (classMap.GetClass().GetClassModifier() == ECClassModifier::Sealed)
             isPolymorphicQuery = false;
-        else if (prepareContext.GetECDb().Schemas().GetDerivedClasses(classMap.GetClass(), classMap.GetPrimaryTable().GetTableSpace().GetName().c_str()).empty())
-            isPolymorphicQuery = false; //Convert a polymorphic query into a none-polymorphic query
+        else
+            {
+            ECDerivedClassesList const* subClasses = prepareContext.GetECDb().Schemas().GetDerivedClassesInternal(classMap.GetClass(), classMap.GetSchemaManager().GetTableSpace().GetName().c_str());
+            if (subClasses == nullptr)
+                return ERROR; // loading subclasses failed
+
+            if (subClasses->empty())
+                isPolymorphicQuery = false;
+            }
         }
-    //----------------------------------------------------------------------------------------------------------------------------------------------
 
     SelectFromViewContext ctx(prepareContext, classMap.GetSchemaManager(), isPolymorphicQuery, memberFunctionCallExp);
     if (memberFunctionCallExp == nullptr) 
@@ -370,7 +376,11 @@ BentleyStatus ViewGenerator::RenderMixinClassMap(bmap<Utf8String, bpair<DbTable 
                 ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
         }
 
-    for (ClassMap const* derivedClassMap : derivedClassMap.GetDerivedClassMaps())
+    Nullable<std::vector<ClassMap const*>> derivedClassMaps = derivedClassMap.GetDerivedClassMaps();
+    if (derivedClassMaps == nullptr)
+        return ERROR;
+
+    for (ClassMap const* derivedClassMap : derivedClassMaps.Value())
         if (RenderMixinClassMap(selectClauses, ctx, mixInClassMap, *derivedClassMap) != SUCCESS)
             return ERROR;
 

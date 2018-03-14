@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMap.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -604,19 +604,19 @@ IssueReporter const& ClassMap::Issues() const { return m_ecdb.GetImpl().Issues()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2015
 //------------------------------------------------------------------------------------------
-StorageDescription const& ClassMap::GetStorageDescription() const
-    {
-    return GetSchemaManager().GetLightweightCache().GetStorageDescription(*this);
-    }
+StorageDescription const& ClassMap::GetStorageDescription() const { return GetSchemaManager().GetLightweightCache().GetStorageDescription(*this); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2014
 //---------------------------------------------------------------------------------------
-std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
+Nullable<std::vector<ClassMap const*>> ClassMap::GetDerivedClassMaps() const
     {
-    ECDerivedClassesList const& derivedClasses = m_ecdb.Schemas().GetDerivedClasses(GetClass());
+    ECDerivedClassesList const* derivedClasses = m_ecdb.Schemas().GetDerivedClassesInternal(GetClass());
+    if (derivedClasses == nullptr)
+        return nullptr;
+
     std::vector<ClassMap const*> derivedClassMaps;
-    for (ECClassCP derivedClass : derivedClasses)
+    for (ECClassCP derivedClass : *derivedClasses)
         {
         if (ClassMap const* derivedClassMap = GetSchemaManager().GetClassMap(*derivedClass))
             derivedClassMaps.push_back(derivedClassMap);
@@ -624,7 +624,6 @@ std::vector<ClassMap const*> ClassMap::GetDerivedClassMaps() const
 
     return derivedClassMaps;
     }
-
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       04 / 2017
@@ -683,9 +682,15 @@ BentleyStatus ClassMap::SetOverflowTable(DbTable& overflowTable)
         ctx.EndSaving(*this);
         }
 
-    for (ClassMap const* derviedClassMap : GetDerivedClassMaps())
-        if (derviedClassMap)
-            const_cast<ClassMap*>(derviedClassMap)->SetOverflowTable(overflowTable);
+    Nullable<std::vector<ClassMap const*>> derivedClassMaps = GetDerivedClassMaps();
+    if (derivedClassMaps == nullptr)
+        return ERROR;
+
+    for (ClassMap const* derivedClassMap : derivedClassMaps.Value())
+        {
+        if (derivedClassMap != nullptr)
+            const_cast<ClassMap*>(derivedClassMap)->SetOverflowTable(overflowTable);
+        }
 
     return SUCCESS;
     }
