@@ -297,19 +297,15 @@ TEST_F(SchemaManagerTests, ImportToken)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaManagerTests, AllowChangesetMergingIncompatibleECSchemaImport)
+TEST_F(SchemaManagerTests, AllowMajorSchemaVersionChangeImport)
     {
-    auto assertImport = [this] (Utf8CP ecschemaXml, BeFileNameCR seedFilePath, std::pair<bool,bool> const& expectedToSucceed, Utf8CP scenario)
+    auto assertImport = [this] (Utf8CP ecschemaXml, std::pair<bool,bool> const& expectedToSucceed, Utf8CP scenario)
         {
-        ECDb ecdb;
-        ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_unrestricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-        
         BentleyStatus expectedStat = expectedToSucceed.first ? SUCCESS : ERROR;
-        ASSERT_EQ(expectedStat, TestHelper(ecdb).ImportSchema(SchemaItem(ecschemaXml))) << "SchemaImport into unrestricted ECDb failed unexpectedly for scenario " << scenario;
-        ecdb.CloseDb();
-
-        RestrictedSchemaImportECDb restrictedECDb(false, false);
-        ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_restricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+        {
+        ASSERT_EQ(expectedStat, GetHelper().ImportSchema(SchemaItem(ecschemaXml))) << "SchemaImport into unrestricted ECDb failed unexpectedly for scenario " << scenario;
+        }
+        m_ecdb.AbandonChanges();
 
         expectedStat = expectedToSucceed.second ? SUCCESS : ERROR;
         ASSERT_EQ(expectedStat, TestHelper(restrictedECDb).ImportSchema(SchemaItem(ecschemaXml))) << "SchemaImport into restricted ECDb. Expected to fail for scenario " << scenario;

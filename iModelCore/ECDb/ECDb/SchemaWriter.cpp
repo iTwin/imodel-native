@@ -664,7 +664,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
         return ERROR;
         }
 
-    Utf8String persistenceUnitStr = koq.GetPersistenceUnit().ToText();
+    Utf8String persistenceUnitStr = koq.GetPersistenceUnitDescriptor();
     BeAssert(!persistenceUnitStr.empty());
     if (BE_SQLITE_OK != stmt->BindText(5, persistenceUnitStr, Statement::MakeCopy::No))
         return ERROR;
