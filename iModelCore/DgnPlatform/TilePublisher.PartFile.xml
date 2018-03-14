@@ -8,12 +8,6 @@
         </Bindings>
     </Part>
 
-    <Part Name="CesiumJs" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
-        <Bindings>
-            <Directory SourceName="Delivery/TilePublisher/scripts" ProductDirectoryName="Assets" ProductSubDirectory="scripts" />
-        </Bindings>
-    </Part>
-
     <!-- Presentation rules for tile publisher -->
     <Part Name="TilePublisherAssets" BentleyBuildMakeFile="TilePublisher/Assets/TilePublisherAssets.mke">
         <Bindings>
@@ -22,7 +16,6 @@
     </Part>
 
     <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
-        <SubPart PartName="CesiumJs" />
         <SubPart PartName="TilePublisherPublicAPI" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
         <SubPart PartName="GeoCoordData"        PartFile="csmap"                Repository="libsrc-csmap"/>
