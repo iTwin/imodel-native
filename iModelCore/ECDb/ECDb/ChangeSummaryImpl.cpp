@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ChangeSummaryImpl.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -608,7 +608,7 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
     // Check if the other end was/is valid to determine if there's really a relationship that was inserted/updated/deleted
     ChangeIterator::ColumnMap const& otherEndColumnMap = endTableRelMap.m_relatedInstanceIdColumnMap;
     ECInstanceId oldOtherEndInstanceId, newOtherEndInstanceId;
-    rowEntry.GetSqlChange()->GetValueIds(oldOtherEndInstanceId, newOtherEndInstanceId, otherEndColumnMap.GetIndex());
+    rowEntry.GetSqlChange()->GetValueIds<ECInstanceId>(oldOtherEndInstanceId, newOtherEndInstanceId, otherEndColumnMap.GetIndex());
     if (!oldOtherEndInstanceId.IsValid() && !newOtherEndInstanceId.IsValid())
         return;
 
@@ -788,7 +788,7 @@ void ChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECIns
     BeAssert(instanceIdColumnIndex >= 0);
 
     ECInstanceId oldEndInstanceId, newEndInstanceId;
-    rowEntry.GetSqlChange()->GetValueIds(oldEndInstanceId, newEndInstanceId, instanceIdColumnIndex);
+    rowEntry.GetSqlChange()->GetValueIds<ECInstanceId>(oldEndInstanceId, newEndInstanceId, instanceIdColumnIndex);
 
     if (newEndInstanceId.IsValid())
         {

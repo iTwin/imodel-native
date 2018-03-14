@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ChangeIteratorImpl.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -185,6 +185,9 @@ struct ChangeIterator::SqlChange final
         SqlChange(SqlChange const&) = delete;
         SqlChange& operator=(SqlChange const&) = delete;
 
+        void GetValues(DbValue& oldValue, DbValue& newValue, int columnIndex) const;
+        DbValue GetValue(int columnIndex) const;
+
     public:
         explicit SqlChange(Changes::Change const& change);
 
@@ -195,10 +198,6 @@ struct ChangeIterator::SqlChange final
         int GetNCols() const { return m_nCols; }
         bool IsPrimaryKeyColumn(int index) const { return m_primaryKeyColumnIndices.find(index) != m_primaryKeyColumnIndices.end(); }
 
-        void GetValues(DbValue& oldValue, DbValue& newValue, int columnIndex) const; // TODO: Check if this can be deprecated
-        void GetValueIds(ECInstanceId& oldInstanceId, ECInstanceId& newInstanceId, int idColumnIndex) const; // TODO: Check if this can be deprecated
-        DbValue GetValue(int columnIndex) const; // TODO: Check if this can be deprecated
-
         template <class T_Id> T_Id GetValueId(int columnIndex) const
             {
             DbValue value = GetValue(columnIndex);
@@ -206,6 +205,21 @@ struct ChangeIterator::SqlChange final
                 return T_Id();
             return value.GetValueId<T_Id>();
             }
+
+        template <class T_Id> void GetValueIds(T_Id& oldId, T_Id& newId, int idColumnIndex) const
+            {
+            oldId = newId = T_Id();
+
+            DbValue oldValue(nullptr), newValue(nullptr);
+            GetValues(oldValue, newValue, idColumnIndex);
+
+            if (oldValue.IsValid() && !oldValue.IsNull())
+                oldId = oldValue.GetValueId<T_Id>();
+
+            if (newValue.IsValid() && !newValue.IsNull())
+                newId = newValue.GetValueId<T_Id>();
+            }
+
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

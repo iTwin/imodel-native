@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ChangeIteratorImpl.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -177,15 +177,34 @@ void ChangeIterator::RowEntry::InitPrimaryInstance()
 //---------------------------------------------------------------------------------------
 ECN::ECClassId ChangeIterator::RowEntry::GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId instanceId) const
     {
-    const DbOpcode dbOpcode = m_sqlChange->GetDbOpcode();
-    if (dbOpcode == DbOpcode::Insert || dbOpcode == DbOpcode::Delete)
-        return m_sqlChange->GetValueId<ECClassId>(m_tableMap->GetColumnIndexByName(classIdColumnName));
+    int classIdColumnIndex = m_tableMap->GetColumnIndexByName(classIdColumnName);
 
-    /* if (dbOpcode == DbOpcode::Update) */
+    ECClassId oldId, newId;
+    m_sqlChange->GetValueIds<ECClassId>(oldId, newId, classIdColumnIndex);
+
+    const DbOpcode dbOpcode = m_sqlChange->GetDbOpcode();
+
+    if (dbOpcode == DbOpcode::Insert)
+        {
+        BeAssert(newId.IsValid());
+        return newId;
+        }
+
+    if (dbOpcode == DbOpcode::Delete)
+        {
+        BeAssert(oldId.IsValid());
+        return oldId;
+        }
+
+    if (dbOpcode == DbOpcode::Update)
+        {
+        if (newId.IsValid()) return newId;
+        if (oldId.IsValid()) return oldId;
+        }
+    
+    // The class id entry hasn't been updated at all - get it from the database itself
     return DbUtilities::QueryRowClassId(m_ecdb, m_tableMap->GetTableName(), classIdColumnName, m_tableMap->GetIdColumn().GetName(), instanceId);
     }
-
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
@@ -731,27 +750,11 @@ void ChangeIterator::SqlChange::GetValues(DbValue& oldValue, DbValue& newValue, 
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-void ChangeIterator::SqlChange::GetValueIds(ECInstanceId& oldInstanceId, ECInstanceId& newInstanceId, int idColumnIndex) const
-    {
-    oldInstanceId = newInstanceId = ECInstanceId();
-
-    DbValue oldValue(nullptr), newValue(nullptr);
-    GetValues(oldValue, newValue, idColumnIndex);
-
-    if (oldValue.IsValid() && !oldValue.IsNull())
-        oldInstanceId = oldValue.GetValueId<ECInstanceId>();
-
-    if (newValue.IsValid() && !newValue.IsNull())
-        newInstanceId = newValue.GetValueId<ECInstanceId>();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 DbValue ChangeIterator::SqlChange::GetValue(int columnIndex) const
     {
     return GetChange().GetValue(columnIndex, (GetDbOpcode() == DbOpcode::Insert) ? Changes::Change::Stage::New : Changes::Change::Stage::Old);
     }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

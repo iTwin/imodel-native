@@ -2031,7 +2031,9 @@ TEST_F(ChangeSummaryTestFixture, SimpleWorkflowWithNavProp_MandatoryRelClassIdIs
     ASSERT_EQ(BE_SQLITE_OK, changeset.FromChangeTrack(tracker));
     //printf("Changeset: %s\r\n", changeset.ToJson(m_ecdb).ToString().c_str());
     ECInstanceKey changeSummaryKey;
+    BeTest::SetFailOnAssert(false);
     ASSERT_EQ(ERROR, m_ecdb.ExtractChangeSummary(changeSummaryKey, ChangeSetArg(changeset))) << "Expected to fail because RelClassId wasn't inserted along with Nav id";
+    BeTest::SetFailOnAssert(true);
     tracker.EndTracking();
     }
 
