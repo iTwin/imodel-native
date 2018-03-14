@@ -446,8 +446,10 @@ BentleyStatus   MaterialFactory::CreateTextureMap (Json::Value& mapJson, DwgGiMa
 
     mapJson[RENDER_MATERIAL_PatternOff] = !isOn;
     mapJson[RENDER_MATERIAL_PatternMapping] = static_cast<int> (this->GetMapMode(mapper));
+#ifdef REMOVED
     mapJson[RENDER_MATERIAL_Layer] = m_mapLayer;
     mapJson[RENDER_MATERIAL_AntialiasStrength] = 100;
+#endif
     mapJson[RENDER_MATERIAL_Antialiasing] = true;
 
     Transform   transform;
@@ -611,7 +613,9 @@ void            MaterialFactory::ConvertTranslucency ()
     {
     double  scale = m_dwgMaterial->GetTranslucence ();
 
+#ifdef REMOVED
     m_materialJson[RENDER_MATERIAL_Translucency] = scale;
+#endif
     m_materialJson[RENDER_MATERIAL_FlagHasTranslucencyColor] = false;
     }
 
@@ -656,6 +660,7 @@ void            MaterialFactory::ConvertAmbient ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            MaterialFactory::ConvertNormal ()
     {
+#ifdef RENDER_MATERIAL_MAP_Normal_REMOVED
     if (0 == (m_dwgMaterial->GetChannelFlags() & DwgDbMaterial::UseNormalMap))
         return;
 
@@ -670,6 +675,7 @@ void            MaterialFactory::ConvertNormal ()
         if (this->CreateTextureMap(mapJson, dwgMap, true) == BSISUCCESS)
             m_mapNodeJson[RENDER_MATERIAL_MAP_Normal] = mapJson;
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
