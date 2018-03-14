@@ -730,22 +730,36 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     koq->SetRelativeError(relError);
 
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
-    Formatting::FormatUnitSet fus;
-    if (SUCCESS != SchemaPersistenceHelper::ParseFormatUnitSetDescriptor(fus, GetECDb(), persUnitStr, *koq))
+
+    bool fileIsNewerThanSoftware = false;
+    {
+    ProfileVersion fileProfileVersion(0, 0, 0, 0);
+    if (BE_SQLITE_OK != ProfileManager::ReadProfileVersion(fileProfileVersion, GetECDb()))
+        {
+        BeAssert(false && "Could not read profile version of the file");
+        return ERROR;
+        }
+    if (fileProfileVersion > ProfileManager::GetExpectedVersion())
+        fileIsNewerThanSoftware = true;
+    }
+
+    Formatting::FormatUnitSet persistenceFus;
+    bool hasDummyUnit = false; // unused
+    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(persistenceFus, hasDummyUnit, persUnitStr, *koq, !fileIsNewerThanSoftware, !fileIsNewerThanSoftware))
         {
         LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit's FormatUnitSet descriptor '%s' could not be parsed.", koq->GetFullName(), persUnitStr);
         return ERROR;
         }
 
-    if (!koq->SetPersistenceUnit(fus))
+    if (!koq->SetPersistenceUnit(persistenceFus))
         {
-        BeAssert(!koq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
+        BeAssert(!koq->GetPersistenceUnit().HasProblem() && "KOQ Persistence Unit could not be added to the KOQ.");
         return ERROR;
         }
 
     if (!Utf8String::IsNullOrEmpty(presUnitsStr))
         {
-        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationUnits(*koq, GetECDb(), presUnitsStr))
+        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationUnits(*koq, GetECDb(), presUnitsStr, fileIsNewerThanSoftware))
             {
             LOG.errorv("Failed to read KindOfQuantity '%s'. One of its presentation units' FormatUnitSet descriptors could not be parsed: %s.", koq->GetFullName(), presUnitsStr);
             return ERROR;

@@ -521,7 +521,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQuantityR koq, ECDbCR ecdb, Utf8CP jsonStr)
+BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQuantityR koq, ECDbCR ecdb, Utf8CP jsonStr, bool fileIsNewerThanSoftware)
     {
     rapidjson::Document presUnitsJson;
     if (presUnitsJson.Parse<0>(jsonStr).HasParseError())
@@ -538,8 +538,16 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
         BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
 
         Formatting::FormatUnitSet fus;
-        if (SUCCESS != ParseFormatUnitSetDescriptor(fus, ecdb, presUnitJson.GetString(), koq))
+        bool hasDummyUnit = false;
+        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(fus, hasDummyUnit, presUnitJson.GetString(), koq, true, !fileIsNewerThanSoftware) ||
+            hasDummyUnit)
+            {
+            if (fileIsNewerThanSoftware)
+                continue; //drop presentation units if file uses EC3.2 or older
+
+            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName(), presUnitJson.GetString());
             return ERROR;
+            }
 
         if (!koq.AddPresentationUnit(fus))
             {
@@ -553,27 +561,5 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  03/2018
-//---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::ParseFormatUnitSetDescriptor(Formatting::FormatUnitSet& fus, ECDbCR ecdb, Utf8CP fusDescriptor, ECN::KindOfQuantityCR koq)
-    {
-    bool parseFusStrictly = true;
-    ProfileVersion fileProfileVersion(0, 0, 0, 0);
-    if (BE_SQLITE_OK != ProfileManager::ReadProfileVersion(fileProfileVersion, ecdb))
-        {
-        BeAssert(false && "Could not read profile version of the file");
-        return ERROR;
-        }
-
-    if (fileProfileVersion > ProfileManager::GetExpectedVersion())
-        parseFusStrictly = false;
-
-    bool hasDummyUnit = false; // unused
-    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(fus, hasDummyUnit, fusDescriptor, koq, parseFusStrictly, parseFusStrictly))
-        return ERROR;
-
-    return SUCCESS;
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

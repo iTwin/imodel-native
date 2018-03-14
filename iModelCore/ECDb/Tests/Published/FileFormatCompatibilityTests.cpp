@@ -1936,6 +1936,160 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_ECEnums)
     }
 
 //---------------------------------------------------------------------------------------
+// Tests that Units which are supported in EC3.2 are not supported yet in EC3.1 schemas.
+// @bsiclass                                     Krischan.Eberle                  03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, EC31KOQs)
+    {
+    //garbage units
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="garbage" presentationUnits="FT;IN;M" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="garbage(myformat)" presentationUnits="FT;IN;M" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="CM" presentationUnits="FT;Garbage;M" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="CM" presentationUnits="FT;Garbage(myFormat);M" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    //EC-compatible names (only possible in EC3.2, but not yet in EC3.1)
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="KM_PER_SEC" presentationUnits="M/SEC" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "EC3.1 can only handle ECnamed units if they are prefixed with the schema alias";
+
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="u:KM_PER_SEC" presentationUnits="M/SEC" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "EC3.1 can only EC named units";
+
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="u:KM_PER_SEC(DefaultReal)" presentationUnits="M/SEC" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "EC3.1 can only EC named units";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="KM/SEC" presentationUnits="M_PER_SEC" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "EC3.1 can only handle ECnamed units if they are prefixed with the schema alias";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="KM/SEC" presentationUnits="M_PER_SEC(DefaultReal)" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "EC3.1 can only handle ECnamed units if they are prefixed with the schema alias";
+
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="KM/SEC" presentationUnits="u:M_PER_SEC(DefaultReal)" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "EC3.1 can only EC named units";
+
+    //User defined units (only possible in EC3.2, but not yet in EC3.1)
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="MyUnit(defaultReal)" presentationUnits="M" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="myalias:MyUnit(defaultReal)" presentationUnits="M" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="MyUnit" presentationUnits="M" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="M" presentationUnits="MyUnit" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="M" presentationUnits="MyUnit(DefaultReal)" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKoq" persistenceUnit="M" presentationUnits="myalias:MyUnit(DefaultReal)" relativeError=".5"/>
+            <ECEntityClass typeName="Foo">
+               <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
+            </ECEntityClass>
+        </ECSchema>)xml")));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  03/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
@@ -1999,22 +2153,19 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
         return SUCCESS;
         };
 
-    auto getKoq = [this] ()
-        {
-        KindOfQuantityCP koq = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKoq");
-        EXPECT_TRUE(koq != nullptr);
-        return koq;
-        };
+    auto getKoq = [this] () { return m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "MyKoq");};
 
     auto getPropertyKoq = [this] ()
         {
         ECClassCP ecClass = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
-        EXPECT_TRUE(ecClass != nullptr);
+        if (ecClass == nullptr)
+            return (KindOfQuantityCP) nullptr;
+
         ECPropertyCP prop = ecClass->GetPropertyP("Prop");
-        EXPECT_TRUE(ecClass != nullptr);
-        KindOfQuantityCP koq = prop->GetKindOfQuantity();
-        EXPECT_TRUE(koq != nullptr);
-        return koq;
+        if (prop == nullptr)
+            return (KindOfQuantityCP) nullptr;
+
+        return prop->GetKindOfQuantity();
         };
 
     auto assertFus = [] (Formatting::FormatUnitSetCR fus, bool expectedIsValidUnit, Utf8CP expectedUnitName, Utf8CP expectedFusName)
@@ -2028,52 +2179,154 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     {
     ASSERT_EQ(SUCCESS, setEC32Fus("garbage(unknownFormat)", nullptr));
     KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultRealU");
+    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("garbage", nullptr));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultReal");
     EXPECT_TRUE(koq->GetPresentationUnitList().empty());
     }
 
     {
     ASSERT_EQ(SUCCESS, setEC32Fus("garbage(unknownFormat)", R"json(["CM","M"])json"));
     KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultRealU");
     EXPECT_TRUE(koq->GetPresentationUnitList().empty());
     }
 
     {
+    ASSERT_EQ(SUCCESS, setEC32Fus("garbage", R"json(["CM","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultReal");
+    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    }
+
+    {
     ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["CM","garbage(unknownFormat)"])json"));
     KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
-    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
+    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
     assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
-    assertFus(koq->GetPresentationUnitList().at(1), false, "garbage", "defaultRealU");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["CM","garbage"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["garbage(unknownFormat)","CM"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["garbage","CM"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
     }
 
     //User defined EC3.2 units
     {
     ASSERT_EQ(SUCCESS, setEC32Fus("myalias:myunit(myformat)", R"json(["myalias:mydisplayunit1(myformat)","myalias:mydisplayunit2(myotherformat)"])json"));
     KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), false, "myalias:myunit", "defaultRealU");
+    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("myunit(myformat)", R"json(["mydisplayunit1(myformat)","mydisplayunit2(myotherformat)"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), false, "myunit", "defaultRealU");
     EXPECT_TRUE(koq->GetPresentationUnitList().empty());
     }
 
     {
+    ASSERT_EQ(SUCCESS, setEC32Fus("myalias:myunit", R"json(["myalias:mydisplayunit1","myalias:mydisplayunit2"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), false, "myalias:myunit", "defaultReal");
+    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    }
+
+    {
     ASSERT_EQ(SUCCESS, setEC32Fus("CM", R"json(["myalias:myunit(myformat)","M"])json"));
     KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "CM", "defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "M", "defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("CM", R"json(["myalias:myunit","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "CM", "defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "M", "defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("CM", R"json(["KM","myalias:myunit(myformat)","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), true, "CM", "defaultReal");
     ASSERT_EQ(2, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "myunit", "defaultRealU");
-    assertFus(koq->GetPresentationUnitList().at(1), false, "M", "defaultReal");
+    assertFus(koq->GetPresentationUnitList().at(0), true, "KM", "defaultReal");
+    assertFus(koq->GetPresentationUnitList().at(1), true, "M", "defaultReal");
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, setEC32Fus("CM", R"json(["KM","myalias:myunit","M"])json"));
+    KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
+    assertFus(koq->GetPersistenceUnit(), true, "CM", "defaultReal");
+    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
+    assertFus(koq->GetPresentationUnitList().at(0), true, "KM", "defaultReal");
+    assertFus(koq->GetPresentationUnitList().at(1), true, "M", "defaultReal");
     }
 
     //standard units
     {
     ASSERT_EQ(SUCCESS, setEC32Fus("KM", nullptr));
     KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
     EXPECT_TRUE(koq->GetPresentationUnitList().empty());
@@ -2082,6 +2335,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     {
     ASSERT_EQ(SUCCESS, setEC32Fus("u:KM", nullptr));
     KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
     EXPECT_TRUE(koq->GetPresentationUnitList().empty());
@@ -2090,6 +2344,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     {
     ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["CM","M"])json"));
     KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
     ASSERT_EQ(2, koq->GetPresentationUnitList().size());
@@ -2100,7 +2355,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     {
     ASSERT_EQ(SUCCESS, setEC32Fus("u:KM", R"json(["u:CM","u:M"])json"));
     KindOfQuantityCP koq = getKoq();
-    EXPECT_EQ(koq, getPropertyKoq());
+    ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
     ASSERT_EQ(2, koq->GetPresentationUnitList().size());
@@ -2112,6 +2367,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     {
     ASSERT_EQ(SUCCESS, setEC32Fus("u:CM_PER_SEC", R"json(["u:M_PER_SEC"])json"));
     KindOfQuantityCP koq = getKoq();
+    ASSERT_TRUE(koq != nullptr);
+    EXPECT_EQ(koq, getPropertyKoq());
     assertFus(koq->GetPersistenceUnit(), true, "CM/SEC", "defaultReal");
     ASSERT_EQ(1, koq->GetPresentationUnitList().size());
     assertFus(koq->GetPresentationUnitList().at(0), true, "M/SEC", "defaultReal");
