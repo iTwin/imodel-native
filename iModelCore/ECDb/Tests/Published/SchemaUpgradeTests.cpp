@@ -37,10 +37,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
         //---------------------------------------------------------------------------------------
         // @bsimethod                                   Muhammad.Hassan                     06/16
         //+---------------+---------------+---------------+---------------+---------------+------
-        DbResult OpenBesqliteDb(Utf8CP dbPath)
-            {
-            return m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
-            }
+        DbResult OpenBesqliteDb(Utf8CP dbPath) { return m_ecdb.OpenBeSQLiteDb(dbPath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)); }
 
         //---------------------------------------------------------------------------------------
         // @bsimethod                                   Muhammad.Hassan                     06/16
@@ -49,7 +46,7 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             {
             //test 1: unrestricted ECDb
             ECDb ecdb;
-            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupdate_unrestricted.ecdb", seedFilePath));
+            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupgrade_unrestricted.ecdb", seedFilePath));
 
             bool expectedToSucceed = expectedToSucceedList.first;
             Utf8String assertMessageFull("[Unrestricted schema import] ");
@@ -66,21 +63,20 @@ struct SchemaUpgradeTestFixture : public ECDbTestFixture
             ecdb.CloseDb();
 
             //test 2: restricted ECDb
-            RestrictedSchemaImportECDb restrictedECDb(false);
-            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, "schemaupdate_changemergecomtapible.ecdb", seedFilePath));
+            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupgrade_disallowmajorschemachange.ecdb", seedFilePath));
 
             expectedToSucceed = expectedToSucceedList.second;
-            assertMessageFull.assign("[Changeset-merging compatible schema import] ").append(assertMessage);
+            assertMessageFull.assign("[schema import with disallowed major schema changes] ").append(assertMessage);
 
             if (expectedToSucceed)
-                ASSERT_EQ(SUCCESS, TestHelper(restrictedECDb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << assertMessageFull.c_str();
             else
-                ASSERT_EQ(ERROR, TestHelper(restrictedECDb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(ERROR, TestHelper(ecdb).ImportSchema(schemaItem, SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << assertMessageFull.c_str();
 
             if (expectedToSucceed)
-                m_updatedDbs.push_back((Utf8String) restrictedECDb.GetDbFileName());
+                m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
 
-            restrictedECDb.CloseDb();
+            ecdb.CloseDb();
             }
     };
 
@@ -1695,7 +1691,7 @@ TEST_F(SchemaUpgradeTestFixture, AddDeleteVirtualColumns)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaItem, filePath, {true, true}, "Addition or deletion of virtual column");
+    AssertSchemaUpdate(editedSchemaItem, filePath, {true, false}, "Addition or deletion of virtual column");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -2823,7 +2819,7 @@ TEST_F(SchemaUpgradeTestFixture, Add_Delete_ECProperty_ShareColumns)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add Delete Property mapped to shared column");
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Add Delete Property mapped to shared column");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -4959,7 +4955,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteSubclassOfRelationshipConstraintConstrain
         "     </ECRelationshipClass>"
         "</ECSchema>";
 
-    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, true}, "Deleting subclass of ECRel ConstraintClass");
+    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, false}, "Deleting subclass of ECRel ConstraintClass");
     }
 
 //---------------------------------------------------------------------------------------
@@ -5049,7 +5045,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteConcreteImplementationOfAbstractConstrain
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>";
-    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, true}, "delete subclass of abstract rel constraint class");
+    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, false}, "delete subclass of abstract rel constraint class");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -5490,7 +5486,7 @@ TEST_F(SchemaUpgradeTestFixture, Add_Class_NavigationProperty_RelationshipClass)
 
     Utf8CP schemaWithNavProperty=
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName='A'>"
         "        <ECProperty propertyName='PA' typeName='int' />"
         "    </ECEntityClass>"
@@ -5549,7 +5545,7 @@ TEST_F(SchemaUpgradeTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppo
 
     SchemaItem schemaWithDeletedBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass0' modifier='None' />"
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "   <ECEntityClass typeName='Sub' modifier='None' >"
@@ -5559,7 +5555,7 @@ TEST_F(SchemaUpgradeTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppo
 
     SchemaItem schemaWithModifedBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass0' modifier='None' />"
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "   <ECEntityClass typeName='Sub' modifier='None' >"
@@ -5570,7 +5566,7 @@ TEST_F(SchemaUpgradeTestFixture, ValidateModifingAddingDeletingBaseClassNotSuppo
 
     SchemaItem schemaWithNewBaseClass(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass0' modifier='None' />"
         "   <ECEntityClass typeName='TestClass' modifier='None' />"
         "   <ECEntityClass typeName='Sub' modifier='None' >"
@@ -6674,7 +6670,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteECCustomAttributeClass_Simple)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(deleteECCustomAttribute, filePath, {true, true}, "Deleting a ECCustomAttributeClass");
+    AssertSchemaUpdate(deleteECCustomAttribute, filePath, {true, false}, "Deleting a ECCustomAttributeClass");
     }
 
 //---------------------------------------------------------------------------------------
@@ -7273,7 +7269,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECArrayProperty)
 
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
         "                    displayLabel='MyKindOfQuantity' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
@@ -7324,7 +7320,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
 
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
         "                    displayLabel='MyKindOfQuantity' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
