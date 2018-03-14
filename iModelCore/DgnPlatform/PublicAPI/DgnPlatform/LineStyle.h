@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/LineStyle.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -338,7 +338,7 @@ public:
     virtual bool        _IsBySegment() const {return false;}
     virtual bool        _HasLineCodes() const {return false;}
     virtual bool        _IsContinuousOrSingleDash() const {return false;}
-    virtual double      _GetMaxWidth ()       const {return 0.0;}
+    virtual double      _GetMaxWidth () const override {return 0.0;}
     virtual bool        _IsAffectedByWidth (bool currentStatusOnly) const {return false;}
     virtual bool        _ContainsComponent (LsComponentP other) const {return other == this;}
     virtual bool        _HasUniformFullWidth (double *pWidth) const  {if (pWidth) *pWidth=0.0; return false;}

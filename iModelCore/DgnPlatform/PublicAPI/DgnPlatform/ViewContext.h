@@ -30,6 +30,7 @@ struct ILineStyleComponent
 {
     virtual bool _IsContinuous() const = 0;
     virtual bool _HasWidth() const = 0;
+    virtual double _GetMaxWidth() const = 0;
     virtual double _GetLength() const = 0;
     virtual StatusInt _StrokeLineString(LineStyleContextR, Render::LineStyleSymbR, DPoint3dCP, int nPts, bool isClosed) const = 0;
     virtual StatusInt _StrokeLineString2d(LineStyleContextR, Render::LineStyleSymbR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
@@ -46,6 +47,8 @@ struct ILineStyle
     virtual ILineStyleComponent const* _GetComponent() const = 0;
     virtual bool _IsSnappable() const = 0;
     virtual Render::Texture* _GetTexture(double& textureWidth, ViewContextR, Render::GeometryParamsCR, bool createGeometryTexture) = 0;
+    double GetMaxWidth () const { return nullptr == _GetComponent() ? 0.0 : _GetComponent()->_GetMaxWidth(); }
+    double GetLength () const { return nullptr == _GetComponent() ? 0.0 : _GetComponent()->_GetLength(); }
 };
 
 //=======================================================================================

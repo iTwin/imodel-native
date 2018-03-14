@@ -364,7 +364,6 @@ struct TileContext : NullContext
     enum class Result { Success, NoGeometry, Aborted };
 private:
     IFacetOptionsR                  m_facetOptions;
-    mutable IFacetOptionsPtr        m_lsStrokerOptions;
     RootR                           m_root;
     GeometryList&                   m_geometries;
     DRange3d                        m_range;
@@ -422,6 +421,7 @@ public:
     bool Is3d() const { return m_root.Is3d(); }
 
     double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonalSquared; }
+    double GetTolerance() const { return m_tolerance; }
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any bits of geometry with range smaller than roughly half a pixel...
@@ -432,29 +432,6 @@ public:
     size_t GetGeometryCount() const { return m_geometries.size(); }
     void TruncateGeometryList(size_t maxSize) { m_geometries.resize(maxSize); m_geometries.MarkIncomplete(); }
 
-    IFacetOptionsPtr GetLineStyleStrokerOptions(LineStyleSymbCR lsSymb) const
-        {
-        if (!lsSymb.GetUseStroker())
-            return nullptr;
-
-        // Only stroke if line width at least 5 pixels...
-        double pixelSize = m_tolerance;
-        double maxWidth = lsSymb.GetStyleWidth();
-        constexpr double pixelThreshold = 5.0;
-
-        if (0.0 != pixelSize && maxWidth / pixelSize < pixelThreshold)
-            return nullptr;
-
-        if (m_lsStrokerOptions.IsNull())
-            {
-            // NB: During geometry collection, tolerance is generally set for leaf node
-            // We don't apply facet options tolerances until we convert the geometry to meshes/strokes
-            m_lsStrokerOptions = IFacetOptions::CreateForCurves();
-            m_lsStrokerOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
-            }
-
-        return m_lsStrokerOptions;
-        }
 
     DgnElementId GetCurrentElementId() const { return m_curElemId; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
@@ -562,12 +539,25 @@ GraphicPtr TileBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
+* @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& options)
+bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR lsSymb, IFacetOptionsPtr& options)
     {
-    options = m_context.GetLineStyleStrokerOptions(symb);
-    return options.IsValid();
+    if (!lsSymb.GetUseStroker())
+        return false;
+
+    // We need to stroke if either the stroke length or width exceeds tolerance...
+    ILineStyleCP    lineStyle;
+    double          maxDimension = (nullptr == (lineStyle = lsSymb.GetILineStyle())) ? 0.0 : std::max(lineStyle->GetMaxWidth(), lineStyle->GetLength());
+    constexpr   double  s_strokeLineStylePixels = 5.0;
+
+    if (maxDimension > s_strokeLineStylePixels * m_context.GetTolerance())
+        {
+        options = &m_context.GetFacetOptions();
+        return true;
+        }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
