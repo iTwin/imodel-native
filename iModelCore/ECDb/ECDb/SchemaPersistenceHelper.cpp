@@ -678,7 +678,7 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
     for (rapidjson::Value const& presUnitJson : presUnitsJson.GetArray())
         {
         BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
-        if (!koq.AddPresentationUnit(presUnitJson.GetString()))
+        if (ECObjectsStatus::Success != koq.AddPresentationUnit(presUnitJson.GetString()))
             return ERROR;
 
         BeAssert(!koq.GetPresentationUnitList().back().HasProblem() && "KOQ PresentationUnit could not be read. Its format is invalid");
