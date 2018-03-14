@@ -2885,7 +2885,7 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveSkirt(uint64_t clipID)
     if (skirt.size() == 0) return true;
     DRange3d extent =  DRange3d::From(skirt[0][0]);
     for (auto& vec : skirt) extent.Extend(vec, nullptr);
-    m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
+    m_scmIndexPtr->GetClipRegistry()->DeleteSkirt(clipID);
 
 	Transform t = Transform::FromIdentity();
 	if (IsCesium3DTiles()) t = GetReprojectionTransform();
