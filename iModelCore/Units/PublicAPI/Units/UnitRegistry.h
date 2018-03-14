@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
+/*__PUBLISH_SECTION_START__*/
 #include <Units/Units.h>
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
@@ -29,8 +30,7 @@ private:
     UnitRegistry();
     UnitRegistry(const UnitRegistry& rhs) = delete;
     UnitRegistry & operator= (const UnitRegistry& rhs) = delete;
-    
-    // TODO: Remove
+
     // The Default methods below are used to populate the UnitRegistry with the definitions that were previously
     // added to the registry and should be phased out in place of User defined definitions inside of an ECSchema.
     void AddDefaultPhenomena();

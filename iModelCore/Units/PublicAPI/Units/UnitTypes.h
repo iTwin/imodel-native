@@ -83,7 +83,7 @@ friend struct UnitRegistry;
 private:
     Utf8String m_name;
 
-    // Lifecycle is managed by a IUnitsContext.
+    // Do not allow copies or assignments.
     UnitSystem() = delete;
     UnitSystem(UnitSystemCR system) = delete;
     UnitSystemR operator=(UnitSystemCR unit) = delete;
@@ -196,7 +196,7 @@ private:
 
     Unit() :UnitsSymbol(), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(true), m_dummyUnit(false) {}
 
-    // Lifecycle is managed by a IUnitsContext.
+    // Do not allow copies or assignments.
     Unit(UnitCR unit) = delete;
     UnitR operator=(UnitCR unit) = delete;
 
