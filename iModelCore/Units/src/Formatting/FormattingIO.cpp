@@ -25,9 +25,40 @@ StdFormatSetP StdFormatSet::Set()
         {
         set = new StdFormatSet();
         set->StdInit();
-        set->CustomInit();
         }
     return set;
+    }
+
+// Specialized "Constructor" to replace the now removed constructor in NumericFormatSpec.
+NumericFormatSpec CreateNewNumericFormatSpec(PresentationType presentationType, ShowSignOption signOption, FormatTraits formatTraits, size_t const precision, Utf8CP uomSeparator = nullptr)
+    {
+    NumericFormatSpec nfs;
+
+    // Replacement for NumericFormatSpec::Init
+    nfs.SetRoundingFactor(0.0);
+    nfs.SetPresentationType(presentationType);
+    nfs.SetSignOption(signOption);
+    nfs.SetFormatTraits(formatTraits);
+    nfs.SetFractionalBarType(FractionBarType::Diagonal);
+    if (PresentationType::Fractional == presentationType)
+    {
+        nfs.SetDecimalPrecision(FormatConstant::DefaultDecimalPrecision());
+        nfs.SetFractionaPrecision(Utils::FractionalPrecisionByDenominator(precision));
+    }
+    else
+    {
+        nfs.SetDecimalPrecision(Utils::DecimalPrecisionByIndex(precision));
+        nfs.SetFractionaPrecision(FormatConstant::DefaultFractionalPrecision());
+    }
+    nfs.SetDecimalSeparator(FormatConstant::FPV_DecimalSeparator());
+    nfs.SetThousandSeparator(FormatConstant::FPV_ThousandSeparator());
+    nfs.SetUomSeparator(FormatConstant::BlankString());
+    nfs.SetStopSeparator('+');
+    nfs.SetMinWidth(0);
+
+    if (uomSeparator)
+        nfs.SetUomSeparator(uomSeparator);
+    return nfs;
     }
 
 //---------------------------------------------------------------------------------------
@@ -35,49 +66,10 @@ StdFormatSetP StdFormatSet::Set()
 //---------------------------------------------------------------------------------------
 size_t StdFormatSet::StdInit()
     {
-    // Specialized "Constructor" to replace the now removed constructor in NumericFormatSpec.
-    static auto const CreateNewNumericFormatSpec = [](
-        PresentationType presentationType,
-        ShowSignOption signOption,
-        FormatTraits formatTraits,
-        size_t const precision,
-        Utf8CP uomSeparator = nullptr
-    ) -> NumericFormatSpec
-        {
-        NumericFormatSpec nfs;
-
-        // Replacement for NumericFormatSpec::Init
-        nfs.SetRoundingFactor(0.0);
-        nfs.SetPresentationType(presentationType);
-        nfs.SetSignOption(signOption);
-        nfs.SetFormatTraits(formatTraits);
-        nfs.SetFractionalBarType(FractionBarType::Diagonal);
-        if (PresentationType::Fractional == presentationType)
-            {
-            nfs.SetDecimalPrecision(FormatConstant::DefaultDecimalPrecision());
-            nfs.SetFractionaPrecision(Utils::FractionalPrecisionByDenominator(precision));
-            }
-        else
-            {
-            nfs.SetDecimalPrecision(Utils::DecimalPrecisionByIndex(precision));
-            nfs.SetFractionaPrecision(FormatConstant::DefaultFractionalPrecision());
-            }
-        nfs.SetDecimalSeparator(FormatConstant::FPV_DecimalSeparator());
-        nfs.SetThousandSeparator(FormatConstant::FPV_ThousandSeparator());
-        nfs.SetUomSeparator(FormatConstant::BlankString());
-        nfs.SetStopSeparator('+');
-        nfs.SetMinWidth(0);
-
-        if (uomSeparator)
-            nfs.SetUomSeparator(uomSeparator);
-        return nfs;
-        };
-
     m_formatSet.clear();
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
     FormatTraits traitsU = FormatConstant::UnitizedFormatTraits();
-    //AddFormat("DefaultReal", CreateNewNumericFormatSpec( PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()), "real");
-    AddFormat(FormatConstant::DefaultFormatName(), NumericFormatSpec::DefaultFormat());
+    AddFormat("DefaultReal", NumericFormatSpec::DefaultFormat());
     AddFormat("DefaultRealU", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, FormatConstant::DefaultDecimalPrecisionIndex()));
     AddFormat("Real2", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 2));
     AddFormat("Real3", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, 3));
@@ -148,9 +140,24 @@ size_t StdFormatSet::StdInit()
     AddFormat("Fractional32U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 64));
     AddFormat("Fractional128U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 128));
 
-    BEU::UnitCP arcDeg = m_unitsRegistry->LookupUnit("ARC_DEG");
-    BEU::UnitCP arcMinute = m_unitsRegistry->LookupUnit("ARC_MINUTE");
-    BEU::UnitCP arcSecond = m_unitsRegistry->LookupUnit("ARC_SECOND");
+    size_t s = m_formatSet.size();
+    return s;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------------------------------------------------------------------------------
+void StdFormatSet::CompositeSpecsInit(BEU::IUnitsContextCP unitContext)
+    {
+    if (nullptr == unitContext)
+        return;
+
+    FormatTraits traits = FormatConstant::DefaultFormatTraits();
+    FormatTraits traitsU = FormatConstant::UnitizedFormatTraits();
+
+    BEU::UnitCP arcDeg = unitContext->LookupUnit("ARC_DEG");
+    BEU::UnitCP arcMinute = unitContext->LookupUnit("ARC_MINUTE");
+    BEU::UnitCP arcSecond = unitContext->LookupUnit("ARC_SECOND");
 
     CompositeValueSpecP cvs = new CompositeValueSpec(arcDeg, arcMinute, arcSecond, nullptr);
     cvs->SetUnitLabels("\xC2\xB0", u8"'", u8"\"");
@@ -160,11 +167,11 @@ size_t StdFormatSet::StdInit()
     cvs->SetUnitLabels("\xC2\xB0", u8"'");
     AddFormat("AngleDM8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs, "dm8");
 
-    BEU::UnitCP mi = m_unitsRegistry->LookupUnit("MILE");
-    BEU::UnitCP yrd = m_unitsRegistry->LookupUnit("YRD");
-    BEU::UnitCP ft = m_unitsRegistry->LookupUnit("FT");
-    BEU::UnitCP in = m_unitsRegistry->LookupUnit("IN");
-    BEU::UnitCP meter = m_unitsRegistry->LookupUnit("M");
+    BEU::UnitCP mi = unitContext->LookupUnit("MILE");
+    BEU::UnitCP yrd = unitContext->LookupUnit("YRD");
+    BEU::UnitCP ft = unitContext->LookupUnit("FT");
+    BEU::UnitCP in = unitContext->LookupUnit("IN");
+    BEU::UnitCP meter = unitContext->LookupUnit("M");
 
     cvs = new CompositeValueSpec(mi, yrd, ft, in);
     cvs->SetUnitLabels("mile(s)", "yrd(s)", "'", "\"");
@@ -200,8 +207,9 @@ size_t StdFormatSet::StdInit()
     AddFormat("DecimalDeg4", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()), *cvs, "decimalDeg4");
 
     cvs = new CompositeValueSpec(ft);
+
     cvs->SetUnitLabels("'");
-    stop = CreateNewNumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2, FormatConstant::EmptyString());
+    NumericFormatSpec stop = CreateNewNumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2, FormatConstant::EmptyString());
     stop.SetMinWidth(2);
     AddFormat("StationFt2", stop, *cvs, "stationFt2");
 
@@ -211,35 +219,33 @@ size_t StdFormatSet::StdInit()
     stop.SetMinWidth(4);
     AddFormat("StationM4", stop, *cvs, "stationM4");
 
-    size_t s = m_formatSet.size();
-    return s;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod
-//---------------------------------------------------------------------------------------
-void StdFormatSet::CustomInit()
-    {
     // Adds trailZeroes to "Stop100-2u"
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2uz\", \"SpecName\" : \"Stop100-2uz\", \"SpecType\" : \"numeric\"}");
+    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2uz\", \"SpecName\" : \"Stop100-2uz\", \"SpecType\" : \"numeric\"}",
+        *unitContext);
     
     // Adds trailZeroes to "Stop100-2"
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-2z\", \"SpecName\" : \"Stop100-2-2z\", \"SpecType\" : \"numeric\"}");
+    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-2z\", \"SpecName\" : \"Stop100-2-2z\", \"SpecType\" : \"numeric\"}",
+        *unitContext);
 
     // "Stop1000-2-3z"
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 3, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-3z\", \"SpecName\" : \"Stop1000-2-3z\", \"SpecType\" : \"numeric\"}");
+    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 3, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-3z\", \"SpecName\" : \"Stop1000-2-3z\", \"SpecType\" : \"numeric\"}",
+        *unitContext);
 
     // "hms"
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"hour(s)\", \"unitName\" : \"HR\"}, \"MiddleUnit\" : {\"unitLabel\":\"min\", \"unitName\" : \"MIN\"}, \"MinorUnit\" : {\"unitLabel\":\"sec\", \"unitName\" : \"S\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"hms\", \"SpecName\" : \"HMS\", \"SpecType\" : \"composite\"}");
+    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"hour(s)\", \"unitName\" : \"HR\"}, \"MiddleUnit\" : {\"unitLabel\":\"min\", \"unitName\" : \"MIN\"}, \"MinorUnit\" : {\"unitLabel\":\"sec\", \"unitName\" : \"S\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"hms\", \"SpecName\" : \"HMS\", \"SpecType\" : \"composite\"}",
+        *unitContext);
     
     // Duplicate of "dms", just different name.
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":1, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms\", \"SpecName\" : \"CAngleDMS\", \"SpecType\" : \"composite\"}");
+    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":1, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms\", \"SpecName\" : \"CAngleDMS\", \"SpecType\" : \"composite\"}",
+        *unitContext);
 
     // Duplicate of "dms8", just different name.
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms8\", \"SpecName\" : \"CAngleDMS8\", \"SpecType\" : \"composite\"}");
+    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms8\", \"SpecName\" : \"CAngleDMS8\", \"SpecType\" : \"composite\"}",
+        *unitContext);
 
     // Duplicate of "dm8", just different name.
-    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdm8\", \"SpecName\" : \"CAngleDM8\", \"SpecType\" : \"composite\"}");
+    AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdm8\", \"SpecName\" : \"CAngleDM8\", \"SpecType\" : \"composite\"}",
+        *unitContext);
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

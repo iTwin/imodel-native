@@ -877,20 +877,18 @@ struct FormatUnitSet
 struct StdFormatSet
     {
 private:
-    // This is going to be used only during testing
-    BEU::IUnitsContextCP m_unitsRegistry;
-
     bvector<NamedFormatSpecCP> m_formatSet;    // core + app
     bvector<FormatUnitSetCP> m_fusSet;
     FormatProblemDetail m_problem; 
 
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP);
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias = nullptr); 
-    NumericFormatSpecCP AddFormat(Utf8CP jsonString);
-    NamedFormatSpecCP AddNamedFormat(Utf8CP jsonString);
+    NumericFormatSpecCP AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
+    NamedFormatSpecCP AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
 
     size_t StdInit();
-    void CustomInit();
+
+    
     StdFormatSet() { m_problem = FormatProblemDetail(); }
     static StdFormatSetP Set();
     UNITS_EXPORT static bool IsFormatDefined(Utf8CP name);
@@ -898,7 +896,10 @@ private:
     bool HasDuplicate(Utf8CP name, FormatUnitSetCP * fusP);
 
 public:
-    //static StdFormatSetP GetStdSet() { return Set(); }
+    // This is temporary since this whole method is going away, but the IUnitsContext is provided to resolve all the names needed to create
+    // the standard set of Composite specs.
+    void CompositeSpecsInit(BEU::IUnitsContextCP unitContext);
+
     UNITS_EXPORT static NumericFormatSpecCP DefaultDecimal();
     static NamedFormatSpecCP DefaultFormatSpec() { return FindFormatSpec(FormatConstant::DefaultFormatName()); }
     static size_t GetFormatSetSize() { return Set()->m_formatSet.size(); }
@@ -934,12 +935,6 @@ public:
     //! @return A pointer to the newly created FormatUnitSet if successful; otherwise, nullptr.
     UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP descriptor, Utf8CP fusName);
 
-    //! Creates a new NamedFormatSpec with the provided JSON string representation of a NamedFormatSpec.
-    //! @param[in] jsonString string representation of the NamedFormatSpec to be created.
-    //! @param[out] problem Contains the problem code from adding the format defined in the JSON string.
-    //! @return pointer to the newly created NamedFormatSpec if successful; otherwise, nullptr.
-    UNITS_EXPORT static NamedFormatSpecCP AddFormat(Utf8CP jsonString, FormatProblemDetailR problem);
-
     //! Gets the FUS from this StdFormatSet.
     //! @param[in] name Name of the FUS to retrieve.
     //! @return A pointer to the FormatUnitSet if found in this set, nullptr otherwise.
@@ -948,8 +943,6 @@ public:
     //! Whether or not the StdFormatSet has a problem.
     //! @return true if the Set has a problem; false, otherwise.
     static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
-    //! Adds the provided IUnitContext to the StdFormatSet.
-    static void AddUnitContext(BEU::IUnitsContextCP context) {Set()->m_unitsRegistry = context;}
     };
 
 struct QuantityFormatting

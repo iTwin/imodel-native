@@ -1444,9 +1444,9 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
-NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
+NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context)
     {
-    NamedFormatSpecCP nfs = AddNamedFormat(jsonString);
+    NamedFormatSpecCP nfs = AddNamedFormat(jsonString, context);
     if (nullptr == nfs)
         return nullptr;
     return nfs->GetNumericSpec();
@@ -1455,11 +1455,11 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString)
+NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context)
     {
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
-    NamedFormatSpecP nfs = new NamedFormatSpec(jval, m_unitsRegistry);
+    NamedFormatSpecP nfs = new NamedFormatSpec(jval, &context);
     if (nullptr == nfs)
         return nullptr;
     Utf8String tval = jval.ToString();
@@ -1657,22 +1657,6 @@ FormatUnitSetCP StdFormatSet::AddFUS(Utf8CP formatName, BEU::UnitCP unit, Utf8CP
     fusP->SetFusName(fusName);
     Set()->m_fusSet.push_back(fusP);
     return Set()->m_fusSet.back();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-// static
-NamedFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString, FormatProblemDetailR problem)
-    {
-    StdFormatSetP sp = Set();
-    sp->ResetProblemCode();
-    auto nfs = sp->AddNamedFormat(jsonString);
-    problem.Reset();
-    if (sp->HasProblem())
-        problem.UpdateProblemCode(sp->GetProblemCode());
-
-    return nfs;
     }
 
 //----------------------------------------------------------------------------------------
