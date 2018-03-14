@@ -996,7 +996,7 @@ void Sheet::Attachment::Root::SetState(uint32_t depth, State state)
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view)
-  : T_Super(db, DgnModelId(), Transform::FromIdentity(), nullptr, nullptr),
+  : T_Super(db, DgnModelId(), /*is3d=*/false, Transform::FromIdentity(), nullptr, nullptr),
     m_attachmentId(attach.GetElementId()), m_viewport(&viewport), m_sheetController(sheetController)
     {
     m_viewport->SetupFromViewController();

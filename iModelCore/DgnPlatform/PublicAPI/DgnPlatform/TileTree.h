@@ -343,6 +343,7 @@ protected:
     bool m_pickable = false;
     bool m_ignoreChanges = false;
     bool m_haveDisplayTransform = false;
+    bool m_is3d;
     mutable std::set<TileLoadStatePtr, TileLoadState::PtrComparator> m_activeLoads;
     DgnDbR m_db;
     DgnModelId m_modelId;
@@ -374,6 +375,8 @@ protected:
     void UpdateRange(DirtyRangesCR dirty);
     void InvalidateDamagedTiles();
     bvector<TileCPtr> SelectTiles(DrawArgsR args);
+
+    Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Utf8CP rootResource, Dgn::Render::SystemP);
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys, BeDuration partialTimeout);
     void RequestTiles(MissingNodesCR, BeDuration partialTimeout);
@@ -452,6 +455,9 @@ public:
     virtual void _OnProjectExtentsChanged(AxisAlignedBox3dCR newExtents) { }
     void SetIgnoreChanges(bool ignore); //!< @private
     void SetDisplayTransform(TransformCP tf); //!< @private
+
+    bool Is3d() const { return m_is3d; }
+    bool Is2d() const { return !Is3d(); }
 };
 
 //=======================================================================================
@@ -653,7 +659,7 @@ struct TileArgs
     TileArgs(TransformCR location, RootR root, ClipVectorCP clip) : m_location(location), m_root(root), m_clip(clip) {}
     TransformCR GetLocation() const {return m_location;}
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
-    double GetTileRadius(TileCR tile) const {DRange3d range=tile.GetRange(); m_location.Multiply(&range.low, 2); return 0.5 * range.low.Distance(range.high);}
+    DGNPLATFORM_EXPORT double GetTileRadius(TileCR) const;
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
 };
 
