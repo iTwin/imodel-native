@@ -1012,20 +1012,28 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
         newKoq->SetDisplayLabel(displayLabel);
 
     newKoq->SetDescription(description);
+    newKoq->SetRelativeError(relError);
 
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
-    if (!newKoq->SetPersistenceUnit(persUnitStr))
+
+    const uint32_t originalECXmlVersionMajor = newKoq->GetSchema().GetOriginalECXmlVersionMajor();
+    const uint32_t originalECXmlVersionMinor = newKoq->GetSchema().GetOriginalECXmlVersionMinor();
+    ECUnitCP unit = nullptr;
+    Formatting::NamedFormatSpecCP format = nullptr;
+    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(unit, format, persUnitStr, *newKoq, originalECXmlVersionMajor, originalECXmlVersionMinor) ||
+        !newKoq->SetPersistenceUnit(*unit, format))
         {
-        BeAssert(false && "KOQ Persistence Unit could not be deserialized correctly. It has an invalid format");
+        LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit's FormatUnitSet descriptor '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitStr);
         return ERROR;
         }
-
-    newKoq->SetRelativeError(relError);
 
     if (!Utf8String::IsNullOrEmpty(presUnitsStr))
         {
         if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationUnits(*newKoq, presUnitsStr))
+            {
+            LOG.errorv("Failed to read KindOfQuantity '%s'. One of its presentation units' FormatUnitSet descriptors could not be parsed: %s.", koq->GetFullName().c_str(), presUnitsStr);
             return ERROR;
+            }
         }
 
     //cache the koq

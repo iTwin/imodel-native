@@ -70,7 +70,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
         {
         if (isAbstract && baseClass->GetClassModifier() == ECClassModifier::None)
             {
-            if (ctx.GetOptions() == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
+            if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues))
                 {
                 //in legacy mode we log all issues as warning, so do not return on first issue
                 LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: An abstract class must not have a non-abstract base class.",
@@ -92,7 +92,7 @@ bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& 
         ECEntityClassCP entityBaseClass = baseClass->GetEntityClassCP();
         if (entityBaseClass == nullptr || !entityBaseClass->IsMixin())
             {
-            if (ctx.GetOptions() == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues && ecClass.IsEntityClass())
+            if (Enum::Contains(ctx.GetOptions(), SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues))
                 {
                 //in legacy mode entity class multi-inheritance must be supported, but  not for other class types
                 LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: Multi-inheritance is not supported. Use mixins instead.",

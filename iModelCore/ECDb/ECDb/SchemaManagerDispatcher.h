@@ -109,7 +109,7 @@ private:
     BentleyStatus SaveDbSchema(SchemaImportContext&) const;
     BentleyStatus CreateOrUpdateRequiredTables() const;
     BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
-    BentleyStatus PurgeOrphanTables() const;
+    BentleyStatus PurgeOrphanTables(SchemaImportContext&) const;
 
     std::set<ClassMap const*> GetRelationshipConstraintClassMaps(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
     BentleyStatus GetRelationshipConstraintClassMaps(SchemaImportContext&, std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;

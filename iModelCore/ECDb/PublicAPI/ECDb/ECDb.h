@@ -97,17 +97,15 @@ public:
         private:
             bool m_requiresECCrudWriteToken = false;
             bool m_requiresECSchemaImportToken = false;
-            bool m_allowChangesetMergingIncompatibleSchemaImport = true;
 
         public:
 #if !defined (DOCUMENTATION_GENERATOR)
             //not inlined as ctors are only needed internally
             Settings();
-            Settings(bool requiresECCrudWriteToken, bool m_requiresECSchemaImportToken, bool allowChangesetMergingIncompatibleSchemaImport);
+            Settings(bool requiresECCrudWriteToken, bool m_requiresECSchemaImportToken);
 #endif
             bool RequiresECCrudWriteToken() const { return m_requiresECCrudWriteToken; }
             bool RequiresECSchemaImportToken() const { return m_requiresECSchemaImportToken; }
-            bool AllowChangesetMergingIncompatibleSchemaImport() const { return m_allowChangesetMergingIncompatibleSchemaImport; }
         };
 
     struct SettingsManager final
@@ -121,7 +119,7 @@ public:
 #if !defined (DOCUMENTATION_GENERATOR)
         //not inlined as ctors are only needed internally
         SettingsManager();
-        void ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
+        void ApplySettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken);
 #endif
         ECDB_EXPORT ~SettingsManager();
 
@@ -190,7 +188,7 @@ private:
 protected:
     //! To be called during construction of the ECDb subclass.
     //This is only a separate method because DgnDb is not a direct subclass of ECDb, but of RefCounted<ECDb>. So DgnDb's ctor cannot call ECDb's ctor.
-    ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport);
+    ECDB_EXPORT void ApplyECDbSettings(bool requireECCrudWriteToken, bool requireECSchemaImportToken);
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;

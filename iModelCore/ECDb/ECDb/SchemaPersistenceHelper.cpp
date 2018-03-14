@@ -675,16 +675,24 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
 
     BeAssert(presUnitsJson.IsArray());
 
+    const uint32_t originalECXmlVersionMajor = koq.GetSchema().GetOriginalECXmlVersionMajor();
+    const uint32_t originalECXmlVersionMinor = koq.GetSchema().GetOriginalECXmlVersionMinor();
     for (rapidjson::Value const& presUnitJson : presUnitsJson.GetArray())
         {
         BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
-        if (ECObjectsStatus::Success != koq.AddPresentationUnit(presUnitJson.GetString()))
-            return ERROR;
 
-        BeAssert(!koq.GetPresentationUnitList().back().HasProblem() && "KOQ PresentationUnit could not be read. Its format is invalid");
+        ECUnitCP unit = nullptr;
+        Formatting::NamedFormatSpecCP format = nullptr;
+        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(unit, format, presUnitJson.GetString(), koq, originalECXmlVersionMajor, originalECXmlVersionMinor) ||
+            ECObjectsStatus::Success != koq.AddPresentationUnit(*unit, format))
+            {
+            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), presUnitJson.GetString());
+            return ERROR;
+            }
         }
 
     return SUCCESS;
     }
+
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
