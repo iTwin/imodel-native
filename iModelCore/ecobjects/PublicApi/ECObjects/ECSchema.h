@@ -1500,7 +1500,7 @@ public:
     ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
     //! Gets the Unit of measurement used for persisting the information
     Formatting::FormatUnitSetCR GetPersistenceUnit() const {return m_persistenceFUS;}
-    ECOBJECTS_EXPORT Utf8String GetPersistenceUnitDescriptor() const;
+    Utf8String GetPersistenceUnitDescriptor() const { return GetFUSDescriptor(m_persistenceFUS, GetSchema()); }
 
     //! Sets the default presentation Unit of this KindOfQuantity
     //! @param[in]  value  The new value to apply
@@ -1548,6 +1548,8 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
+
+    ECOBJECTS_EXPORT static Utf8String GetFUSDescriptor(Formatting::FormatUnitSetCR, ECSchemaCR koqSchema);
 
     //! Given a FUS descriptor string, with format {unitName}({formatName}), it will be parsed and used to populate the unit and format.
     //!

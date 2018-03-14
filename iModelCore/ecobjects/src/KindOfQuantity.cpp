@@ -187,25 +187,6 @@ bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSp
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-Utf8String KindOfQuantity::GetPersistenceUnitDescriptor() const
-    {
-    Utf8String descriptor = "";
-    if (nullptr != m_persistenceFUS.GetUnit())
-        descriptor += static_cast<ECUnitCP>(m_persistenceFUS.GetUnit())->GetQualifiedName(GetSchema()).c_str();
-
-    if (nullptr != m_persistenceFUS.GetNamedFormatSpec())
-        {
-        descriptor += "(";
-        descriptor += m_persistenceFUS.GetNamedFormatSpec()->GetName();
-        descriptor += ")";
-        }
-
-    return descriptor;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
 bool KindOfQuantity::SetDefaultPresentationUnit(Utf8StringCR fusDescriptor)
     {
     ECUnitCP unit;
@@ -286,10 +267,8 @@ Utf8String KindOfQuantity::GetPresentationUnitDescriptor() const
         {
         if (!first)
             descriptor += ";";
-        descriptor += static_cast<ECUnitCP>(fus.GetUnit())->GetQualifiedName(GetSchema()).c_str();
-        descriptor += "(";
-        descriptor += fus.GetNamedFormatSpec()->GetName();
-        descriptor += ")";
+
+        descriptor.append(GetFUSDescriptor(fus, GetSchema()));
         first = false;
         }
 
@@ -502,6 +481,22 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             }
         }
     return SchemaReadStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                 03/2018
+//--------------------------------------------------------------------------------------
+//static
+Utf8String KindOfQuantity::GetFUSDescriptor(Formatting::FormatUnitSetCR fus, ECSchemaCR koqSchema)
+    {
+    Utf8String descriptor = "";
+    if (nullptr != fus.GetUnit())
+        descriptor = static_cast<ECUnitCP>(fus.GetUnit())->GetQualifiedName(koqSchema).c_str();
+
+    if (nullptr != fus.GetNamedFormatSpec())
+        descriptor.append("(").append(fus.GetNamedFormatSpec()->GetName()).append(")");
+
+    return descriptor;
     }
 
 //--------------------------------------------------------------------------------------
