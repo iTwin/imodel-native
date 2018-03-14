@@ -453,6 +453,10 @@ public:
     //! @note It is up to the caller to keep the GeometrySource in memory by holding onto a DgnElementPtr, etc. until done iterating.
     DGNPLATFORM_EXPORT GeometryCollection(GeometrySourceCR source);
 
+    //! Create a Json::Value that represents the GeometryStream from this GeometryCollection.
+    //! @param[in] opts options for customizing the value.
+    DGNPLATFORM_EXPORT Json::Value ToJson(JsonValueCR opts = Json::Value()) const;
+
 }; // GeometryCollection
 
 typedef RefCountedPtr<GeometryBuilder> GeometryBuilderPtr;
@@ -548,6 +552,7 @@ private:
 
     bool                        m_appearanceChanged = false;
     bool                        m_appearanceModified = false;
+    bool                        m_subCategoryChanged = false;
     bool                        m_havePlacement = false;
     bool                        m_isPartCreate = false;
     bool                        m_is3d = false;
@@ -677,6 +682,18 @@ public:
     //!       the element is really located at the origin.
     //!       The supplied GeometrySource is soley used to query information, it does not need to be the same GeometrySource that is modified by Finish.
     DGNPLATFORM_EXPORT static GeometryBuilderPtr Create(GeometrySourceCR);
+
+    //! Updates DgnGeometryPart's GeometryStream from json value.
+    //! @param[in] part DgnGeometryPart to update.
+    //! @param[in] value GeometryStream json value.
+    //! @param[in] opts options for update.
+    DGNPLATFORM_EXPORT static bool UpdateFromJson(DgnGeometryPartR part, JsonValueCR value, JsonValueCR opts = Json::Value());
+
+    //! Updates GeometrySource's GeometryStream from json value.
+    //! @param[in] source GeometrySource to update.
+    //! @param[in] value GeometryStream json value.
+    //! @param[in] opts options for update.
+    DGNPLATFORM_EXPORT static bool UpdateFromJson(GeometrySourceR source, JsonValueCR value, JsonValueCR opts = Json::Value());
 
 }; // GeometryBuilder
 
