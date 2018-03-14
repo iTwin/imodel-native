@@ -267,8 +267,7 @@ public: bool TryParse (JsonValueCR source, bvector<IGeometryPtr> &geometry)
 bool IModelJson::TryIModelJsonValueToGeometry (JsonValueCR value, bvector<IGeometryPtr> &geometry)
     {
     BeCGIModelJsonValueReader reader;
-    reader.TryParse (value, geometry);
-    return false;
+    return reader.TryParse (value, geometry);
     }
 
 bool IModelJson::TryIModelJsonStringToGeometry (Utf8StringCR string, bvector<IGeometryPtr> &geometry)
