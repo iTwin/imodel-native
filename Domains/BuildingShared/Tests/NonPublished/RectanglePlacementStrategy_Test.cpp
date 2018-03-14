@@ -31,11 +31,8 @@ TEST_F(RectanglePlacementStrategyTestFixture, SecondKeyPointSetsRotation)
     sut->AddDynamicKeyPoint({2,0,0});
     sut->AddKeyPoint({1,1,0});
 
-    RotMatrix expectedRotation;
-    expectedRotation.InitRotationFromVectorToVector(DVec3d::From(1, 1, 0), DVec3d::From(0, 1, 0));
     RotMatrix actualRotation;
     ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(RectanglePlacementStrategy::prop_Rotation(), actualRotation));
-    ASSERT_TRUE(actualRotation.IsEqual(expectedRotation));
     }
 
 //--------------------------------------------------------------------------------------
@@ -76,4 +73,45 @@ TEST_F(RectanglePlacementStrategyTestFixture, PopKeyPoint)
     ASSERT_FALSE(sut->GetKeyPoints().empty());
     sut->PopKeyPoint();
     ASSERT_TRUE(sut->GetKeyPoints().empty());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RectanglePlacementStrategyTestFixture, TryGetProperty_Rotation_0degree)
+    {
+    RectanglePlacementStrategyPtr sut = RectanglePlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,0,0});
+
+    RotMatrix expectedRotation = RotMatrix::FromIdentity();
+    RotMatrix actualRotation;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(RectanglePlacementStrategy::prop_Rotation(), actualRotation));
+    ASSERT_TRUE(actualRotation.IsEqual(expectedRotation));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RectanglePlacementStrategyTestFixture, TryGetProperty_Rotation_RotationPointAt45DegreeFromXAxis)
+    {
+    RectanglePlacementStrategyPtr sut = RectanglePlacementStrategy::Create();
+    ASSERT_TRUE(sut.IsValid());
+
+    sut->AddKeyPoint({0,0,0});
+    sut->AddKeyPoint({1,1,0});
+
+    double angleDegrees = -45;
+    double angleRadians = Angle::DegreesToRadians(angleDegrees);
+    RotMatrix expectedRotation = RotMatrix::FromRowValues(
+        cos(angleRadians), -sin(angleRadians), 0,
+        sin(angleRadians), cos(angleRadians), 0,
+        0, 0, 1
+    );
+
+    RotMatrix actualRotation;
+    ASSERT_EQ(BentleyStatus::SUCCESS, sut->TryGetProperty(RectanglePlacementStrategy::prop_Rotation(), actualRotation));
+    ASSERT_TRUE(actualRotation.IsEqual(expectedRotation));
     }

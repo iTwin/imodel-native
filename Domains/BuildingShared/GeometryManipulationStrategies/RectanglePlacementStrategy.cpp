@@ -56,12 +56,16 @@ BentleyStatus RectanglePlacementStrategy::_TryGetProperty
     if (0 == strcmp(key, prop_Rotation()))
         {
         bvector<DPoint3d> points = m_manipulationStrategy->GetKeyPoints();
+        
+        RotMatrix tmp;
         if (m_dynamicRotationPointSet)
-            value.InitRotationFromVectorToVector(m_dynamicRotationPoint - points[0], DVec3d::From(0.0, 1.0, 0.0));
+            tmp.InitFrom1Vector(m_dynamicRotationPoint - points.front(), 0, true);
         else if (m_rotationPointSet)
-            value.InitRotationFromVectorToVector(m_rotationPoint - points[0], DVec3d::From(0.0, 1.0, 0.0));
+            tmp.InitFrom1Vector(m_rotationPoint - points.front(), 0, true);
         else
             return BentleyStatus::ERROR;
+        
+        value.InitFrom(Transform::From(tmp).ValidatedInverse());
         return BentleyStatus::SUCCESS;
         }
 
