@@ -685,6 +685,10 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
         return SchemaStatus::Success;
         }
 
+    //always disallow major schema upgrades for domain schema imports. Major schema upgrades are only allowed across software generations
+    //which will most likely not be an automatic process anyways.
+    importOptions |= SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade;
+
     DgnDbR dgndb = GetDgnDb();
     if (dgndb.IsReadonly())
         {
@@ -701,7 +705,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
     if (dgndb.Txns().HasLocalChanges())
         {
         // The dgnv8converter generates changes to the be_EmbedFile table just prior to importing a generated schema. Don't reject the schema just for that.
-        if (SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues != importOptions)
+        if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) != SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
             {
             BeAssert(false && "Cannot upgrade schemas when there are local changes. Commit any outstanding changes, then create and finish/abandon a revision to flush the TxnTable");
             return SchemaStatus::DbHasLocalChanges;
@@ -740,7 +744,7 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
 
     if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken()))
         {
-        if (SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues == importOptions)
+        if ((importOptions & SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues) == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
             {
             LOG.errorv("Failed to import legacy V8 schemas"); 
             }
