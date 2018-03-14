@@ -17,7 +17,6 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="Delivery\TilePublisher\scripts\**\*.*" target="Assets\scripts\" />
         <file src="PublicAPI\**\*.*"                      target="include\" />        
         <file src="VendorAPI\**\*.*"                      target="include\" />
         <file src="SubParts\Assemblies\crunchB02.dll"     target="lib\native\crunchB02.dll" />
