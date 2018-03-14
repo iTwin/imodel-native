@@ -405,7 +405,11 @@ protected:
     AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
-
+    bool _AnyPointVisible(DPoint3dCP pts, int nPts, double tolerance) override
+        {
+        DRange3d range = DRange3d::From(pts, nPts);
+        return range.IntersectsWith(m_range);
+        }
 public:
     TileContext(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, LoadContextCR loadContext)
         : TileContext(geometries, root, range, facetOptions, transformFromDgn, tolerance, tolerance, loadContext) { }
@@ -1168,7 +1172,7 @@ TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, "", &system),
-    m_name(model.GetName()), m_is3d(model.Is3dModel()),
+    m_name(model.GetName()),
 #if defined(CACHE_LARGE_GEOMETRY)
     m_cacheGeometry(m_is3d)
 #else
@@ -1209,10 +1213,6 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         RangeAccumulator accum(range, model.Is2dModel());
         if (!accum.Accumulate(*model.GetRangeIndex()))
             range = DRange3d::From(DPoint3d::FromZero());
-
-
-        // Temp Fix to avoid endless subdivision as we are not subdividing in Z...
-        range.low.z = range.high.z = 0.0;
 
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }
@@ -1474,7 +1474,7 @@ bool Root::WantCacheGeometry(double rangeDiagSq) const
     if (0.0 == diag)
         return false;
 
-    BeAssert(m_is3d); // we only bother caching for 3d...want rangeRatio relative to actual range, not expanded range
+    BeAssert(Is3d()); // we only bother caching for 3d...want rangeRatio relative to actual range, not expanded range
     diag /= s_spatialRangeMultiplier;
     return rangeDiagSq / diag >= rangeRatio;
     }

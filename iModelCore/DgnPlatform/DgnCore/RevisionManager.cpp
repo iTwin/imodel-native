@@ -446,6 +446,77 @@ Utf8CP GetConflictCauseDescription(ChangeSet::ConflictCause cause)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String formatOldValue(Statement& stmt)
+    {
+    switch (stmt.GetColumnType(0))
+        {
+        case DbValueType::IntegerVal:
+            return Utf8PrintfString("%" PRId64, stmt.GetValueInt64(0));
+
+        case DbValueType::FloatVal:
+            return Utf8PrintfString("%lg", stmt.GetValueDouble(0));
+
+        case DbValueType::TextVal:
+            return Utf8PrintfString("\"%s\"", stmt.GetValueText(0));
+
+        case DbValueType::NullVal:
+            return "null";
+        }
+
+    return "?";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void dumpCurrentValues(DgnDbCR db, Changes::Change iter, Utf8CP tableName)
+    {
+    bvector<Utf8String> columnNames;
+    db.GetColumns(columnNames, tableName);
+
+    Byte* pcols = nullptr;
+    int npcols = 0;
+    iter.GetPrimaryKeyColumns(&pcols, &npcols);
+    
+    int64_t pk = 0;
+    int pki = 0;
+    for (int i = 0; i <= npcols; ++i)
+        {
+        if (pcols[i] == 0)
+            continue;
+
+        pk = iter.GetValue(i, Changes::Change::Stage::Old).GetValueInt64();
+        pki = i;
+        break;
+        }
+
+    for (int i = 0; i <= npcols; ++i)
+        {
+        if (pcols[i] > 0)
+            continue;
+
+        if (!iter.GetValue(i, Changes::Change::Stage::Old).IsValid()
+         && !iter.GetValue(i, Changes::Change::Stage::New).IsValid())
+            continue;   // this col was not changed
+
+        Statement stmt;
+        stmt.Prepare(db, Utf8PrintfString("SELECT %s from %s WHERE %s=%lld", 
+                                                  columnNames[i].c_str(),
+                                                          tableName, 
+                                                                   columnNames[pki].c_str(),
+                                                                      pk).c_str());
+        if (BE_SQLITE_ROW != stmt.Step())
+            return; // The row is not found. This must be a NOT_FOUND conflict, i.e., there is no current row with this Id.
+            
+        Utf8String oldVal = formatOldValue(stmt);
+
+        LOG.infov(Utf8PrintfString("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str()).c_str());
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
@@ -464,6 +535,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         LOG.infov("------------------------------------------------------------------");
         LOG.infov("Conflict detected - Cause: %s", GetConflictCauseDescription(cause));
         iter.Dump(dgndb, false, 1);
+        dumpCurrentValues(dgndb, iter, tableName);
         }
 
     if (cause == ChangeSet::ConflictCause::NotFound)
@@ -491,14 +563,8 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
         return ChangeSet::ConflictResolution::Abort; 
         }
 
-    auto control = dgndb.GetOptimisticConcurrencyControl();
-    if (nullptr != control)
-        {
-        return control->_OnConflict(dgndb, cause, iter);
-        }
-
     /*
-     * We ALWAYS accept the incoming revision in cases of conflicts:
+     * We ALWAYS(*) accept the incoming revision in cases of conflicts:
      *
      * + In a briefcase with no local changes, the state of a row in the Db (i.e., the final state of a previous revision) 
      *   may not exactly match the initial state of the incoming revision. This will cause a conflict.
@@ -519,6 +585,18 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
      *
      * + Also see comments in TxnManager::MergeDataChangesInRevision()
      */
+
+    if (const_cast<DgnDbR>(dgndb).Txns().HasLocalChanges())
+        {
+        // (*) Actually, if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
+        // (We don't call the control in the case where there are no local changes. As explained above, we always want the incoming changes in that case.)
+        auto control = dgndb.GetOptimisticConcurrencyControl();
+        if (nullptr != control)
+            {
+            return control->_OnConflict(dgndb, cause, iter);
+            }
+        }
+
     LOG.infov("Conflicting resolved by replacing the existing entry with the change");
     return ChangeSet::ConflictResolution::Replace;
     }
@@ -691,6 +769,8 @@ BeFileName DgnRevision::BuildRevisionChangesPathname(Utf8String revisionId)
 //---------------------------------------------------------------------------------------
 void DgnRevision::Dump(DgnDbCR dgndb) const
     {
+// Don't log "sensitive" information in production builds.
+#if !defined(PRG)
     LOG.infov("Id : %s", m_id.c_str());
     LOG.infov("ParentId : %s", m_parentId.c_str());
     LOG.infov("Initial ParentId : %s", m_initialParentId.c_str());
@@ -713,6 +793,7 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
         dbSchemaChangeSet.Dump("DDL: ");
 
     fs.Dump("ChangeSet:\n", dgndb, false, 0);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
