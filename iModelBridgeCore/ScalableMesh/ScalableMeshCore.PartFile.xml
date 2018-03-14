@@ -64,9 +64,10 @@
         </Bindings>
     </Part>-->
 
-  <Part Name="ScalableMeshCoreLib" BMakeFile="ScalableMeshCoreLib_Vancouver.mke">
+  <Part Name="ScalableMeshCore" BMakeFile="ScalableMeshCore_Vancouver.mke">
     <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
     <SubPart PartName="Acute3d"        PartFile="DgnDisplay"                                  Repository="DgnDisplay"/>
+    <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
     <SubPart PartName="FreeImage"       PartFile="${SrcBsiCommon}CvsPartfiles/freeimage" Repository="Bin-FreeImage"/>
     <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>
     <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
@@ -80,32 +81,32 @@
     <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
     <SubPart PartName="ScalableMeshRDSDependencies"/>
     <Bindings>
-      <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshCoreLib$(libext)</Libs>
-      <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshCoreLib$(shlibext)</Assemblies>
-      <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMeshCoreLib$(shlibext)</Assemblies>
+      <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshCore$(libext)</Libs>
+      <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshCore$(shlibext)</Assemblies>
+      <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMeshCore$(shlibext)</Assemblies>
       <PublicAPI Domain="ScalableMesh" />
     </Bindings>
   </Part>
 
-  <Part Name="ScalableMeshImportersLib" BMakeFile="ScalableMeshImportersLib_Vancouver.mke">
+  <Part Name="ScalableMeshCreator" BMakeFile="ScalableMeshCreator_Vancouver.mke">
     <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
     <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
     <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
     <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>
     <SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
     <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
-    <SubPart PartName="ScalableMeshCoreLib"/>
+    <SubPart PartName="ScalableMeshCore"/>
     <Bindings>
-      <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshImportersLib$(libext)</Libs>
-      <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshImportersLib$(shlibext)</Assemblies>
-      <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMeshImportersLib$(shlibext)</Assemblies>
+      <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMeshCreator$(libext)</Libs>
+      <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMeshCreator$(shlibext)</Assemblies>
+      <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMeshCreator$(shlibext)</Assemblies>
       <PublicAPI Domain="ScalableMesh" />
     </Bindings>
   </Part>
-
+  
   <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe_Vancouver.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">    
-    <SubPart PartName="ScalableMeshCoreLib"  />
-    <SubPart PartName="ScalableMeshImportersLib"  />
+    <SubPart PartName="ScalableMeshCore"  />
+    <SubPart PartName="ScalableMeshCreator"  />
     <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
     <Bindings>
       <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>

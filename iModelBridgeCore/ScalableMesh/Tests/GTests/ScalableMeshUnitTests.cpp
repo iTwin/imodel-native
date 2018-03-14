@@ -7,14 +7,22 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/BeTest.h>
+#include <Bentley/BeThread.h>
 #include "SMUnitTestUtil.h"
 #include <ScalableMesh/ScalableMeshDefs.h>
 #include <ScalableMesh/IScalableMeshSaveAs.h>
+#include <ScalableMesh/IScalableMeshSourceCreator.h>
 #include <random>
 #include <TerrainModel/Core/IDTM.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>
 #include "SMUnitTestDisplayQuery.h"
+
+
+
+
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
+
 
 class ScalableMeshEnvironment : public ::testing::Environment
     {
@@ -167,6 +175,23 @@ class ScalableMeshTestWithParams : public ::testing::TestWithParam<BeFileName>
     };
 
 
+class ScalableMeshGenerationTestWithParams : public ::testing::TestWithParam<BeFileName>
+{
+protected:
+    BeFileName m_filename;
+
+public:
+    virtual void SetUp()
+    {
+        m_filename = GetParam();
+    }
+    virtual void TearDown() { }
+    BeFileName GetFileName() { return m_filename; }
+    ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
+
+};
+
+
 class ScalableMeshTestDrapePoints : public ::testing::TestWithParam<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>>
 {
 protected:
@@ -232,9 +257,8 @@ public:
     bvector<double>& GetExpectedResults() { return m_expectedResults; }
 
     ScalableMeshGTestUtil::SMMeshType GetType() { return ScalableMeshGTestUtil::GetFileType(m_filename); }
-
-
 };
+
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -527,6 +551,11 @@ TEST_P(ScalableMeshTestWithParams, VerifyMeshNodeInfo)
 INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshTestWithParams, ::testing::ValuesIn(ScalableMeshGTestUtil::GetFiles(BeFileName(SM_DATA_PATH))));
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+INSTANTIATE_TEST_CASE_P(ScalableMesh, ScalableMeshGenerationTestWithParams, ::testing::ValuesIn(ScalableMeshGTestUtil::GetFiles(BeFileName(SM_DATA_SOURCE_PATH), true)));
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ScalableMeshTest, SaveAsWithClipBoundary)
@@ -752,33 +781,7 @@ TEST_P(ScalableMeshTestDrapePointsFast, DrapeLinear)
 * @bsimethod                                                  Mathieu.St-Pierre   11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
-    {
-
-    /*
-    BeFileName GetFileName() { return m_filename; }
-    const DMatrix4d& GetRootToViewMatrix() { return m_rootToViewMatrix; }
-    const bvector<DPoint4d>& GetClipPlanes() { return m_clipPlanes; }
-    bvector<double>& GetExpectedResults() { return m_expectedResults; }
-    */
-
-
-    //auto myScalableMesh = OpenMesh();
-
-    /*
-    bvector<DPoint3d> sourcePts = GetData();
-    TerrainModel::DTMDrapedLinePtr result;
-    ASSERT_EQ(DTM_SUCCESS, myScalableMesh->GetDTMInterface()->GetDTMDraping()->DrapeLinear(result, sourcePts.data(), (int)sourcePts.size()));
-    ASSERT_EQ(result.IsValid(), true);
-    for (size_t i = 0; i < GetResult().size(); ++i)
-    {
-    DPoint3d pt;
-    result->GetPointByIndex(pt, nullptr, nullptr, (unsigned int)i);
-    EXPECT_EQ(fabs(pt.z - GetResult()[i].z) < 1e-6, true);
-    EXPECT_EQ(fabs(pt.x - GetResult()[i].x) < 1e-6, true);
-    EXPECT_EQ(fabs(pt.y - GetResult()[i].y) < 1e-6, true);
-    }*/
-    
-
+    {      
     DisplayQueryTester queryTester;
 
     bool result = queryTester.SetQueryParams(GetFileName(), GetRootToViewMatrix(), GetClipPlanes(), GetExpectedResults());
@@ -789,7 +792,53 @@ TEST_P(ScalableMeshTestDisplayQuery, ProgressiveQuery)
         queryTester.DoQuery();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Mathieu.St-Pierre   03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshGenerationTestWithParams, FromSourceCreation)
+    {
+    //m_filename.c_str()
+    BeFileName newSmFileName = ScalableMeshGTestUtil::GetUserSMTempDir();
 
+    BeFileNameStatus statusFile = BeFileName::CreateNewDirectory(newSmFileName.c_str());
+    ASSERT_EQ(statusFile == BeFileNameStatus::Success || statusFile == BeFileNameStatus::AlreadyExists, true);
+
+    newSmFileName = BeFileName((newSmFileName + WString(L"\\fromSourceCreation.3sm")).c_str());
+
+    if (BeFileName::DoesPathExist(newSmFileName.c_str()))
+        ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::BeDeleteFile(newSmFileName.c_str()));
+    
+    StatusInt status;
+    IScalableMeshSourceCreatorPtr smCreatorPtr(IScalableMeshSourceCreator::GetFor(newSmFileName.c_str(), status));
+
+    EXPECT_EQ(status == SUCCESS, true);    
+
+    ScalableMesh::IDTMSourcePtr sourceP = ScalableMesh::IDTMLocalFileSource::Create(ScalableMesh::DTMSourceDataType::DTM_SOURCE_DATA_POINT, m_filename.c_str());        
+    smCreatorPtr->EditSources().Add(sourceP);
+    smCreatorPtr->SaveToFile();
+    SMStatus smStatus = smCreatorPtr->Create();
+
+    EXPECT_EQ(smStatus == S_SUCCESS, true);
+
+    smCreatorPtr = nullptr;
+
+    IScalableMeshPtr smPtr(IScalableMesh::GetFor(newSmFileName.c_str(), false, true, status));    
+
+    EXPECT_EQ(status == SUCCESS && smPtr.IsValid(), true);
+
+    //smPtr->SynchWithSources();
+    //EXPECT_EQ(smPtr->InSynchWithSources(), true);
+    //EXPECT_EQ(smPtr->InSynchWithDataSources(), true);
+
+    time_t lastSynchTime;
+
+    smPtr->LastSynchronizationCheck(lastSynchTime);
+
+    time_t currentTime;
+    time(&currentTime);
+
+    EXPECT_EQ(lastSynchTime <= currentTime, true);    
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     02/2018
