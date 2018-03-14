@@ -19,7 +19,7 @@ struct NumericFormatSpecTest : FormattingTestFixture
     {
     };
 
-struct BinaryFormattingTest : public NumericFormatSpecTest
+struct BinaryFormattingTest : NumericFormatSpecTest
     {
     struct TestByte
         {
@@ -36,11 +36,11 @@ struct BinaryFormattingTest : public NumericFormatSpecTest
         };
     };
 
-struct FormatIntegerTest : public NumericFormatSpecTest
+struct FormatIntegerTest : NumericFormatSpecTest
     {
     };
 
-struct FormatDoubleTest : public NumericFormatSpecTest
+struct FormatDoubleTest : NumericFormatSpecTest
     {
     };
 
@@ -61,6 +61,56 @@ struct FormatUnitSetTest : FormattingTestFixture
 //===================================================
 struct NamedFormatSpecTest : FormattingTestFixture
     {
+    };
+
+//===================================================
+// FormatParsingSet
+//===================================================
+struct FormatParsingSetTest : FormattingTestFixture
+    {
+public:
+    BEU::IUnitsContextCP unitsContext;
+
+    // Test units availiable pre-looked-up for use in tests.
+    BEU::UnitCP mile;
+    BEU::UnitCP yard;
+    BEU::UnitCP foot;
+    BEU::UnitCP inch;
+    BEU::UnitCP arc_deg;
+    void SetUp()
+        {
+        unitsContext = &BEU::UnitRegistry::Get();
+        ASSERT_NE(nullptr, mile = unitsContext->LookupUnit("MILE"));
+        ASSERT_NE(nullptr, yard = unitsContext->LookupUnit("YRD"));
+        ASSERT_NE(nullptr, foot = unitsContext->LookupUnit("FT"));
+        ASSERT_NE(nullptr, inch = unitsContext->LookupUnit("IN"));
+        ASSERT_NE(nullptr, arc_deg = unitsContext->LookupUnit("ARC_DEG"));
+        }
+
+    Utf8String GetFmtStringErrMsg(Utf8CP fmtStr)
+        {
+        return Utf8String("format string: \"") + fmtStr + "\"";
+        }
+
+    void TestValidParseToQuantity(Utf8CP fmtStr, BEU::UnitCP expectedUnit, double const expectedMagnitude)
+        {
+        FormatUnitSet fus = FormatUnitSet(expectedUnit->GetName().c_str(), unitsContext);
+        FormatProblemCode probCode;
+
+        FormatParsingSet fps(fmtStr, expectedUnit);
+        ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
+        BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
+
+        ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
+        EXPECT_EQ(expectedUnit, qty.GetUnit()) << GetFmtStringErrMsg(fmtStr);
+        EXPECT_DOUBLE_EQ(expectedMagnitude, qty.GetMagnitude()) << GetFmtStringErrMsg(fmtStr);
+        }
+
+    void TestInvalidFmtStr(Utf8CP fmtStr, BEU::UnitCP expectedUnit)
+        {
+        FormatParsingSet fps(fmtStr, expectedUnit);
+        ASSERT_TRUE(fps.HasProblem()) << GetFmtStringErrMsg(fmtStr);
+        }
     };
 
 //---------------------------------------------------------------------------------------
@@ -890,8 +940,106 @@ TEST_F(NamedFormatSpecTest, IsIdentical)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-//TEST_F(NamedFormatSpecTest, )
-//    {
-//
+TEST_F(FormatParsingSetTest, Identity)
+    {
+    TestValidParseToQuantity("1 MILE", mile, 1.0);
+    TestValidParseToQuantity("3 FT", foot, 3.0);
+    TestValidParseToQuantity("999.55 IN", inch, 999.55);
+
+    TestValidParseToQuantity("1", mile, 1.0);
+    TestValidParseToQuantity("3", foot, 3.0);
+    TestValidParseToQuantity("999.55", inch, 999.55);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatParsingSetTest, LeadingPlusAndMinus)
+    {
+    TestValidParseToQuantity("+3 FT", foot, 3.0);
+    TestValidParseToQuantity("-3 FT", foot, -3.0);
+    TestInvalidFmtStr("+ 3 FT", foot);
+    TestInvalidFmtStr("- 3 FT", foot);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatParsingSetTest, SingleUnitConvertedToAnotherUnit)
+    {
+    TestValidParseToQuantity("1 MILE", yard, 1760);
+    TestValidParseToQuantity("1 MILE", foot, 5280);
+    TestValidParseToQuantity("1 MILE", inch, 63360);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatParsingSetTest, SingleUnitFraction)
+    {
+    TestValidParseToQuantity("1/2", foot, 1.0/2);
+    TestValidParseToQuantity("1/2 FT", foot, 1.0/2);
+    TestValidParseToQuantity("2/4", foot, 1.0/2);
+    TestValidParseToQuantity("2/4 FT", foot, 1.0/2);
+    TestValidParseToQuantity("1 1/2", foot, 1.5);
+    TestValidParseToQuantity("1\t1/2", foot, 1.5);
+    TestValidParseToQuantity("1_1/2 FT", foot, 1.5);
+    TestValidParseToQuantity("1 1/2 FT", foot, 1.5);
+    TestValidParseToQuantity("4/2", foot, 2.0);
+    TestValidParseToQuantity("4/2 FT", foot, 2.0);
+
+    // Some more fractions.
+    TestValidParseToQuantity("1/3", foot, 1.0/3);
+    TestValidParseToQuantity("1/4", foot, 1.0/4);
+    TestValidParseToQuantity("1/5", foot, 1.0/5);
+    TestValidParseToQuantity("1/8", foot, 1.0/8);
+    TestValidParseToQuantity("1/64", foot, 1.0/64);
+    TestValidParseToQuantity("1/128", foot, 1.0/128);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatParsingSetTest, SingleUnitWithVaryingUnitSeperators)
+    {
+    TestValidParseToQuantity("42.125 FT", foot, 42.125);
+    TestValidParseToQuantity("42.125_FT", foot, 42.125);
+    TestValidParseToQuantity("42.125_FT", foot, 42.125);
+    TestValidParseToQuantity("42 1/8_FT", foot, 42.125);
+    TestValidParseToQuantity("42.125FT", foot, 42.125);
+    TestValidParseToQuantity("42 1/8FT", foot, 42.125);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatParsingSetTest, CompositeFormats)
+    {
+    TestValidParseToQuantity("2 FT 6 IN", foot, 2*1  + 6.f/12.f);
+    TestValidParseToQuantity("2 FT 6 IN", inch, 2*12 + 6*1);
+
+    TestValidParseToQuantity("3 YRD 2 FT 6 IN", yard, 3*1  + 2.f/3.f + 6.f/36.f);
+    TestValidParseToQuantity("3 YRD 2 FT 6 IN", foot, 3*3  + 2*1     + 6.f/12.f);
+    TestValidParseToQuantity("3 YRD 2 FT 6 IN", inch, 3*36 + 2*12    + 6*1);
+    TestValidParseToQuantity(u8"135°11'30 1/4\" ", arc_deg, 135.191736);
+
+    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", mile, 1*1     + 3.f/1760.f + 2.f/5280.f + 6.f/63360.f);
+    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", yard, 1*1760  + 3*1        + 2.f/3.f    + 6.f/36.f);
+    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", foot, 1*5280  + 3*3        + 2*1        + 6.f/12.f);
+    TestValidParseToQuantity("1 MILE 3 YRD 2 FT 6 IN", inch, 1*63360 + 3*36       + 2*12       + 6*1);
+
+    // Make sure composite formats with fractional/decimal components work.
+    TestValidParseToQuantity("2.5 FT 6 IN", inch, 2.5*12 + 6*1);
+    TestValidParseToQuantity("2 1/2 FT 6 IN", inch, 2.5*12 + 6*1);
+
+    // Whitespace shouldn't matter between the numeric and unit portions of a unit.
+    TestValidParseToQuantity("2FT 6IN", inch, 2*12 + 6*1);
+    TestValidParseToQuantity("2          FT 6     IN", inch, 2*12 + 6*1);
+
+    // Whitespace shouldn't matter between units.
+    TestValidParseToQuantity("2FT6IN", inch, 2*12 + 6*1);
+    TestValidParseToQuantity("2 FT6 IN", inch, 2*12 + 6*1);
+    TestValidParseToQuantity("2 FT        6 IN", inch, 2*12 + 6*1);
+    }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

@@ -584,14 +584,13 @@ void FormattingTestUtils::TestScanTriplets(Utf8CP str)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-
-void FormattingTestUtils::TestSegments(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP expectReduced)
+void FormattingTestUtils::TestSegments(Utf8CP input, Utf8CP unitName, Utf8CP expectReduced)
     {
     BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
-    FormatParsingSet fps = FormatParsingSet(input, start, unit);
+    FormatParsingSet fps = FormatParsingSet(input, unit);
     if (nullptr == expectReduced)
         {
-        LOG.infov("=========== TestSegments |%s| from %d", input, start);
+        LOG.infov("=========== TestSegments |%s|", input);
 
         bvector<FormatParsingSegment> segs = fps.GetSegments();
         int n = 0;
@@ -606,55 +605,6 @@ void FormattingTestUtils::TestSegments(Utf8CP input, size_t start, Utf8CP unitNa
         {
         EXPECT_STREQ (expectReduced, fps.GetSignature(false).c_str());
         }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP formatName)
-    {
-    LOG.infov("=========== Parsing To Quantity |%s| from %d", input, start);
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
-    NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(formatName);
-    FormatUnitSet fus = FormatUnitSet(nfs, unit);
-    FormatProblemCode probCode;
-    FormatParsingSet fps = FormatParsingSet(input, start, unit);
-    BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
-    if(qty.IsNullQuantity())
-        LOG.info("Parsing failed");
-    else
-        {
-        LOG.infov("Unit: %s Magnitude %.6f", qty.GetUnitName(), qty.GetMagnitude());
-        BEU::Quantity q1 = qty.ConvertTo(unit);
-        if (q1.IsNullQuantity())
-            LOG.infov("Invalid alternative Unit: %s", unitName);
-        else
-            LOG.infov("Unit: %s Magnitude %.6f", q1.GetUnitName(), q1.GetMagnitude());
-        }
-    LOG.info("=========== Parsing To Quantity End =============");
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnitName, Utf8CP spacer)
-    {
-    BEU::UnitCP fusUnit = BEU::UnitRegistry::Get().LookupUnit(fusUnitName);
-    NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(formatName);
-    FormatUnitSet fus = FormatUnitSet(nfs, fusUnit);
-    if (fus.HasProblem())
-        {
-        LOG.errorv("FUS-problem: %s", fus.GetProblemDescription().c_str());
-        return;
-        }
-
-    FormatParsingSet fps = FormatParsingSet(input, 0, fusUnit);
-
-    FormatProblemCode probCode;
-    BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
-    Utf8String qtyT = fus.FormatQuantity(qty, spacer);
-    LOG.errorv("Input:%s Quantity %s", input, qtyT.c_str());
-    return;
     }
 
 //----------------------------------------------------------------------------------------
@@ -1001,40 +951,6 @@ void FormattingTestUtils::FormatDoubleTest(double dval, Utf8CP fmtName, int prec
        LOG.infov("%f formatted: %s (%d)", dval, txt.c_str(), txt.size());
     else
         EXPECT_STREQ(expect, txt.c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::VerifyQuantity(Utf8CP input, Utf8CP unitName, Utf8CP formatName, double magnitude, Utf8CP qtyUnitName)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
-    NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(formatName);
-    FormatUnitSet fus = FormatUnitSet(nfs, unit);
-    FormatProblemCode probCode;
-    FormatParsingSet fps = FormatParsingSet(input, 0, unit);
-    BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
-    if (FormatProblemCode::NoProblems != probCode)
-        {
-        LOG.infov("Parsing problem: Input |%s| - ", Utils::SubstituteEmptyOrNull(input, "<empty>"), fps.GetProblemDescription().c_str());
-        }
-    else
-        {
-        BEU::PhenomenonCP pp = fus.GetPhenomenon();
-        BEU::UnitCP unit = (nullptr == pp) ? BEU::UnitRegistry::Get().LookupUnit(qtyUnitName) : pp->LookupUnit(qtyUnitName);
-        EXPECT_NE(nullptr, unit) << Utf8PrintfString("Unable to find the Unit %s in %s.", qtyUnitName, (nullptr == pp) ? "the UnitRegistry" : Utf8PrintfString("the phenomenon '%s'", pp->GetName().c_str()).c_str()).c_str();
-        if (nullptr == unit)
-            return;
-
-        BEU::Quantity temp = BEU::Quantity(magnitude, *unit);
-        bool eq = qty.IsClose(temp, 0.0001);
-        EXPECT_TRUE(eq);
-        if (!eq)
-            {
-            Utf8PrintfString txt("Quantity (%s} not equal {%s}", qty.ToDebugText().c_str(), temp.ToDebugText().c_str());
-            LOG.infov("Verification problem: Input |%s| - %s", Utils::SubstituteEmptyOrNull(input, "<empty>"), txt.c_str());
-            }
-        }
     }
 
 //----------------------------------------------------------------------------------------

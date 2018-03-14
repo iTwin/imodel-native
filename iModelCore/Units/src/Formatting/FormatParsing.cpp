@@ -1860,7 +1860,6 @@ BEU::UnitCP FormatParsingSet::GetUnit(Formatting::FormatUnitSetCP fusP)
 void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
     {
     m_input = input;
-    m_start = start;
     m_unit = unit;
     m_problem.Reset();
     FormatParsingSegment fps;
@@ -1924,13 +1923,15 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
             }
         }
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //----------------------------------------------------------------------------------------
-FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit)
+FormatParsingSet::FormatParsingSet(Utf8CP input, BEU::UnitCP unit)
     {
-    Init(input, start, unit);
+    Init(input, 0, unit);
     }
+
 PUSH_MSVC_IGNORE(6385 6386)
 
 //----------------------------------------------------------------------------------------

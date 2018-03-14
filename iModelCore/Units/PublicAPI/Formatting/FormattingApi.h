@@ -752,7 +752,7 @@ public:
     };
 
 //=======================================================================================
-//! The Format-Unit Set(FUS) has two parts describing how a Quantity transformation 
+//! The Format-Unit Set(FUS) has two parts describing how a Quantity transformation
 //! between an internal form and presentation form should be handled.
 //! 
 //! The two parts:
@@ -972,8 +972,8 @@ public:
 
 struct QuantityFormatting
     {
-    UNITS_EXPORT static Units::Quantity CreateQuantity(Utf8CP input, size_t start, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
-    UNITS_EXPORT static Units::Quantity CreateQuantity(Utf8CP input, size_t start, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
+    UNITS_EXPORT static Units::Quantity CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
+    UNITS_EXPORT static Units::Quantity CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
     };
 
 END_BENTLEY_FORMATTING_NAMESPACE

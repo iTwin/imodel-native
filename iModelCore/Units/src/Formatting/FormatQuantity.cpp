@@ -410,10 +410,10 @@ CompositeValue::CompositeValue()
     Init();
     }
 
-Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, size_t start, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
+Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
     {
     BEU::UnitCP persUnit = outputFUS.GetUnit();
-    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, inputFUS.GetUnit());
+    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, inputFUS.GetUnit());
     Formatting::FormatProblemCode locCode;
     if (nullptr == problemCode) problemCode = &locCode;
     *problemCode = Formatting::FormatProblemCode::NoProblems;
@@ -432,9 +432,9 @@ Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, size_t start, d
     return qty;
     }
 
-Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, size_t start, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
+Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
     {
-    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, inputFUS.GetUnit());
+    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, inputFUS.GetUnit());
     BEU::Quantity qty = fps.GetQuantity(problemCode, &inputFUS);
     return qty;
     }
