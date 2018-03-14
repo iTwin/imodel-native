@@ -989,6 +989,42 @@ TEST_P(ScalableMeshTestWithParams, NodeRayQueryByLevel)
 }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, NodeRayQueryUnbounded)
+    {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    IScalableMeshNodeRayQueryPtr ptr = myScalableMesh->GetNodeQueryInterface();
+    IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
+    DVec3d direction = DVec3d::From(0, 0, -1);
+    params->SetDirection(direction);
+
+    bvector<IScalableMeshNodePtr> nodes;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    params->SetUseUnboundedRay(false);
+    DPoint3d testPt = DPoint3d::From(range.low.x + range.XLength() / 2, range.low.y + range.YLength() / 2, range.low.z -10);
+    ptr->Query(nodes, &testPt, NULL, 0, params);
+
+    ASSERT_TRUE(nodes.empty());
+    params->SetUseUnboundedRay(true);
+
+    ASSERT_TRUE(params->GetUseUnboundedRay());
+    ptr->Query(nodes, &testPt, NULL, 0, params);
+
+    ASSERT_TRUE(!nodes.empty());
+    ASSERT_TRUE(nodes[0]->GetContentExtent().low.x <= testPt.x);
+    ASSERT_TRUE(nodes[0]->GetContentExtent().low.y <= testPt.y);
+    ASSERT_TRUE(nodes[0]->GetContentExtent().high.x >= testPt.x);
+    ASSERT_TRUE(nodes[0]->GetContentExtent().high.y >= testPt.y);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                               Elenie.Godzaridis     02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, NodeRayQueryUsing2dProjectedRays)
@@ -1236,6 +1272,56 @@ TEST_P(ScalableMeshTestWithParams, RemoveSkirt)
 
     skirtData.push_back(vec);
     ASSERT_TRUE(myScalableMesh->AddSkirt(skirtData, 242)); //after removing, can add again with the same id
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               Elenie.Godzaridis     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetAllClipIds)
+{
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    range.ScaleAboutCenter(range, 0.75);
+
+    bvector<DPoint3d> clipData;
+    std::random_device rd;
+
+    std::default_random_engine e1(rd());
+    std::uniform_real_distribution<double> val_x(range.low.x, range.high.x);
+    std::uniform_real_distribution<double> val_y(range.low.y, range.high.y);
+
+    for (size_t i = 0; i < 15; ++i)
+    {
+        DPoint3d pt = DPoint3d::From(val_x(e1), val_y(e1), range.high.z);
+        clipData.push_back(pt);
+    }
+
+    clipData.push_back(clipData.front());
+    bvector<uint64_t> ids;
+    myScalableMesh->GetAllClipIds(ids);
+
+    ASSERT_TRUE(ids.empty());
+    myScalableMesh->AddClip(clipData.data(), clipData.size(), 222);
+    myScalableMesh->GetAllClipIds(ids);
+
+    ASSERT_TRUE(!ids.empty());
+    ASSERT_TRUE(ids.front() == 222);
+    ids.clear();
+
+    myScalableMesh->AddClip(clipData.data(), clipData.size(), 245);
+    myScalableMesh->GetAllClipIds(ids);
+    ASSERT_TRUE(ids.size() == 2);
+
+    ids.clear();
+    myScalableMesh->RemoveClip(222);
+    myScalableMesh->GetAllClipIds(ids);
+    ASSERT_TRUE(ids.empty());
+
 }
 
 /*---------------------------------------------------------------------------------**//**
