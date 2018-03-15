@@ -188,6 +188,7 @@ enum class ECObjectsStatus
     PropertyHasNoKindOfQuantity,
     PropertyValueNull,
     NotFound,
+    InvalidUnitName,
     };
 
 //! Result status for deserializing an ECSchema from Xml

@@ -6,8 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
-//#include <Formatting/FormattingApi.h>
-//#include <ECObjects/ECSchema.h>
 #include <ECObjects/ECQuantityFormatting.h>
 
 namespace BEU = BentleyApi::Units;
@@ -21,18 +19,16 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
     {
     Utf8String str;
     ECQuantityFormattingStatus locStat = ECQuantityFormattingStatus::Success;
-    if (nullptr == formatStatus) formatStatus = &locStat;
+    if (nullptr == formatStatus) 
+        formatStatus = &locStat;
+
     *formatStatus = ECQuantityFormattingStatus::Success;
 
     // check compatibility of Quantity and KOQ
-    if (Formatting::Utils::AreUnitsComparable(qty.GetUnit(), &presentationUnit))
-        {
+    if (ECUnit::AreCompatible(qty.GetUnit(), &presentationUnit))
         str = BEF::NumericFormatSpec::StdFormatQuantity(formatSpec, qty.ConvertTo(&presentationUnit));
-        }
     else
-        {
         *formatStatus = ECQuantityFormattingStatus::IncompatibleKOQ;
-        }
 
     return str;
     }
@@ -49,16 +45,12 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
     *formatStatus = ECQuantityFormattingStatus::Success;
 
     if (nullptr == koq)
-        {
         str = defFormat->FormatDouble(qty.GetMagnitude());
-        }
     else
         {
         Formatting::FormatUnitSet fus = koq->GetDefaultPresentationUnit();
-        if (Units::Unit::AreCompatible(qty.GetUnit(), fus.GetUnit()))
-            {
+        if (ECUnit::AreCompatible(qty.GetUnit(), fus.GetUnit()))
             str = fus.FormatQuantity(qty, nullptr);
-            }
         else
             {
             str = defFormat->FormatDouble(qty.GetMagnitude());

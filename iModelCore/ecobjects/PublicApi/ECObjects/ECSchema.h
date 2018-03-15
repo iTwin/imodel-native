@@ -1570,6 +1570,12 @@ public:
     //! @param[in] ecXmlMinorVersion The minor version of ECXml to parse the descriptor in the context of.
     //! @return ECObjectsStatus::Success if the FUS is successfully created; otherwise, ECObjectsStatus::Error.
     ECOBJECTS_EXPORT static ECObjectsStatus ParseFUSDescriptor(ECUnitCP& unit, Formatting::NamedFormatSpecCP& format, Utf8CP descriptor, KindOfQuantityR koq, Nullable<uint32_t> ecXmlMajorVersion = nullptr, Nullable<uint32_t> ecXmlMinorVersion = nullptr);
+
+    //! Given an old EC3.1 FUS descriptor, {unitName}({formatName}), it will convert it into the new format.
+    //! @param[out] updatedDescriptor  The updated descriptor if it is able to be updated. If not it will be an empty string.
+    //! @param[in] descriptor  The descriptor that is of the format for the old FUS descriptor, format: {unitName}({formatName}), where the format part is optional.
+    //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
+    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptor(Utf8String& updatedDescriptor, Utf8CP descriptor);
 };
 
 //=======================================================================================

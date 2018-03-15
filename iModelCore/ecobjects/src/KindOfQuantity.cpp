@@ -599,6 +599,50 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::N
     return ECObjectsStatus::Success;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+// static
+ECObjectsStatus KindOfQuantity::UpdateFUSDescriptor(Utf8String& updatedDescriptor, Utf8CP descriptor)
+    {
+    updatedDescriptor.clear();
+
+    if (nullptr == descriptor)
+        return ECObjectsStatus::NullPointerValue;
+
+    Utf8String unitName;
+    Utf8String format;
+    Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, descriptor);
+
+    if (unitName.size() <= 0)
+        return ECObjectsStatus::InvalidUnitName;
+
+    unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
+    if (unitName.empty())
+        return ECObjectsStatus::InvalidUnitName;
+
+    Utf8String alias;
+    Utf8String name;
+    ECClass::ParseClassName(alias, name, unitName);
+
+    ECUnitCP unit = StandardUnitsHelper::GetSchema()->GetUnitCP(name.c_str());
+    if (nullptr == unit)
+        return ECObjectsStatus::InvalidUnitName;
+
+    updatedDescriptor
+        .append("u:")
+        .append(unit->GetName().c_str());
+
+    if (format.size() > 0)
+        {
+        updatedDescriptor.append("(")
+        .append(format.c_str())
+        .append(")");
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  06/2017
 //---------------------------------------------------------------------------------------
