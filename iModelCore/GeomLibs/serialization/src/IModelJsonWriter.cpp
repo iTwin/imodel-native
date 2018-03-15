@@ -25,6 +25,8 @@ BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 //=======================================================================================
 struct BeCGIModelJsonValueWriter
     {
+    bool m_packIsolatedPoints = false;
+    bool m_packArrays = false;
     Json::Value singleton (const char *name, Json::Value const &value)
         {
         Json::Value result;
@@ -37,12 +39,20 @@ struct BeCGIModelJsonValueWriter
             jsonArray.append (candidate);
         }
 
-    Json::Value toJson (DPoint3dCR point)
+    Json::Value toJson (DPoint3dCR point, bool compact)
         {
-        auto result = Json::Value();
-        result.append (Json::Value(point.x));
-        result.append (Json::Value(point.y));
-        result.append (Json::Value(point.z));
+        if (compact)
+            {
+            auto result = Json::Value();
+            result.append (Json::Value(point.x));
+            result.append (Json::Value(point.y));
+            result.append (Json::Value(point.z));
+            return result;
+            }
+        auto result = Json::Value ();
+        result["x"] = point.x;
+        result["y"] = point.y;
+        result["z"] = point.z;
         return result;
         }
 
@@ -50,7 +60,7 @@ struct BeCGIModelJsonValueWriter
         {
         Json::Value jsonArray;
         for (auto &xyz : points)
-            jsonArray.append (toJson (xyz));
+            jsonArray.append (toJson (xyz, m_packArrays));
         return jsonArray;
         }
 
@@ -77,8 +87,8 @@ struct BeCGIModelJsonValueWriter
         if (cp.TryGetLine (segment))
             {
             Json::Value value;
-            value.append (toJson (segment.point[0]));
-            value.append (toJson (segment.point[1]));
+            value.append (toJson (segment.point[0], m_packIsolatedPoints));
+            value.append (toJson (segment.point[1], m_packIsolatedPoints));
             auto result = Json::Value ();
             return singleton ("lineSegment", value);
             }
@@ -86,9 +96,9 @@ struct BeCGIModelJsonValueWriter
         if (cp.TryGetArc (arc))
             {
             Json::Value value;
-            value["center"] = toJson (arc.center);
-            value["vectorX"] = toJson (arc.vector0);
-            value["vectorY"] = toJson (arc.vector90);
+            value["center"] = toJson (arc.center, m_packIsolatedPoints);
+            value["vectorX"] = toJson (arc.vector0, m_packIsolatedPoints);
+            value["vectorY"] = toJson (arc.vector90, m_packIsolatedPoints);
             value["sweepStartEnd"] = createSweepStartSweepRadiansToStartEndDegrees (arc.start, arc.sweep);
             return singleton ("arc", value);
             }
@@ -156,6 +166,8 @@ struct BeCGIModelJsonValueWriter
 
     public: BeCGIModelJsonValueWriter ()
         {
+        m_packArrays = true;
+        m_packIsolatedPoints = true;
         }
 
 };

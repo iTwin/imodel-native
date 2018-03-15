@@ -39,13 +39,34 @@ bool accessNumericArray (JsonValueCR value, size_t numNeeded, double values[])
         values[i] = 0;
     return true;
     }
+bool accessNumeric (JsonValueCR source, char const *name, double &value, double defaultValue = 0.0)
+    {
+    value = defaultValue;
+    auto jsonValue = source[name];
+    if (jsonValue.isNumeric ())
+        {
+        value = jsonValue.asDouble ();
+        return true;
+        }
+    return false;
+    }
+
 bool tryValueToDPoint3d (JsonValueCR value, DPoint3dR xyz)
     {
     double xyzArray[3];
-    if (!accessNumericArray (value, 3, xyzArray))
-        return false;
-    xyz.Init (xyzArray[0], xyzArray[1], xyzArray[2]);
-    return true;
+    bool stat = false;
+    if (accessNumericArray (value, 3, xyzArray))
+        {
+        stat = true;
+        }
+    else
+        {
+        // IMPORTANT -- single bar to ensure all three are called . . 
+        stat = accessNumeric (value, "x", xyzArray[0], 0.0)
+             | accessNumeric (value, "y", xyzArray[1], 0.0)
+             | accessNumeric (value, "z", xyzArray[2], 0.0);
+        }
+    return stat;
     }
 bool tryValueToBVectorDPoint3d (JsonValueCR value, bvector<DPoint3d> &data)
     {
