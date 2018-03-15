@@ -527,7 +527,7 @@ typedef std::function<void(Utf8StringR token, time_t& timer)> RequestConstructor
 
 //=====================================================================================
 //! @bsiclass                                  Spencer.Mason               01/2017
-//! ProxyManager
+//! ConnectTokenManager
 //! Centralized class to handle proxy information, in case multiple RequestConstructors
 //! are used
 //=====================================================================================

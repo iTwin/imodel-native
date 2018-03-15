@@ -109,7 +109,8 @@ TEST_F(RealityDataServiceConsoleTestFixture, HelpTest)
 
     Utf8String commandString = "\n"
                         "n\n"
-                        "8\n"
+                        "S3MX\n"
+                        "y\n"
                         "n\n"
                         "help\n"
                         "quit\n";
@@ -156,7 +157,8 @@ TEST_F(RealityDataServiceConsoleTestFixture, StatTest)
 
     Utf8String commandString = "\n"
         "n\n"
-        "8\n"
+        "S3MX\n"
+        "y\n"
         "n\n"
         "stat\n"
         "quit\n";
@@ -259,7 +261,8 @@ TEST_F(RealityDataServiceConsoleTestFixture, CompleteTest)
 
     Utf8String commandString = "dev\n"
                                 "n\n"
-                                "8\n"
+                                "S3MX\n"
+                                "y\n"
                                 "y\n"
                                 "72524420-7d48-4f4e-8b0f-144e5fa0aa22\n"
                                 "upload\n";
