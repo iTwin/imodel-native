@@ -316,6 +316,44 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
     }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
+    {
+    Utf8String descriptor;
+    {
+    descriptor.clear();
+    EXPECT_EQ(ECObjectsStatus::NullPointerValue, KindOfQuantity::UpdateFUSDescriptor(descriptor, nullptr));
+    EXPECT_TRUE(descriptor.empty());
+    }
+    {
+    descriptor.clear();
+    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, KindOfQuantity::UpdateFUSDescriptor(descriptor, "badDescriptor"));
+    EXPECT_TRUE(descriptor.empty());
+    }
+    {
+    descriptor.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptor(descriptor, "CM"));
+    EXPECT_STREQ("u:CM", descriptor.c_str());
+    }
+    {
+    descriptor.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptor(descriptor, "DEG/HR"));
+    EXPECT_STREQ("u:DEG_PER_HR", descriptor.c_str());
+    }
+    {
+    descriptor.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptor(descriptor, "CM(DefaultReal)"));
+    EXPECT_STREQ("u:CM(DefaultReal)", descriptor.c_str());
+    }
+    {
+    descriptor.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptor(descriptor, "CM(InvalidFormat)"));
+    EXPECT_STREQ("u:CM(InvalidFormat)", descriptor.c_str());
+    }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
