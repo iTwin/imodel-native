@@ -733,7 +733,7 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
 
     GeometricPrimitivePtr elemGeom = GeometricPrimitive::Create(clone);
 
-    AddSymbolGeometry(elemGeom);
+    AddSymbolGeometry(elemGeom, isFilled && curves.IsAnyRegionType());
 
     return Bentley::SUCCESS;
     }
@@ -749,7 +749,7 @@ virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddSymbolGeometry(GeometricPrimitivePtr& geometry)
+void AddSymbolGeometry(GeometricPrimitivePtr& geometry, bool isFilled)
     {
     Transform   v8ToDgnDbTrans = DoInterop(Bentley::Transform::FromProduct(m_conversionScale, m_currentTransform));
 
@@ -761,8 +761,11 @@ void AddSymbolGeometry(GeometricPrimitivePtr& geometry)
         return;
 
     Render::GeometryParams geomParams;
-
     m_converter.InitGeometryParams(geomParams, m_currentDisplayParams, *m_context, true, m_v8Model);
+
+    if (isFilled && Render::FillDisplay::Never == geomParams.GetFillDisplay())
+        geomParams.SetFillDisplay(Render::FillDisplay::Always); // Dropped glyph regions should always be drawn filled...
+
     m_symbolParams.push_back(geomParams);
     }
 
