@@ -317,6 +317,11 @@ protected:
 
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override;
     GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
+    void _ActivateGraphicParams(GraphicParamsCR gfParams, GeometryParamsCP geomParams) override
+        {
+        BeAssert(nullptr == geomParams || geomParams->GetSubCategoryId().IsValid());
+        GeometryListBuilder::_ActivateGraphicParams(gfParams, geomParams);
+        }
 
     TileBuilder(TileContext& context, DRange3dCR range);
 
@@ -539,6 +544,7 @@ GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP cl
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicPtr TileBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     {
+    BeAssert(nullptr == GetGeometryParams() || GetGeometryParams()->GetSubCategoryId().IsValid());
     return m_context.FinishGraphic(accum, *this);
     }
 

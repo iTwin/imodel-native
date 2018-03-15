@@ -2762,7 +2762,6 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         m_leafGeometries.clear();
         }
 #if defined(NEEDSWORK_SHEET_BORDER)
-    // Sheet::Model::CreateBorder() now creates border in *view* coords...Cesium needs it in world coords...
     else if (TileGeneratorStatus::Success == status)
         {
         Sheet::ModelCP sheetModel = m_cache.GetModel().ToSheetModel();
@@ -2778,8 +2777,10 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
             if (0.0 == sheetSize.y)
                 sheetSize.y = 0.1;
 
-            auto border = Sheet::Model::CreateBorder (context, sheetSize);
-            context.OutputGraphic(*border, nullptr);
+            auto gf = context.CreateSceneGraphic();
+            Sheet::Border border(context, sheetSize, Sheet::Border::CoordSystem::World);
+            border.AddToBuilder(*gf);
+            context.OutputGraphic(*gf->Finish(), nullptr);
             PushCurrentGeometry();
             }
         }
