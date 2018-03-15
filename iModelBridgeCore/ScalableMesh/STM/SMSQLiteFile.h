@@ -215,6 +215,7 @@ public:
 
     virtual void DeleteCoveragePolygon(int64_t coverageID) { assert(false); }
     virtual void DeleteClipPolygon(int64_t clipID) { assert(false); }
+    virtual void DeleteSkirtPolygon(int64_t clipID) { assert(false); }
     
 	void Compact();
 
