@@ -161,27 +161,6 @@ UIList UIUtils::GetAvailableTraits()
     return traits;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  01/2018
-//---------------------------------------------------------------------------------------
-Json::Value UIUtils::GetAvailableUnitLabels(BEU::UnitCP unit)
-    {
-    if (nullptr == unit)
-        return Json::Value(Json::nullValue);
-
-    Json::Value labels(Json::arrayValue);
-    bvector<Utf8CP> synonyms;
-    if (unit->GetSynonymList(synonyms) > 0)
-        {
-        for (size_t i = 0; i < synonyms.size(); i++)
-            {
-            labels.append(synonyms[i]);
-            }
-        }
-
-    return labels;
-    }
-
 //===================================================
 //
 // FormatConstant Methods

@@ -456,31 +456,29 @@ bool Unit::AreCompatible(UnitCP unitA, UnitCP unitB)
     return nullptr == unitA || nullptr == unitB ? false : Phenomenon::AreEqual(unitA->GetPhenomenon(), unitB->GetPhenomenon());
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/18
-//----------------------------------------------------------------------------------------
-void Unit::AddSynonym(Utf8CP synonym) const
+//===================================================
+//
+// Phenomenon
+//
+//===================================================
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+Phenomenon::Phenomenon(Utf8CP name, Utf8CP definition) : UnitsSymbol(name, definition, 0.0, 0.0, 0) 
     {
-    PhenomenonCP ph = GetPhenomenon();
-    if (nullptr != ph)
-        ph->AddSynonym(this, synonym);
+    m_isNumber = m_definition.Equals(NUMBER);
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-size_t Unit::GetSynonymList(bvector<Utf8CP>& synonyms) const
+UnitCP Phenomenon::LookupUnit(Utf8CP unitName) const
     {
-    synonyms.clear();
-    if (nullptr == m_phenomenon)
-        return 0;
-    T_UnitSynonymVector* synV = m_phenomenon->GetSynonymVector();
-    for (UnitSynonymMap* up = synV->begin(); up != synV->end(); up++)
-        {
-        if(this == up->GetUnit())
-         synonyms.push_back(up->GetSynonym());
-        }
-    return synonyms.size();
+    auto it = std::find_if(m_units.begin(), m_units.end(), [&unitName](UnitCP unit) {return unit->GetName().EqualsI(unitName);});
+    if (nullptr == it)
+        return nullptr;
+    return *it;
     }
 
 //--------------------------------------------------------------------------------------
@@ -514,312 +512,6 @@ bool Phenomenon::IsCompatible(UnitCR unit) const
 bool Phenomenon::IsLength() const { return m_name.Equals(LENGTH); }
 bool Phenomenon::IsTime() const { return m_name.Equals(TIME); }
 bool Phenomenon::IsAngle() const { return m_name.Equals(ANGLE); }
-
-//===================================================
-//
-// UnitSynonymMap
-//
-//===================================================
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void UnitSynonymMap::Init(UnitCP unit, Utf8CP synonym)
-    {
-    m_unit = unit;
-    if (nullptr == m_unit)
-        m_synonym.clear();
-    else
-        m_synonym = synonym;
-    }
-
-//----------------------------------------------------------------------------------------
-// The description of the map could be either a plain text string <UnitName>,<synonym>
-//   or a Json text string that starts and ends by the "curvy brackets". If this is the case
-//    this function attempts to parse the string into a Json-object that will be used for
-//     populating the instance
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-UnitSynonymMap::UnitSynonymMap(IUnitsContextCP context, Utf8CP descr)
-    {
-    Init(nullptr, nullptr);
-    if (nullptr != descr && *descr != '\0')
-        {
-        while (isspace(*descr)) descr++; // skip blanks
-        if ('{' == *descr) // indicator of the Json string
-            {
-            Json::Value jval (Json::objectValue);
-            Json::Reader::Parse(descr, jval);
-            LoadJson(context, jval);
-            }
-        else
-            {
-            bvector<Utf8String> tokens;
-            BeStringUtilities::Split(descr, ", ", nullptr, tokens);
-            if (tokens.size() == 2)
-                Init(context->LookupUnit(tokens[0].c_str()), tokens[1].c_str());
-            }
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-UnitSynonymMap::UnitSynonymMap(IUnitsContextCP context, Json::Value jval)
-    {
-    LoadJson(context, jval);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void UnitSynonymMap::LoadJson(IUnitsContextCP context, Json::Value jval)
-    {
-    m_unit = nullptr;
-    m_synonym.clear();
-    if (jval.empty())
-        return;
-    Utf8CP paramName;
-    Utf8String formatName;
-    Utf8String unitName;
-    Utf8String synonym;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
-            unitName = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_synonym()) == 0)
-            synonym = val.asString();
-        }
-    Init(context->LookupUnit(unitName.c_str()), synonym.c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-Json::Value UnitSynonymMap::ToJson()
-    {
-    Json::Value jval;
-    if (nullptr != m_unit)
-        {
-        jval[json_unitName()] = m_unit->GetName();
-        jval[json_synonym()] = m_synonym.c_str();
-        }
-    return jval;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-bool UnitSynonymMap::IsIdentical(UnitSynonymMapCR other)
-    {
-    if (m_unit != other.m_unit) return false;
-    if (BeStringUtilities::StricmpAscii(m_synonym.c_str(), other.m_synonym.c_str()) != 0) return false;
-    return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-// static
-bool UnitSynonymMap::AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<UnitSynonymMap>& v2)
-    {
-    if (v1.size() != v2.size()) return false;
-    for (size_t i = 0; i < v1.size(); i++)
-        {
-        if (!v1[i].IsIdentical(v2[i])) return false;
-        }
-    return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 09/17
-//----------------------------------------------------------------------------------------
-// static
-bvector<UnitSynonymMap> UnitSynonymMap::MakeUnitSynonymVector(IUnitsContextCP context, Json::Value jval)
-    {
-    UnitSynonymMap map;
-    Json::Value val;
-    bvector<UnitSynonymMap> mapV;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        val = *iter;
-        map = UnitSynonymMap(context, val);
-        mapV.push_back(map);
-        }
-    return mapV;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 09/17
-//----------------------------------------------------------------------------------------
-// static
-size_t UnitSynonymMap::AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, IUnitsContextCP context, Utf8CP unitName, Utf8CP synonym)
-    {
-    UnitCP unit = context->LookupUnit(unitName);
-    if (nullptr != unit)
-        return mapV.size();
-
-    UnitSynonymMap map(unit, synonym);
-    mapV.push_back(map);
-    return mapV.size();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 09/17
-//----------------------------------------------------------------------------------------
-// static
-bool UnitSynonymMap::CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR map2)
-    {
-    PhenomenonCP p1 = map1.GetPhenomenon();
-    PhenomenonCP p2 = map2.GetPhenomenon();
-    if (nullptr == p1) // objects not to be moved if either one or both do not yield a Phenomenon
-        return false;
-    if (nullptr == p2)
-        return true;
-    int diff = BeStringUtilities::StricmpAscii(p1->GetName().c_str(), p2->GetName().c_str());
-    if (diff < 0)
-        return true;
-    if (diff > 0)
-        return false;
-    UnitCP un1 = map1.GetUnit();
-    UnitCP un2 = map2.GetUnit();
-    diff = BeStringUtilities::StricmpAscii(un1->GetName().c_str(), un2->GetName().c_str());
-    if (diff < 0)
-        return true;
-    if (diff > 0)
-        return false;
-    diff = BeStringUtilities::StricmpAscii(map1.GetSynonym(), map2.GetSynonym());
-    if (diff <= 0)
-        return true;
-    return false;
-    }
-
-//===================================================
-//
-// Phenomenon
-//
-//===================================================
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-Phenomenon::Phenomenon(Utf8CP name, Utf8CP definition) : UnitsSymbol(name, definition, 0.0, 0.0, 0) 
-    {
-    m_isNumber = m_definition.Equals(NUMBER);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-UnitCP Phenomenon::LookupUnit(Utf8CP unitName) const
-    {
-    UnitCP un = FindSynonym(unitName);
-    if (nullptr != un)
-        return un;
-
-    auto it = std::find_if(m_units.begin(), m_units.end(), [&unitName](UnitCP unit) {return unit->GetName().EqualsI(unitName);});
-    if (nullptr == it)
-        return nullptr;
-    return *it;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-UnitCP Phenomenon::FindSynonym(Utf8CP synonym) const
-    {
-    if (0 == m_altNames.size())  // there are some alternative names
-        return nullptr;
-
-    for (const UnitSynonymMap* syn = m_altNames.begin(); syn != m_altNames.end(); syn++)
-        {
-        if (0 == BeStringUtilities::StricmpAscii(synonym, syn->GetSynonym()))
-            return syn->GetUnit();
-        }
-    return nullptr;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void Phenomenon::AddSynonym(Utf8CP unitName, Utf8CP synonym)
-    {
-    UnitCP unit = LookupUnit(unitName);
-    if (nullptr == unit)
-        return;
-
-    return AddSynonym(unit, synonym);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/18
-//----------------------------------------------------------------------------------------
-void Phenomenon::AddSynonym(UnitCP unit, Utf8CP synonym) const
-    {
-    if (unit->GetPhenomenon() != this)
-        return;
-    
-    if (nullptr != FindSynonym(synonym)) // synonym is found - we don't add duplicate
-        return;
-
-    UnitSynonymMap map = UnitSynonymMap(unit, synonym);
-    m_altNames.push_back(map);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void Phenomenon::AddSynonymMap(UnitSynonymMapCR map) const
-    {
-    UnitCP un = FindSynonym(map.GetSynonym());
-    if (nullptr == un)
-        m_altNames.push_back(map);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 09/17
-//----------------------------------------------------------------------------------------
-void Phenomenon::AddSynonymMaps(Json::Value jval) const // this value could be an array
-    {
-    UnitSynonymMap map;
-    Json::Value val;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        val = *iter;
-        for (Json::Value::iterator iter = val.begin(); iter != val.end(); iter++)
-            {
-            map = UnitSynonymMap(m_unitsContext, val);
-            AddSynonymMap(map);
-            }
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-Json::Value Phenomenon::SynonymMapToJson() const
-    {
-    Json::Value jval;
-
-    for (size_t i = 0; i < m_altNames.size(); i++)
-        jval.append(m_altNames[i].ToJson());
-    return jval;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-// static
-Json::Value Phenomenon::SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV)
-    {
-    Json::Value jval;
-
-    for (size_t i = 0; i < mapV.size(); i++)
-        jval.append(mapV[i].ToJson());
-    return jval;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017

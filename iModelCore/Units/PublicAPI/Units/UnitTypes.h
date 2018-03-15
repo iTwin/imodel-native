@@ -271,59 +271,11 @@ public:
     UnitCP MultiplyUnit(UnitCR rhs) const;
     UnitCP DivideUnit(UnitCR rhs) const;
 
-    UNITS_EXPORT void AddSynonym(Utf8CP synonym) const;
-    UNITS_EXPORT size_t GetSynonymList(bvector<Utf8CP>& synonyms) const;
-
     static bool IsNegligible(double dval) {return (1.0e-16 > dval);}
     //! Returns true if the input units are the same; otherwise, false or if one or both are null.
     static bool AreEqual(UnitCP unitA, UnitCP unitB) {return nullptr == unitA || nullptr == unitB ? false : unitA->GetName().EqualsI(unitB->GetName().c_str());}
     //! Returns true if the input units belong to the same phenomenon, false if not or one or both are null.
     UNITS_EXPORT static bool AreCompatible(UnitCP unitA, UnitCP unitB);
-};
-
-//=======================================================================================
-//! UnitSynonymMap links a non-canonical unit name (synonym) to the specific Unit. Attaching 
-//! "synonyms" to the specific Units helps in avoiding conflict between synonyms. However, 
-//! each synonym must be unique among all synonyms of the specific Phenomenon. The canonical
-//! Unit name must be unique among all units of all Phenomena
-//!
-// @bsistruct
-//=======================================================================================
-struct UnitSynonymMap
-{
-private:
-    UnitCP m_unit;
-    Utf8String m_synonym;
-
-    UNITS_EXPORT void Init(UnitCP unit, Utf8CP synonym);
-    UNITS_EXPORT void LoadJson(IUnitsContextCP context, Json::Value jval);
-public:
-    UnitSynonymMap() {m_unit = nullptr; m_synonym.clear();}
-    
-    //! The first argument of the constructor is a required text string that can contain of of the 
-    //! following:
-    //!   a valid canonical Unit name
-    //!   a valid canonical Unit name followed by comma and the synonym: UnitName,synonym
-    //!   a Json string that containts a canonical Unit name and its synonym: {"synonym":"^","unitName":"ARC_DEG"}
-    //! When the first argument contains only the name of the unit, the second argument must be a synonym
-    //! Invalide names or their invalid combination will result in the empty Map
-    // UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym = nullptr);
-    UNITS_EXPORT UnitSynonymMap(UnitCP unit, Utf8CP synonym) :m_unit(unit), m_synonym(synonym) {}
-
-    UNITS_EXPORT UnitSynonymMap(IUnitsContextCP context, Utf8CP descriptor);
-    UNITS_EXPORT UnitSynonymMap(IUnitsContextCP context, Json::Value jval);
-
-    bool IsMapEmpty() {return (nullptr == m_unit) && m_synonym.empty();}
-    Utf8CP GetSynonym() const {return m_synonym.c_str();}
-    Utf8CP GetUnitName() const {return m_unit->GetName().c_str();}
-    UnitCP GetUnit() const {return m_unit;}
-    PhenomenonCP GetPhenomenon() const{return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon();}
-    UNITS_EXPORT Json::Value ToJson();
-    UNITS_EXPORT bool IsIdentical(UnitSynonymMapCR other);
-    UNITS_EXPORT static bool AreVectorsIdentical(bvector<UnitSynonymMap>& v1, bvector<UnitSynonymMap>& v2);
-    UNITS_EXPORT static bvector<UnitSynonymMap> MakeUnitSynonymVector(IUnitsContextCP context, Json::Value jval);
-    UNITS_EXPORT static size_t AugmentUnitSynonymVector(bvector<UnitSynonymMap>& mapV, IUnitsContextCP context, Utf8CP unitName, Utf8CP synonym);
-    UNITS_EXPORT static bool CompareSynonymMap(UnitSynonymMapCR map1, UnitSynonymMapCR map2);
 };
 
 //=======================================================================================
@@ -338,7 +290,6 @@ friend struct Expression;
 
 private:
     bvector<UnitCP> m_units;
-    mutable bvector<UnitSynonymMap> m_altNames;
     mutable Utf8String m_displayLabel;
 
     // Conversion caching currently not supported
@@ -368,7 +319,6 @@ public:
     UNITS_EXPORT Utf8String GetPhenomenonSignature() const;
 
     bool HasUnits() const {return m_units.size() > 0;}
-    bool HasSynonyms() const {return m_altNames.size() > 0;}
     bvector<UnitCP> const GetUnits() const {return m_units;}
     UnitCP GetSIUnit() const {auto it = std::find_if(m_units.begin(), m_units.end(), [](UnitCP unit) {return unit->IsSI();});  return m_units.end() == it ? nullptr : *it;}
 
@@ -380,16 +330,6 @@ public:
     UNITS_EXPORT bool IsTime() const;
     UNITS_EXPORT bool IsAngle() const;
     UNITS_EXPORT UnitCP LookupUnit(Utf8CP unitName) const;
-    UNITS_EXPORT UnitCP FindSynonym(Utf8CP synonym) const;
-
-    UNITS_EXPORT void AddSynonym(Utf8CP unitName, Utf8CP synonym);
-    UNITS_EXPORT void AddSynonym(UnitCP unitP, Utf8CP synonym) const;
-    UNITS_EXPORT void AddSynonymMap(UnitSynonymMapCR map) const;
-    UNITS_EXPORT void AddSynonymMaps(Json::Value jval) const;
-    UNITS_EXPORT Json::Value SynonymMapToJson() const;
-    UNITS_EXPORT static Json::Value SynonymMapVectorToJson(bvector<UnitSynonymMap> mapV);
-    UNITS_EXPORT T_UnitSynonymVector* GetSynonymVector() const {return &m_altNames;}
-    UNITS_EXPORT size_t GetSynonymCount() const {return m_altNames.size();}
     UNITS_EXPORT Utf8StringCR GetLabel() const;
     UNITS_EXPORT Utf8StringCR GetInvariantLabel() const;
 

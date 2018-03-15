@@ -553,21 +553,7 @@ void FormattingTestUtils::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::P
         bvector<BEU::UnitCP> unitsV = phenP->GetUnits();
         LOG.infov("Phenomenon %s (UOM list of %d)", phenP->GetName().c_str(), unitsV.size());
         for (const BEU::UnitCP* up = unitsV.begin(); up != unitsV.end(); up++)
-            {
             LOG.infov("  %s", (*up)->GetName().c_str());
-            }
-        if (phenP->HasSynonyms())
-            {
-            BEU::T_UnitSynonymVector* synV = phenP->GetSynonymVector();
-            LOG.infov("  List of %d synonyms:", synV->size());
-            for (const BEU::UnitSynonymMap* up = synV->begin(); up != synV->end(); up++)
-                {
-                LOG.infov(u8"  %s => %s", up->GetSynonym(), up->GetUnitName());
-                }
-            LOG.info("=======================================");
-            }
-        else
-            LOG.info("==== No synonyms are defined===========");
         }
     else
         {

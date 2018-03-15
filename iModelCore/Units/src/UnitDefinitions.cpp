@@ -13,7 +13,6 @@ USING_NAMESPACE_BENTLEY_UNITS
 
 void AddLengths(UnitRegistry& reg)
     {
-    UnitCP un;
     reg.AddUnit(LENGTH, METRIC, "MM", "[MILLI]*M");
     reg.AddUnit(LENGTH, METRIC, "CM", "[CENTI]*M");
     reg.AddUnit(LENGTH, METRIC, "DM", "[DECI]*M");
@@ -24,19 +23,8 @@ void AddLengths(UnitRegistry& reg)
     reg.AddUnit(LENGTH, USCUSTOM, "MICROINCH", "[MICRO]*IN");
     reg.AddUnit(LENGTH, USCUSTOM, "MILLIFOOT", "[MILLI]*FT");
 
-    un = reg.AddUnit(LENGTH, USCUSTOM, "IN", "MM", 25.4); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix B. Section 3.1, Page B-10
-    un->AddSynonym("\"");
-    un->AddSynonym("INCH");
-    un->AddSynonym("\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC");  // дюйм
-    un->AddSynonym("\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC\xD0\xB0");  // дюйма
-    un->AddSynonym("\xD0\xB4\xD1\x8E\xD0\xB9\xD0\xBC\xD0\xBE\xD0\xB2"); // дюймов
-    un = reg.AddUnit(LENGTH, USCUSTOM, "FT", "IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
-    un->AddSynonym("\'");
-    un->AddSynonym("feet");
-    un->AddSynonym("foot");
-    un->AddSynonym("\xD1\x84\xD1\x83\xD1\x82");  // фут
-    un->AddSynonym("\xD1\x84\xD1\x83\xD1\x82\xD0\xB0"); // фута
-    un->AddSynonym("\xD1\x84\xD1\x83\xD1\x82\xD0\xBE\xD0\xB2");  // футов
+    reg.AddUnit(LENGTH, USCUSTOM, "IN", "MM", 25.4); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix B. Section 3.1, Page B-10
+    reg.AddUnit(LENGTH, USCUSTOM, "FT", "IN", 12.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
 
     reg.AddUnit(LENGTH, USCUSTOM, "YRD", "FT", 3.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 2, Page C-4
     reg.AddUnit(LENGTH, USCUSTOM, "CHAIN", "FT", 66.0); // Exact, http://www.nist.gov/pml/wmd/pubs/upload/hb44-15-web-final.pdf, Appendix C. Section 4, Page C-8
@@ -85,13 +73,9 @@ void AddTime(UnitRegistry& reg)
 
 void AddTemperature(UnitRegistry& reg)
     {
-    UnitCP un;
-    un = reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 1.0, 273.15);
-    un->AddSynonym("\xC2\xB0\x43");
-    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0, 9.0, -32); // Factor is 5/9
-    un->AddSynonym("\xC2\xB0\x46");
-    un = reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0, 9.0); // Factor is 5/9
-    un->AddSynonym("\xC2\xB0\x52");
+    reg.AddUnit(TEMPERATURE, METRIC, "CELSIUS", "K", 1.0, 1.0, 273.15);
+    reg.AddUnit(TEMPERATURE, USCUSTOM, "FAHRENHEIT", "CELSIUS", 5.0, 9.0, -32); // Factor is 5/9
+    reg.AddUnit(TEMPERATURE, USCUSTOM, "RANKINE", "K", 5.0, 9.0); // Factor is 5/9
     }
 
 void AddTemperatureChange(UnitRegistry& reg)
@@ -169,15 +153,10 @@ void AddAcceleration(UnitRegistry& reg)
 
 void AddPlaneAngle(UnitRegistry& reg)
     {
-    UnitCP un;
-    un = reg.AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 1.0, 180.0 ); // 1/180
-    un->AddSynonym("^");
-    un->AddSynonym("\xC2\xB0");
+    reg.AddUnit(ANGLE, METRIC, "ARC_DEG", "[PI]*RAD", 1.0, 180.0 ); // 1/180
 
-    un = reg.AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 1.0, 60.0); // 1/60
-    un->AddSynonym("'");
-    un = reg.AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 1.0, 3600.0); // 1/3600
-    un->AddSynonym("\"");
+    reg.AddUnit(ANGLE, METRIC, "ARC_MINUTE", "ARC_DEG", 1.0, 60.0); // 1/60
+    reg.AddUnit(ANGLE, METRIC, "ARC_SECOND", "ARC_DEG", 1.0, 3600.0); // 1/3600
     reg.AddUnit(ANGLE, METRIC, "ARC_QUADRANT", "[PI/2]*RAD");
     reg.AddUnit(ANGLE, METRIC, "GRAD", "[PI]*RAD", 1.0, 200.0); // 1/200
     reg.AddUnit(ANGLE, METRIC, "REVOLUTION", "[2PI]*RAD");
@@ -561,8 +540,7 @@ void AddPressure(UnitRegistry& reg)
     reg.AddUnit(PRESSURE, METRIC, "MEGAPASCAL", "[MEGA]*PA");
     reg.AddUnit(PRESSURE, INDUSTRIAL, "MEGAPASCAL_GAUGE", "[MEGA]*PA", 1, 1.0, 101325e-6);  // Offset is one standard atmosphere (101325 PA) converted to megapascal.  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
-    UnitCP un = reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
-    un->AddSynonym("ATMOSPHERE_TECHNIAL");
+    reg.AddUnit(PRESSURE, INTERNATIONAL, "AT", "KGF*CM(-2)");  // Exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.
 
     reg.AddUnit(PRESSURE, INDUSTRIAL, "AT_GAUGE", "AT", 1.0, 1.0, 1.0332274527998859); // Offset is one standard atmosphere (101325 PA) converted to atmosphere-technical (AT).  Offset is exact, See http://physics.nist.gov/cuu/pdf/sp811.pdf Appendix B.  
 
@@ -782,22 +760,16 @@ void AddApparentPower(UnitRegistry& reg)
 //---------------------------------------------------------------------------------------
 void UnitRegistry::AddBaseUnits()
     {
-    UnitCP un;
-    un = AddUnitForBasePhenomenon("M", LENGTH);
-    un->AddSynonym("METER");
+    AddUnitForBasePhenomenon("M", LENGTH);
     AddUnitForBasePhenomenon("KG", MASS);
-    un = AddUnitForBasePhenomenon("S", TIME);
-    un->AddSynonym("SEC");
-    un = AddUnitForBasePhenomenon("K", TEMPERATURE);
-    un->AddSynonym("\xC2\xB0\x4B");
-    un->AddSynonym("KELVIN");
+    AddUnitForBasePhenomenon("S", TIME);
+    AddUnitForBasePhenomenon("K", TEMPERATURE);
     AddUnitForBasePhenomenon("DELTA_KELVIN", TEMPERATURE_CHANGE);
 
     AddUnitForBasePhenomenon("A", CURRENT);
     AddUnitForBasePhenomenon("MOL", MOLE); // Where mol is the SI gram mol or gmol.
     AddUnitForBasePhenomenon("CD", LUMINOSITY);
-    un = AddUnitForBasePhenomenon("RAD", ANGLE);
-    un->AddSynonym("RADIAN");
+    AddUnitForBasePhenomenon("RAD", ANGLE);
 
     AddUnitForBasePhenomenon("STERAD", SOLIDANGLE);
     AddUnitForBasePhenomenon("US$", CURRENCY);

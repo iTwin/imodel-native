@@ -119,10 +119,6 @@ private:
         if (nullptr == unit)
             return nullptr;
 
-        // Add the unit label as a synonym as long as it is not the same as the actual unit name
-        if (!Utf8String::IsNullOrEmpty(unit->GetLabel().c_str()) && (0 != BeStringUtilities::StricmpAscii(unit->GetLabel().c_str(), unitName)))
-            unit->AddSynonym(unit->GetLabel().c_str());
-
         unit->m_unitsContext = this;
         phenomenon->AddUnit(*unit);
 
