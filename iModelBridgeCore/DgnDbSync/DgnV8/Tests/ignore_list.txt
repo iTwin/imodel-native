@@ -5,6 +5,8 @@
 DataValidation_Tests.* 
 DataValidationTests.*
 
+
+
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
@@ -28,3 +30,10 @@ ConverterTests.UpdateWithDeletedParent
     # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTests.cpp(1081): error: Value of: child1.IsValid()
     # Actual: false
     # Expected: true
+
+# newly added sheet composition tests
+SheetCompositionTests.SheetNameTest
+SheetCompositionTests.SheetSizeTest
+SheetCompositionTests.HasDgnAttachment    
+SheetCompositionTests.HasSheetBorder
+SheetCompositionTests.HasDrawingBoundary

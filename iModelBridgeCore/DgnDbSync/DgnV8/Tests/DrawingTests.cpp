@@ -1167,3 +1167,114 @@ TEST_F(DrawingTests, Cyclic2dModels_AttachToSheet)
         countElementsInModelByClass(*sheetmodel1, getBisClassId(*db, "ViewAttachment"), 2);
         }
     }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+struct SheetCompositionTests : public ConverterTestBaseFixture
+    {
+    Bentley::SheetDefCP GetV8SheetDef (Bentley::WString sheetName)
+        {
+        V8FileEditor v8editor;
+        v8editor.Open (m_v8FileName);
+        Bentley::DgnPlatform::ModelId sheetModelId = v8editor.m_file->FindModelIdByName (L"Section_Case1");
+        Bentley::DgnModelPtr v8Model = v8editor.m_file->LoadModelById (sheetModelId);
+        return v8Model->GetModelInfoCP ()->GetSheetDefCP ();
+        }
+
+    BentleyApi::Dgn::Sheet::ModelCP GetSheetModel (BentleyApi::Utf8String sheetName)
+        {
+        DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+        BentleyApi::Dgn::DgnModelPtr model;
+        for (auto const& modelEntry : db->Models ().MakeIterator (BIS_SCHEMA (BIS_CLASS_GeometricModel)))
+            {
+            model = db->Models ().GetModel (modelEntry.GetModelId ());
+            if (0 == model->GetName ().CompareTo (sheetName))
+                break;
+            }
+
+        return model.IsValid () ? model->ToSheetModel () : nullptr;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test name of the converted sheet
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, SheetNameTest)
+    {
+    LineUpFiles (L"SheetNameTest.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+    BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel ("Section_Case1");
+
+    ASSERT_TRUE (nullptr != sheetModel);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test size of the converted sheet
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, SheetSizeTest)
+    {
+    LineUpFiles (L"SheetSizeTest.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+
+    Bentley::SheetDefCP v8SheetDef = GetV8SheetDef(L"Section_Case1");
+    double v8SheetWidth = 0.0;
+    double v8SheetHeight = 0.0;
+    v8SheetDef->GetSize (v8SheetWidth, v8SheetHeight);
+    DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+
+    auto sheetElement = db->Elements ().Get<BentleyApi::Dgn::Sheet::Element> (findFirstElementByClass (*db, getBisClassId (*db, BIS_CLASS_Sheet)));
+    double height = sheetElement->GetHeight ();
+    double width = sheetElement->GetWidth ();
+    double unitsScaleFactor = height / v8SheetHeight;
+
+    ASSERT_DOUBLE_EQ (height, v8SheetHeight*unitsScaleFactor);
+    ASSERT_DOUBLE_EQ (width, v8SheetWidth*unitsScaleFactor);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test if the attachement came through
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, HasDgnAttachment)
+    {
+    LineUpFiles (L"HasDgnAttachment.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+    DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    BentleyApi::Dgn::Sheet::ModelCP sheetModel = GetSheetModel ("Section_Case1");
+    auto attachments = sheetModel->GetSheetAttachmentViews (*db);
+    ASSERT_TRUE (0 != attachments.size ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test sheet has a border
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, HasSheetBorder)
+    {
+    LineUpFiles (L"HasSheetBorder.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+    DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    auto sheetElement = db->Elements ().Get<BentleyApi::Dgn::Sheet::Element> (findFirstElementByClass (*db, getBisClassId (*db, BIS_CLASS_Sheet)));
+    auto borderElementId = sheetElement->GetBorder ();
+
+    auto borderElementGraphics = db->Elements ().Get<BentleyApi::Dgn::DrawingGraphic> (borderElementId);
+    ASSERT_TRUE (borderElementGraphics.IsValid ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mayuresh.Kanade                 03/2018
+* Test sheet has a drawing boundary in it
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (SheetCompositionTests, HasDrawingBoundary)
+    {
+    LineUpFiles (L"HasDrawingBoundary.ibim", L"DVTest_Case1.dgn", true);
+    m_wantCleanUp = true;
+    DgnDbPtr db = OpenExistingDgnDb (m_dgnDbFileName);
+    
+    auto drawingBoundary= db->Elements ().Get<BentleyApi::Dgn::GenericViewAttachmentLabel> (findFirstElementByClass (*db, db->Schemas ().GetClassId (GENERIC_DOMAIN_NAME, GENERIC_CLASS_ViewAttachmentLabel)));
+    ASSERT_TRUE (drawingBoundary.IsValid ());
+    }
+
