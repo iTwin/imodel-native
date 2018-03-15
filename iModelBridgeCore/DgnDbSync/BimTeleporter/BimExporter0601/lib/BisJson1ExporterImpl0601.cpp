@@ -10,6 +10,7 @@
 #include "BisJson1ExporterImpl0601.h"
 #include <limits>
 #include <DgnDb06Api/DgnPlatform/WebMercator.h>
+#include <DgnDb06Api/DgnPlatform/DgnIModel.h>
 
 DGNDB06_USING_NAMESPACE_BENTLEY
 DGNDB06_USING_NAMESPACE_BENTLEY_SQLITE
@@ -306,12 +307,49 @@ bool BisJson1ExporterImpl::OpenDgnDb()
     DgnPlatformLib::Initialize(*this, false);
     DbResult dbStatus;
     DgnDb::OpenParams openParams(DgnDb::OpenMode::Readonly);
+    BeFileName dgndbFileName;
 
-    m_dgndb = DgnDb::OpenDgnDb(&dbStatus, m_dbPath, openParams);
+    if (m_dbPath.GetExtension().EqualsI(L"imodel"))
+        {
+        BimFormatVersion versionInfo = BimFormatVersion::Extract(m_dbPath);
+        if (!versionInfo.IsValid() || !versionInfo.IsCurrent())
+            {
+            LogMessage(TeleporterLoggingSeverity::LOG_ERROR, L"Failed to open imodel '%ls'", m_dbPath.GetName());
+            return false;
+            }
 
+        BeFileName tempPathname;
+        BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, nullptr);
+        if (SUCCESS != status)
+            {
+            LogMessage(TeleporterLoggingSeverity::LOG_ERROR, "Failed to retrieve temporary path for extracting imodel");
+            return false;
+            }
+
+        dgndbFileName = tempPathname.Combine({L"Bentley", L"DgnDb0601ToBimConverter", m_dbPath.GetFileNameWithoutExtension().AppendA(".i.idgndb").c_str()});
+        if (!dgndbFileName.GetDirectoryName().DoesPathExist())
+            {
+            BeFileName::CreateNewDirectory(dgndbFileName.GetDirectoryName().c_str());
+            }
+
+        BentleyApi::BeSQLite::DbResult dbResult;
+        DgnIModel::ExtractUsingDefaults(dbResult, dgndbFileName, m_dbPath, true);
+
+        if (BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK != dbResult)
+            {
+            LogMessage(TeleporterLoggingSeverity::LOG_ERROR, "Failed to extract dgndb from imodel");
+            return false;
+            }
+
+
+        }
+    else
+        dgndbFileName = m_dbPath;
+
+    m_dgndb = DgnDb::OpenDgnDb(&dbStatus, dgndbFileName, openParams);
     if (!m_dgndb.IsValid())
         {
-        LogMessage(TeleporterLoggingSeverity::LOG_ERROR, L"Failed to open DgnDb '%ls'", m_dbPath.GetName());
+        LogMessage(TeleporterLoggingSeverity::LOG_ERROR, L"Failed to open DgnDb '%ls'", dgndbFileName.GetName());
         return false;
         }
 
