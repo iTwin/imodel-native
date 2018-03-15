@@ -916,7 +916,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             if (numerator == nullptr)
                 numerator = 1.0;
             //BeAssert(numerator != nullptr && "Constant unit expects numerator not to be null");
-            if (ECObjectsStatus::Success != schema.CreateConstant(unit, name, definition, *ph, *us, numerator.Value(), denominator, displayLabel, description))
+            if (ECObjectsStatus::Success != schema.CreateConstant(unit, name, definition, *ph, numerator.Value(), denominator, displayLabel, description))
                     return ERROR;
             }
         else
