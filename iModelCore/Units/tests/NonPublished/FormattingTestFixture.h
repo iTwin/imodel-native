@@ -96,6 +96,7 @@ struct FormattingTestFixture
 		static void TestScanPointVector(Utf8CP str);
 		static void TestScanTriplets(Utf8CP str);
 		static void TestSegments(Utf8CP input, size_t start, Utf8CP unitName, Utf8CP expectReduced = nullptr);
+		static void TestTime(Utf8CP localeName, Utf8CP label, Utf8CP pattern = nullptr);
 		static void UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName);
 		static void UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym = nullptr);
 		static bool ValidateSchemaUnitNames(char* schemaPath, Utf8CP token, char* reportPath = nullptr);

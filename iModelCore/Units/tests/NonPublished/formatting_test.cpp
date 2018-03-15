@@ -19,6 +19,8 @@
 #include <BeSQLite/L10N.h>
 
 
+
+
 //#define FORMAT_DEBUG_PRINT
 
 using namespace BentleyApi::Formatting;
@@ -53,6 +55,7 @@ BE_JSON_NAME(roll)
 //    BeSQLite::L10N::Shutdown();
 //    }
 
+#ifdef  BENTLEYCONFIG_OS_WINDOWS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1241,6 +1244,11 @@ TEST(FormattingTest, LocaleTest)
 	FormattingTestFixture::DecomposeString("-3.141.592 2/3 FT", false);
 
 	LOG.infov("================  End of String Decomposition ===========================\n");
+	FormattingTestFixture::TestTime("", "", "%c %a (%A) ");
+	FormattingTestFixture::TestTime("en-US", "US time", "%c %a (%A) day %d of %b (%B)");
+	FormattingTestFixture::TestTime("de-DE", "German time", "%c %a (%A) day %d of %b (%B)");
+	FormattingTestFixture::TestTime("fr", "French time", "%c %a (%A) day %d of %b (%B)");
+	FormattingTestFixture::TestTime("ru", "Russian time", u8"%c %a (%A) день %d месяца %b (%B)");
 }
 
 
@@ -1262,7 +1270,7 @@ TEST(FormattingTest, PhenomenaTest)
     }
 
 
-
+#endif    //BENTLEYCONFIG_OS_WINDOWS
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 

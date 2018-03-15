@@ -8,9 +8,14 @@
 #pragma once
 #if defined (BENTLEY_WIN32)
 #include <windows.h>
-#include <iostream>
+
 #endif
+#include <iostream>
+#include <time.h>
+#include <ctime>
 #include <locale>
+#include <chrono>
+
 #include "UnitsTests.h"
 #include <Formatting/FormattingApi.h>
 #include <Units/UnitRegistry.h>
@@ -1378,6 +1383,88 @@ Utf8String FormattingTestFixture::SetLocale(Utf8CP name)
 	                                  Utils::GetCurrentGrouping().c_str());*/
 	return locName;
 }
+
+void FormattingTestFixture::TestTime(Utf8CP localeName, Utf8CP label, Utf8CP pattern)
+{
+	//std::locale loc(name);
+
+	//strm << "TestTimeFunction" << std::endl;
+	//LOG.infov("Test cout to buffer: %s", strm.str().c_str());
+	//LOG.infov("Default locale name: %s", std::locale(localeName).name().c_str());
+
+ //   time_t now = time(NULL);
+	//struct tm tstruct;
+ //   Utf8Char buf[40];
+	//tstruct = *localtime(&now);
+	//	//format: day DD-MM-YYYY
+	//strftime(buf, sizeof(buf), "%A %d/%m/%Y", &tstruct);
+	//LOG.infov("Current Date: %s", buf);
+	//
+	//strftime(buf, sizeof(buf), "%X", &tstruct);
+	//LOG.infov("Current Time: %s", buf);
+	//
+	std::locale loc(localeName);
+	std::wstringstream strm;
+	if(Utils::IsNameNullOrEmpty(localeName))
+	     strm.imbue(std::locale());
+	else
+		strm.imbue(std::locale(localeName));
+	strm.imbue(loc);
+	strm.clear();
+	if (Utils::IsNameNullOrEmpty(pattern))
+		pattern = "%c";
+
+	if (Utils::IsNameNullOrEmpty(label))
+		label = "time";
+	WString wPatt(pattern, true);
+	//BeStringUtilities::Utf8ToWChar(wPatt, pattern, strlen(pattern));
+
+	using std::chrono::system_clock;
+	std::time_t tt = system_clock::to_time_t(system_clock::now());
+
+	struct std::tm * ptm = std::localtime(&tt);
+	//Utf8String tstr(std::put_time(ptm, pattern).str());
+	//WString wPat(pattern, true);
+	strm << std::put_time(ptm, wPatt.c_str()) << '\n';
+
+	/*WString wLoc(std::locale(localeName).name().c_str(), true);
+	WString wLab(label, true);
+	WString wStr(strm.str().c_str(), true);
+	LOG.infov(u8"Locale %ls %ls: %ls", wLoc.c_str(), wLab.c_str(), wStr.c_str());*/
+	//WString wStr(strm.str().c_str());
+	Utf8String utf8Buffer(strm.str().c_str());
+	//BeStringUtilities::WCharToUtf8(utf8Buffer, (WCharCP)((void*)(strm.str().c_str())), -1);
+	//BeStringUtilities::WCharToUtf8(utf8Buffer, strm.str().c_str(), -1);
+	//std::string ss = strm.str();
+	//Utf8String utf8Buffer(ss.c_str());
+	Utf8String dump = Utils::HexDump((Utf8CP)((void*)(strm.str().c_str())), (int)utf8Buffer.size() * 2);
+
+	LOG.infov(u8"Locale %s %s: %s   copied len %d", std::locale(localeName).name().c_str(), label, utf8Buffer.c_str());
+	LOG.infov("Dump[%d]: %s", dump.size(), dump.c_str());
+
+	/*std::time_t t = std::time(nullptr);
+	std::tm tm = *std::localtime(&t);
+	std::cout.imbue(std::locale("ru"));
+	std::stringstream ruStr;
+	ruStr << "ru_RU: " << std::put_time(&tm, "%c %Z") << '\n';
+	LOG.infov("Russian %s", ruStr.str().c_str());*/
+
+
+	//LOG.infov("Locale %s %s: %s", std::locale(localeName).name().c_str(), label, strm.str().c_str());
+	//LOG.infov("testString %s", tstr.c_str());
+}
+
+//WString wName(unitName, true);
+//WString wSyn(synonym, true);
+//WString wJson(jval.ToString().c_str(), true);
+//WString wBool(FormatConstant::BoolText(ident), true);
+////WChar outStr[258];
+////memset(outStr, 0, sizeof(outStr));
+////BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
+////LOG.infov(L"FormattedMapString: %ls", outStr);
+//LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
+
+
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 

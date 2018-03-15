@@ -486,24 +486,6 @@ void NumericFormatSpec::TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex,
     outValue[bitIndex] = FormatConstant::BoolText((static_cast<int>(traits) & static_cast<int>(bit)) != 0);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 03/17
-//---------------------------------------------------------------------------------------
-BEU::PhenomenonCP NamedFormatSpec::GetPhenomenon() const
-{
-	if (FormatSpecType::Composite == m_specType)
-		return m_compositeSpec.GetPhenomenon();
-	return nullptr;
-}
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 03/17
-//---------------------------------------------------------------------------------------
-Utf8CP NamedFormatSpec::GetPhenomenonName() const
-{
-	if (FormatSpecType::Composite == m_specType)
-		return m_compositeSpec.GetPhenomenonName();
-	return nullptr;
-}
 
 Json::Value NumericFormatSpec::JsonFormatTraits(bool verbose) const
     {
@@ -760,6 +742,7 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
     SetUnitRatios();
     }
 
+
 //===================================================
 //
 // NamedFormatSpec Methods
@@ -771,14 +754,15 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval)
 //----------------------------------------------------------------------------------------
 void NamedFormatSpec::Init(FormatProblemCode prob)
     {
-    m_name.clear();
+	InitCore(prob);
+   /* m_name.clear();
     m_alias.clear();
     m_description.clear();
-    m_displayLabel.clear();
+    m_displayLabel.clear();*/
     m_numericSpec.DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex());
     m_compositeSpec.Init();
-    m_specType = FormatSpecType::Undefined;
-    m_problem.UpdateProblemCode(prob);
+   /* m_specType = FormatSpecType::Undefined;
+    m_problem.UpdateProblemCode(prob);*/
     }
 
 //----------------------------------------------------------------------------------------
@@ -787,14 +771,14 @@ void NamedFormatSpec::Init(FormatProblemCode prob)
 Json::Value NamedFormatSpec::ToJson(bool verbose) const
     {
     Json::Value jNFS;
-    jNFS[json_SpecName()] = m_name;
-    jNFS[json_SpecAlias()] = m_alias;
-    if (!m_description.empty())
-        jNFS[json_SpecDescript()] = m_description;
-    if (!m_displayLabel.empty())
-        jNFS[json_SpecLabel()] = m_displayLabel;
+    jNFS[json_SpecName()] = GetName();
+    jNFS[json_SpecAlias()] = GetAlias();
+    if (!GetDescriptionString().empty())
+        jNFS[json_SpecDescript()] = GetDescription();
+    if (!GetLabelString().empty())
+        jNFS[json_SpecLabel()] = GetLabel();
 
-    jNFS[json_SpecType()] = Utils::FormatSpecTypeToName(m_specType);
+    jNFS[json_SpecType()] = GetTypeName();
     jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
     Json::Value jcs = m_compositeSpec.ToJson();
     if (!jcs.empty())
@@ -802,6 +786,24 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
     return jNFS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//---------------------------------------------------------------------------------------
+BEU::PhenomenonCP NamedFormatSpec::GetPhenomenon() const
+{
+	if (FormatSpecType::Composite == GetSpecType())
+		return m_compositeSpec.GetPhenomenon();
+	return nullptr;
+}
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 03/17
+//---------------------------------------------------------------------------------------
+Utf8CP NamedFormatSpec::GetPhenomenonName() const
+{
+	if (FormatSpecType::Composite == GetSpecType())
+		return m_compositeSpec.GetPhenomenonName();
+	return nullptr;
+}
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
@@ -811,7 +813,7 @@ void NamedFormatSpec::LoadJson(Json::Value jval)
     Init();
     if (jval.empty())
         {
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
+        UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
         return;
         }
     //str = jval.ToString();
@@ -820,15 +822,15 @@ void NamedFormatSpec::LoadJson(Json::Value jval)
         paramName = iter.memberName();
         JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_SpecName()) == 0)
-            m_name = val.asString();
+            SetName(val.asString());
         else if (BeStringUtilities::StricmpAscii(paramName, json_SpecAlias()) == 0)
-            m_alias = val.asString();
+            SetAlias(val.asString());
         else if (BeStringUtilities::StricmpAscii(paramName, json_SpecDescript()) == 0)
-            m_description = val.asString();
+            SetDescription(val.asString());
         else if (BeStringUtilities::StricmpAscii(paramName, json_SpecLabel()) == 0)
-            m_displayLabel = val.asString();
+			SetLabel(val.asString());
         else if (BeStringUtilities::StricmpAscii(paramName, json_SpecType()) == 0)
-            m_specType = Utils::NameToFormatSpecType(val.asCString());
+			SetSpecType(Utils::NameToFormatSpecType(val.asCString()));
         else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
             m_numericSpec = NumericFormatSpec(val);
         else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)

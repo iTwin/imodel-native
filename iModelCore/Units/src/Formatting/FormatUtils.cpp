@@ -829,6 +829,16 @@ bool Utils::IsNameNullOrEmpty(Utf8CP name)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
+bool Utils::IsWCharNullOrEmpty(WCharCP name)
+{
+	if (nullptr == name || *name == 0)
+		return true;
+	return false;
+}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 Utf8Char Utils::MatchingDivider(Utf8Char div)
     {
     Utf8CP fd= FormatConstant::FUSDividers();
@@ -1874,6 +1884,69 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
 
 //===================================================
 //
+// NamedFormatCore Methods
+//
+//===================================================
+
+void NamedFormatCore::InitCore(FormatProblemCode prob)
+{
+	m_name.clear();
+	m_alias.clear();
+	m_description.clear();
+	m_displayLabel.clear();
+	m_specType = FormatSpecType::Undefined;
+	m_problem.UpdateProblemCode(prob);
+}
+
+NamedFormatCore::NamedFormatCore(Utf8CP name, FormatSpecType type)
+{
+	m_name = Utf8String(name);
+	m_specType = type;
+	m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);
+}
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+bool NamedFormatCore::HasName(Utf8CP name) const
+{
+	if (Utils::IsNameNullOrEmpty(name))
+		return false;
+	return (0 == BeStringUtilities::StricmpAscii(name, m_name.c_str()));
+}
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+bool NamedFormatCore::HasAlias(Utf8CP name) const
+{
+	if (Utils::IsNameNullOrEmpty(name))
+		return false;
+	return (0 == BeStringUtilities::StricmpAscii(name, m_alias.c_str()));
+}
+
+
+void NamedFormatCore::CloneCore(NamedFormatCoreCR other)
+{
+	m_name = other.m_name;
+	m_alias = other.m_alias;
+	m_description = other.m_description;
+	m_displayLabel = other.m_displayLabel;
+	m_specType = other.m_specType;
+	m_problem.UpdateProblemCode(other.m_problem.GetProblemCode());
+}
+
+void NamedFormatCore::CloneCore(NamedFormatCoreCP other)
+{
+	m_name = other->m_name;
+	m_alias = other->m_alias;
+	m_description = other->m_description;
+	m_displayLabel = other->m_displayLabel;
+	m_specType = other->m_specType;
+	m_problem.UpdateProblemCode(other->m_problem.GetProblemCode());
+}
+
+//===================================================
+//
 // NamedFormatSpec
 //
 //===================================================
@@ -1891,14 +1964,15 @@ void NamedFormatSpec::SetSuppressUnitLabel()
 //----------------------------------------------------------------------------------------
 void NamedFormatSpec::Clone(NamedFormatSpecCR other)
     {
-    m_name = other.m_name;
-    m_alias = other.m_alias;
-    m_description = other.m_description;
-    m_displayLabel = other.m_displayLabel;
+	CloneCore(other);
+    //SetName(other.m_name);
+    //SetAlias(other.m_alias);
+    //SetDescription(other.m_description);
+    //m_displayLabel = other.m_displayLabel;
     m_numericSpec.Clone(other.m_numericSpec);
     m_compositeSpec.Clone(other.m_compositeSpec);
-    m_specType = other.m_specType;
-    m_problem.UpdateProblemCode(other.m_problem.GetProblemCode());
+    //m_specType = other.m_specType;
+    //m_problem.UpdateProblemCode(other.m_problem.GetProblemCode());
     }
 
 //----------------------------------------------------------------------------------------
@@ -1906,14 +1980,15 @@ void NamedFormatSpec::Clone(NamedFormatSpecCR other)
 //----------------------------------------------------------------------------------------
 void NamedFormatSpec::Clone(NamedFormatSpecCP other)
     {
-    m_name = other->m_name;
-    m_alias = other->m_alias;
-    m_description = other->m_description;
-    m_displayLabel = other->m_displayLabel;
+	CloneCore(other);
+    //m_name = other->m_name;
+    //m_alias = other->m_alias;
+    //m_description = other->m_description;
+    //m_displayLabel = other->m_displayLabel;
     m_numericSpec.Clone(other->m_numericSpec);
     m_compositeSpec.Clone(other->m_compositeSpec);
-    m_specType = other->m_specType;
-    m_problem.UpdateProblemCode(other->m_problem.GetProblemCode());
+    //m_specType = other->m_specType;
+    //m_problem.UpdateProblemCode(other->m_problem.GetProblemCode());
     }
 
 NamedFormatSpec& NamedFormatSpec::operator=(const NamedFormatSpec& other)
@@ -1929,8 +2004,8 @@ NamedFormatSpec& NamedFormatSpec::operator=(const NamedFormatSpec& other)
 //----------------------------------------------------------------------------------------
 NamedFormatSpec::NamedFormatSpec()
     {
-    m_specType = FormatSpecType::Undefined;
-    m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);
+    //m_specType = FormatSpecType::Undefined;
+    //m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);
     }
 
 
@@ -1943,15 +2018,15 @@ NamedFormatSpec::NamedFormatSpec()
  //----------------------------------------------------------------------------------------
 NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias)
     {
-    m_specType = FormatSpecType::Undefined;
-    m_alias = alias;
-    m_name = name;
+    //m_specType = FormatSpecType::Undefined;
+    SetAlias(alias);
+    SetName(name);
     m_numericSpec = NumericFormatSpec(numSpec);
     m_compositeSpec.Clone(compSpec);
-    m_specType = FormatSpecType::Composite;
-    m_problem = FormatProblemDetail();
+	SetSpecType(FormatSpecType::Composite);
+	ResetProblem();
     if (Utils::IsNameNullOrEmpty(name))
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
+        UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
     }
 
 //----------------------------------------------------------------------------------------
@@ -1959,15 +2034,15 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Compo
 //----------------------------------------------------------------------------------------
 NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias)
     {
-    m_specType = FormatSpecType::Undefined;
-    m_alias = alias;
-    m_name = name;
+    //m_specType = FormatSpecType::Undefined;
+	SetAlias(alias);
+	SetName(name);
     m_numericSpec = NumericFormatSpec(numSpec);
-    m_specType = FormatSpecType::Numeric;
+	SetSpecType(FormatSpecType::Numeric);
     //m_compositeSpec(); // = CompositeValueSpec();
-    m_problem = FormatProblemDetail();
+	ResetProblem();
     if (Utils::IsNameNullOrEmpty(name))
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
+       UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
@@ -1977,12 +2052,12 @@ bool NamedFormatSpec::IsIdentical(NamedFormatSpecCR other) const
     int cod = 0;
     while (0 == cod)
         {
-        if (!m_name.Equals(other.m_name)) { cod = 1; break; }
-        if (!m_alias.Equals(other.m_alias)) { cod = 2; break; }
+        if (!IsNameEquals(other.GetName())) { cod = 1; break; }
+        if (!IsAliasEquals(other.GetAlias())) { cod = 2; break; }
         if (!m_numericSpec.IsIdentical(other.m_numericSpec)) { cod = 3; break; }
         if (!m_compositeSpec.IsIdentical(other.m_compositeSpec)) { cod = 4; break; }
-        if (m_specType != other.m_specType) { cod = 5; break; }
-        if (m_problem.GetProblemCode() != other.m_problem.GetProblemCode()) { cod = 6; break; }
+        if (GetSpecType() != other.GetSpecType()) { cod = 5; break; }
+        if (GetProblemCode() != other.GetProblemCode()) { cod = 6; break; }
         break;
         }
     if(0 == cod)
@@ -1992,21 +2067,21 @@ bool NamedFormatSpec::IsIdentical(NamedFormatSpecCR other) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-bool NamedFormatSpec::HasName(Utf8CP name) const 
-    {
-    if (Utils::IsNameNullOrEmpty(name))
-        return false;
-    return (0 == BeStringUtilities::StricmpAscii(name, m_name.c_str())); 
-    }
+//bool NamedFormatSpec::HasName(Utf8CP name) const 
+//    {
+//    if (Utils::IsNameNullOrEmpty(name))
+//        return false;
+//    return (0 == BeStringUtilities::StricmpAscii(name, m_name.c_str())); 
+//    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-bool NamedFormatSpec::HasAlias(Utf8CP name) const
-    {
-    if (Utils::IsNameNullOrEmpty(name))
-        return false;
-    return (0 == BeStringUtilities::StricmpAscii(name, m_alias.c_str()));
-    }
+//bool NamedFormatSpec::HasAlias(Utf8CP name) const
+//    {
+//    if (Utils::IsNameNullOrEmpty(name))
+//        return false;
+//    return (0 == BeStringUtilities::StricmpAscii(name, m_alias.c_str()));
+//    }
 
 //===================================================
 //
