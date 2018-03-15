@@ -315,6 +315,8 @@ namespace Attachment
         Sheet::ViewController& m_sheetController;
     private:
         Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view);
+
+        Render::ViewFlagsOverrides _GetViewFlagsOverrides() const override;
     public:
         static RootPtr Create(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context);
 
