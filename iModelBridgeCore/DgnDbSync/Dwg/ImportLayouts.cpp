@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/ImportLayouts.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -210,6 +210,17 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
         if (block->IsLayout() && !block->IsExternalReference())
             {
             if (changeDetector._ShouldSkipModel(*this, entry))
+                continue;
+
+            // don't import an empty layout:
+            auto iter = block->GetBlockChildIterator ();
+            iter.Start ();
+            if (iter.Done())
+                continue;
+
+            // even if the overall viewport exists, and it's the only entity in the block, the layout is treated as empty:
+            iter.Step ();
+            if (iter.Done() && !iter.GetEntityId().IsValid())
                 continue;
 
             DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);
