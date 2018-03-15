@@ -1601,8 +1601,14 @@ void Converter::OnCreateComplete()
     // *** NEEDS WORK: What is this for? m_rootScaleFactor is never set anywhere in the converter
     //m_dgndb->SaveProperty(PropertySpec("SourceRootScaleFactor", "dgn_Proj"), &m_rootScaleFactor, sizeof(m_rootScaleFactor));
 
-    if (m_defaultViewId.IsValid() && IsCreatingNewDgnDb())
-        GetDgnDb().SaveProperty(DgnViewProperty::DefaultView(), &m_defaultViewId, sizeof(m_defaultViewId));
+    if (m_defaultViewId.IsValid())
+        {
+        // check and add the DefaultView ID if not found in DB:
+        PropertySpec    prop = DgnViewProperty::DefaultView ();
+        DgnElementId    existingId;
+        if (m_dgndb->QueryProperty(&existingId, sizeof(existingId), prop) != DbResult::BE_SQLITE_OK || !existingId.IsValid())
+            m_dgndb->SaveProperty (prop, &m_defaultViewId, sizeof(m_defaultViewId));
+        }
     // else
     //  ensureAUserView
 
