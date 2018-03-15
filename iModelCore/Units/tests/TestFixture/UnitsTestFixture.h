@@ -17,6 +17,10 @@ BEGIN_UNITS_UNITTESTS_NAMESPACE
 struct UnitsTestFixture : public ::testing::Test
     {
     public:
+        // A UnitRegistry instance to use for all testing that does not require adding any additional Units.
+        // If you need to add additional Units get a new copy of the UnitRegistry.
+        static UnitRegistry* s_unitsContext;
+
         void SetUp() override;
         void TearDown() override;
 

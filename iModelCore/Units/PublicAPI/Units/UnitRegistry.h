@@ -21,13 +21,10 @@ struct UnitRegistry : IUnitsContext
 {
 friend struct Unit;
 private:
-    static UnitRegistry * s_instance;
-
     bmap<Utf8CP, UnitSystemP, less_str> m_systems;
     bmap<Utf8CP, PhenomenonP, less_str> m_phenomena;
     bmap<Utf8CP, UnitP, less_str> m_units;
 
-    UnitRegistry();
     UnitRegistry(const UnitRegistry& rhs) = delete;
     UnitRegistry & operator= (const UnitRegistry& rhs) = delete;
 
@@ -74,13 +71,13 @@ private:
             return nullptr;
             }
 
-        auto phenomena = Phenomenon::_Create(phenomenaName, definition);
+        auto phenomenon = Phenomenon::_Create(phenomenaName, definition);
 
-        phenomena->m_unitsContext = this;
+        phenomenon->m_unitsContext = this;
 
-        m_phenomena.insert(bpair<Utf8CP, PhenomenonP>(phenomena->GetName().c_str(), phenomena));
+        m_phenomena.insert(bpair<Utf8CP, PhenomenonP>(phenomenon->GetName().c_str(), phenomenon));
 
-        return phenomena;
+        return phenomenon;
         }
 
     
@@ -223,14 +220,8 @@ protected:
 
     UnitCP CreateDummyUnit(Utf8CP unitName);
 public:
-    //! Returns a pointer to the singleton instance of the UnitRegistry
-    //!
-    //! If the singleton has not yet been instantiated the UnitRegistry will be initialized with 
-    //! a set of base Units, Phenomena, and Unit Systems. For more details see the description of the class.
-    UNITS_EXPORT static UnitRegistry& Get();
-
-    //! Clears the singleton instance of all definitions.
-    UNITS_EXPORT static void Clear(); // TODO: Remove or hide so cannot be called from public API, only needed for performance testing
+    //! Constructs a new instance of the UnitRegistry with a default set of Units/Phenomenon/UnitSystems.
+    UNITS_EXPORT UnitRegistry();
 
     //! Populates the provided vector with the name of all the Units in the registry. If includeSynonyms is true, all Unit synonym names 
     //! will be included.

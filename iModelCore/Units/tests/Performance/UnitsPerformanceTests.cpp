@@ -28,13 +28,12 @@ void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsPerformanceTests, InitUnitsHub)
     {
-    UnitRegistry::Clear();
     StopWatch timer("Init Units Hub", false);
     timer.Start();
-    UnitRegistry& hub = UnitRegistry::Get();
+    UnitRegistry* hub = new UnitRegistry();
     timer.Stop();
     bvector<Utf8String> allUnitNames;
-    hub.AllUnitNames(allUnitNames, false);
+    hub->AllUnitNames(allUnitNames, false);
 
     PERFORMANCELOG.errorv("Time to load Units Hub with %lu units: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     }
@@ -44,28 +43,30 @@ TEST_F(UnitsPerformanceTests, InitUnitsHub)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
     {
+    UnitRegistry* hub;
+
     StopWatch timer("Get every unit by name", false);
-    UnitRegistry::Clear();
     bvector<Utf8String> allUnitNames;
+    hub = new UnitRegistry();
     timer.Start();
-    UnitRegistry::Get().AllUnitNames(allUnitNames, false);
+    hub->AllUnitNames(allUnitNames, false);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get all %lu primary unit names: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     
     timer.Start();
-    GetUnitsByName(UnitRegistry::Get(), allUnitNames);
+    GetUnitsByName(*hub, allUnitNames);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get %lu units by name: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
 
-    UnitRegistry::Clear();
+    hub = new UnitRegistry();
     allUnitNames.clear();
     timer.Start();
-    UnitRegistry::Get().AllUnitNames(allUnitNames, true);
+    hub->AllUnitNames(allUnitNames, true);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get all %lu primary unit names and synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
 
     timer.Start();
-    GetUnitsByName(UnitRegistry::Get(), allUnitNames);
+    GetUnitsByName(*hub, allUnitNames);
     timer.Stop();
     PERFORMANCELOG.errorv("Time to get %lu units by name including using synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     }
@@ -76,10 +77,10 @@ TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
 TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
     {
     StopWatch timer("Evaluate every unit", false);
-    UnitRegistry::Clear();
-    UnitRegistry& hub = UnitRegistry::Get();
+    
+    UnitRegistry* hub = new UnitRegistry();
     bvector<PhenomenonCP> allPhenomena;
-    hub.AllPhenomena(allPhenomena);
+    hub->AllPhenomena(allPhenomena);
 
     int numConversions = 0;
     timer.Start();

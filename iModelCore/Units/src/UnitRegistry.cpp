@@ -13,34 +13,6 @@ using namespace std;
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
-UnitRegistry * UnitRegistry::s_instance = nullptr;
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                              Chris.Tartamella     02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-// static
-UnitRegistry& UnitRegistry::Get()
-    {
-    if (nullptr == s_instance)
-        {
-        s_instance = new UnitRegistry();
-        s_instance->AddDefaultPhenomena();
-        s_instance->AddDefaultUnits();
-        s_instance->AddDefaultConstants();
-        }
-
-    return *s_instance;
-    }
-
-//-------------------------------------------------------------------------------------//
-// @bsimethod                                              Chris.Tartamella     02/16
-//---------------+---------------+---------------+---------------+---------------+------//
-// static
-void UnitRegistry::Clear()
-    {
-    s_instance = nullptr;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Caleb.Shafer            01/18
 //---------------------------------------------------------------------------------------
@@ -49,6 +21,9 @@ UnitRegistry::UnitRegistry()
     AddBaseSystems();
     AddBasePhenomena();
     AddBaseUnits();
+    AddDefaultPhenomena();
+    AddDefaultUnits();
+    AddDefaultConstants();
     }
 
 /*--------------------------------------------------------------------------------**//**

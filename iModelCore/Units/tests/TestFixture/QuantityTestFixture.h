@@ -7,21 +7,21 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "UnitsTests.h"
+#include "UnitsTestFixture.h"
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
 /*=================================================================================**//**
 * @bsiclass                                             Chris.Tartamella 02/2016
 +===============+===============+===============+===============+===============+======*/
-struct QuantityTestFixture : public ::testing::Test
+struct QuantityTestFixture : UnitsTestFixture
     {
     protected:
-        void QuantityEquality(QuantityCR q1, QuantityCR q2) const;
-        void QuantityGreater(QuantityCR q1, QuantityCR q2) const;
-        void QuantityGreaterEqual(QuantityCR q1, QuantityCR q2) const;
-        void QuantityLess(QuantityCR q1, QuantityCR q2) const;
-        void QuantityLessEqual(QuantityCR q1, QuantityCR q2) const;
+        static void QuantityEquality(QuantityCR q1, QuantityCR q2);
+        static void QuantityGreater(QuantityCR q1, QuantityCR q2);
+        static void QuantityGreaterEqual(QuantityCR q1, QuantityCR q2);
+        static void QuantityLess(QuantityCR q1, QuantityCR q2);
+        static void QuantityLessEqual(QuantityCR q1, QuantityCR q2);
     };
 
 END_UNITS_UNITTESTS_NAMESPACE

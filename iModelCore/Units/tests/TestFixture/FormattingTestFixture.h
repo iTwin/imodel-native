@@ -39,18 +39,9 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct FormattingTestUtils
     {
-    private:
-        Utf8CP m_text;
     public:
-        static void SetUpL10N();
-        static void TearDownL10N();
-
         static void SignaturePattrenCollapsing(Utf8CP txt, int tstN);
         static void ShowSignature(Utf8CP txt, int tstN);
-        static void CrossValidateFUS(Utf8CP descr1, Utf8CP descr2);
-        static void ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnit, Utf8CP fusFormat, Utf8CP space);
-        static void ShowQuantityS(Utf8CP descr);
-        static void TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space);
         static int FindLastDividerPos(Utf8CP txt, Utf8Char div);
         static void ShowSplitByDividers(Utf8CP txt, Utf8CP divDef);
         static size_t FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8Char div);
@@ -59,7 +50,6 @@ struct FormattingTestUtils
         static bool IsDataAvailalbe();
         static bool GetNextLine(Utf8P buf, int bufLen);
         static Utf8String ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim);
-        static bool ValidateSchemaUnitNames(char* schemaPath, Utf8CP token, char* reportPath=nullptr);
         static bool GetNextInstruction(Utf8P buf, int bufLen, Utf8P com, int comLen);
         static size_t CopyTextSecure(Utf8P dest, size_t destSize, Utf8CP src);
         static size_t ExtractArgs(Utf8CP desc, Utf8P buf, size_t bufL, bvector<Utf8CP>* parts, Utf8Char div);
@@ -67,18 +57,10 @@ struct FormattingTestUtils
         static void DecomposeString(Utf8CP str, bool revers);
         static void TestScanPointVector(Utf8CP str);
         static void TestScanTriplets(Utf8CP str);
-        static void TestSegments(Utf8CP input, Utf8CP unitName, Utf8CP expectReduced=nullptr);
         static void StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue);
-        static void NamedFormatJsonTest(int testNum, Utf8CP formatName, bool verbose, Utf8CP expected);
         static void NumericFormatSpecJsonTest(NumericFormatSpecCR nfs);
-        static void UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName);
-        static void UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym=nullptr);
-        static void StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint = false);
-        static void StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result);
         static void FormatDoubleTest(double dval, Utf8CP formatName, int prec=-1.0, double round=-1.0, Utf8CP expect=nullptr);
         static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
-        static void ShowKnownPhenomena();
-        static void ShowSynonyms();
         static Utf8String SetLocale(Utf8CP name);
     };
 
@@ -87,9 +69,12 @@ struct FormattingTestUtils
 //=======================================================================================
 struct FormattingTestFixture : ::testing::Test
 {
-    FormattingTestFixture() {}
-    virtual void SetUp() override {FormattingTestUtils::SetUpL10N();}
-    virtual void TearDown() override {FormattingTestUtils::TearDownL10N();}
+    // A UnitRegistry instance to use for all testing that does not require adding any additional Units.
+    // If you need to add additional Units get a new copy of the UnitRegistry.
+    static BEU::UnitRegistry* s_unitsContext;
+
+    virtual void SetUp() override;
+    virtual void TearDown() override;
 };
 
 END_BENTLEY_FORMATTEST_NAMESPACE

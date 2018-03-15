@@ -54,10 +54,10 @@ TEST_F(CompositeValueSpecTest, DefaultConstructor)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueSpecTest, Constructors)
     {
-    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
-    BEU::UnitCP yrd = BEU::UnitRegistry::Get().LookupUnit("YRD");
-    BEU::UnitCP ft = BEU::UnitRegistry::Get().LookupUnit("FT");
-    BEU::UnitCP inch = BEU::UnitRegistry::Get().LookupUnit("IN");
+    BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
+    BEU::UnitCP yrd = s_unitsContext->LookupUnit("YRD");
+    BEU::UnitCP ft = s_unitsContext->LookupUnit("FT");
+    BEU::UnitCP inch = s_unitsContext->LookupUnit("IN");
 
     // Single Unit
     CompositeValueSpec cvs1unit(mile);
@@ -132,7 +132,7 @@ TEST_F(CompositeValueSpecTest, LoadFromJson)
     Json::Reader::Parse(jsonString, jval);
 
     CompositeValueSpec cvs;
-    cvs.LoadJsonData(jval, &BEU::UnitRegistry::Get());
+    cvs.LoadJsonData(jval, s_unitsContext);
 
     EXPECT_TRUE(cvs.NoProblem());
     EXPECT_FALSE(cvs.IsProblem());

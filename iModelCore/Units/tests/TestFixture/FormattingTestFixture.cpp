@@ -22,10 +22,12 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
 static void* testFile = nullptr;
 
+BEU::UnitRegistry* FormattingTestFixture::s_unitsContext = nullptr;
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                  Bill Steinbock 12/17
 //----------------------------------------------------------------------------------------
-void FormattingTestUtils::SetUpL10N()
+void FormattingTestFixture::SetUp()
     {
     BeFileName sqlangFile;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory(sqlangFile);
@@ -37,12 +39,15 @@ void FormattingTestUtils::SetUpL10N()
 
     BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
     BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+
+    if (nullptr == s_unitsContext)
+        s_unitsContext = new BEU::UnitRegistry();
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                  Bill Steinbock 12/17
 //----------------------------------------------------------------------------------------
-void FormattingTestUtils::TearDownL10N()
+void FormattingTestFixture::TearDown()
     {
     BeSQLite::L10N::Shutdown();
     }
@@ -89,85 +94,6 @@ void FormattingTestUtils::ShowSignature(Utf8CP txt, int tstN)
     sig = curs.GetReversedSignature(true, true);
     pat = curs.GetPattern(false, false);
     LOG.infov("Reversed Signature Test%02d  >%s< Signature >%s< Pattern >%s<", tstN, txt, sig, pat);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::CrossValidateFUS(Utf8CP descr1, Utf8CP descr2)
-    {
-    FormatUnitSet fus1 = FormatUnitSet(descr1, &BEU::UnitRegistry::Get());
-    if (fus1.HasProblem())
-        LOG.infov("Invalid descr1: >%s<", descr1);
-    FormatUnitSet fus2 = FormatUnitSet(descr2, &BEU::UnitRegistry::Get());
-    if (fus2.HasProblem())
-        LOG.infov("Invalid descr1: >%s<", descr1);
-    EXPECT_TRUE (fus1.IsIdentical(fus2));
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::ShowQuantity(double dval, Utf8CP uom, Utf8CP fusUnitName, Utf8CP fusFormat, Utf8CP space)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
-    if (nullptr == unit)
-        {
-        LOG.infov("Invalid UOM: >%s<", uom);
-        return;
-        }
-    BEU::Quantity const q = BEU::Quantity(dval, *unit);
-
-    BEU::UnitCP fusUnit = BEU::UnitRegistry::Get().LookupUnit(fusUnitName);
-    NamedFormatSpecCP nfs = StdFormatSet::FindFormatSpec(fusFormat);
-    FormatUnitSet fus = FormatUnitSet(nfs, fusUnit);
-    if (fus.HasProblem())
-        {
-        LOG.infov("Invalid Formatting Set: >%s< or unit: >%s<", fus.GetProblemDescription().c_str());
-        return;
-        }
-
-    Utf8String fmtQ = fus.FormatQuantity(q, space);
-    LOG.infov("\n===ShowQuantity: %f of %s = %s", dval, uom, fmtQ.c_str());
-    Json::Value jval = fus.FormatQuantityJson(q);
-    Utf8String jsonQ = jval.ToString();
-    LOG.infov("JSON: %s", jsonQ.c_str());
-    FormatUnitSet deFUS = StdFormatSet::DefaultFUS(q);
-    LOG.infov("Default FUS JSON: %s", deFUS.ToJsonString(true).c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::ShowQuantityS(Utf8CP descr)
-    {
-    size_t bufL = 256;
-    Utf8P buf = (Utf8P)alloca(bufL);
-    bvector<Utf8CP> parts;
-
-    size_t partN = ExtractArgs(descr, buf, bufL, &parts, ';');
-    if (partN < 5)
-        LOG.infov("Invalid input string for ShowQunatity (%d args)", partN);
-    else
-        {
-        double dval = atof(parts[0]);
-        Utf8CP uom = parts[1];
-        Utf8CP fusUnit = parts[2];
-        Utf8CP fusFormat = parts[3];
-        Utf8CP space = parts[4];
-        ShowQuantity(dval, uom, fusUnit, fusFormat, space);
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(uom);
-    BEU::Quantity q = BEU::Quantity(dval, *unit);
-    FormatUnitSet fus = FormatUnitSet(fusDesc, &BEU::UnitRegistry::Get());
-    LOG.infov("Testing FUS->Q  %s", fus.FormatQuantity(q, space).c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -359,146 +285,10 @@ Utf8String FormattingTestUtils::ExtractTokenValue(wchar_t* line, wchar_t* token,
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-#ifdef _WIN32
-bool FormattingTestUtils::ValidateSchemaUnitNames(char* schemaPath, Utf8CP token, char* reportPath)
-{
-#define VSN_BUFLEN 1024
-    if (Utils::IsNameNullOrEmpty(schemaPath))
-        return false;
-    wchar_t fnw[256];
-    wchar_t tokW[256];
-    BeStringUtilities::Utf8ToWChar(fnw, schemaPath, 254);
-    FILE* in = _wfopen(fnw, L"rtS, ccs=UTF-8"); // fopen(schemaPath, "r");
-    if (nullptr == in)
-        return false;
-    FILE* out = nullptr;
-    char fullTok[VSN_BUFLEN + 2];
-    sprintf(fullTok, "<%s>", token);
-    BeStringUtilities::Utf8ToWChar(tokW, fullTok, 254);
-
-    wchar_t locW[VSN_BUFLEN + 2];// , unitName[VSN_BUFLEN + 2], className[VSN_BUFLEN + 2];
-    memset(locW, 0, sizeof(locW));
-    wchar_t* tokSymb = L"<";
-    Utf8String tokVal8;
-    BEU::UnitCP unitP, oldP;
-    int count = 0;
-    int old = 0;
-    int miss = 0;
-    int tot = 0;
-    int cls = 0;
-    int prop = 0;
-    int active = 0;
-    bvector<Utf8String> clasV, propV;
-    while (!feof(in))
-        {
-        fgetws(locW, VSN_BUFLEN, in);
-        count++;
-        tokVal8 = ExtractTokenValue(locW, tokW, tokSymb);
-        if (!tokVal8.empty())
-            {
-            unitP = BEU::UnitRegistry::Get().LookupUnit(tokVal8.c_str());
-            oldP = nullptr;
-            if (nullptr == unitP)
-                oldP = BEU::UnitRegistry::Get().LookupUnitUsingOldName(tokVal8.c_str());
-            if (nullptr != reportPath)
-                {
-                if (nullptr == out)
-                    out = fopen(reportPath, "w");
-                if (nullptr != out)
-                    {
-                    if (nullptr == unitP)
-                        {
-                        if (nullptr == oldP)
-                            {
-                            fprintf (out, "     ***%s\n", tokVal8.c_str());
-                            miss++;
-                            }
-                        else
-                            {
-                            fprintf (out, "     ###%s\n", tokVal8.c_str());
-                            old++;
-                            }
-                        }
-                    else
-                        {
-                        fprintf (out, "     %s\n", tokVal8.c_str());
-                        active++;
-                        }
-                    tot++;
-                    }
-                }
-            }// !tokVal8.empty()
-        else
-            {
-            tokVal8 = ExtractTokenValue(locW, L"<ECClass typeName=\"", L"\"");
-            if (!tokVal8.empty())
-                {
-                if (nullptr != reportPath)
-                    {
-                    if (nullptr == out)
-                        out = fopen(reportPath, "w");
-                    if (nullptr != out)
-                        {
-                        fprintf (out, "== Class: %s\n", tokVal8.c_str());
-                        cls++;
-                        clasV.push_back(tokVal8);
-                        }
-                    }
-                }
-            else
-                {
-                tokVal8 = ExtractTokenValue(locW, L"<ECProperty propertyName=\"", L"\"");
-                if (!tokVal8.empty())
-                    {
-                    if (nullptr != reportPath)
-                        {
-                        if (nullptr == out)
-                            out = fopen(reportPath, "w");
-                        if (nullptr != out)
-                            {
-                            fprintf (out, "    === Property: %s\n", tokVal8.c_str());
-                            propV.push_back(tokVal8);
-                            prop++;
-                            }
-                        }
-                    }
-                }
-            }
-        } //<ECProperty propertyName="
-   
-    if (nullptr != out)
-        {
-        fprintf (out, "Total %d obsolete %d missing %d active %d classes %d props %d\n ", tot, old, miss, active, cls, prop);
-        if(clasV.size() > 0)
-        {
-            fprintf (out, "=====list of %d classes\n", (int)clasV.size());
-            for (int i = 0; i < clasV.size(); i++)
-                {
-                fprintf (out, "%s\n", clasV[i].c_str());
-                }
-        }
-        
-        if (propV.size() > 0)
-            {
-            fprintf (out, "=====list of %d props\n", (int)propV.size());
-            for (int i = 0; i < propV.size(); i++)
-                {
-                fprintf (out, "%s\n", propV[i].c_str());
-                }
-            }        fclose(out);
-        }
-    count++;
-    return true;
-}
-#endif
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
 void FormattingTestUtils::TestScanPointVector(Utf8CP str)
     {
-
     FormatParseVector forw(str, false);
     bvector<CursorScanPoint> fvect = forw.GetArray();
     LOG.info("============= Forward Vector scan =================");
@@ -538,32 +328,6 @@ void FormattingTestUtils::TestScanTriplets(Utf8CP str)
         LOG.infov("<-Triplet at %d |%s|", revs.GetTripletIndex(), revs.GetTriplet().c_str());
         } while (revs.MoveFrame());
     LOG.info("============= Triplet Scan complete =================\n");
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::TestSegments(Utf8CP input, Utf8CP unitName, Utf8CP expectReduced)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
-    FormatParsingSet fps = FormatParsingSet(input, unit);
-    if (nullptr == expectReduced)
-        {
-        LOG.infov("=========== TestSegments |%s|", input);
-
-        bvector<FormatParsingSegment> segs = fps.GetSegments();
-        int n = 0;
-        for (FormatParsingSegmentP s = segs.begin(); s != segs.end(); s++)
-            {
-            LOG.info(s->ToText(n++).c_str());
-            }
-        LOG.infov("Signature: %s reduced %s", fps.GetSignature(true).c_str(), fps.GetSignature(false).c_str());
-        LOG.info("=========== TestSegments End =============");
-        }
-    else
-        {
-        EXPECT_STREQ (expectReduced, fps.GetSignature(false).c_str());
-        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -754,25 +518,6 @@ bvector<TraitJsonKeyMap> TraitJsonKeyMap::TraitJsonKeySet()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestUtils::NamedFormatJsonTest(int testNum, Utf8CP stdName, bool verbose, Utf8CP expected)
-    {
-    NamedFormatSpecCP  nfsP = StdFormatSet::FindFormatSpec(stdName);
-    Json::Value jval = nfsP->ToJson(verbose);
-    LOG.infov("[%03d] Format %s json: %s", testNum, stdName, jval.ToString().c_str());
-    bool equ; 
-
-    NamedFormatSpec nfs1 = NamedFormatSpec(jval, &BEU::UnitRegistry::Get());
-
-    equ = nfsP->IsIdentical(nfs1);
-    if (equ)
-        EXPECT_TRUE(equ);
-    else
-        LOG.infov("Format %s conversion failed", stdName);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
 void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
     {
     Json::Value jval = nfs.ToJson(true);
@@ -782,122 +527,6 @@ void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
     jval = nfs.ToJson(false);
     nfs1 = NumericFormatSpec(jval);
     EXPECT_TRUE(nfs.IsIdentical(nfs1));
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::UnitProxyJsonTest(Utf8CP unitName, Utf8CP labelName)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupConstant(unitName);
-    UnitProxyCR up1 = UnitProxy(unit, labelName);
-    Json::Value jval = up1.ToJson();
-    UnitProxy up2 = UnitProxy();
-    up2.LoadJson(jval, &BEU::UnitRegistry::Get());
-    EXPECT_TRUE(up1.IsIdentical(up2));
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::UnitSynonymMapTest(Utf8CP unitName, Utf8CP synonym)
-    {
-    BEU::UnitCP unit = BEU::UnitRegistry::Get().LookupUnit(unitName);
-    BEU::UnitSynonymMap map = BEU::UnitSynonymMap(unit, synonym);
-    Json::Value jval = map.ToJson();
-    BEU::UnitSynonymMap other = BEU::UnitSynonymMap(&BEU::UnitRegistry::Get(), jval);
-    bool ident = map.IsIdentical(other);
-    EXPECT_TRUE(map.IsIdentical(other));
-    if (Utf8String::IsNullOrEmpty(synonym))
-        synonym = "*";
-    if (Utf8String::IsNullOrEmpty(unitName))
-        unitName = "*";
-    WString wName(unitName, true);
-    WString wSyn(synonym, true);
-    WString wJson(jval.ToString().c_str(), true);
-    WString wBool(FormatConstant::BoolText(ident), true);
-    LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::StandaloneNamedFormatTest(Utf8CP jsonFormat, bool doPrint)
-    {
-    NamedFormatSpec nfs = NamedFormatSpec(jsonFormat);
-    Json::Value nfsJ = nfs.ToJson(false);
-    int diff = BeStringUtilities::StricmpAscii(jsonFormat, nfsJ.ToString().c_str());
-
-    NamedFormatSpec nfsE = NamedFormatSpec();
-    nfsE.LoadJson(jsonFormat, &BEU::UnitRegistry::Get());
-    Json::Value nfsEJ = nfsE.ToJson(false);
-    int diffE = BeStringUtilities::StricmpAscii(jsonFormat, nfsEJ.ToString().c_str());
-
-    EXPECT_TRUE(diff == 0);
-    EXPECT_TRUE(diffE == 0);
-    if (doPrint)
-        {
-        LOG.infov("\n=================StandaloneFormatTest================");
-        LOG.infov("Restored Json: %s   (diff %d)", nfsJ.ToString().c_str(), diff);
-        LOG.infov("Json-loaded: %s   (diff %d)", nfsEJ.ToString().c_str(), diffE);
-        if(diff != 0 || diffE != 0)
-            LOG.infov("Different from original: %s   (diff %d)", jsonFormat);
-        LOG.infov("=======================================================\n");
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::StandaloneFUSTest(double dval, Utf8CP unitName, Utf8CP fusUnitName, Utf8CP formatName, Utf8CP result)
-    {
-    LOG.info("\n=========== StandaloneFUSTest=============");
-    BEU::UnitCP uom = BEU::UnitRegistry::Get().LookupUnit(unitName);
-    if (nullptr == uom)
-        {
-        LOG.infov("Invalid Unit Name %s", unitName);
-        return;
-        }
-    if (Utils::IsNameNullOrEmpty(fusUnitName))
-        {
-        LOG.infov("Missing FUS Unit Name");
-        return;
-        }
-    BEU::UnitCP fusUOM = BEU::UnitRegistry::Get().LookupUnit(fusUnitName);
-    if (nullptr == uom)
-        {
-        LOG.infov("Invalid FUS Unit Name %s", fusUnitName);
-        return;
-        }
-    fusUOM = nullptr;
-    Utf8Char buf[256];
-    if(Utils::IsNameNullOrEmpty(formatName))
-        sprintf(buf, "%s", fusUnitName);
-    else
-        sprintf(buf, "%s(%s)", fusUnitName, formatName);
-    FormatUnitSet fus = FormatUnitSet(buf, &BEU::UnitRegistry::Get());
-    if (Utils::IsNameNullOrEmpty(formatName))
-        sprintf(buf, "{\"unitName\":\"%s\"}", fusUnitName);
-    else
-        sprintf(buf, "{\"unitName\":\"%s\",\"formatName\":\"%s\"}", fusUnitName, formatName);
-    LOG.infov("JSON %s", buf);
-    FormatUnitSet fusS = FormatUnitSet(buf, &BEU::UnitRegistry::Get());
-
-    BEU::Quantity qty = BEU::Quantity(dval, *uom);
-    Utf8String qtyT = fus.FormatQuantity(qty, "");
-    Utf8String qtyS = fusS.FormatQuantity(qty, "");
-
-    LOG.infov("qty value: %s (expected %s)", qtyT.c_str(), result);
-    LOG.infov("JSON-qty value: %s (expected %s)", qtyS.c_str(), result);
-    EXPECT_STREQ (result, qtyT.c_str());
-    EXPECT_STREQ (result, qtyS.c_str());
-
-    Utf8String fusJ = fus.ToJsonString(false);
-    LOG.infov("\nfusJ  %s\n", fusJ.c_str());
-    FormatUnitSet fusFromJ = FormatUnitSet(fusJ.c_str(), &BEU::UnitRegistry::Get());
-    qtyT = fusFromJ.FormatQuantity(qty, "");
-    EXPECT_STREQ (result, qtyT.c_str());
-    LOG.infov("restored qty value: %s (expected %s)", qtyT.c_str(), result);
-    LOG.info("=========== StandaloneFUSTest=============\n");
     }
 
 //----------------------------------------------------------------------------------------
@@ -951,48 +580,6 @@ void FormattingTestUtils::ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::P
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-void FormattingTestUtils::ShowKnownPhenomena()
-    {
-    bvector<BEU::PhenomenonCP> allPhenomena;
-    bvector<BEU::PhenomenonCP> undefPhenomena;
-    BEU::UnitRegistry::Get().AllPhenomena(allPhenomena);
-    for (const BEU::PhenomenonCP* ph = allPhenomena.begin(); ph != allPhenomena.end(); ph++)
-        {
-        ShowPhenomenon(*ph, undefPhenomena);
-        }
-    if (undefPhenomena.size() > 0)
-        {
-        LOG.infov("\nList of %d Phenomena without UOM: ", undefPhenomena.size());
-        for (const BEU::PhenomenonCP* ph = undefPhenomena.begin(); ph != undefPhenomena.end(); ph++)
-            {
-            LOG.infov("  %s", (*ph)->GetName().c_str());
-            }
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::ShowSynonyms()
-    {
-    bvector<BEU::UnitCP> allUnits;
-    bvector<Utf8CP> synonyms;
-    WString wsyn;
-    BEU::UnitRegistry::Get().AllUnits(allUnits);
-    for (BEU::UnitCP* un = allUnits.begin(); un != allUnits.end();un++)
-        {
-        if ((*un)->GetSynonymList(synonyms) > 0)
-            {
-            LOG.infov("Unit %s synonyms:", (*un)->GetName().c_str());
-            for (size_t i = 0; i < synonyms.size(); i++)
-                {
-                wsyn = WString(synonyms[i], true);
-                LOG.infov(L"%02d %ls", i + 1, wsyn.c_str());
-                }
-            }
-        }
-    }
-
 Utf8String FormattingTestUtils::SetLocale(Utf8CP name)
     {
     Utf8String locName;

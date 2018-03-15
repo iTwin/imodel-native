@@ -12,6 +12,8 @@
 
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
+UnitRegistry* UnitsTestFixture::s_unitsContext = nullptr;
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                  Bill Steinbock 12/17
 //----------------------------------------------------------------------------------------
@@ -27,6 +29,9 @@ void UnitsTestFixture::SetUp()
 
     BeSQLite::BeSQLiteLib::Initialize(temporaryDirectory, BeSQLite::BeSQLiteLib::LogErrors::Yes);
     BeSQLite::L10N::Initialize(BeSQLite::L10N::SqlangFiles(sqlangFile));
+
+    if (nullptr == s_unitsContext)
+        s_unitsContext = new UnitRegistry();
     }
 
 //----------------------------------------------------------------------------------------
@@ -111,9 +116,9 @@ Utf8String UnitsTestFixture::ParseUOM(Utf8CP unitName, bset<Utf8String>& notMapp
 UnitCP UnitsTestFixture::LocateUOM(Utf8CP unitName, bool useLegacyNames)
     {
     if (useLegacyNames)
-        return UnitRegistry::Get().LookupUnitUsingOldName(unitName);
+        return s_unitsContext->LookupUnitUsingOldName(unitName);
         
-    return UnitRegistry::Get().LookupUnit(unitName);
+    return s_unitsContext->LookupUnit(unitName);
     }
 
 //---------------------------------------------------------------------------------------

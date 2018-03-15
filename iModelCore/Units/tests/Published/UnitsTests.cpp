@@ -67,7 +67,7 @@ TEST_F(UnitsTests, UnitsMapping)
         {
         if (i.second.Equals("NULL"))
             continue;
-        UnitCP unit = UnitRegistry::Get().LookupUnit(i.second.c_str());
+        UnitCP unit = s_unitsContext->LookupUnit(i.second.c_str());
         ASSERT_NE(nullptr, unit) << "Couldn't find unit with name " << i.second.c_str();
         EXPECT_STREQ(i.second.c_str(), unit->GetName().c_str()) << "Mapping for old unit '" << i.first.c_str() << "' uses a synonmym";
         }
@@ -79,7 +79,7 @@ TEST_F(UnitsTests, UnitsMapping)
 TEST_F(UnitsTests, CheckSignatureForEveryPhenomenon)
     {
     bvector<PhenomenonCP> allPhenomena;
-    UnitRegistry::Get().AllPhenomena(allPhenomena);
+    s_unitsContext->AllPhenomena(allPhenomena);
     for (auto const& phenomenon : allPhenomena)
         {
         PERFORMANCELOG.errorv("Dimension string for %s: %s", phenomenon->GetName().c_str(), phenomenon->GetPhenomenonSignature().c_str());
@@ -92,7 +92,7 @@ TEST_F(UnitsTests, CheckSignatureForEveryPhenomenon)
 TEST_F(UnitsTests, PhenomenonAndUnitSignaturesMatch)
     {
     bvector<PhenomenonCP> allPhenomena;
-    UnitRegistry::Get().AllPhenomena(allPhenomena);
+    s_unitsContext->AllPhenomena(allPhenomena);
     for (auto const& phenomenon : allPhenomena)
         {
         for (auto const& unit : phenomenon->GetUnits())
@@ -108,7 +108,7 @@ TEST_F(UnitsTests, PhenomenonAndUnitSignaturesMatch)
 TEST_F(UnitsTests, EveryPhenomenonHasAtleastOneUnit)
     {
     bvector<PhenomenonCP> allPhenomena;
-    UnitRegistry::Get().AllPhenomena(allPhenomena);
+    s_unitsContext->AllPhenomena(allPhenomena);
     for (auto const& phenomenon : allPhenomena)
         {
         EXPECT_NE(0, phenomenon->GetUnits().size()) << "The Phenomenon '" << phenomenon->GetName().c_str() << "' has no units.";
@@ -162,7 +162,7 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
     EXPECT_EQ(file2.Create(fileName2, true), BeFileStatus::Success);
 
     bvector<PhenomenonCP> phenomena;
-    UnitRegistry::Get().AllPhenomena(phenomena);
+    s_unitsContext->AllPhenomena(phenomena);
 
     WriteLine(file, "Name,Unit System,Sub Components,Signature,ParsedDefinition");
 
@@ -204,7 +204,7 @@ TEST_F(UnitsTests, UnitNamesByReferencedComponents)
     {
     bmap<Utf8String, bvector<Utf8String>> unitNamesByReferencedComponent;
     bvector<UnitCP> allUnits;
-    UnitRegistry::Get().AllUnits(allUnits);
+    s_unitsContext->AllUnits(allUnits);
     for (auto const& unit : allUnits)
         {
         bvector<Utf8String> symbols;
@@ -221,7 +221,7 @@ TEST_F(UnitsTests, UnitNamesByReferencedComponents)
             unitName.ReplaceAll("[", "");
             unitName.ReplaceAll("]", "");
 
-            UnitCP subUnit = UnitRegistry::Get().LookupUnit(unitName.c_str());
+            UnitCP subUnit = s_unitsContext->LookupUnit(unitName.c_str());
             ASSERT_NE(nullptr, subUnit) << "Could not find subunit: " << unitName;
 
             auto it = unitNamesByReferencedComponent.find(unitName);
@@ -260,7 +260,7 @@ TEST_F(UnitsTests, UnitNamesByReferencedComponents)
 TEST_F(UnitsTests, TestUnitDefinitionsDoNotContainSynonyms)
     {
     bvector<UnitCP> allUnits;
-    UnitRegistry::Get().AllUnits(allUnits);
+    s_unitsContext->AllUnits(allUnits);
     for (auto const& unit : allUnits)
         {
         bvector<Utf8String> symbols;
@@ -277,7 +277,7 @@ TEST_F(UnitsTests, TestUnitDefinitionsDoNotContainSynonyms)
             unitName.ReplaceAll("[", "");
             unitName.ReplaceAll("]", "");
 
-            UnitCP subUnit = UnitRegistry::Get().LookupUnit(unitName.c_str());
+            UnitCP subUnit = s_unitsContext->LookupUnit(unitName.c_str());
             ASSERT_NE(nullptr, subUnit) << "Could not find subunit: " << unitName;
             EXPECT_STREQ(unitName.c_str(), subUnit->GetName().c_str()) << "The Unit " << unit->GetName() << " has sub unit " << unitName << " in it's definition which is a Synonym for " << subUnit->GetName();
             }
@@ -386,7 +386,7 @@ TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
         }
 
     bvector<Utf8String> allUnitNames;
-    UnitRegistry::Get().AllUnitNames(allUnitNames, false);
+    s_unitsContext->AllUnitNames(allUnitNames, false);
     bvector<Utf8String> missingLabels;
     for (auto const& name : allUnitNames)
         {
@@ -464,7 +464,7 @@ TEST_F(UnitsTests, CreateUnitsSchemaFromFiles)
         ASSERT_EQ(3, tokens.size()) << line.c_str();
         Utf8PrintfString phenString("<Phenomenon typeName=%s definition=%s", tokens[0].c_str(), tokens[1].c_str());
         tokens[0].ReplaceAll("\"", "");
-        PhenomenonCP phen = UnitRegistry::Get().LookupPhenomenon(tokens[0].c_str());
+        PhenomenonCP phen = s_unitsContext->LookupPhenomenon(tokens[0].c_str());
         if (nullptr != phen)
             {
             Utf8StringCR phenLabel = phen->GetLabel();
@@ -521,7 +521,7 @@ TEST_F(UnitsTests, CreateUnitsSchemaFromFiles)
                 unitString.append(tokens[6].c_str());
                 }
             tokens[2].ReplaceAll("\"", "");
-            UnitCP unit = UnitRegistry::Get().LookupUnit(tokens[2].c_str());
+            UnitCP unit = s_unitsContext->LookupUnit(tokens[2].c_str());
             if (nullptr != unit)
                 {
                 Utf8StringCR unitLabel = unit->GetLabel();
@@ -578,7 +578,7 @@ TEST_F(UnitsTests, CreateUnitsSchemaFromFiles)
                 constString.append(tokens[5].c_str());
                 }
             tokens[2].ReplaceAll("\"", "");
-            UnitCP unit = UnitRegistry::Get().LookupUnit(tokens[2].c_str());
+            UnitCP unit = s_unitsContext->LookupUnit(tokens[2].c_str());
             if (nullptr != unit)
                 {
                 Utf8StringCR unitLabel = unit->GetLabel();

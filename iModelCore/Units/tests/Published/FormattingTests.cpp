@@ -80,12 +80,11 @@ public:
     BEU::UnitCP arcDeg;
     void SetUp()
         {
-        unitsContext = &BEU::UnitRegistry::Get();
-        ASSERT_NE(nullptr, mile = unitsContext->LookupUnit("MILE"));
-        ASSERT_NE(nullptr, yard = unitsContext->LookupUnit("YRD"));
-        ASSERT_NE(nullptr, foot = unitsContext->LookupUnit("FT"));
-        ASSERT_NE(nullptr, inch = unitsContext->LookupUnit("IN"));
-        ASSERT_NE(nullptr, arcDeg = unitsContext->LookupUnit("ARC_DEG"));
+        ASSERT_NE(nullptr, mile = s_unitsContext->LookupUnit("MILE"));
+        ASSERT_NE(nullptr, yard = s_unitsContext->LookupUnit("YRD"));
+        ASSERT_NE(nullptr, foot = s_unitsContext->LookupUnit("FT"));
+        ASSERT_NE(nullptr, inch = s_unitsContext->LookupUnit("IN"));
+        ASSERT_NE(nullptr, arcDeg = s_unitsContext->LookupUnit("ARC_DEG"));
         }
 
     Utf8String GetFmtStringErrMsg(Utf8CP fmtStr){ return Utf8String("format string: \"") + fmtStr + "\""; }
@@ -96,7 +95,7 @@ public:
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
-        FormatUnitSet fus = FormatUnitSet(expectedUnit->GetName().c_str(), unitsContext);
+        FormatUnitSet fus = FormatUnitSet(expectedUnit->GetName().c_str(), s_unitsContext);
         BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
@@ -110,7 +109,7 @@ public:
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
-        FormatUnitSet fus = FormatUnitSet(stdFmtDescription, unitsContext);
+        FormatUnitSet fus = FormatUnitSet(stdFmtDescription, s_unitsContext);
         BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
@@ -168,6 +167,9 @@ TEST_F(NumericFormatSpecTest, Constructors)
     }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(NumericFormatSpecTest, IsIdentical)
     {
     NumericFormatSpec nfsA;
@@ -670,8 +672,8 @@ TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
     numericFormatSpec.SetUse1000Separator(true);
     numericFormatSpec.SetKeepSingleZero(true);
 
-    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
-    BEU::UnitCP inch = BEU::UnitRegistry::Get().LookupUnit("IN");
+    BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
+    BEU::UnitCP inch = s_unitsContext->LookupUnit("IN");
     CompositeValueSpec compositeValueSpec(mile, inch);
     ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Double, compositeValueSpec.GetType());
@@ -688,25 +690,25 @@ TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
 TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     {
     {
-    FormatUnitSet MMFusNoFormatName("MM", &BEU::UnitRegistry::Get());
+    FormatUnitSet MMFusNoFormatName("MM", s_unitsContext);
     EXPECT_FALSE(MMFusNoFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusNoFormatName);
     EXPECT_STREQ("MM(DefaultReal)", MMFusNoFormatName.ToText().c_str());
     EXPECT_STREQ("MM(real)", MMFusNoFormatName.ToText().c_str());
     }
     {
-    FormatUnitSet MMFusParens("MM(Real2)", &BEU::UnitRegistry::Get());
+    FormatUnitSet MMFusParens("MM(Real2)", s_unitsContext);
     EXPECT_FALSE(MMFusParens.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusParens);
     EXPECT_STREQ("MM(Real2)", MMFusParens.ToText().c_str());
     EXPECT_STREQ("MM(real2)", MMFusParens.ToText().c_str());
     }
     {
-    FormatUnitSet MMFusBarFormatName("MM|Real2", &BEU::UnitRegistry::Get());
+    FormatUnitSet MMFusBarFormatName("MM|Real2", s_unitsContext);
     EXPECT_FALSE(MMFusBarFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatName);
     EXPECT_STREQ("MM(Real2)", MMFusBarFormatName.ToText().c_str());
     EXPECT_STREQ("MM(real2)", MMFusBarFormatName.ToText().c_str());
     }
     {
-    FormatUnitSet MMFusBarFormatNameBar("MM|Real2|", &BEU::UnitRegistry::Get());
+    FormatUnitSet MMFusBarFormatNameBar("MM|Real2|", s_unitsContext);
     EXPECT_FALSE(MMFusBarFormatNameBar.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatNameBar);
     EXPECT_STREQ("MM(Real2)", MMFusBarFormatNameBar.ToText().c_str());
     EXPECT_STREQ("MM(real2)", MMFusBarFormatNameBar.ToText().c_str());
@@ -714,11 +716,11 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     {
     FormatUnitSet MMFusJsonOnlyUnitName(R"json({
         unitName: "MM"
-    })json", &BEU::UnitRegistry::Get());
+    })json", s_unitsContext);
     EXPECT_FALSE(MMFusJsonOnlyUnitName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonOnlyUnitName);
     EXPECT_STREQ("MM(Real2)", MMFusJsonOnlyUnitName.ToText().c_str());
     EXPECT_STREQ("MM(real2)", MMFusJsonOnlyUnitName.ToText().c_str());
-    EXPECT_TRUE(MMFusJsonOnlyUnitName.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
+    EXPECT_TRUE(MMFusJsonOnlyUnitName.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
     }
     // TODO: The below JSON methods aren't parsing the formatName attribute correctly. I tried
     // "formatName": "Real2"
@@ -731,11 +733,11 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     FormatUnitSet MMFusJsonUnitNameFormatName(R"json({
         "unitName": "MM",
         "formatName": "real2"
-    })json", &BEU::UnitRegistry::Get());
+    })json", s_unitsContext);
     EXPECT_FALSE(MMFusJsonUnitNameFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonUnitNameFormatName);
     EXPECT_STREQ("MM(Real2)", MMFusJsonUnitNameFormatName.ToText().c_str());
     EXPECT_STREQ("MM(real2)", MMFusJsonUnitNameFormatName.ToText().c_str());
-    EXPECT_TRUE(MMFusJsonUnitNameFormatName.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
+    EXPECT_TRUE(MMFusJsonUnitNameFormatName.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
     }
     {
     FormatUnitSet MMFusJsonAllMembers(R"json({
@@ -743,11 +745,11 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
         "formatName": "real2",
         "cloneData": false,
         "formatSpec": { }
-    })json", &BEU::UnitRegistry::Get());
+    })json", s_unitsContext);
     EXPECT_FALSE(MMFusJsonAllMembers.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonAllMembers);
     EXPECT_STREQ("MM(Real2)", MMFusJsonAllMembers.ToText().c_str());
     EXPECT_STREQ("MM(real2)", MMFusJsonAllMembers.ToText().c_str());
-    EXPECT_TRUE(MMFusJsonAllMembers.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
+    EXPECT_TRUE(MMFusJsonAllMembers.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
     }
     }
 
@@ -898,7 +900,7 @@ TEST_F(NamedFormatSpecTest, IsIdentical)
     // NamedFormatSpecs with differing CompositeValueSpecs.
     {
     NumericFormatSpec numFmtSpec;
-    BEU::UnitCP mile = BEU::UnitRegistry::Get().LookupUnit("MILE");
+    BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
     CompositeValueSpec compValSpecA(mile);
     CompositeValueSpec compValSpecB;
     compValSpecB.SetSpacer(" # ");
