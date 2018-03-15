@@ -789,13 +789,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         double              GetMaxPixelError() const;
 
-        StopQueryCallbackFP GetStopQueryCallback() const;
-
-        bool                GetUseSameResolutionWhenCameraIsOff() const;
-
-        bool                GetUseSplitThresholdForLevelSelection() const;
-
-        bool                GetUseSplitThresholdForTileSelection() const;
+        StopQueryCallbackFP GetStopQueryCallback() const;        
 
         const double*       GetRootToViewMatrix() const;
 
@@ -815,12 +809,6 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
         BENTLEY_SM_EXPORT void      SetRootToViewMatrix(const double rootToViewMatrix[][4]);    
 
         BENTLEY_SM_EXPORT StatusInt SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP);
-
-        BENTLEY_SM_EXPORT void      SetUseSameResolutionWhenCameraIsOff(bool useSameResolution);        
-
-        BENTLEY_SM_EXPORT void      SetUseSplitThresholdForLevelSelection(bool useSplitThreshold);        
-
-        BENTLEY_SM_EXPORT void      SetUseSplitThresholdForTileSelection(bool useSplitThreshold);    
 
         BENTLEY_SM_EXPORT void      SetViewClipVector(ClipVectorPtr& viewClipVector);
         

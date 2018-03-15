@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/GTests/SMUnitTestDisplayQuery.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -390,6 +390,9 @@ void DisplayQueryTester::DoQuery()
     viewDependentQueryParams->SetRootToViewMatrix(m_rootToViewMatrix);
     viewDependentQueryParams->SetViewClipVector(m_clipVector);
 
+    DPoint3d dummyViewBox[8]; 
+    viewDependentQueryParams->SetViewBox(dummyViewBox);
+
     int queryId = 0;
     bvector<bool> clips;
     const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr> startingNodes;
@@ -482,6 +485,7 @@ void DisplayQueryTester::DoQuery()
 
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedVideoMesh() == 0, true);
     EXPECT_EQ(((ScalableMeshDisplayCacheManager*)m_displayCacheManager.get())->GetNbDestroyedVideoTexture() == 0, true);    
+
     }
 
 /*---------------------------------------------------------------------------------**//**
