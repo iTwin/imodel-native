@@ -675,15 +675,13 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
 
     BeAssert(presUnitsJson.IsArray());
 
-    const uint32_t originalECXmlVersionMajor = koq.GetSchema().GetOriginalECXmlVersionMajor();
-    const uint32_t originalECXmlVersionMinor = koq.GetSchema().GetOriginalECXmlVersionMinor();
     for (rapidjson::Value const& presUnitJson : presUnitsJson.GetArray())
         {
         BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
 
         ECUnitCP unit = nullptr;
         Formatting::NamedFormatSpecCP format = nullptr;
-        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(unit, format, presUnitJson.GetString(), koq, originalECXmlVersionMajor, originalECXmlVersionMinor) ||
+        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(unit, format, presUnitJson.GetString(), koq) ||
             ECObjectsStatus::Success != koq.AddPresentationUnit(*unit, format))
             {
             LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), presUnitJson.GetString());

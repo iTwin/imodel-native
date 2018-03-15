@@ -637,7 +637,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
         return ERROR;
         }
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_KindOfQuantity(SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits) VALUES(?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_KindOfQuantity(SchemaId,Name,DisplayLabel,Description,RelativeError,PersistenceUnit,PresentationUnits) VALUES(?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -659,6 +659,9 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
             return ERROR;
         }
 
+    if (BE_SQLITE_OK != stmt->BindDouble(5, koq.GetRelativeError()))
+        return ERROR;
+
     if (koq.GetPersistenceUnit().HasProblem())
         {
         ctx.Issues().ReportV("Failed to import KindOfQuantity '%s'. Its persistence unit is invalid: %s.", koq.GetFullName().c_str(), koq.GetPersistenceUnit().GetProblemDescription().c_str());
@@ -667,12 +670,8 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
 
     Utf8String persistenceUnitStr = koq.GetPersistenceUnitDescriptor();
     BeAssert(!persistenceUnitStr.empty());
-    if (BE_SQLITE_OK != stmt->BindText(5, persistenceUnitStr, Statement::MakeCopy::No))
+    if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr, Statement::MakeCopy::No))
         return ERROR;
-
-    if (BE_SQLITE_OK != stmt->BindDouble(6, koq.GetRelativeError()))
-        return ERROR;
-
 
     Utf8String presUnitsJsonStr;
     if (!koq.GetPresentationUnitList().empty())

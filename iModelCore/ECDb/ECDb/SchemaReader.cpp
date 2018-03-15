@@ -975,11 +975,11 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     const int nameIx = 1;
     const int displayLabelColIx = 2;
     const int descriptionColIx = 3;
-    const int persUnitColIx = 4;
-    const int relErrorColIx = 5;
+    const int relErrorColIx = 4;
+    const int persUnitColIx = 5;
     const int presUnitColIx = 6;
 
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM [%s]." TABLE_KindOfQuantity " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,RelativeError,PersistenceUnit,PresentationUnits FROM [%s]." TABLE_KindOfQuantity " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
@@ -998,8 +998,8 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
     Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
     BeAssert(!stmt->IsColumnNull(persUnitColIx));
-    Utf8CP persUnitStr = stmt->GetValueText(persUnitColIx);
     const double relError = stmt->GetValueDouble(relErrorColIx);
+    Utf8CP persUnitStr = stmt->GetValueText(persUnitColIx);
     Utf8CP presUnitsStr = stmt->IsColumnNull(presUnitColIx) ? nullptr : stmt->GetValueText(presUnitColIx);
 
     KindOfQuantityP newKoq = nullptr;
@@ -1016,11 +1016,9 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
 
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
 
-    const uint32_t originalECXmlVersionMajor = newKoq->GetSchema().GetOriginalECXmlVersionMajor();
-    const uint32_t originalECXmlVersionMinor = newKoq->GetSchema().GetOriginalECXmlVersionMinor();
     ECUnitCP unit = nullptr;
     Formatting::NamedFormatSpecCP format = nullptr;
-    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(unit, format, persUnitStr, *newKoq, originalECXmlVersionMajor, originalECXmlVersionMinor) ||
+    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(unit, format, persUnitStr, *newKoq) ||
         !newKoq->SetPersistenceUnit(*unit, format))
         {
         LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit's FormatUnitSet descriptor '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitStr);

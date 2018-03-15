@@ -67,7 +67,18 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    return UpgradeKoqs(ecdb);
+    stat = UpgradeKoqs(ecdb);
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    //all affected schemas are now 
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE main." TABLE_Schema " SET ECVersion=" SQLVAL_ECVersion_V3_2))
+        {
+        LOG.error("ECDb profile upgrade failed: Could not update ECVersion to 3.2 for the upgraded ECSchema.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    return BE_SQLITE_OK;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -76,7 +87,7 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
 //static
 DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
     {
-    bset<ECSchemaId> ecdbSchemas;
+    IdSet<ECSchemaId> ecdbSchemas;
     {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Id FROM main." TABLE_Schema " WHERE Name IN ('ECDbChange', 'ECDbFileInfo', 'ECDbMeta')"))
@@ -102,8 +113,9 @@ DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
     while (BE_SQLITE_ROW == stmt.Step())
         {
         int64_t enumId = stmt.GetValueInt64(0);
+        ECSchemaId schemaId = stmt.GetValueId<ECSchemaId>(1);
         Utf8CP enumName = stmt.GetValueText(2);
-        if (ecdbSchemas.find(stmt.GetValueId<ECSchemaId>(1)) != ecdbSchemas.end())
+        if (ecdbSchemas.find(schemaId) != ecdbSchemas.end())
             {
             UpgradeECDbEnum(enumValues, enumId, enumName);
             continue;
@@ -158,7 +170,13 @@ DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
         stmt.Reset();
         stmt.ClearBindings();
         }
+    stmt.Finalize();
 
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE " TABLE_Schema " SET OriginalECXmlVersionMajor=3, OriginalECXmlVersionMinor=2 WHERE InVirtualSet(?,Id)") ||
+        BE_SQLITE_OK != stmt.BindVirtualSet(1, ecdbSchemas))
+        {
+
+        }
     LOG.debug("ECDb profile upgrade: Updated table " TABLE_Enumeration " to EC3.2 format.");
     return BE_SQLITE_OK;
     }
@@ -278,22 +296,26 @@ void ProfileUpgrader_4002::UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, i
 //static
 DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     {
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT distinct SchemaId FROM main." TABLE_KindOfQuantity))
+    bset<ECSchemaId> affectedSchemas;
         {
-        LOG.errorv("ECDb profile upgrade failed: Selecting all KindOfQuantities failed: %s.", ecdb.GetLastError().c_str());
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        UpgradeFusSqlFunction upgradeFusSqlFnc(ecdb, affectedSchemas);
+        ecdb.AddFunction(upgradeFusSqlFnc);
+
+        Statement stmt;
+        if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE " TABLE_KindOfQuantity " SET PersistenceUnit=UPGRADEFUS(SchemaId,PersistenceUnit,0), PresentationUnits=UPGRADEFUS(SchemaId,PresentationUnits,1)"))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Upgrading FUS descriptor strings in ec_KindOfQuantities to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        if (BE_SQLITE_DONE != stmt.Step())
+            {
+            LOG.errorv("ECDb profile upgrade failed: Upgrading FUS descriptor strings in ec_KindOfQuantities to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
         }
 
-    bset<ECSchemaId> schemasWithKoqs;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        schemasWithKoqs.insert(stmt.GetValueId<ECSchemaId>(0));
-        }
-
-    stmt.Finalize();
-
-    if (schemasWithKoqs.empty())
+    if (affectedSchemas.empty())
         return BE_SQLITE_OK;
 
     ECSchemaId unitSchemaId;
@@ -321,13 +343,14 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     ecdb.ClearECDbCache();
     }
 
+    Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, "INSERT INTO main." TABLE_SchemaReference "(SchemaId,ReferencedSchemaId) VALUES(?,?)"))
         {
         LOG.error("ECDb profile upgrade failed: Failed to prepare SQL to insert references to standard Units schema.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    for (ECSchemaId schemaWithKoq : schemasWithKoqs)
+    for (ECSchemaId schemaWithKoq : affectedSchemas)
         {
         if (BE_SQLITE_OK != stmt.BindId(1, schemaWithKoq) ||
             BE_SQLITE_OK != stmt.BindId(2, unitSchemaId) ||
@@ -343,6 +366,78 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
 
     LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
     return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    03/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+void ProfileUpgrader_4002::UpgradeFusSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+    {
+    DbValue const& schemaIdVal = args[0];
+    if (schemaIdVal.GetValueType() != DbValueType::IntegerVal)
+        {
+        ctx.SetResultError("UPGRADEFUS SQL: Argument 0 is expected to be the SchemaId of the ec_KindOfQuantity row.");
+        return;
+        }
+
+    m_schemasWithKoqs.insert(schemaIdVal.GetValueId<ECSchemaId>());
+
+    DbValue const& oldFusValue = args[1];
+    if (oldFusValue.GetValueType() != DbValueType::NullVal && oldFusValue.GetValueType() != DbValueType::TextVal)
+        {
+        ctx.SetResultError("UPGRADEFUS SQL: Argument 1 is expected to be the pre-EC3.2 FUS descriptor.");
+        return;
+        }
+
+    if (oldFusValue.IsNull())
+        {
+        ctx.SetResultNull();
+        return;
+        }
+
+    DbValue const& isArrayValue = args[2];
+    if (isArrayValue.GetValueType() != DbValueType::IntegerVal)
+        {
+        ctx.SetResultError("UPGRADEFUS SQL: Argument 2 is expected to be a bool.");
+        return;
+        }
+
+    Utf8CP oldFus = oldFusValue.GetValueText();
+    const bool isFusArray = isArrayValue.GetValueInt() != 0;
+    if (!isFusArray)
+        {
+        Utf8String newFus;
+        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptor(newFus, oldFus))
+            {
+            ctx.SetResultError(Utf8PrintfString("UPGRADEFUS SQL: Could not upgrade FUS descriptor '%s' to EC3.2 format.", oldFus).c_str());
+            return;
+            }
+
+        ctx.SetResultText(newFus.c_str(), (int) newFus.size(), DbFunction::Context::CopyData::Yes);
+        return;
+        }
+
+    Json::Value fusArrayJson;
+    if (!Json::Reader::Parse(oldFus, fusArrayJson))
+        {
+        ctx.SetResultError(Utf8PrintfString("UPGRADEFUS SQL: Could not parse presentation units '%s' as JSON.", oldFus).c_str());
+        return;
+        }
+
+    for (Json::Value& fusJson : fusArrayJson)
+        {
+        Utf8String newFus;
+        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptor(newFus, fusJson.asCString()))
+            {
+            ctx.SetResultError(Utf8PrintfString("UPGRADEFUS SQL: Could not upgrade FUS descriptor '%s' to EC3.2 format.", fusJson.asCString()).c_str());
+            return;
+            }
+
+        fusJson = newFus;
+        }
+
+    Utf8String newFusArray = fusArrayJson.ToString();
+    ctx.SetResultText(newFusArray.c_str(), (int) newFusArray.size(), DbFunction::Context::CopyData::Yes);
     }
 
 //******************************************************************************************************************

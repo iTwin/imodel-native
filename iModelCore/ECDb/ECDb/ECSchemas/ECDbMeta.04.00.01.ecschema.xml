@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ECDbMeta" alias="meta" version="04.00.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+
+    <ECEnumeration typeName="ECVersion" backingTypeName="int" isStrict="True" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders." displayLabel="Root Folder Type">
+        <ECEnumerator name="V2_0" value="131072" displayLabel="EC 2.0" />
+        <ECEnumerator name="V3_0" value="196608" displayLabel="EC 3.0" />
+        <ECEnumerator name="V3_1" value="196609" displayLabel="EC 3.1" />
+        <ECEnumerator name="V3_2" value="196610" displayLabel="EC 3.2" />
+    </ECEnumeration>
+
     <ECEntityClass typeName="ECSchemaDef" description="ECSchema" displayLabel="ECSchema" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -33,7 +41,7 @@
                 </PropertyMap>
             </ECCustomAttributes>
         </ECProperty>
-        <ECProperty propertyName="ECVersion" typeName="int"/>
+        <ECProperty propertyName="ECVersion" typeName="ECVersion"/>
         <ECProperty propertyName="OriginalECXmlVersionMajor" typeName="int"/>
         <ECProperty propertyName="OriginalECXmlVersionMinor" typeName="int"/>
     </ECEntityClass>
