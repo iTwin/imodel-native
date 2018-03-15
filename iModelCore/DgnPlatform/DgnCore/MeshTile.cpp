@@ -18,8 +18,7 @@ BEGIN_UNNAMED_NAMESPACE
 constexpr double s_half2dDepthRange = 10.0;
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
-
-static const double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const double s_minRangeBoxSize    = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
 
 END_UNNAMED_NAMESPACE
@@ -2169,7 +2168,6 @@ private:
     TileGeometryList            m_curLeafGeometries;
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
-    double                      m_minLineStyleWidth;
     bool*                       m_leafThresholdExceeded;
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
@@ -2224,13 +2222,11 @@ public:
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
         {
         static const double s_minTextBoxToleranceRatio = 1.0;           // Below this ratio to tolerance text is rendered as box.
-        static const double s_minLineStyleWidthToleranceRatio = 1.0;     // Below this ratio to tolerance line styles are rendered as continuous.
 
         double targetTolerance = tolerance * transformFromDgn.ColumnXMagnitude();
         m_targetFacetOptions->SetChordTolerance(targetTolerance);
         m_minRangeDiagonal = s_minRangeBoxSize * targetTolerance;
         m_minTextBoxSize  = s_minTextBoxToleranceRatio * targetTolerance;
-        m_minLineStyleWidth = s_minLineStyleWidthToleranceRatio * targetTolerance;
 
         m_transformFromDgn.Multiply (m_tileRange, m_range);
         }
@@ -2245,11 +2241,12 @@ public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
     DRange3dCR GetRange() const { return m_range; }
+    double& GetMinRangeDiagonalR() { return m_minRangeDiagonal; }
 
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any elements with range smaller than roughly half a pixel...
-        return range.DiagonalDistance() < m_minRangeDiagonal;
+       return range.DiagonalDistance() < m_minRangeDiagonal;
         }
     
     void PushCurrentGeometry()
@@ -2877,7 +2874,32 @@ void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, T
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void _DrawStyledCurveVector(Render::GraphicBuilderR builder, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override
+    {
+    if (doCook)
+        CookGeometryParams(params, builder);
+
+    // Arggh.... Turn off the size filter while stroking linestyle so the components aren't filtered.
+    IFacetOptionsPtr    facetOptions;
+    if (nullptr != params.GetLineStyle() &&
+        CurveVector::BOUNDARY_TYPE_None != curve.GetBoundaryType() &&
+        params.GetLineStyle()->GetLineStyleSymb().GetUseStroker() && 
+        builder.WantStrokeLineStyle(params.GetLineStyle()->GetLineStyleSymb(), facetOptions))
+        {
+        AutoRestore<double>     saveMinRangeDiagonal(&m_processor.GetMinRangeDiagonalR(), 0.0);
+
+        T_Super::_DrawStyledCurveVector(builder, curve, params, false);
+        }
+    else
+        {
+        T_Super::_DrawStyledCurveVector(builder, curve, params, false);
+        }
+    }
 };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -3098,7 +3120,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
         {
 #ifdef DEBUG_GEOMETRY_FILTER
         auto        entityId = geom->GetEntityId().GetValue();
-        static      uint64_t    s_debugEntityId = 73634;
+        static      uint64_t    s_debugEntityId = 74285;
 
         if (0 != s_debugEntityId && entityId != s_debugEntityId)
             continue;
