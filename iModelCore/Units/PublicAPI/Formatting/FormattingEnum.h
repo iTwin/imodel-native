@@ -241,6 +241,7 @@ enum class FormatProblemCode
     NoProblems = 0,
     UnknownStdFormatName = 20011,
     UnknownUnitName = 20012,
+    NotInitialized = 20013,
     CNS_InconsistentFactorSet = 20051,  //!< All ratio factors between units must be bigger than one
     CNS_InconsistentUnitSet = 20052,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
     CNS_UncomparableUnits = 20053,      //!< Units provided on the argument list are not comparable

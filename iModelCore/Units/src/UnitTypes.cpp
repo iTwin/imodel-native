@@ -67,9 +67,9 @@ Unit::Unit(UnitCR parent, Utf8CP unitName, uint32_t id) :
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensonSymbol, 
-           double factor, double offset, bool isConstant) : UnitsSymbol(name, definition, dimensonSymbol, id, factor, offset),
-           m_system(system), m_parent(nullptr), m_isConstant(isConstant)
+Unit::Unit(Utf8CP system, PhenomenonCR phenomenon, Utf8CP name, uint32_t id, Utf8CP definition, Utf8Char dimensonSymbol,
+    double factor, double offset, bool isConstant) : UnitsSymbol(name, definition, dimensonSymbol, id, factor, offset),
+    m_system(system), m_parent(nullptr), m_isConstant(isConstant), m_dummyUnit(false)
     {
     m_phenomenon = &phenomenon;
     }
@@ -431,7 +431,7 @@ bool Phenomenon::IsAngle() const { return m_name.Equals(ANGLE); }
 
 void UnitSynonymMap::Init(Utf8CP unitName, Utf8CP synonym)
     {
-    m_unit = (nullptr == unitName)? nullptr : UnitRegistry::Instance().LookupUnitCI(unitName);
+    m_unit = (nullptr == unitName)? nullptr : UnitRegistry::Instance().LookupUnit(unitName);
     if (nullptr == m_unit)
         m_synonym.clear();
     else

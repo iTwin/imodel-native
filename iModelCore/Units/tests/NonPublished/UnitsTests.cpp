@@ -2,7 +2,7 @@
 |
 |  $Source: tests/NonPublished/UnitsTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1100,6 +1100,58 @@ TEST_F(UnitsTests, VolumeRatio_Conversions)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                  11/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, DummmyUnitsAreNotConvertableToAnyOtherUnit)
+    {
+    UnitCP bananaDummy = UnitRegistry::Instance().AddDummyUnit("BANANA");
+    UnitCP appleDummy = UnitRegistry::Instance().AddDummyUnit("APPLE");
+    UnitCP inchReal = UnitRegistry::Instance().LookupUnit("IN");
+    UnitCP percentReal = UnitRegistry::Instance().LookupUnit("PERCENT");
+    UnitCP oneReal = UnitRegistry::Instance().LookupUnit("ONE");
+
+    EXPECT_FALSE(Unit::AreCompatible(bananaDummy, appleDummy));
+    EXPECT_FALSE(Unit::AreCompatible(bananaDummy, oneReal));
+    EXPECT_FALSE(Unit::AreCompatible(bananaDummy, inchReal));
+    EXPECT_FALSE(Unit::AreCompatible(appleDummy, percentReal));
+    double converted;
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, bananaDummy->Convert(converted, 42.42, appleDummy));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, bananaDummy->Convert(converted, 42.42, oneReal));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, oneReal->Convert(converted, 42.42, appleDummy));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, appleDummy->Convert(converted, 42.42, inchReal));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, appleDummy->Convert(converted, 42.42, percentReal));
+    EXPECT_EQ(UnitsProblemCode::UncomparableUnits, percentReal->Convert(converted, 42.42, bananaDummy));
+    }
+
+void LookUpUnitWithCaseDifferences(Utf8CP exactName, Utf8CP caseIncorrectName)
+    {
+    UnitCP caseIncorrect = UnitRegistry::Instance().LookupUnit(caseIncorrectName);
+    ASSERT_NE(nullptr, caseIncorrect) << caseIncorrectName;
+    UnitCP exact = UnitRegistry::Instance().LookupUnit(exactName);
+    ASSERT_NE(nullptr, exact) << exactName;
+    ASSERT_TRUE(Unit::AreEqual(caseIncorrect, exact));
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, UnitsLookupIsCaseInsensitive)
+    {
+    LookUpUnitWithCaseDifferences("IN", "in");
+    LookUpUnitWithCaseDifferences("FT", "ft");
+    LookUpUnitWithCaseDifferences("ARC_DEG", "arc_DeG");
+    }
+
+//---------------------------------------------------------------------------------------//
+// @bsimethod                            Colin.Kerr                                  09/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(UnitsTests, CannotAddUnitWhichOnlyDiffersByCaseFromExistingUnit)
+    {
+    ASSERT_EQ(nullptr, UnitRegistry::Instance().AddUnit("LENGTH", "USCUSTOM", "in", "MM", 25.4));
+    ASSERT_EQ(nullptr, UnitRegistry::Instance().AddUnit("LENGTH", "USCUSTOM", "In", "MM", 25.4));
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                  03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1468,6 +1520,45 @@ TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
     file.Close();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                 02/2018
+//--------------------------------------------------------------------------------------
+TEST_F(UnitsTests, AllNewNamesMapToECNames)
+    {
+    UnitRegistry::Instance().Clear();
+    bvector<Utf8String> ignoredNames = {"CM/REVOLUTION", "FT/REVOLUTION", "IN/DEGREE", "IN/RAD", "IN/REVOLUTION", "M/DEGREE", "M/RAD", "M/REVOLUTION", "MM/RAD", "MM/REVOLUTION"};
+    bvector<Utf8String> names;
+    UnitRegistry::Instance().AllUnitNames(names, false);
+
+    bool ignore = false;
+    for(auto const& name: names)
+        {
+        for(auto const& i : ignoredNames)
+            {
+            if(i.EqualsI(name))
+                { 
+                ignore=true;
+                break;
+                }
+            }
+        if(!ignore)
+            { 
+            Utf8String mapped;
+            UnitRegistry::Instance().TryGetECNameFromNewName(name.c_str(),mapped);
+            EXPECT_FALSE(mapped.empty()) << "Unit with new Name " << name.c_str() << " not mapped to an ec Name";
+            auto newUnit = UnitRegistry::Instance().LookupUnit(name.c_str());
+            Utf8String roundtrippedName;
+            UnitRegistry::Instance().TryGetNewNameFromECName(mapped.c_str(), roundtrippedName);
+            EXPECT_FALSE(roundtrippedName.empty()) << "Can't get name from ecname for unit " << mapped.c_str();
+            auto ecUnit = UnitRegistry::Instance().LookupUnit(roundtrippedName.c_str());
+            EXPECT_NE(nullptr, ecUnit) << "Failed to look up unit with roundtripped name " << roundtrippedName.c_str();
+            if(roundtrippedName.EqualsI("CAPITA") || roundtrippedName.EqualsI("KIPF") || roundtrippedName.EqualsI("N/SQ.MM"))
+                continue;
+            EXPECT_EQ(newUnit, ecUnit) << "Failed to find " << roundtrippedName.c_str();
+            }
+        ignore=false;
+        }
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                               07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/

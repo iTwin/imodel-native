@@ -28,6 +28,7 @@ UnitRegistry& UnitRegistry::Instance()
         s_instance->AddDefaultUnits();
         s_instance->AddDefaultConstants();
         s_instance->AddDefaultMappings();
+        s_instance->AddDefaultECMappings();
         }
 
     return *s_instance;
@@ -181,6 +182,7 @@ void UnitRegistry::AddDefaultSystems ()
     AddSystem (CUSTOMARY);
     AddSystem (FINANCE);
     AddSystem (CONSTANT);
+    AddSystem(DUMMY);
     }
 
 //---------------------------------------------------------------------------------------//
@@ -268,16 +270,25 @@ UnitCP UnitRegistry::AddUnit (Utf8CP phenomName, Utf8CP systemName, Utf8CP unitN
     return AddUnitP(phenomName, systemName, unitName, definition, factor, offset);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   03/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-UnitCP UnitRegistry::AddDummyUnit(Utf8CP unitName)
+//---------------------------------------------------------------------------------------//
+// @bsimethod                                              Colin.Kerr           11/17
+//+---------------+---------------+---------------+---------------+---------------+------//
+UnitCP UnitRegistry::CreateDummyUnit(Utf8CP unitName)
     {
-    auto dummy = LookupUnit(unitName);
-    if (nullptr == dummy)
-        dummy = AddUnit("ONE", "USCUSTOM", unitName, "ONE");
+    if (Utf8String::IsNullOrEmpty(unitName))
+        return nullptr;
 
-    BeAssert(nullptr != dummy);
+    if (NameConflicts(unitName))
+        {
+        LOG.errorv("Could not create dummy unit '%s' because that name is already in use", unitName);
+        return nullptr;
+        }
+
+    LOG.warningv("Creating Dummy unit with name '%s'", unitName);
+    Utf8PrintfString dummyPhenName("%s_%s", "DUMMY", unitName);
+    AddPhenomenon(dummyPhenName.c_str(), "ONE");
+    auto dummy = AddUnitP(dummyPhenName.c_str(), DUMMY, unitName, "ONE", 1.0, 0.0);
+    dummy->m_dummyUnit = true;
     return dummy;
     }
 
@@ -436,20 +447,6 @@ UnitCP UnitRegistry::LookupUnit (Utf8CP name) const
     return LookupUnitP(name);
     }
 
-PUSH_MSVC_IGNORE(6385 6386)
-UnitCP UnitRegistry::LookupUnitCI (Utf8CP name) const
-    {
-    size_t len = (nullptr == name) ? 0 : strlen(name);
-    if (len == 0)
-        return nullptr;
-    Utf8P temp = (Utf8P)alloca(len + 2);
-    memset(temp, 0, len + 2);
-    memcpy(temp, name, len);
-    Utf8CP uppName = BeStringUtilities::Strupr(temp);
-    return LookupUnitP(uppName);
-    }
-POP_MSVC_IGNORE
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Chris.Tartamella     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -544,6 +541,16 @@ void UnitRegistry::AddMapping(Utf8CP oldName, Utf8CP newName)
     }
 
 /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                           Kyle.Abramowitz     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void UnitRegistry::AddECMapping(Utf8CP newName, Utf8CP ecName)
+    {
+    // NOTE: New mappings overwrite previously added mappings
+    m_ecNameNewNameMapping[ecName] = newName;
+    m_newNameEcNameMapping[newName] = ecName;
+    }
+
+/*--------------------------------------------------------------------------------**//**
 * @bsimethod                                              Robert.Schili     03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool UnitRegistry::TryGetNewName(Utf8CP oldName, Utf8StringR newName) const
@@ -567,6 +574,36 @@ bool UnitRegistry::TryGetOldName(Utf8CP newName, Utf8StringR oldName) const
     if (p != m_newNameOldNameMapping.end())
         {
         oldName = p->second;
+        return true;
+        }
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                            Kyle.Abramowitz     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::TryGetECNameFromNewName(Utf8CP newName, Utf8StringR ecName) const
+    {
+    auto p = m_newNameEcNameMapping.find(newName);
+    if (p != m_newNameEcNameMapping.end())
+        {
+        ecName = p->second;
+        return true;
+        }
+
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                            Kyle.Abramowitz     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool UnitRegistry::TryGetNewNameFromECName(Utf8CP ecName, Utf8StringR newName) const
+    {
+    auto p = m_ecNameNewNameMapping.find(ecName);
+    if (p != m_ecNameNewNameMapping.end())
+        {
+        newName = p->second;
         return true;
         }
 
@@ -616,7 +653,7 @@ PhenomenonCP UnitRegistry::LoadSynonym(Utf8CP unitName, Utf8CP synonym) const
     {
     if (Utf8String::IsNullOrEmpty(unitName) || Utf8String::IsNullOrEmpty(synonym))
         return nullptr;
-      UnitCP unit = UnitRegistry::Instance().LookupUnitCI(unitName);
+      UnitCP unit = UnitRegistry::Instance().LookupUnit(unitName);
       PhenomenonCP ph = (nullptr == unit)? nullptr : unit->GetPhenomenon();
       if (nullptr != ph)
           {
