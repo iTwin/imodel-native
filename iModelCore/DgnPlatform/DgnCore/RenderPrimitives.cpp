@@ -2196,6 +2196,8 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     DRange3d textRange = DRange3d::From(textRange2d.low.x, textRange2d.low.y, 0.0, textRange2d.high.x, textRange2d.high.y, 0.0);
     textTransform.Multiply(textRange, textRange);
 
+    auto facetOptions = CreateFacetOptions(chordTolerance);
+
     DPoint3d textRangeCenter = DPoint3d::FromInterpolate(textRange.low, 0.5, textRange.high);
     double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
     double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
@@ -2206,7 +2208,17 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     constexpr double s_texSizeThreshold = 64.0;
     bool doTextAsRasterIfPossible = textSize / s_minToleranceRatioMultiplier <= s_texSizeThreshold;
 
-    auto facetOptions = CreateFacetOptions(chordTolerance);
+    IPolyfaceConstructionPtr glyphBoxBuilder;
+    constexpr double s_glyphBoxSizeThreshold = 3.0; // If text is this few pixels or smaller on screen, just render glyphs as boxes
+    bool doGlyphBoxes = textSize <= s_glyphBoxSizeThreshold;
+    bvector<DPoint3d> glyphBox(5);
+    if (doGlyphBoxes)
+        {
+        if (nullptr == polyfaces)
+            return;
+
+        glyphBoxBuilder = IPolyfaceConstruction::Create(*facetOptions);
+        }
 
     for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
         {
@@ -2215,13 +2227,33 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
         Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph, textString.GetStyle().GetFont()) : nullptr;
         if (nullptr == glyph || !glyph->IsValid())
             continue;
-        else if ((glyph->IsStrokes() && nullptr == strokes) || (!glyph->IsStrokes() && nullptr == polyfaces))
-            continue;
+
+        if (!doGlyphBoxes)
+            {
+            if ((glyph->IsStrokes() && nullptr == strokes) || (!glyph->IsStrokes() && nullptr == polyfaces))
+                continue;
+            }
 
         Transform glyphTransform = Transform::FromProduct(Transform::From(glyphOrigins[i]), rot);
         glyphTransform = Transform::FromProduct(textTransform, glyphTransform);
 
-        if (glyph->IsStrokes())
+        if (doGlyphBoxes)
+            {
+            DRange2d glyphRange = textGlyph->GetExactRange();
+
+            glyphBox[0].x = glyphBox[3].x = glyphBox[4].x = glyphRange.low.x;
+            glyphBox[1].x = glyphBox[2].x = glyphRange.high.x;
+
+            glyphBox[0].y = glyphBox[1].y = glyphBox[4].y = glyphRange.low.y;
+            glyphBox[2].y = glyphBox[3].y = glyphRange.high.y;
+
+            for (auto& pt : glyphBox)
+                pt.z = 0.0;
+
+            glyphTransform.Multiply(glyphBox, glyphBox);
+            glyphBoxBuilder->AddTriangulation(glyphBox);
+            }
+        else if (glyph->IsStrokes())
             {
             Strokes::PointLists points = glyph->GetStrokes(*facetOptions);
             if (!points.empty())
@@ -2258,6 +2290,13 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
                 polyfaces->push_back(Polyface(*displayParams, *polyface, false, true));
                 }
             }
+        }
+
+    if (doGlyphBoxes)
+        {
+        auto polyface = glyphBoxBuilder->GetClientMeshPtr();
+        if (polyface.IsValid() && polyface->HasFacets())
+            polyfaces->push_back(Polyface(geom.GetDisplayParams(), *polyface, false, true));
         }
     }
 
