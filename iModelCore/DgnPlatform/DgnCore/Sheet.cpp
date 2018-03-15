@@ -1029,6 +1029,18 @@ void Sheet::Attachment::Root::SetState(uint32_t depth, State state)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::ViewFlagsOverrides Sheet::Attachment::Root::_GetViewFlagsOverrides() const
+    {
+    // TFS#863662: If sheet's ViewFlags has transparency turned off, background pixels of
+    // attachments will render opaque black...
+    auto ovrs = T_Super::_GetViewFlagsOverrides();
+    ovrs.SetShowTransparency(true);
+    return ovrs;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view)

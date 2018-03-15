@@ -2209,9 +2209,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     bool doTextAsRasterIfPossible = textSize / s_minToleranceRatioMultiplier <= s_texSizeThreshold;
 
     IPolyfaceConstructionPtr glyphBoxBuilder;
-    constexpr double s_glyphBoxSizeThreshold = 3.0; // If text is this few pixels or smaller on screen, just render glyphs as boxes
-    bool doGlyphBoxes = textSize <= s_glyphBoxSizeThreshold;
-    doGlyphBoxes = false;
+    bool doGlyphBoxes = context.WantGlyphBoxes(textSize);
     bvector<DPoint3d> glyphBox(5);
     if (doGlyphBoxes)
         {
