@@ -1319,6 +1319,7 @@ TEST_P(ScalableMeshTestWithParams, GetAllClipIds)
 
     ids.clear();
     myScalableMesh->RemoveClip(222);
+    myScalableMesh->RemoveClip(245);
     myScalableMesh->GetAllClipIds(ids);
     ASSERT_TRUE(ids.empty());
 
@@ -1329,6 +1330,99 @@ TEST_P(ScalableMeshTestWithParams, GetAllClipIds)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_P(ScalableMeshTestWithParams, GetSkirtMeshes)
 {
+    auto datasetName = Utf8String(BeFileName::GetFileNameWithoutExtension(m_filename.c_str()));
+
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);
+
+    //Don't test clipping on un-reprojected Cesium datasets
+    if (myScalableMesh->IsCesium3DTiles())
+        return;
+
+    DRange3d range;
+    myScalableMesh->GetRange(range);
+    range.ScaleAboutCenter(range, 0.75);
+
+    bvector<bvector<DPoint3d>> skirtData;
+    bvector<DPoint3d> vec;
+    std::random_device rd;
+
+    std::default_random_engine e1(rd());
+    std::uniform_real_distribution<double> val_x(range.low.x, range.high.x);
+    std::uniform_real_distribution<double> val_y(range.low.y, range.high.y);
+
+    for (size_t i = 0; i < 21; ++i)
+    {
+        DPoint3d pt = DPoint3d::From(val_x(e1), val_y(e1), range.high.z);
+        vec.push_back(pt);
+    }
+
+    skirtData.push_back(vec);
+    myScalableMesh->AddClip(&vec[0], vec.size(), 242);
+    ASSERT_TRUE(myScalableMesh->AddSkirt(skirtData, 242));
+    bset<uint64_t> passedClips;
+    passedClips.insert(242);
+
+    bset<uint64_t> fakeClips;
+    fakeClips.insert(1);
+
+    std::queue<IScalableMeshNodePtr> allNodes;
+    allNodes.push(myScalableMesh->GetRootNode());
+
+    while(!allNodes.empty())
+    {
+        auto current = allNodes.front();
+        allNodes.pop();
+        bvector<PolyfaceHeaderPtr> meshes;
+
+        for (auto& node : current->GetChildrenNodes())
+            allNodes.push(node);
+        if (current->GetPointCount() < 4) continue;
+        if (!current->HasClip(242)) continue;
+
+        current->GetSkirtMeshes(meshes, passedClips);
+        //need to refresh clips
+        ASSERT_TRUE(meshes.empty() || meshes.front()->GetPointIndexCount() == 0);
+
+        Transform tr = Transform::FromIdentity();
+        current->RefreshMergedClip(tr);
+
+        meshes.clear();
+        current->GetSkirtMeshes(meshes, passedClips);
+        ASSERT_TRUE(!meshes.empty());
+        for(auto& mesh: meshes)
+        {
+            PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*mesh);
+            bvector<int> &pointIndex = visitor->ClientPointIndex();
+            for (visitor->Reset(); visitor->AdvanceToNextFace();)
+            {
+                DPoint3d tri[3] = { mesh->GetPointCP()[pointIndex[0]], mesh->GetPointCP()[pointIndex[1]], mesh->GetPointCP()[pointIndex[2]] };
+                
+                bool foundLine[3] = { false, false, false };
+                //this checks that all points presents in the meshes project on the skirt lines in the XY plane
+                for(size_t i =0; i < vec.size()-1; ++i)
+                {
+                    DSegment3d seg = DSegment3d::From(vec[i], vec[i + 1]);
+                    for(size_t j =0; j < 3; ++j)
+                    {
+                        DPoint3d project;
+                        double param;
+                        if (!foundLine[j])
+                        {
+                            foundLine[j] = seg.ProjectPointXY(project, param, tri[j]) && param > -1e-6 &&
+                                param < 1+1e-6 && abs(project.x - tri[j].x) < 1e-6 && abs(project.y - tri[j].y) < 1e-6;
+                        }
+                    }
+                }
+                ASSERT_TRUE(foundLine[0] && foundLine[1] && foundLine[2]);
+            }
+        }
+
+        meshes.clear();
+        current->GetSkirtMeshes(meshes, fakeClips);
+
+        ASSERT_TRUE(meshes.empty());
+    }
 }
 
 
