@@ -20,6 +20,7 @@ class SMSQLiteClipDefinitionsFile : public SMSQLiteFile
     virtual void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize);
 
     virtual void DeleteClipPolygon(int64_t clipID);
+    virtual void DeleteSkirtPolygon(int64_t clipID);
 
     virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive);
     virtual void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize);
