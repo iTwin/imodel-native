@@ -153,8 +153,6 @@ TEST_F(NumericFormatSpecTest, Constructors)
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     }
-
-    FAIL() << "TODO: Test NumericFormatSpec constructed from JSON";
     }
 
 TEST_F(NumericFormatSpecTest, IsIdentical)
@@ -200,22 +198,6 @@ TEST_F(BinaryFormattingTest, FormatInt16)
     EXPECT_STREQ("0101101010010110", nfsComma.Int16ToBinaryText(BinaryFormattingTest::TestInt16::testVal, false).c_str());
     EXPECT_STREQ("01011010,10010110", nfsComma.Int16ToBinaryText(BinaryFormattingTest::TestInt16::testVal, true).c_str());
     EXPECT_STREQ("01011010+10010110", nfsPlus.Int16ToBinaryText(BinaryFormattingTest::TestInt16::testVal, true).c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(BinaryFormattingTest, FormatInt32)
-    {
-    FAIL() << "TODO: Untested methods are failing methods.";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(BinaryFormattingTest, FormatDouble)
-    {
-    FAIL() << "TODO: Untested methods are failing methods.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -309,7 +291,7 @@ TEST_F(FormatIntegerTest, FormatIntegerPresentationTypeTests)
     nfs.SetPresentationType(PresentationType::Scientific);
     nfs.SetDecimalPrecision(DecimalPrecision::Max);
     EXPECT_STREQ("1.00501e+5", nfs.FormatInteger(testValPos).c_str());
-    EXPECT_STREQ("-11.00501e+5", nfs.FormatInteger(testValNeg).c_str());
+    EXPECT_STREQ("-1.00501e+5", nfs.FormatInteger(testValNeg).c_str());
     }
 
     // ScientificNorm
@@ -407,8 +389,6 @@ TEST_F(FormatIntegerTest, FormatIntegerFormatTraitsTests)
     EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
     EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
     EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
-
-    FAIL() << "TODO: Test with the buffer version.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -667,11 +647,6 @@ TEST_F(FormatDoubleTest, FormatDoubleFormatTraitsTests)
     EXPECT_STREQ("-100501.125", nfs.FormatDouble(testValNeg).c_str());
     }
 
-TEST_F(NumericFormatSpecTest, StdFormatDouble)
-    {
-    FAIL() << "TODO: Untested methods are failing methods.";
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -692,16 +667,6 @@ TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
     // 1500.5 miles == 1,500 miles and 31,680 inches
     BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
     EXPECT_STREQ("1'500.0 31'680.0", NumericFormatSpec::StdFormatQuantity(namedFormatSpec, quantity).c_str());
-    }
-
-TEST_F(NumericFormatSpecTest, FormatQuantity)
-    {
-    FAIL() << "TODO: Untested methods are failing methods.";
-    }
-
-TEST_F(NumericFormatSpecTest, ToJson)
-    {
-    FAIL() << "TODO: Untested methods are failing methods.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -770,9 +735,6 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     EXPECT_STREQ("MM(Real2)", MMFusJsonAllMembers.ToText().c_str());
     EXPECT_STREQ("MM(real2)", MMFusJsonAllMembers.ToText().c_str());
     EXPECT_TRUE(MMFusJsonAllMembers.IsIdentical(FormatUnitSet("MM(Real2)", &BEU::UnitRegistry::Get())));
-    }
-    {
-    FAIL() << "TODO: Test FUS from JSON with formatSpec fully defined.";
     }
     }
 
@@ -856,8 +818,6 @@ TEST_F(NamedFormatSpecTest, Constructors)
     ASSERT_NE(nullptr, namedFmtSpec.GetCompositeSpec());
     EXPECT_TRUE(namedFmtSpec.GetCompositeSpec()->IsIdentical(compValSpec));
     }
-
-    FAIL() << "TODO: Test const ref copy constructor and JSON constructors.";
     }
 
 //---------------------------------------------------------------------------------------
