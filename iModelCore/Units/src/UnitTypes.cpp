@@ -133,6 +133,19 @@ UnitP Unit::_Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
+//--------------------------------------------------------------------------------------
+UnitP Unit::_Create(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator)
+    {
+    if (0.0 == denominator)
+        {
+        LOG.errorv("Cannot create constant %s because denominator is 0.0.", name);
+        return nullptr;
+        }
+    return new Unit(phenomenon, name, definition, numerator, denominator);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 BentleyStatus Unit::SetPhenomenon(PhenomenonR phenom)

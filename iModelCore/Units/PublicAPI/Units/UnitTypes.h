@@ -221,10 +221,13 @@ protected:
         }
 
     UNITS_EXPORT static UnitP _Create(UnitCR parentUnit, UnitSystemCR system, Utf8CP unitName);
+    UNITS_EXPORT static UnitP _Create(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator);
 
     Unit(Utf8CP name) : UnitsSymbol(name), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(false), m_dummyUnit(false) {}
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
-
+    //! Creates a constant.
+    Unit(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator)
+        : UnitsSymbol(name, definition, numerator, denominator, 0), m_phenomenon(&phenomenon), m_system(nullptr) { SetConstant(true);}
     //! Creates an inverted Unit.
     Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name)
         : Unit(system, *(parentUnit.GetPhenomenon()), name, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
