@@ -361,6 +361,15 @@ public:
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileSubGraphic);
 DEFINE_REF_COUNTED_PTR(TileSubGraphic);
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool wantGlyphBoxes(double sizeInPixels)
+    {
+    constexpr double s_glyphBoxSizeThreshold = 3.0;
+    return sizeInPixels <= s_glyphBoxSizeThreshold;
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
@@ -410,6 +419,7 @@ protected:
     AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
+    bool _WantGlyphBoxes(double sizeInPixels) const override { return wantGlyphBoxes(sizeInPixels); }
     bool _AnyPointVisible(DPoint3dCP pts, int nPts, double tolerance) override
         {
         DRange3d range = DRange3d::From(pts, nPts);
@@ -1951,6 +1961,7 @@ private:
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) override { BeAssert(false); return nullptr; }
     GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
+    bool _WantGlyphBoxes(double sizeInPixels) const override { return wantGlyphBoxes(sizeInPixels); }
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
