@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimImporter/lib/BisJson1ImporterImpl.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -106,10 +106,10 @@ BentleyStatus BisJson1ImporterImpl::AttachSyncInfo()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ImporterImpl::ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue)
+BentleyStatus BisJson1ImporterImpl::ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue, folly::Future<bool>& exporterFuture)
     {
     Json::Value entry;
-    while (!m_isDone)
+    while (!exporterFuture.isReady())
         {
         while (objectQueue.read(entry))
             {

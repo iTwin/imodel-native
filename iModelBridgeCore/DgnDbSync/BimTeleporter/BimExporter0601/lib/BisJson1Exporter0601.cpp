@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -14,9 +14,9 @@ BEGIN_BIM_TELEPORTER_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BisJson1Exporter0601::BisJson1Exporter0601(wchar_t const* dbPath)
+BisJson1Exporter0601::BisJson1Exporter0601(wchar_t const* dbPath, const wchar_t* tempPath, const wchar_t* assetsPath)
     {
-    m_exporter = new BentleyG0601::Dgn::BimTeleporter::BisJson1ExporterImpl(dbPath);
+    m_exporter = new BentleyG0601::Dgn::BimTeleporter::BisJson1ExporterImpl(dbPath, tempPath, assetsPath);
     }
 
 //---------------------------------------------------------------------------------------

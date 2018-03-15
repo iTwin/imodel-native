@@ -24,6 +24,8 @@ HeaderFiles = $(PublicApi)DgnDbToBimConverter.h $(PublicApi)BisJson1Exporter0601
 
 $(o)DgnDbToBimConverter.obj: $(baseDir)DgnDbToBimConverter.cpp $(HeaderFiles)
 
+$(o)InteropHostProvider.obj: $(baseDir)InteropHostProvider.cpp $(HeaderFiles) $(baseDir)InteropHostProvider.h
+
 
 #----------------------------------------------------------------------
 #   Link the library
@@ -35,7 +37,7 @@ DLM_DEST        = $(o)
 DLM_NAME        = $(appname)
 DLM_OBJECT_DEST     = $(o)
 DLM_EXPORT_DEST     = $(o)
-DLM_OBJECT_FILES    = $(o)DgnDbToBimConverter.obj
+DLM_OBJECT_FILES    = $(o)DgnDbToBimConverter.obj $(o)InteropHostProvider.obj
 DLM_NOINITFUN   = 1
 DLM_NOENTRY     = 1
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BisJson1Exporter0601.lib

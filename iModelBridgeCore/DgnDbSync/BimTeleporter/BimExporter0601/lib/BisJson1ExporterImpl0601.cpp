@@ -223,7 +223,7 @@ Utf8String IdToString(Utf8CP idString)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BisJson1ExporterImpl::BisJson1ExporterImpl(wchar_t const* dbPath) : m_dbPath(dbPath)
+BisJson1ExporterImpl::BisJson1ExporterImpl(wchar_t const* dbPath, wchar_t const* tempPath, wchar_t const* assetsPath) : m_dbPath(dbPath), m_tempPath(tempPath), m_assetsPath(assetsPath)
     {
     m_meter = new PrintfProgressMeter();
     }
@@ -248,6 +248,9 @@ L10N::SqlangFiles BisJson1ExporterImpl::_SupplySqlangFiles()
     return L10N::SqlangFiles(sqlangFile);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 void BisJson1ExporterImpl::LogMessage(TeleporterLoggingSeverity severity, Utf8CP message, ...)
     {
     va_list args;
@@ -257,6 +260,9 @@ void BisJson1ExporterImpl::LogMessage(TeleporterLoggingSeverity severity, Utf8CP
     m_logger(severity, msg.c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 void BisJson1ExporterImpl::LogMessage(TeleporterLoggingSeverity severity, WCharCP message, ...)
     {
     va_list args;
@@ -266,6 +272,9 @@ void BisJson1ExporterImpl::LogMessage(TeleporterLoggingSeverity severity, WCharC
     m_logger(severity, Utf8String(msg.c_str()).c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 void BisJson1ExporterImpl::LogPerformanceMessage(StopWatch& stopWatch, Utf8CP description, ...)
     {
     stopWatch.Stop();
@@ -279,12 +288,16 @@ void BisJson1ExporterImpl::LogPerformanceMessage(StopWatch& stopWatch, Utf8CP de
     m_performanceLog(message.c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 void BisJson1ExporterImpl::SendToQueue(Utf8CP json)
     {
     Utf8String jsonStr(json);
     jsonStr.ReplaceAll("dgn.", "BisCore.");
     (QueueJson)(jsonStr.c_str());
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2017
 //---------------+---------------+---------------+---------------+---------------+-------
