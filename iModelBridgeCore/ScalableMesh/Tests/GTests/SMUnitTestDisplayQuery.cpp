@@ -392,6 +392,7 @@ void DisplayQueryTester::DoQuery()
 
     DPoint3d dummyViewBox[8]; 
     viewDependentQueryParams->SetViewBox(dummyViewBox);
+    viewDependentQueryParams->SetProgressiveDisplay(true);
 
     int queryId = 0;
     bvector<bool> clips;
