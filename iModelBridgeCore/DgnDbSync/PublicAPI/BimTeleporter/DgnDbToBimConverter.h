@@ -25,6 +25,10 @@ BEGIN_DGNDB_TO_BIM_NAMESPACE
 struct DgnDbToBimConverter
     {
     public:
+        //! Converts a 1.6 dgndb/imodel to 2.0.  Calling application must have already initialized the host
+        //! @param[in] inputPath    Full filename of the input 1.6 file
+        //! @param[in] outputPath   Path to the directory where the 2.0 bim will be created
         __declspec(dllexport) static bool Convert(WCharCP inputPath, WCharCP outputPath);
     };
+
 END_DGNDB_TO_BIM_NAMESPACE

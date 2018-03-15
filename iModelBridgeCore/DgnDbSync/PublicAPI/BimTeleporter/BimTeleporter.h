@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BimTeleporter/BimTeleporter.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,3 +48,4 @@ enum TeleporterLoggingSeverity
 typedef std::function<void(TeleporterLoggingSeverity severity, const char* message)> T_LogGeneralMessage;
 typedef std::function<void(const char* message)> T_LogPerformanceMessage;
 typedef std::function<void(const char* json)> T_QueueJson;
+typedef std::function<void()> T_Insert;

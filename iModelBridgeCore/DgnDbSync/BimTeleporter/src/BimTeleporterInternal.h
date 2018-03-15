@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/src/BimTeleporterInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,6 @@
 #include <Bentley/BeFileName.h>
 #include <BimTeleporter/BimTeleporter.h>
 #include <Logging/bentleylogging.h>
-#include <folly/futures/Future.h>
 
 #if defined (__BIMTELEPORTER_BUILD__)
 #   define BIMTELEPORTER_EXPORT      EXPORT_ATTRIBUTE
@@ -23,7 +22,7 @@
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
-struct BisJson1Exporter0601;
+struct BimTeleporterHost;
 
 struct BimTeleporter
 {
@@ -31,6 +30,7 @@ private:
     BeFileName m_inputFileName;
     BeFileName m_outputPath;
     BeFileName m_loggingConfigFileName;
+    BimTeleporterHost* m_host;
 
     void PrintError(WCharCP fmt, ...);
     void _PrintMessage(WCharCP fmt, ...);
@@ -43,12 +43,11 @@ private:
     BentleyStatus _Initialize(int argc, WCharCP argv[]);
     static BentleyApi::NativeLogging::ILogger& GetLogger() { return *BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter"); }
 
-    folly::Future<bool> ExportDgnDb(BisJson1Exporter0601* exporter);
-
 public:
     //! wmain should call this to run the job.
     BIMTELEPORTER_EXPORT int Run(int argc, WCharCP argv[]);
 
 };
+
 
 END_BIM_TELEPORTER_NAMESPACE

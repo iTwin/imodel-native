@@ -16,6 +16,7 @@
 #include <Bentley/BeThread.h>
 #include <folly/BeFolly.h>
 
+#include "InteropHostProvider.h"
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY
 USING_DGNDB_TO_BIM_NAMESPACE
@@ -37,7 +38,7 @@ folly::Future<bool> ExportDgnDb(BisJson1Exporter0601* exporter)
 //---------------+---------------+---------------+---------------+---------------+-------
 bool DgnDbToBimConverter::Convert(WCharCP inputPath, WCharCP outputPath)
     {
-    BisJson1Exporter0601 exporter(inputPath);
+    BisJson1Exporter0601 exporter(inputPath, InteropHostProvider::GetTemporaryDirectory(), InteropHostProvider::GetAssetsDirectory());
     auto logFunc = [] (TeleporterLoggingSeverity severity, const char* message)
         {
         BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter")->message((SEVERITY) severity, message);
@@ -57,11 +58,12 @@ bool DgnDbToBimConverter::Convert(WCharCP inputPath, WCharCP outputPath)
         });
 
     StopWatch totalTimer(true);
-    std::thread consumer([&importer] { importer.CreateBim(); });
+//    std::thread consumer([&importer] { importer.CreateBim(); });
     auto future = ExportDgnDb(&exporter);
-    bool stat = future.get();
-    importer.SetDone();
-    consumer.join();
+    importer.CreateBim(future);
+    //bool stat = future.get();
+    //importer.SetDone();
+//    consumer.join();
     totalTimer.Stop();
     Utf8PrintfString message("Total teleportation|%.0f millisecs", totalTimer.GetElapsedSeconds() * 1000.0);
     BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter.Performance")->info(message.c_str());

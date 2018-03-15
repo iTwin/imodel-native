@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimImporter/lib/BisJson1ImporterImpl.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -93,7 +93,7 @@ struct BisJson1ImporterImpl : DgnImportContext
         BentleyStatus InitializeSchemas();
         BentleyStatus CreateAndAttachSyncInfo();
         BentleyStatus AttachSyncInfo();
-        BentleyStatus ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue);
+        BentleyStatus ImportJson(folly::ProducerConsumerQueue<BentleyB0200::Json::Value>& objectQueue, folly::Future<bool>& exporterFuture);
         void AddToQueue(const char* entry);
         void SetDone() { m_isDone = true; }
         void FinalizeImport();
