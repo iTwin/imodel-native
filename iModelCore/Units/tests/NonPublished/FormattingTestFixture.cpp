@@ -1370,34 +1370,34 @@ Utf8String FormattingTestFixture::SetLocale(Utf8CP name)
 	return locName;
 }
 
-void FormattingTestFixture::TestTime(Utf8CP localeName, Utf8CP label, Utf8CP pattern)
-{
-	std::locale loc(localeName);
-	std::wstringstream strm;
-	
-	strm.imbue(loc);
-	strm.clear();
-	if (Utils::IsNameNullOrEmpty(pattern))
-		pattern = "%c";
-
-	if (Utils::IsNameNullOrEmpty(label))
-		label = "time";
-	WString wPatt(pattern, true);
-
-	using std::chrono::system_clock;
-	std::time_t tt = system_clock::to_time_t(system_clock::now());
-
-	struct std::tm * ptm = std::localtime(&tt);
-
-	strm << std::put_time(ptm, wPatt.c_str()) << '\n';
-	Utf8String utf8Buffer(strm.str().c_str());
-
-	LOG.infov(u8"Locale %s %s: %s", std::locale(localeName).name().c_str(), label, utf8Buffer.c_str());
-
-	//Utf8String dump = Utils::HexDump((Utf8CP)((void*)(strm.str().c_str())), (int)utf8Buffer.size() * 2);
-	//LOG.infov("Dump[%d]: %s", dump.size(), dump.c_str());
-
-}
+//void FormattingTestFixture::TestTime(Utf8CP localeName, Utf8CP label, Utf8CP pattern)
+//{
+//	std::locale loc(localeName);
+//	std::wstringstream strm;
+//	
+//	strm.imbue(loc);
+//	strm.clear();
+//	if (Utils::IsNameNullOrEmpty(pattern))
+//		pattern = "%c";
+//
+//	if (Utils::IsNameNullOrEmpty(label))
+//		label = "time";
+//	WString wPatt(pattern, true);
+//
+//	using std::chrono::system_clock;
+//	std::time_t tt = system_clock::to_time_t(system_clock::now());
+//
+//	struct std::tm * ptm = std::localtime(&tt);
+//
+//	strm << std::put_time(ptm, wPatt.c_str()) << '\n';
+//	Utf8String utf8Buffer(strm.str().c_str());
+//
+//	LOG.infov(u8"Locale %s %s: %s", std::locale(localeName).name().c_str(), label, utf8Buffer.c_str());
+//
+//	//Utf8String dump = Utils::HexDump((Utf8CP)((void*)(strm.str().c_str())), (int)utf8Buffer.size() * 2);
+//	//LOG.infov("Dump[%d]: %s", dump.size(), dump.c_str());
+//
+//}
 
 //WString wName(unitName, true);
 //WString wSyn(synonym, true);
