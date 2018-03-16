@@ -203,20 +203,13 @@ void LsSymbolComponent::Draw(LineStyleContextR context, TransformCR transform, C
 
     Render::GraphicBuilderR mainGraphic = context.GetGraphicR();
     ViewContextR viewContext = context.GetViewContext();
+    Transform partToWorld = Transform::FromProduct(mainGraphic.GetLocalToWorldTransform(), transform);
+    ElementAlignedBox3d range = geomPart->GetBoundingBox();
 
-#ifdef UNNECESSARY_VIEWPORT_TEST
-    // Removed this test so that file publisher can reject symbols that are not within the tile.  (TFS# 80823).
-    if (nullptr != viewContext.GetViewport())
-#endif
-        {
-        Transform partToWorld = Transform::FromProduct(mainGraphic.GetLocalToWorldTransform(), transform);
-        ElementAlignedBox3d range = geomPart->GetBoundingBox();
+    partToWorld.Multiply(range, range);
 
-        partToWorld.Multiply(range, range);
-
-        if (!viewContext.IsRangeVisible(range))
-            return; // Part range doesn't overlap pick/fence...
-        }
+    if (!viewContext.IsRangeVisible(range))
+        return; // Part range doesn't overlap pick/fence...
 
     Render::GeometryParamsCR baseParams = context.GetGeometryParams();
     bool cookParams = baseParams.GetCategoryId().IsValid(); // NOTE: LineStyleRangeCollector doesn't care about base symbology...
@@ -240,7 +233,7 @@ void LsSymbolComponent::Draw(LineStyleContextR context, TransformCR transform, C
             if (ignoreColor)
                 {
                 symbParams.SetLineColor(baseParams.GetLineColor()); // Should transparency also come from baseParams???
-                symbParams.SetFillColor(baseParams.GetFillColor()); // Does color also mean fill color?
+                symbParams.SetFillColor(baseParams.GetLineColor()); // BaseParams doesn't have seperate fill color - synch fill with color.
                 }
             else if (creatingTexture)
                 {

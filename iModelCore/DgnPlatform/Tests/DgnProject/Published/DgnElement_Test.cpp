@@ -8,6 +8,7 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <ECObjects/ECJsonUtilities.h>
+#include <DgnPlatform/SavedSelection.h>
 
 USING_NAMESPACE_BENTLEY_DPTEST
 
@@ -2271,6 +2272,33 @@ TEST_F(DgnElementTests, ElementIterator)
         count++;
         }
     ASSERT_EQ(numPhysicalObjects, count);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  03/2018
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, SavedSelectionCRUD)
+    {
+    SetupSeedProject();
+
+    SavedSelectionPtr selection = SavedSelection::Create(*m_db, "MySelection");
+    ASSERT_TRUE(selection.IsValid());
+
+    Json::Value outData = selection->GetSelectionData();
+    ASSERT_TRUE(outData.isNull());
+
+    Json::Value inData(Json::objectValue);
+    inData["TestData"] = "TestData";
+    selection->SetSelectionData(inData);
+
+    outData = selection->GetSelectionData();
+    ASSERT_TRUE(outData.isObject());
+    ASSERT_TRUE(outData["TestData"].asString().Equals("TestData"));
+
+    ASSERT_TRUE(selection->Insert().IsValid());
+    m_db->SaveChanges();
+
+    ASSERT_TRUE(SavedSelection::GetElementIdByName(*m_db, "MySelection").IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**

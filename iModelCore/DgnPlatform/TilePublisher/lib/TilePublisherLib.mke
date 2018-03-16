@@ -2,7 +2,7 @@
 #
 #  $Source: TilePublisher/lib/TilePublisherLib.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -30,8 +30,6 @@ $(o)SchedulePublisher$(oext) : $(SrcDir)SchedulePublisher.cpp $(SrcDir)Constants
 $(o)HistoryPublisher$(oext) : $(SrcDir)HistoryPublisher.cpp $(SrcDir)Constants.h ${MultiCompileDepends} $(SrcRoot)DgnPlatform/publicapi/TilePublisher/CesiumPublisher.h
 
 $(o)CesiumPublisher$(oext) : $(SrcDir)CesiumPublisher.cpp $(SrcDir)CesiumConstants.h $(SrcRoot)DgnPlatform/publicapi/TilePublisher/CesiumPublisher.h ${MultiCompileDepends} 
-
-$(o)CesiumDirectPublisher$(oext) : $(SrcDir)CesiumDirectPublisher.cpp $(SrcDir)CesiumConstants.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 

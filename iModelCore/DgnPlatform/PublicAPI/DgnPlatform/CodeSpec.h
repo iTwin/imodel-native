@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/CodeSpec.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,6 +23,7 @@
 #define BIS_CODESPEC_AuxCoordSystemSpatial          BIS_CODESPEC(BIS_CLASS_AuxCoordSystemSpatial)
 #define BIS_CODESPEC_CategorySelector               BIS_CODESPEC(BIS_CLASS_CategorySelector)
 #define BIS_CODESPEC_ColorBook                      BIS_CODESPEC(BIS_CLASS_ColorBook)
+#define BIS_CODESPEC_SavedSelection                 BIS_CODESPEC(BIS_CLASS_SavedSelection)
 #define BIS_CODESPEC_DisplayStyle                   BIS_CODESPEC(BIS_CLASS_DisplayStyle)
 #define BIS_CODESPEC_Drawing                        BIS_CODESPEC(BIS_CLASS_Drawing)
 #define BIS_CODESPEC_DrawingCategory                BIS_CODESPEC(BIS_CLASS_DrawingCategory)
