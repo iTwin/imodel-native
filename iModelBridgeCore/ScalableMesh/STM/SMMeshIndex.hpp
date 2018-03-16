@@ -4073,9 +4073,6 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     
     PtToPtConverter::Transform(&points[0], &(*pointsPtr)[0], points.size());
 
-	if (m_SMIndex->IsFromCesium())
-		tr.Multiply(&points[0], &points[0], (int)points.size());
-
   /*  DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
                                         ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));*/
 
@@ -4084,10 +4081,13 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
 	if (m_SMIndex->IsFromCesium())
 	    {
-		tr.Multiply(nodeRange.low);
-		tr.Multiply(nodeRange.high);
-		nodeRange = DRange3d::From(nodeRange.low, nodeRange.high);
-	    }
+        bvector<DPoint3d> box(8);
+        nodeRange.Get8Corners(box.data());
+        tr.Multiply(&box[0], &box[0], (int)box.size());
+        nodeRange = DRange3d::From(box);
+
+        tr.Multiply(&points[0], &points[0], (int)points.size());
+        }
 
     bvector<bvector<DPoint3d>> polys;
     bvector<uint64_t> clipIds;
@@ -4505,10 +4505,12 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
 	{
 		extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext), ExtentOp<EXTENT>::GetZMin(ext),
 			ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext), ExtentOp<EXTENT>::GetZMax(ext));
-		//tr.Multiply(extRange.low, extRange.low);
-		//tr.Multiply(extRange.high, extRange.high);
-		//extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(extRange), ExtentOp<EXTENT>::GetYMin(extRange), 0,
-		//	ExtentOp<EXTENT>::GetXMax(extRange), ExtentOp<EXTENT>::GetYMax(extRange), 0);
+        bvector<DPoint3d> box(8);
+        extRange.Get8Corners(box.data());
+        tr.Multiply(&box[0], &box[0], (int)box.size());
+        extRange = DRange3d::From(box);
+		extRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(extRange), ExtentOp<EXTENT>::GetYMin(extRange), 0,
+			ExtentOp<EXTENT>::GetXMax(extRange), ExtentOp<EXTENT>::GetYMax(extRange), 0);
 		for (auto& pt : polyPts)
 			tr.Multiply(pt, pt);
 	}
