@@ -43,7 +43,7 @@ public:
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SavedSelection));}
 
     //! Convenience method to get the ElementId for SavedSelection by name. If no match is found then an invalid Id is returned.
-    static DgnElementId SavedSelection::GetElementIdByName(DgnDbR db, Utf8CP name)
+    static DgnElementId GetElementIdByName(DgnDbR db, Utf8CP name)
         {
         if (Utf8String::IsNullOrEmpty(name))
             return DgnElementId();
@@ -56,7 +56,7 @@ public:
 
     JsonValueCR GetSelectionData() const { return m_jsonProperties[json_selectionData()]; } //!< Returns the Json data that defines the Selection Elements.
 
-    void SavedSelection::SetSelectionData(Json::Value selectionData) //!< Sets the Json data that defines the Selection Elements.
+    void SetSelectionData(Json::Value selectionData) //!< Sets the Json data that defines the Selection Elements.
         {
         if (selectionData.isNull() || selectionData.empty())
             RemoveJsonProperties(json_selectionData());
