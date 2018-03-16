@@ -8,7 +8,7 @@
 
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
-#include <ECObjects\SchemaComparer.h>
+#include <ECObjects/SchemaComparer.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
