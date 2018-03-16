@@ -56,7 +56,7 @@ public:
     bool GetIsDisplayLabelDefined() const {return m_hasExplicitDisplayLabel;} //!< Whether the display label is explicitly defined or not.
     Utf8StringCR GetInvariantDisplayLabel() const {return (m_hasExplicitDisplayLabel) ? m_displayLabel : GetName();} //!< Gets the invariant display label for this UnitSystem.
 
-    bool GetIsDescriptionDefined() const {return !m_description.empty();} //!< Returns true if description is not empty
+    bool GetIsDescriptionDefined() const {return m_description.length() > 0;} //!< Returns true if description length is 0
     Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this UnitSystem.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this UnitSystem. Returns the localized description if one exists.
 
@@ -114,7 +114,7 @@ public:
     bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;} //!< Whether the display label is explicitly defined or not.
     ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const; //!< Gets the invariant display label for this Phenomenon.
 
-    bool GetIsDescriptionDefined() const {return !m_description.empty();} //!< Returns true if description is not empty
+    bool GetIsDescriptionDefined() const {return m_description.length() > 0;} //!< Returns true if description length is 0
     Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this Phenomenon.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this Phenomenon. Returns the localized description if one exists.
 
@@ -146,12 +146,20 @@ friend struct SchemaJsonWriter;
 private:
     ECSchemaCR m_schema;
     UnitId m_unitId;
+
     bool m_isDisplayLabelExplicitlyDefined;
+    bool m_isNumeratorExplicitlyDefined;
+    bool m_isDenominatorExplicitlyDefined;
+    bool m_isOffsetExplicitlyDefined;
+
     Utf8String m_description;
     mutable Utf8String m_fullName;
 
     ECObjectsStatus SetDisplayLabel(Utf8StringCR value) {Units::Unit::SetLabel(value.c_str()); m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
     ECObjectsStatus SetDescription(Utf8StringCR value) {m_description = value; return ECObjectsStatus::Success;}
+    BentleyStatus SetNumerator(double value) override {m_isNumeratorExplicitlyDefined = true; return Units::Unit::SetNumerator(value);}
+    BentleyStatus SetDenominator(double value) override {m_isDenominatorExplicitlyDefined = true; return Units::Unit::SetDenominator(value);}
+    BentleyStatus SetOffset(double value) override {m_isOffsetExplicitlyDefined = true; return Units::Unit::SetOffset(value);}
 
     SchemaReadStatus ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR context);
     SchemaReadStatus ReadStandardUnitXml(BeXmlNodeR, ECSchemaReadContextR context);
@@ -168,8 +176,9 @@ private:
 
     ECUnit(ECSchemaCR schema, Utf8CP name);
     ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName); //!< Creates and inverted unit
-    ECUnit(ECSchemaCR schema, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator); //!< Creates a constat.
+    ECUnit(ECSchemaCR schema, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator); //!< Creates a constant.
     ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant); //! Creates a unit.
+    ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition); //! Creates a unit.
 
     ECSchemaR GetSchemaR() const {return const_cast<ECSchemaR>(m_schema);}
 
@@ -185,10 +194,13 @@ public:
     bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;} //!< Whether the display label is explicitly defined or not.
     ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const; //!< Gets the invariant display label for this ECUnit.
 
-    bool GetIsDescriptionDefined() const {return !m_description.empty();} //!< Returns true if description is not empty
+    bool GetIsDescriptionDefined() const {return m_description.length() > 0;} //!< Returns true if description length is 0
     Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description for this ECUnit.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this ECUnit. Returns the localized description if one exists.
 
+    bool HasNumerator() const override {return m_isNumeratorExplicitlyDefined;} //!< Returns true if the numerator has been explicitly set
+    bool HasDenominator() const override {return m_isDenominatorExplicitlyDefined;} //!< Returns true if the denominator has been explicitly set
+    bool HasOffset() const override {return m_isOffsetExplicitlyDefined;} //!< Returns true if the offset has been explicitly set
     PhenomenonCP GetPhenomenon() const {return (ECN::PhenomenonCP) T_Super::GetPhenomenon();}
 
     UnitSystemCP GetUnitSystem() const {return (ECN::UnitSystemCP) T_Super::GetUnitSystem();}

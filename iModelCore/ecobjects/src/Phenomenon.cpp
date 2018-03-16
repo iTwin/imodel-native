@@ -123,8 +123,8 @@ SchemaWriteStatus Phenomenon::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVe
 
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->GetName().c_str());
     xmlWriter.WriteAttribute(DEFINITION_ATTRIBUTE, this->GetDefinition().c_str());
-    if (GetIsDescriptionDefined())
-        xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
+
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
 
@@ -157,6 +157,7 @@ SchemaWriteStatus Phenomenon::WriteJson(Json::Value& outValue, bool standalone, 
 
     outValue[ECJSON_SCHEMA_CHILD_TYPE] = PHENOMENON_ELEMENT;
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
+    
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
     if (GetIsDescriptionDefined())

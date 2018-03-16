@@ -91,8 +91,8 @@ SchemaWriteStatus UnitSystem::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVe
     xmlWriter.WriteElementStart(elementName);
 
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
-    if (GetIsDescriptionDefined())
-        xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
+
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
 

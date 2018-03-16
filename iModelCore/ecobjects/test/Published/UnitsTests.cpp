@@ -72,12 +72,12 @@ TEST_F(UnitsTests, ECUnitContainerTest)
     }
     {
     ECUnitP unit;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateUnit(unit, "ExampleUnit3", "MMM", *phenom, *system, 1.0));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateUnit(unit, "ExampleUnit3", "MMM", *phenom, *system));
     EXPECT_TRUE(nullptr != unit);
     }
     ECUnitP unitToBeInverted;
     {
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateUnit(unitToBeInverted, "ExampleUnit4", "MMMM", *phenom, *system, 1.0, "ExampleUnitLabel4", "ExampleUnitDescription4"));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateUnit(unitToBeInverted, "ExampleUnit4", "MMMM", *phenom, *system, nullptr, "ExampleUnitLabel4", "ExampleUnitDescription4"));
     EXPECT_TRUE(nullptr != unitToBeInverted);
     }
     {
@@ -130,7 +130,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("ExampleUnit2", unit->GetName().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
-                EXPECT_FALSE(unit->HasNumerator());
+                EXPECT_TRUE(unit->HasNumerator());
                 EXPECT_EQ(1.0, unit->GetNumerator());
                 EXPECT_FALSE(unit->HasDenominator());
                 EXPECT_EQ(1.0, unit->GetDenominator());

@@ -1111,13 +1111,17 @@ ECObjectsStatus ECSchema::CreateUnit(ECUnitP& unit, Utf8CP name, Utf8CP definiti
         return ECObjectsStatus::SchemaNotFound;
         }
 
-    double localNumerator = numerator.IsValid() ? numerator.Value() : 1.0;
-    double localDenominator = denominator.IsValid() ? denominator.Value() : 1.0;
-    double localOffset = offset.IsValid() ? offset.Value() : 0.0;
-    
-    unit = new ECUnit(*this, unitSystem, phenom, name, definition, localNumerator, localDenominator, localOffset, false);
+    unit = new ECUnit(*this, unitSystem, phenom, name, definition);
+
     if (nullptr == unit)
         return ECObjectsStatus::Error;
+
+    if (numerator.IsValid())
+        unit->SetNumerator(numerator.Value());
+    if (denominator.IsValid())
+        unit->SetDenominator(denominator.Value());
+    if (offset.IsValid())
+        unit->SetOffset(offset.Value());
 
     ECObjectsStatus status;
     const auto cleanupIfNecessary = [&unit, &status]() -> decltype(auto)
@@ -1229,9 +1233,10 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
         return ECObjectsStatus::SchemaNotFound;
         }
 
-    double localDenominator = denominator.IsValid() ? denominator.Value() : 1.0;
+    constant = new ECUnit(*this, phenom, name, definition, numerator, 1.0);
 
-    constant = new ECUnit(*this, phenom, name, definition, numerator, localDenominator);
+    if(denominator.IsValid())
+        constant->SetDenominator(denominator.Value());
 
     if (nullptr != label)
         { 

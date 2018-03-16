@@ -13,7 +13,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECUnit::ECUnit(ECSchemaCR schema, Utf8CP name) : Units::Unit(name), m_schema(schema)
+ECUnit::ECUnit(ECSchemaCR schema, Utf8CP name) : Units::Unit(name), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -21,7 +21,7 @@ ECUnit::ECUnit(ECSchemaCR schema, Utf8CP name) : Units::Unit(name), m_schema(sch
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName) : Units::Unit(parentUnit, system, unitName), m_schema(schema)
+ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR system, Utf8CP unitName) : Units::Unit(parentUnit, system, unitName), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -30,7 +30,7 @@ ECUnit::ECUnit(ECSchemaCR schema, Units::UnitCR parentUnit, Units::UnitSystemCR 
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator) :
-    Units::Unit(phenomenon, name, definition, numerator, denominator), m_isDisplayLabelExplicitlyDefined(false), m_schema(schema)
+    Units::Unit(phenomenon, name, definition, numerator, denominator), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -39,7 +39,16 @@ ECUnit::ECUnit(ECSchemaCR schema,Units::PhenomenonCR phenomenon, Utf8CP name, Ut
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant) :
-    Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false),m_schema(schema)
+    Units::Unit(unitSystem, phenomenon, name, definition, numerator, denominator, offset, isConstant), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
+    {
+    m_unitsContext = &schema.GetUnitsContext();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECUnit::ECUnit(ECSchemaCR schema, Units::UnitSystemCR unitSystem, Units::PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition) :
+    Units::Unit(unitSystem, phenomenon, name, definition), m_isDisplayLabelExplicitlyDefined(false), m_isNumeratorExplicitlyDefined(false), m_isDenominatorExplicitlyDefined(false), m_isOffsetExplicitlyDefined(false), m_schema(schema)
     {
     m_unitsContext = &schema.GetUnitsContext();
     }
@@ -247,38 +256,63 @@ SchemaReadStatus ECUnit::ReadStandardUnitXml(BeXmlNodeR unitNode, ECSchemaReadCo
 
     if (SUCCESS != SetDefinition(definition.c_str())) // Checks null or empty
         {
-        LOG.errorv("Invalid ECSchemaXML: The Phenomenon %s contains an invalid %s attribute", GetName().c_str(), DEFINITION_ATTRIBUTE);
+        LOG.errorv("Invalid ECSchemaXML: The ECUnit %s contains an invalid %s attribute", GetName().c_str(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
     double numerator;
     auto xmlStatus = unitNode.GetAttributeDoubleValue(numerator, NUMERATOR_ATTRIBUTE);
-    if (BeXmlStatus::BEXML_AttributeNotFound == xmlStatus) 
-        numerator = 1.0;
-    else if (BeXmlStatus::BEXML_Success != xmlStatus)
-        return SchemaReadStatus::InvalidECSchemaXml;
-
-    if(SUCCESS != SetNumerator(numerator))
-        return SchemaReadStatus::InvalidECSchemaXml;
+    if (BeXmlStatus::BEXML_Success == xmlStatus)
+        { 
+        if(SUCCESS != SetNumerator(numerator))
+            {
+            LOG.errorv("Invalid ECschemaXML: The ECUnit failed to set the numerator to %f", numerator);
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+    else if (BeXmlStatus::BEXML_AttributeNotFound != xmlStatus)
+            {
+            Utf8String errVal;
+            unitNode.GetAttributeStringValue(errVal, NUMERATOR_ATTRIBUTE);
+            LOG.errorv("Invalid ECschemaXML: The ECUnit failed to set the numerator to %s", errVal.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
     double denominator;
     xmlStatus = unitNode.GetAttributeDoubleValue(denominator, DENOMINATOR_ATTRIBUTE);
-    if (BeXmlStatus::BEXML_AttributeNotFound == xmlStatus) 
-        denominator = 1.0;
-    else if (BeXmlStatus::BEXML_Success != xmlStatus)
-        return SchemaReadStatus::InvalidECSchemaXml;
-
-    if(SUCCESS != SetDenominator(denominator))
-        return SchemaReadStatus::InvalidECSchemaXml;
+    if (BeXmlStatus::BEXML_Success == xmlStatus)
+        { 
+        if(SUCCESS != SetDenominator(denominator))
+            {
+            LOG.errorv("Invalid ECschemaXML: The ECUnit failed to set the denominator to %f", denominator);
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+    else if (BeXmlStatus::BEXML_AttributeNotFound != xmlStatus)
+            {
+            Utf8String errVal;
+            unitNode.GetAttributeStringValue(errVal, DENOMINATOR_ATTRIBUTE);
+            LOG.errorv("Invalid ECschemaXML: The ECUnit failed to set the denominator to %s", errVal.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
     double offset;
     xmlStatus = unitNode.GetAttributeDoubleValue(offset, OFFSET_ATTRIBUTE);
-    if (BeXmlStatus::BEXML_AttributeNotFound == xmlStatus)
-        offset = 0.0;
-    else if (BeXmlStatus::BEXML_Success != xmlStatus)
-        return SchemaReadStatus::InvalidECSchemaXml;
-
-    SetOffset(offset);
+    if (BeXmlStatus::BEXML_Success == xmlStatus)
+        { 
+        if (SUCCESS != SetOffset(offset))
+            {
+            LOG.errorv("Invalid ECschemaXML: The ECUnit failed to set the offset to %f", offset);
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+    else if (BeXmlStatus::BEXML_AttributeNotFound != xmlStatus)
+            {
+            Utf8String errVal;
+            unitNode.GetAttributeStringValue(errVal, OFFSET_ATTRIBUTE);
+            LOG.errorv("Invalid ECschemaXML: The ECUnit failed to set the offset to %s", errVal.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
     return SchemaReadStatus::Success;
     }
@@ -357,13 +391,21 @@ SchemaReadStatus ECUnit::ReadConstantXml(BeXmlNodeR unitNode, ECSchemaReadContex
 
     double denominator;
     xmlStatus = unitNode.GetAttributeDoubleValue(denominator, DENOMINATOR_ATTRIBUTE);
-    if (BeXmlStatus::BEXML_AttributeNotFound == xmlStatus) 
-        denominator = 1.0;
-    else if (BeXmlStatus::BEXML_Success != xmlStatus)
-        return SchemaReadStatus::InvalidECSchemaXml;
-
-    if(SUCCESS != SetDenominator(denominator))
-        return SchemaReadStatus::InvalidECSchemaXml;
+    if (BeXmlStatus::BEXML_Success == xmlStatus)
+        { 
+        if(SUCCESS != SetDenominator(denominator))
+            {
+            LOG.errorv("Invalid ECschemaXML: The ECUnit failed to set the denominator to %f", denominator);
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+    else if (BeXmlStatus::BEXML_AttributeNotFound != xmlStatus)
+            {
+            Utf8String errVal;
+            unitNode.GetAttributeStringValue(errVal, DENOMINATOR_ATTRIBUTE);
+            LOG.errorv("Invalid ECschemaXML: The ECUnit failed to set the denominator to %s", errVal.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
 
     SetConstant(true);
 
@@ -384,13 +426,11 @@ SchemaWriteStatus ECUnit::WriteInvertedUnitXml(BeXmlWriterR xmlWriter, ECVersion
     xmlWriter.WriteElementStart(elementName);
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
     xmlWriter.WriteAttribute(INVERTS_UNIT_ATTRIBUTE, ((ECN::ECUnitCP)GetParent())->GetQualifiedName(GetSchema()).c_str());
+    xmlWriter.WriteAttribute(UNIT_SYSTEM_NAME_ATTRIBUTE, GetUnitSystem()->GetQualifiedName(GetSchema()).c_str());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
+
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
-
-    if (GetIsDescriptionDefined())
-        xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
-
-    xmlWriter.WriteAttribute(UNIT_SYSTEM_NAME_ATTRIBUTE, GetUnitSystem()->GetQualifiedName(GetSchema()).c_str());
 
     xmlWriter.WriteElementEnd();
     return status;
@@ -408,17 +448,15 @@ SchemaWriteStatus ECUnit::WriteConstantXml(BeXmlWriterR xmlWriter, ECVersion ecX
     SchemaWriteStatus status = SchemaWriteStatus::Success;
     xmlWriter.WriteElementStart(elementName);
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
-
-    if (GetIsDisplayLabelDefined())
-        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
-
-    if (GetIsDescriptionDefined())
-        xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
-
     xmlWriter.WriteAttribute(PHENOMENON_NAME_ATTRIBUTE, GetPhenomenon()->GetQualifiedName(GetSchema()).c_str());
     xmlWriter.WriteAttribute(DEFINITION_ATTRIBUTE, GetDefinition().c_str());
     xmlWriter.WriteAttribute(NUMERATOR_ATTRIBUTE, GetNumerator());
-    xmlWriter.WriteAttribute(DENOMINATOR_ATTRIBUTE, GetDenominator());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
+
+    if (GetIsDisplayLabelDefined())
+        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
+    if (HasDenominator())
+        xmlWriter.WriteAttribute(DENOMINATOR_ATTRIBUTE, GetDenominator());
 
     xmlWriter.WriteElementEnd();
     return status;
@@ -436,19 +474,17 @@ SchemaWriteStatus ECUnit::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
     SchemaWriteStatus status = SchemaWriteStatus::Success;
     xmlWriter.WriteElementStart(elementName);
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
-
-    if (GetIsDisplayLabelDefined())
-        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
-
-    if (GetIsDescriptionDefined())
-        xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
-
     xmlWriter.WriteAttribute(PHENOMENON_NAME_ATTRIBUTE, GetPhenomenon()->GetQualifiedName(GetSchema()).c_str());
     xmlWriter.WriteAttribute(UNIT_SYSTEM_NAME_ATTRIBUTE, GetUnitSystem()->GetQualifiedName(GetSchema()).c_str());
     xmlWriter.WriteAttribute(DEFINITION_ATTRIBUTE, GetDefinition().c_str());
-    xmlWriter.WriteAttribute(NUMERATOR_ATTRIBUTE, GetNumerator());
-    xmlWriter.WriteAttribute(DENOMINATOR_ATTRIBUTE, GetDenominator());
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
 
+    if (GetIsDisplayLabelDefined())
+        xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
+    if (HasNumerator())
+        xmlWriter.WriteAttribute(NUMERATOR_ATTRIBUTE, GetNumerator());
+    if (HasDenominator())
+        xmlWriter.WriteAttribute(DENOMINATOR_ATTRIBUTE, GetDenominator());
     if (HasOffset())
         xmlWriter.WriteAttribute(OFFSET_ATTRIBUTE, GetOffset());
 
@@ -497,10 +533,10 @@ SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool standalone, bool
 
     outValue[ECJSON_SCHEMA_CHILD_TYPE] = UNIT_ELEMENT;
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
-    outValue[NUMERATOR_ATTRIBUTE] = GetNumerator();
-    outValue[DENOMINATOR_ATTRIBUTE] = GetDenominator();
+
     outValue[PHENOMENON_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::PhenomenonCP)GetPhenomenon());
     outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::UnitSystemCP)GetUnitSystem());
+
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
@@ -508,6 +544,10 @@ SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool standalone, bool
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
     if (HasOffset())
         outValue[OFFSET_ATTRIBUTE] = GetOffset();
+    if (HasNumerator())
+        outValue[NUMERATOR_ATTRIBUTE] = GetNumerator();
+    if (HasDenominator())
+        outValue[DENOMINATOR_ATTRIBUTE] = GetDenominator();
 
     return SchemaWriteStatus::Success;
     }
@@ -558,8 +598,9 @@ SchemaWriteStatus ECUnit::WriteConstantJson(Json::Value& outValue, bool standalo
     outValue[PHENOMENON_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::PhenomenonCP)GetPhenomenon());
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
     outValue[NUMERATOR_ATTRIBUTE] = GetNumerator();
-    outValue[DENOMINATOR_ATTRIBUTE] = GetDenominator();
 
+    if (HasDenominator())
+        outValue[DENOMINATOR_ATTRIBUTE] = GetDenominator();
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
     if (GetIsDescriptionDefined())
