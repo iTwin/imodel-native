@@ -135,6 +135,42 @@ NAPI_NO_RETURN void napi_fatal_error(const char* location,
   node::FatalError(location_string.c_str(), message_string.c_str());
 }
 
+//=======================================================================================
+// @bsiclass                                    Satyakam.Khadilkar    03/2018
+//=======================================================================================
+struct JSCFunctionCallbackData {
+    napi_env env;
+    napi_callback cb;
+    void* data;
+    JSCFunctionCallbackData(napi_env environment, napi_callback callback, void* callbackData)
+    : env(environment), cb(callback), data(callbackData) {}
+};
+
+//=======================================================================================
+// @bsiclass                                    Satyakam.Khadilkar    03/2018
+//=======================================================================================
+struct JSCFunctionCallbackWrapper {
+    size_t argumentCount;
+    const JSValueRef* arguments;
+    JSObjectRef thisObject;
+    JSCFunctionCallbackData* funcCallbackData;
+    
+    JSCFunctionCallbackWrapper(JSCFunctionCallbackData* data, JSObjectRef thisObj, size_t argC, const JSValueRef argV[])
+    : funcCallbackData(data), thisObject(thisObj), argumentCount(argC), arguments(argV) {}
+    
+    JSValueRef Invoke() {
+        return funcCallbackData->cb(funcCallbackData->env,(napi_callback_info)this);
+    }
+
+    static JSValueRef
+    functionCallBack (JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
+    {
+        auto funcCBData = (JSCFunctionCallbackData*)JSObjectGetPrivate(function);
+        JSCFunctionCallbackWrapper info(funcCBData,thisObject,argumentCount,arguments);
+        return info.Invoke();
+    }
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -144,21 +180,21 @@ napi_status napi_create_function(napi_env env,
                                  napi_callback cb,
                                  void* callback_data,
                                  napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, result);
-  CHECK_ARG(env, cb);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, result);
+    CHECK_ARG(env, cb);
 
-  JSContextRef ctx = env->GetContext();
-
-  // TODO
-
-  return GET_RETURN_STATUS(env);
-}
-
-void class_constructor(JSContextRef ctx, JSObjectRef object)
-{
+    JSContextRef ctx = env->GetContext();
+    JSClassDefinition classDef = kJSClassDefinitionEmpty;
+    classDef.className = utf8name;
+    classDef.callAsFunction = JSCFunctionCallbackWrapper::functionCallBack;
+    JSClassRef classRef = JSClassCreate(&classDef);
+    auto func = new JSCFunctionCallbackData(env,cb,callback_data);
+    *result = JSObjectMake(ctx,classRef,func);
     
+    return GET_RETURN_STATUS(env);
 }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
@@ -178,7 +214,6 @@ napi_status napi_define_class(napi_env env,
     JSContextRef ctx = env->GetContext();
     JSClassDefinition classDef = kJSClassDefinitionEmpty;
     classDef.className = utf8name;
-    classDef.initialize = class_constructor;
 
     JSClassRef classRef = JSClassCreate(&classDef);
     *result = JSObjectMake(ctx,classRef,NULL);
@@ -186,9 +221,13 @@ napi_status napi_define_class(napi_env env,
     for (int ii=0; ii< property_count; ii++)
     {
         napi_property_descriptor descriptor = properties[ii];
+        JSStringRef functionNameString = JSStringCreateWithUTF8CString (descriptor.utf8name);
+        JSObjectRef func = JSObjectMakeFunctionWithCallback(ctx, functionNameString, JSCFunctionCallbackWrapper:: functionCallBack);
+        JSObjectRef objectObject = JSValueToObject (ctx, *result, NULL);
+        JSObjectSetProperty(ctx, objectObject, functionNameString, func, kJSPropertyAttributeNone, NULL);
+        JSStringRelease(functionNameString);
     }
     JSClassRelease(classRef);
-
     return GET_RETURN_STATUS(env);
 }
 
@@ -839,8 +878,12 @@ napi_status napi_get_cb_info(
   CHECK_ENV(env);
   CHECK_ARG(env, cbinfo);
 
-  JSContextRef ctx = env->GetContext();
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    JSCFunctionCallbackWrapper* theCbInfo = (JSCFunctionCallbackWrapper*)cbinfo;
+    *data = theCbInfo->funcCallbackData->data;
+    *argc = theCbInfo->argumentCount;
+//    *argv = theCbInfo->arguments;
+    *this_arg = theCbInfo->thisObject;
 
   return napi_clear_last_error(env);
 }

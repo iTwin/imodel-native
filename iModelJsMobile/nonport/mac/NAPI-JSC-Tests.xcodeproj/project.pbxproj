@@ -65,8 +65,8 @@
 		26DF23AE2037601A001FE257 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			dstPath = usr/share/man/man1;
+			dstSubfolderSpec = 13;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 1;

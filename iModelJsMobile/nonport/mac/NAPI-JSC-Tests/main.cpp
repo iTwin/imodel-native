@@ -10,13 +10,38 @@
 #include <iModelJs/iModelJs.h>
 #include <iModelJs/iModelJsServicesTier.h>
 
+struct TestObject : Napi::ObjectWrap<TestObject>
+{
+    TestObject(const Napi::CallbackInfo& info) : Napi::ObjectWrap<TestObject>(info)
+    {}
+
+    static void Init(Napi::Env env, Napi::Object exports)
+    {
+        Napi::HandleScope scope(env);
+        Napi::Function t = TestObject::DefineClass(env, "TestObject", {
+            TestObject::InstanceMethod("TestFunc", &TestObject::TestFunc),
+        });
+
+        exports.Set("TestObject", t);
+        
+        exports.Set("TestFunc2", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value {
+            return Napi::Number::New(info.Env(), 2.0);
+        }));
+    }
+
+    Napi::Value TestFunc(const Napi::CallbackInfo& info)
+    {
+        return Napi::Number::New(Env(), (int) 0);
+    }
+};
+
 
 int main(int argc, const char * argv[]) {
     std::cout << "NAPI - JavaScriptCore Tests\n";
     
     BentleyApi::iModelJs::Js::Runtime runtime;
-    BentleyApi::iModelJs::ServicesTier::UvHost host;
-    while (!host.IsReady()) { ; }
+//    BentleyApi::iModelJs::ServicesTier::UvHost host;
+//    while (!host.IsReady()) { ; }
     
     Napi::Env& env = runtime.Env();
 
@@ -50,6 +75,12 @@ int main(int argc, const char * argv[]) {
     
     auto s2 = s;
     assert (s2.Utf8Value() == s.Utf8Value());
+
+    TestObject::Init(env, env.Global());
+    
+    auto result1 = runtime.EvaluateScript ("TestFunc2(1.0);");
+    assert (result1.status == BentleyB0200::iModelJs::Js::EvaluateStatus::Success);
+    assert (result1.value.As<Napi::Number>().DoubleValue() == 2.0);
 
     return 0;
 }
