@@ -139,6 +139,7 @@ protected:
 
     //! Creates a valid Symbol
     UNITS_EXPORT UnitsSymbol(Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset);
+    UNITS_EXPORT UnitsSymbol(Utf8CP name, Utf8CP definition);
     UNITS_EXPORT virtual ~UnitsSymbol();
 
     ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
@@ -148,14 +149,14 @@ protected:
 
     //! Sets the numerator of this UnitSymbol if the current numerator is the default, 1.0. The provided
     //! numerator cannot be 0.0.
-    UNITS_EXPORT BentleyStatus SetNumerator(double numerator);
+    UNITS_EXPORT virtual BentleyStatus SetNumerator(double numerator);
     
     //! Sets the denominator of this UnitSymbol if the current denominator is the default, 1.0. The provided
     //! denominator cannot be 0.0.
-    UNITS_EXPORT BentleyStatus SetDenominator(double denominator);
+    UNITS_EXPORT virtual BentleyStatus SetDenominator(double denominator);
 
     //! Sets the offset of this UnitSymbol if the current offset is the default, 0.0.
-    UNITS_EXPORT BentleyStatus SetOffset(double offset);
+    UNITS_EXPORT virtual BentleyStatus SetOffset(double offset);
 
     //! Sets the UnitsContext if it has not been previously set.
     BentleyStatus SetContext(IUnitsContextCP context) {if (nullptr != m_unitsContext) return ERROR; m_unitsContext = context; return SUCCESS;}
@@ -163,11 +164,11 @@ protected:
 public:
     Utf8StringCR GetName() const {return m_name;}
     Utf8StringCR GetDefinition() const {return m_definition;}
-    bool HasNumerator() const {return 1.0 != m_numerator;}
+    virtual bool HasNumerator() const {return 1.0 != m_numerator;}
     double GetNumerator() const {return m_numerator;}
-    bool HasDenominator() const {return 1.0 != m_denominator;}
+    virtual bool HasDenominator() const {return 1.0 != m_denominator;}
     double GetDenominator() const { return m_denominator; }
-    bool HasOffset() const {return 0.0 != m_offset;}
+    virtual  bool HasOffset() const {return 0.0 != m_offset;}
     double GetOffset() const {return m_offset;}
     void SetName(Utf8CP name) {m_name = name;}
     bool IsBase() const {return m_isBaseSymbol;}
@@ -225,6 +226,7 @@ protected:
 
     Unit(Utf8CP name) : UnitsSymbol(name), m_system(nullptr), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(false), m_dummyUnit(false) {}
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator, double offset, bool isConstant);
+    UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition);
     //! Creates a constant.
     Unit(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator)
         : UnitsSymbol(name, definition, numerator, denominator, 0), m_phenomenon(&phenomenon), m_system(nullptr) { SetConstant(true);}
