@@ -12,7 +12,7 @@
 #include <Formatting/FormattingEnum.h>
 #include <Formatting/FormattingParsing.h>
 #include <Units/Units.h>
-
+#include <time.h>
 namespace BEU = BentleyApi::Units;
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
@@ -763,6 +763,15 @@ public:
 	BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
 	BEU::PhenomenonCP GetPhenomenon() const;
 	UNITS_EXPORT Utf8CP GetPhenomenonName() const;
+
+};
+
+struct NamedTimeFormatSpec :NamedFormatCore
+{
+private:
+	struct tm m_dateTime;
+	Utf8String m_format;
+public:
 
 };
 

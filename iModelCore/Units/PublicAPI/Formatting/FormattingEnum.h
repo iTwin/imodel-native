@@ -305,7 +305,8 @@ enum class FormatSpecType
     {
     Undefined = 0,
     Numeric = 1,   // a pure numeric Spec
-    Composite = 2      // a composite spec is also defined (numeric spec is implied)
+    Composite = 2,      // a composite spec is also defined (numeric spec is implied)
+	DateTime = 3
     };
 
 enum class AccumulatorState
@@ -469,6 +470,7 @@ struct FormatConstant
         static Utf8String FPN_SignAlways() { return "SignAlways"; }
         static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
 
+		static Utf8String FPN_DateTime() { return "datetime"; }
         static Utf8String FPN_Composite() { return "composite"; }
         static Utf8String FPN_Numeric() { return "numeric"; }
         static Utf8String FPN_Undefined() { return "undefined"; }

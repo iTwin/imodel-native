@@ -374,6 +374,7 @@ Utf8String Utils::FormatSpecTypeToName(FormatSpecType type)
         {
         case FormatSpecType::Numeric: return FormatConstant::FPN_Numeric();
         case FormatSpecType::Composite: return FormatConstant::FPN_Composite();
+		case FormatSpecType::DateTime: return FormatConstant::FPN_DateTime();
         default: return FormatConstant::FPN_Undefined();
         }
     }
