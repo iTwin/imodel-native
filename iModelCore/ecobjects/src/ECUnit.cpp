@@ -136,7 +136,7 @@ SchemaReadStatus ECUnit::ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR conte
         Utf8String phenomName;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(phenomAlias, phenomName, qualifiedPhenomName))
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be parsed.",
+            LOG.errorv("Invalid ECSchemaXML: The ECUnit '%s' contains a %s element with the value '%s' that can not be parsed.",
                 GetName().c_str(), PHENOMENON_NAME_ATTRIBUTE, qualifiedPhenomName.c_str());
 
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -160,7 +160,7 @@ SchemaReadStatus ECUnit::ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR conte
 
         if (nullptr == phenom)
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s attribute with the value '%s' that can not be resolved to a Phenomenon named '%s' in the ECSchema '%s' or any of its references.",
+            LOG.errorv("Invalid ECSchemaXML: The ECUnit '%s' contains a %s attribute with the value '%s' that can not be resolved to a Phenomenon named '%s' in the ECSchema '%s' or any of its references.",
                 GetName().c_str(), PHENOMENON_NAME_ATTRIBUTE, qualifiedPhenomName.c_str(), phenomName.c_str(), GetSchema().GetName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
@@ -228,8 +228,6 @@ SchemaReadStatus ECUnit::ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR conte
             return ReadInvertedUnitXml(unitNode, context);
         case ECSchemaElementType::Constant:
             return ReadConstantXml(unitNode, context);
-        default:
-            return SchemaReadStatus::InvalidECSchemaXml;
         }
 
     return SchemaReadStatus::InvalidECSchemaXml;
@@ -241,13 +239,13 @@ SchemaReadStatus ECUnit::ReadXml(BeXmlNodeR unitNode, ECSchemaReadContextR conte
 SchemaReadStatus ECUnit::ReadStandardUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context)
     {
     Utf8String definition;
-    if(BEXML_Success != unitNode.GetAttributeStringValue(definition, DEFINITION_ATTRIBUTE) || Utf8String::IsNullOrEmpty(definition.c_str()))
+    if(BEXML_Success != unitNode.GetAttributeStringValue(definition, DEFINITION_ATTRIBUTE))
         {
         LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", unitNode.GetName(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    if (SUCCESS != SetDefinition(definition.c_str()))
+    if (SUCCESS != SetDefinition(definition.c_str())) // Checks null or empty
         {
         LOG.errorv("Invalid ECSchemaXML: The Phenomenon %s contains an invalid %s attribute", GetName().c_str(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
@@ -260,7 +258,8 @@ SchemaReadStatus ECUnit::ReadStandardUnitXml(BeXmlNodeR unitNode, ECSchemaReadCo
     else if (BeXmlStatus::BEXML_Success != xmlStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
 
-    SetNumerator(numerator);
+    if(SUCCESS != SetNumerator(numerator))
+        return SchemaReadStatus::InvalidECSchemaXml;
 
     double denominator;
     xmlStatus = unitNode.GetAttributeDoubleValue(denominator, DENOMINATOR_ATTRIBUTE);
@@ -269,7 +268,8 @@ SchemaReadStatus ECUnit::ReadStandardUnitXml(BeXmlNodeR unitNode, ECSchemaReadCo
     else if (BeXmlStatus::BEXML_Success != xmlStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
 
-    SetDenominator(denominator);
+    if(SUCCESS != SetDenominator(denominator))
+        return SchemaReadStatus::InvalidECSchemaXml;
 
     double offset;
     xmlStatus = unitNode.GetAttributeDoubleValue(offset, OFFSET_ATTRIBUTE);
@@ -335,7 +335,7 @@ SchemaReadStatus ECUnit::ReadInvertedUnitXml(BeXmlNodeR unitNode, ECSchemaReadCo
 SchemaReadStatus ECUnit::ReadConstantXml(BeXmlNodeR unitNode, ECSchemaReadContextR context)
     {
     Utf8String definition;
-    if(BEXML_Success != unitNode.GetAttributeStringValue(definition, DEFINITION_ATTRIBUTE) || Utf8String::IsNullOrEmpty(definition.c_str()))
+    if(BEXML_Success != unitNode.GetAttributeStringValue(definition, DEFINITION_ATTRIBUTE))
         {
         LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", unitNode.GetName(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
@@ -352,7 +352,8 @@ SchemaReadStatus ECUnit::ReadConstantXml(BeXmlNodeR unitNode, ECSchemaReadContex
     if (BEXML_Success != xmlStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
 
-    SetNumerator(numerator);
+    if(SUCCESS != SetNumerator(numerator))
+        return SchemaReadStatus::InvalidECSchemaXml;
 
     double denominator;
     xmlStatus = unitNode.GetAttributeDoubleValue(denominator, DENOMINATOR_ATTRIBUTE);
@@ -361,7 +362,8 @@ SchemaReadStatus ECUnit::ReadConstantXml(BeXmlNodeR unitNode, ECSchemaReadContex
     else if (BeXmlStatus::BEXML_Success != xmlStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
 
-    SetDenominator(denominator);
+    if(SUCCESS != SetDenominator(denominator))
+        return SchemaReadStatus::InvalidECSchemaXml;
 
     SetConstant(true);
 

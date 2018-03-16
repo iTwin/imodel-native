@@ -54,7 +54,7 @@ TEST_F(UnitSystemTest, UnitSystemContainer)
     }
     {
     UnitSystemP unitSystem;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateUnitSystem(unitSystem, "UnitSystem3", "Unit System 3", "The third UnitSystem"));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateUnitSystem(unitSystem, "UnitSystem3", nullptr, "The third UnitSystem"));
     EXPECT_TRUE(nullptr != unitSystem);
     }
     {
@@ -83,7 +83,7 @@ TEST_F(UnitSystemTest, UnitSystemContainer)
             case 2:
                 EXPECT_STREQ("UnitSystem3", unitSystem->GetName().c_str());
                 EXPECT_STREQ("The third UnitSystem", unitSystem->GetInvariantDescription().c_str());
-                EXPECT_STREQ("Unit System 3", unitSystem->GetInvariantDisplayLabel().c_str());
+                EXPECT_STREQ("UnitSystem3", unitSystem->GetInvariantDisplayLabel().c_str());
                 break;
             case 3:
                 EXPECT_STREQ("UnitSystem4", unitSystem->GetName().c_str());
@@ -182,6 +182,17 @@ TEST_F(UnitSystemDeserializationTest, MissingOrInvalidName)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <UnitSystem typeName="....." displayLabel="Unit System" description="This is an awesome new Unit System with an empty name"/>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
 }
 
 //---------------------------------------------------------------------------------------
@@ -201,6 +212,25 @@ TEST_F(UnitSystemDeserializationTest, MissingDisplayLabel)
 
     UnitSystemCP unitSystem = schema->GetUnitSystemCP("aUniqueUnitSystem");
     EXPECT_STREQ("aUniqueUnitSystem", unitSystem->GetInvariantDisplayLabel().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitSystemDeserializationTest, MissingDescription)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <UnitSystem typeName="aUniqueUnitSystem"/>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    UnitSystemCP unitSystem = schema->GetUnitSystemCP("aUniqueUnitSystem");
+    EXPECT_TRUE(unitSystem->GetInvariantDescription().empty());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

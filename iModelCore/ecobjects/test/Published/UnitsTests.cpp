@@ -72,7 +72,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
     }
     {
     ECUnitP unit;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateUnit(unit, "ExampleUnit3", "MMM", *phenom, *system, 1.0, "ExampleUnitLabel3", "ExampleUnitDescription3"));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateUnit(unit, "ExampleUnit3", "MMM", *phenom, *system, 1.0));
     EXPECT_TRUE(nullptr != unit);
     }
     ECUnitP unitToBeInverted;
@@ -138,8 +138,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_EQ(0.0, unit->GetOffset());
                 break;
             case 3:
-                EXPECT_STREQ("ExampleUnitDescription3", unit->GetInvariantDescription().c_str());
-                EXPECT_STREQ("ExampleUnitLabel3", unit->GetInvariantDisplayLabel().c_str());
+                EXPECT_STREQ("ExampleUnit3", unit->GetInvariantDisplayLabel().c_str());
                 EXPECT_STREQ("MMM", unit->GetDefinition().c_str());
                 EXPECT_STREQ("ExampleUnit3", unit->GetName().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
@@ -205,6 +204,27 @@ TEST_F(UnitsTests, StandaloneSchemaChildECUnit)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                           Kyle.Abramowitz                          03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitsTests, WritingToPre32VersionShouldNotWriteUnit)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+    PhenomenonP phenom;
+    UnitSystemP system;
+    schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
+    schema->CreateUnitSystem(system, "ExampleUnitSystem");
+    ECUnitP unit;
+    schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, 10.0, 1.0, 1.0, "ExampleUnitLabel", "ExampleUnitDescription");
+
+    Utf8String out;
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(out, ECVersion::V3_1));
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, out.c_str(), *context);
+    ASSERT_EQ(nullptr, schema->GetUnitCP("ExampleUnit"));
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsTests, AllUnitsInStandardUnitsSchemaHaveValidDefinitions)
@@ -230,7 +250,7 @@ TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit" offset="10.0" numerator="10.0" denominator="10.0"/>
         </ECSchema>)xml";
 
     Utf8String serializedSchemaXml;
@@ -247,6 +267,9 @@ TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("Unit", unit->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ("This is an awesome new Unit", unit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", unit->GetDefinition().c_str());
+    EXPECT_DOUBLE_EQ(10.0, unit->GetOffset());
+    EXPECT_DOUBLE_EQ(10.0, unit->GetNumerator());
+    EXPECT_DOUBLE_EQ(10.0, unit->GetDenominator());
 
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
     }
@@ -261,6 +284,9 @@ TEST_F(UnitsDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("Unit", serializedECUnit->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ("This is an awesome new Unit", serializedECUnit->GetInvariantDescription().c_str());
     EXPECT_STREQ("M", serializedECUnit->GetDefinition().c_str());
+    EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetOffset());
+    EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetNumerator());
+    EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetDenominator());
     }
     }
 
@@ -352,17 +378,10 @@ TEST_F(UnitsDeserializationTests, ShouldFailWithoutAliases)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsDeserializationTests, ShouldFailWithoutPhenomenonAndUnitSystemBeingDefined)
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-        </ECSchema>)xml";
-
-    Utf8String serializedSchemaXml;
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit without properly defined unit system and phenomenon");
     }
 
 //---------------------------------------------------------------------------------------
@@ -370,18 +389,13 @@ TEST_F(UnitsDeserializationTests, ShouldFailWithoutPhenomenonAndUnitSystemBeingD
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsDeserializationTests, DuplicateUnitNames)
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
             <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-        </ECSchema>)xml";
-
-    Utf8String serializedSchemaXml;
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize schema with two units with the same name");
     }
 
 //---------------------------------------------------------------------------------------
@@ -389,18 +403,67 @@ TEST_F(UnitsDeserializationTests, DuplicateUnitNames)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsDeserializationTests, DuplicateSchemaChildNames)
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <PropertyCategory typeName="TestUnit"/>
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-        </ECSchema>)xml";
+            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit" numerator="10.0"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize schema with duplicate schema child names, one being a unit");
+    }
 
-    Utf8String serializedSchemaXml;
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitsDeserializationTests, ShouldFailWithBadUnitSystemName)
+    {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem:" displayLabel="Unit" definition="M" description="This is an awesome new Unit" numerator="10.0"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with bad unit system name (fails parseClassName because of colon at end");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="badalias:TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit" numerator="10.0"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with bad unit system alias");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="" displayLabel="Unit" definition="M" description="This is an awesome new Unit" numerator="10.0"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with empty unit system name");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitsDeserializationTests, ShouldFailWithBadPhenomName)
+    {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <Unit typeName="TestUnit" phenomenon="BadPhenom:" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit" numerator="10.0"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a bad phenom name (fails parseclassname because of colon at end");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <Unit typeName="TestUnit" phenomenon="badAlias:TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit" numerator="10.0"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with a phenom with a bad alias");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <Unit typeName="TestUnit" phenomenon="" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit" numerator="10.0"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with an empty phenom name");
     }
 
 //---------------------------------------------------------------------------------------
@@ -408,30 +471,19 @@ TEST_F(UnitsDeserializationTests, DuplicateSchemaChildNames)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsDeserializationTests, MissingOrInvalidName)
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Unit phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-    </ECSchema>)xml";
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with missing name");
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Unit typeName="" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-    </ECSchema>)xml";
-
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with empty name");
     }
 
 //---------------------------------------------------------------------------------------
@@ -452,32 +504,29 @@ TEST_F(UnitsDeserializationTests, MissingOrInvalidNumerator)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ECUnitCP unit = schema->GetUnitCP("Smoot");
     ASSERT_FALSE(unit->HasNumerator());
-    ASSERT_EQ(1.0, unit->GetNumerator());
+    ASSERT_DOUBLE_EQ(1.0, unit->GetNumerator());
     }
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Unit typeName="Smoot" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" numerator="Smoots" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-    </ECSchema>)xml";
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with non numeric numerator");
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Unit typeName="Smoot" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" numerator="" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-    </ECSchema>)xml";
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with empty numerator");
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Unit typeName="Smoot" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" numerator="0.0" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with 0.0 numerator");
     }
 
 //---------------------------------------------------------------------------------------
@@ -498,32 +547,62 @@ TEST_F(UnitsDeserializationTests, MissingOrInvalidDenominator)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ECUnitCP unit = schema->GetUnitCP("Smoot");
     ASSERT_FALSE(unit->HasDenominator());
-    ASSERT_EQ(1.0, unit->GetDenominator());
+    ASSERT_DOUBLE_EQ(1.0, unit->GetDenominator());
     }
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Unit typeName="Smoot" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" numerator="1.0" denominator="Smoots" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-    </ECSchema>)xml";
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an invalid (non-numeric) denominator");
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Unit typeName="Smoot" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" numerator="1.0" denominator="0.0" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a 0 denominator");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Unit typeName="Smoot" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" numerator="1.0" denominator="" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-    </ECSchema>)xml";
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an empty denominator");
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(UnitsDeserializationTests, MissingOrInvalidOffset)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit" numerator="10.0"/>
+        </ECSchema>)xml";
+
+    Utf8String serializedSchemaXml;
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    EXPECT_DOUBLE_EQ(schema->GetUnitCP("TestUnit")->GetOffset(), 0.0);
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Unit typeName="Smoot" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" numerator="1.0" displayLabel="Unit" definition="M" description="This is an awesome new Unit" offset="bananas"/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an invalid (non-numeric) offset");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Unit typeName="Smoot" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" numerator="1.0" displayLabel="Unit" definition="M" description="This is an awesome new Unit" offset=""/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an empty offset");
     }
 
 //---------------------------------------------------------------------------------------
@@ -551,28 +630,19 @@ TEST_F(UnitsDeserializationTests, MissingDisplayLabel)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsDeserializationTests, MissingOrEmptyDefinition)
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" description="This is an awesome new Unit"/>
-    </ECSchema>)xml";
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
-    Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with missing definition");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-        <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="" description="This is an awesome new Unit"/>
-    </ECSchema>)xml";
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml2, *context));
-    }
+        <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" definition="" displayLabel="Unit" description="This is an awesome new Unit"/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize unit with empty definintion");
     }
 
 //=======================================================================================
@@ -582,7 +652,7 @@ TEST_F(UnitsDeserializationTests, MissingOrEmptyDefinition)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(InvertedUnitsTests, BasicInvertedUnitCreation)
+TEST_F(InvertedUnitsTests, BasicCreation)
     {
     ECSchemaPtr schema;
     ECUnitP unit;
@@ -604,7 +674,7 @@ TEST_F(InvertedUnitsTests, BasicInvertedUnitCreation)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Kyle.Abramowitz                          02/2018
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(InvertedUnitsTests, StandaloneSchemaChildInvertedUnit)
+TEST_F(InvertedUnitsTests, StandaloneSchemaChild)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
@@ -626,6 +696,29 @@ TEST_F(InvertedUnitsTests, StandaloneSchemaChildInvertedUnit)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Kyle.Abramowitz                          03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitsTests, WritingToPre32VersionShouldNotWriteInvertedUnit)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+    PhenomenonP phenom;
+    UnitSystemP system;
+    schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
+    schema->CreateUnitSystem(system, "ExampleUnitSystem");
+    ECUnitP unit;
+    ECUnitP inv;
+    schema->CreateUnit(unit, "ExampleUnit", "M", *phenom, *system, 10.0, 1.0, 1.0, "ExampleUnitLabel", "ExampleUnitDescription");
+    schema->CreateInvertedUnit(inv, *unit, "Inv", *system);
+
+    Utf8String out;
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(out, ECVersion::V3_1));
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, out.c_str(), *context);
+    ASSERT_EQ(nullptr, schema->GetInvertedUnitCP("Inv"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -724,7 +817,6 @@ TEST_F(InvertedUnitsDeserializationTests, BasicRoundTripTest)
     {
     ECSchemaPtr serializedSchema;
     ECSchemaReadContextPtr serializedContext = ECSchemaReadContext::CreateContext();
-    printf(serializedSchemaXml.c_str());
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(serializedSchema, serializedSchemaXml.c_str(), *serializedContext));
     ASSERT_EQ(2, serializedSchema->GetUnitCount());
     ECUnitCP serializedECUnit = serializedSchema->GetUnitCP("TestUnit");
@@ -775,39 +867,52 @@ TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithoutAliases)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithoutUnitSystemDefined)
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
             <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
-            <InvertedUnit typeName="TestInvertedUnit" invertsUnit="TestUnit" unitSystem="TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
-        </ECSchema>)xml";
-
-    Utf8String serializedSchemaXml;
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+            <InvertedUnit typeName="TestInvertedUnit" invertsUnit="TestUnit" unitSystem="bananas" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize inverted unit with a unit system that doesn't exist");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                    02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithoutUnitDefined)
+TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithoutInvertsUnitDefinedOrEmptyOrMissingInvertsUnit)
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
             <InvertedUnit typeName="TestInvertedUnit" invertsUnit="TestUnit" unitSystem="TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
-        </ECSchema>)xml";
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize an InvertedUnit with unit that doesn't exist");
 
-    Utf8String serializedSchemaXml;
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <InvertedUnit typeName="TestInvertedUnit" invertsUnit="" unitSystem="TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize an Inverted unit with empty invertsUnit");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <InvertedUnit typeName="TestInvertedUnit" unitSystem="TestUnitSystem" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize an inverted unit with missing invertsUnit");
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(InvertedUnitsDeserializationTests, ShouldFailWithBadSchemaAliases)
+    {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <InvertedUnit typeName="TestInvertedUnit" invertsUnit="units:M" unitSystem="u:SI" displayLabel="InvertedUnitLabel" description="InvertedUnitDescription"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with bad schema alias on invertsUnit");
     }
 
 //=======================================================================================
@@ -838,6 +943,25 @@ TEST_F(ConstantTests, StandaloneSchemaChild)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                           Kyle.Abramowitz                          03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(UnitsTests, WritingToPre32VersionShouldNotWriteConstant)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+    PhenomenonP phenom;
+    schema->CreatePhenomenon(phenom, "ExamplePhenomenon", "LENGTH");
+    ECUnitP unit;
+    schema->CreateConstant(unit, "Constant", "M", *phenom, 10.0);
+
+    Utf8String out;
+    ASSERT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(out, ECVersion::V3_1));
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlString(schema, out.c_str(), *context);
+    ASSERT_EQ(nullptr, schema->GetConstantCP("Constant"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -947,7 +1071,7 @@ TEST_F(ConstantDeserializationTests, RoundTripWithReferencedSchemaForPhenomenonA
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                    02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(ConstantDeserializationTests, ShouldFailWithoutAliases)
+TEST_F(ConstantDeserializationTests, ShouldFailWithoutAliasesOrBadAliases)
     {
     Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="refSchema" version="01.00" alias="rs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
@@ -994,49 +1118,101 @@ TEST_F(ConstantDeserializationTests, ShouldFailWithoutPhenomenonAndUnitSystemBei
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ConstantDeserializationTests, DuplicateConstantNames)
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
             <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
             <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
-        </ECSchema>)xml";
-
-    Utf8String serializedSchemaXml;
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize schema with two constants with same name");
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                    02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConstantDeserializationTests, ShouldFailWithInvalidDefinition)
+    {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+            <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+            <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="" description="This is an awesome new Constant" numerator="10.0"/>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should Fail to derserialize constatnt with empty defintion");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ConstantDeserializationTests, MissingOrInvalidNumerator)
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Constant typeName="Constant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant"/>
-    </ECSchema>)xml";
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize Constant with missing numerator");
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Constant typeName="Constant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="bananas"/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize Constant with non numeric numerator");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Constant typeName="Constant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="bananas"/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize Constant with empty numerator");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Constant typeName="Constant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="0.0"/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize Constant with 0 numerator");
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ConstantDeserializationTests, MissingOrInvalidDenominator)
+    {
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
-        <Constant typeName="Constant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" factor="bananas"/>
+        <Constant typeName="Constant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
     </ECSchema>)xml";
 
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_DOUBLE_EQ(1.0, schema->GetConstantCP("Constant")->GetDenominator());
     }
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Constant typeName="Constant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0" denominator="bananas"/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialized with invalid denominator");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Constant typeName="Constant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0" denominator="0.0"/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialized with 0 denominator");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
+        <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
+        <Constant typeName="Constant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0" denominator=""/>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialized with invalid denominator");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1044,30 +1220,19 @@ TEST_F(ConstantDeserializationTests, MissingOrInvalidNumerator)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ConstantDeserializationTests, MissingOrInvalidName)
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Constant phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
-    </ECSchema>)xml";
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize constant with missing name");
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Constant typeName="" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="M" description="This is an awesome new Constant" numerator="10.0"/>
-    </ECSchema>)xml";
-
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize constant with empty name");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1095,28 +1260,19 @@ TEST_F(ConstantDeserializationTests, MissingDisplayLabel)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ConstantDeserializationTests, MissingOrEmptyDefinition)
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" description="This is an awesome new Constant" numerator="10.0"/>
-    </ECSchema>)xml";
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
-    Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize constant with missing definition");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="TestPhenomenon" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon"/>
         <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
         <Constant typeName="TestConstant" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" displayLabel="Constant" definition="" description="This is an awesome new Constant" numerator="10.0"/>
-    </ECSchema>)xml";
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml2, *context));
-    }
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize constant with empty defintion");
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

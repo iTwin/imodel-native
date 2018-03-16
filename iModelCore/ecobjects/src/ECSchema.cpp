@@ -1017,7 +1017,11 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
     if (nullptr == system)
         return ECObjectsStatus::Error;
 
-    ECObjectsStatus status = system->SetDisplayLabel(displayLabel);
+    ECObjectsStatus status = ECObjectsStatus::Success;
+    
+    if (nullptr != displayLabel)
+        status = system->SetDisplayLabel(displayLabel);
+
     if (ECObjectsStatus::Success != status)
         {
         delete system;
@@ -1025,7 +1029,9 @@ ECObjectsStatus ECSchema::CreateUnitSystem(UnitSystemP& system, Utf8CP name, Utf
         return status;
         }
 
-    status = system->SetDescription(description);
+    if (nullptr != description)
+        status = system->SetDescription(description);
+
     if (ECObjectsStatus::Success != status)
         {
         delete system;
@@ -1052,7 +1058,11 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
     
     phenomenon = new Phenomenon(*this, name, definition);
 
-    ECObjectsStatus status = phenomenon->SetDisplayLabel(displayLabel);
+    ECObjectsStatus status = ECObjectsStatus::Success;
+
+    if (nullptr != displayLabel)
+        status = phenomenon->SetDisplayLabel(displayLabel);
+
     if (ECObjectsStatus::Success != status)
         {
         delete phenomenon;
@@ -1060,7 +1070,9 @@ ECObjectsStatus ECSchema::CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name,
         return status;
         }
 
-    status = phenomenon->SetDescription(description);
+    if (nullptr != description)
+        status = phenomenon->SetDescription(description);
+
     if (ECObjectsStatus::Success != status)
         {
         delete phenomenon;
@@ -1170,12 +1182,19 @@ ECObjectsStatus ECSchema::CreateInvertedUnit(ECUnitP& unit, ECUnitCR parent, Utf
 
     unit =  new ECUnit(*this, parent, unitSystem, name);
 
-    status = unit->SetDisplayLabel(label);
-    cleanupIfNecessary();
-    if(status != ECObjectsStatus::Success) return status;
-    status = unit->SetDescription(description);
-    cleanupIfNecessary();
-    if(status != ECObjectsStatus::Success) return status;
+    if (nullptr != label)
+        { 
+        status = unit->SetDisplayLabel(label);
+        cleanupIfNecessary();
+        if(status != ECObjectsStatus::Success) return status;
+        }
+    
+    if (nullptr != description)
+        { 
+        status = unit->SetDescription(description);
+        cleanupIfNecessary();
+        if(status != ECObjectsStatus::Success) return status;
+        }
 
     status = AddUnitType<ECUnit>(unit, ECSchemaElementType::InvertedUnit);
     cleanupIfNecessary();

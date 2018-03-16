@@ -90,7 +90,7 @@ Utf8StringCR Phenomenon::GetDescription() const
 SchemaReadStatus Phenomenon::ReadXml(BeXmlNodeR PhenomenonNode, ECSchemaReadContextR context)
     {
     Utf8String value;
-    if (BEXML_Success != PhenomenonNode.GetAttributeStringValue(value, DEFINITION_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
+    if (BEXML_Success != PhenomenonNode.GetAttributeStringValue(value, DEFINITION_ATTRIBUTE))
         {
         LOG.errorv("Invalid ECSchemaXML: The %s element must contain a %s attribute", GetName().c_str(), DEFINITION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;

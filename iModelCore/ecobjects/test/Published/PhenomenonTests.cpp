@@ -55,7 +55,7 @@ TEST_F(PhenomenonTests, PhenomenonContainerTest)
     }
     {
     PhenomenonP phenom;
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon3", "LENGTH*LENGTH*LENGTH", "Phenomenon 3", "The third Phenomenon"));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreatePhenomenon(phenom, "Phenomenon3", "LENGTH*LENGTH*LENGTH", nullptr, "The third Phenomenon"));
     EXPECT_TRUE(nullptr != phenom);
     }
     {
@@ -86,7 +86,7 @@ TEST_F(PhenomenonTests, PhenomenonContainerTest)
             case 2:
                 EXPECT_STREQ("Phenomenon3", phenom->GetName().c_str());
                 EXPECT_STREQ("The third Phenomenon", phenom->GetInvariantDescription().c_str());
-                EXPECT_STREQ("Phenomenon 3", phenom->GetInvariantDisplayLabel().c_str());
+                EXPECT_STREQ("Phenomenon3", phenom->GetInvariantDisplayLabel().c_str());
                 EXPECT_STREQ("LENGTH*LENGTH*LENGTH", phenom->GetDefinition().c_str());
                 break;
             case 3:
@@ -204,26 +204,15 @@ TEST_F(PhenomenonDeserializationTest, DuplicateSchemaChildNames)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(PhenomenonDeserializationTest, MissingOrInvalidName)
     {
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon without a name"/>
-    </ECSchema>)xml";
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with missing name");
 
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
-    {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="" displayLabel="Phenomenon" definition="LENGTH*LENGTH" description="This is an awesome new Phenomenon with an empty name"/>
-    </ECSchema>)xml";
-
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to derserialize schema with an empty name");
     }
 
 //---------------------------------------------------------------------------------------
@@ -246,28 +235,38 @@ TEST_F(PhenomenonDeserializationTest, MissingDisplayLabel)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Kyle.Abramowitz                  03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(PhenomenonDeserializationTest, MissingDescription)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+        <Phenomenon typeName="aUniquePhenomenon" definition="LENGTH*LENGTH" displayLabel="Label"/>
+    </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
+    PhenomenonCP phenom = schema->GetPhenomenonCP("aUniquePhenomenon");
+    EXPECT_FALSE(phenom->GetIsDescriptionDefined());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(PhenomenonDeserializationTest, MissingOrEmptyDefinition)
     {
-    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" displayLabel="Phenomenon" description="This is an awesome new Phenomenon"/>
-    </ECSchema>)xml";
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-    }
-    Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with missing definition");
+
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <Phenomenon typeName="aUniquePhenomenon" displayLabel="Phenomenon" definition="" description="This is an awesome new Phenomenon"/>
-    </ECSchema>)xml";
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, ECSchema::ReadFromXmlString(schema, schemaXml2, *context));
-    }
+    </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize phenomenon with empty definition");
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
