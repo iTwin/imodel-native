@@ -15,6 +15,7 @@
 #include <ctime>
 #include <locale>
 #include <chrono>
+#include <iomanip>
 
 #include "UnitsTests.h"
 #include <Formatting/FormattingApi.h>
