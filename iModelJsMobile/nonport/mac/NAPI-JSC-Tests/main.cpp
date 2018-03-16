@@ -24,8 +24,10 @@ struct TestObject : Napi::ObjectWrap<TestObject>
 
         exports.Set("TestObject", t);
         
-        exports.Set("TestFunc2", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value {
-            return Napi::Number::New(info.Env(), 2.0);
+        exports.Set("Multiply", Napi::Function::New(env, [](Napi::CallbackInfo const& info) -> Napi::Value {
+            Napi::Number val1 = info[0].ToNumber();
+            Napi::Number val2 = info[1].ToNumber();
+            return Napi::Number::New(info.Env(), val1.DoubleValue() * val2.DoubleValue());
         }));
     }
 
@@ -78,9 +80,9 @@ int main(int argc, const char * argv[]) {
 
     TestObject::Init(env, env.Global());
     
-    auto result1 = runtime.EvaluateScript ("TestFunc2(1.0);");
+    auto result1 = runtime.EvaluateScript ("Multiply(7.0,6.0);");
     assert (result1.status == BentleyB0200::iModelJs::Js::EvaluateStatus::Success);
-    assert (result1.value.As<Napi::Number>().DoubleValue() == 2.0);
+    assert (result1.value.As<Napi::Number>().DoubleValue() == 42.0);
 
     return 0;
 }

@@ -56,6 +56,67 @@ const char* error_messages[] = {nullptr,
                                 "The async work item was cancelled",
                                 "napi_escape_handle already called on scope"};
 
+//=======================================================================================
+// @bsiclass                                    Satyakam.Khadilkar    03/2018
+//=======================================================================================
+struct JSCFunctionCallbackData {
+public:
+    JSCFunctionCallbackData(napi_env environment, napi_callback callback, void* callbackData)
+    : _env(environment), _callback(callback), _data(callbackData) {}
+    napi_env Env() { return _env; }
+    JSValueRef Callback(napi_callback_info info) {return _callback(_env,info);}
+    void* Data() { return _data; }
+private:
+    napi_env _env;
+    napi_callback _callback;
+    void* _data;
+};
+
+//=======================================================================================
+// @bsiclass                                    Satyakam.Khadilkar    03/2018
+//=======================================================================================
+struct JSCFunctionCallbackWrapper {
+public:
+    JSCFunctionCallbackWrapper(JSCFunctionCallbackData* data, JSObjectRef thisObj, size_t argC, const JSValueRef argV[])
+    : _data(data), _this(thisObj), _args_length(argC), _argv(argV) {}
+    
+    JSValueRef InvokeCallback() {
+        return _data->Callback((napi_callback_info)this);
+    }
+    
+    JSCFunctionCallbackData* Data() { return _data; }
+    size_t ArgsLength() { return _args_length;}
+    void Args(napi_value* buffer, size_t buffer_length) {
+        size_t i = 0;
+        size_t min = std::min(buffer_length, _args_length);
+        
+        for (; i < min; i += 1) {
+            buffer[i] = _argv[i];
+        }
+        
+        if (i < buffer_length) {
+            napi_value undefined = JSValueMakeUndefined(_data->Env()->GetContext());
+            for (; i < buffer_length; i += 1) {
+                buffer[i] = undefined;
+            }
+        }
+    }
+    
+    JSObjectRef This() { return _this;}
+    
+    static JSValueRef Invoke (JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
+                              size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception){
+        auto funcCBData = reinterpret_cast<JSCFunctionCallbackData*>(JSObjectGetPrivate(function));
+        JSCFunctionCallbackWrapper cbwrapper(funcCBData,thisObject,argumentCount,arguments);
+        return cbwrapper.InvokeCallback();
+    }
+private:
+    size_t _args_length;
+    const JSValueRef* _argv;
+    JSObjectRef _this;
+    JSCFunctionCallbackData* _data;
+};
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -135,42 +196,6 @@ NAPI_NO_RETURN void napi_fatal_error(const char* location,
   node::FatalError(location_string.c_str(), message_string.c_str());
 }
 
-//=======================================================================================
-// @bsiclass                                    Satyakam.Khadilkar    03/2018
-//=======================================================================================
-struct JSCFunctionCallbackData {
-    napi_env env;
-    napi_callback cb;
-    void* data;
-    JSCFunctionCallbackData(napi_env environment, napi_callback callback, void* callbackData)
-    : env(environment), cb(callback), data(callbackData) {}
-};
-
-//=======================================================================================
-// @bsiclass                                    Satyakam.Khadilkar    03/2018
-//=======================================================================================
-struct JSCFunctionCallbackWrapper {
-    size_t argumentCount;
-    const JSValueRef* arguments;
-    JSObjectRef thisObject;
-    JSCFunctionCallbackData* funcCallbackData;
-    
-    JSCFunctionCallbackWrapper(JSCFunctionCallbackData* data, JSObjectRef thisObj, size_t argC, const JSValueRef argV[])
-    : funcCallbackData(data), thisObject(thisObj), argumentCount(argC), arguments(argV) {}
-    
-    JSValueRef Invoke() {
-        return funcCallbackData->cb(funcCallbackData->env,(napi_callback_info)this);
-    }
-
-    static JSValueRef
-    functionCallBack (JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception)
-    {
-        auto funcCBData = (JSCFunctionCallbackData*)JSObjectGetPrivate(function);
-        JSCFunctionCallbackWrapper info(funcCBData,thisObject,argumentCount,arguments);
-        return info.Invoke();
-    }
-};
-
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
@@ -187,11 +212,10 @@ napi_status napi_create_function(napi_env env,
     JSContextRef ctx = env->GetContext();
     JSClassDefinition classDef = kJSClassDefinitionEmpty;
     classDef.className = utf8name;
-    classDef.callAsFunction = JSCFunctionCallbackWrapper::functionCallBack;
+    classDef.callAsFunction = JSCFunctionCallbackWrapper::Invoke;
     JSClassRef classRef = JSClassCreate(&classDef);
-    auto func = new JSCFunctionCallbackData(env,cb,callback_data);
-    *result = JSObjectMake(ctx,classRef,func);
-    
+    auto funcCBData = new JSCFunctionCallbackData(env,cb,callback_data);
+    *result = JSObjectMake(ctx,classRef,funcCBData);
     return GET_RETURN_STATUS(env);
 }
 
@@ -222,7 +246,7 @@ napi_status napi_define_class(napi_env env,
     {
         napi_property_descriptor descriptor = properties[ii];
         JSStringRef functionNameString = JSStringCreateWithUTF8CString (descriptor.utf8name);
-        JSObjectRef func = JSObjectMakeFunctionWithCallback(ctx, functionNameString, JSCFunctionCallbackWrapper:: functionCallBack);
+        JSObjectRef func = JSObjectMakeFunctionWithCallback(ctx, functionNameString, JSCFunctionCallbackWrapper:: Invoke);
         JSObjectRef objectObject = JSValueToObject (ctx, *result, NULL);
         JSObjectSetProperty(ctx, objectObject, functionNameString, func, kJSPropertyAttributeNone, NULL);
         JSStringRelease(functionNameString);
@@ -875,17 +899,26 @@ napi_status napi_get_cb_info(
     napi_value* argv,  // [out] Array of values
     napi_value* this_arg,  // [out] Receives the JS 'this' arg for the call
     void** data) {         // [out] Receives the data pointer for the callback.
-  CHECK_ENV(env);
-  CHECK_ARG(env, cbinfo);
+    CHECK_ENV(env);
+    CHECK_ARG(env, cbinfo);
 
-    JSContextRef ctx = env->GetContext();
-    JSCFunctionCallbackWrapper* theCbInfo = (JSCFunctionCallbackWrapper*)cbinfo;
-    *data = theCbInfo->funcCallbackData->data;
-    *argc = theCbInfo->argumentCount;
-//    *argv = theCbInfo->arguments;
-    *this_arg = theCbInfo->thisObject;
-
-  return napi_clear_last_error(env);
+    JSCFunctionCallbackWrapper* info = reinterpret_cast<JSCFunctionCallbackWrapper*>(cbinfo);
+    
+    if (argv != nullptr) {
+        CHECK_ARG(env, argc);
+        info->Args(argv, *argc);
+    }
+    if (argc != nullptr) {
+        *argc = info->ArgsLength();
+    }
+    if (this_arg != nullptr) {
+        *this_arg = info->This();
+    }
+    if (data != nullptr) {
+        *data = info->Data();
+    }
+  
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1195,6 +1228,7 @@ napi_status napi_coerce_to_object(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+    *result = value;
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1211,6 +1245,7 @@ napi_status napi_coerce_to_bool(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+    *result = value;
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1227,6 +1262,7 @@ napi_status napi_coerce_to_number(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+    *result = value;
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1243,6 +1279,7 @@ napi_status napi_coerce_to_string(napi_env env,
   CHECK_ARG(env, result);
 
   JSContextRef ctx = env->GetContext();
+    *result = value;
   // TODO
 
   return GET_RETURN_STATUS(env);
