@@ -3315,32 +3315,19 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
 
             originLatLong.longitude = -75.686844444444444444444444444444;
             originLatLong.latitude = 40.065702777777777777777777777778;        // Arbitrary location (Exton flapole).
+            originLatLong.elevation = 0.0;
             }
         }
     else
         {
         dgnGCS->LatLongFromUors (originLatLong, origin);
 
-        // If the current GCS does not use WGS84, need to convert as XYZFromLatLong expects WGS84 Lat/Long... (TFS# 799148). 
-        if (0 != wcscmp (dgnGCS->GetDatumName(), L"WGS84"))
-            {
-            auto        wgs84Datum = GeoCoordinates::Datum::CreateDatum (L"WGS84");
-            auto        thisDatum = GeoCoordinates::Datum::CreateDatum(dgnGCS->GetDatumName());
-            auto        datumConverter = GeoCoordinates::DatumConverter::Create (*thisDatum, *wgs84Datum);
-
-            if (nullptr != datumConverter)
-                {
-                datumConverter->ConvertLatLong3D(originLatLong, originLatLong);
-
-                // Eww?
-                datumConverter->Destroy();
-                datumConverter = nullptr;
-                }
-            }
+        GeoPoint tempLatLong = originLatLong;
+        dgnGCS->LatLongFromLatLong(originLatLong, tempLatLong, *wgs84GCS);
         }
     GeoPoint    northLatLong = originLatLong;
 
-    northLatLong.latitude += 3.0 / (360.0 * 60.0 * 60.0);   // To get a point north of origin move 3 minutes of latitude (per Alain Robert)                  
+    northLatLong.latitude += 3.0 / (60.0 * 60.0);   // To get a point north of origin move 3 seconds of latitude (per Alain Robert)                  
 
 
     wgs84GCS->XYZFromLatLong(ecfOrigin, originLatLong);

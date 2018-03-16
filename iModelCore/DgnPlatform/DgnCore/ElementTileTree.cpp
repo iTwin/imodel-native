@@ -1101,7 +1101,7 @@ BentleyStatus Loader::_LoadTile()
         if (graphic.IsValid())
             {
             geometry.Meshes().m_features.SetModelId(root.GetModelId());
-            batch = system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features));
+            batch = system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features), tile._GetContentRange());
             BeAssert(batch.IsValid());
             tile.SetGraphic(*batch);
             }

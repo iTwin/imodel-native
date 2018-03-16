@@ -361,9 +361,10 @@ struct RenderSystem : Render::System
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& featureTable) const override 
+virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& featureTable, DRange3dCR range) const override 
     {
     m_featureTable = std::move(featureTable);
+    m_range = range;
     return nullptr; 
     }
 

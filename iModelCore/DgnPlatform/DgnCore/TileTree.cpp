@@ -2146,3 +2146,18 @@ void TriMeshTree::Tile::_PickGraphics(PickArgsR args, uint32_t depth) const
         mesh->Pick(args);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Marc.Neely   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr Tile::CreateTileGraphic(Render::GraphicR graphic, DgnModelId modelId) const
+    {
+    Dgn::Render::SystemP renderSystem = m_root.GetRenderSystemP();
+    if (nullptr == renderSystem || !modelId.IsValid())
+        return &graphic;
+
+    Feature feature(DgnElementId(modelId.GetValue()), DgnSubCategoryId(), DgnGeometryClass::Primary);
+    FeatureTable features(modelId, renderSystem->_GetMaxFeaturesPerBatch());
+    features.GetIndex(feature);
+
+    return renderSystem->_CreateBatch(graphic, std::move(features), _GetContentRange());
+    }
