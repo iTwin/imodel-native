@@ -12,6 +12,31 @@ USING_NAMESPACE_DGNDBSYNC_DWG
 
 static Utf8CP   s_blankTagName = "BLANKTAG";
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GetPropertyNameFromAttributeName (Utf8StringR propName, DwgStringCR tagName)
+    {
+    // replace blank tag name with "BLANKTAG"
+    bool    validated = false;
+    Utf8String  proposed (tagName.c_str());
+    if (proposed.empty())
+        {
+        proposed.assign (s_blankTagName);
+        validated = true;
+        }
+
+    ECNameValidation::EncodeToValidName (propName, proposed);
+    
+    // above validation allows "id", but SchemaValidator::ValidPropertyRule::ValidatePropertyName does not, resulting in failure importing our schema:
+    if (propName.EqualsI("id"))
+        propName += "_";
+
+    if (!validated && !propName.EqualsI(proposed))
+        validated = true;
+
+    return  validated;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
@@ -28,14 +53,9 @@ AttributeFactory::AttributeFactory (DwgImporter& importer, DgnElementR hostEleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttributeCR attrib)
     {
-    // extrat tag name from attribute, replacing blank name with "BLANKTAG":
-    Utf8String  tag (DwgHelper::ToUtf8CP(attrib.GetTag(), true));
-    if (tag.empty())
-        tag.assign (s_blankTagName);
-
     // build an internal EC property name from the tag name
     Utf8String  propName;
-    ECNameValidation::EncodeToValidName (propName, tag.c_str());
+    GetPropertyNameFromAttributeName (propName, attrib.GetTag());
 
     Utf8String  valueString;
     DwgString   text;
@@ -65,6 +85,10 @@ bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttribut
         {
         // missing attrdef - create an Adhoc property
         uint32_t    count = 0;
+        Utf8String  tag (attrib.GetTag().c_str());
+        if (tag.empty())
+            tag.assign (s_blankTagName);
+
         while (!m_hostElement.GetUserProperties(tag.c_str()).isNull())
             {
             Utf8PrintfString    tryName("%s%d", tag.c_str(), ++count);
@@ -87,7 +111,9 @@ bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttribut
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus AttributeFactory::AddConstantProperty (DwgDbAttributeDefinitionCR attrdef)
     {
-    Utf8String  tag (attrdef.GetTag().c_str());
+    Utf8String  tag;
+    GetPropertyNameFromAttributeName (tag, attrdef.GetTag());
+    
     Utf8String  valueString;
     DwgString   text;
     if (attrdef.GetValueString(text))
@@ -349,16 +375,9 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
             if (attrdef.IsNull())
                 continue;
 
-            // replace blank tag name with "BLANKTAG"
-            Utf8String  tagName (DwgHelper::ToUtf8CP(attrdef->GetTag(), true));
-            if (tagName.empty())
-                tagName.assign (s_blankTagName);
-
             PrimitiveECPropertyP    prop = nullptr;
             Utf8String              propName;
-
-            // build an internal EC property name from attrdef tag
-            ECNameValidation::EncodeToValidName (propName, tagName.c_str());
+            GetPropertyNameFromAttributeName (propName, attrdef->GetTag());
 
             // Property tag
             status = attrdefClass->CreatePrimitiveProperty (prop, propName.c_str(), PRIMITIVETYPE_String);
