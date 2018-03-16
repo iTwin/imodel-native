@@ -2281,24 +2281,38 @@ TEST_F(DgnElementTests, SavedSelectionCRUD)
     {
     SetupSeedProject();
 
-    SavedSelectionPtr selection = SavedSelection::Create(*m_db, "MySelection");
+    auto selection = SavedSelection::Create(m_db->GetDictionaryModel(), "MySelection");
     ASSERT_TRUE(selection.IsValid());
 
-    Json::Value outData = selection->GetSelectionData();
+    Json::Value outData = SavedSelection::GetSelectionData(*selection);
     ASSERT_TRUE(outData.isNull());
 
     Json::Value inData(Json::objectValue);
     inData["TestData"] = "TestData";
-    selection->SetSelectionData(inData);
+    SavedSelection::SetSelectionData(*selection, inData);
 
-    outData = selection->GetSelectionData();
+    outData = SavedSelection::GetSelectionData(*selection);
     ASSERT_TRUE(outData.isObject());
     ASSERT_TRUE(outData["TestData"].asString().Equals("TestData"));
 
     ASSERT_TRUE(selection->Insert().IsValid());
     m_db->SaveChanges();
 
-    ASSERT_TRUE(SavedSelection::GetElementIdByName(*m_db, "MySelection").IsValid());
+    DgnElementId elementId = SavedSelection::GetElementIdByName(*m_db, "MySelection");
+    ASSERT_TRUE(elementId.IsValid());
+
+    auto element = m_db->Elements().GetForEdit<DefinitionElement>(elementId);
+    ASSERT_TRUE(element.IsValid());
+
+    outData = SavedSelection::GetSelectionData(*element);
+    ASSERT_TRUE(outData.isObject());
+    ASSERT_TRUE(outData["TestData"].asString().Equals("TestData"));
+
+    Json::Value emptyData(Json::arrayValue);
+    SavedSelection::SetSelectionData(*element, emptyData);
+
+    outData = SavedSelection::GetSelectionData(*element);
+    ASSERT_TRUE(outData.isNull());
     }
 
 /*---------------------------------------------------------------------------------**//**

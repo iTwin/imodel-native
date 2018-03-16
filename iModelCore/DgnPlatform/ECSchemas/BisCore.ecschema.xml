@@ -1439,12 +1439,9 @@
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SavedSelection" modifier="Sealed" displayLabel="Selection set of elements" description="Defines a set elements that can be used to set the active element selection.">
+    <ECEntityClass typeName="SavedSelection" displayLabel="Selection set of elements" description="Defines a set elements that can be used to set the active element selection.">
         <!-- selected element definition stored in JsonProperties -->
         <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="RenderMaterial" modifier="Sealed" displayLabel="Render Material">
