@@ -18,6 +18,24 @@
 BEGIN_SHEET_NAMESPACE
 
 //=======================================================================================
+//! Describes the geometry of the sheet border in view coordinates or world coordinates.
+// @bsistruct                                                   Paul.Connelly   03/18
+//=======================================================================================
+struct Border
+{
+private:
+    DPoint2d                m_rect[5];
+    DPoint2d                m_shadow[7];
+    Render::GradientSymbPtr m_gradient;
+public:
+    enum class CoordSystem { View, World };
+
+    Border(ViewContextCR context, DPoint2dCR size, CoordSystem coords);
+
+    void AddToBuilder(Render::GraphicBuilderR) const;
+};
+
+//=======================================================================================
 //! A Sheet::Model is a GraphicalModel2d that has the following characteristics:
 //!     - Has finite  extents, specified in meters.
 //!     - Can contain @b views of other models, like pictures pasted on a photo album.
@@ -297,6 +315,8 @@ namespace Attachment
         Sheet::ViewController& m_sheetController;
     private:
         Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view);
+
+        Render::ViewFlagsOverrides _GetViewFlagsOverrides() const override;
     public:
         static RootPtr Create(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context);
 

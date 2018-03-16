@@ -162,6 +162,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::SystemP _GetRenderSystem() const;
     DGNPLATFORM_EXPORT virtual Render::TargetP _GetRenderTarget() const;
     DGNPLATFORM_EXPORT virtual double _GetPixelSizeAtPoint(DPoint3dCP origin) const;
+    virtual bool _WantGlyphBoxes(double sizeInPixels) const { return false; }
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
@@ -334,6 +335,7 @@ public:
     StatusInt VisitElement(DgnElementId elementId, bool allowLoad=true) {return _VisitElement(elementId, allowLoad);}
 
     bool CheckStop() {return _CheckStop();}
+    bool WantGlyphBoxes(double sizeInPixels) const {return _WantGlyphBoxes(sizeInPixels);}
 }; // ViewContext
 
 //=======================================================================================

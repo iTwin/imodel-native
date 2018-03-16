@@ -639,6 +639,7 @@ struct TileGeometry : RefCountedBase
         void Transform(TransformCR transform);
 
         TileStrokes (TileDisplayParamsCR displayParams, bvector<bvector<DPoint3d>>&& strokes, bool disjoint = false) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
+        TileStrokes (TileDisplayParamsCR displayParams, bool disjoint = false) : m_displayParams(&displayParams), m_disjoint(disjoint) { }
         }; 
 
     typedef bvector<TilePolyface>   T_TilePolyfaces;

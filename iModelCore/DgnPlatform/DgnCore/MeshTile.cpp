@@ -18,8 +18,7 @@ BEGIN_UNNAMED_NAMESPACE
 constexpr double s_half2dDepthRange = 10.0;
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
-
-static const double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const double s_minRangeBoxSize    = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
 
 END_UNNAMED_NAMESPACE
@@ -2169,7 +2168,6 @@ private:
     TileGeometryList            m_curLeafGeometries;
     double                      m_minRangeDiagonal;
     double                      m_minTextBoxSize;
-    double                      m_minLineStyleWidth;
     bool*                       m_leafThresholdExceeded;
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
@@ -2224,13 +2222,11 @@ public:
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
         {
         static const double s_minTextBoxToleranceRatio = 1.0;           // Below this ratio to tolerance text is rendered as box.
-        static const double s_minLineStyleWidthToleranceRatio = 1.0;     // Below this ratio to tolerance line styles are rendered as continuous.
 
         double targetTolerance = tolerance * transformFromDgn.ColumnXMagnitude();
         m_targetFacetOptions->SetChordTolerance(targetTolerance);
         m_minRangeDiagonal = s_minRangeBoxSize * targetTolerance;
         m_minTextBoxSize  = s_minTextBoxToleranceRatio * targetTolerance;
-        m_minLineStyleWidth = s_minLineStyleWidthToleranceRatio * targetTolerance;
 
         m_transformFromDgn.Multiply (m_tileRange, m_range);
         }
@@ -2245,11 +2241,12 @@ public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
     DRange3dCR GetRange() const { return m_range; }
+    double& GetMinRangeDiagonalR() { return m_minRangeDiagonal; }
 
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any elements with range smaller than roughly half a pixel...
-        return range.DiagonalDistance() < m_minRangeDiagonal;
+       return range.DiagonalDistance() < m_minRangeDiagonal;
         }
     
     void PushCurrentGeometry()
@@ -2762,7 +2759,6 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         m_leafGeometries.clear();
         }
 #if defined(NEEDSWORK_SHEET_BORDER)
-    // Sheet::Model::CreateBorder() now creates border in *view* coords...Cesium needs it in world coords...
     else if (TileGeneratorStatus::Success == status)
         {
         Sheet::ModelCP sheetModel = m_cache.GetModel().ToSheetModel();
@@ -2778,8 +2774,10 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
             if (0.0 == sheetSize.y)
                 sheetSize.y = 0.1;
 
-            auto border = Sheet::Model::CreateBorder (context, sheetSize);
-            context.OutputGraphic(*border, nullptr);
+            auto gf = context.CreateSceneGraphic();
+            Sheet::Border border(context, sheetSize, Sheet::Border::CoordSystem::World);
+            border.AddToBuilder(*gf);
+            context.OutputGraphic(*gf->Finish(), nullptr);
             PushCurrentGeometry();
             }
         }
@@ -2877,14 +2875,39 @@ void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, T
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void _DrawStyledCurveVector(Render::GraphicBuilderR builder, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override
+    {
+    if (doCook)
+        CookGeometryParams(params, builder);
+
+    // Arggh.... Turn off the size filter while stroking linestyle so the components aren't filtered.
+    IFacetOptionsPtr    facetOptions;
+    if (nullptr != params.GetLineStyle() &&
+        CurveVector::BOUNDARY_TYPE_None != curve.GetBoundaryType() &&
+        params.GetLineStyle()->GetLineStyleSymb().GetUseStroker() && 
+        builder.WantStrokeLineStyle(params.GetLineStyle()->GetLineStyleSymb(), facetOptions))
+        {
+        AutoRestore<double>     saveMinRangeDiagonal(&m_processor.GetMinRangeDiagonalR(), 0.0);
+
+        T_Super::_DrawStyledCurveVector(builder, curve, params, false);
+        }
+    else
+        {
+        T_Super::_DrawStyledCurveVector(builder, curve, params, false);
+        }
+    }
 };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(DgnElementId elementId, bool allowLoad)
     {
-#define DEBUG_ELEMENT_FILTER
+//#define DEBUG_ELEMENT_FILTER
 #ifdef DEBUG_ELEMENT_FILTER
     static  DgnElementId s_debugId = DgnElementId((uint64_t) 73634);
 
@@ -3018,6 +3041,64 @@ struct MeshTileClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
     StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
     StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
 };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometry::TileStrokes clipSegments(TileGeometry::TileStrokes input, DRange3dCR tileRange) 
+    {
+    TileGeometry::TileStrokes output(*input.m_displayParams, false);
+    output.m_strokes.reserve(input.m_strokes.size());
+
+    for (auto const& points : input.m_strokes)
+        {
+        // unused - DRange3d    range = DRange3d::From(points);
+        // unused - DPoint3d    rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
+
+        DPoint3d prevPt = points.front();
+        bool prevOutside = !tileRange.IsContained(prevPt);
+        if (!prevOutside)
+            {
+            bvector<DPoint3d>   points(1, prevPt);
+            output.m_strokes.push_back(points);
+            }
+
+        for (size_t i = 1; i < points.size(); i++)
+            {
+            auto nextPt = points[i];
+            bool nextOutside = !tileRange.IsContained(nextPt);
+            DSegment3d clippedSegment;
+            if (prevOutside || nextOutside)
+                {
+                double param0, param1;
+                DSegment3d unclippedSegment = DSegment3d::From(prevPt, nextPt);
+                if (!tileRange.IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
+                    {
+                    // entire segment clipped
+                    prevPt = nextPt;
+                    continue;
+                    }
+                }
+
+            DPoint3d startPt = prevOutside ? clippedSegment.point[0] : prevPt;
+            DPoint3d endPt = nextOutside ? clippedSegment.point[1] : nextPt;
+
+            if (prevOutside)
+                {
+                bvector<DPoint3d>   points(1, startPt);
+                output.m_strokes.push_back(points);
+                }
+
+            output.m_strokes.back().push_back(endPt);
+
+            prevPt = nextPt;
+            prevOutside = nextOutside;
+            }
+
+        BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().size());
+        }
+
+    return output;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -3038,9 +3119,9 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
     for (auto& geom : geometries)
         {
-#ifndef NDEBUG
+#ifdef DEBUG_GEOMETRY_FILTER
         auto        entityId = geom->GetEntityId().GetValue();
-        static      uint64_t    s_debugEntityId = 73634;
+        static      uint64_t    s_debugEntityId = 74285;
 
         if (0 != s_debugEntityId && entityId != s_debugEntityId)
             continue;
@@ -3109,8 +3190,9 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             {
             auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, TileGeometry::NormalMode::Never));
         
-            for (auto& tileStrokes : tileStrokesArray)
+            for (auto& inTileStrokes : tileStrokesArray)
                 {
+                auto    tileStrokes = clipSegments (inTileStrokes, myTileRange);
                 TileDisplayParamsCPtr   displayParams = tileStrokes.m_displayParams;
                 TileMeshMergeKey key(*displayParams, false, false, geom->GetEntityId().IsValid());
 

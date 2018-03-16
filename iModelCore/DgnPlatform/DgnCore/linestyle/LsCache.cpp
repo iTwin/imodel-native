@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsCache.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -695,7 +695,7 @@ StatusInt       LsInternalComponent::_DoStroke (LineStyleContextR context, DPoin
                     break;
                 }
 
-            context.GetGraphicR().ActivateGraphicParams(tmpGraphicParams);
+            context.GetGraphicR().ActivateGraphicParams(tmpGraphicParams, &tmpGeomParams);
             }
         }
 

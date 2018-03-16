@@ -245,26 +245,32 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
 //=======================================================================================
 struct RectanglePoints
 {
-    DPoint2d m_pts[5]; // view coords
-
-    RectanglePoints(double xlow, double ylow, double xhigh, double yhigh) 
+    template<typename T> static void Init(T& pts, double xlow, double ylow, double xhigh, double yhigh)
         {
-        m_pts[0].x = m_pts[3].x = m_pts[4].x = xlow;
-        m_pts[0].y = m_pts[1].y = m_pts[4].y = ylow;
-        m_pts[1].x = m_pts[2].x = xhigh; 
-        m_pts[2].y = m_pts[3].y = yhigh;
-        }
-
-    // Inputs in world coords
-    RectanglePoints(double xlow, double ylow, double xhigh, double yhigh, ViewContextCR context)
-        {
-        DPoint3d pts[5];
         pts[0].x = pts[3].x = pts[4].x = xlow;
         pts[0].y = pts[1].y = pts[4].y = ylow;
         pts[1].x = pts[2].x = xhigh; 
         pts[2].y = pts[3].y = yhigh;
-        
-        context.WorldToView(m_pts, pts, 5);
+        }
+
+    DPoint2d m_pts[5];
+
+    // If context supplied, points will be transformed to view coords.
+    RectanglePoints(double xlow, double ylow, double xhigh, double yhigh, ViewContextCP context=nullptr)
+        {
+        if (nullptr != context)
+            {
+            DPoint3d pts[5];
+            Init(pts, xlow, ylow, xhigh, yhigh);
+            for (auto& pt : pts)
+                pt.z = 0.0;
+
+            context->WorldToView(m_pts, pts, 5);
+            }
+        else
+            {
+            Init(m_pts, xlow, ylow, xhigh, yhigh);
+            }
         }
 
     operator DPoint2dP() {return m_pts;}
@@ -462,48 +468,78 @@ void Sheet::ViewController::_OnRenderFrame()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Sheet::Border::Border(ViewContextCR context, DPoint2dCR size, CoordSystem coords)
+    {
+    // Rect
+    bool wantViewCoords = CoordSystem::View == coords;
+    RectanglePoints rect(0, 0, size.x, size.y, wantViewCoords ? &context : nullptr);
+    memcpy(m_rect, rect.m_pts, 5 * sizeof(DPoint2d));
+
+    // Shadow
+    double shadowWidth = .01 * size.Distance(DPoint2d::FromZero());
+
+    DPoint3d shadow[7];
+    shadow[0].y = shadow[1].y = shadow[6].y = 0.0;
+    shadow[0].x = shadowWidth;
+    shadow[1].x = shadow[2].x = size.x;
+    shadow[3].x = shadow[4].x = size.x + shadowWidth;
+    shadow[2].y = shadow[3].y = size.y - shadowWidth;
+    shadow[4].y = shadow[5].y = -shadowWidth;
+    shadow[5].x = shadow[6].x = shadowWidth;
+
+    if (wantViewCoords)
+        {
+        for (auto& point : shadow)
+            point.z = 0.0;
+
+        context.WorldToView(m_shadow, shadow, 7);
+        }
+    else
+        {
+        for (size_t i = 0; i < 7; i++)
+            {
+            m_shadow[i].x = shadow[i].x;
+            m_shadow[i].y = shadow[i].y;
+            }
+        }
+            
+    // Gradient
+    double keyValues[] = {0.0, 0.5};
+    ColorDef keyColors[] = {ColorDef(25,25,25), ColorDef(150,150,150)};
+
+    m_gradient = GradientSymb::Create();
+    m_gradient->SetMode(Render::GradientSymb::Mode::Linear);
+    m_gradient->SetAngle(-45.0);
+    m_gradient->SetKeys(2, keyColors, keyValues);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::Border::AddToBuilder(Render::GraphicBuilderR builder) const
+    {
+    builder.SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, LinePixels::Solid);
+    builder.AddLineString2d(5, m_rect, 0.0);
+
+    GraphicParams params;
+    params.SetLineColor(ColorDef(25,25,25));
+    params.SetGradient(m_gradient.get());
+
+    builder.ActivateGraphicParams(params);
+    builder.AddShape2d(7, m_shadow, true, Render::Target::Get2dFrustumDepth());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr Sheet::Model::CreateBorder(DecorateContextR context, DPoint2dCR size)
     {
-    Render::GraphicBuilderPtr border = context.CreateViewBackground();
-    RectanglePoints rect(0, 0, size.x, size.y, context);
-    border->SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, LinePixels::Solid);
-    border->AddLineString2d(5, rect, 0.0);
-
-    double shadowWidth = .01 * size.Distance(DPoint2d::FromZero());
-
-    DPoint3d points[7];
-    points[0].y = points[1].y = points[6].y = 0.0;
-    points[0].x = shadowWidth;
-    points[1].x = points[2].x = size.x;
-    points[3].x = points[4].x = size.x + shadowWidth;
-    points[2].y = points[3].y = size.y - shadowWidth;
-    points[4].y = points[5].y = -shadowWidth;
-    points[5].x = points[6].x = shadowWidth;
-    for (auto& point : points)
-        point.z =0.0;
-
-    DPoint2d shadowPoints[7];
-    context.WorldToView(shadowPoints, points, 7);
-
-    double keyValues[] = {0.0, 0.5};
-    ColorDef keyColors[] = {ColorDef(25,25,25), ColorDef(150,150,150)};
-
-    GradientSymbPtr gradient = GradientSymb::Create();
-    gradient->SetMode(Render::GradientSymb::Mode::Linear);
-    gradient->SetAngle(-45.0);
-    gradient->SetKeys(2, keyColors, keyValues);
- 
-    GraphicParams params;
-    params.SetLineColor(keyColors[0]);
-    params.SetGradient(gradient.get());
-    border->ActivateGraphicParams(params);
-
-    // Make sure drop shadow displays behind border...
-    border->AddShape2d(7, shadowPoints, true, Render::Target::Get2dFrustumDepth());
-
-    return border->Finish();
+    Border border(context, size, Border::CoordSystem::View);
+    Render::GraphicBuilderPtr builder = context.CreateViewBackground();
+    border.AddToBuilder(*builder);
+    return builder->Finish();
     }
 
 #define MAX_SHEET_REFINE_DEPTH 6
@@ -990,6 +1026,18 @@ void Sheet::Attachment::Root::SetState(uint32_t depth, State state)
     auto attach = m_sheetController.GetAttachments().Find(m_attachmentId);
     BeAssert(nullptr != attach);
     attach->SetState(depth, state);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::ViewFlagsOverrides Sheet::Attachment::Root::_GetViewFlagsOverrides() const
+    {
+    // TFS#863662: If sheet's ViewFlags has transparency turned off, background pixels of
+    // attachments will render opaque black...
+    auto ovrs = T_Super::_GetViewFlagsOverrides();
+    ovrs.SetShowTransparency(true);
+    return ovrs;
     }
 
 /*---------------------------------------------------------------------------------**//**
