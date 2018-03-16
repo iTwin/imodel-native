@@ -47,7 +47,7 @@ public:
         } 
 
     //! Sets the Json data that defines the Selection Elements.
-    static void SetSelectionData(DefinitionElementR selection, Json::Value selectionData) 
+    static void SetSelectionData(DefinitionElementR selection, JsonValueCR selectionData)
         {
         // empty() checks for a empty arrayValue and null objectValues
         if (selectionData.empty())
@@ -56,11 +56,31 @@ public:
             selection.SetJsonProperties(json_selectionData(), selectionData);
         }
 
+    //! Sets the Name for the SavedSelection.
+    static StatusInt SetName(DefinitionElementR selection, Utf8CP name) 
+        {
+        if (Utf8String::IsNullOrEmpty(name))
+            return ERROR;
+
+        return (DgnDbStatus::Success == selection.SetCode(CreateCode(selection.GetDgnDb(), name))) ? SUCCESS : ERROR;
+        }
+
+    //! Convenience method to create a new SavedSelection element.
+    //! @param[in] model The model to store the Saved Selection.
+    //! @param[in] name The name will be used to form the element's DgnCode
+    static DefinitionElementPtr Create(DefinitionModelR model, Utf8CP name)
+        {
+        if (Utf8String::IsNullOrEmpty(name))
+            return nullptr;
+
+        return new DefinitionElement(DgnElement::CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model.GetDgnDb(), name)));
+        }
+
     //! Convenience method to create a new SavedSelection element.
     //! @param[in] model The model to store the Saved Selection.
     //! @param[in] name The name will be used to form the element's DgnCode
     //! @param[in] selectionData The json value that holds the selection data to be saved in the element.
-    static DefinitionElementPtr Create(DefinitionModelR model, Utf8CP name, Json::Value selectionData = Json::Value(Json::nullValue))
+    static DefinitionElementPtr Create(DefinitionModelR model, Utf8CP name, JsonValueCR selectionData)
         {
         if (Utf8String::IsNullOrEmpty(name))
             return nullptr;
@@ -71,6 +91,7 @@ public:
 
         return selection;
         }
+
 };
 
 

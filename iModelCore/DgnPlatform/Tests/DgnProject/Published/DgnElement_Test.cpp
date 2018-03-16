@@ -2313,6 +2313,9 @@ TEST_F(DgnElementTests, SavedSelectionCRUD)
 
     outData = SavedSelection::GetSelectionData(*element);
     ASSERT_TRUE(outData.isNull());
+
+    ASSERT_TRUE(SUCCESS == SavedSelection::SetName(*element, "My-Selection"));
+    ASSERT_TRUE(0 == strcmp(element->GetCode().GetValueUtf8CP(), "My-Selection"));
     }
 
 /*---------------------------------------------------------------------------------**//**

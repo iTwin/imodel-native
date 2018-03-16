@@ -1439,8 +1439,8 @@
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SavedSelection" displayLabel="Selection set of elements" description="Defines a set elements that can be used to set the active element selection.">
-        <!-- selected element definition stored in JsonProperties -->
+    <ECEntityClass typeName="SavedSelection" displayLabel="Selection of elements" description="a named set of elements.">
+        <!-- selected element definitions are stored in JsonProperties -->
         <BaseClass>DefinitionElement</BaseClass>
     </ECEntityClass>
 
