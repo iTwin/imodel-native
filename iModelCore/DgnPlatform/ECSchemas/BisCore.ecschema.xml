@@ -1438,7 +1438,15 @@
         </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
-    
+
+    <ECEntityClass typeName="SavedSelection" modifier="Sealed" displayLabel="Selection set of elements" description="Defines a set elements that can be used to set the active element selection.">
+        <!-- selected element definition stored in JsonProperties -->
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="RenderMaterial" modifier="Sealed" displayLabel="Render Material">
         <!-- Marked as "Sealed" because JsonProperties will be used to persist data. This allows a single instance to "morph" between a DgnV8 render material and a future PBR material. -->
         <BaseClass>DefinitionElement</BaseClass>

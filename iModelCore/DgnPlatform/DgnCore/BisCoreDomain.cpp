@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/BisCoreDomain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -79,6 +79,7 @@ HANDLER_DEFINE_MEMBERS(GraphicalType2d)
 HANDLER_DEFINE_MEMBERS(TemplateRecipe2d)
 HANDLER_DEFINE_MEMBERS(SpatialLocationType)
 HANDLER_DEFINE_MEMBERS(ColorBook)
+HANDLER_DEFINE_MEMBERS(SavedSelection)
 HANDLER_DEFINE_MEMBERS(Subject)
 HANDLER_DEFINE_MEMBERS(InformationPartition)
 HANDLER_DEFINE_MEMBERS(DefinitionPartition)
@@ -173,6 +174,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::SpatialCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::SubCategory::GetHandler());
     RegisterHandler(dgn_ElementHandler::ColorBook::GetHandler());
+    RegisterHandler(dgn_ElementHandler::SavedSelection::GetHandler());
     RegisterHandler(dgn_ElementHandler::Subject::GetHandler());
     RegisterHandler(dgn_ElementHandler::Role::GetHandler());
     RegisterHandler(dgn_ElementHandler::InformationPartition::GetHandler());
