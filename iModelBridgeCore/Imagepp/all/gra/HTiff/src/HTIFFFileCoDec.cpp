@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/gra/HTiff/src/HTIFFFileCoDec.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -116,16 +116,8 @@ void HTIFFFile::SetLZWAlgo(uint32_t pi_BitsPerPixel, uint16_t pi_Predictor, uint
     ExtractWidthHeight (&Width, &Height);
     Byte LinePaddingBits = (Byte)((8 - ((Width * pi_BitsPerPixel) % 8)) % 8);
 
-    //Special case to fix TFS 88368.
-    if (1 == pi_SamplesPerPixel && 2 == pi_Predictor && 32 == pi_BitsPerPixel)
-        {
-        m_pPacket->SetCodec(new HCDCodecLZWPredicateExt(Width, Height,pi_BitsPerPixel, pi_Predictor, pi_SamplesPerPixel));
-        }
-    else
-        {
-        m_pPacket->SetCodec(new HCDCodecLZW(Width, Height,pi_BitsPerPixel, pi_Predictor));
-        }        
-
+    m_pPacket->SetCodec(new HCDCodecLZW(Width, Height,pi_BitsPerPixel, pi_Predictor, pi_SamplesPerPixel));
+    
     if (LinePaddingBits != 0)
         ((HFCPtr<HCDCodecLZW>&)(m_pPacket->GetCodec()))->SetLinePaddingBits(LinePaddingBits);
 

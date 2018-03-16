@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: all/utl/hcd/src/HCDCodecLZW.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -285,25 +285,26 @@ bail:	_del(d);
 //-----------------------------------------------------------------------------
 HCDCodecLZW::HCDCodecLZW()
     : HCDCodecImage(HCD_CODEC_NAME)
-    {
-    }
+{
+}
 
 //-----------------------------------------------------------------------------
 // public
-// if pi_Predictor == 2, the data must be V24R8B8G8 or V32 
-// for V16... see HCDCodecLZWPredicateExt
 //-----------------------------------------------------------------------------
 HCDCodecLZW::HCDCodecLZW(size_t     pi_Width,
-                         size_t     pi_Height,
-                         size_t     pi_BitsPerPixel,
-                         uint16_t   pi_Predictor)
+    size_t     pi_Height,
+    size_t     pi_BitsPerPixel,
+    uint16_t   pi_Predictor,
+    uint32_t   pi_samplesPerPixel)
     : HCDCodecImage(HCD_CODEC_NAME,
-                    pi_Width,
-                    pi_Height,
-                    pi_BitsPerPixel)
-    {
+        pi_Width,
+        pi_Height,
+        pi_BitsPerPixel)
+{
     m_Predictor = pi_Predictor;
-    }
+    m_samplePerPixels = pi_samplesPerPixel;
+    BeAssert(2 == m_Predictor ? pi_samplesPerPixel != 0 : true);
+}
 
 //-----------------------------------------------------------------------------
 // public
@@ -311,43 +312,127 @@ HCDCodecLZW::HCDCodecLZW(size_t     pi_Width,
 //-----------------------------------------------------------------------------
 HCDCodecLZW::HCDCodecLZW(const HCDCodecLZW& pi_rObj)
     : HCDCodecImage(pi_rObj)
-    {
+{
     m_Predictor = pi_rObj.m_Predictor;
-    }
+    m_samplePerPixels = pi_rObj.m_samplePerPixels;
+}
 
 //-----------------------------------------------------------------------------
 // public
 // Destructor
 //-----------------------------------------------------------------------------
 HCDCodecLZW::~HCDCodecLZW()
-    {
-    }
+{
+}
 
 //-----------------------------------------------------------------------------
 // public
 // Clone
 //-----------------------------------------------------------------------------
 HCDCodec* HCDCodecLZW::Clone() const
-    {
+{
     return new HCDCodecLZW(*this);
-    }
+}
 
 //-----------------------------------------------------------------------------
 // public
 // CompressSubset
 //-----------------------------------------------------------------------------
 size_t HCDCodecLZW::CompressSubset(const void* pi_pInData,
-                                   size_t pi_InDataSize,
-                                   void* po_pOutBuffer,
-                                   size_t po_OutBufferSize)
-    {
+    size_t pi_InDataSize,
+    void* po_pOutBuffer,
+    size_t po_OutBufferSize)
+{
     size_t OutDataSize(0);
 
     HCDLZWEncoder   LZWEncoder;
     OutDataSize = LZWEncoder.Encode((Byte*)pi_pInData, pi_InDataSize, (Byte*)po_pOutBuffer, po_OutBufferSize);
 
     return OutDataSize;
-    }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                2/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename DataType_T, uint32_t ChannelCount_T>
+void DecodePredicate(size_t width, size_t height, Byte* pPixels, size_t dataSize)
+{
+    // Based on: https://www.fileformat.info/format/tiff/corion-lzw.htm and \Imagepp\ext\gdal\frmts\gtiff\libtiff\tif_predict.c
+    size_t rowSize = width * sizeof(DataType_T) * ChannelCount_T;
+
+    for (size_t row = 0; row < height; ++row)
+        {
+        if ((row + 1) * rowSize > dataSize)
+            {
+            // Some app(gdal_translate) won't include the padding data for the last block so in these cases
+            // the last block is smaller than expected but the raster is still valid. 
+            // Unfortunately HTIFFFile::ReadDataWithPacket doesn't set the effective pixel width/height so 
+            // we have no way to know that it is the last block so assert that we are on a row boundary and stop decoding.
+            BeAssert("unexpected end of data buffer" && dataSize % rowSize == 0);
+            break;
+            }
+
+        DataType_T* pPixelsRow = (DataType_T*)(pPixels + row * rowSize);
+
+        for (size_t col = 1; col < width; ++col)
+            {
+            for (uint32_t channel = 0; channel < ChannelCount_T; ++channel)
+                {
+                pPixelsRow[col * ChannelCount_T + channel] += pPixelsRow[(col - 1) * ChannelCount_T + channel];
+                }
+            }
+        }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                2/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+template<class Data_t>
+void DecodePredicate(size_t width, size_t height, uint32_t channelCount, Byte* pPixels, size_t dataSize)
+{    
+    switch (channelCount)
+        {
+        case 1:
+            DecodePredicate<Data_t, 1>(width, height, pPixels, dataSize);
+            break;
+        case 2:
+            DecodePredicate<Data_t, 2>(width, height, pPixels, dataSize);
+            break;
+        case 3:
+            DecodePredicate<Data_t, 3>(width, height, pPixels, dataSize);
+            break;
+        case 4:
+            DecodePredicate<Data_t, 4>(width, height, pPixels, dataSize);
+            break;
+        default:
+            BeAssert(!"Channel count not supported");
+        }
+}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.Marchand                2/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HCDCodecLZW::DecodeHorizontalPredicate(Byte* po_pOutBuffer, size_t dataSize)
+{
+    BeAssert(m_samplePerPixels > 0);
+    size_t bitsPerChannel = m_samplePerPixels > 0 ? GetBitsPerPixel() / m_samplePerPixels : 0;
+
+    switch (bitsPerChannel)
+        {
+        case 8:
+            DecodePredicate<uint8_t>(GetWidth(), GetHeight(), m_samplePerPixels, po_pOutBuffer, dataSize);
+            break;
+        case 16:
+            DecodePredicate<uint16_t>(GetWidth(), GetHeight(), m_samplePerPixels, po_pOutBuffer, dataSize);
+            break;
+        case 32:
+            DecodePredicate<uint32_t>(GetWidth(), GetHeight(), m_samplePerPixels, po_pOutBuffer, dataSize);
+            break;
+        default:
+            BeAssert(!"Predictor not supported");
+            break;
+        }
+}
 
 //-----------------------------------------------------------------------------
 // public
@@ -358,8 +443,6 @@ size_t HCDCodecLZW::DecompressSubset(const void*  pi_pInData,
                                      void*  po_pOutBuffer,
                                      size_t pi_OutBufferSize)
     {
-    HDEBUGCODE(uint64_t OUTBOUND_OFFSET = (uint64_t)(po_pOutBuffer) + pi_OutBufferSize;);
-
     size_t OutDataSize = 0;
 
     // is it the first packet?
@@ -396,88 +479,10 @@ size_t HCDCodecLZW::DecompressSubset(const void*  pi_pInData,
 #ifdef LZW_A_SLOW_DECODER
         lzwDecoder.Decode2((Byte*)pi_pInData, pi_InDataSize, (Byte*)po_pOutBuffer, pi_OutBufferSize);
 #endif
-
-        if( m_Predictor == 2 )
-            {
-            HUINTX stride = GetBitsPerPixel() / 8;
-
-            HUINTX rowSize = GetWidth() * stride;
-            HUINTX cc      = rowSize;
-            size_t row     = pi_OutBufferSize;
-
-            char* op = (char*) po_pOutBuffer;
-
-            while( row >= rowSize )
-                {
-                char* cp = (char*) op;
-
-                HASSERT((uint64_t)cp < OUTBOUND_OFFSET);
-
-                cc = rowSize;
-                stride = GetBitsPerPixel() / 8;
-                if (cc > stride)
-                    {
-                    cc -= stride;
-                    // Pipeline the most common cases.
-                    if (stride == 3)
-                        {
-                        HASSERT(((uint64_t)cp + 3) <= OUTBOUND_OFFSET);
-
-                        uint32_t cr = cp[0];
-                        uint32_t cg = cp[1];
-                        uint32_t cb = cp[2];
-                        do
-                            {
-                            cc -= 3, cp += 3;
-
-                            HASSERT(((uint64_t)cp + 3) <= OUTBOUND_OFFSET);
-
-                            cp[0] = ((cr += cp[0]) & 0xFF);
-                            cp[1] = ((cg += cp[1]) & 0xFF);
-                            cp[2] = ((cb += cp[2]) & 0xFF);
-                            }
-                        while ( cc > 0);
-                        }
-                    else if (stride == 4)
-                        {
-                        HASSERT(((uint64_t)cp + 4) <= OUTBOUND_OFFSET);
-
-                        uint32_t cr = cp[0];
-                        uint32_t cg = cp[1];
-                        uint32_t cb = cp[2];
-                        uint32_t ca = cp[3];
-                        do
-                            {
-                            cc -= 4, cp += 4;
-
-                            HASSERT(((uint64_t)cp + 4) <= OUTBOUND_OFFSET);
-
-                            cp[0] = ((cr += cp[0]) & 0xFF);
-                            cp[1] = ((cg += cp[1]) & 0xFF);
-                            cp[2] = ((cb += cp[2]) & 0xFF);
-                            cp[3] = ((ca += cp[3]) & 0xFF);
-                            }
-                        while ( cc > 0);
-                        }
-                    else
-                        {
-                        do
-                            {
-                            HASSERT(((uint64_t)cp + stride) <= OUTBOUND_OFFSET);
-
-                            XREPEAT4(stride, cp[stride] += *cp; cp++)
-                            cc -= stride;
-                            }
-                        while ( cc > 0);
-                        }
-                    }
-                row -= rowSize;
-
-                op += rowSize;
-                HASSERT(((uint64_t)op) <= OUTBOUND_OFFSET);
-                }
-            }
-
+        
+        if(m_Predictor == 2 )
+            DecodeHorizontalPredicate(static_cast<Byte*>(po_pOutBuffer), OutDataSize);
+            
         SetCompressedImageIndex(GetCompressedImageIndex() + pi_InDataSize);
         SetSubsetPosY(GetSubsetPosY() + GetSubsetHeight());
 
@@ -515,182 +520,3 @@ bool HCDCodecLZW::IsBitsPerPixelSupported(size_t pi_Bits) const
     else
         return false;
     }
-
-
-
-
-//HCDCodecLZWPredicateExt---------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-// public
-// Default constructor
-//-----------------------------------------------------------------------------
-HCDCodecLZWPredicateExt::HCDCodecLZWPredicateExt()
-: HCDCodecLZW()
-{
-}
-
-//-----------------------------------------------------------------------------
-// public
-// Default constructor
-//-----------------------------------------------------------------------------
-HCDCodecLZWPredicateExt::HCDCodecLZWPredicateExt(size_t     pi_Width,
-                                                 size_t     pi_Height,
-                                                 size_t     pi_BitsPerPixel,
-                                                 uint16_t    pi_Predictor, 
-                                                 uint32_t    pi_SamplesPerPixel)
-: HCDCodecLZW(pi_Width,
-              pi_Height,
-              pi_BitsPerPixel,
-              pi_Predictor)
-
-{
-    //Only to solve TFS 88368 on V8i.
-    assert(pi_Predictor == 2 && pi_BitsPerPixel == 32 && pi_SamplesPerPixel == 1);
-
-    m_Predictor = pi_Predictor;
-    m_SamplesPerPixel = pi_SamplesPerPixel;
-}
-
-//-----------------------------------------------------------------------------
-// public
-// Copy constructor
-//-----------------------------------------------------------------------------
-HCDCodecLZWPredicateExt::HCDCodecLZWPredicateExt(const HCDCodecLZWPredicateExt& pi_rObj)
-: HCDCodecLZW(pi_rObj)
-{
-    m_Predictor = pi_rObj.m_Predictor;
-    m_SamplesPerPixel = pi_rObj.m_SamplesPerPixel;    
-}
-
-//-----------------------------------------------------------------------------
-// public
-// Destructor
-//-----------------------------------------------------------------------------
-HCDCodecLZWPredicateExt::~HCDCodecLZWPredicateExt()
-{
-}
-
-//-----------------------------------------------------------------------------
-// public
-// Clone
-//-----------------------------------------------------------------------------
-HCDCodec* HCDCodecLZWPredicateExt::Clone() const
-{
-    return new HCDCodecLZWPredicateExt(*this);
-}
-
-
-
-//-----------------------------------------------------------------------------
-// public
-// CompressSubset
-//-----------------------------------------------------------------------------
-size_t HCDCodecLZWPredicateExt::CompressSubset(const void* pi_pInData,
-                                   size_t pi_InDataSize,
-                                   void* po_pOutBuffer,
-                                   size_t po_OutBufferSize)
-{
-    assert("Not implemented");
-    return 0;
-}
-  
-//-----------------------------------------------------------------------------
-// public
-// DecompressSubset
-//-----------------------------------------------------------------------------
-#define REPEAT4(n, op)		\
-    switch (n) {		\
-    default: { size_t i; for (i = n-4; i > 0; i--) { op; } } \
-    case 4:  op;		\
-    case 3:  op;		\
-    case 2:  op;		\
-    case 1:  op;		\
-    case 0:  ;			\
-    }
-
-
-size_t HCDCodecLZWPredicateExt::DecompressSubset(const void*  pi_pInData,
-                                           size_t pi_InDataSize,
-                                           void*  po_pOutBuffer,
-                                           size_t pi_OutBufferSize)
-{
-    if (m_Predictor != 2 || GetBitsPerPixel() != 32 || m_SamplesPerPixel != 1)
-        return 0;
-    
-    HDEBUGCODE(uint64_t OUTBOUND_OFFSET = (uint64_t)(po_pOutBuffer) + pi_OutBufferSize;);
-
-    size_t OutDataSize = 0;
-
-    // is it the first packet?
-    if(GetSubsetPosY() == 0)
-        {
-        SetCurrentState(STATE_DECOMPRESS);
-        }
-  
-    //TR 232508
-    HCDLZWDecoder lzwDecoder;
-    OutDataSize = lzwDecoder.Decode((Byte const*)pi_pInData, pi_InDataSize, (Byte*)po_pOutBuffer, pi_OutBufferSize);
-
-    if (OutDataSize > 0)
-        {    
-        // libTiff 5.0 LZW bug.
-        HASSERT(!(((Byte*)pi_pInData)[0] == 0 && (((Byte*)pi_pInData)[1] & 0x1)));
-        
-        if( m_Predictor == 2 )
-            {
-            HUINTX stride = GetBitsPerPixel() / 8;
-
-            HUINTX rowSize = GetWidth() * stride;
-            HUINTX cc      = rowSize;
-            size_t row     = pi_OutBufferSize;
-        
-            char* op = (char*) po_pOutBuffer;
-
-            while( row >= rowSize )
-                {
-                char* cp = (char*) op;
-
-                HASSERT((uint64_t)cp < OUTBOUND_OFFSET);
-
-                cc = rowSize;
-                stride = GetBitsPerPixel() / 8;
-
-                assert(cc > stride);
-                
-                //Taken from v8i_src\imagepp\ext\gdal\frmts\gtiff\libtiff\tif_predict.c.
-                size_t internStride = 1;                 
-                uint32_t* wp = (uint32_t*) cp;
-                size_t wc = cc / 4;
-
-                assert((cc%(4*internStride))==0);
-
-                if (wc > internStride) 
-                    {
-                    wc -= internStride;
-                    do 
-                        {
-                        REPEAT4(internStride, wp[internStride] += wp[0]; wp++)
-                        wc -= internStride;
-                        } while (wc > 0);
-                    }
-                
-                row -= rowSize;
-
-                op += rowSize;
-                HASSERT(((uint64_t)op) <= OUTBOUND_OFFSET);
-                }
-            }
-
-        SetCompressedImageIndex(GetCompressedImageIndex() + pi_InDataSize);
-        SetSubsetPosY(GetSubsetPosY() + GetSubsetHeight());
-
-        OutDataSize = ((GetSubsetWidth() + GetLinePaddingBits()) / 8) * GetSubsetHeight();
-
-        if(GetSubsetPosY() == GetHeight())
-            Reset();    
-        }
-   
-    return OutDataSize;
-}
