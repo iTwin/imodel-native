@@ -470,11 +470,10 @@ void Sheet::ViewController::_OnRenderFrame()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Sheet::Border::Border(ViewContextCR context, DPoint2dCR size, CoordSystem coords)
+Sheet::Border::Border(ViewContextCP context, DPoint2dCR size)
     {
     // Rect
-    bool wantViewCoords = CoordSystem::View == coords;
-    RectanglePoints rect(0, 0, size.x, size.y, wantViewCoords ? &context : nullptr);
+    RectanglePoints rect(0, 0, size.x, size.y, context);
     memcpy(m_rect, rect.m_pts, 5 * sizeof(DPoint2d));
 
     // Shadow
@@ -489,12 +488,12 @@ Sheet::Border::Border(ViewContextCR context, DPoint2dCR size, CoordSystem coords
     shadow[4].y = shadow[5].y = -shadowWidth;
     shadow[5].x = shadow[6].x = shadowWidth;
 
-    if (wantViewCoords)
+    if (nullptr != context)
         {
         for (auto& point : shadow)
             point.z = 0.0;
 
-        context.WorldToView(m_shadow, shadow, 7);
+        context->WorldToView(m_shadow, shadow, 7);
         }
     else
         {
@@ -529,6 +528,17 @@ void Sheet::Border::AddToBuilder(Render::GraphicBuilderR builder) const
 
     builder.ActivateGraphicParams(params);
     builder.AddShape2d(7, m_shadow, true, Render::Target::Get2dFrustumDepth());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange2d Sheet::Border::GetRange() const
+    {
+    DRange2d shadowRange = DRange2d::From(m_shadow, 7),
+             range = DRange2d::From(m_rect, 5);
+    range.Extend(shadowRange);
+    return range;
     }
 
 /*---------------------------------------------------------------------------------**//**

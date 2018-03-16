@@ -21,6 +21,22 @@ static ITileGenerationProgressMonitor   s_defaultProgressMeter;
 static const double s_minRangeBoxSize    = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static DPoint2d getSheetSize(Sheet::Model const& sheet)
+    {
+    // Cheap workaround for TFS#743687. Not going to invest in a better fix because MeshTile.cpp is going bye-bye very soon.
+    DPoint2d sheetSize = sheet.GetSheetSize();
+    if (0.0 == sheetSize.x)
+        sheetSize.x = 0.1;
+
+    if (0.0 == sheetSize.y)
+        sheetSize.y = 0.1;
+
+    return sheetSize;
+    }
+
 END_UNNAMED_NAMESPACE
 
 //#define POINT_SUPPORT
@@ -143,6 +159,22 @@ private:
             {
             m_range.low.z = -s_half2dDepthRange*2;  // times 2 so we don't stick geometry right on the boundary...
             m_range.high.z = s_half2dDepthRange*2;
+            }
+
+        auto sheet = m_model.ToSheetModel();
+        if (nullptr != sheet)
+            {
+            // Want to ensure the sheet border decoration is not clipped...the decoration's range exceeds the sheet extents due to drop-shadow
+            // - just create the border and grab its range (scaled a bit to prevent clipping edges).
+            Sheet::Border border(getSheetSize(*sheet));
+            DRange2d borderRange2d = border.GetRange();
+            borderRange2d.ScaleAboutCenter(borderRange2d, 1.001);
+
+            DRange3d borderRange;
+            borderRange.low = DPoint3d::From(borderRange2d.low);
+            borderRange.high = DPoint3d::From(borderRange2d.high);
+
+            m_range.Extend(borderRange);
             }
         }
 public:
@@ -2758,7 +2790,6 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         m_tileGeometries.clear();
         m_leafGeometries.clear();
         }
-#if defined(NEEDSWORK_SHEET_BORDER)
     else if (TileGeneratorStatus::Success == status)
         {
         Sheet::ModelCP sheetModel = m_cache.GetModel().ToSheetModel();
@@ -2766,13 +2797,7 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         if (nullptr != sheetModel)
             {
             m_curElemId.Invalidate();
-
-            // Cheap workaround for TFS#743687. Not going to invest in a better fix because MeshTile.cpp is going bye-bye very soon.
-            DPoint2d sheetSize = sheetModel->GetSheetSize();
-            if (0.0 == sheetSize.x)
-                sheetSize.x = 0.1;
-            if (0.0 == sheetSize.y)
-                sheetSize.y = 0.1;
+            DPoint2d sheetSize = getSheetSize(*sheetModel);
 
             auto gf = context.CreateSceneGraphic();
             Sheet::Border border(context, sheetSize, Sheet::Border::CoordSystem::World);
@@ -2781,7 +2806,6 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
             PushCurrentGeometry();
             }
         }
-#endif
 
     if (!LeafThresholdExceeded())
         {

@@ -326,6 +326,9 @@ public:
 	
     //! Returns custom metadata extracted from the model
     virtual void GetCustomMetadata(Utf8StringR name, Json::Value& data) const { _GetCustomMetadata(name, data); };
+
+    //! Puts the given graphic into a batch.
+    DGNPLATFORM_EXPORT Render::GraphicPtr CreateTileGraphic(Render::GraphicR graphic, DgnModelId modelId) const;
 };
 
 /*=================================================================================**//**

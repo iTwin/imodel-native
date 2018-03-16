@@ -3256,32 +3256,6 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DPoint3d  cartesianFromRadians (double longitude, double latitude, double height = 0.0)
-    {
-    DPoint3d    s_wgs84RadiiSquared = DPoint3d::From (6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
-    double      cosLatitude = cos(latitude);
-    DPoint3d    normal, scratchK;
-
-    normal.x = cosLatitude * cos(longitude);
-    normal.y = cosLatitude * sin(longitude);
-    normal.z = sin(latitude);
-
-    normal.Normalize();
-    scratchK.x = normal.x * s_wgs84RadiiSquared.x;
-    scratchK.y = normal.y * s_wgs84RadiiSquared.y;
-    scratchK.z = normal.z * s_wgs84RadiiSquared.z;
-
-    double  gamma = sqrt(normal.DotProduct (scratchK));
-
-    DPoint3d    earthPoint = DPoint3d::FromScale(scratchK, 1.0 / gamma);
-    DPoint3d    heightDelta = DPoint3d::FromScale (normal, height);
-
-    return DPoint3d::FromSumOf (earthPoint, heightDelta);
-    };
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PublisherContext::IsGeolocated () const
@@ -3303,7 +3277,6 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
-
     m_isEcef = false;
 
     // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
@@ -3318,59 +3291,47 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
 
     // Some user might want to override the DgnGCS by specifying a geolocation on cmd line...
     m_isGeoLocated = nullptr != dgnGCS || nullptr != geoLocation;
+
+
+    // Create a WGS84 GCS to convert the WGS84 Lat/Long to ECEF/XYZ
+    WString     warningMsg;
+    StatusInt   warning;
+    auto        wgs84GCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
+    GeoPoint    originLatLong;
+
+    wgs84GCS ->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
+
+
     if (nullptr == dgnGCS || nullptr != geoLocation)
         {
-        double  longitude = -75.686844444444444444444444444444, latitude = 40.065702777777777777777777777778;
-
         if (nullptr != geoLocation)
             {
-            longitude = geoLocation->longitude;
-            latitude  = geoLocation->latitude;
+            originLatLong = *geoLocation;
             }
+        else
+            {
+            // NB: We have to translate to surface of globe even if we're not using the globe, because
+            // Cesium's camera freaks out if it approaches the origin (aka the center of the earth)
 
-        // NB: We have to translate to surface of globe even if we're not using the globe, because
-        // Cesium's camera freaks out if it approaches the origin (aka the center of the earth)
-
-        ecfOrigin = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, latitude * msGeomConst_radiansPerDegree);
-        ecfNorth  = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, 1.0E-4 + latitude * msGeomConst_radiansPerDegree);
+            originLatLong.longitude = -75.686844444444444444444444444444;
+            originLatLong.latitude = 40.065702777777777777777777777778;        // Arbitrary location (Exton flapole).
+            originLatLong.elevation = 0.0;
+            }
         }
     else
         {
-        GeoPoint        originLatLong, northLatLong;
-        DPoint3d        north = origin;
-    
-        north.y += 100.0;
-
         dgnGCS->LatLongFromUors (originLatLong, origin);
-        dgnGCS->LatLongFromUors (northLatLong, north);
 
-
-        // If the current GCS does not use WGS84, need to convert as XYZFromLatLong expects WGS84 Lat/Long... (TFS# 799148). 
-        if (0 != wcscmp (dgnGCS->GetDatumName(), L"WGS84"))
-            {
-            auto        wgs84Datum = GeoCoordinates::Datum::CreateDatum (L"WGS84");
-            auto        thisDatum = GeoCoordinates::Datum::CreateDatum(dgnGCS->GetDatumName());
-            auto        datumConverter = GeoCoordinates::DatumConverter::Create (*thisDatum, *wgs84Datum);
-            if (nullptr != datumConverter)
-                {
-                GeoPoint    wgsOrigin, wgsNorth;
-
-                datumConverter->ConvertLatLong3D(wgsOrigin, originLatLong);
-                datumConverter->ConvertLatLong3D(wgsNorth, northLatLong);
-
-                originLatLong = wgsOrigin;
-                northLatLong  = wgsNorth;
-
-                // Eww?
-                datumConverter->Destroy();
-                datumConverter = nullptr;
-                }
-            }
-
-        /// Note we used to call dgnGCS->XYZFromLatLong to do the ECEF conversion - but that seems unreliable when datum is not WGS84 (TFS# 799148).
-        ecfOrigin = cartesianFromRadians (originLatLong.longitude * msGeomConst_radiansPerDegree, originLatLong.latitude * msGeomConst_radiansPerDegree);
-        ecfNorth  = cartesianFromRadians (northLatLong.longitude * msGeomConst_radiansPerDegree, 1.0E-4 + northLatLong.latitude * msGeomConst_radiansPerDegree);
+        GeoPoint tempLatLong = originLatLong;
+        dgnGCS->LatLongFromLatLong(originLatLong, tempLatLong, *wgs84GCS);
         }
+    GeoPoint    northLatLong = originLatLong;
+
+    northLatLong.latitude += 3.0 / (60.0 * 60.0);   // To get a point north of origin move 3 seconds of latitude (per Alain Robert)                  
+
+
+    wgs84GCS->XYZFromLatLong(ecfOrigin, originLatLong);
+    wgs84GCS->XYZFromLatLong(ecfNorth, northLatLong);
 
     RotMatrix   rMatrix;
     rMatrix.InitIdentity();
@@ -3774,13 +3735,26 @@ BeFileName  PublisherContext::GetModelDataDirectory(DgnModelId modelId, Classifi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId)
+void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId, bool includeViewAttachments)
     {
     SpatialViewDefinitionPtr spatialView = nullptr;
     auto view2d = GetDgnDb().Elements().Get<ViewDefinition2d>(viewId);
     if (view2d.IsValid())
         {
         viewedModels.insert(view2d->GetBaseModelId());
+        auto sheet = includeViewAttachments ? view2d->ToSheetView() : nullptr;
+        if (nullptr != sheet)
+            {
+            auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+            stmt->BindId(1, view2d->GetBaseModelId());
+            while (BE_SQLITE_ROW == stmt->Step())
+                {
+                auto attachId = stmt->GetValueId<DgnElementId>(0);
+                auto attach = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
+                if (attach.IsValid())
+                    GetViewedModelsFromView(viewedModels, attach->GetAttachedViewId(), false); // view attachments don't nest...
+                }
+            }
         }
     else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
         {
@@ -3796,8 +3770,14 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels;
 
+#if defined(WIP_PUBLISH_VIEW_ATTACHMENTS)
+    bool includeAttachments = true;
+#else
+    bool includeAttachments = false;
+#endif
+
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId);
+        GetViewedModelsFromView (viewedModels, viewId, includeAttachments);
 
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)

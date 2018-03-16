@@ -194,7 +194,7 @@ protected:
     GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
     GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const { return FakeGraphic::Create(dgndb); }
     GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const { return FakeGraphic::Create(dgndb); }
-    GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const { return FakeGraphic::Create(graphic.GetDgnDb()); }
+    GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features, DRange3dCR range) const { return FakeGraphic::Create(graphic.GetDgnDb()); }
 
     uint32_t _GetMaxFeaturesPerBatch() const override { return 0x7fffffff; }
 };
@@ -233,7 +233,7 @@ public:
 
     GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& list, DgnDbR db) const override { m_proc->ProcessGraphicList(std::move(list)); return FakeGraphic::Create(db); }
     GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR db, TransformCR tf, ClipVectorCP clip) const override { m_proc->ProcessBranch(std::move(branch), tf, clip); return FakeGraphic::Create(db); }
-    GraphicPtr _CreateBatch(GraphicR gf, FeatureTable&& feats) const override { m_proc->ProcessBatch(gf, std::move(feats)); return FakeGraphic::Create(gf.GetDgnDb()); }
+    GraphicPtr _CreateBatch(GraphicR gf, FeatureTable&& feats, DRange3dCR range) const override { m_proc->ProcessBatch(gf, std::move(feats)); return FakeGraphic::Create(gf.GetDgnDb()); }
 
     GraphicProcessorSystem(GraphicProcessorR proc) { Reset(proc); }
 

@@ -27,12 +27,19 @@ private:
     DPoint2d                m_rect[5];
     DPoint2d                m_shadow[7];
     Render::GradientSymbPtr m_gradient;
+
+    Border(ViewContextCP context, DPoint2dCR size);
 public:
     enum class CoordSystem { View, World };
 
-    Border(ViewContextCR context, DPoint2dCR size, CoordSystem coords);
+    //! Create a border of the specified size in view or world coordinates
+    Border(ViewContextCR context, DPoint2dCR size, CoordSystem coords) : Border(CoordSystem::View == coords ? &context : nullptr, size) { }
+
+    //! Create a border of the specified size in world coordinates
+    explicit Border(DPoint2dCR size) : Border(nullptr, size) { }
 
     void AddToBuilder(Render::GraphicBuilderR) const;
+    DRange2d GetRange() const;
 };
 
 //=======================================================================================
