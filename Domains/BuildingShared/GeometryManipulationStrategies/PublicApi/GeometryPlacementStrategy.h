@@ -14,6 +14,12 @@ BEGIN_BUILDING_SHARED_NAMESPACE
     GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual BentleyStatus _TryGetProperty(Utf8CP key, value_type& value) const override;
 
 //=======================================================================================
+// A base class for strategies that create new geometry. This can seen as a wrapper
+// for GeometryManipulationStrategy that allows manipulations only in the back of 
+// the key point collection.
+//
+// Usually methods calls are forwarded to corresponding GeometryManipulationStrategy methods.
+//
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
 struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
@@ -53,12 +59,22 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
         GMS_PROPERTY_OVERRIDE(GeometryManipulationStrategyProperty)
 
     public:
+        //! Get the underlying manipulation strategy.
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT GeometryManipulationStrategyCR GetManipulationStrategy() const;
 
+        //! Add key point to the back of the key point collection. Resets dynamic key points before doing that.
+        //! @param[in] newKeyPoint The key point to be added.
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddKeyPoint(DPoint3dCR newKeyPoint);
+
+        //! Remove key point from the back of the key point collection. Resets dynamic key points before doing that.
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void PopKeyPoint();
 
+        //! Add dynamic key point to the back of the key point collection. Resets dynamic key points before doing that.
+        //! @param[in] newDynamicKeyPoint The dynamic key point to be added.
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint);
+
+        //! Add multiple dynamic key points to the back of the key point collection. Resets dynamic key points before doing that.
+        //! @param[in] newDynamicKeyPoints Dynamic key points to be added.
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT void AddDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints);
     };
 
