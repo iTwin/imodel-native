@@ -235,16 +235,11 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
         
         if (columnToAdd->IsOnlyColumnOfPrimaryKeyConstraint())
             {
-            ecdb.GetImpl().Issues().ReportV("Failed to add column (%s) as primary column for an existing table.", columnToAdd->GetName().c_str());
+            ecdb.GetImpl().Issues().ReportV("Failed to add column %s as primary column to table %s.", columnToAdd->GetName().c_str(),
+                                            table.GetName().c_str());
             return ERROR;
             }
 
-/* WIP_BACKWARDCOMPATIBILITY        if (!allowBackwardsCompatibleChanges && columnToAdd->DoNotAllowDbNull())
-            {
-            ecdb.GetImpl().Issues().ReportV("Failed to add column (%s) for an existing table. It would break compatibility with older software versions, because it has a NOT NULL constraint.", columnToAdd->GetName().c_str());
-            return ERROR;
-            }
-*/
         Utf8String ddl(alterDdlTemplate);
         if (SUCCESS != AppendColumnDdl(ddl, *columnToAdd))
             return ERROR;
@@ -265,20 +260,14 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
 
             if (fkConstraint->GetFkColumns().size() != 1 || fkConstraint->GetFkColumns()[0] != columnToAdd)
                 continue;
-
-            /* WIP_BACKWARDCOMPATIBILITY         if (!allowBackwardsCompatibleChanges)
-                {
-                ecdb.GetImpl().Issues().ReportV("Failed to Foreign Key to new column (%s) for an existing table. It would break compatibility with older software versions.", columnToAdd->GetName().c_str());
-                return ERROR;
-                }
-                */
+            
             if (SUCCESS != AppendForeignKeyToColumnDdl(ddl, *fkConstraint, *columnToAdd))
                 return ERROR;
             }
 
         if (BE_SQLITE_OK != ecdb.ExecuteDdl(ddl.c_str()))
             {
-            ecdb.GetImpl().Issues().ReportV("Failed to add new column (%s). Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
+            ecdb.GetImpl().Issues().ReportV("Failed to add new column %s. Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
             return ERROR;
             }
         }
