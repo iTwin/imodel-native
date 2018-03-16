@@ -12072,7 +12072,7 @@ struct fts5_api {
 ** The maximum value of a ?nnn wildcard that the parser will accept.
 */
 #ifndef SQLITE_MAX_VARIABLE_NUMBER
-# define SQLITE_MAX_VARIABLE_NUMBER 999
+# define SQLITE_MAX_VARIABLE_NUMBER 32767
 #endif
 
 /* Maximum page size.  The upper bound on this value is 65536.  This a limit
