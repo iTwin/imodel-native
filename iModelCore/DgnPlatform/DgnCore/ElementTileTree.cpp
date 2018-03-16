@@ -1256,6 +1256,10 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         if (!accum.Accumulate(*model.GetRangeIndex()))
             range = DRange3d::From(DPoint3d::FromZero());
 
+        auto sheet = model.ToSheetModel();
+        if (nullptr != sheet)
+            range.Extend(sheet->GetSheetExtents());
+
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }
 
