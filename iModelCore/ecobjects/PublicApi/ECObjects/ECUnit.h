@@ -201,7 +201,7 @@ public:
     bool HasNumerator() const override {return m_isNumeratorExplicitlyDefined;} //!< Returns true if the numerator has been explicitly set
     bool HasDenominator() const override {return m_isDenominatorExplicitlyDefined;} //!< Returns true if the denominator has been explicitly set
     bool HasOffset() const override {return m_isOffsetExplicitlyDefined;} //!< Returns true if the offset has been explicitly set
-    PhenomenonCP GetPhenomenon() const {return (ECN::PhenomenonCP) T_Super::GetPhenomenon();}
+    PhenomenonCP GetPhenomenon() const override {return (ECN::PhenomenonCP) T_Super::GetPhenomenon();}
 
     UnitSystemCP GetUnitSystem() const {return (ECN::UnitSystemCP) T_Super::GetUnitSystem();}
 
