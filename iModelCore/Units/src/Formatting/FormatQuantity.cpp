@@ -41,11 +41,6 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     }
 
 //---------------------------------------------------------------------------------------
-// The Ratio between Units must be a positive integer number. Otherwise forming a triad is not
-//   possible (within the current triad concept). This function will return -1 if Units do not qualify:
-//    1. Units do not belong to the same Phenomenon
-//    2. Ratio of major/minor < 1
-//    3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
 size_t CompositeValueSpec::CalculateUnitRatio(BEU::UnitCP unit, BEU::UnitCP subunit)
@@ -76,7 +71,6 @@ size_t CompositeValueSpec::CalculateUnitRatio(BEU::UnitCP unit, BEU::UnitCP subu
     }
 
 //---------------------------------------------------------------------------------------
-// Checks comparability and calculates ratios between UOM of the parts and checks their consistency
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
 void CompositeValueSpec::CalculateUnitRatios()
@@ -122,7 +116,7 @@ void CompositeValueSpec::CalculateUnitRatios()
 //---------------------------------------------------------------------------------------
 void CompositeValueSpec::SetUnitLabel(size_t index, Utf8CP label)
     {
-    if (IsIndexCorrect(index))
+    if (!IsIndexCorrect(index))
         return;
 
     auto proxy = GetProxyP(index);
@@ -136,14 +130,14 @@ void CompositeValueSpec::SetUnitLabel(size_t index, Utf8CP label)
 //---------------------------------------------------------------------------------------
 Utf8CP CompositeValueSpec::GetUnitLabel(size_t index, Utf8CP substitute) const
     {
-    if (IsIndexCorrect(index))
+    if (!IsIndexCorrect(index))
         return substitute;
 
     auto proxy = GetProxyP(index);
     if (nullptr == proxy)
         return substitute;
-    
-    return proxy->GetLabel();
+
+    return proxy->HasLabel() ? proxy->GetLabel().c_str() : substitute;
     }
 
 //---------------------------------------------------------------------------------------
@@ -201,7 +195,6 @@ Utf8CP CompositeValueSpec::GetUnitName(size_t indx, Utf8CP substitute) const
 CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit)
     : CompositeValueSpec()
     {
-
     int count = 0;
     if (nullptr != majorUnit)
         count += 1;
@@ -222,8 +215,6 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middle
     }
 
 //---------------------------------------------------------------------------------------
-// if uom is not provided we assume that the value is defined in the smallest units defined
-//   in the current spec. 
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
 CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)

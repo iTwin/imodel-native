@@ -487,38 +487,42 @@ public:
 struct UnitProxy
     {
 private:
-    BEU::UnitCP mutable m_unit;
-    Utf8String mutable m_unitLabel;
+    BEU::UnitCP m_unit;
+    Utf8String m_unitLabel;
 
 public:
     UnitProxy() : m_unit(nullptr) {}
-    UNITS_EXPORT UnitProxy(BEU::UnitCP unit, Utf8CP label = nullptr);
+    UnitProxy(BEU::UnitCP unit, Utf8CP label = nullptr) : m_unit(unit), m_unitLabel(label) {}
     UnitProxy(UnitProxyCR other)
         {
-        m_unit = other.m_unit;
-        m_unitLabel = Utf8String(other.m_unitLabel.c_str());
+        if (nullptr != other.m_unit)
+            m_unit = other.m_unit;
+        
+        m_unitLabel = other.m_unitLabel.c_str();
         }
     void Copy(UnitProxyCP other)
         {
         if (nullptr == other)
             {
             m_unit = nullptr;
+            return;
             }
-        else
-            {
+
+        if (nullptr != other->m_unit)
             m_unit = other->m_unit;
-            m_unitLabel = Utf8String(other->m_unitLabel.c_str());
-            }
+        
+        m_unitLabel = other->m_unitLabel.c_str();
         }
 
     UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
     bool SetUnit(BEU::UnitCP unit) {m_unit = unit; return true;}
-    Utf8CP GetLabel() const { return m_unitLabel.c_str(); }
-    Utf8CP SetLabel(Utf8CP lab) { m_unitLabel = Utf8String(lab);  return m_unitLabel.c_str(); }
+    Utf8StringCR GetLabel() const { return m_unitLabel; }
+    bool HasLabel() const {return !m_unitLabel.empty();}
+    void SetLabel(Utf8CP lab) {if (nullptr == lab) return; m_unitLabel = lab;}
 
     //! Returns the name of Unit in this if one is available
     Utf8CP GetName() const {if (nullptr == m_unit) return nullptr; return m_unit->GetName().c_str();}
-    BEU::UnitCP GetUnit() const { return m_unit; }
+    BEU::UnitCP GetUnit() const {return m_unit;}
     UNITS_EXPORT Json::Value ToJson() const;
     bool IsEmpty() const {return nullptr == m_unit;}
     bool IsIdentical(UnitProxyCR other) const {return BEU::Unit::AreEqual(m_unit, other.m_unit) && m_unitLabel.Equals(other.m_unitLabel);}
@@ -559,9 +563,15 @@ private:
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
 
+    //! The Ratio between Units must be a positive integer number. Otherwise forming a triad is not
+    //! possible (within the current triad concept). This function will return -1 if Units do not qualify:
+    //!     1. Units do not belong to the same Phenomenon
+    //!     2. Ratio of major/minor < 1
+    //!     3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
     size_t CalculateUnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
     size_t CalculateUnitRatio(size_t uppIndx, size_t lowIndx) {return  CalculateUnitRatio(GetUnit(uppIndx), GetUnit(lowIndx));}
     void ResetType() { m_type = CompositeSpecType::Undefined; }
+    //! Checks comparability and calculates ratios between UOM of the parts and checks their consistency
     void CalculateUnitRatios();
 
     Utf8CP GetUnitName(size_t indx, Utf8CP substitute = nullptr) const;
@@ -593,7 +603,7 @@ public:
 
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit=nullptr, BEU::UnitCP minorUnit=nullptr, BEU::UnitCP subUnit = nullptr);
 
-    CompositeSpecType GetType() const { return m_type; }
+    CompositeSpecType GetType() const {return m_type;}
     size_t GetUnitCount() const {return m_proxys.size();}
 
     BEU::UnitCP GetMajorUnit()  const {return GetUnit(indxMajor);}
@@ -601,27 +611,29 @@ public:
     BEU::UnitCP GetMinorUnit()  const {return GetUnit(indxMinor);}
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
 
-    void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
-    Utf8String GetMajorLabel()  const { return GetEffectiveLabel(indxMajor); }
-    Utf8String GetMiddleLabel() const { return GetEffectiveLabel(indxMiddle); }
-    Utf8String GetMinorLabel()  const { return GetEffectiveLabel(indxMinor); }
-    Utf8String GetSubLabel()    const { return GetEffectiveLabel(indxSub); }
+    UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
+    Utf8String GetMajorLabel()  const {return GetEffectiveLabel(indxMajor);}
+    Utf8String GetMiddleLabel() const {return GetEffectiveLabel(indxMiddle);}
+    Utf8String GetMinorLabel()  const {return GetEffectiveLabel(indxMinor);}
+    Utf8String GetSubLabel()    const {return GetEffectiveLabel(indxSub);}
 
     size_t GetMajorToMiddleRatio() const {return m_ratio[indxMajor];}
-    size_t GetMiddleToMinorRatio() const  {return m_ratio[indxMiddle];}
+    size_t GetMiddleToMinorRatio() const {return m_ratio[indxMiddle];}
     size_t GetMinorToSubRatio()    const {return m_ratio[indxMinor];}
 
-    bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
+    bool UpdateProblemCode(FormatProblemCode code) {return m_problem.UpdateProblemCode(code);}
     Utf8CP GetProblemDescription() const {return m_problem.GetProblemDescription().c_str();}
-    bool IsProblem() const { return m_problem.IsProblem(); }
-    bool NoProblem() const { return m_problem.NoProblem(); }
+    bool IsProblem() const {return m_problem.IsProblem();}
+    bool NoProblem() const {return m_problem.NoProblem();}
 
-    Utf8String SetSpacer(Utf8CP spacer) { return m_spacer = spacer; }
-    Utf8String GetSpacer() const { return m_spacer; }
+    Utf8String SetSpacer(Utf8CP spacer) {return m_spacer = spacer;}
+    Utf8String GetSpacer() const {return m_spacer;}
 
-    bool SetIncludeZero(bool incl) { return m_includeZero = incl; }
-    bool IsIncludeZero() const { return m_includeZero; }
+    bool SetIncludeZero(bool incl) {return m_includeZero = incl;}
+    bool IsIncludeZero() const {return m_includeZero;}
 
+    //! If uom is not provided we assume that the value is defined in the smallest units defined
+    //! in the current spec. 
     UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
 
     UNITS_EXPORT Json::Value ToJson() const;

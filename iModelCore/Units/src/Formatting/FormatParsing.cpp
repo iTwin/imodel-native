@@ -1053,19 +1053,6 @@ Utf8String NumericAccumulator::ToText()
 //===================================================
 // UnitProxy Methods
 //===================================================
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-UnitProxy::UnitProxy(Units::UnitCP unit, Utf8CP label)
-    {
-    m_unitLabel = nullptr;
-    m_unit = unit;
-    if (nullptr != m_unit)
-        {
-        if (!Utf8String::IsNullOrEmpty(label))
-            m_unitLabel = Utf8String(label);
-        }
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17

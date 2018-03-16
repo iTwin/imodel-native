@@ -5,15 +5,34 @@ USING_BENTLEY_FORMATTING
 
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
+static BEU::UnitCP s_mile = nullptr;
+static BEU::UnitCP s_yrd = nullptr;
+static BEU::UnitCP s_ft = nullptr;
+static BEU::UnitCP s_inch = nullptr;
+
+struct CompositeValueSpecTest : FormattingTestFixture
+    {
+    void SetUp() override
+        {
+        FormattingTestFixture::SetUp();
+
+        if (nullptr == s_mile)
+            s_mile = s_unitsContext->LookupUnit("MILE");
+        if (nullptr == s_yrd)
+            s_yrd = s_unitsContext->LookupUnit("YRD");
+        if (nullptr == s_ft)
+            s_ft = s_unitsContext->LookupUnit("FT");
+        if (nullptr == s_inch)
+            s_inch = s_unitsContext->LookupUnit("IN");
+        }
+
+    void VerifyCompositeJson(Utf8CP jsonString, Utf8CP errorMsg = nullptr);
+    };
+struct CompositeValueTest : FormattingTestFixture {};
+
 //===================================================
 // CompositeValueSpec
 //===================================================
-struct CompositeValueSpecTest : FormattingTestFixture {};
-
-//===================================================
-// CompositeValue
-//===================================================
-struct CompositeValueTest : FormattingTestFixture {};
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
@@ -54,13 +73,8 @@ TEST_F(CompositeValueSpecTest, DefaultConstructor)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeValueSpecTest, Constructors)
     {
-    BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
-    BEU::UnitCP yrd = s_unitsContext->LookupUnit("YRD");
-    BEU::UnitCP ft = s_unitsContext->LookupUnit("FT");
-    BEU::UnitCP inch = s_unitsContext->LookupUnit("IN");
-
     // Single Unit
-    CompositeValueSpec cvs1unit(mile);
+    CompositeValueSpec cvs1unit(s_mile);
     ASSERT_EQ(1, cvs1unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Single, cvs1unit.GetType());
     ASSERT_FALSE(cvs1unit.IsProblem());
@@ -70,7 +84,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_EQ(nullptr, cvs1unit.GetSubUnit());
 
     // Two Units
-    CompositeValueSpec cvs2unit(mile, yrd);
+    CompositeValueSpec cvs2unit(s_mile, s_yrd);
     ASSERT_EQ(2, cvs2unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Double, cvs2unit.GetType());
     ASSERT_FALSE(cvs2unit.IsProblem());
@@ -81,7 +95,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_EQ(1760, cvs2unit.GetMajorToMiddleRatio());
 
     // Three Units
-    CompositeValueSpec cvs3unit(mile, yrd, ft);
+    CompositeValueSpec cvs3unit(s_mile, s_yrd, s_ft);
     ASSERT_EQ(3, cvs3unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Triple, cvs3unit.GetType());
     ASSERT_FALSE(cvs3unit.IsProblem());
@@ -93,7 +107,7 @@ TEST_F(CompositeValueSpecTest, Constructors)
     EXPECT_EQ(3, cvs3unit.GetMiddleToMinorRatio());
 
     // Four Units
-    CompositeValueSpec cvs4unit(mile, yrd, ft, inch);
+    CompositeValueSpec cvs4unit(s_mile, s_yrd, s_ft, s_inch);
     ASSERT_EQ(4, cvs4unit.GetUnitCount());
     ASSERT_EQ(CompositeSpecType::Quatro, cvs4unit.GetType());
     ASSERT_FALSE(cvs4unit.IsProblem());
@@ -109,36 +123,127 @@ TEST_F(CompositeValueSpecTest, Constructors)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-TEST_F(CompositeValueSpecTest, LoadFromJson)
+TEST_F(CompositeValueSpecTest, None_SetUnitLabels)
     {
-    Utf8CP jsonString = R"json(
-        "CompositeFormat": {
-            "MajorUnit": {
-                "unitLabel": "hour(s)",
-                "unitName": "HR",
-            },
-            "MiddleUnit": {
-                "unitLabel": "min",
-                "unitName": "MIN",
-            },
-            "MinorUnit": {
-                "unitLabel": "sec",
-                "unitName": "S",
-            }
-        }
-    )json";
-
-    Json::Value jval(Json::objectValue);
-    Json::Reader::Parse(jsonString, jval);
-
-    CompositeValueSpec cvs;
-    cvs.LoadJsonData(jval, s_unitsContext);
-
-    EXPECT_TRUE(cvs.NoProblem());
-    EXPECT_FALSE(cvs.IsProblem());
-
-    EXPECT_EQ(3, cvs.GetUnitCount());
+    CompositeValueSpec cvs1Unit;
+    cvs1Unit.SetUnitLabels(nullptr, nullptr, nullptr, nullptr);
+    EXPECT_STREQ("", cvs1Unit.GetMajorLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetMiddleLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetMinorLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+TEST_F(CompositeValueSpecTest, Single_SetUnitLabels)
+    {
+    { // Set labels on none of the units
+    CompositeValueSpec cvs1Unit(s_mile);
+    cvs1Unit.SetUnitLabels(nullptr, nullptr, nullptr, nullptr);
+    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_mile->GetLabel().c_str();
+    EXPECT_STREQ("", cvs1Unit.GetMiddleLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetMinorLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
+    }
+    { // Set labels on the only unit
+    CompositeValueSpec cvs1Unit(s_mile);
+    cvs1Unit.SetUnitLabels("sillyLabel");
+    EXPECT_STREQ("sillyLabel", cvs1Unit.GetMajorLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("", cvs1Unit.GetMiddleLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetMinorLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
+    }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+TEST_F(CompositeValueSpecTest, Double_SetUnitLabels)
+    {
+    { // Set labels on none of the units
+    CompositeValueSpec cvs1Unit(s_mile, s_yrd);
+    cvs1Unit.SetUnitLabels(nullptr, nullptr, nullptr, nullptr);
+    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_mile->GetLabel().c_str();
+    EXPECT_STREQ("YRD", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the display label that is set on the unit: " << s_yrd->GetLabel().c_str();
+    EXPECT_STREQ("", cvs1Unit.GetMinorLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
+    }
+    { // Set labels on both set Units
+    CompositeValueSpec cvs1Unit(s_mile, s_yrd);
+    cvs1Unit.SetUnitLabels("sillyLabel1", "sillyLabel2");
+    EXPECT_STREQ("sillyLabel1", cvs1Unit.GetMajorLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("sillyLabel2", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("", cvs1Unit.GetMinorLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
+    }
+    { // Attempt setting a label without a Unit being set
+    CompositeValueSpec cvs1Unit(s_mile, s_yrd);
+    cvs1Unit.SetUnitLabels("sillyLabel1", "sillyLabel2", "sillyLabel3", "sillyLabel4");
+    EXPECT_STREQ("sillyLabel1", cvs1Unit.GetMajorLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("sillyLabel2", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("", cvs1Unit.GetMinorLabel().c_str());
+    EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
+    }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+TEST_F(CompositeValueSpecTest, Triple_SetUnitLabels)
+    {
+    { // Set labels on none of the units
+    CompositeValueSpec cvs1Unit(s_mile, s_yrd, s_ft);
+    cvs1Unit.SetUnitLabels(nullptr, nullptr, nullptr, nullptr);
+    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_mile->GetLabel().c_str();
+    EXPECT_STREQ("YRD", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the display label that is set on the unit: " << s_yrd->GetLabel().c_str();
+    EXPECT_STREQ("FT", cvs1Unit.GetMinorLabel().c_str()) << "Expected the display label that is set on the unit: " << s_ft->GetLabel().c_str();
+    EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
+    }
+    { // Set labels on all Units
+    CompositeValueSpec cvs1Unit(s_mile, s_yrd, s_ft);
+    cvs1Unit.SetUnitLabels("sillyLabel1", "sillyLabel2", "sillyLabel3");
+    EXPECT_STREQ("sillyLabel1", cvs1Unit.GetMajorLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("sillyLabel2", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("sillyLabel3", cvs1Unit.GetMinorLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
+    }
+    { // Attempt setting a label without a Unit.
+    CompositeValueSpec cvs1Unit(s_mile, s_yrd, s_ft);
+    cvs1Unit.SetUnitLabels("sillyLabel1", "sillyLabel2", "sillyLabel3", "sillyLabel4");
+    EXPECT_STREQ("sillyLabel1", cvs1Unit.GetMajorLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("sillyLabel2", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("sillyLabel3", cvs1Unit.GetMinorLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("", cvs1Unit.GetSubLabel().c_str());
+    }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+TEST_F(CompositeValueSpecTest, Quatro_SetUnitLabels)
+    {
+    {
+    CompositeValueSpec cvs1Unit(s_mile, s_yrd, s_ft, s_inch);
+    cvs1Unit.SetUnitLabels(nullptr, nullptr, nullptr, nullptr);
+    EXPECT_STREQ("MILE", cvs1Unit.GetMajorLabel().c_str());
+    EXPECT_STREQ("YRD", cvs1Unit.GetMiddleLabel().c_str());
+    EXPECT_STREQ("FT", cvs1Unit.GetMinorLabel().c_str());
+    EXPECT_STREQ("IN", cvs1Unit.GetSubLabel().c_str());
+    }
+    { // Attempt setting a label without a Unit.
+    CompositeValueSpec cvs1Unit(s_mile, s_yrd, s_ft, s_inch);
+    cvs1Unit.SetUnitLabels("sillyLabel1", "sillyLabel2", "sillyLabel3", "sillyLabel4");
+    EXPECT_STREQ("sillyLabel1", cvs1Unit.GetMajorLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("sillyLabel2", cvs1Unit.GetMiddleLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("sillyLabel3", cvs1Unit.GetMinorLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    EXPECT_STREQ("sillyLabel4", cvs1Unit.GetSubLabel().c_str()) << "Expected the label set in the CompositeValueSpec.";
+    }
+    }
+
+//===================================================
+// CompositeValue
+//===================================================
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
