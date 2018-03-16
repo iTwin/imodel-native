@@ -286,6 +286,7 @@ SyncInfo::V8FileProvenance RootModelConverter::_GetV8FileIntoSyncInfo(DgnV8FileR
     {
     auto prov = T_Super::_GetV8FileIntoSyncInfo(file, policy);
     m_v8Files.push_back(&file);
+    _KeepFileAlive(file);
     return prov;
     }
 

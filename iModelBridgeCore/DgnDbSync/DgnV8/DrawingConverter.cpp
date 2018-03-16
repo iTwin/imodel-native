@@ -239,7 +239,6 @@ void RootModelConverter::RegisterNonSpatialModel(DgnV8ModelR thisV8Model)
     if (!GetV8FileSyncInfoIdFromAppData(thisV8File).IsValid())  // Register this FILE in syncinfo.
         {
         GetV8FileSyncInfoId(thisV8File); // populates m_v8files
-        _KeepFileAlive(thisV8File);     // keep the file alive
         }
     }
 
