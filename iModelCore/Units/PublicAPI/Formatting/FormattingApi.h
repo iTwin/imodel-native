@@ -766,14 +766,14 @@ public:
 
 };
 
-struct NamedTimeFormatSpec :NamedFormatCore
-{
-private:
-	struct tm m_dateTime;
-	Utf8String m_format;
-public:
-
-};
+//struct NamedTimeFormatSpec :NamedFormatCore
+//{
+//private:
+//	struct tm m_dateTime;
+//	Utf8String m_format;
+//public:
+//
+//};
 
 //=======================================================================================
 // Container for keeping together primary numeric, composite and other types of specs
