@@ -156,7 +156,7 @@ struct RenderSystem : Render::System
     virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) override { return nullptr; }
     virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) override { return nullptr; }
     virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const override { return nullptr; }
-    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const override {return nullptr; }
+    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features, DRange3dCR range) const override {return nullptr; }
     virtual uint32_t   _GetMaxFeaturesPerBatch() const override { return 0xffffffff; }
 
     virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const override {return nullptr; }
