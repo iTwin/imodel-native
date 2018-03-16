@@ -223,3 +223,11 @@ ConnectSignInManagerTests.CheckAndUpdateToken_AfterSignInAndConfiguredTimeout_Re
     # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Connect\ConnectSignInManagerTests.cpp(102): error: Actual function call count doesn't match EXPECT_CALL(*imsClient, RequestToken(*token, _, _))...
     # Expected: to be called once
     # Actual: never called - unsatisfied and active
+
+UrlProviderTests.GetUrl_ValidateAllGetters
+
+    # TFS#862962
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/14/2018
+    # c:\build\src\mds06t\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(103): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
