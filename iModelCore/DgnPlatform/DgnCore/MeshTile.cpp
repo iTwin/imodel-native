@@ -2758,7 +2758,6 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         m_tileGeometries.clear();
         m_leafGeometries.clear();
         }
-#if defined(NEEDSWORK_SHEET_BORDER)
     else if (TileGeneratorStatus::Success == status)
         {
         Sheet::ModelCP sheetModel = m_cache.GetModel().ToSheetModel();
@@ -2781,7 +2780,6 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
             PushCurrentGeometry();
             }
         }
-#endif
 
     if (!LeafThresholdExceeded())
         {

@@ -3734,13 +3734,26 @@ BeFileName  PublisherContext::GetModelDataDirectory(DgnModelId modelId, Classifi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId)
+void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId, bool includeViewAttachments)
     {
     SpatialViewDefinitionPtr spatialView = nullptr;
     auto view2d = GetDgnDb().Elements().Get<ViewDefinition2d>(viewId);
     if (view2d.IsValid())
         {
         viewedModels.insert(view2d->GetBaseModelId());
+        auto sheet = includeViewAttachments ? view2d->ToSheetView() : nullptr;
+        if (nullptr != sheet)
+            {
+            auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+            stmt->BindId(1, view2d->GetBaseModelId());
+            while (BE_SQLITE_ROW == stmt->Step())
+                {
+                auto attachId = stmt->GetValueId<DgnElementId>(0);
+                auto attach = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
+                if (attach.IsValid())
+                    GetViewedModelsFromView(viewedModels, attach->GetAttachedViewId(), false); // view attachments don't nest...
+                }
+            }
         }
     else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
         {
@@ -3756,8 +3769,14 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels;
 
+#if defined(WIP_PUBLISH_VIEW_ATTACHMENTS)
+    bool includeAttachments = true;
+#else
+    bool includeAttachments = false;
+#endif
+
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId);
+        GetViewedModelsFromView (viewedModels, viewId, includeAttachments);
 
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)

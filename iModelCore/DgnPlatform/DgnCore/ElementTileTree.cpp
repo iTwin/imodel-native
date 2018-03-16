@@ -85,7 +85,6 @@ constexpr double s_minToleranceRatioMultiplier = 2.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize * s_minToleranceRatioMultiplier;
 constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
-constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to expand project extents slightly to avoid clipping geometry that lies right on one of their planes...
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 
@@ -734,6 +733,34 @@ static void clipContentRangeToTileRange(DRange3dR content, DRange3dCR tile)
         content.Init();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static DRange3d scaleSpatialRange(DRange3dCR range)
+    {
+    // Geometry often lies in a plane precisely coincident with the planes of the project extents.
+    // We must expand the extents slightly to prevent floating point fuzz in range intersection tests
+    // against such geometry - otherwise portions may be inappropriately culled.
+    // Similarly (TFS#863543) some 3d data sets consist of essentially 2d data sitting smack in the center of the
+    // project extents. If we subdivide tiles in half, we face similar issues where the geometry ends up precisely
+    // aligned to tile boundaries. Bias the scale to prevent this.
+    // NOTE: There's no simple way to detect and deal with arbitrarily located geometry just-so-happening to
+    // align with some tile's boundary...
+    constexpr double loScale = 1.0001,
+                     hiScale = 1.0002,
+                     fLo = 0.5 * (1.0 + loScale),
+                     fHi = 0.5 * (1.0 + hiScale);
+
+    DRange3d result = range;
+    if (!result.IsNull())
+        {
+        result.high.Interpolate(range.low, fHi, range.high);
+        result.low.Interpolate(range.high, fLo, range.low);
+        }
+
+    return result;
+    }
+
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -1220,8 +1247,7 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     if (model.Is3dModel())
         {
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
-
-        range.ScaleAboutCenter(range, s_spatialRangeMultiplier);
+        range = scaleSpatialRange(range);
         populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
         }
     else
@@ -1491,7 +1517,6 @@ bool Root::WantCacheGeometry(double rangeDiagSq) const
         return false;
 
     BeAssert(Is3d()); // we only bother caching for 3d...want rangeRatio relative to actual range, not expanded range
-    diag /= s_spatialRangeMultiplier;
     return rangeDiagSq / diag >= rangeRatio;
     }
 
@@ -2941,7 +2966,7 @@ RefCountedPtr<ThumbnailRoot> ThumbnailRoot::Create(GeometricModelR model, Render
 
     DRange3d frustumRange = context.GetViewportR().GetFrustum().ToRange();
     if (model.Is3dModel())
-        frustumRange.ScaleAboutCenter(frustumRange, s_spatialRangeMultiplier);
+        frustumRange = scaleSpatialRange(frustumRange);
 
     DPoint3d centroid = DPoint3d::FromInterpolate(frustumRange.low, 0.5, frustumRange.high);
     Transform transform = Transform::From(centroid);
