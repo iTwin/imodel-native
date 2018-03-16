@@ -242,10 +242,10 @@ TEST_F(BeSQliteTestFixture, variable_limit)
     {
     auto db1 = Create("first.db");
     BeTest::SetFailOnAssert(false);
-    ASSERT_EQ(BE_SQLITE_ERROR, db1->ExecuteSql("SELECT ?32800")) << db1->GetLastError();
-    ASSERT_EQ(BE_SQLITE_ERROR, db1->ExecuteSql("SELECT ?32768")) << db1->GetLastError();
-    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("SELECT ?32767")) << db1->GetLastError(); //MAX that can fit into 16bits
-    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("SELECT ?32700")) << db1->GetLastError();
+    ASSERT_EQ(BE_SQLITE_ERROR, db1->ExecuteSql("SELECT ?20002")) << db1->GetLastError();
+    ASSERT_EQ(BE_SQLITE_ERROR, db1->ExecuteSql("SELECT ?20001")) << db1->GetLastError();
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("SELECT ?20000")) << db1->GetLastError(); //MAX that can fit into 16bits
+    ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("SELECT ?19999")) << db1->GetLastError();
     BeTest::SetFailOnAssert(true);
 
     }
