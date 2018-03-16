@@ -79,6 +79,10 @@ void ImporterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR outputName, Ben
     m_options.SetInputFileName (inputFileName);
     m_options.SetBridgeRegSubKey (ImporterTests::GetDwgBridgeRegistryKey());
     m_options.SetIsUpdating (false);
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    m_options.SetWantThumbnails (false);
+#endif
     
     DwgImporter*    importer = new DwgImporter(m_options);
     ASSERT_NOT_NULL(importer);
@@ -116,6 +120,10 @@ void ImporterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR outputName, Bent
     m_options.SetInputFileName (inputFileName);
     m_options.SetBridgeRegSubKey (ImporterTests::GetDwgBridgeRegistryKey());
     m_options.SetIsUpdating (true);
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    m_options.SetWantThumbnails (false);
+#endif
 
     DwgImporter*    importer = new DwgImporter(m_options);
     ASSERT_NOT_NULL(importer);

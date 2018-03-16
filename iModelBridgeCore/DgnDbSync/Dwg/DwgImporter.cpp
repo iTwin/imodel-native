@@ -1655,11 +1655,12 @@ void            DwgImporter::_BeginImport ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::_FinishImport ()
     {
+    // initialize project extents before processing views
+    m_dgndb->GeoLocation().InitializeProjectExtents();
+
     _PostProcessViewports ();
     _EmbedFonts ();
     _EmbedPresentationRules ();
-
-    m_dgndb->GeoLocation().InitializeProjectExtents();
 
     if (m_defaultViewId.IsValid())
         {
