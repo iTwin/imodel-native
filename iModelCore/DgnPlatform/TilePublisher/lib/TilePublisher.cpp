@@ -3315,6 +3315,7 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
 
             originLatLong.longitude = -75.686844444444444444444444444444;
             originLatLong.latitude = 40.065702777777777777777777777778;        // Arbitrary location (Exton flapole).
+            originLatLong.elevation = 0.0;
             }
         }
     else
