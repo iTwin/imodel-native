@@ -3,11 +3,11 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
+/*TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
     {
     ASSERT_TRUE(RunTestApp("Geometry.dgn", "ORDGeometryTest.bim"));
     VerifyConvertedElements("ORDGeometryTest.bim", 1, 0);
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
