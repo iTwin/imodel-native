@@ -386,20 +386,9 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP con
 
 //===================================================
 //
-// CompositeValue Methods
+// QuantityFormatting Methods
 //
 //===================================================
-void CompositeValue::Init()
-    {
-    memset(m_parts, 0, sizeof(m_parts));
-    m_problem = FormatProblemDetail();
-    m_negative = false;
-    }
-
-CompositeValue::CompositeValue()
-    {
-    Init();
-    }
 
 Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
     {
@@ -429,6 +418,5 @@ Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatUnitSetCR
     BEU::Quantity qty = fps.GetQuantity(problemCode, &inputFUS);
     return qty;
     }
-
 
 END_BENTLEY_FORMATTING_NAMESPACE

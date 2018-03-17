@@ -77,18 +77,6 @@ enum class FormatTraits : int32_t
     };
 
 //=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class NumSequenceTraits
-    {
-    None = 0,
-    Signed = 0x1,
-    DecPoint = 0x2,
-    Exponent = 0x4,
-    Uom = 0x8
-    };
-
-//=======================================================================================
 //! Number of points after decimal point given significance in the scientific notation
 //! representation of floating point numbers.
 // @bsienum

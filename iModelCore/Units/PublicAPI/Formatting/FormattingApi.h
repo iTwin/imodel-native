@@ -165,7 +165,6 @@ struct UIUtils
     UNITS_EXPORT static UIList GetAvailableThousandSeparators();
     UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators();
     UNITS_EXPORT static UIList GetAvailableTraits();
-    UNITS_EXPORT static Json::Value GetAvailableUnitLabels(BEU::UnitCP unit);
     };
 
 //=======================================================================================
@@ -650,9 +649,9 @@ private:
     double m_parts[5];
     FormatProblemDetail m_problem;
     double GetSignFactor() { return m_negative ? -1.0 : 1.0; }
-    void Init();
+
 public:
-    UNITS_EXPORT CompositeValue();
+    CompositeValue() : m_negative(false) {memset(m_parts, 0, sizeof(m_parts));}
 
     void SetNegative() { m_negative = true; }
     void SetPositive() { m_negative = false; }
@@ -957,10 +956,13 @@ public:
     static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
     };
 
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
 struct QuantityFormatting
     {
-    UNITS_EXPORT static Units::Quantity CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
-    UNITS_EXPORT static Units::Quantity CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
+    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
+    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
     };
 
 END_BENTLEY_FORMATTING_NAMESPACE

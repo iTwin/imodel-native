@@ -68,8 +68,6 @@ struct NamedFormatSpecTest : FormattingTestFixture
 //===================================================
 struct FormatParsingSetTest : FormattingTestFixture
     {
-private:
-    BEU::IUnitsContextCP unitsContext;
 public:
 
     // Test units availiable pre-looked-up for use in tests.
