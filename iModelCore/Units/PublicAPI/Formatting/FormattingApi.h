@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Formatting/FormattingDefinitions.h>
 #include <Formatting/FormattingEnum.h>
 #include <Units/Units.h>
@@ -132,22 +131,22 @@ struct UIListEntry
 // @bsistruct                                            Bill.Steinbock  11/2017
 //=======================================================================================
 struct UIList
-    {
-    protected:
-        Json::Value m_json;
+{
+protected:
+    Json::Value m_json;
 
-    public:
-        UIList() : m_json(Json::arrayValue) {}
-        UIList(Json::Value const& j) : m_json(j) {}
-        UIList& operator=(UIList const& rhs) { m_json = rhs.m_json; return *this; }
+public:
+    UIList() : m_json(Json::arrayValue) {}
+    UIList(Json::Value const& j) : m_json(j) {}
+    UIList& operator=(UIList const& rhs) { m_json = rhs.m_json; return *this; }
 
-        Json::ArrayIndex GetSize() { return m_json.size(); }
-        void AddListEntry(UIListEntryCR n) { m_json.append(n.GetJson()); }
-        UIListEntry GetListEntry(Json::ArrayIndex i) { return UIListEntry(m_json[i]); }
+    Json::ArrayIndex GetSize() { return m_json.size(); }
+    void AddListEntry(UIListEntryCR n) { m_json.append(n.GetJson()); }
+    UIListEntry GetListEntry(Json::ArrayIndex i) { return UIListEntry(m_json[i]); }
 
-        bool IsNull() const { return m_json.isNull(); }
-        Json::Value const& GetJson() const { return m_json; }
-    };
+    bool IsNull() const { return m_json.isNull(); }
+    Json::Value const& GetJson() const { return m_json; }
+};
 
 //=======================================================================================
 //
@@ -156,7 +155,7 @@ struct UIList
 // @bsistruct                                            Bill.Steinbock  11/2017
 //=======================================================================================
 struct UIUtils
-    {
+{
     UNITS_EXPORT static UIList GetAvailableDecimalPercisions();
     UNITS_EXPORT static UIList GetAvailableFractionalPercisions();
     UNITS_EXPORT static UIList GetAvailableSignOption();
@@ -165,13 +164,13 @@ struct UIUtils
     UNITS_EXPORT static UIList GetAvailableThousandSeparators();
     UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators();
     UNITS_EXPORT static UIList GetAvailableTraits();
-    };
+};
 
 //=======================================================================================
 //! @bsistruct
 //=======================================================================================
 struct FactorPower
-    {
+{
 private:
     size_t m_divisor;  // the value of divisor
     size_t m_power;    // the degree of the divisor
@@ -180,20 +179,20 @@ private:
 public:
     FactorPower() { m_divisor = 0; m_power = 0; m_index = -1; }
     FactorPower(size_t div, size_t pow, int ind) : m_divisor(div), m_power(pow), m_index(ind) {}
-    UNITS_EXPORT void CopyValues(FactorPowerP other);
-    UNITS_EXPORT void Merge(FactorPowerP fp1, FactorPowerP fp2);
+    UNITS_EXPORT void CopyValues(FactorPowerCP other);
+    UNITS_EXPORT void Merge(FactorPowerCP fp1, FactorPowerCP fp2);
     const int GetDivisor() { return static_cast<int>(m_divisor); }
     const size_t GetPower() { return m_power; }
     const int GetIndex() { return m_index; }
     UNITS_EXPORT const size_t GetFactor();
     UNITS_EXPORT Utf8String ToText(Utf8Char pref);
-    };
+};
 
 //=======================================================================================
 //! @bsistruct
 //=======================================================================================
 struct FactorizedNumber
-    {
+{
 private:
     size_t m_ival;
     bvector<FactorPower> m_factors;
@@ -211,13 +210,13 @@ public:
     size_t GetValue() { return m_ival; }
     UNITS_EXPORT Utf8String ToText();
     UNITS_EXPORT Utf8String DebugText();
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  10/2016
 //=======================================================================================
 struct FractionalNumeric
-    {
+{
 private:
     int64_t m_integral;
     size_t m_numerator;
@@ -238,23 +237,19 @@ public:
     UNITS_EXPORT Utf8String GetIntegralString();
     UNITS_EXPORT Utf8String GetDenominatorString();
     UNITS_EXPORT Utf8String GetNumeratorString();
-    UNITS_EXPORT Utf8CP GetIntegralText();
-    UNITS_EXPORT Utf8CP GetDenominatorText();
-    UNITS_EXPORT Utf8CP GetNumeratorText();
     UNITS_EXPORT void FormTextParts(bool reduce);
     bool HasFractionPart() { return 1 < m_textParts.size(); }
     bool IsZero() { return (0 == m_numerator); }
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  02/2018
-// implemented in Formatting.cpp
 //=======================================================================================
 struct LocaleProperties
 {
 private:
-    Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
-    Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+    Utf8Char m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
+    Utf8Char m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
 public:
 
     UNITS_EXPORT LocaleProperties(Json::Value jval);
@@ -275,7 +270,7 @@ public:
 // @bsiclass                                                    David.Fox-Rabinovitz  10/2016
 //=======================================================================================
 struct NumericFormatSpec
-    {
+{
 private:
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, ScientificNorm
@@ -327,6 +322,10 @@ private:
 
 public:
     // TODO: Attempt to remove these methods from the public API================
+    //! The following methind does not perform buffer related checks and does not use
+    //! parenthesis for indicating negative numbers However it uses other ShowSign options
+    //! the calling function.
+    //! The main purpose of this methind is to form exponent value.
     UNITS_EXPORT int static FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
     // !TODO====================================================================
 
@@ -398,7 +397,7 @@ public:
     //======================================
     UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits traits, FormatTraits bit, bool setTo);
     UNITS_EXPORT static bool GetTraitsBit(FormatTraits traits, FormatTraits bit);
-    UNITS_EXPORT void SetTraitsBit(FormatTraits bit, bool setTo);
+    void SetTraitsBit(FormatTraits bit, bool setTo) {m_formatTraits = NumericFormatSpec::SetTraitsBit(m_formatTraits, bit, setTo);}
     UNITS_EXPORT bool GetTraitsBit(FormatTraits bit) const;
     UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose=false) const;
     
@@ -455,13 +454,13 @@ public:
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
 
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  06/2017
 //=======================================================================================
 struct UnitProxy
-    {
+{
 private:
     BEU::UnitCP m_unit;
     Utf8String m_unitLabel;
@@ -502,7 +501,7 @@ public:
     UNITS_EXPORT Json::Value ToJson() const;
     bool IsEmpty() const {return nullptr == m_unit;}
     bool IsIdentical(UnitProxyCR other) const {return BEU::Unit::AreEqual(m_unit, other.m_unit) && m_unitLabel.Equals(other.m_unitLabel);}
-    };
+};
 
 //=======================================================================================
 //! We recognize combined numbers (combo-numbers) that represent some quantity as a sum of
@@ -524,8 +523,8 @@ public:
 //! @bsiclass                                                David.Fox-Rabinovitz  01/2017
 //=======================================================================================
 struct CompositeValueSpec
-    {
-    friend struct CompositeValue;
+{
+friend struct CompositeValue;
 private:
     static size_t const indxMajor  = 0;
     static size_t const indxMiddle = 1;
@@ -613,13 +612,13 @@ public:
     UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
 
     UNITS_EXPORT Json::Value ToJson() const;
-    };
+};
 
 //=======================================================================================
 //! @bsistruct
 //=======================================================================================
 struct CompositeValue
-    {
+{
 private:
     static const size_t  indxInput = 4;
     bool m_negative;
@@ -650,7 +649,7 @@ public:
 
     bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
     bool IsProblem() const { return m_problem.IsProblem(); }
-    };
+};
 
 //=======================================================================================
 //! Container for keeping together primary, numeric, composite and other types of specs.
@@ -661,7 +660,7 @@ public:
 //! @bsistruct                                          David.Fox-Rabinovitz  03/2017
 //=======================================================================================
 struct NamedFormatSpec
-    {
+{
 private:
     Utf8String          m_name;             // Name or ID of the format.
     Utf8String          m_description;      // @units_msg:descr_Real8@
@@ -737,7 +736,7 @@ public:
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
 
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
-    };
+};
 
 //=======================================================================================
 //! The Format-Unit Set(FUS) has two parts describing how a Quantity transformation
@@ -755,107 +754,107 @@ public:
 // @bsiclass                                                    David.Fox-Rabinovitz  03/2017
 //=======================================================================================
 struct FormatUnitSet
-    {
-    friend struct StdFormatSet;
-    private:
-        NamedFormatSpecCP m_formatSpec;
-        Utf8String  m_unitName;
-        BEU::UnitCP m_unit;
-        FormatProblemDetail m_problem;
-        NamedFormatSpec m_localCopy;
-        mutable Utf8String  m_fusName;
+{
+friend struct StdFormatSet;
+private:
+    NamedFormatSpecCP m_formatSpec;
+    Utf8String  m_unitName;
+    BEU::UnitCP m_unit;
+    FormatProblemDetail m_problem;
+    NamedFormatSpec m_localCopy;
+    mutable Utf8String  m_fusName;
 
-        Utf8CP GetDefaultDisplayLabel() const;
-        Utf8CP SetFusName(Utf8CP name) const { m_fusName.assign(name);  return m_fusName.c_str(); }
+    Utf8CP GetDefaultDisplayLabel() const;
+    Utf8CP SetFusName(Utf8CP name) const { m_fusName.assign(name);  return m_fusName.c_str(); }
 
-    public:
-        UNITS_EXPORT void Init();
-        FormatUnitSet() : m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemCode::NotInitialized) {}
-        FormatUnitSet(BEU::UnitCP unit) : FormatUnitSet(nullptr, unit) {}
-        FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit) : FormatUnitSet(format, unit, false) {}
-        FormatUnitSet(FormatUnitSetCR other) : m_formatSpec(other.m_formatSpec), m_unitName(other.m_unitName), m_unit(other.m_unit), m_problem(other.m_problem) {}
-        UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData);
+public:
+    UNITS_EXPORT void Init();
+    FormatUnitSet() : m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemCode::NotInitialized) {}
+    FormatUnitSet(BEU::UnitCP unit) : FormatUnitSet(nullptr, unit) {}
+    FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit) : FormatUnitSet(format, unit, false) {}
+    FormatUnitSet(FormatUnitSetCR other) : m_formatSpec(other.m_formatSpec), m_unitName(other.m_unitName), m_unit(other.m_unit), m_problem(other.m_problem) {}
+    UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData);
         
-        UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
+    UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
 
-        UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
+    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
 
-        //! The 'descriptor' argument is a text string in one of several formats as follows:
-        //! For compatibility with the obsolete KOQ def's it may consist of only a unit name, e.g.
-        //! FT. Since FUS consists of two components: the reference to the Unit and a reference to
-        //! a format specification, the DefaultReal format will be used in this case. The most
-        //! common descriptor consists of two names: the Unit Name and the Format Name, e.g.
-        //! FT(real6). For supporting the usage of comples Unit Names a "vertical bar" can be used
-        //! as a separator between the Unit Name and the Format Name as in "FT|real6" The closing
-        //! vertical bar delimiting the Format Name is not required if the Format Name is
-        //! terminated with the "end-of-line". However, the Fomat Name can be also delimited by
-        //! the "vertical bar" as in: "FT|real6|". The descriptor can be also a JSON-string enclosed
-        //! in the "curvy brackets". There are two types of this JSON-string which are currently
-        //! supported: A short one consists of the unitName and formatName. The optional cloneData
-        //! boolean value indicates that the format spec should be cloned into the newly created
-        //! FUS. The default value of the cloneData parameter if "false" the long one consists of
-        //! the unitName and formatSpec that contains the full description of this Spec.
-        UNITS_EXPORT FormatUnitSet(Utf8CP descriptor, BEU::IUnitsContextCP context);
+    //! The 'descriptor' argument is a text string in one of several formats as follows:
+    //! For compatibility with the obsolete KOQ def's it may consist of only a unit name, e.g.
+    //! FT. Since FUS consists of two components: the reference to the Unit and a reference to
+    //! a format specification, the DefaultReal format will be used in this case. The most
+    //! common descriptor consists of two names: the Unit Name and the Format Name, e.g.
+    //! FT(real6). For supporting the usage of comples Unit Names a "vertical bar" can be used
+    //! as a separator between the Unit Name and the Format Name as in "FT|real6" The closing
+    //! vertical bar delimiting the Format Name is not required if the Format Name is
+    //! terminated with the "end-of-line". However, the Fomat Name can be also delimited by
+    //! the "vertical bar" as in: "FT|real6|". The descriptor can be also a JSON-string enclosed
+    //! in the "curvy brackets". There are two types of this JSON-string which are currently
+    //! supported: A short one consists of the unitName and formatName. The optional cloneData
+    //! boolean value indicates that the format spec should be cloned into the newly created
+    //! FUS. The default value of the cloneData parameter if "false" the long one consists of
+    //! the unitName and formatSpec that contains the full description of this Spec.
+    UNITS_EXPORT FormatUnitSet(Utf8CP descriptor, BEU::IUnitsContextCP context);
 
-        //! Resets this FUS to its initial state and populates it will the json value.
-        //!
-        //! Supported JSON format:
-        //!     <code>
-        //!     {
-        //!         unitName: "",
-        //!         formatName: "",
-        //!         cloneData: true,
-        //!         formatSpec: { }
-        //!     }
-        //!     </code>
-        //!
-        //! Potential problem codes:
-        //!     - FormatProblemCode::NFS_InvalidJsonObject,
-        //!         - When Json value is empty
-        //!     - FormatProblemCode::UnknownUnitName
-        //!         - If the unitName is provided but cannot be found in the context.
-        //!
-        //! @note If a formatName or formatSpec is not defined in the JSON value the FormatConstant::DefaultFormatName is used.
-        //! @note If a formatName and formatSpec are provided in the JSON the last will be used.
-        //!
-        //! @param[in] jval Json to use to populate this.
-        UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
+    //! Resets this FUS to its initial state and populates it will the json value.
+    //!
+    //! Supported JSON format:
+    //!     <code>
+    //!     {
+    //!         unitName: "",
+    //!         formatName: "",
+    //!         cloneData: true,
+    //!         formatSpec: { }
+    //!     }
+    //!     </code>
+    //!
+    //! Potential problem codes:
+    //!     - FormatProblemCode::NFS_InvalidJsonObject,
+    //!         - When Json value is empty
+    //!     - FormatProblemCode::UnknownUnitName
+    //!         - If the unitName is provided but cannot be found in the context.
+    //!
+    //! @note If a formatName or formatSpec is not defined in the JSON value the FormatConstant::DefaultFormatName is used.
+    //! @note If a formatName and formatSpec are provided in the JSON the last will be used.
+    //!
+    //! @param[in] jval Json to use to populate this.
+    UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
 
-        //! Returns whether this FormatUnitSet has a problem.
-        bool HasProblem() const { return m_problem.IsProblem(); }
+    //! Returns whether this FormatUnitSet has a problem.
+    bool HasProblem() const { return m_problem.IsProblem(); }
 
-        //! Returns the problem code for this FUS.
-        FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
-        Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
-        Utf8String GetUnitName() const { return m_unitName; }
-        Utf8CP GetFusName() const { return m_fusName.c_str(); }
+    //! Returns the problem code for this FUS.
+    FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
+    Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
+    Utf8String GetUnitName() const { return m_unitName; }
+    Utf8CP GetFusName() const { return m_fusName.c_str(); }
 
-        UNITS_EXPORT Utf8CP GetDisplayLabel(bool useDefault=false) const;
-        UNITS_EXPORT Utf8String ToText() const;
-        BEU::UnitCP GetUnit() const { return m_unit; }
-        NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
-        bool IsComparable(BEU::QuantityCR qty) const {return IsComparable(qty.GetUnit());}
-        bool IsComparable(BEU::UnitCP unit) const {return BEU::Unit::AreCompatible(unit, m_unit);}
+    UNITS_EXPORT Utf8CP GetDisplayLabel(bool useDefault=false) const;
+    UNITS_EXPORT Utf8String ToText() const;
+    BEU::UnitCP GetUnit() const { return m_unit; }
+    NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
+    bool IsComparable(BEU::QuantityCR qty) const {return IsComparable(qty.GetUnit());}
+    bool IsComparable(BEU::UnitCP unit) const {return BEU::Unit::AreCompatible(unit, m_unit);}
 
-        UNITS_EXPORT Json::Value ToJson(bool verbose = false) const;
-        UNITS_EXPORT Utf8String ToJsonString(bool verbose = false) const;
+    UNITS_EXPORT Json::Value ToJson(bool verbose = false) const;
+    UNITS_EXPORT Utf8String ToJsonString(bool verbose = false) const;
 
-        UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, Utf8CP space="") const;
-        BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
+    UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, Utf8CP space="") const;
+    BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
 
-        UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
+    UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         
-        bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
-        bool IsSetRegistered() { return !m_fusName.empty(); }
-        bool HasComposite() const { return nullptr != m_formatSpec && m_formatSpec->HasComposite(); }
-        size_t GetCompositeUnitCount() const { return HasComposite() ? m_formatSpec->GetCompositeUnitCount() : 0; }
-        BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMajorUnit() : nullptr; }
-        BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMiddleUnit() : nullptr; }
-        BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMinorUnit() : nullptr; }
-        BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_formatSpec->GetCompositeSubUnit() : nullptr; }
+    bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
+    bool IsSetRegistered() { return !m_fusName.empty(); }
+    bool HasComposite() const { return nullptr != m_formatSpec && m_formatSpec->HasComposite(); }
+    size_t GetCompositeUnitCount() const { return HasComposite() ? m_formatSpec->GetCompositeUnitCount() : 0; }
+    BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMajorUnit() : nullptr; }
+    BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMiddleUnit() : nullptr; }
+    BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMinorUnit() : nullptr; }
+    BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_formatSpec->GetCompositeSubUnit() : nullptr; }
 
-        UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
-    };
+    UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
+};
 
 //=======================================================================================
 //! Singleton container for known NamedFormatSpecs and FormatUnitSets.
@@ -863,7 +862,7 @@ struct FormatUnitSet
 //! @bsistruct
 //=======================================================================================
 struct StdFormatSet
-    {
+{
 private:
     bvector<NamedFormatSpecCP> m_formatSet;    // core + app
     bvector<FormatUnitSetCP> m_fusSet;
@@ -931,15 +930,15 @@ public:
     //! Whether or not the StdFormatSet has a problem.
     //! @return true if the Set has a problem; false, otherwise.
     static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
-    };
+};
 
 //=======================================================================================
 //! @bsistruct
 //=======================================================================================
 struct QuantityFormatting
-    {
+{
     UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
     UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
-    };
+};
 
 END_BENTLEY_FORMATTING_NAMESPACE

@@ -365,17 +365,17 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
                 ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
                 locBuf[ind++] = sign;
             }
-        ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetIntegralText());
+        ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetIntegralString().c_str());
         if (fn.HasFractionPart())
             {
             if (ind < locBufL)
                 ind = Utils::AppendText(locBuf, locBufL, ind, " ");
             if (ind < locBufL)
-                ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorText());
+                ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorString().c_str());
             if (ind < locBufL)
                 ind = Utils::AppendText(locBuf, locBufL, ind, "/");
             if (ind < locBufL)
-                ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorText());
+                ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorString().c_str());
             }
         ind++;
         if (ind > bufLen)
@@ -465,12 +465,12 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-int  NumericFormatSpec::GetDecimalPrecisionIndex(int prec) const
+int NumericFormatSpec::GetDecimalPrecisionIndex(int prec) const
     { 
     if (0 <= prec && prec < Utils::DecimalPrecisionToInt(DecimalPrecision::Precision12))
         return prec;
     return Utils::DecimalPrecisionToInt(m_decPrecision); 
-    };
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -593,41 +593,41 @@ int NumericFormatSpec::IntPartToText(double n, Utf8P bufOut, int bufLen, bool us
 // terminating 0. This function returns the number of bytes that was not populated - in
 // case of success it will return 0.
 int NumericFormatSpec::FormatBinaryByte (unsigned char n, Utf8P bufOut, int bufLen)
-{
-char binBuf[8];
-unsigned char mask = 0x80;
-int i = 0;
-while (mask != 0)
     {
-    binBuf[i++] = (n & mask) ? '1' : '0';
-    mask >>= 1;
-    }
+    char binBuf[8];
+    unsigned char mask = 0x80;
+    int i = 0;
+    while (mask != 0)
+        {
+        binBuf[i++] = (n & mask) ? '1' : '0';
+        mask >>= 1;
+        }
 
-return RightAlignedCopy(bufOut, bufLen, true, binBuf, sizeof(binBuf));
-}
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, sizeof(binBuf));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 int NumericFormatSpec::FormatBinaryShort(short int n, Utf8P bufOut, int bufLen, bool useSeparator)
-{
-char binBuf[64];
+    {
+    char binBuf[64];
 
-unsigned char c = (n & 0xFF00) >> 8;
-FormatBinaryByte (c, binBuf, 9);
-int ind = 8;
-if (IsInsertSeparator(useSeparator))
-    binBuf[ind++] = m_thousandsSeparator;
-c = n & 0xFF;
-FormatBinaryByte (c, &binBuf[ind], 9);
-return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
-}
+    unsigned char c = (n & 0xFF00) >> 8;
+    FormatBinaryByte (c, binBuf, 9);
+    int ind = 8;
+    if (IsInsertSeparator(useSeparator))
+        binBuf[ind++] = m_thousandsSeparator;
+    c = n & 0xFF;
+    FormatBinaryByte(c, &binBuf[ind], 9);
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 int NumericFormatSpec::FormatBinaryInt(int n, Utf8P bufOut, int bufLen, bool useSeparator)
-{
+    {
     char binBuf[80];
 
     memset(binBuf, 0, sizeof(binBuf));
@@ -640,13 +640,13 @@ int NumericFormatSpec::FormatBinaryInt(int n, Utf8P bufOut, int bufLen, bool use
     c = n & 0xFFFF;
     FormatBinaryShort (c, &binBuf[ind], (int)(sizeof(binBuf) - ind), useSeparator);
     return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //---------------------------------------------------------------------------------------
 int NumericFormatSpec::FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bool useSeparator)
-{
+    {
     char binBuf[80];
     union { unsigned int ival[2]; double x; }temp;
     temp.x = x;
@@ -657,7 +657,7 @@ int NumericFormatSpec::FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bo
         binBuf[ind++] = m_thousandsSeparator;
     FormatBinaryInt (temp.ival[0], &binBuf[ind], (int)(sizeof(binBuf) - ind), useSeparator);
     return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
-}
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -709,7 +709,7 @@ Utf8String NumericFormatSpec::FormatIntegerToString(int n, int minSize) const
         str[k] = '\0';
         }
     return Utf8String(str);
-     }
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -760,7 +760,6 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_minWidth = 0;
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
@@ -769,10 +768,6 @@ void NumericFormatSpec::TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex,
     outValue[bitIndex] = FormatConstant::BoolText((static_cast<int>(traits) & static_cast<int>(bit)) != 0);
     }
 
-// The following methind does not perform buffer related checks and does not use
-// parenthesis for indicating negative numbers However it uses other ShowSign options
-// the calling function.
-// The main purpose of this methind is to form exponent value.
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
@@ -913,6 +908,7 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
+// static
 NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
     {
     static NumericFormatSpec nfs;
@@ -922,6 +918,7 @@ NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    David Fox-Rabinovitz
 //---------------+---------------+---------------+---------------+---------------+-------
+// static
 FormatTraits NumericFormatSpec::SetTraitsBit(FormatTraits traits, FormatTraits bit, bool setTo)
     {
     std::underlying_type<FormatTraits>::type traitsBitField = static_cast<std::underlying_type<FormatTraits>::type>(traits);
@@ -940,14 +937,6 @@ bool NumericFormatSpec::GetTraitsBit(FormatTraits traits, FormatTraits bit)
     {
     return 0 != (static_cast<std::underlying_type<FormatTraits>::type>(traits)
         & static_cast<std::underlying_type<FormatTraits>::type>(bit));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-void NumericFormatSpec::SetTraitsBit(FormatTraits bit, bool setTo)
-    {
-    m_formatTraits = NumericFormatSpec::SetTraitsBit(m_formatTraits, bit, setTo);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1033,11 +1022,51 @@ Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
+Utf8String NumericFormatSpec::ByteToBinaryText(Byte n)
+    {
+    char buf[64];
+    FormatBinaryByte(n, buf, sizeof(buf));
+    return Utf8String(buf);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormatSpec::Int16ToBinaryText(int16_t n, bool useSeparator)
+    {
+    char buf[64];
+    FormatBinaryShort(n, buf, sizeof(buf), useSeparator);
+    return Utf8String(buf);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormatSpec::Int32ToBinaryText(int32_t n, bool useSeparator)
+    {
+    char buf[80];
+    FormatBinaryInt(n, buf, sizeof(buf), useSeparator);
+    return Utf8String(buf);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormatSpec::DoubleToBinaryText(double n, bool useSeparator)
+    {
+    char buf[80];
+    FormatBinaryDouble(n, buf, sizeof(buf), useSeparator);
+    return Utf8String(buf);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
  Utf8String NumericFormatSpec::FormatInteger(int32_t ival)
     {
-        char buf[64];
-        FormatInteger(ival, buf, sizeof(buf));
-        return Utf8String(buf);
+    char buf[64];
+    FormatInteger(ival, buf, sizeof(buf));
+    return Utf8String(buf);
     }
 
 //---------------------------------------------------------------------------------------

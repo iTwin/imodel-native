@@ -29,7 +29,6 @@ void FormattingScannerCursor::Rewind()
     m_status = ScannerCursorStatus::Success;
     m_effectiveBytes = 0;
     m_breakIndex = 0; 
-    return;
     }
 
 //----------------------------------------------------------------------------------------
@@ -37,11 +36,9 @@ void FormattingScannerCursor::Rewind()
 //----------------------------------------------------------------------------------------
 size_t FormattingScannerCursor::TrueIndex(size_t index, size_t wordSize)
     {
-    const bool end = FormatConstant::IsLittleEndian();
-    if (end || wordSize <= 1)
+    if (FormatConstant::IsLittleEndian() || wordSize <= 1)
         return index;
-    int i = (int)(--wordSize) - (int)index;
-    return i; // (int)(--wordSize) - (int)index;
+    return (int)(--wordSize) - (int)index;
     }
 
 //---------------------------------------------------------------------------------------
@@ -61,41 +58,26 @@ FormattingScannerCursor::FormattingScannerCursor(Utf8CP utf8Text, int scanLength
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-FormattingScannerCursor::FormattingScannerCursor(FormattingScannerCursorCR other) :m_dividers(other.m_dividers)
-    {
-    m_text = other.m_text;
-    m_cursorPosition = other.m_cursorPosition;
-    m_lastScannedCount = other.m_lastScannedCount;
-    m_uniCode = other.m_uniCode;
-    m_isASCII = other.m_isASCII;
-    m_status = other.m_status;
-    m_dividers = FormattingDividers(other.m_dividers);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
 int FormattingScannerCursor::AddTrailingByte()
     {
-    if (ScannerCursorStatus::Success == m_status)
+    if (ScannerCursorStatus::Success != m_status)
+        return 0;
+
+    char bits = 0;
+    if (!FormatConstant::GetTrailingBits(m_text.c_str()[++m_cursorPosition], &bits))
         {
-        char bits = 0;
-        if (FormatConstant::GetTrailingBits(m_text.c_str()[++m_cursorPosition], &bits))
-            {
-            m_uniCode <<= FormatConstant::GetTrailingShift();
-            m_uniCode |= bits;
-            return 1;
-            }
-        else
-            m_status = ScannerCursorStatus::IncompleteSequence;
+        m_status = ScannerCursorStatus::IncompleteSequence;
+        return 0;
         }
-    return 0;
+
+    m_uniCode <<= FormatConstant::GetTrailingShift();
+    m_uniCode |= bits;
+    return 1;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //---------------------------------------------------------------------------------------
-PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that iArg can exceed the array bounds, but the if statement above ensures it will not.
 FormattingWord FormattingScannerCursor::ExtractWord()
     {
     static const size_t maxDelim = 4;
@@ -127,10 +109,6 @@ FormattingWord FormattingScannerCursor::ExtractWord()
     }
 
 //---------------------------------------------------------------------------------------
-//  This method attempts to extract the content of the last "enclosure" - that is a group of
-//    characters enclosed into one of brackets: parenthesis, curvy bracket or square brackets
-//     if brackets are not detected - the returned word wil be empty
-//  "vertical line" divider is marked by single boolean argument because the divider and its mate are same
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //---------------------------------------------------------------------------------------
 FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
@@ -180,6 +158,9 @@ FormattingWord FormattingScannerCursor::ExtractLastEnclosure()
     return word;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 FormattingWord FormattingScannerCursor::ExtractBeforeEnclosure()
     {
     Utf8Char emptyBuf[2];
@@ -209,8 +190,11 @@ FormattingWord FormattingScannerCursor::ExtractBeforeEnclosure()
     return word;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 FormattingWord FormattingScannerCursor::ExtractSegment(size_t from, size_t to)
-{
+    {
     Utf8Char emptyBuf[2];
     emptyBuf[0] = 0;
     m_status = ScannerCursorStatus::Success;
@@ -229,9 +213,7 @@ FormattingWord FormattingScannerCursor::ExtractSegment(size_t from, size_t to)
  
     m_status = ScannerCursorStatus::NoEnclosure;
     return FormattingWord(this, emptyBuf, emptyBuf, true);
-}
-
-POP_MSVC_IGNORE
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -266,7 +248,6 @@ size_t FormattingScannerCursor::GetNextSymbol()
                 m_effectiveBytes = 2;
             break;
         case 3: // Three byte sequence
-                // m_code.octet[TrueIndex(2, sizeof(m_code.octet))] = c & ~m_unicodeConst->Get3ByteMask();
             m_uniCode = (size_t)(c &  ~FormatConstant::UTF_3ByteMask());
             m_lastScannedCount += AddTrailingByte();
             m_lastScannedCount += AddTrailingByte();
@@ -278,7 +259,6 @@ size_t FormattingScannerCursor::GetNextSymbol()
                 m_effectiveBytes = 3;
             break;
         case 4: // Four byte sequence
-                //m_code.octet[TrueIndex(3, sizeof(m_code.octet))] = c & ~m_unicodeConst->Get3ByteMask();
             m_uniCode = (size_t)(c &  ~FormatConstant::UTF_4ByteMask());
             m_lastScannedCount += AddTrailingByte();
             m_lastScannedCount += AddTrailingByte();
@@ -394,7 +374,7 @@ Utf8CP FormattingScannerCursor::GetSignature(bool refresh, bool compress)
     if (!refresh)
         return m_traits.GetSignature();
 
-    if(!m_traits.Reset(m_totalScanLength))
+    if (!m_traits.Reset(m_totalScanLength))
         return FormatConstant::AllocError();
     Utf8CP symb = "xabcdefg";
 
@@ -428,9 +408,8 @@ Utf8CP FormattingScannerCursor::GetSignature(bool refresh, bool compress)
         c = GetNextSymbol();
         }
     if (compress)
-        {
         m_traits.CompressPattern();
-        }
+
     return m_traits.GetSignature();
     }
 
@@ -478,19 +457,17 @@ Utf8CP FormattingScannerCursor::GetReversedSignature(bool refresh, bool compress
             }
         c = GetNextReversed();
         }
+
     if (compress)
-        {
         m_traits.CompressPattern();
-        }
+
     m_cursorPosition = savePos;
     return m_traits.GetSignature();
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-PUSH_MSVC_IGNORE(6385 6386)
 Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
     {
     Utf8CP sig = GetSignature(true, true);
@@ -552,7 +529,6 @@ Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
 
     return str;
     }
-POP_MSVC_IGNORE
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
@@ -628,13 +604,11 @@ FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8CP divs)
 //----------------------------------------------------------------------------------------
 bool FormatDividerInstance::IsDivLast() 
     {
-    if (0 < m_divCount)
-        {
-        int last = m_positions.back();
-        bool check = (m_div == m_mate) ? m_totLen == last : m_totLen == -last;
-        return check;
-        }
-    return false;
+    if (0 >= m_divCount)
+        return false;
+
+    int last = m_positions.back();
+    return (m_div == m_mate) ? m_totLen == last : m_totLen == -last;
     }
 
 //----------------------------------------------------------------------------------------
@@ -643,9 +617,10 @@ bool FormatDividerInstance::IsDivLast()
 Utf8String FormatDividerInstance::ToText()
     {
     if (m_problem.IsProblem())
-     return "Unknown Divider";
+        return "Unknown Divider";
     Utf8String str;
     str.Sprintf("Dividers: %d  mates %d", m_divCount, m_mateCount);
+
     if (m_positions.size() > 0 )
         {
         Utf8String tmp;
@@ -661,12 +636,12 @@ Utf8String FormatDividerInstance::ToText()
     return str;
     }
 
-
 //===================================================
 //
 // FormattingSignature Methods
 //
 //===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
@@ -709,13 +684,8 @@ bool FormattingSignature::Reset(size_t reserve)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod      Constructor                                  David Fox-Rabinovitz 04/17
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
-FormattingSignature::FormattingSignature(size_t reserve)
-    {
-    Reset(reserve);
-    }
-
 size_t FormattingSignature::AppendSignature(Utf8Char c)
     { 
     if (m_sigIndx < m_size) 
@@ -846,10 +816,10 @@ Utf8String FormattingSignature::ReversedPattern()
 
     return Utf8String(temp);
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-PUSH_MSVC_IGNORE(6385 6386)
 size_t FormattingSignature::CompressPattern()
     {
     if (FormatConstant::EndOfLine() == m_pattern[0])
@@ -875,16 +845,17 @@ size_t FormattingSignature::CompressPattern()
     m_pattern[i] = FormatConstant::EndOfLine();
     return i;
     }
-POP_MSVC_IGNORE
+
 //===================================================
 //
 // NumericAccumulator Methods
 //
 //===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-int  NumericAccumulator::AddDigitValue(Utf8Char c)
+int NumericAccumulator::AddDigitValue(Utf8Char c)
     {
     switch (m_stat)
         {
@@ -901,6 +872,7 @@ int  NumericAccumulator::AddDigitValue(Utf8Char c)
         }
     return 0;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -949,43 +921,47 @@ AccumulatorState NumericAccumulator::SetExponentMark()
     return m_stat = AccumulatorState::Failure;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 AccumulatorState NumericAccumulator::AddSymbol(size_t symb)
     {
-    if (FormatConstant::IsASCII(symb)) // symbol must be ASCII
+    if (!FormatConstant::IsASCII(symb)) // symbol must be ASCII
         {
-        Utf8Char c = FormatConstant::ASCIIcode(symb);
-        if (isdigit(c))
-            {
-            AddDigitValue(c);
-            m_bytes++;
-            return m_stat;
-            }
-
-        switch (c)
-            {
-            case '+':
-                SetSign(1);
-                break;
-            case '-':
-                SetSign(-1);
-                break;
-            case '.':
-                SetDecimalPoint();
-                break;
-            case 'E':
-            case 'e':
-                SetExponentMark();
-                break;
-            default:
-                m_stat = AccumulatorState::RejectedSymbol;
-            }
-        }
-        else
-            m_stat = AccumulatorState::RejectedSymbol;
-
-        if (m_stat != AccumulatorState::RejectedSymbol)
-            m_bytes++;
+        m_stat = AccumulatorState::RejectedSymbol;
         return m_stat;
+        }
+
+    Utf8Char c = FormatConstant::ASCIIcode(symb);
+    if (isdigit(c))
+        {
+        AddDigitValue(c);
+        m_bytes++;
+        return m_stat;
+        }
+
+    switch (c)
+        {
+        case '+':
+            SetSign(1);
+            break;
+        case '-':
+            SetSign(-1);
+            break;
+        case '.':
+            SetDecimalPoint();
+            break;
+        case 'E':
+        case 'e':
+            SetExponentMark();
+            break;
+        default:
+            m_stat = AccumulatorState::RejectedSymbol;
+        }
+
+    if (m_stat != AccumulatorState::RejectedSymbol)
+        m_bytes++;
+    return m_stat;
     }
 
 //----------------------------------------------------------------------------------------
@@ -1026,7 +1002,7 @@ AccumulatorState NumericAccumulator::SetComplete()
         {
         double f = 1.0;
         double mult = (m_expSign < 0) ? 0.1 : 10.0;
-  
+
         for (int i = 0; i < m_count[1]; ++i) { f *= mult; }
         m_dval *= f;
         m_real = true;
@@ -1038,6 +1014,7 @@ AccumulatorState NumericAccumulator::SetComplete()
 
     return m_stat = AccumulatorState::Complete; 
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -1098,10 +1075,10 @@ void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
 //
 // CursorScanPoint Methods
 //
-//============================================
+//===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
-// the caller is responsible for keeping the index inside the allowable range
 //----------------------------------------------------------------------------------------
 ScannerCursorStatus CursorScanPoint::AppendTrailingByte(Utf8CP txt)
     {
@@ -1122,14 +1099,15 @@ ScannerCursorStatus CursorScanPoint::AppendTrailingByte(Utf8CP txt)
         }
     return m_status;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 // the caller is responsible for keeping the index inside the allowable range
 //----------------------------------------------------------------------------------------
-CursorScanPoint::CursorScanPoint(Utf8CP input, size_t indx, bool revers)
+CursorScanPoint::CursorScanPoint(Utf8CP input, size_t indx, bool reverse)
     {
     m_indx = indx;
-    if (revers)
+    if (reverse)
       ProcessPrevious(input);
     else
       ProcessNext(input);
@@ -1138,9 +1116,9 @@ CursorScanPoint::CursorScanPoint(Utf8CP input, size_t indx, bool revers)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-void CursorScanPoint::Iterate(Utf8CP input, bool revers)
+void CursorScanPoint::Iterate(Utf8CP input, bool reverse)
     {
-    if (revers)
+    if (reverse)
         ProcessPrevious(input);
     else
         ProcessNext(input);
@@ -1165,6 +1143,7 @@ void CursorScanPoint::ProcessASCII(unsigned char c)
     else if (c == '.' || c == ',' || c == '/' || c == '_' || c == ':')
         m_patt = c;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -1175,6 +1154,7 @@ void CursorScanPoint::ProcessNext(Utf8CP input)
         input = FormatConstant::EmptyString();
         m_indx = 0;
         }
+
     m_uniCode = 0;
     m_len = 0;
     memset(m_bytes, '\0', sizeof(m_bytes));
@@ -1190,19 +1170,6 @@ void CursorScanPoint::ProcessNext(Utf8CP input)
         if (seqLen == 1)
             {
             ProcessASCII(c);
-            //m_bytes[m_len++] = c;
-            //m_uniCode = FormatConstant::ASCIIcode(c);
-            //m_patt = 'a';
-            //if (isspace(c))
-            //    m_patt = FormatConstant::SpaceSymbol();
-            //else if (isdigit(c))
-            //    m_patt = FormatConstant::NumberSymbol();
-            //else if (c == '+' || c == '-')
-            //    m_patt = FormatConstant::SignSymbol();
-            //else if (c == 'e' || c == 'E')
-            //    m_patt = 'x';     // a suspicion of exponent - TBD later
-            //else if (c == '.' || c == ',' || c == '/' || c == '_')
-            //   m_patt = c;
             m_indx++;
             break;
             }
@@ -1241,18 +1208,6 @@ void CursorScanPoint::ProcessNext(Utf8CP input)
         break;
         }
     }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-void CursorScanPoint::Init()
-    {
-    m_uniCode = 0;
-    m_indx = 0;
-    m_len = 0;
-    memset(m_bytes, 0, sizeof(m_bytes));
-    m_patt = '\0';
-    m_status = ScannerCursorStatus::Success;
-    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
@@ -1277,19 +1232,6 @@ void CursorScanPoint::ProcessPrevious(Utf8CP input)
         if (FormatConstant::IsASCIIChar(c))  // it's the simplest case - we done
             {
             ProcessASCII(c);
-            //m_bytes[m_len++] = c;
-            //m_uniCode = FormatConstant::ASCIIcode(c);
-            //m_patt = 'a';
-            //if (isspace(c))
-            //    m_patt = FormatConstant::SpaceSymbol();
-            //else if (isdigit(c))
-            //    m_patt = FormatConstant::NumberSymbol();
-            //else if (c == '+' || c == '-')
-            //    m_patt = FormatConstant::SignSymbol();
-            //else if (c == 'e' || c == 'E')
-            //    m_patt = 'x';     // a suspicion of exponent - TBD later
-            //else if (c == '.' || c == ',' || c == '/'|| c== '_')
-            //    m_patt = c;
             break;
             }
         // need to find the head byte by moving backward
@@ -1300,7 +1242,7 @@ void CursorScanPoint::ProcessPrevious(Utf8CP input)
             ++n;
             }
         size_t seqLen = FormatConstant::GetSequenceLength(c); // it must be 2, 3 or 4
-       
+
         if (seqLen == 2)
             {
             m_bytes[m_len++] = c;
@@ -1311,7 +1253,7 @@ void CursorScanPoint::ProcessPrevious(Utf8CP input)
             m_patt = 'b';
             break;
             }
-         if (seqLen == 3)
+        if (seqLen == 3)
             {
             m_bytes[m_len] = c;
             m_uniCode = (size_t)(m_bytes[m_len++] & FormatConstant::UTF_3ByteSelector());
@@ -1325,7 +1267,7 @@ void CursorScanPoint::ProcessPrevious(Utf8CP input)
             m_patt = 'c';
             break;
             }
-          if (seqLen == 4)
+        if (seqLen == 4)
             {
             m_bytes[m_len] = c;
             m_uniCode = (size_t)(m_bytes[m_len++] & FormatConstant::UTF_4ByteSelector());
@@ -1342,9 +1284,9 @@ void CursorScanPoint::ProcessPrevious(Utf8CP input)
             break;
             }
 
-            m_status = ScannerCursorStatus::InvalidSymbol;
-            break;
-        }// end of While
+        m_status = ScannerCursorStatus::InvalidSymbol;
+        break;
+        } // end of While
     }
 
 //----------------------------------------------------------------------------------------
@@ -1373,11 +1315,11 @@ size_t FormatParseVector::ExtractTriplet()
     m_patt.word = 0;
     m_bufIndex = 0; // it is also the actual number of bytes in the triplet
     for (size_t i = m_tripletIndx; m_bufIndex < 3 && i < m_vect.size(); m_bufIndex++, i++)
-        {
         m_patt.byte[m_bufIndex] = m_vect[i].GetPattern();
-        }
+
     return m_bufIndex;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -1385,21 +1327,21 @@ bool FormatParseVector::MoveFrame(bool forw)
     {
     bool mov = false;
     if (forw)
-    {
+        {
         if (m_tripletIndx + 3 < m_vect.size())
             {
             ++m_tripletIndx;
             mov = true;
             }
-    }
+        }
     else
-    {
+        {
         if (m_tripletIndx > 0)
             {
             --m_tripletIndx;
             mov = true;
             }
-    }
+        }
     if(mov)
        ExtractTriplet();
     return mov;
@@ -1425,12 +1367,9 @@ FormatParseVector::FormatParseVector(Utf8CP input, bool revers)
 //----------------------------------------------------------------------------------------
 size_t FormatParseVector::AddPoint(CursorScanPointCR pnt)
     {
-     //CursorScanPointCP last = m_vect.empty() ? nullptr : &m_vect.back();
     m_vect.push_back(pnt);
     return m_vect.size();
     }
-
-PUSH_MSVC_IGNORE(6385 6386)
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
@@ -1470,7 +1409,6 @@ Utf8String FormatParseVector::GetSignature()
         }
     return Utf8String(buf);
     }
-POP_MSVC_IGNORE
 
 //===================================================
 //
@@ -1507,9 +1445,6 @@ bool CursorScanTriplet::SetReverse(bool rev)
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
-//   this method creates a "sliding" cursor that exposes three consequtive symbols from
-//   the input string the "reading head" is always at the current position in the string
-//     
 //----------------------------------------------------------------------------------------
 void CursorScanTriplet::PushSymbol(size_t symb) 
     {
@@ -1536,11 +1471,13 @@ void CursorScanTriplet::PushSymbol(size_t symb)
             }
         }
     }
+
 //===================================================
 //
 // NumberGrabber Methods
 //
 //===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -1663,13 +1600,11 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
             csp.Iterate(m_input, revs);
             }
         }
+
     // it's time to validate the number
-    if (iCount > 0 || fCount > 0) num = true; // at least some digits
- 
-   /* if ((sign != 0 && !num) || (!num && expMark) || (expMark && eCount == 0))
-        {
-        m_next = m_start;
-        }*/
+    if (iCount > 0 || fCount > 0)
+        num = true; // at least some digits
+
     if(num && (point || expMark))
         {
         m_type = ParsingSegmentType::Real;
@@ -1700,14 +1635,6 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
     return m_next - m_start;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-Utf8CP NumberGrabber::GetTail() 
-    { 
-    return &m_input[m_next]; 
-    }
-
 //===================================================
 //
 // FormatParsingSegment Methods
@@ -1727,6 +1654,7 @@ void FormatParsingSegment::Init(size_t start)
     m_unit = nullptr;
     m_name = "";
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -1744,7 +1672,6 @@ FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
         m_dval = ng.GetReal();
         }
     }
-PUSH_MSVC_IGNORE(6385 6386)
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
@@ -1781,51 +1708,22 @@ FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t
             }
          }
     }
-POP_MSVC_IGNORE
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-BEU::UnitCP FormatParsingSegment::GetUnit(Formatting::FormatUnitSetCP fusP)
-    { 
-    return (nullptr == fusP) ? m_unit : fusP->GetUnit(); 
-    }
-
 Utf8PrintfString FormatParsingSegment::ToText(int n)
     {
-     Utf8PrintfString head("start %d bytes %d ", m_start, m_byteCount);
-     if (m_type == ParsingSegmentType::Real)
-         {
-         return Utf8PrintfString("Segment[%d] %s Real %.5f Int %d", n, head.c_str(), m_dval, m_ival);
-         }
-     else if (m_type == ParsingSegmentType::Integer)
-         {
-         return Utf8PrintfString("Segment[%d] %s Int %d Real %.5f", n, head.c_str(), m_ival, m_dval);
-         }
-     else if (m_type == ParsingSegmentType::Fraction)
-         {
-         return Utf8PrintfString("Segment[%d] %s Fraction %.5f Int %d ", n, head.c_str(), m_dval, m_ival);
-         }
-     else
-         {
-         //size_t bufL = 4 * m_vect.size() + 2;
-         //Utf8Char* buf = (Utf8Char*)alloca(bufL);
-         //memset(buf, 0, bufL);
-         //int i = 0;
-         //unsigned char* ptr;
+    Utf8PrintfString head("start %d bytes %d ", m_start, m_byteCount);
+    if (m_type == ParsingSegmentType::Real)
+        return Utf8PrintfString("Segment[%d] %s Real %.5f Int %d", n, head.c_str(), m_dval, m_ival);
+    else if (m_type == ParsingSegmentType::Integer)
+        return Utf8PrintfString("Segment[%d] %s Int %d Real %.5f", n, head.c_str(), m_ival, m_dval);
+    else if (m_type == ParsingSegmentType::Fraction)
+        return Utf8PrintfString("Segment[%d] %s Fraction %.5f Int %d ", n, head.c_str(), m_dval, m_ival);
 
-        /* for (CursorScanPointP vp = m_vect.begin(); vp != m_vect.end(); vp++)
-             {
-             for (ptr = vp->GetBytes(); *ptr != '\0'; ptr++)
-                 {
-                 buf[i++] = *ptr;
-                 }
-             }*/
-
-         return Utf8PrintfString("Segment[%d] %s Text %s %s", n, head.c_str(), m_name.c_str(),
-                        ((nullptr == m_unit)? "(not a Unit)" : "(Unit)"));
-
-         }
+    return Utf8PrintfString("Segment[%d] %s Text %s %s", n, head.c_str(), m_name.c_str(),
+                ((nullptr == m_unit)? "(not a Unit)" : "(Unit)"));
     }
 
 //===================================================
@@ -1836,11 +1734,6 @@ Utf8PrintfString FormatParsingSegment::ToText(int n)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-BEU::UnitCP FormatParsingSet::GetUnit(Formatting::FormatUnitSetCP fusP)
-    {
-    return (nullptr == fusP) ? m_unit : fusP->GetUnit();
-    }
-
 void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
     {
     m_input = input;
@@ -1916,8 +1809,6 @@ FormatParsingSet::FormatParsingSet(Utf8CP input, BEU::UnitCP unit)
     Init(input, 0, unit);
     }
 
-PUSH_MSVC_IGNORE(6385 6386)
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //----------------------------------------------------------------------------------------
@@ -1989,11 +1880,10 @@ Utf8String FormatParsingSet::GetSignature(bool distinct) //, int* colonCount)
                 buf[i++] = 'U';
             }
         }
-    //if (nullptr != colonCount)
-    //    *colonCount = colNum;
+
     return Utf8String(buf);
     }
-POP_MSVC_IGNORE
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //----------------------------------------------------------------------------------------
@@ -2001,7 +1891,7 @@ bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP
     {
     if (0 == reqUnitCount)
         return false;
-   if (nullptr == fusP)
+    if (nullptr == fusP)
         m_problem.UpdateProblemCode(FormatProblemCode::PS_MissingFUS);
     if (!fusP->HasComposite())
         m_problem.UpdateProblemCode(FormatProblemCode::PS_MissingCompositeSpec);
@@ -2016,31 +1906,26 @@ bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //----------------------------------------------------------------------------------------
-BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatUnitSetCP fusP)
+BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatUnitSetCP fusP)
     {
     BEU::Quantity qty = BEU::Quantity();
     BEU::Quantity tmp = BEU::Quantity();
-    //int sigT = 0;
     Utf8String sig = GetSignature(false);
     // only a limited number of signatures will be recognized in this particular context
     // reduced version: NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
     //   3 FT - NU
     //  1/3 FT  FU
     BEU::UnitCP majP, midP;
-    //FormatProblemCode locCode;
     double sign = 1.0;
-    //if (nullptr == probCode)
-   //     probCode = &locCode;
 
     m_problem.Reset();
    
-    //double mu, su;
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
     switch (cod)
         {
         case Formatting::FormatSpecialCodes::SignatureN:
         case Formatting::FormatSpecialCodes::SignatureF:
-            qty = BEU::Quantity(m_segs[0].GetReal(), *GetUnit(fusP));    // *m_unit);
+            qty = BEU::Quantity(m_segs[0].GetReal(), *GetUnit(fusP));
             break;
         case Formatting::FormatSpecialCodes::SignatureNF:
             sign = m_segs[0].GetSign();

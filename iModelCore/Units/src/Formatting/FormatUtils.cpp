@@ -49,7 +49,6 @@ UIList UIUtils::GetAvailableFractionalPercisions()
     {
     UIList fracPercisionList;
 
-    // See Utils::FractionalPrecisionByDenominator
     fracPercisionList.AddListEntry(UIListEntry(1,    UNITSL10N_GETSTRING(FractionalPrecision_Whole).c_str()));
     fracPercisionList.AddListEntry(UIListEntry(2,    UNITSL10N_GETSTRING(FractionalPrecision_Half).c_str()));
     fracPercisionList.AddListEntry(UIListEntry(4,    UNITSL10N_GETSTRING(FractionalPrecision_Quarter).c_str()));
@@ -236,13 +235,17 @@ bool FormatConstant::GetTrailingBits(unsigned char c, Utf8P outBits)
     return false;
     }
 
-size_t  FormatConstant::ExtractTrailingBits(unsigned char c, size_t shift) 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
+size_t FormatConstant::ExtractTrailingBits(unsigned char c, size_t shift) 
     { 
     size_t cod = c & UTF_TrailingBitsMask();
     if (shift > 0)
         cod <<= shift;
     return cod; 
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
@@ -263,7 +266,9 @@ const size_t* FormatConstant::FractionCodes()
     return cod;
     }
 
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
 const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     {
     if(Utf8String::IsNullOrEmpty(name)) return FormatSpecialCodes::SignatureNull;
@@ -298,12 +303,14 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     return FormatSpecialCodes::SignatureInvalid;
     }
 
-
 //===================================================
 //
 // Utils Methods
 //
 //===================================================
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
 ShowSignOption Utils::NameToSignOption(Utf8CP name)
     {
     if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_OnlyNegative().c_str()) == 0) return ShowSignOption::OnlyNegative;
@@ -312,6 +319,9 @@ ShowSignOption Utils::NameToSignOption(Utf8CP name)
     return ShowSignOption::NoSign;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
 Utf8String Utils::FormatSpecTypeToName(FormatSpecType type)
     {
     switch (type)
@@ -321,6 +331,10 @@ Utf8String Utils::FormatSpecTypeToName(FormatSpecType type)
         default: return FormatConstant::FPN_Undefined();
         }
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
 FormatSpecType Utils::NameToFormatSpecType(Utf8CP name)
     {
     if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Numeric().c_str()) == 0) return FormatSpecType::Numeric;
@@ -328,12 +342,13 @@ FormatSpecType Utils::NameToFormatSpecType(Utf8CP name)
     return FormatSpecType::Undefined;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/17
+//----------------------------------------------------------------------------------------
 Utf8CP Utils::SkipBlanks(Utf8CP str)
     {
     while (isspace(*str))
-        {
         str++;
-        }
     return str;
     }
 
@@ -345,9 +360,7 @@ Utf8Char Utils::GetFirstSignificantChar(Utf8CP str)
     if (Utils::IsNameNullOrEmpty(str))
         return '\0';
     while (isspace(*str))
-        {
         str++;
-        }
     return *str;
     }
 
@@ -368,16 +381,6 @@ Utf8Char Utils::GetLastSignificantChar(Utf8CP str)
             return '\0';
         }
     return str[len];
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-bool Utils::IsJsonCandidate(Utf8CP str)
-    {
-    if ((GetFirstSignificantChar(str) == '{') &&  (GetLastSignificantChar(str) == '}')  )
-        return true;
-    return false;
     }
 
 //----------------------------------------------------------------------------------------
@@ -440,6 +443,7 @@ Utf8String Utils::CharToString(Utf8Char c)
     buf[1] = '\0';
     return Utf8String(buf);
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
@@ -593,16 +597,16 @@ const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
 //----------------------------------------------------------------------------------------
 size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
     {
-        int cap = static_cast<int>(bufLen) - static_cast<int>(index) - 1;
-        size_t strL = (nullptr == str) ? 0 : strlen(str);
-        if (strL < 1 || cap < 1)
-            return index;
-        if (static_cast<int>(strL) > cap)
-            strL = static_cast<size_t>(cap);
-        memcpy(static_cast<void*>(buf + index), str, strL);
-        index += strL;
-        buf[index] = FormatConstant::EndOfLine();     
+    int cap = static_cast<int>(bufLen) - static_cast<int>(index) - 1;
+    size_t strL = (nullptr == str) ? 0 : strlen(str);
+    if (strL < 1 || cap < 1)
         return index;
+    if (static_cast<int>(strL) > cap)
+        strL = static_cast<size_t>(cap);
+    memcpy(static_cast<void*>(buf + index), str, strL);
+    index += strL;
+    buf[index] = FormatConstant::EndOfLine();     
+    return index;
     }
 
 //----------------------------------------------------------------------------------------
@@ -627,9 +631,9 @@ Utf8String Utils::AppendUnitName(Utf8CP txtValue, Utf8CP unitName, Utf8CP space)
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
 bool Utils::IsNameNullOrEmpty(Utf8CP name) 
-    { 
+    {
     size_t len = (nullptr == name) ? 0 : strlen(name);
-     return (len == 0); 
+    return (len == 0); 
     }
 
 //----------------------------------------------------------------------------------------
@@ -709,6 +713,7 @@ FractionalNumeric::FractionalNumeric(double dval, FractionalPrecision fprec)
     {
     Calculate(dval, Utils::FractionalPrecisionDenominator(fprec));
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //----------------------------------------------------------------------------------------
@@ -801,33 +806,6 @@ Utf8String FractionalNumeric::GetDenominatorString()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8CP FractionalNumeric::GetIntegralText()
-    {
-    Utf8CP p = GetIntegralString().c_str();
-    return p;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-Utf8CP FractionalNumeric::GetDenominatorText()
-    {
-    Utf8CP p = GetDenominatorString().c_str();
-    return p;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-Utf8CP FractionalNumeric::GetNumeratorText()
-    {
-    Utf8CP p = GetNumeratorString().c_str();
-    return p;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
 Utf8String FractionalNumeric::ToTextDefault(bool reduce)
     {
     FormTextParts(reduce);
@@ -848,18 +826,15 @@ Utf8String FractionalNumeric::ToTextDefault(bool reduce)
 const size_t FactorPower::GetFactor()
     {
     size_t res = 1;
-    
     for(size_t i = 0; i < m_power; i++)
-        {
         res *= m_divisor;
-        }
     return res;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-void FactorPower::CopyValues(FactorPowerP other)
+void FactorPower::CopyValues(FactorPowerCP other)
     {
     if (nullptr == other)
         {
@@ -878,7 +853,7 @@ void FactorPower::CopyValues(FactorPowerP other)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //----------------------------------------------------------------------------------------
-void FactorPower::Merge(FactorPowerP fp1, FactorPowerP fp2)
+void FactorPower::Merge(FactorPowerCP fp1, FactorPowerCP fp2)
     {
     m_divisor = 0;
     m_power = 0;
@@ -893,6 +868,7 @@ void FactorPower::Merge(FactorPowerP fp1, FactorPowerP fp2)
         m_power = GetMin(fp1->m_power, fp2->m_power);
         }
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //----------------------------------------------------------------------------------------
@@ -907,10 +883,11 @@ Utf8String FactorPower::ToText(Utf8Char pref)
         {
         if (n > 0)
             buf[i++] = 'x';
-        i += NumericFormatSpec::FormatIntegerSimple (static_cast<int>(m_divisor), buf + i, static_cast<int>(sizeof(buf)) - i, false, false);
+        i += NumericFormatSpec::FormatIntegerSimple(static_cast<int>(m_divisor), buf + i, static_cast<int>(sizeof(buf)) - i, false, false);
         }
     return Utf8String(buf);
     }
+
 //===================================================
 //
 // FactorizedNumber
@@ -937,6 +914,7 @@ size_t FactorizedNumber::GetPrimeCount()
      GetPrimes(&primN);
      return static_cast<size_t>(primN);
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //----------------------------------------------------------------------------------------
@@ -960,26 +938,26 @@ size_t FactorizedNumber::PowerOfPrime(size_t ival, size_t prim, size_t* result)
 //----------------------------------------------------------------------------------------
 FactorizedNumber::FactorizedNumber(size_t ival)
     {
-     m_ival = ival;
-     int primM;
-     const size_t* primN = GetPrimes(&primM);
-     size_t pwr = 0;
-     size_t num = ival;
-     FactorPower fp;
-     for (int i = 0; primN[i] > 0; i++)
-         {
-         pwr = PowerOfPrime(num, primN[i], &num);
-         if (pwr > 0)
-             {
-             fp = FactorPower(primN[i], pwr, i);
-             m_factors.push_back(fp);
-             }
-         }
-     if(num > 1)
-         {
-         fp = FactorPower(num, 1, primM+1); // the last factor has index exceeding the number of primes in the base set
-         m_factors.push_back(fp);
-         }
+    m_ival = ival;
+    int primM;
+    const size_t* primN = GetPrimes(&primM);
+    size_t pwr = 0;
+    size_t num = ival;
+    FactorPower fp;
+    for (int i = 0; primN[i] > 0; i++)
+        {
+        pwr = PowerOfPrime(num, primN[i], &num);
+        if (pwr > 0)
+            {
+            fp = FactorPower(primN[i], pwr, i);
+            m_factors.push_back(fp);
+            }
+        }
+    if(num > 1)
+        {
+        fp = FactorPower(num, 1, primM+1); // the last factor has index exceeding the number of primes in the base set
+        m_factors.push_back(fp);
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -996,13 +974,9 @@ size_t FactorizedNumber::RestoreNumber()
            {
             fpp = curr;
             m_ival *= fpp->GetFactor();
-            //div = fpp->GetDivisor();
-            //for (int i = 0; i < fpp->GetPower(); i++)
-            //    {
-            //    m_ival *= div;
-            //    }
            }
         }
+
     return m_ival;
     }
 
@@ -1018,6 +992,7 @@ FactorPowerP FactorizedNumber::FindDivisor(int div)
         if (div == fpp->GetDivisor())
             return fpp;
         }
+
     return nullptr;
     }
 
@@ -1036,6 +1011,7 @@ void FactorizedNumber::ResetFactors(bvector<FactorPower> fact)
         if (0 < fpp->GetPower())
             m_factors.push_back(*curr);
         }
+
     RestoreNumber();
     return;
     }
@@ -1055,13 +1031,13 @@ Utf8String FactorizedNumber::ToText()
             txt += fpp->ToText('x');
             }
         }
+
     return txt;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //----------------------------------------------------------------------------------------
-PUSH_MSVC_IGNORE(6385) // static analysis thinks we exceed the bounds of fact3... I don't see how.
 size_t FactorizedNumber::GetGreatestCommonFactor(FactorizedNumber other)
     {
     size_t primN = GetPrimeCount();
@@ -1093,7 +1069,6 @@ size_t FactorizedNumber::GetGreatestCommonFactor(FactorizedNumber other)
 
     return fact;
     }
-POP_MSVC_IGNORE
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
@@ -1160,9 +1135,7 @@ FormatUnitSet& FormatUnitSet::operator=(const FormatUnitSet& other)
             m_formatSpec = &m_localCopy;
             }
         else
-            {
             m_formatSpec = other.m_formatSpec;
-            }
 
         m_unitName = other.m_unitName;
         m_unit = other.m_unit;
@@ -1396,31 +1369,6 @@ Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, Utf8CP space)
     return jval;
     }
 
-FormattingDividers::FormattingDividers(Utf8CP div)
-    {
-    if (nullptr == div)
-        div = " !\"#$%&\'()*+,-./:;<=>? [\\]^{|}";
-    memset(m_markers, 0, sizeof(m_markers));
-    Utf8CP p = div;
-    while (*p != 0)
-        {
-        m_markers[(*p & 0x78) >> 3] |= FormatConstant::TriadBitMask(*p);
-        ++p;
-        }
-    }
-
-FormattingDividers::FormattingDividers(FormattingDividersCR other)
-    {
-    memcpy(m_markers, other.m_markers, sizeof(m_markers));
-    }
-
-bool FormattingDividers::IsDivider(char c)
-    {
-    if (0 == c)
-        return true;
-    return (0 != ((m_markers[(c & 0x78) >> 3]) & (FormatConstant::TriadBitMask(c))));
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -1446,6 +1394,46 @@ Utf8String FormatUnitSet::ToJsonString(bool verbose) const
     Json::Value jval = ToJson(verbose);
     str = jval.ToString();
     return str;
+    }
+
+//===================================================
+//
+// FormattingDividers
+//
+//===================================================
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+FormattingDividers::FormattingDividers(Utf8CP div)
+    {
+    if (nullptr == div)
+        div = " !\"#$%&\'()*+,-./:;<=>? [\\]^{|}";
+    memset(m_markers, 0, sizeof(m_markers));
+    Utf8CP p = div;
+    while (*p != 0)
+        {
+        m_markers[(*p & 0x78) >> 3] |= FormatConstant::TriadBitMask(*p);
+        ++p;
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+FormattingDividers::FormattingDividers(FormattingDividersCR other)
+    {
+    memcpy(m_markers, other.m_markers, sizeof(m_markers));
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//----------------------------------------------------------------------------------------
+bool FormattingDividers::IsDivider(char c)
+    {
+    if (0 == c)
+        return true;
+    return (0 != ((m_markers[(c & 0x78) >> 3]) & (FormatConstant::TriadBitMask(c))));
     }
 
 //===================================================

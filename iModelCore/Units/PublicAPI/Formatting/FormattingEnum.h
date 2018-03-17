@@ -325,7 +325,7 @@ struct Utils
     UNITS_EXPORT static Utf8CP SkipBlanks(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetFirstSignificantChar(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetLastSignificantChar(Utf8CP str);
-    UNITS_EXPORT static bool IsJsonCandidate(Utf8CP str);
+    static bool IsJsonCandidate(Utf8CP str) {return (GetFirstSignificantChar(str) == '{') && (GetLastSignificantChar(str) == '}');}
     UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
     UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
     UNITS_EXPORT static Utf8String GetCurrentGrouping();
