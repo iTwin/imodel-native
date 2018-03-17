@@ -33,7 +33,7 @@ struct TestObject : Napi::ObjectWrap<TestObject>
 
     Napi::Value TestFunc(const Napi::CallbackInfo& info)
     {
-        return Napi::Number::New(Env(), (int) 0);
+        return Napi::Number::New(Env(), 42.0);
     }
 };
 
@@ -79,10 +79,12 @@ int main(int argc, const char * argv[]) {
     assert (s2.Utf8Value() == s.Utf8Value());
 
     TestObject::Init(env, env.Global());
-    
     auto result1 = runtime.EvaluateScript ("Multiply(7.0,6.0);");
     assert (result1.status == BentleyB0200::iModelJs::Js::EvaluateStatus::Success);
     assert (result1.value.As<Napi::Number>().DoubleValue() == 42.0);
 
+    auto result2 = runtime.EvaluateScript ("var a = new TestObject(1.0);");
+    auto result3 = runtime.EvaluateScript ("a.TestFunc()");
+    assert (result3.value.As<Napi::Number>().DoubleValue() == 42.0);
     return 0;
 }

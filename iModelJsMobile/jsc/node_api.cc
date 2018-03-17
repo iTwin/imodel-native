@@ -59,17 +59,55 @@ const char* error_messages[] = {nullptr,
 //=======================================================================================
 // @bsiclass                                    Satyakam.Khadilkar    03/2018
 //=======================================================================================
-struct JSCFunctionCallbackData {
+struct JSCCallbackData {
 public:
-    JSCFunctionCallbackData(napi_env environment, napi_callback callback, void* callbackData)
-    : _env(environment), _callback(callback), _data(callbackData) {}
-    napi_env Env() { return _env; }
+    JSCCallbackData(napi_env environment, napi_callback callback)
+    : _env(environment), _callback(callback) {}
     JSValueRef Callback(napi_callback_info info) {return _callback(_env,info);}
-    void* Data() { return _data; }
+    napi_env Env() {return _env;}
 private:
     napi_env _env;
     napi_callback _callback;
+};
+
+//=======================================================================================
+// @bsiclass                                    Satyakam.Khadilkar    03/2018
+//=======================================================================================
+struct JSCFunctionCallbackData : JSCCallbackData {
+public:
+    JSCFunctionCallbackData(napi_env environment, napi_callback callback, void* callbackData)
+    : JSCCallbackData(environment, callback), _data(callbackData) {}
+    void* Data() { return _data; }
+private:
     void* _data;
+};
+
+//=======================================================================================
+// @bsiclass                                    Satyakam.Khadilkar    03/2018
+//=======================================================================================
+struct JSClassCallbackData : JSCFunctionCallbackData {
+public:
+    JSClassCallbackData(napi_env environment, napi_callback callback, void* callbackData,
+                        size_t property_count, const napi_property_descriptor* properties) : JSCFunctionCallbackData(environment,callback,callbackData),
+    _property_count(property_count){
+        _properties = new napi_property_descriptor[property_count];
+        for (size_t i = 0 ; i < property_count; i++) {
+            _properties[i] = properties[i];
+        }
+    }
+    
+    ~JSClassCallbackData () {
+        if (_properties != nullptr) {
+            delete [] _properties;
+        }
+    }
+    size_t PropertyCount() { return _property_count;}
+    
+    const napi_property_descriptor* Properties(){return _properties;}
+    
+private:
+    size_t _property_count;
+    napi_property_descriptor* _properties;
 };
 
 //=======================================================================================
@@ -77,14 +115,14 @@ private:
 //=======================================================================================
 struct JSCFunctionCallbackWrapper {
 public:
-    JSCFunctionCallbackWrapper(JSCFunctionCallbackData* data, JSObjectRef thisObj, size_t argC, const JSValueRef argV[])
-    : _data(data), _this(thisObj), _args_length(argC), _argv(argV) {}
+    JSCFunctionCallbackWrapper(JSContextRef context, JSCFunctionCallbackData* data, JSObjectRef thisObj, size_t argC, const JSValueRef argV[], bool isConstructor)
+    : _context(context), _data(data), _this(thisObj), _args_length(argC), _argv(argV), _isConstructor(isConstructor) {}
     
     JSValueRef InvokeCallback() {
         return _data->Callback((napi_callback_info)this);
     }
     
-    JSCFunctionCallbackData* Data() { return _data; }
+    void* Data() { return _data ? _data->Data() : nullptr; }
     size_t ArgsLength() { return _args_length;}
     void Args(napi_value* buffer, size_t buffer_length) {
         size_t i = 0;
@@ -95,7 +133,7 @@ public:
         }
         
         if (i < buffer_length) {
-            napi_value undefined = JSValueMakeUndefined(_data->Env()->GetContext());
+            napi_value undefined = JSValueMakeUndefined(_context);
             for (; i < buffer_length; i += 1) {
                 buffer[i] = undefined;
             }
@@ -104,17 +142,68 @@ public:
     
     JSObjectRef This() { return _this;}
     
-    static JSValueRef Invoke (JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
+    bool IsConstructor() { return _isConstructor; }
+    
+    static JSValueRef CallAsFunction (JSContextRef ctx, JSObjectRef function, JSObjectRef thisObject,
                               size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception){
         auto funcCBData = reinterpret_cast<JSCFunctionCallbackData*>(JSObjectGetPrivate(function));
-        JSCFunctionCallbackWrapper cbwrapper(funcCBData,thisObject,argumentCount,arguments);
+        JSCFunctionCallbackWrapper cbwrapper(ctx, funcCBData, thisObject,
+                                             argumentCount,arguments,false);
         return cbwrapper.InvokeCallback();
     }
+
+    static JSObjectRef CallAsConstructor (JSContextRef ctx, JSObjectRef constructor, size_t argumentCount, const JSValueRef arguments[], JSValueRef* exception){
+        auto classCBData = reinterpret_cast<JSClassCallbackData*>(JSObjectGetPrivate(constructor));
+        JSObjectRef thisObject = JSObjectMake(ctx, nullptr, nullptr);
+        // Add Properties
+        auto pCount = classCBData->PropertyCount();
+        auto properties = classCBData->Properties();
+        size_t static_property_count = 0;
+        for (size_t i=0; i < pCount; i++) {
+            const napi_property_descriptor* p = properties + i;
+            if ((p->attributes & napi_static) != 0) {
+                // Static properties are handled separately below.
+                static_property_count++;
+                continue;
+            }
+
+            JSClassDefinition classDef = kJSClassDefinitionEmpty;
+
+            if (p->utf8name != nullptr) {
+                classDef.className = p->utf8name;
+            } else {
+                continue;
+            }
+            
+            // This code is similar to that in napi_define_properties(); the
+            // difference is it applies to a template instead of an object.
+            if (p->getter != nullptr || p->setter != nullptr) {
+                
+            } else if (p->method != nullptr) {
+                classDef.callAsFunction = JSCFunctionCallbackWrapper::CallAsFunction;
+                JSClassRef classRef = JSClassCreate(&classDef);
+                auto funcCBData = new JSCFunctionCallbackData(classCBData->Env(),p->method,p->data);
+                JSObjectRef method = JSObjectMake(ctx,classRef,funcCBData);
+                JSStringRef methodName = JSStringCreateWithUTF8CString(classDef.className);
+                JSObjectSetProperty(ctx, thisObject, methodName, method, kJSClassAttributeNone, nullptr);
+                JSStringRelease(methodName);
+                JSClassRelease(classRef);
+            } else {
+            }
+        }
+        
+        JSCFunctionCallbackWrapper cbwrapper(ctx, classCBData, thisObject,
+                                             argumentCount,arguments,true);
+        return (JSObjectRef)cbwrapper.InvokeCallback();
+    }
+    
 private:
+    JSContextRef _context;
     size_t _args_length;
     const JSValueRef* _argv;
     JSObjectRef _this;
     JSCFunctionCallbackData* _data;
+    bool _isConstructor;
 };
 
 //---------------------------------------------------------------------------------------
@@ -210,9 +299,13 @@ napi_status napi_create_function(napi_env env,
     CHECK_ARG(env, cb);
 
     JSContextRef ctx = env->GetContext();
+    
     JSClassDefinition classDef = kJSClassDefinitionEmpty;
-    classDef.className = utf8name;
-    classDef.callAsFunction = JSCFunctionCallbackWrapper::Invoke;
+    if (utf8name != nullptr) {
+        classDef.className = utf8name;
+    }
+    
+    classDef.callAsFunction = JSCFunctionCallbackWrapper::CallAsFunction;
     JSClassRef classRef = JSClassCreate(&classDef);
     auto funcCBData = new JSCFunctionCallbackData(env,cb,callback_data);
     *result = JSObjectMake(ctx,classRef,funcCBData);
@@ -236,21 +329,14 @@ napi_status napi_define_class(napi_env env,
     CHECK_ARG(env, constructor);
 
     JSContextRef ctx = env->GetContext();
+    
     JSClassDefinition classDef = kJSClassDefinitionEmpty;
     classDef.className = utf8name;
+    classDef.callAsConstructor = JSCFunctionCallbackWrapper::CallAsConstructor;
 
     JSClassRef classRef = JSClassCreate(&classDef);
-    *result = JSObjectMake(ctx,classRef,NULL);
-
-    for (int ii=0; ii< property_count; ii++)
-    {
-        napi_property_descriptor descriptor = properties[ii];
-        JSStringRef functionNameString = JSStringCreateWithUTF8CString (descriptor.utf8name);
-        JSObjectRef func = JSObjectMakeFunctionWithCallback(ctx, functionNameString, JSCFunctionCallbackWrapper:: Invoke);
-        JSObjectRef objectObject = JSValueToObject (ctx, *result, NULL);
-        JSObjectSetProperty(ctx, objectObject, functionNameString, func, kJSPropertyAttributeNone, NULL);
-        JSStringRelease(functionNameString);
-    }
+    auto classCBData = new JSClassCallbackData(env,constructor,callback_data,property_count,properties);
+    *result = JSObjectMake(ctx,classRef,classCBData);
     JSClassRelease(classRef);
     return GET_RETURN_STATUS(env);
 }
@@ -931,9 +1017,13 @@ napi_status napi_get_new_target(napi_env env,
   CHECK_ARG(env, cbinfo);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  // TODO
-
+    JSContextRef ctx = env->GetContext();
+    JSCFunctionCallbackWrapper* info = reinterpret_cast<JSCFunctionCallbackWrapper*>(cbinfo);
+    if (info->IsConstructor()) {
+        *result = JSObjectMake(ctx, nullptr, nullptr);
+    } else {
+        *result = nullptr;
+    }
   return napi_clear_last_error(env);
 }
 
