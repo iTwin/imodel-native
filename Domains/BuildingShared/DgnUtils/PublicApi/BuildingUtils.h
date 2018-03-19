@@ -227,6 +227,54 @@ public:
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::ElementIterator MakeIterator(Dgn::DgnElementCR element, ECN::ECClassId classId);
 };
 
+//=======================================================================================
+//! The "current entry" of an ElementIdIterator
+// @bsiclass                                                     Mindaugas.Butkus  03/18
+//=======================================================================================
+struct ElementIdIteratorEntry : Dgn::ECSqlStatementEntry
+    {
+    friend struct Dgn::ECSqlStatementIterator<ElementIdIteratorEntry>;
+    private:
+        ElementIdIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : Dgn::ECSqlStatementEntry(statement) {}
+    public:
+        BUILDINGSHAREDDGNUTILS_EXPORT Dgn::DgnElementId GetElementId() const; //!< Get the DgnElementId of the current element
+        template <class T_ElementId> T_ElementId GetId() const { return T_ElementId(GetElementId().GetValue()); } //!< Get the DgnElementId of the current element
+    };
+
+//=======================================================================================
+//! An iterator over a set of DgnElementIds, defined by a query.
+// @bsiclass                                                     Shaun.Sewall      11/16
+//=======================================================================================
+struct ElementIdIterator : Dgn::ECSqlStatementIterator<ElementIdIteratorEntry>
+    {
+    //! Iterates all entries to build an unordered IdSet templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId> BeSQLite::IdSet<T_ElementId> BuildIdSet()
+        {
+        BeSQLite::IdSet<T_ElementId> idSet;
+        for (ElementIdIteratorEntry const& entry : *this)
+            idSet.insert(entry.GetId<T_ElementId>());
+
+        return idSet;
+        }
+
+    //! Iterates all entries to build an ordered bvector templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId> bvector<T_ElementId> BuildIdList()
+        {
+        bvector<T_ElementId> idList;
+        for (ElementIdIteratorEntry const& entry : *this)
+            idList.push_back(entry.GetId<T_ElementId>());
+
+        return idList;
+        }
+
+    //! Iterates all entries to populate an ordered bvector templated on DgnElementId or a subclass of DgnElementId
+    template <class T_ElementId> void BuildIdList(bvector<T_ElementId>& idList)
+        {
+        for (ElementIdIteratorEntry const& entry : *this)
+            idList.push_back(entry.GetId<T_ElementId>());
+        }
+    };
+
 BUILDINGSHAREDDGNUTILS_EXPORT void BuildingElement_notifyFail(Utf8CP pOperation, Dgn::DgnElement& elm, Dgn::DgnDbStatus* stat);
 
 BUILDINGSHAREDDGNUTILS_EXPORT Dgn::RepositoryStatus BuildingLocks_LockElementForOperation(Dgn::DgnElementCR el, BeSQLite::DbOpcode op, Utf8CP pOperation);

@@ -733,5 +733,7 @@ Utf8CP pOperation
     return stat;
     }
 
+Dgn::DgnElementId ElementIdIteratorEntry::GetElementId() const { return m_statement->GetValueId<Dgn::DgnElementId>(0); }
+
 END_BUILDING_SHARED_NAMESPACE
 
