@@ -27,6 +27,7 @@ namespace iModelHubHelpers
     void CreateProjectWSClient(IWSRepositoryClientPtr& result, ClientR client, Utf8StringCR projectId);
 
     iModelResult CreateNewiModel(ClientPtr client, DgnDbPtr db, Utf8StringCR projectId, bool expectSuccess);
+    void CreateUninitializediModel(iModelResult& result, ClientPtr client, Utf8StringCR projectId, Utf8StringCR imodelName);
     void LockiModel(StatusResult& result, iModelConnectionPtr connection, bool expectSuccess = true);
     void UploadNewSeedFile(FileResult& result, iModelConnectionPtr connection, DgnDbPtr db, bool expectSuccess = true);
     BeSQLite::BeGuid ReplaceSeedFile(iModelConnectionPtr connection, DgnDbPtr db);

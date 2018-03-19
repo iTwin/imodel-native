@@ -54,6 +54,33 @@ namespace iModelHubHelpers
         }
 
     /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              03/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    Json::Value iModelCreationJson(Utf8StringCR imodelName, Utf8StringCR description)
+        {
+        Json::Value iModelCreation(Json::objectValue);
+        JsonValueR instance = iModelCreation[ServerSchema::Instance] = Json::objectValue;
+        instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+        instance[ServerSchema::ClassName] = ServerSchema::Class::iModel;
+        JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+        properties[ServerSchema::Property::iModelName] = imodelName;
+        properties[ServerSchema::Property::iModelDescription] = description;
+        return iModelCreation;
+        }
+
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                    Karolis.Dziedzelis              03/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void CreateUninitializediModel(iModelResult& result, ClientPtr client, Utf8StringCR projectId, Utf8StringCR imodelName)
+        {
+        IWSRepositoryClientPtr wsClient;
+        CreateProjectWSClient(wsClient, *client, projectId);
+        ASSERT_SUCCESS(wsClient->SendCreateObjectRequest(iModelCreationJson(imodelName, ""), BeFileName(), nullptr, nullptr)->GetResult());
+        result = client->GetiModelByName(projectId, imodelName)->GetResult();
+        ASSERT_SUCCESS(result);
+        }
+
+    /*--------------------------------------------------------------------------------------+
     * @bsimethod                                    Karolis.Dziedzelis              11/2017
     +---------------+---------------+---------------+---------------+---------------+------*/
     iModelResult CreateNewiModel(ClientCR client, DgnDbR db, Utf8StringCR projectId, bool expectSuccess)
