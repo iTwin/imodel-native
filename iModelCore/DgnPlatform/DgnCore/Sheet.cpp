@@ -874,7 +874,11 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile::_SelectTiles(bvector<TileT
         if (m_tilePolys.empty())
             {
             ncThis.CreatePolys(args.m_context); // m_graphicsClip on tree must be set before creating polys (the polys that represent the tile)
-            BeAssert(!m_tilePolys.empty());
+            if (m_tilePolys.empty())
+                {
+                ncThis.SetNotFound();
+                return SelectParent::No;
+                }
             }
 
         ncThis.CreateGraphics(args.m_context);
