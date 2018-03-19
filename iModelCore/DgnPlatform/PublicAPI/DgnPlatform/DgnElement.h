@@ -1928,7 +1928,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus ClearPropertyArray(uint32_t propertyIndex);
 
     //! Create a Json::Value that represents the state of this element.
-    //! @param[in] opts options for customizing the value. If opts["noGeometry"] == false, don't include geometry.
+    //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream Json::Value is not included.
     Json::Value ToJson(JsonValueCR opts = Json::Value()) const { Json::Value val; _ToJson(val, opts); return val; }
 
     void FromJson(JsonValueR props) {_FromJson(props);}
