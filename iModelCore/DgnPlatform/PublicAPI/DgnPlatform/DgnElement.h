@@ -2861,9 +2861,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DefinitionElementCP _ToDefinitionElement() const override final {return this;}
+public:
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 
-public:
     BE_JSON_NAME(isPrivate)
     bool IsPrivate() const {return m_isPrivate;} //!< Test if this definition is private (should not be listed in the GUI, for example)
     void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this definition is private (should not appear in the GUI, for example)
