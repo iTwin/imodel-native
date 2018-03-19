@@ -41,7 +41,9 @@
 #include <DgnPlatform/RangeIndex.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/ColorBook.h>
+#ifdef ALLOW_SAVEDSELECTION_IN_SCHEMA
 #include <DgnPlatform/SavedSelection.h>
+#endif
 #include <DgnPlatform/ViewDefinition.h>
 #include <DgnPlatform/DisplayMetrics.h>
 #include <DgnPlatform/ECUtils.h>

@@ -8,8 +8,9 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <ECObjects/ECJsonUtilities.h>
+#ifdef ALLOW_SAVEDSELECTION_IN_SCHEMA
 #include <DgnPlatform/SavedSelection.h>
-
+#endif
 USING_NAMESPACE_BENTLEY_DPTEST
 
 //----------------------------------------------------------------------------------------
@@ -2274,6 +2275,7 @@ TEST_F(DgnElementTests, ElementIterator)
     ASSERT_EQ(numPhysicalObjects, count);
     }
 
+#ifdef ALLOW_SAVEDSELECTION_IN_SCHEMA
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  03/2018
 //---------------------------------------------------------------------------------------
@@ -2317,6 +2319,7 @@ TEST_F(DgnElementTests, SavedSelectionCRUD)
     ASSERT_TRUE(SUCCESS == SavedSelection::SetName(*element, "My-Selection"));
     ASSERT_TRUE(0 == strcmp(element->GetCode().GetValueUtf8CP(), "My-Selection"));
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
