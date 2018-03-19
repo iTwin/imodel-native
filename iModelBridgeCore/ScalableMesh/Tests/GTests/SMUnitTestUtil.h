@@ -19,6 +19,11 @@
 #define SM_LISTING_FILE_NAME L"list.txt"
 #endif
 
+#ifndef SM_DATA_SOURCE_PATH
+#define SM_DATA_SOURCE_PATH L"SMDataSource"
+#endif
+
+
 #ifndef SM_DISPLAY_QUERY_TEST_CASES
 #define SM_DISPLAY_QUERY_TEST_CASES L"displayQueryTestCases.txt"
 #endif
@@ -58,10 +63,11 @@ namespace ScalableMeshGTestUtil
         TYPE_3SM,
         TYPE_3DTILES_TILESET,
         TYPE_3DTILES_B3DM,
+        TYPE_3SM_SOURCE,
         TYPE_UNKNOWN
         };
     
-    bvector<BeFileName> GetFiles(BeFileName dataPath);
+    bvector<BeFileName> GetFiles(BeFileName dataPath, bool wantSource = false);
 
     size_t GetFileCount(BeFileName dataPath);
 
@@ -73,7 +79,7 @@ namespace ScalableMeshGTestUtil
     
     SMMeshType GetFileType(BeFileName file);
 
-    bool FilterEntry(BeFileName& entry, bool isDir);
+    bool FilterEntry(BeFileName& entry, bool isDir, bool wantSource = false);
 
 #ifdef VANCOUVER_API
     struct ScalableMeshModule : DgnViewLib::Host

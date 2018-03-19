@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: STM/ScalableMeshCoreLibPCH.cpp $
+|     $Source: STM/ScalableMeshCorePCH.cpp $
 |    $RCSfile: stdafx.h,v $
 |   $Revision: 1.11 $
 |       $Date: 2012/07/25 14:13:37 $
@@ -9,6 +9,6 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ScalableMeshCoreLibPCH.h" 
+#include "ScalableMeshCorePCH.h" 
 
     

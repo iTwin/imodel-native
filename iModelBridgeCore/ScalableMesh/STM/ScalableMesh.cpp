@@ -245,7 +245,7 @@ IScalableMeshMeshQueryPtr IScalableMesh::GetMeshQueryInterface(MeshQueryType que
 IScalableMeshNodeRayQueryPtr IScalableMesh::GetNodeQueryInterface() const
     {
     return _GetNodeQueryInterface();
-    }
+    } 
 
 IScalableMeshEditPtr IScalableMesh::GetMeshEditInterface() const
     {
@@ -2993,7 +2993,6 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveSkirt(uint64_t clipID)
     if (!_GetSkirt(clipID, skirt)) return false;
     DRange3d extent =  DRange3d::From(skirt[0][0]);
     for (auto& vec : skirt) extent.Extend(vec, nullptr);
-    //m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
     m_scmIndexPtr->GetClipRegistry()->DeleteSkirt(clipID);
 
 	Transform t = Transform::FromIdentity();
