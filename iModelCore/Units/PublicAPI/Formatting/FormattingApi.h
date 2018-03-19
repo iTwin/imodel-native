@@ -441,29 +441,6 @@ public:
     //======================================
     // Formatting Methods
     //======================================
-    //! Format the provided byte as a binary string.
-    //! @param[in] n    Byte to format.
-    //! @return n as a binary string who's first character is the most significant bit of n.
-    UNITS_EXPORT Utf8String ByteToBinaryText(Byte n);
-    //! Format the provided 16-bit integer as a binary string.
-    //! @param[in] n            Integer to format.
-    //! @param[in] useSeparator If true, the thousands separator will be used to separate each
-    //! 8-bit segment of the integer.
-    //! @return n as a binary string who's first character is the most significant bit of n.
-    UNITS_EXPORT Utf8String Int16ToBinaryText(int16_t n, bool useSeparator);
-    //! Format the provided 32-bit integer as a binary string.
-    //! @param[in] n    Integer to format.
-    //! @param[in] useSeparator If true, the thousands separator will be used to separate each
-    //! 8-bit segment of the integer.
-    //! @return n as a binary string who's first character is the most significant bit of n.
-    UNITS_EXPORT Utf8String Int32ToBinaryText(int32_t n, bool useSeparator);
-    //! Format the provided double as a binary string.
-    //! @param[in] n    Double to format.
-    //! @param[in] useSeparator If true, the thousands separator will be used to separate each
-    //! 8-bit segment of the double.
-    //! @return n as a binary string.
-    UNITS_EXPORT Utf8String DoubleToBinaryText(double n, bool useSeparator);
-
     //! Format an integer using this NumericFormatSpec's format settings.
     //! @param[in] ival Integer to format.
     //! @return ival as a formatted string.

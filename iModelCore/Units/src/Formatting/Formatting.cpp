@@ -1033,46 +1033,6 @@ Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::ByteToBinaryText(Byte n)
-{
-    char buf[64];
-    FormatBinaryByte(n, buf, sizeof(buf));
-    return Utf8String(buf);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::Int16ToBinaryText(int16_t n, bool useSeparator)
-{
-    char buf[64];
-    FormatBinaryShort(n, buf, sizeof(buf), useSeparator);
-    return Utf8String(buf);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::Int32ToBinaryText(int32_t n, bool useSeparator)
-{
-    char buf[80];
-    FormatBinaryInt(n, buf, sizeof(buf), useSeparator);
-    return Utf8String(buf);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::DoubleToBinaryText(double n, bool useSeparator)
-{
-    char buf[80];
-    FormatBinaryDouble(n, buf, sizeof(buf), useSeparator);
-    return Utf8String(buf);
-}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
  Utf8String NumericFormatSpec::FormatInteger(int32_t ival)
     {
         char buf[64];

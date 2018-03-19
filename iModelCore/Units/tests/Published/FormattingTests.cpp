@@ -19,23 +19,6 @@ struct NumericFormatSpecTest : FormattingTestFixture
     {
     };
 
-struct BinaryFormattingTest : NumericFormatSpecTest
-    {
-    struct TestByte
-        {
-        static Byte const allBitsZero = 0x0;
-        static Byte const allBitsOne = 0xFF;
-        static Byte const charA = 'A';
-        };
-
-    struct TestInt16
-        {
-        static int16_t const allBitsZero = 0;
-        static int16_t const allBitsOne = ~0;
-        static short const testVal = 0b01011010'10010110;
-        };
-    };
-
 struct FormatIntegerTest : NumericFormatSpecTest
     {
     };
@@ -175,42 +158,6 @@ TEST_F(NumericFormatSpecTest, IsIdentical)
 
     EXPECT_TRUE(nfsA.IsIdentical(nfsA)) << "NumericFormatSpec is not identical to itself.";
     EXPECT_FALSE(nfsA.IsIdentical(nfsB));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(BinaryFormattingTest, FormatByte)
-    {
-    NumericFormatSpec nfs;
-    EXPECT_STREQ("00000000", nfs.ByteToBinaryText(BinaryFormattingTest::TestByte::allBitsZero).c_str());
-    EXPECT_STREQ("11111111", nfs.ByteToBinaryText(BinaryFormattingTest::TestByte::allBitsOne).c_str());
-    EXPECT_STREQ("01000001", nfs.ByteToBinaryText(BinaryFormattingTest::TestByte::charA).c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(BinaryFormattingTest, FormatInt16)
-    {
-    NumericFormatSpec nfsComma;
-    nfsComma.SetThousandSeparator(',');
-    nfsComma.SetUse1000Separator(true);
-    NumericFormatSpec nfsPlus;
-    nfsPlus.SetThousandSeparator('+');
-    nfsPlus.SetUse1000Separator(true);
-
-    EXPECT_STREQ("0000000000000000", nfsComma.Int16ToBinaryText(BinaryFormattingTest::TestInt16::allBitsZero, false).c_str());
-    EXPECT_STREQ("00000000,00000000", nfsComma.Int16ToBinaryText(BinaryFormattingTest::TestInt16::allBitsZero, true).c_str());
-    EXPECT_STREQ("00000000+00000000", nfsPlus.Int16ToBinaryText(BinaryFormattingTest::TestInt16::allBitsZero, true).c_str());
-
-    EXPECT_STREQ("1111111111111111", nfsComma.Int16ToBinaryText(BinaryFormattingTest::TestInt16::allBitsOne, false).c_str());
-    EXPECT_STREQ("11111111,11111111", nfsComma.Int16ToBinaryText(BinaryFormattingTest::TestInt16::allBitsOne, true).c_str());
-    EXPECT_STREQ("11111111+11111111", nfsPlus.Int16ToBinaryText(BinaryFormattingTest::TestInt16::allBitsOne, true).c_str());
-
-    EXPECT_STREQ("0101101010010110", nfsComma.Int16ToBinaryText(BinaryFormattingTest::TestInt16::testVal, false).c_str());
-    EXPECT_STREQ("01011010,10010110", nfsComma.Int16ToBinaryText(BinaryFormattingTest::TestInt16::testVal, true).c_str());
-    EXPECT_STREQ("01011010+10010110", nfsPlus.Int16ToBinaryText(BinaryFormattingTest::TestInt16::testVal, true).c_str());
     }
 
 //---------------------------------------------------------------------------------------
