@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/CodeSpec.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -36,6 +36,7 @@
 #define BIS_CODESPEC_PhysicalType                   BIS_CODESPEC(BIS_CLASS_PhysicalType)
 #define BIS_CODESPEC_InformationPartitionElement    BIS_CODESPEC(BIS_CLASS_InformationPartitionElement)
 #define BIS_CODESPEC_RenderMaterial                 BIS_CODESPEC(BIS_CLASS_RenderMaterial)
+#define BIS_CODESPEC_SavedSelection                 BIS_CODESPEC(BIS_CLASS_SavedSelection)
 #define BIS_CODESPEC_Sheet                          BIS_CODESPEC(BIS_CLASS_Sheet)
 #define BIS_CODESPEC_SpatialCategory                BIS_CODESPEC(BIS_CLASS_SpatialCategory)
 #define BIS_CODESPEC_SpatialLocationType            BIS_CODESPEC(BIS_CLASS_SpatialLocationType)

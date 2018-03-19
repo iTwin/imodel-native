@@ -85,7 +85,6 @@ constexpr double s_minToleranceRatioMultiplier = 2.0;
 constexpr double s_minToleranceRatio = s_tileScreenSize * s_minToleranceRatioMultiplier;
 constexpr uint32_t s_minElementsPerTile = 100; // ###TODO: The complexity of a single element's geometry can vary wildly...
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
-constexpr double s_spatialRangeMultiplier = 1.0001; // must be > 1.0 - need to expand project extents slightly to avoid clipping geometry that lies right on one of their planes...
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 
@@ -317,6 +316,11 @@ protected:
 
     GraphicBuilderPtr _CreateSubGraphic(TransformCR, ClipVectorCP) const override;
     GraphicPtr _FinishGraphic(GeometryAccumulatorR) override;
+    void _ActivateGraphicParams(GraphicParamsCR gfParams, GeometryParamsCP geomParams) override
+        {
+        BeAssert(nullptr == geomParams || geomParams->GetSubCategoryId().IsValid());
+        GeometryListBuilder::_ActivateGraphicParams(gfParams, geomParams);
+        }
 
     TileBuilder(TileContext& context, DRange3dCR range);
 
@@ -356,6 +360,15 @@ public:
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileSubGraphic);
 DEFINE_REF_COUNTED_PTR(TileSubGraphic);
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool wantGlyphBoxes(double sizeInPixels)
+    {
+    constexpr double s_glyphBoxSizeThreshold = 3.0;
+    return sizeInPixels <= s_glyphBoxSizeThreshold;
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
@@ -364,7 +377,6 @@ struct TileContext : NullContext
     enum class Result { Success, NoGeometry, Aborted };
 private:
     IFacetOptionsR                  m_facetOptions;
-    mutable IFacetOptionsPtr        m_lsStrokerOptions;
     RootR                           m_root;
     GeometryList&                   m_geometries;
     DRange3d                        m_range;
@@ -406,7 +418,12 @@ protected:
     AreaPatternTolerance _GetAreaPatternTolerance(CurveVectorCR) override { return AreaPatternTolerance(m_tolerance); }
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
-
+    bool _WantGlyphBoxes(double sizeInPixels) const override { return wantGlyphBoxes(sizeInPixels); }
+    bool _AnyPointVisible(DPoint3dCP pts, int nPts, double tolerance) override
+        {
+        DRange3d range = DRange3d::From(pts, nPts);
+        return range.IntersectsWith(m_range);
+        }
 public:
     TileContext(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, double tolerance, LoadContextCR loadContext)
         : TileContext(geometries, root, range, facetOptions, transformFromDgn, tolerance, tolerance, loadContext) { }
@@ -422,6 +439,7 @@ public:
     bool Is3d() const { return m_root.Is3d(); }
 
     double GetMinRangeDiagonalSquared() const { return m_minRangeDiagonalSquared; }
+    double GetTolerance() const { return m_tolerance; }
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any bits of geometry with range smaller than roughly half a pixel...
@@ -432,29 +450,6 @@ public:
     size_t GetGeometryCount() const { return m_geometries.size(); }
     void TruncateGeometryList(size_t maxSize) { m_geometries.resize(maxSize); m_geometries.MarkIncomplete(); }
 
-    IFacetOptionsPtr GetLineStyleStrokerOptions(LineStyleSymbCR lsSymb) const
-        {
-        if (!lsSymb.GetUseStroker())
-            return nullptr;
-
-        // Only stroke if line width at least 5 pixels...
-        double pixelSize = m_tolerance;
-        double maxWidth = lsSymb.GetStyleWidth();
-        constexpr double pixelThreshold = 5.0;
-
-        if (0.0 != pixelSize && maxWidth / pixelSize < pixelThreshold)
-            return nullptr;
-
-        if (m_lsStrokerOptions.IsNull())
-            {
-            // NB: During geometry collection, tolerance is generally set for leaf node
-            // We don't apply facet options tolerances until we convert the geometry to meshes/strokes
-            m_lsStrokerOptions = IFacetOptions::CreateForCurves();
-            m_lsStrokerOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
-            }
-
-        return m_lsStrokerOptions;
-        }
 
     DgnElementId GetCurrentElementId() const { return m_curElemId; }
     TransformCR GetTransformFromDgn() const { return m_transformFromDgn; }
@@ -558,16 +553,30 @@ GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP cl
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicPtr TileBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     {
+    BeAssert(nullptr == GetGeometryParams() || GetGeometryParams()->GetSubCategoryId().IsValid());
     return m_context.FinishGraphic(accum, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   05/17
+* @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& options)
+bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR lsSymb, IFacetOptionsPtr& options)
     {
-    options = m_context.GetLineStyleStrokerOptions(symb);
-    return options.IsValid();
+    if (!lsSymb.GetUseStroker())
+        return false;
+
+    // We need to stroke if either the stroke length or width exceeds tolerance...
+    ILineStyleCP        lineStyle;
+    double              maxDimension = (nullptr == (lineStyle = lsSymb.GetILineStyle())) ? 0.0 : std::max(lineStyle->GetMaxWidth(), lineStyle->GetLength());
+    constexpr double    s_strokeLineStylePixels = 5.0;      // Stroke if max dimension exceeds 5 pixels.
+
+    if (maxDimension > s_strokeLineStylePixels * m_context.GetTolerance())
+        {
+        options = &m_context.GetFacetOptions();
+        return true;
+        }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -722,6 +731,34 @@ static void clipContentRangeToTileRange(DRange3dR content, DRange3dCR tile)
 
     if (content.low.x > content.high.x || content.low.y > content.high.y || content.low.z > content.high.z)
         content.Init();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static DRange3d scaleSpatialRange(DRange3dCR range)
+    {
+    // Geometry often lies in a plane precisely coincident with the planes of the project extents.
+    // We must expand the extents slightly to prevent floating point fuzz in range intersection tests
+    // against such geometry - otherwise portions may be inappropriately culled.
+    // Similarly (TFS#863543) some 3d data sets consist of essentially 2d data sitting smack in the center of the
+    // project extents. If we subdivide tiles in half, we face similar issues where the geometry ends up precisely
+    // aligned to tile boundaries. Bias the scale to prevent this.
+    // NOTE: There's no simple way to detect and deal with arbitrarily located geometry just-so-happening to
+    // align with some tile's boundary...
+    constexpr double loScale = 1.0001,
+                     hiScale = 1.0002,
+                     fLo = 0.5 * (1.0 + loScale),
+                     fHi = 0.5 * (1.0 + hiScale);
+
+    DRange3d result = range;
+    if (!result.IsNull())
+        {
+        result.high.Interpolate(range.low, fHi, range.high);
+        result.low.Interpolate(range.high, fLo, range.low);
+        }
+
+    return result;
     }
 
 END_UNNAMED_NAMESPACE
@@ -1064,7 +1101,7 @@ BentleyStatus Loader::_LoadTile()
         if (graphic.IsValid())
             {
             geometry.Meshes().m_features.SetModelId(root.GetModelId());
-            batch = system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features));
+            batch = system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features), tile._GetContentRange());
             BeAssert(batch.IsValid());
             tile.SetGraphic(*batch);
             }
@@ -1178,7 +1215,7 @@ TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system) : T_Super(model, transform, "", &system),
-    m_name(model.GetName()), m_is3d(model.Is3dModel()),
+    m_name(model.GetName()),
 #if defined(CACHE_LARGE_GEOMETRY)
     m_cacheGeometry(m_is3d)
 #else
@@ -1210,8 +1247,7 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     if (model.Is3dModel())
         {
         range = model.GetDgnDb().GeoLocation().GetProjectExtents();
-
-        range.ScaleAboutCenter(range, s_spatialRangeMultiplier);
+        range = scaleSpatialRange(range);
         populateRootTile = isElementCountLessThan(s_minElementsPerTile, *model.GetRangeIndex());
         }
     else
@@ -1220,9 +1256,9 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         if (!accum.Accumulate(*model.GetRangeIndex()))
             range = DRange3d::From(DPoint3d::FromZero());
 
-
-        // Temp Fix to avoid endless subdivision as we are not subdividing in Z...
-        range.low.z = range.high.z = 0.0;
+        auto sheet = model.ToSheetModel();
+        if (nullptr != sheet)
+            range.Extend(sheet->GetSheetExtents());
 
         populateRootTile = accum.GetElementCount() < s_minElementsPerTile;
         }
@@ -1484,8 +1520,7 @@ bool Root::WantCacheGeometry(double rangeDiagSq) const
     if (0.0 == diag)
         return false;
 
-    BeAssert(m_is3d); // we only bother caching for 3d...want rangeRatio relative to actual range, not expanded range
-    diag /= s_spatialRangeMultiplier;
+    BeAssert(Is3d()); // we only bother caching for 3d...want rangeRatio relative to actual range, not expanded range
     return rangeDiagSq / diag >= rangeRatio;
     }
 
@@ -1955,6 +1990,7 @@ private:
     GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const&) override { BeAssert(false); return nullptr; }
     GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
+    bool _WantGlyphBoxes(double sizeInPixels) const override { return wantGlyphBoxes(sizeInPixels); }
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
@@ -1970,7 +2006,20 @@ public:
     DRange3dCR GetTileRange() const { return m_builderMap.GetRange(); }
     TileCR GetTile() const { return m_tile; }
     void SetLoadContext(LoadContextCR context) { m_loadContext = context; }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance) override
+    {
+    DRange3d        pointRange = DRange3d::From(worldPoints, nPts);
+
+    return pointRange.IntersectsWith(m_tile.GetRange());
+    }
+
 };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
@@ -2227,7 +2276,6 @@ Strokes MeshGenerator::ClipSegments(StrokesCR input) const
                 if (!GetTileRange().IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
                     {
                     // entire segment clipped
-                    BeAssert(prevOutside && nextOutside);
                     prevPt = nextPt;
                     continue;
                     }
@@ -2922,7 +2970,7 @@ RefCountedPtr<ThumbnailRoot> ThumbnailRoot::Create(GeometricModelR model, Render
 
     DRange3d frustumRange = context.GetViewportR().GetFrustum().ToRange();
     if (model.Is3dModel())
-        frustumRange.ScaleAboutCenter(frustumRange, s_spatialRangeMultiplier);
+        frustumRange = scaleSpatialRange(frustumRange);
 
     DPoint3d centroid = DPoint3d::FromInterpolate(frustumRange.low, 0.5, frustumRange.high);
     Transform transform = Transform::From(centroid);

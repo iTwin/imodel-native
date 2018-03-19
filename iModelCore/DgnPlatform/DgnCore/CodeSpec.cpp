@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/CodeSpec.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -357,6 +357,7 @@ DbResult DgnDb::CreateCodeSpecs()
     {
     if (// CodeSpecs with Repository scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_NullCodeSpec, CodeScopeSpec::CreateRepositoryScope(), CodeSpec::GetNullCodeSpecId())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SavedSelection, CodeScopeSpec::CreateRepositoryScope())) ||
         // CodeSpecs with Model scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AnnotationFrameStyle, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AnnotationLeaderStyle, CodeScopeSpec::CreateModelScope())) ||

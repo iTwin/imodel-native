@@ -169,7 +169,6 @@ protected:
     mutable GeomPartCache           m_geomParts;
     mutable SolidPrimitivePartMap   m_solidPrimitiveParts;
     mutable GeomListMap             m_geomLists;
-    bool                            m_is3d;
     DebugOptions                    m_debugOptions = DebugOptions::None;
     bool                            m_cacheGeometry;
 
@@ -190,8 +189,6 @@ public:
     virtual ~Root() { ClearAllTiles(); }
 
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
-    bool Is3d() const { return m_is3d; }
-    bool Is2d() const { return !Is3d(); }
     DebugOptions GetDebugOptions() const;
     void SetDebugOptions(DebugOptions opts) { m_debugOptions = opts; }
 

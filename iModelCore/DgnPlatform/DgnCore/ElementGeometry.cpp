@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
 #include "DgnPlatform/Annotations/TextAnnotationDraw.h"
@@ -4347,6 +4348,121 @@ GeometryCollection::GeometryCollection(GeometrySourceCR source) : m_state(source
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
+    {
+    GeometryStreamIO::Collection collection(m_data, m_dataSize);
+    GeometryStreamIO::Reader reader(m_state.m_dgnDb);
+    DgnSubCategoryId lastSubCategory = m_state.m_geomParams.GetSubCategoryId();
+    Json::Value output;
+    
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case GeometryStreamIO::OpCode::Header:
+                break;
+
+            case GeometryStreamIO::OpCode::BasicSymbology:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+                Json::Value value;
+
+                DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
+
+                // NOTE: Don't include default sub-category if sub-category isn't changing from a non-default sub-category (was un-necessarily included in some GeometryStreams)...
+                if (subCategoryId.IsValid() && subCategoryId != lastSubCategory)
+                    {
+                    value["subCategory"] = subCategoryId.ToHexStr();
+                    lastSubCategory = subCategoryId;
+                    }
+
+                if (ppfb->useColor())
+                    value["color"] = Json::Value(ppfb->color());
+
+                if (ppfb->useWeight())
+                    value["weight"] = Json::Value(ppfb->weight());
+
+                if (ppfb->useStyle())
+                    {
+                    DgnStyleId styleId((uint64_t)ppfb->lineStyleId());
+                    value["style"] = styleId.ToHexStr();
+                    }
+
+                if (0.0 != ppfb->transparency())
+                    value["transparency"] = ppfb->transparency();
+
+                if (0 != ppfb->displayPriority())
+                    value["displayPriority"] = ppfb->displayPriority();
+                
+                if (FB::GeometryClass_Primary != ppfb->geomClass())
+                    value["geometryClass"] = ppfb->geomClass();
+                    
+                Json::Value symbValue;
+                symbValue["appearance"] = value; // NOTE: A null "appearance" indicates a reset to default sub-category appearance...
+                output.append(symbValue);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::GeometryPartInstance:
+                break;
+
+            case GeometryStreamIO::OpCode::Polyface:
+            case GeometryStreamIO::OpCode::SolidPrimitive:
+            case GeometryStreamIO::OpCode::BsplineSurface:
+            case GeometryStreamIO::OpCode::ParasolidBRep:
+            case GeometryStreamIO::OpCode::BRepPolyface:
+            case GeometryStreamIO::OpCode::BRepCurveVector:
+            case GeometryStreamIO::OpCode::TextString:
+            case GeometryStreamIO::OpCode::Image:
+                break; // NEEDSWORK...Ignore these for now...
+
+            default:
+                {
+                if (!egOp.IsGeometryOp())
+                    break;
+
+                GeometricPrimitivePtr geom;
+
+                if (!reader.Get(egOp, geom))
+                    break;
+
+                IGeometryPtr geomPtr;
+
+                switch (geom->GetGeometryType())
+                    {
+                    case GeometricPrimitive::GeometryType::CurvePrimitive:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsICurvePrimitive());
+                        break;
+                        }
+
+                    case GeometricPrimitive::GeometryType::CurveVector:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsCurveVector());
+                        break;
+                        }
+                    }
+
+                if (!geomPtr.IsValid())
+                    break;
+
+                Json::Value value;
+
+                if (!IModelJson::TryGeometryToIModelJsonValue(value, *geomPtr))
+                    break;
+
+                output.append(value);
+                break;
+                }
+            }
+        }
+
+    return output;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool is3dGeometryType(GeometricPrimitive::GeometryType geomType)
@@ -4581,6 +4697,7 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
     if (m_elParams.IsEquivalent(elParams))
         return true;
 
+    m_subCategoryChanged = (!m_isPartCreate && (elParams.GetSubCategoryId() != m_elParams.GetSubCategoryId()));
     m_elParams = elParams;
     m_appearanceChanged = true; // Defer append until we actually have some geometry...
 
@@ -4773,14 +4890,15 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic, Geom
         if (!m_appearanceModified || !m_elParamsModified.IsEquivalent(localParams))
             {
             m_elParamsModified = localParams;
-            m_writer.Append(m_elParamsModified, m_isPartCreate, m_is3d);
+            m_writer.Append(m_elParamsModified, m_isPartCreate || !m_subCategoryChanged, m_is3d);
             m_appearanceChanged = m_appearanceModified = true;
+            m_subCategoryChanged = false;
             }
         }
     else if (m_appearanceChanged)
         {
-        m_writer.Append(m_elParams, m_isPartCreate, m_is3d);
-        m_appearanceChanged = m_appearanceModified = false;
+        m_writer.Append(m_elParams, m_isPartCreate || !m_subCategoryChanged, m_is3d);
+        m_appearanceChanged = m_appearanceModified = m_subCategoryChanged = false;
         }
 
     if (isSubGraphic && !m_isPartCreate)
@@ -5543,3 +5661,95 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source)
 
     return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.GetAsGeometrySource2d()->GetPlacement());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::UpdateFromJson(DgnGeometryPartR part, JsonValueCR input, JsonValueCR opts)
+    {
+    // NEEDSWORK...
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::UpdateFromJson(GeometrySourceR source, JsonValueCR input, JsonValueCR opts)
+    {
+    if (!input.isArray())
+        return false;
+
+    GeometryBuilderPtr builder = Create(source);
+
+    if (!builder.IsValid())
+        return false;
+
+    Render::GeometryParams params = builder->GetGeometryParams();
+    int n = input.size();
+
+    for (int i = 0; i < n; i++)
+        {
+        Json::Value entry = input[i];
+
+        if (!entry.isObject())
+            continue;
+
+        if (entry.isMember("appearance"))
+            {
+            Json::Value appearance = entry["appearance"];
+
+            params.ResetAppearance(); // Always reset to subCategory appearance...
+
+            if (!appearance["subCategory"].isNull())
+                {
+                DgnSubCategoryId subCategoryId;
+
+                subCategoryId.FromJson(appearance["subCategory"]);
+
+                if (subCategoryId.IsValid())
+                    params.SetSubCategoryId(subCategoryId);
+                }
+
+            if (!appearance["color"].isNull())
+                params.SetLineColor(ColorDef(appearance["color"].asInt()));
+
+            if (!appearance["weight"].isNull())
+                params.SetWeight(appearance["weight"].asInt());
+
+            if (!appearance["style"].isNull())
+                {
+                DgnStyleId styleId;
+
+                styleId.FromJson(appearance["style"]);
+
+                if (styleId.IsValid())
+                    {
+                    LineStyleInfoPtr lsInfo = LineStyleInfo::Create(styleId, nullptr);
+                    params.SetLineStyle(lsInfo.get());
+                    }
+                }
+
+            if (!appearance["transparency"].isNull())
+                params.SetTransparency(appearance["transparency"].asDouble());
+
+            if (!appearance["displayPriority"].isNull())
+                params.SetDisplayPriority(appearance["displayPriority"].asInt());
+
+            if (!appearance["geometryClass"].isNull())
+                params.SetGeometryClass((Render::DgnGeometryClass) (appearance["geometryClass"].asInt()));
+            }
+        else
+            {
+            bvector<IGeometryPtr> geometry;
+
+            if (!IModelJson::TryIModelJsonValueToGeometry(entry, geometry) || 1 != geometry.size())
+                return false; // Should only ever be a single entry...
+
+            builder->Append(params);
+            builder->Append(*geometry.at(0));
+            }
+        }
+
+    return (SUCCESS == builder->Finish(source));
+    }
+

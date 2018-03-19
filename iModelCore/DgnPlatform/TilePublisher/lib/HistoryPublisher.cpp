@@ -155,7 +155,7 @@ PublisherContext::Status PublishRevision(DgnModelIdSet const& modelIds, DgnEleme
     if (!elementIds.empty())                                                                                                        {
         ProgressMeter               progressMonitor(*this);
         RevisionCollectionFilter    collectionFilter(elementIds);
-        TileGenerator               tileGenerator(m_db, &collectionFilter, &progressMonitor);
+        TileGenerator               tileGenerator(m_db, m_projectExtents, &collectionFilter, &progressMonitor);
 
         auto generateStatus = tileGenerator.GenerateTiles(*this, modelIds, params.GetTolerance(), params.SurfacesOnly(), s_maxPointsPerTile);
         }

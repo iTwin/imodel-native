@@ -277,7 +277,7 @@ private:
     DgnSubCategoryId    m_subCategoryId;
     DgnGeometryClass    m_class;
 
-    bool AreIdsValid() const { BeAssert(m_elementId.IsValid() == m_subCategoryId.IsValid()); return m_elementId.IsValid(); }
+    bool AreIdsValid() const { /* BeAssert(m_elementId.IsValid() == m_subCategoryId.IsValid()); */ return m_elementId.IsValid();  }
 public:
     FeatureAttributes() : m_class(DgnGeometryClass::Primary) { }
     FeatureAttributes(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) : m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
@@ -639,6 +639,7 @@ struct TileGeometry : RefCountedBase
         void Transform(TransformCR transform);
 
         TileStrokes (TileDisplayParamsCR displayParams, bvector<bvector<DPoint3d>>&& strokes, bool disjoint = false) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
+        TileStrokes (TileDisplayParamsCR displayParams, bool disjoint = false) : m_displayParams(&displayParams), m_disjoint(disjoint) { }
         }; 
 
     typedef bvector<TilePolyface>   T_TilePolyfaces;
@@ -1075,7 +1076,7 @@ private:
     FutureStatus GenerateTilesFromTileTree(ITileCollector* collector, double leafTolerance, bool surfacesOnly, GeometricModelP model);
 
 public:
-    DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, ITileCollectionFilterCP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
+    DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, AxisAlignedBox3dCR projectExtents, ITileCollectionFilterCP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetSpatialTransformFromDgn() const { return m_spatialTransformFromDgn; }

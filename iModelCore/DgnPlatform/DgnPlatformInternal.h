@@ -2,7 +2,7 @@
 |
 |     $Source: DgnPlatformInternal.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #ifndef __DGNCOREINTERNAL_H__
@@ -41,6 +41,7 @@
 #include <DgnPlatform/RangeIndex.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/ColorBook.h>
+#include <DgnPlatform/SavedSelection.h>
 #include <DgnPlatform/ViewDefinition.h>
 #include <DgnPlatform/DisplayMetrics.h>
 #include <DgnPlatform/ECUtils.h>

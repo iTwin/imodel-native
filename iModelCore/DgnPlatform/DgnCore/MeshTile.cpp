@@ -18,13 +18,30 @@ BEGIN_UNNAMED_NAMESPACE
 constexpr double s_half2dDepthRange = 10.0;
 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
-
-static const double s_minRangeBoxSize    = 1.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+static const double s_minRangeBoxSize    = 2.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const double s_minToleranceRatio  = 256.0;   // Nominally the screen size of a tile.  Increasing generally increases performance (fewer draw calls) at expense of higher load times.
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static DPoint2d getSheetSize(Sheet::Model const& sheet)
+    {
+    // Cheap workaround for TFS#743687. Not going to invest in a better fix because MeshTile.cpp is going bye-bye very soon.
+    DPoint2d sheetSize = sheet.GetSheetSize();
+    if (0.0 == sheetSize.x)
+        sheetSize.x = 0.1;
+
+    if (0.0 == sheetSize.y)
+        sheetSize.y = 0.1;
+
+    return sheetSize;
+    }
 
 END_UNNAMED_NAMESPACE
 
 //#define POINT_SUPPORT
+
+static bool s_doCurveVectorDecimation = false;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -142,6 +159,22 @@ private:
             {
             m_range.low.z = -s_half2dDepthRange*2;  // times 2 so we don't stick geometry right on the boundary...
             m_range.high.z = s_half2dDepthRange*2;
+            }
+
+        auto sheet = m_model.ToSheetModel();
+        if (nullptr != sheet)
+            {
+            // Want to ensure the sheet border decoration is not clipped...the decoration's range exceeds the sheet extents due to drop-shadow
+            // - just create the border and grab its range (scaled a bit to prevent clipping edges).
+            Sheet::Border border(getSheetSize(*sheet));
+            DRange2d borderRange2d = border.GetRange();
+            borderRange2d.ScaleAboutCenter(borderRange2d, 1.001);
+
+            DRange3d borderRange;
+            borderRange.low = DPoint3d::From(borderRange2d.low);
+            borderRange.high = DPoint3d::From(borderRange2d.high);
+
+            m_range.Extend(borderRange);
             }
         }
 public:
@@ -923,7 +956,9 @@ size_t TileGeometry::GetFacetCount(IFacetOptionsR options) const
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
-    {                    
+    {              
+    bool                    isCurved = curve.ContainsNonLinearPrimitive();
+    constexpr double        s_minDecimateCount = 25;
     bvector <bvector<bvector<DPoint3d>>> strokesArray;
 
     curve.CollectLinearGeometry (strokesArray, &facetOptions);
@@ -933,10 +968,22 @@ static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVecto
         for (auto& loopStrokes : loop)
             {
             transform.Multiply(loopStrokes, loopStrokes);
-            strokes.push_back (std::move(loopStrokes));
+
+            if (s_doCurveVectorDecimation && !isCurved && loopStrokes.size() > s_minDecimateCount) 
+                {
+                bvector<DPoint3d>       compressed;
+                
+                DPoint3dOps::CompressByChordError(compressed, loopStrokes, facetOptions.GetChordTolerance());
+                strokes.push_back (std::move(compressed));
+                }
+            else
+                {
+                strokes.push_back (std::move(loopStrokes));
+                }
             }
         }
     }
+
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -1032,6 +1079,37 @@ public:
 };
 
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addRegion (IPolyfaceConstructionR builder, CurveVectorR curveVector)
+    {
+    bvector<DPoint3d>   points;
+    size_t              numLoop;
+    constexpr size_t    s_minDecimateCount = 25;
+
+    builder.Stroke (curveVector, points, numLoop);
+
+#ifndef NDEBUG    
+    DRange3d        range = DRange3d::From(points);
+    static          double s_sizeTest = 1.0E3;
+
+    BeAssert (range.DiagonalDistance() < s_sizeTest);
+#endif
+
+    if (s_doCurveVectorDecimation && 1 == numLoop && points.size() > s_minDecimateCount)
+        {
+        bvector<DPoint3d>       compressed;
+                
+        DPoint3dOps::CompressByChordError(compressed, points, builder.GetFacetOptionsR().GetChordTolerance());
+        builder.AddTriangulation (compressed);
+        }
+    else
+        {
+        builder.AddTriangulation (points);
+        }
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
@@ -1098,6 +1176,7 @@ bool     DoGlyphBoxes (IFacetOptionsR facetOptions)
     return minDimension < s_minGlyphRatio * facetOptions.GetChordTolerance();
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1137,7 +1216,7 @@ T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
     else
         {
         for (auto& glyphCurve : m_glyphCurves)
-            polyfaceBuilder->AddRegion(*glyphCurve);
+            addRegion(*polyfaceBuilder, *glyphCurve);
         }
 
     PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
@@ -1433,7 +1512,7 @@ TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptions
     MSBsplineSurfacePtr bsplineSurface = solidPrimitive.IsNull() && curveVector.IsNull() ? m_geometry->GetAsMSBsplineSurface() : nullptr;
 
     if (curveVector.IsValid() && !m_curvesAsWire)
-        polyfaceBuilder->AddRegion(*curveVector);
+        addRegion(*polyfaceBuilder, *curveVector);
     else if (solidPrimitive.IsValid())
         polyfaceBuilder->AddSolidPrimitive(*solidPrimitive);
     else if (bsplineSurface.IsValid())
@@ -1587,13 +1666,13 @@ IFacetOptionsPtr TileGeometry::CreateFacetOptions(double chordTolerance, NormalM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::TileGenerator(DgnDbR dgndb, ITileCollectionFilterCP filter, ITileGenerationProgressMonitorP progress)
+TileGenerator::TileGenerator(DgnDbR dgndb, AxisAlignedBox3dCR projectExtents, ITileCollectionFilterCP filter, ITileGenerationProgressMonitorP progress)
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), m_totalTiles(0), m_totalModels(0), m_completedModels(0), m_filter(filter)
     {
 #if defined(WIP_MESHTILE_3SM)
     m_spatialTransformFromDgn.InitIdentity();
 #else
-    DPoint3d origin = dgndb.GeoLocation().GetProjectExtents().GetCenter();
+    DPoint3d origin = projectExtents.GetCenter();
     m_spatialTransformFromDgn = Transform::From(-origin.x, -origin.y, -origin.z);
 #endif
     }
@@ -1658,31 +1737,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollecto
 TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
     // ###TODO: This is not ready for primetime...
-#ifdef GENERATE_FROM_TILE_TREE_DIRECTLY
-    DgnModelPtr         modelPtr(&model);
-    auto                pCollector = &collector;
-    auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
-    GeometricModelP     geometricModel = model.ToGeometricModelP();
-    bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
-
-    if (!isModel3d)
-        surfacesOnly = false;
-
-
-    if (nullptr == geometricModel)
-        {
-        BeAssert (false);
-        return folly::makeFuture(TileGeneratorStatus::NoGeometry);
-        }
-
-    double          rangeDiagonal = geometricModel->QueryModelRange().DiagonalDistance();
-    double          minDiagonalToleranceRatio = isModel3d ? 1.0E-3 : 1.0E-5;   // Don't allow leaf tolerance to be less than this factor times range diagonal.
-    static  double  s_minLeafTolerance = 1.0E-6;
-
-    leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
-
-    return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
-#else
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
@@ -1760,8 +1814,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             return status;                           
             });
         }
-
-#endif
     }
 
 
@@ -2135,7 +2187,6 @@ private:
 
     IFacetOptionsR              m_leafFacetOptions;
     IFacetOptionsPtr            m_targetFacetOptions;
-    mutable IFacetOptionsPtr    m_lineStyleFacetOptions;
     DgnElementId                m_curElemId;
     TileGenerationCacheCR       m_cache;
     TileDisplayParamsCache      m_displayParamsCache;
@@ -2164,7 +2215,6 @@ private:
 
     IFacetOptionsP _GetFacetOptionsP() override { return &GetFacetOptions(); }
     IFacetOptionsR GetFacetOptions() const { return LeafThresholdExceeded() ? *m_targetFacetOptions : m_leafFacetOptions; }
-    IFacetOptionsP GetLineStyleFacetOptions(LineStyleSymbCR) const;
 
     bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf) override;
     bool _ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) override;
@@ -2204,7 +2254,6 @@ public:
           m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
         {
         static const double s_minTextBoxToleranceRatio = 1.0;           // Below this ratio to tolerance text is rendered as box.
-        //static const double s_minLineStyleWidthToleranceRatio = 1.0;     // Below this ratio to tolerance line styles are rendered as continuous.
 
         double targetTolerance = tolerance * transformFromDgn.ColumnXMagnitude();
         m_targetFacetOptions->SetChordTolerance(targetTolerance);
@@ -2219,16 +2268,17 @@ public:
 
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
     bool IsGeomPartContained (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic) const;
-    bool _DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr&, SimplifyGraphic&) const override;
+    bool _DoLineStyleStroke(Render::LineStyleSymbCR lineStyleSymb, IFacetOptionsPtr& options, SimplifyGraphic&) const override;
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
     DRange3dCR GetRange() const { return m_range; }
+    double& GetMinRangeDiagonalR() { return m_minRangeDiagonal; }
 
     bool BelowMinRange(DRange3dCR range) const
         {
         // Avoid processing any elements with range smaller than roughly half a pixel...
-        return range.DiagonalDistance() < m_minRangeDiagonal;
+       return range.DiagonalDistance() < m_minRangeDiagonal;
         }
     
     void PushCurrentGeometry()
@@ -2265,42 +2315,25 @@ public:
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
+* @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGeometryProcessor::_DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& facetOptions, SimplifyGraphic& gf) const
-    {
-    facetOptions = GetLineStyleFacetOptions(lsSymb);
-    return facetOptions.IsValid();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-IFacetOptionsP TileGeometryProcessor::GetLineStyleFacetOptions(LineStyleSymbCR lsSymb) const
+bool TileGeometryProcessor::_DoLineStyleStroke(Render::LineStyleSymbCR lsSymb, IFacetOptionsPtr& options, SimplifyGraphic& gf) const
     {
     if (!lsSymb.GetUseStroker())
-        return nullptr;
+        return false;
 
-    // NB: Initially we collect geometry as if this were a leaf tile.
-    // However large styled curves will quickly cause us to exceed our leaf facet count threshold.
-    // So stroke only if the line width is at least 5 pixels at tile (not leaf) tolerance, or if
-    // we have not yet exceeded the threshold.
-    // GetFacetOptions() returns the options for leaf tolerance if threshold not exceeded; for tile tolerance otherwise.
-    double pixelSize = GetFacetOptions().GetChordTolerance();
-    double maxWidth = lsSymb.GetStyleWidth();
-    constexpr double pixelThreshold = 5.0;
+    // We need to stroke if either the stroke length or width exceeds tolerance...
+    ILineStyleCP        lineStyle;
+    double              maxDimension = (nullptr == (lineStyle = lsSymb.GetILineStyle())) ? 0.0 : std::max(lineStyle->GetMaxWidth(), lineStyle->GetLength());
+    constexpr double    s_strokeLineStylePixels = 5.0;      // Stroke if max dimension exceeds 5 pixels.
 
-    // ###TODO: width of 0 indicates what?
-    if (0.0 != pixelSize && 0.0 != maxWidth && maxWidth / pixelSize < pixelThreshold)
-        return nullptr;
-
-    if (m_lineStyleFacetOptions.IsNull())
+    if (maxDimension > s_strokeLineStylePixels * GetFacetOptions().GetChordTolerance())
         {
-        m_lineStyleFacetOptions = IFacetOptions::CreateForCurves();
-        m_lineStyleFacetOptions->SetAngleTolerance(Angle::FromDegrees(5.0).Radians());
+        options = &GetFacetOptions();
+        return true;
         }
 
-    return m_lineStyleFacetOptions.get();
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2757,8 +2790,6 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         m_tileGeometries.clear();
         m_leafGeometries.clear();
         }
-#if defined(NEEDSWORK_SHEET_BORDER)
-    // Sheet::Model::CreateBorder() now creates border in *view* coords...Cesium needs it in world coords...
     else if (TileGeneratorStatus::Success == status)
         {
         Sheet::ModelCP sheetModel = m_cache.GetModel().ToSheetModel();
@@ -2766,20 +2797,15 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         if (nullptr != sheetModel)
             {
             m_curElemId.Invalidate();
+            DPoint2d sheetSize = getSheetSize(*sheetModel);
 
-            // Cheap workaround for TFS#743687. Not going to invest in a better fix because MeshTile.cpp is going bye-bye very soon.
-            DPoint2d sheetSize = sheetModel->GetSheetSize();
-            if (0.0 == sheetSize.x)
-                sheetSize.x = 0.1;
-            if (0.0 == sheetSize.y)
-                sheetSize.y = 0.1;
-
-            auto border = Sheet::Model::CreateBorder (context, sheetSize);
-            context.OutputGraphic(*border, nullptr);
+            auto gf = context.CreateSceneGraphic();
+            Sheet::Border border(context, sheetSize, Sheet::Border::CoordSystem::World);
+            border.AddToBuilder(*gf);
+            context.OutputGraphic(*gf->Finish(), nullptr);
             PushCurrentGeometry();
             }
         }
-#endif
 
     if (!LeafThresholdExceeded())
         {
@@ -2873,15 +2899,41 @@ void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, T
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void _DrawStyledCurveVector(Render::GraphicBuilderR builder, CurveVectorCR curve, Render::GeometryParamsR params, bool doCook) override
+    {
+    if (doCook)
+        CookGeometryParams(params, builder);
+
+    // Arggh.... Turn off the size filter while stroking linestyle so the components aren't filtered.
+    IFacetOptionsPtr    facetOptions;
+    if (nullptr != params.GetLineStyle() &&
+        CurveVector::BOUNDARY_TYPE_None != curve.GetBoundaryType() &&
+        params.GetLineStyle()->GetLineStyleSymb().GetUseStroker() && 
+        builder.WantStrokeLineStyle(params.GetLineStyle()->GetLineStyleSymb(), facetOptions))
+        {
+        AutoRestore<double>     saveMinRangeDiagonal(&m_processor.GetMinRangeDiagonalR(), 0.0);
+
+        T_Super::_DrawStyledCurveVector(builder, curve, params, false);
+        }
+    else
+        {
+        T_Super::_DrawStyledCurveVector(builder, curve, params, false);
+        }
+    }
 };
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(DgnElementId elementId, bool allowLoad)
     {
+//#define DEBUG_ELEMENT_FILTER
 #ifdef DEBUG_ELEMENT_FILTER
-    static  DgnElementId s_debugId = DgnElementId((uint64_t) 197);
+    static  DgnElementId s_debugId = DgnElementId((uint64_t) 73634);
 
     if (s_debugId.IsValid() && s_debugId != elementId)
         return SUCCESS;
@@ -3013,6 +3065,64 @@ struct MeshTileClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
     StatusInt _ProcessUnclippedPolyface(PolyfaceQueryCR mesh) override { m_output.push_back(&mesh); ; return SUCCESS; }
     StatusInt _ProcessClippedPolyface(PolyfaceHeaderR mesh) override { m_output.push_back(&mesh); m_clipped.push_back(&mesh); return SUCCESS; }
 };
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometry::TileStrokes clipSegments(TileGeometry::TileStrokes input, DRange3dCR tileRange) 
+    {
+    TileGeometry::TileStrokes output(*input.m_displayParams, false);
+    output.m_strokes.reserve(input.m_strokes.size());
+
+    for (auto const& points : input.m_strokes)
+        {
+        // unused - DRange3d    range = DRange3d::From(points);
+        // unused - DPoint3d    rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
+
+        DPoint3d prevPt = points.front();
+        bool prevOutside = !tileRange.IsContained(prevPt);
+        if (!prevOutside)
+            {
+            bvector<DPoint3d>   points(1, prevPt);
+            output.m_strokes.push_back(points);
+            }
+
+        for (size_t i = 1; i < points.size(); i++)
+            {
+            auto nextPt = points[i];
+            bool nextOutside = !tileRange.IsContained(nextPt);
+            DSegment3d clippedSegment;
+            if (prevOutside || nextOutside)
+                {
+                double param0, param1;
+                DSegment3d unclippedSegment = DSegment3d::From(prevPt, nextPt);
+                if (!tileRange.IntersectBounded(param0, param1, clippedSegment, unclippedSegment))
+                    {
+                    // entire segment clipped
+                    prevPt = nextPt;
+                    continue;
+                    }
+                }
+
+            DPoint3d startPt = prevOutside ? clippedSegment.point[0] : prevPt;
+            DPoint3d endPt = nextOutside ? clippedSegment.point[1] : nextPt;
+
+            if (prevOutside)
+                {
+                bvector<DPoint3d>   points(1, startPt);
+                output.m_strokes.push_back(points);
+                }
+
+            output.m_strokes.back().push_back(endPt);
+
+            prevPt = nextPt;
+            prevOutside = nextOutside;
+            }
+
+        BeAssert(output.m_strokes.empty() || 1 < output.m_strokes.back().size());
+        }
+
+    return output;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -3033,6 +3143,14 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
     for (auto& geom : geometries)
         {
+#ifdef DEBUG_GEOMETRY_FILTER
+        auto        entityId = geom->GetEntityId().GetValue();
+        static      uint64_t    s_debugEntityId = 74285;
+
+        if (0 != s_debugEntityId && entityId != s_debugEntityId)
+            continue;
+#endif
+
         if (nullptr != filter && !filter->AcceptElement(DgnElementId(geom->GetEntityId().GetValue()), geom->GetDisplayParams()))
             continue;
 
@@ -3096,8 +3214,9 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
             {
             auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, TileGeometry::NormalMode::Never));
         
-            for (auto& tileStrokes : tileStrokesArray)
+            for (auto& inTileStrokes : tileStrokesArray)
                 {
+                auto    tileStrokes = clipSegments (inTileStrokes, myTileRange);
                 TileDisplayParamsCPtr   displayParams = tileStrokes.m_displayParams;
                 TileMeshMergeKey key(*displayParams, false, false, geom->GetEntityId().IsValid());
 

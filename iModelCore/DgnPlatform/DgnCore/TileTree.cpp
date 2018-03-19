@@ -686,16 +686,28 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelCR model, TransformCR location, Utf8CP rootResource, Render::SystemP system)
-    : Root(model.GetDgnDb(), model.GetModelId(), location, rootResource, system)
+    : Root(model.GetDgnDb(), model.GetModelId(), model.Is3d(), location, rootResource, system)
     {
     //
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
+* @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(DgnDbR db, DgnModelId modelId, TransformCR location, Utf8CP rootResource, Render::SystemP system)
-    : m_db(db), m_location(location), m_renderSystem(system), m_modelId(modelId)
+    : Root(db, modelId, true, location, rootResource, system)
+    {
+    auto model = db.Models().GetModel(modelId);
+    BeAssert(model.IsValid());
+    if (model.IsValid() && !model->Is3d())
+        m_is3d = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Root::Root(DgnDbR db, DgnModelId modelId, bool is3d, TransformCR location, Utf8CP rootResource, Render::SystemP system)
+    : m_db(db), m_location(location), m_renderSystem(system), m_modelId(modelId), m_is3d(is3d)
     {
     // unless a root directory is specified, we assume it's http.
     m_isHttp = true;
@@ -1738,6 +1750,28 @@ void TileRequests::RequestMissing(BeDuration partialTimeout) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileRequests::HasMissingTiles() const
+    {
+    for (auto const& kvp : m_map)
+        if (!kvp.second.empty())
+            return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+double TileArgs::GetTileRadius(TileCR tile) const
+    {
+    DRange3d range = tile.GetRange();
+    m_location.Multiply(&range.low, 2);
+    return 0.5 * (tile.GetRoot().Is3d() ? range.low.Distance(range.high) : range.low.DistanceXY(range.high));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip)
@@ -2112,3 +2146,18 @@ void TriMeshTree::Tile::_PickGraphics(PickArgsR args, uint32_t depth) const
         mesh->Pick(args);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Marc.Neely   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr Tile::CreateTileGraphic(Render::GraphicR graphic, DgnModelId modelId) const
+    {
+    Dgn::Render::SystemP renderSystem = m_root.GetRenderSystemP();
+    if (nullptr == renderSystem || !modelId.IsValid())
+        return &graphic;
+
+    Feature feature(DgnElementId(modelId.GetValue()), DgnSubCategoryId(), DgnGeometryClass::Primary);
+    FeatureTable features(modelId, renderSystem->_GetMaxFeaturesPerBatch());
+    features.GetIndex(feature);
+
+    return renderSystem->_CreateBatch(graphic, std::move(features), _GetContentRange());
+    }

@@ -332,7 +332,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     DRange3d            range;
 
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (GetDgnDb(), nullptr, &progressMeter);                                                                                                                     
+    TileGenerator generator (GetDgnDb(), m_projectExtents, nullptr, &progressMeter);                                                                                                                     
 
     ExtractSchedules();     // Extract these now as they schedule entries may need to be added to batch tables.
 

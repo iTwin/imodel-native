@@ -3296,7 +3296,7 @@ struct System
     virtual uint32_t _GetMaxFeaturesPerBatch() const = 0;
 
     //! Create a Graphic consisting of batched Features.
-    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const = 0;
+    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features, DRange3dCR range) const = 0;
 
     //! Find a previously-created Texture by key. Returns null if no such texture exists.
     virtual TexturePtr _FindTexture(TextureKeyCR key, DgnDbR db) const = 0;

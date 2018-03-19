@@ -8,6 +8,7 @@
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
 #include <ECObjects/ECJsonUtilities.h>
+#include <DgnPlatform/SavedSelection.h>
 
 USING_NAMESPACE_BENTLEY_DPTEST
 
@@ -2271,6 +2272,50 @@ TEST_F(DgnElementTests, ElementIterator)
         count++;
         }
     ASSERT_EQ(numPhysicalObjects, count);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bill.Steinbock                  03/2018
+//---------------------------------------------------------------------------------------
+TEST_F(DgnElementTests, SavedSelectionCRUD)
+    {
+    SetupSeedProject();
+
+    auto selection = SavedSelection::Create(m_db->GetDictionaryModel(), "MySelection");
+    ASSERT_TRUE(selection.IsValid());
+
+    Json::Value outData = SavedSelection::GetSelectionData(*selection);
+    ASSERT_TRUE(outData.isNull());
+
+    Json::Value inData(Json::objectValue);
+    inData["TestData"] = "TestData";
+    SavedSelection::SetSelectionData(*selection, inData);
+
+    outData = SavedSelection::GetSelectionData(*selection);
+    ASSERT_TRUE(outData.isObject());
+    ASSERT_TRUE(outData["TestData"].asString().Equals("TestData"));
+
+    ASSERT_TRUE(selection->Insert().IsValid());
+    m_db->SaveChanges();
+
+    DgnElementId elementId = SavedSelection::GetElementIdByName(*m_db, "MySelection");
+    ASSERT_TRUE(elementId.IsValid());
+
+    auto element = m_db->Elements().GetForEdit<DefinitionElement>(elementId);
+    ASSERT_TRUE(element.IsValid());
+
+    outData = SavedSelection::GetSelectionData(*element);
+    ASSERT_TRUE(outData.isObject());
+    ASSERT_TRUE(outData["TestData"].asString().Equals("TestData"));
+
+    Json::Value emptyData(Json::arrayValue);
+    SavedSelection::SetSelectionData(*element, emptyData);
+
+    outData = SavedSelection::GetSelectionData(*element);
+    ASSERT_TRUE(outData.isNull());
+
+    ASSERT_TRUE(SUCCESS == SavedSelection::SetName(*element, "My-Selection"));
+    ASSERT_TRUE(0 == strcmp(element->GetCode().GetValueUtf8CP(), "My-Selection"));
     }
 
 /*---------------------------------------------------------------------------------**//**
