@@ -2368,6 +2368,9 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, InstanceLabelOverride_SetsD
     EXPECT_STREQ("Custom label", contentSet.Get(0)->GetDisplayLabel().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(RulesDrivenECPresentationManagerContentTests, SetsDisplayLabelPropertyWhenMergingRecordsAndLabelsAreEqual)
     {
     // set up the dataset
