@@ -3474,7 +3474,7 @@ public:
     virtual void _OverrideFeatureSymbology(FeatureSymbologyOverrides&&) = 0;
     virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
     virtual void _SetFlashed(DgnElementId, double) = 0;
-    virtual void _SetViewRect(BSIRect rect) {}
+    virtual void _SetViewRect(BSIRect rect, bool temporary=false) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
     virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect, PixelData::Selector selector) = 0;
     DGNVIEW_EXPORT virtual void _QueueReset();
