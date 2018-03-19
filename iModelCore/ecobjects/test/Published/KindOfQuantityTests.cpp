@@ -926,8 +926,35 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::InvalidECSchemaXml, "Should fail to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema");
+    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::InvalidECSchemaXml, SchemaWriteStatus::FailedToSaveXml, "Should fail to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema as persistence unit");
     ASSERT_FALSE(schema.IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                    03/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityRoundTripTest, ec31_roundTripShouldDropUnknownPresentationUnits)
+    {
+    SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+            <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
+                        displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
+                        presentationUnits="TestUnit;u:FT;u:IN" />
+            <ECEntityClass typeName="Foo" >
+                <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
+                <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
+                <ECArrayProperty propertyName="AlternativeLengths" typeName="double" minOccurs="0" maxOccurs="unbounded" kindOfQuantity="MyKindOfQuantity"/>
+                <ECArrayProperty propertyName="Favorites" typeName="string" extendedTypeName="URL" minOccurs="0" maxOccurs="unbounded" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should succeed to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema as presentation unit");
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_EQ(2, schema->GetKindOfQuantityCP("MyKindOfQuantity")->GetPresentationUnitList().size());
     }
 
 //--------------------------------------------------------------------------------------
@@ -952,8 +979,35 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec30_roundTrip)
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_0, SchemaReadStatus::InvalidECSchemaXml, "Should fail to round trip a 3.0 schema with KoQ using EC3.2 unit defined in schema");
+    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_0, SchemaReadStatus::InvalidECSchemaXml, SchemaWriteStatus::FailedToSaveXml, "Should fail to round trip a 3.0 schema with KoQ using EC3.2 unit defined in schema as persistence unit");
     ASSERT_FALSE(schema.IsValid());
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                    03/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityRoundTripTest, ec30_roundTripShouldDropUnknownPresentationUnits)
+    {
+    SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
+            <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
+                        displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
+                        presentationUnits="TestUnit;u:FT;u:IN" />
+            <ECEntityClass typeName="Foo" >
+                <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
+                <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
+                <ECArrayProperty propertyName="AlternativeLengths" typeName="double" minOccurs="0" maxOccurs="unbounded" kindOfQuantity="MyKindOfQuantity"/>
+                <ECArrayProperty propertyName="Favorites" typeName="string" extendedTypeName="URL" minOccurs="0" maxOccurs="unbounded" />
+            </ECEntityClass>
+        </ECSchema>)xml");
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should succeed to round trip a 3.0 schema with KoQ using EC3.2 unit defined in schema as presentation unit");
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_EQ(2, schema->GetKindOfQuantityCP("MyKindOfQuantity")->GetPresentationUnitList().size());
     }
 
 //--------------------------------------------------------------------------------------
@@ -977,7 +1031,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTrip)
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.1 -> 3.2");
+    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.1 -> 3.2");
     auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_EQ(2, koq->GetPresentationUnitList().size());
     EXPECT_STRCASEEQ("FT", koq->GetPresentationUnitList()[0].GetUnit()->GetName().c_str());
@@ -1008,7 +1062,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
-    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_0,  SchemaReadStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.0 -> 3.2");
+    RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_0,  SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.0 -> 3.2");
     auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_EQ(2, koq->GetPresentationUnitList().size());
     EXPECT_STRCASEEQ("FT", koq->GetPresentationUnitList()[0].GetUnit()->GetName().c_str());

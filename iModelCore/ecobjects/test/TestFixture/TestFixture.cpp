@@ -161,20 +161,24 @@ void ECTestFixture::AssertSchemaDeserializationFailure(SchemaItem const& schemaI
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     deserializeSchema(schema, *context, schemaItem, expectedError, true, failureMessage);
     }
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    08/2017
+// @bsimethod                                 Kyle.Abramowitz                    03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-void ECTestFixture::RoundTripSchemaToVersionAndBack(ECSchemaPtr& schema, SchemaItem item, ECN::ECVersion toVersion, SchemaReadStatus expectedStatus, Utf8CP failureMessage)
+void ECTestFixture::RoundTripSchemaToVersionAndBack(ECSchemaPtr& schema, SchemaItem item, ECN::ECVersion toVersion, SchemaReadStatus expectedReadStatus, SchemaWriteStatus expectedWriteStatus, Utf8CP failureMessage)
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    deserializeSchema(schema, *context, item, SchemaReadStatus::Success, true, "Should be able to deserialize original schema for round trip test");
+    ECSchemaPtr local;
+    deserializeSchema(local, *context, item, SchemaReadStatus::Success, true, "Should be able to deserialize original schema for round trip test");
     Utf8String outXml;
-    ASSERT_NE(nullptr, schema.get());
-    ASSERT_TRUE(schema->Validate());
-    schema->WriteToXmlString(outXml, toVersion);
+    ASSERT_NE(nullptr, local.get());
+    ASSERT_TRUE(local->Validate());
+    ASSERT_EQ(expectedWriteStatus, local->WriteToXmlString(outXml, toVersion));
+    if (SchemaWriteStatus::Success != expectedWriteStatus)
+        return;
     context = ECSchemaReadContext::CreateContext();
-    deserializeSchema(schema, *context, SchemaItem(outXml), expectedStatus, true, "Should be able to deserialize the round tripped schema");
+    deserializeSchema(schema, *context, SchemaItem(outXml), expectedReadStatus, true, "Should be able to deserialize the round tripped schema");
     }
 
 //---------------------------------------------------------------------------------------

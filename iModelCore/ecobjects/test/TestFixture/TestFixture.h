@@ -65,7 +65,7 @@ public:
     static void AssertSchemaDeserializationFailure(SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml, Utf8CP failureMessage = "");
     static void AssertSchemaDeserializationFailure(Utf8CP schemaXml, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml, Utf8CP failureMessage = "")
         {AssertSchemaDeserializationFailure(SchemaItem(schemaXml), expectedError, failureMessage);}
-    static void RoundTripSchemaToVersionAndBack(ECN::ECSchemaPtr& schema, SchemaItem item, ECN::ECVersion toVersion, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::Success, Utf8CP failureMessage = "");
+    static void RoundTripSchemaToVersionAndBack(ECN::ECSchemaPtr& schema, SchemaItem item, ECN::ECVersion toVersion, ECN::SchemaReadStatus expectedReadStatus = ECN::SchemaReadStatus::Success, ECN::SchemaWriteStatus expectedWriteStatus = ECN::SchemaWriteStatus::Success, Utf8CP failureMessage = "");
 };
 
 //=======================================================================================

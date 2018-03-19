@@ -296,21 +296,26 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
         return SchemaWriteStatus::FailedToSaveXml;
         }
 
-    auto getUnitNameFromVersion = [this, &ecXmlVersion](ECUnitCP unit) -> Utf8String {
+    auto getUnitNameFromVersion = [this, &ecXmlVersion](ECUnitCP unit, Utf8StringR out) -> bool {
         if (ecXmlVersion > ECVersion::V3_1)
-            return unit->GetQualifiedName(GetSchema());
-
+            {
+            out = unit->GetQualifiedName(GetSchema());
+            return true;
+            }
         // EC3.0 and EC3.1
         auto ecName = Units::UnitNameMappings::TryGetNewNameFromECName(unit->GetFullName().c_str());
         if (nullptr != ecName)
-            return ecName;
-        return unit->GetQualifiedName(GetSchema());
+            { 
+            out = ecName;
+            return true;
+            }
+        return false;
     };
-
-    Utf8String persistenceUnitString = getUnitNameFromVersion((ECUnitCP)GetPersistenceUnit().GetUnit());
-    if (persistenceUnitString.empty())
+    Utf8String persistenceUnitString;
+    auto hasValidUnitForVersion = getUnitNameFromVersion((ECUnitCP)GetPersistenceUnit().GetUnit(), persistenceUnitString);
+    if (!hasValidUnitForVersion)
         {
-        // LOG.errorv("", );
+        LOG.errorv("Failed to write KindOfQuantity %s because it has a persistence unit not defined in the version it is being serialized to", GetName().c_str());
         return SchemaWriteStatus::FailedToSaveXml;
         }
 
@@ -333,11 +338,19 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                 return SchemaWriteStatus::FailedToSaveXml;
                 }
 
-            presUnit = getUnitNameFromVersion((ECUnitCP)fus.GetUnit());
-            if (presUnit.empty())
+            auto hasValidNameForVersion = getUnitNameFromVersion((ECUnitCP)fus.GetUnit(), presUnit);
+            if (!hasValidNameForVersion)
                 {
-                LOG.errorv("Failed to write schema becasue presentation FUS for KindOfQuantity '%s'.", GetFullName().c_str());
-                return SchemaWriteStatus::FailedToSaveXml;
+                if (ecXmlVersion < ECVersion::V3_2)
+                    { 
+                    LOG.warningv("Dropping presentation FUS for KindOfQuantity '%s' with unit '%s' because it is not found in the serialize-to version.", GetFullName().c_str(), fus.GetUnitName().c_str());
+                    continue;
+                    }
+                else
+                    {
+                    LOG.errorv("Failed to write schema becasue presentation FUS for KindOfQuantity '%s' contains invalid unit for version >= 3.2", GetFullName().c_str());
+                    return SchemaWriteStatus::FailedToSaveXml;
+                    }
                 }
 
             if (!first)
