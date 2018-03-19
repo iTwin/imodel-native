@@ -844,6 +844,14 @@ DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::Tile::SelectParent Sheet::Attachment::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
     {
+    return const_cast<Tile&>(*this).Select(selected, args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::Tile::SelectParent Sheet::Attachment::Tile::Select(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args)
+    {
     if (0 == GetDepth())
         GetTree().m_viewport->m_rendering = false;
 
@@ -865,81 +873,58 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile::_SelectTiles(bvector<TileT
 
     if (nullptr != children)
         {
+        size_t initialSize = selected.size();
         m_childrenLastUsed = args.m_now;
         for (auto& child : *children)
-            child->_SelectTiles(selected, args);
+            {
+            if (SelectParent::Yes == child->_SelectTiles(selected, args))
+                {
+                // At least one of the selected children is not ready to draw. If the parent (this) is drawable, draw in place of all the children.
+                selected.resize(initialSize);
+                if (IsReady())
+                    {
+                    selected.push_back(this);
+                    return SelectParent::No;
+                    }
+                else
+                    {
+                    // This tile isn't ready to draw either. Try drawing its own parent in its place.
+                    return SelectParent::Yes;
+                    }
+                }
+            }
 
         return SelectParent::No;
         }
 
-//#define DEBUG_PRINT_SHEET_TILE_SELECTION
-#if defined(DEBUG_PRINT_SHEET_TILE_SELECTION)
-    DEBUG_PRINTF(" ** Selecting this tile, IsReady()=%d, depth=%d", IsReady(), GetDepth());
-#endif
-
+    // This tile is of appropriate resolution to draw. Enqueue it for loading if necessary.
     if (!IsReady())
         {
-        auto& ncThis = const_cast<Tile&>(*this);
         if (m_tilePolys.empty())
             {
-            ncThis.CreatePolys(args.m_context); // m_graphicsClip on tree must be set before creating polys (the polys that represent the tile)
+            CreatePolys(args.m_context); // m_graphicsClip on tree must be set before creating polys (the polys that represent the tile)
             if (m_tilePolys.empty())
                 {
-                ncThis.SetNotFound();
+                SetNotFound();
                 return SelectParent::No;
                 }
             }
 
-        ncThis.CreateGraphics(args.m_context);
+        CreateGraphics(args.m_context);
         }
 
     if (IsReady())
         {
         selected.push_back(this);
         _UnloadChildren(args.m_purgeOlderThan);
-        }
-    else
-        {
-        // Inform the sheet controller that it needs to recreate its scene next frame
-        GetTree().m_sheetController.MarkAttachmentSceneIncomplete();
-#if 0 // ###TODO: do something similar for the new subdividing system
-
-        // Select a tile to temporarily draw in its place. Note this logic will need to change when we start subdividing.
-        TileTree::TilePtr sub;
-        auto children = _GetChildren(false);
-        while (nullptr != children && !children->empty())
-            {
-            auto child = (*children)[0];
-            if (child->IsReady())
-                {
-                sub = child;
-                break;
-                }
-
-            children = child->_GetChildren(false);
-            }
-
-        if (sub.IsNull())
-            {
-            auto parent = GetParent();
-            while (nullptr != parent)
-                {
-                if (parent->IsReady())
-                    {
-                    sub = const_cast<TileTree::TileP>(parent);
-                    break;
-                    }
-
-                parent = parent->GetParent();
-                }
-            }
-
-        if (sub.IsValid())
-            selected.push_back(sub);
-#endif
+        return SelectParent::No;
         }
 
-    return SelectParent::No;
+    // Inform the sheet controller that it needs to recreate its scene next frame
+    GetTree().m_sheetController.MarkAttachmentSceneIncomplete();
+
+    // Tell parent to render in this tile's place until it becomes ready to draw.
+    return SelectParent::Yes;
     }
 
 /*---------------------------------------------------------------------------------**//**
