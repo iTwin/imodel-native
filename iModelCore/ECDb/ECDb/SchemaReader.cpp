@@ -865,16 +865,6 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
         Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
 
-        const PhenomenonId phId = stmt->GetValueId<PhenomenonId>(phIdColIx);
-        PhenomenonCP ph = m_cache.Find(phId);
-        if (ph == nullptr)
-            return ERROR;
-
-        const UnitSystemId usId = stmt->GetValueId<UnitSystemId>(usIdColIx);
-        UnitSystemCP us = m_cache.Find(usId);
-        if (us == nullptr)
-            return ERROR;
-
         const bool isConstant = stmt->GetValueBoolean(isConstantColIx);
 
         UnitId invertingUnitId;
@@ -882,6 +872,23 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
             invertingUnitId = stmt->GetValueId<UnitId>(invertingUnitIdColIx);
 
         const bool isInvertedUnit = invertingUnitId.IsValid();
+
+        const PhenomenonId phId = stmt->GetValueId<PhenomenonId>(phIdColIx);
+        PhenomenonCP ph = m_cache.Find(phId);
+        if (ph == nullptr)
+            return ERROR;
+
+        UnitSystemCP us = nullptr;
+        if (!stmt->IsColumnNull(usIdColIx))
+            {
+            UnitSystemId usId = stmt->GetValueId<UnitSystemId>(usIdColIx);
+            us = m_cache.Find(usId);
+            if (us == nullptr)
+                return ERROR;
+            }
+
+        BeAssert((isConstant && us == nullptr) || (!isConstant && us != nullptr));
+
         if (isInvertedUnit)
             {
             //cache inverted units as they need their inverting unit to be exist before
@@ -912,10 +919,7 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         ECUnitP unit = nullptr;
         if (isConstant)
             {
-            //WIP: Numerator should not be nullptr for constants -> HasNumerator should not return false
-            if (numerator == nullptr)
-                numerator = 1.0;
-            //BeAssert(numerator != nullptr && "Constant unit expects numerator not to be null");
+            BeAssert(numerator != nullptr && "Constant unit expects numerator not to be null");
             if (ECObjectsStatus::Success != schema.CreateConstant(unit, name, definition, *ph, numerator.Value(), denominator, displayLabel, description))
                     return ERROR;
             }
@@ -946,8 +950,9 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
         Utf8CP name = std::get<3>(tuple).c_str();
         Utf8CP displayLabel = std::get<4>(tuple).empty() ? "" : std::get<4>(tuple).c_str();
         Utf8CP descr = std::get<5>(tuple).empty() ? "" : std::get<5>(tuple).c_str();
+        UnitSystemCP us = std::get<6>(tuple);
         ECUnitP invertedUnit = nullptr;
-        if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateInvertedUnit(invertedUnit, *invertingUnit, name, *std::get<6>(tuple), displayLabel, descr))
+        if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateInvertedUnit(invertedUnit, *invertingUnit, name, *us, displayLabel, descr))
             return ERROR;
 
         invertedUnit->SetId(id);

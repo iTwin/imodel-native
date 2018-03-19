@@ -172,11 +172,12 @@ DbResult ProfileUpgrader_4002::UpgradeECEnums(ECDbCR ecdb)
         }
     stmt.Finalize();
 
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE " TABLE_Schema " SET OriginalECXmlVersionMajor=3, OriginalECXmlVersionMinor=2 WHERE InVirtualSet(?,Id)") ||
-        BE_SQLITE_OK != stmt.BindVirtualSet(1, ecdbSchemas))
+    if (BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE " TABLE_Schema " SET ECVersion=" SQLVAL_ECVersion_V3_2))
         {
-
+        LOG.errorv("ECDb profile upgrade failed: Failed to set ECVersion in " TABLE_Schema " to ECVersion::V3_2: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
+
     LOG.debug("ECDb profile upgrade: Updated table " TABLE_Enumeration " to EC3.2 format.");
     return BE_SQLITE_OK;
     }

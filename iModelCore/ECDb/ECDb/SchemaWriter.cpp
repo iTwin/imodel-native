@@ -523,9 +523,12 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
     if (SUCCESS != ImportPhenomenon(ctx, *phen))
         return ERROR;
 
-    UnitSystemCP system = unit.GetUnitSystem();
-    if (SUCCESS != ImportUnitSystem(ctx, *system))
-        return ERROR;
+    if (!unit.IsConstant())
+        {
+        UnitSystemCP system = unit.GetUnitSystem();
+        if (SUCCESS != ImportUnitSystem(ctx, *system))
+            return ERROR;
+        }
 
     ECUnitCP invertingUnit = nullptr;
     if (unit.IsInvertedUnit())
@@ -575,8 +578,11 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
     if (BE_SQLITE_OK != stmt->BindId(phIdParamIx, phen->GetId()))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindId(usIdParamIx, system->GetId()))
-        return ERROR;
+    if (!unit.IsConstant())
+        {
+        if (BE_SQLITE_OK != stmt->BindId(usIdParamIx, unit.GetUnitSystem()->GetId()))
+            return ERROR;
+        }
 
     if (!unit.GetDefinition().empty())
         {

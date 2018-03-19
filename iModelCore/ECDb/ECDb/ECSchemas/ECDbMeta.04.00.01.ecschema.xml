@@ -338,7 +338,7 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="UnitSystemHasUnits" modifier="Sealed" strength="referencing">
-        <Source multiplicity="(1..1)" roleLabel="has" polymorphic="false">
+        <Source multiplicity="(0..1)" roleLabel="has" polymorphic="false">
             <Class class="UnitSystemDef"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">

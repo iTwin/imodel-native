@@ -38,12 +38,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
                        "DisplayLabel TEXT," \
                        "Description TEXT," \
                        "PhenomenonId INTEGER NOT NULL REFERENCES " TABLE_Phenomenon "(Id) ON DELETE CASCADE," \
-                       "UnitSystemId INTEGER NOT NULL REFERENCES " TABLE_UnitSystem "(Id) ON DELETE NO ACTION," \
+                       "UnitSystemId INTEGER REFERENCES " TABLE_UnitSystem "(Id) ON DELETE NO ACTION," \
                        "Definition TEXT COLLATE NOCASE," \
                        "Numerator REAL," \
                        "Denominator REAL," \
                        "Offset REAL," \
-                       "IsConstant BOOLEAN," \
+                       "IsConstant BOOLEAN NOT NULL," \
                        "InvertingUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL);" \
                        "CREATE INDEX ix_ec_Unit_SchemaId ON " TABLE_Unit "(SchemaId);" \
                        "CREATE INDEX ix_ec_Unit_Name ON " TABLE_Unit "(Name);" \

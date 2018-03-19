@@ -2452,7 +2452,7 @@ TEST_F(FileFormatCompatibilityTests, EC31KOQs)
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only EC named units";
+        </ECSchema>)xml"))) << "EC3.1 cannot use EC named units";
 
     ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
