@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECProperty.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1080,10 +1080,7 @@ static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpai
     if (nullptr == primArrProp && nullptr == primProp)
         return SchemaWriteStatus::FailedToCreateJson;
 
-    attributes.push_back(bpair<Utf8String, Json::Value>(
-        TYPE_NAME_ATTRIBUTE,
-        primProp ? primProp->GetTypeName() : primArrProp->GetTypeName()
-        ));
+    attributes.push_back(bpair<Utf8String, Json::Value>(TYPE_NAME_ATTRIBUTE, primProp ? primProp->GetTypeFullName() : primArrProp->GetTypeFullName()));
     if (primProp ? primProp->IsExtendedTypeDefinedLocally() : primArrProp->IsExtendedTypeDefinedLocally())
         attributes.push_back(bpair<Utf8String, Json::Value>(
             EXTENDED_TYPE_NAME_ATTRIBUTE,

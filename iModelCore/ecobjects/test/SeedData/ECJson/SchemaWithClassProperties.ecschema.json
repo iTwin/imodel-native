@@ -12,8 +12,21 @@
       "label" : "PrimitivePropertyDisplayLabel",
       "readOnly" : true,
       "category" : "ExampleSchema.ExamplePropertyCategory",
+      "kindOfQuantity" : "ExampleSchema.TestKindOfQuantity",
       "typeName" : "int",
       "extendedTypeName" : "Example Primitive Property",
+      "minValue" : 42,
+      "maxValue" : 1999
+    },
+    {
+      "name" : "ExampleEnumerationProperty",
+      "propertyType" : "PrimitiveProperty",
+      "description" : "An example primitive enumeration property.",
+      "label" : "Enumeration Property DisplayLabel",
+      "readOnly" : true,
+      "category" : "ExampleSchema.ExamplePropertyCategory",
+      "typeName" : "ExampleSchema.ExampleEnumeration",
+      "extendedTypeName" : "Example_ExtendedType",
       "minValue" : 42,
       "maxValue" : 1999
     },
