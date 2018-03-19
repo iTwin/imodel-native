@@ -37,7 +37,7 @@ struct BisJson1Exporter0601
 
     public:
         //! Constructor for the exporter.  The calling application must have already initialized the host.
-        //! @param[in] bimPath      Path to the 1.6 dgndb/imodel
+        //! @param[in] dbPath      Path to the 1.6 dgndb/imodel
         //! @param[in] tempPath     Path returned by T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory
         //! @param[in] assetsPath   Path returned by T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory
         BIM_EXPORTER_EXPORT BisJson1Exporter0601(wchar_t const* dbPath, const wchar_t* tempPath, const wchar_t* assetsPath);
