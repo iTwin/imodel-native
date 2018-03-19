@@ -47,8 +47,8 @@ int main(int argc, const char * argv[]) {
     std::cout << "NAPI - JavaScriptCore Tests\n";
     
     BentleyApi::iModelJs::Js::Runtime runtime;
-//    BentleyApi::iModelJs::ServicesTier::UvHost host;
-//    while (!host.IsReady()) { ; }
+    BentleyApi::iModelJs::ServicesTier::UvHost host;
+    while (!host.IsReady()) { ; }
     
     Napi::Env& env = runtime.Env();
 

@@ -1,0 +1,559 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 48;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		262B4E66206044D400BAAB20 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 262B4E65206044D400BAAB20 /* AppDelegate.m */; };
+		262B4E69206044D400BAAB20 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 262B4E68206044D400BAAB20 /* ViewController.m */; };
+		262B4E6C206044D400BAAB20 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E6A206044D400BAAB20 /* Main.storyboard */; };
+		262B4E6E206044D400BAAB20 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E6D206044D400BAAB20 /* Assets.xcassets */; };
+		262B4E71206044D400BAAB20 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E6F206044D400BAAB20 /* LaunchScreen.storyboard */; };
+		262B4E74206044D400BAAB20 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 262B4E73206044D400BAAB20 /* main.m */; };
+		262B4E7B206045AC00BAAB20 /* Assets in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E7A206045AC00BAAB20 /* Assets */; };
+		262B4E7D2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */; };
+		262B4E802060475B00BAAB20 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E7F2060475B00BAAB20 /* CoreFoundation.framework */; };
+		262B4E822060476000BAAB20 /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E812060476000BAAB20 /* JavaScriptCore.framework */; };
+		262B4E842060476500BAAB20 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E832060476500BAAB20 /* CFNetwork.framework */; };
+		262B4EA72060479D00BAAB20 /* log4j.dtd in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E852060479C00BAAB20 /* log4j.dtd */; };
+		262B4EA82060479D00BAAB20 /* libBeOpenSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E862060479C00BAAB20 /* libBeOpenSSL.a */; };
+		262B4EA92060479D00BAAB20 /* libECObjects.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E872060479C00BAAB20 /* libECObjects.a */; };
+		262B4EAA2060479D00BAAB20 /* libBentleyGeom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E882060479C00BAAB20 /* libBentleyGeom.a */; };
+		262B4EAB2060479D00BAAB20 /* libBeLibxml2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E892060479C00BAAB20 /* libBeLibxml2.a */; };
+		262B4EAC2060479D00BAAB20 /* libBaseGeoCoord.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8A2060479C00BAAB20 /* libBaseGeoCoord.a */; };
+		262B4EAD2060479D00BAAB20 /* libBeHttp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8B2060479C00BAAB20 /* libBeHttp.a */; };
+		262B4EAE2060479D00BAAB20 /* libBeXml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8C2060479C00BAAB20 /* libBeXml.a */; };
+		262B4EAF2060479D00BAAB20 /* liblibapr010502.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8D2060479C00BAAB20 /* liblibapr010502.a */; };
+		262B4EB02060479D00BAAB20 /* libBeLibJpegTurbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8E2060479C00BAAB20 /* libBeLibJpegTurbo.a */; };
+		262B4EB12060479D00BAAB20 /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8F2060479C00BAAB20 /* libDgnPlatform.a */; };
+		262B4EB22060479D00BAAB20 /* libfreetype2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E902060479C00BAAB20 /* libfreetype2.a */; };
+		262B4EB32060479D00BAAB20 /* libBentleyGeomSerialization.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E912060479C00BAAB20 /* libBentleyGeomSerialization.a */; };
+		262B4EB42060479D00BAAB20 /* libBeZlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E922060479C00BAAB20 /* libBeZlib.a */; };
+		262B4EB52060479D00BAAB20 /* libBePng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E932060479C00BAAB20 /* libBePng.a */; };
+		262B4EB62060479D00BAAB20 /* libBeCsmapStatic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E942060479C00BAAB20 /* libBeCsmapStatic.a */; };
+		262B4EB82060479D00BAAB20 /* libBeJpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E962060479C00BAAB20 /* libBeJpeg.a */; };
+		262B4EB92060479D00BAAB20 /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E972060479C00BAAB20 /* liblzma.a */; };
+		262B4EBA2060479D00BAAB20 /* libBeFolly.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E982060479C00BAAB20 /* libBeFolly.a */; };
+		262B4EBB2060479D00BAAB20 /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E992060479C00BAAB20 /* libBentley.a */; };
+		262B4EBC2060479D00BAAB20 /* libBeSQLiteEC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9A2060479D00BAAB20 /* libBeSQLiteEC.a */; };
+		262B4EBD2060479D00BAAB20 /* libbentleylog4cxx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9B2060479D00BAAB20 /* libbentleylog4cxx.a */; };
+		262B4EBE2060479D00BAAB20 /* libECPresentation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9C2060479D00BAAB20 /* libECPresentation.a */; };
+		262B4EBF2060479D00BAAB20 /* libliblog4cxx010.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9D2060479D00BAAB20 /* libliblog4cxx010.a */; };
+		262B4EC02060479D00BAAB20 /* libsnappy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9E2060479D00BAAB20 /* libsnappy.a */; };
+		262B4EC12060479D00BAAB20 /* libBeIcu4c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9F2060479D00BAAB20 /* libBeIcu4c.a */; };
+		262B4EC22060479D00BAAB20 /* libUnits.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA02060479D00BAAB20 /* libUnits.a */; };
+		262B4EC32060479D00BAAB20 /* libBeJsonCpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA12060479D00BAAB20 /* libBeJsonCpp.a */; };
+		262B4EC42060479D00BAAB20 /* libBeJavaScript.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA22060479D00BAAB20 /* libBeJavaScript.a */; };
+		262B4EC62060479D00BAAB20 /* libBeCurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA42060479D00BAAB20 /* libBeCurl.a */; };
+		262B4EC72060479D00BAAB20 /* liblibaprutil010504.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA52060479D00BAAB20 /* liblibaprutil010504.a */; };
+		262B4EC82060479D00BAAB20 /* libBeSQLite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA62060479D00BAAB20 /* libBeSQLite.a */; };
+		262B4ED62060487100BAAB20 /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ECB2060487100BAAB20 /* Utilities.cpp */; };
+		262B4ED92060487100BAAB20 /* node_api.cc in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ECF2060487100BAAB20 /* node_api.cc */; };
+		262B4EDA2060487100BAAB20 /* node_internals.cc in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ED02060487100BAAB20 /* node_internals.cc */; };
+		262B4EDB2060487100BAAB20 /* ServicesTierNodeHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ED12060487100BAAB20 /* ServicesTierNodeHost.cpp */; };
+		262B4EDD2060487100BAAB20 /* ServicesTierScripts.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ED32060487100BAAB20 /* ServicesTierScripts.cpp */; };
+		262B4EEC206055E400BAAB20 /* Test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4EEA206055E400BAAB20 /* Test.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		262B4E61206044D400BAAB20 /* NAPI-JSC-Tests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NAPI-JSC-Tests.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		262B4E64206044D400BAAB20 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		262B4E65206044D400BAAB20 /* AppDelegate.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.m; sourceTree = "<group>"; };
+		262B4E67206044D400BAAB20 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		262B4E68206044D400BAAB20 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		262B4E6B206044D400BAAB20 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		262B4E6D206044D400BAAB20 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		262B4E70206044D400BAAB20 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		262B4E72206044D400BAAB20 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		262B4E73206044D400BAAB20 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		262B4E7A206045AC00BAAB20 /* Assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Assets; path = "$(OutRoot)$(BuildArchitecture)/Product/iModelJs-Tests/Assets"; sourceTree = "<group>"; };
+		262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "NAPI-JSC-Tests.xcconfig"; sourceTree = "<group>"; };
+		262B4E7F2060475B00BAAB20 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		262B4E812060476000BAAB20 /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		262B4E832060476500BAAB20 /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
+		262B4E852060479C00BAAB20 /* log4j.dtd */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = log4j.dtd; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.13/native/assets/log4j.dtd; sourceTree = "<group>"; };
+		262B4E862060479C00BAAB20 /* libBeOpenSSL.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeOpenSSL.a; path = ../../../nuget/OpenSslNuget_iosarm64.2.0.2.13/native/lib/static/libBeOpenSSL.a; sourceTree = "<group>"; };
+		262B4E872060479C00BAAB20 /* libECObjects.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECObjects.a; path = "../../../../out-release/iOSARM64/static/build/ECObjects/ECObjects/libECObjects.a"; sourceTree = "<group>"; };
+		262B4E882060479C00BAAB20 /* libBentleyGeom.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeom.a; path = "../../../../out-release/iOSARM64/static/build/GeomLibs/delivery/basegeom/bin/libBentleyGeom.a"; sourceTree = "<group>"; };
+		262B4E892060479C00BAAB20 /* libBeLibxml2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibxml2.a; path = ../../../nuget/LibXml2Nuget_iosarm64.2.0.2.13/native/lib/static/libBeLibxml2.a; sourceTree = "<group>"; };
+		262B4E8A2060479C00BAAB20 /* libBaseGeoCoord.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBaseGeoCoord.a; path = "../../../../out-release/iOSARM64/static/build/BaseGeoCoord/libBaseGeoCoord.a"; sourceTree = "<group>"; };
+		262B4E8B2060479C00BAAB20 /* libBeHttp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeHttp.a; path = "../../../../out-release/iOSARM64/static/build/BeHttp/libBeHttp.a"; sourceTree = "<group>"; };
+		262B4E8C2060479C00BAAB20 /* libBeXml.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeXml.a; path = "../../../../out-release/iOSARM64/static/build/BeXml/libBeXml.a"; sourceTree = "<group>"; };
+		262B4E8D2060479C00BAAB20 /* liblibapr010502.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibapr010502.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.13/native/lib/static/liblibapr010502.a; sourceTree = "<group>"; };
+		262B4E8E2060479C00BAAB20 /* libBeLibJpegTurbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibJpegTurbo.a; path = ../../../nuget/JpegTurboNuget_iosarm64.2.0.2.13/native/lib/static/libBeLibJpegTurbo.a; sourceTree = "<group>"; };
+		262B4E8F2060479C00BAAB20 /* libDgnPlatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libDgnPlatform.a; path = "../../../../out-release/iOSARM64/static/build/DgnPlatform/DgnPlatform/libDgnPlatform.a"; sourceTree = "<group>"; };
+		262B4E902060479C00BAAB20 /* libfreetype2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype2.a; path = ../../../nuget/Freetype2Nuget_iosarm64.2.0.2.13/native/lib/static/libfreetype2.a; sourceTree = "<group>"; };
+		262B4E912060479C00BAAB20 /* libBentleyGeomSerialization.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeomSerialization.a; path = "../../../../out-release/iOSARM64/static/build/GeomLibs/Serialization/libBentleyGeomSerialization.a"; sourceTree = "<group>"; };
+		262B4E922060479C00BAAB20 /* libBeZlib.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeZlib.a; path = ../../../nuget/CompressNuget_iosarm64.2.0.2.13/native/lib/static/libBeZlib.a; sourceTree = "<group>"; };
+		262B4E932060479C00BAAB20 /* libBePng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBePng.a; path = ../../../nuget/PngNuget_iosarm64.2.0.2.13/native/lib/static/libBePng.a; sourceTree = "<group>"; };
+		262B4E942060479C00BAAB20 /* libBeCsmapStatic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCsmapStatic.a; path = "../../../../out-release/iOSARM64/static/build/csmap/libBeCsmapStatic.a"; sourceTree = "<group>"; };
+		262B4E952060479C00BAAB20 /* libiModelJs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libiModelJs.a; path = "../../../../out-release/iOSARM64/static/build/iModelJs/libiModelJs.a"; sourceTree = "<group>"; };
+		262B4E962060479C00BAAB20 /* libBeJpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJpeg.a; path = "../../../../out-release/iOSARM64/static/build/BeJpeg/libBeJpeg.a"; sourceTree = "<group>"; };
+		262B4E972060479C00BAAB20 /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblzma.a; path = ../../../nuget/CompressNuget_iosarm64.2.0.2.13/native/lib/static/liblzma.a; sourceTree = "<group>"; };
+		262B4E982060479C00BAAB20 /* libBeFolly.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeFolly.a; path = "../../../../out-release/iOSARM64/static/build/Folly/libBeFolly.a"; sourceTree = "<group>"; };
+		262B4E992060479C00BAAB20 /* libBentley.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentley.a; path = "../../../../out-release/iOSARM64/static/build/Bentley/libBentley.a"; sourceTree = "<group>"; };
+		262B4E9A2060479D00BAAB20 /* libBeSQLiteEC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLiteEC.a; path = "../../../../out-release/iOSARM64/static/build/ECDb/libBeSQLiteEC.a"; sourceTree = "<group>"; };
+		262B4E9B2060479D00BAAB20 /* libbentleylog4cxx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbentleylog4cxx.a; path = "../../../../out-release/iOSARM64/static/build/LoggingSdk/bentleylog4cxx/libbentleylog4cxx.a"; sourceTree = "<group>"; };
+		262B4E9C2060479D00BAAB20 /* libECPresentation.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECPresentation.a; path = "../../../../out-release/iOSARM64/static/build/ECPresentation/Lib/libECPresentation.a"; sourceTree = "<group>"; };
+		262B4E9D2060479D00BAAB20 /* libliblog4cxx010.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libliblog4cxx010.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.13/native/lib/static/libliblog4cxx010.a; sourceTree = "<group>"; };
+		262B4E9E2060479D00BAAB20 /* libsnappy.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsnappy.a; path = ../../../nuget/CompressNuget_iosarm64.2.0.2.13/native/lib/static/libsnappy.a; sourceTree = "<group>"; };
+		262B4E9F2060479D00BAAB20 /* libBeIcu4c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeIcu4c.a; path = ../../../nuget/IcuNuget_iosarm64.2.0.2.13/native/lib/static/libBeIcu4c.a; sourceTree = "<group>"; };
+		262B4EA02060479D00BAAB20 /* libUnits.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libUnits.a; path = "../../../../out-release/iOSARM64/static/build/Units/libUnits.a"; sourceTree = "<group>"; };
+		262B4EA12060479D00BAAB20 /* libBeJsonCpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJsonCpp.a; path = "../../../../out-release/iOSARM64/static/build/BeJsonCpp/libBeJsonCpp.a"; sourceTree = "<group>"; };
+		262B4EA22060479D00BAAB20 /* libBeJavaScript.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJavaScript.a; path = "../../../../out-release/iOSARM64/static/build/BeJavaScript/libBeJavaScript.a"; sourceTree = "<group>"; };
+		262B4EA32060479D00BAAB20 /* libuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libuv.a; path = "../../../../out-release/iOSARM64/static/build/libuv/libuv.a"; sourceTree = "<group>"; };
+		262B4EA42060479D00BAAB20 /* libBeCurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCurl.a; path = ../../../nuget/CurlNuget_iosarm64.2.0.2.13/native/lib/static/libBeCurl.a; sourceTree = "<group>"; };
+		262B4EA52060479D00BAAB20 /* liblibaprutil010504.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibaprutil010504.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.13/native/lib/static/liblibaprutil010504.a; sourceTree = "<group>"; };
+		262B4EA62060479D00BAAB20 /* libBeSQLite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLite.a; path = "../../../../out-release/iOSARM64/static/build/BeSQLite/libBeSQLite.a"; sourceTree = "<group>"; };
+		262B4ECB2060487100BAAB20 /* Utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Utilities.cpp; path = ../../../Utilities.cpp; sourceTree = "<group>"; };
+		262B4ECD2060487100BAAB20 /* iModelJsApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsApp.h; path = ../../../PublicAPI/iModelJs/iModelJsApp.h; sourceTree = "<group>"; };
+		262B4ECF2060487100BAAB20 /* node_api.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_api.cc; path = ../../../jsc/node_api.cc; sourceTree = "<group>"; };
+		262B4ED02060487100BAAB20 /* node_internals.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_internals.cc; path = ../../../node_internals.cc; sourceTree = "<group>"; };
+		262B4ED12060487100BAAB20 /* ServicesTierNodeHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierNodeHost.cpp; path = ../../../ServicesTierNodeHost.cpp; sourceTree = "<group>"; };
+		262B4ED32060487100BAAB20 /* ServicesTierScripts.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierScripts.cpp; path = ../../../ServicesTierScripts.cpp; sourceTree = "<group>"; };
+		262B4EDE206048B000BAAB20 /* node_api_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_api_types.h; path = "../../../PublicAPI/node-addon-api/node_api_types.h"; sourceTree = "<group>"; };
+		262B4EDF206048B000BAAB20 /* iModelJs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJs.h; path = ../../../PublicAPI/iModelJs/iModelJs.h; sourceTree = "<group>"; };
+		262B4EE0206048B000BAAB20 /* napi-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "napi-inl.h"; path = "../../../PublicAPI/node-addon-api/napi-inl.h"; sourceTree = "<group>"; };
+		262B4EE2206048B000BAAB20 /* iModelJsServicesTier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsServicesTier.h; path = ../../../PublicAPI/iModelJs/iModelJsServicesTier.h; sourceTree = "<group>"; };
+		262B4EE3206048B000BAAB20 /* node_api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_api.h; path = "../../../PublicAPI/node-addon-api/node_api.h"; sourceTree = "<group>"; };
+		262B4EE4206048B000BAAB20 /* napi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = napi.h; path = "../../../PublicAPI/node-addon-api/napi.h"; sourceTree = "<group>"; };
+		262B4EE5206048B000BAAB20 /* iModelJsInternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsInternal.h; path = ../../../iModelJsInternal.h; sourceTree = "<group>"; };
+		262B4EE6206048B000BAAB20 /* iModelJsUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsUtilities.h; path = ../../../PublicAPI/iModelJs/iModelJsUtilities.h; sourceTree = "<group>"; };
+		262B4EE7206048B000BAAB20 /* node_internals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_internals.h; path = ../../../node_internals.h; sourceTree = "<group>"; };
+		262B4EEA206055E400BAAB20 /* Test.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test.cpp; path = ../../Test.cpp; sourceTree = "<group>"; };
+		262B4EEB206055E400BAAB20 /* Test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Test.h; path = ../../Test.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		262B4E5E206044D400BAAB20 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				262B4EA72060479D00BAAB20 /* log4j.dtd in Frameworks */,
+				262B4EA82060479D00BAAB20 /* libBeOpenSSL.a in Frameworks */,
+				262B4EA92060479D00BAAB20 /* libECObjects.a in Frameworks */,
+				262B4EAA2060479D00BAAB20 /* libBentleyGeom.a in Frameworks */,
+				262B4EAB2060479D00BAAB20 /* libBeLibxml2.a in Frameworks */,
+				262B4EAC2060479D00BAAB20 /* libBaseGeoCoord.a in Frameworks */,
+				262B4EAD2060479D00BAAB20 /* libBeHttp.a in Frameworks */,
+				262B4EAE2060479D00BAAB20 /* libBeXml.a in Frameworks */,
+				262B4EAF2060479D00BAAB20 /* liblibapr010502.a in Frameworks */,
+				262B4EB02060479D00BAAB20 /* libBeLibJpegTurbo.a in Frameworks */,
+				262B4EB12060479D00BAAB20 /* libDgnPlatform.a in Frameworks */,
+				262B4EB22060479D00BAAB20 /* libfreetype2.a in Frameworks */,
+				262B4EB32060479D00BAAB20 /* libBentleyGeomSerialization.a in Frameworks */,
+				262B4EB42060479D00BAAB20 /* libBeZlib.a in Frameworks */,
+				262B4EB52060479D00BAAB20 /* libBePng.a in Frameworks */,
+				262B4EB62060479D00BAAB20 /* libBeCsmapStatic.a in Frameworks */,
+				262B4EB82060479D00BAAB20 /* libBeJpeg.a in Frameworks */,
+				262B4EB92060479D00BAAB20 /* liblzma.a in Frameworks */,
+				262B4EBA2060479D00BAAB20 /* libBeFolly.a in Frameworks */,
+				262B4EBB2060479D00BAAB20 /* libBentley.a in Frameworks */,
+				262B4EBC2060479D00BAAB20 /* libBeSQLiteEC.a in Frameworks */,
+				262B4EBD2060479D00BAAB20 /* libbentleylog4cxx.a in Frameworks */,
+				262B4EBE2060479D00BAAB20 /* libECPresentation.a in Frameworks */,
+				262B4EBF2060479D00BAAB20 /* libliblog4cxx010.a in Frameworks */,
+				262B4EC02060479D00BAAB20 /* libsnappy.a in Frameworks */,
+				262B4EC12060479D00BAAB20 /* libBeIcu4c.a in Frameworks */,
+				262B4EC22060479D00BAAB20 /* libUnits.a in Frameworks */,
+				262B4EC32060479D00BAAB20 /* libBeJsonCpp.a in Frameworks */,
+				262B4EC42060479D00BAAB20 /* libBeJavaScript.a in Frameworks */,
+				262B4EC62060479D00BAAB20 /* libBeCurl.a in Frameworks */,
+				262B4EC72060479D00BAAB20 /* liblibaprutil010504.a in Frameworks */,
+				262B4EC82060479D00BAAB20 /* libBeSQLite.a in Frameworks */,
+				262B4E842060476500BAAB20 /* CFNetwork.framework in Frameworks */,
+				262B4E822060476000BAAB20 /* JavaScriptCore.framework in Frameworks */,
+				262B4E802060475B00BAAB20 /* CoreFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		262B4E58206044D400BAAB20 = {
+			isa = PBXGroup;
+			children = (
+				262B4E63206044D400BAAB20 /* NAPI-JSC-Tests */,
+				262B4E62206044D400BAAB20 /* Products */,
+				262B4E7E2060475B00BAAB20 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		262B4E62206044D400BAAB20 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				262B4E61206044D400BAAB20 /* NAPI-JSC-Tests.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		262B4E63206044D400BAAB20 /* NAPI-JSC-Tests */ = {
+			isa = PBXGroup;
+			children = (
+				262B4EDF206048B000BAAB20 /* iModelJs.h */,
+				262B4EE5206048B000BAAB20 /* iModelJsInternal.h */,
+				262B4EE2206048B000BAAB20 /* iModelJsServicesTier.h */,
+				262B4EE6206048B000BAAB20 /* iModelJsUtilities.h */,
+				262B4EE0206048B000BAAB20 /* napi-inl.h */,
+				262B4EE4206048B000BAAB20 /* napi.h */,
+				262B4EDE206048B000BAAB20 /* node_api_types.h */,
+				262B4EE3206048B000BAAB20 /* node_api.h */,
+				262B4EE7206048B000BAAB20 /* node_internals.h */,
+				262B4ECD2060487100BAAB20 /* iModelJsApp.h */,
+				262B4ECF2060487100BAAB20 /* node_api.cc */,
+				262B4ED02060487100BAAB20 /* node_internals.cc */,
+				262B4ED12060487100BAAB20 /* ServicesTierNodeHost.cpp */,
+				262B4ED32060487100BAAB20 /* ServicesTierScripts.cpp */,
+				262B4ECB2060487100BAAB20 /* Utilities.cpp */,
+				262B4E64206044D400BAAB20 /* AppDelegate.h */,
+				262B4E65206044D400BAAB20 /* AppDelegate.m */,
+				262B4E67206044D400BAAB20 /* ViewController.h */,
+				262B4E68206044D400BAAB20 /* ViewController.m */,
+				262B4E7A206045AC00BAAB20 /* Assets */,
+				262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */,
+				262B4E6A206044D400BAAB20 /* Main.storyboard */,
+				262B4E6D206044D400BAAB20 /* Assets.xcassets */,
+				262B4E6F206044D400BAAB20 /* LaunchScreen.storyboard */,
+				262B4E72206044D400BAAB20 /* Info.plist */,
+				262B4E73206044D400BAAB20 /* main.m */,
+				262B4EEA206055E400BAAB20 /* Test.cpp */,
+				262B4EEB206055E400BAAB20 /* Test.h */,
+			);
+			path = "NAPI-JSC-Tests";
+			sourceTree = "<group>";
+		};
+		262B4E7E2060475B00BAAB20 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				262B4E8A2060479C00BAAB20 /* libBaseGeoCoord.a */,
+				262B4E942060479C00BAAB20 /* libBeCsmapStatic.a */,
+				262B4EA42060479D00BAAB20 /* libBeCurl.a */,
+				262B4E982060479C00BAAB20 /* libBeFolly.a */,
+				262B4E8B2060479C00BAAB20 /* libBeHttp.a */,
+				262B4E9F2060479D00BAAB20 /* libBeIcu4c.a */,
+				262B4EA22060479D00BAAB20 /* libBeJavaScript.a */,
+				262B4E962060479C00BAAB20 /* libBeJpeg.a */,
+				262B4EA12060479D00BAAB20 /* libBeJsonCpp.a */,
+				262B4E8E2060479C00BAAB20 /* libBeLibJpegTurbo.a */,
+				262B4E892060479C00BAAB20 /* libBeLibxml2.a */,
+				262B4E992060479C00BAAB20 /* libBentley.a */,
+				262B4E882060479C00BAAB20 /* libBentleyGeom.a */,
+				262B4E912060479C00BAAB20 /* libBentleyGeomSerialization.a */,
+				262B4E9B2060479D00BAAB20 /* libbentleylog4cxx.a */,
+				262B4E862060479C00BAAB20 /* libBeOpenSSL.a */,
+				262B4E932060479C00BAAB20 /* libBePng.a */,
+				262B4EA62060479D00BAAB20 /* libBeSQLite.a */,
+				262B4E9A2060479D00BAAB20 /* libBeSQLiteEC.a */,
+				262B4E8C2060479C00BAAB20 /* libBeXml.a */,
+				262B4E922060479C00BAAB20 /* libBeZlib.a */,
+				262B4E8F2060479C00BAAB20 /* libDgnPlatform.a */,
+				262B4E872060479C00BAAB20 /* libECObjects.a */,
+				262B4E9C2060479D00BAAB20 /* libECPresentation.a */,
+				262B4E902060479C00BAAB20 /* libfreetype2.a */,
+				262B4E952060479C00BAAB20 /* libiModelJs.a */,
+				262B4E8D2060479C00BAAB20 /* liblibapr010502.a */,
+				262B4EA52060479D00BAAB20 /* liblibaprutil010504.a */,
+				262B4E9D2060479D00BAAB20 /* libliblog4cxx010.a */,
+				262B4E972060479C00BAAB20 /* liblzma.a */,
+				262B4E9E2060479D00BAAB20 /* libsnappy.a */,
+				262B4EA02060479D00BAAB20 /* libUnits.a */,
+				262B4EA32060479D00BAAB20 /* libuv.a */,
+				262B4E852060479C00BAAB20 /* log4j.dtd */,
+				262B4E832060476500BAAB20 /* CFNetwork.framework */,
+				262B4E812060476000BAAB20 /* JavaScriptCore.framework */,
+				262B4E7F2060475B00BAAB20 /* CoreFoundation.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		262B4E60206044D400BAAB20 /* NAPI-JSC-Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 262B4E77206044D400BAAB20 /* Build configuration list for PBXNativeTarget "NAPI-JSC-Tests" */;
+			buildPhases = (
+				262B4E5D206044D400BAAB20 /* Sources */,
+				262B4E5E206044D400BAAB20 /* Frameworks */,
+				262B4E5F206044D400BAAB20 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "NAPI-JSC-Tests";
+			productName = "NAPI-JSC-Tests";
+			productReference = 262B4E61206044D400BAAB20 /* NAPI-JSC-Tests.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		262B4E59206044D400BAAB20 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0920;
+				ORGANIZATIONNAME = "Bentley Systems";
+				TargetAttributes = {
+					262B4E60206044D400BAAB20 = {
+						CreatedOnToolsVersion = 9.2;
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 262B4E5C206044D400BAAB20 /* Build configuration list for PBXProject "NAPI-JSC-Tests" */;
+			compatibilityVersion = "Xcode 8.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 262B4E58206044D400BAAB20;
+			productRefGroup = 262B4E62206044D400BAAB20 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				262B4E60206044D400BAAB20 /* NAPI-JSC-Tests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		262B4E5F206044D400BAAB20 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				262B4E71206044D400BAAB20 /* LaunchScreen.storyboard in Resources */,
+				262B4E7D2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig in Resources */,
+				262B4E7B206045AC00BAAB20 /* Assets in Resources */,
+				262B4E6E206044D400BAAB20 /* Assets.xcassets in Resources */,
+				262B4E6C206044D400BAAB20 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		262B4E5D206044D400BAAB20 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				262B4EEC206055E400BAAB20 /* Test.cpp in Sources */,
+				262B4EDA2060487100BAAB20 /* node_internals.cc in Sources */,
+				262B4E69206044D400BAAB20 /* ViewController.m in Sources */,
+				262B4ED92060487100BAAB20 /* node_api.cc in Sources */,
+				262B4ED62060487100BAAB20 /* Utilities.cpp in Sources */,
+				262B4EDB2060487100BAAB20 /* ServicesTierNodeHost.cpp in Sources */,
+				262B4E74206044D400BAAB20 /* main.m in Sources */,
+				262B4EDD2060487100BAAB20 /* ServicesTierScripts.cpp in Sources */,
+				262B4E66206044D400BAAB20 /* AppDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		262B4E6A206044D400BAAB20 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				262B4E6B206044D400BAAB20 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		262B4E6F206044D400BAAB20 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				262B4E70206044D400BAAB20 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		262B4E75206044D400BAAB20 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		262B4E76206044D400BAAB20 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		262B4E78206044D400BAAB20 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = N2P4TGF347;
+				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/PublicAPI/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/VendorAPI/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsNodeAddon/Delivery/imodeljs-addon-iModelJs-objs/",
+					"$(SrcRoot)/thirdparty/libuv/include/",
+				);
+				INFOPLIST_FILE = "NAPI-JSC-Tests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bentley.NAPI-JSC-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "d61af43b-aa7a-420f-9ff2-53e393897f92";
+				PROVISIONING_PROFILE_SPECIFIER = WIldCardProfile;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		262B4E79206044D400BAAB20 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = N2P4TGF347;
+				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/PublicAPI/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/VendorAPI/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJsNodeAddon/Delivery/imodeljs-addon-iModelJs-objs/",
+					"$(SrcRoot)/thirdparty/libuv/include/",
+				);
+				INFOPLIST_FILE = "NAPI-JSC-Tests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.bentley.NAPI-JSC-Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "d61af43b-aa7a-420f-9ff2-53e393897f92";
+				PROVISIONING_PROFILE_SPECIFIER = WIldCardProfile;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		262B4E5C206044D400BAAB20 /* Build configuration list for PBXProject "NAPI-JSC-Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				262B4E75206044D400BAAB20 /* Debug */,
+				262B4E76206044D400BAAB20 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		262B4E77206044D400BAAB20 /* Build configuration list for PBXNativeTarget "NAPI-JSC-Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				262B4E78206044D400BAAB20 /* Debug */,
+				262B4E79206044D400BAAB20 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 262B4E59206044D400BAAB20 /* Project object */;
+}
