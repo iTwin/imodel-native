@@ -736,6 +736,7 @@ public:
 
     private:
         T_WStringVectorP    m_listMessageCollection;
+        bset<WString>       m_displayedMessageCollection;
         WString             m_displayMessage;
 
         void    ProcessInputMessage (WCharCP message, int numChars);

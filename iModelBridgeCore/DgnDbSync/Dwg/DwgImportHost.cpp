@@ -565,9 +565,10 @@ void            DwgImporter::MessageCenter::DisplayAndFlush ()
         // a LIST property has started message collection, add it to the collection:
         m_listMessageCollection->push_back (m_displayMessage);
         }
-    else if (LOG_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
+    else if (LOG_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE) && m_displayedMessageCollection.find(m_displayMessage) == m_displayedMessageCollection.end())
         {
         LOG.infov ("From Toolkit: %ls", m_displayMessage.c_str());
+        m_displayedMessageCollection.insert (m_displayMessage);
         }
 
     // flush the string
