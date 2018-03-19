@@ -929,6 +929,25 @@ void Sheet::Attachment::Tile::_DrawGraphics(DrawArgsR args) const
     for (auto& graphic : m_graphics)
         if (graphic.IsValid())
             args.m_graphics.Add(*graphic);
+
+    static bool s_drawDebugRange = false;
+    if (!s_drawDebugRange)
+        return;
+
+    GraphicParams params;
+    params.SetWidth(0);
+    ColorDef color = ColorDef::DarkOrange();
+    params.SetLineColor(color);
+    params.SetFillColor(color);
+
+    auto range = GetRange();
+    range.low.z = range.high.z = 1.0;
+
+    auto gf = args.m_context.CreateSceneGraphic();
+    gf->ActivateGraphicParams(params);
+    gf->AddRangeBox(range);
+
+    args.m_graphics.Add(*gf->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
