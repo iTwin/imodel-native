@@ -154,6 +154,29 @@ TEST_F(iModelTests, UnsuccessfulGetiModels)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, FilterGetiModels)
+    {
+    Utf8String imodelName = GetTestiModelName();
+    iModelResult createResult;
+    iModelHubHelpers::CreateUninitializediModel(createResult, s_client, s_projectId, imodelName);
+
+    iModelsResult filteredResult = s_client->GetiModels(s_projectId, nullptr, true)->GetResult();
+    ASSERT_SUCCESS(filteredResult);
+    iModelsResult unfilteredResult = s_client->GetiModels(s_projectId, nullptr, false)->GetResult();
+    ASSERT_SUCCESS(unfilteredResult);
+    ASSERT_GT(unfilteredResult.GetValue().size(), filteredResult.GetValue().size());
+    for (iModelInfoPtr info : filteredResult.GetValue())
+        EXPECT_NE(imodelName, info->GetName());
+    bool found = false;
+    for (iModelInfoPtr info : unfilteredResult.GetValue())
+        if (imodelName == info->GetName())
+            found = true;
+    EXPECT_TRUE(found);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Algirdas.Mikoliunas             07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(iModelTests, SuccessfulCreateiModelWithASpaceInName)

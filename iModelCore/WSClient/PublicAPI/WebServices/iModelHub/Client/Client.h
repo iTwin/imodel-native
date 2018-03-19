@@ -112,9 +112,10 @@ public:
     //! Get list of available repostiories for this client.
     //! @param[in] projectId Project Id to connect to.
     //! @param[in] cancellationToken
+    //! @param[in] filterInitialized If set to true, returns only iModels that have been initialized
     //! @return Asynchronous task that has a collection of iModel information as the result. See iModelInfo.
     //! @note Does not return uninitialized iModels or iModels that the user does not have authorization to access.
-    IMODELHUBCLIENT_EXPORT iModelsTaskPtr GetiModels(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT iModelsTaskPtr GetiModels(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken = nullptr, bool filterInitialized = false) const;
 
     //! Gets iModel with the specified name.
     //! @param[in] projectId Project Id to connect to.
