@@ -20,6 +20,7 @@ struct TestObject : Napi::ObjectWrap<TestObject>
         Napi::HandleScope scope(env);
         Napi::Function t = TestObject::DefineClass(env, "TestObject", {
             TestObject::InstanceMethod("TestFunc", &TestObject::TestFunc),
+            StaticMethod("TestStaticFunc", &TestObject::TestStaticFunc),
         });
 
         exports.Set("TestObject", t);
@@ -35,8 +36,12 @@ struct TestObject : Napi::ObjectWrap<TestObject>
     {
         return Napi::Number::New(Env(), 42.0);
     }
-};
 
+    static Napi::Value TestStaticFunc(const Napi::CallbackInfo& info)
+    {
+        return Napi::Number::New(info.Env(), 3.14);
+    }
+};
 
 int main(int argc, const char * argv[]) {
     std::cout << "NAPI - JavaScriptCore Tests\n";
@@ -86,5 +91,9 @@ int main(int argc, const char * argv[]) {
     auto result2 = runtime.EvaluateScript ("var a = new TestObject(1.0);");
     auto result3 = runtime.EvaluateScript ("a.TestFunc()");
     assert (result3.value.As<Napi::Number>().DoubleValue() == 42.0);
+
+    auto result4 = runtime.EvaluateScript ("TestObject.TestStaticFunc()");
+    assert (result4.value.As<Napi::Number>().DoubleValue() == 3.14);
+
     return 0;
 }

@@ -338,6 +338,28 @@ napi_status napi_define_class(napi_env env,
     auto classCBData = new JSClassCallbackData(env,constructor,callback_data,property_count,properties);
     *result = JSObjectMake(ctx,classRef,classCBData);
     JSClassRelease(classRef);
+    
+    // Define static Properties here.
+    for (size_t i=0; i < property_count; i++) {
+        const napi_property_descriptor* p = properties + i;
+        if ((p->attributes & napi_static) != 0) {
+            JSClassDefinition classDef = kJSClassDefinitionEmpty;
+            if (p->utf8name != nullptr) {
+                classDef.className = p->utf8name;
+            } else {
+                continue;
+            }
+
+            classDef.callAsFunction = JSCFunctionCallbackWrapper::CallAsFunction;
+            JSClassRef classRef = JSClassCreate(&classDef);
+            auto funcCBData = new JSCFunctionCallbackData(env,p->method,p->data);
+            JSObjectRef method = JSObjectMake(ctx,classRef,funcCBData);
+            JSStringRef methodName = JSStringCreateWithUTF8CString(classDef.className);
+            JSObjectSetProperty(ctx, (JSObjectRef)*result, methodName, method, kJSClassAttributeNone, nullptr);
+            JSStringRelease(methodName);
+            JSClassRelease(classRef);
+        }
+    }
     return GET_RETURN_STATUS(env);
 }
 
