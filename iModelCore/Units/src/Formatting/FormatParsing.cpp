@@ -1748,56 +1748,56 @@ void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
     size_t ind0 = start;
     bool initVect = true;
 
-    if (!Utf8String::IsNullOrEmpty(input))
+    if (Utf8String::IsNullOrEmpty(input))
+        return;
+
+    while (!ng.IsEndOfLine())
         {
-        ng = NumberGrabber();
-        while (!ng.IsEndOfLine())
+        ng.Grab(m_input, ind);
+        if (ng.GetLength() > 0)  // a number is detected
             {
-            ng.Grab(m_input, ind);
-            if (ng.GetLength() > 0)  // a number is detected
+            if (m_symbs.size() > 0)
+                {
+                fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+                m_segs.push_back(fps);
+                m_symbs.clear();
+                }
+
+            fps = FormatParsingSegment(ng);
+            m_segs.push_back(fps);
+            ind = ng.GetNextIndex();
+            initVect = true;
+            }
+        else
+            {
+            if (initVect) ind0 = ind;
+            initVect = false;
+            csp = CursorScanPoint(m_input, ind, revs);
+            if (csp.IsSpace())
                 {
                 if (m_symbs.size() > 0)
                     {
                     fps = FormatParsingSegment(m_symbs, ind0, m_unit);
                     m_segs.push_back(fps);
                     m_symbs.clear();
-                    }
-
-                fps = FormatParsingSegment(ng);
-                m_segs.push_back(fps);
-                ind = ng.GetNextIndex();
-                initVect = true;
-                }
-            else
-                {
-                if (initVect) ind0 = ind;
-                initVect = false;
-                csp = CursorScanPoint(m_input, ind, revs);
-                if (csp.IsSpace())
-                    {
-                    if (m_symbs.size() > 0)
-                        {
-                        fps = FormatParsingSegment(m_symbs, ind0, m_unit);
-                        m_segs.push_back(fps);
-                        m_symbs.clear();
-                        ind = csp.GetIndex();
-                        ind0 = ind;
-                        }
-                    while (csp.IsSpace()) { csp.Iterate(m_input, revs); }
                     ind = csp.GetIndex();
                     ind0 = ind;
                     }
-                if (csp.IsEndOfLine())
-                    break;
-                m_symbs.push_back(csp);
+                while (csp.IsSpace()) { csp.Iterate(m_input, revs); }
                 ind = csp.GetIndex();
+                ind0 = ind;
                 }
+            if (csp.IsEndOfLine())
+                break;
+            m_symbs.push_back(csp);
+            ind = csp.GetIndex();
             }
-        if (m_symbs.size() > 0)
-            {
-            fps = FormatParsingSegment(m_symbs, ind0, m_unit);
-            m_segs.push_back(fps);
-            }
+        }
+
+    if (m_symbs.size() > 0)
+        {
+        fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+        m_segs.push_back(fps);
         }
     }
 

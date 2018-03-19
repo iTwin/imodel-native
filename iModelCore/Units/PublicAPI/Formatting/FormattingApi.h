@@ -762,10 +762,6 @@ private:
     BEU::UnitCP m_unit;
     FormatProblemDetail m_problem;
     NamedFormatSpec m_localCopy;
-    mutable Utf8String  m_fusName;
-
-    Utf8CP GetDefaultDisplayLabel() const;
-    Utf8CP SetFusName(Utf8CP name) const { m_fusName.assign(name);  return m_fusName.c_str(); }
 
 public:
     UNITS_EXPORT void Init();
@@ -774,7 +770,7 @@ public:
     FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit) : FormatUnitSet(format, unit, false) {}
     FormatUnitSet(FormatUnitSetCR other) : m_formatSpec(other.m_formatSpec), m_unitName(other.m_unitName), m_unit(other.m_unit), m_problem(other.m_problem) {}
     UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData);
-        
+
     UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
 
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
@@ -827,9 +823,7 @@ public:
     FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
     Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
     Utf8String GetUnitName() const { return m_unitName; }
-    Utf8CP GetFusName() const { return m_fusName.c_str(); }
 
-    UNITS_EXPORT Utf8CP GetDisplayLabel(bool useDefault=false) const;
     UNITS_EXPORT Utf8String ToText() const;
     BEU::UnitCP GetUnit() const { return m_unit; }
     NamedFormatSpecCP GetNamedFormatSpec() const { return m_formatSpec; }
@@ -845,7 +839,6 @@ public:
     UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
         
     bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
-    bool IsSetRegistered() { return !m_fusName.empty(); }
     bool HasComposite() const { return nullptr != m_formatSpec && m_formatSpec->HasComposite(); }
     size_t GetCompositeUnitCount() const { return HasComposite() ? m_formatSpec->GetCompositeUnitCount() : 0; }
     BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMajorUnit() : nullptr; }
@@ -865,22 +858,18 @@ struct StdFormatSet
 {
 private:
     bvector<NamedFormatSpecCP> m_formatSet;    // core + app
-    bvector<FormatUnitSetCP> m_fusSet;
     FormatProblemDetail m_problem; 
 
     NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP);
-    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS, Utf8CP alias = nullptr); 
+    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS); 
     NumericFormatSpecCP AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
     NamedFormatSpecCP AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
 
     size_t StdInit();
 
-    
     StdFormatSet() { m_problem = FormatProblemDetail(); }
     static StdFormatSetP Set();
-    UNITS_EXPORT static bool IsFormatDefined(Utf8CP name);
-    UNITS_EXPORT FormatUnitSetCP FindFUS(Utf8CP fusName) const;
-    bool HasDuplicate(Utf8CP name, FormatUnitSetCP * fusP);
+    static bool IsFormatDefined(Utf8CP name);
 
 public:
     // This is temporary since this whole method is going away, but the IUnitsContext is provided to resolve all the names needed to create
@@ -888,8 +877,8 @@ public:
     void CompositeSpecsInit(BEU::IUnitsContextCP unitContext);
 
     UNITS_EXPORT static NumericFormatSpecCP DefaultDecimal();
-    static NamedFormatSpecCP DefaultFormatSpec() { return FindFormatSpec(FormatConstant::DefaultFormatName()); }
-    static size_t GetFormatSetSize() { return Set()->m_formatSet.size(); }
+    static NamedFormatSpecCP DefaultFormatSpec() {return FindFormatSpec(FormatConstant::DefaultFormatName());}
+    static size_t GetFormatSetSize() {return Set()->m_formatSet.size();}
     UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name);
     UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name);
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames();
@@ -897,35 +886,9 @@ public:
     size_t GetFormatCount() { return m_formatSet.size(); }
     bool HasProblem() const { return m_problem.IsProblem(); }
     FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
-    void ResetProblemCode() { m_problem.Reset(); }
+    void ResetProblemCode() {m_problem.Reset();}
 
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
-
-    //! Creates a new FormatUnitSet with the provided name and FUS, and adds it to the set.
-    //! @remark There are no duplicate named FUSes allowed in a StdFormatSet.
-    //! @param[in] fusR The FUS to copy the data for the to be created FUS
-    //! @param[in] fusName Name of the FUS to create
-    //! @return A pointer to the newly created FormatUnitSet if successful; otherwise, nullptr.
-    UNITS_EXPORT static FormatUnitSetCP AddFUS(FormatUnitSetCR fusR, Utf8CP fusName);
-
-    //! Creates a new FormatUnitSet with the provided name using the format and unit.
-    //! @param[in] formatName Name of the NamedFormatSpec to add to the FormatUnitSet to be created.
-    //! @param[in] unit Unit to add to the FormatUnitSet to be created.
-    //! @param[in] fusName Name of the FormatUnitSet to be created.
-    //! @return A pointer to the newly created FormatUnitSet if successful; otherwise, nullptr.
-    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP formatName, BEU::UnitCP unit, Utf8CP fusName);
-
-    //! Creates a new FormatUnitSet with the provided name and json string describing the FUS to be
-    //! created.
-    //! @param[in] descriptor string representation of the FUS to be created.
-    //! @param[in] fusName Name of the FormatUnitSet to be created.
-    //! @return A pointer to the newly created FormatUnitSet if successful; otherwise, nullptr.
-    UNITS_EXPORT static FormatUnitSetCP AddFUS(Utf8CP descriptor, Utf8CP fusName);
-
-    //! Gets the FUS from this StdFormatSet.
-    //! @param[in] name Name of the FUS to retrieve.
-    //! @return A pointer to the FormatUnitSet if found in this set, nullptr otherwise.
-    UNITS_EXPORT static FormatUnitSetCP LookupFUS(Utf8CP name);
 
     //! Whether or not the StdFormatSet has a problem.
     //! @return true if the Set has a problem; false, otherwise.

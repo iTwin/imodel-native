@@ -1312,31 +1312,6 @@ Utf8String FormatUnitSet::ToText() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-Utf8CP FormatUnitSet::GetDefaultDisplayLabel() const
-    {
-    Utf8CP fnP = (nullptr == m_formatSpec) ? "#" : m_formatSpec->GetName();
-    Utf8PrintfString lab("FUS_%s_%s", fnP, m_unitName.c_str());
-    Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(lab.c_str()));
-    return dispLabel.c_str();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-Utf8CP FormatUnitSet::GetDisplayLabel(bool useDefault) const
-    {
-    if (m_fusName.empty() || useDefault)
-        return GetDefaultDisplayLabel();
-
-    Utf8PrintfString nam("FUS_%s", m_fusName.c_str());
-    Utf8String dispLabel = BeSQLite::L10N::GetString(UnitsL10N::GetNameSpace(), BeSQLite::L10N::StringId(nam.c_str()));
-
-    return dispLabel.c_str();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
 bool FormatUnitSet::IsIdentical(FormatUnitSetCR other) const
     {
     if(m_formatSpec != other.m_formatSpec) return false;
@@ -1351,8 +1326,7 @@ bool FormatUnitSet::IsIdentical(FormatUnitSetCR other) const
 //----------------------------------------------------------------------------------------
 Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const
     {
-    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, qty.ConvertTo(m_unit), nullptr, space);
-    return txt;
+    return NumericFormatSpec::StdFormatQuantity(*m_formatSpec, qty.ConvertTo(m_unit), nullptr, space);
     }
 
 //----------------------------------------------------------------------------------------
@@ -1375,8 +1349,6 @@ Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, Utf8CP space)
 Json::Value FormatUnitSet::ToJson(bool verbose) const
     {
     Json::Value jval;
-    if (!m_fusName.empty())
-        jval[json_fusName()] = m_fusName.c_str();
     jval[json_unitName()] = m_unit->GetName();
     if(verbose)
         jval[json_formatSpec()] = m_formatSpec->ToJson(true);
