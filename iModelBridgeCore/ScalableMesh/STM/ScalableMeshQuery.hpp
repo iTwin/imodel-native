@@ -2917,7 +2917,7 @@ template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetContentExtent() con
     {
     LOAD_NODE        
 
-    if (!m_node->m_nodeHeader.m_totalCountDefined)
+    if (m_node->m_nodeHeader.m_totalCountDefined && m_node->m_nodeHeader.m_totalCount == 0)
         { 
         return DRange3d::NullRange();
         }
