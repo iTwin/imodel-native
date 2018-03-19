@@ -56,6 +56,19 @@
 		262B4EDB2060487100BAAB20 /* ServicesTierNodeHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ED12060487100BAAB20 /* ServicesTierNodeHost.cpp */; };
 		262B4EDD2060487100BAAB20 /* ServicesTierScripts.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ED32060487100BAAB20 /* ServicesTierScripts.cpp */; };
 		262B4EEC206055E400BAAB20 /* Test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4EEA206055E400BAAB20 /* Test.cpp */; };
+		26E0497320605B0400D8FDCE /* ServicesTierUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0496E20605B0400D8FDCE /* ServicesTierUtilities.cpp */; };
+		26E0497420605B0400D8FDCE /* ServicesTierEnvironment.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0496F20605B0400D8FDCE /* ServicesTierEnvironment.cpp */; };
+		26E0497520605B0400D8FDCE /* ServicesTierUvHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497020605B0400D8FDCE /* ServicesTierUvHost.cpp */; };
+		26E0497620605B0400D8FDCE /* ServicesTierHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497120605B0400D8FDCE /* ServicesTierHost.cpp */; };
+		26E0497720605B0400D8FDCE /* ServicesTierExtension.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497220605B0400D8FDCE /* ServicesTierExtension.cpp */; };
+		26E0497820605B6500D8FDCE /* libuv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA32060479D00BAAB20 /* libuv.a */; };
+		26E0498020605E1D00D8FDCE /* ECPresentationUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497920605E1C00D8FDCE /* ECPresentationUtils.cpp */; };
+		26E0498120605E1D00D8FDCE /* IModelJsNative.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497A20605E1C00D8FDCE /* IModelJsNative.cpp */; };
+		26E0498220605E1D00D8FDCE /* JsInteropBriefcaseManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497B20605E1C00D8FDCE /* JsInteropBriefcaseManager.cpp */; };
+		26E0498320605E1D00D8FDCE /* TestUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497C20605E1C00D8FDCE /* TestUtils.cpp */; };
+		26E0498420605E1D00D8FDCE /* ECSchemaXmlContextUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497D20605E1C00D8FDCE /* ECSchemaXmlContextUtils.cpp */; };
+		26E0498520605E1D00D8FDCE /* JsInterop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497E20605E1D00D8FDCE /* JsInterop.cpp */; };
+		26E0498620605E1D00D8FDCE /* JsInteropDgnDb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497F20605E1D00D8FDCE /* JsInteropDgnDb.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -125,6 +138,18 @@
 		262B4EE7206048B000BAAB20 /* node_internals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_internals.h; path = ../../../node_internals.h; sourceTree = "<group>"; };
 		262B4EEA206055E400BAAB20 /* Test.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test.cpp; path = ../../Test.cpp; sourceTree = "<group>"; };
 		262B4EEB206055E400BAAB20 /* Test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Test.h; path = ../../Test.h; sourceTree = "<group>"; };
+		26E0496E20605B0400D8FDCE /* ServicesTierUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUtilities.cpp; path = ../../../ServicesTierUtilities.cpp; sourceTree = "<group>"; };
+		26E0496F20605B0400D8FDCE /* ServicesTierEnvironment.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierEnvironment.cpp; path = ../../../ServicesTierEnvironment.cpp; sourceTree = "<group>"; };
+		26E0497020605B0400D8FDCE /* ServicesTierUvHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUvHost.cpp; path = ../../../ServicesTierUvHost.cpp; sourceTree = "<group>"; };
+		26E0497120605B0400D8FDCE /* ServicesTierHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierHost.cpp; path = ../../../ServicesTierHost.cpp; sourceTree = "<group>"; };
+		26E0497220605B0400D8FDCE /* ServicesTierExtension.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierExtension.cpp; path = ../../../ServicesTierExtension.cpp; sourceTree = "<group>"; };
+		26E0497920605E1C00D8FDCE /* ECPresentationUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ECPresentationUtils.cpp; path = ../../../../iModelJsNodeAddon/ECPresentationUtils.cpp; sourceTree = "<group>"; };
+		26E0497A20605E1C00D8FDCE /* IModelJsNative.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IModelJsNative.cpp; path = ../../../../iModelJsNodeAddon/IModelJsNative.cpp; sourceTree = "<group>"; };
+		26E0497B20605E1C00D8FDCE /* JsInteropBriefcaseManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropBriefcaseManager.cpp; path = ../../../../iModelJsNodeAddon/JsInteropBriefcaseManager.cpp; sourceTree = "<group>"; };
+		26E0497C20605E1C00D8FDCE /* TestUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TestUtils.cpp; path = ../../../../iModelJsNodeAddon/TestUtils.cpp; sourceTree = "<group>"; };
+		26E0497D20605E1C00D8FDCE /* ECSchemaXmlContextUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ECSchemaXmlContextUtils.cpp; path = ../../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.cpp; sourceTree = "<group>"; };
+		26E0497E20605E1D00D8FDCE /* JsInterop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInterop.cpp; path = ../../../../iModelJsNodeAddon/JsInterop.cpp; sourceTree = "<group>"; };
+		26E0497F20605E1D00D8FDCE /* JsInteropDgnDb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropDgnDb.cpp; path = ../../../../iModelJsNodeAddon/JsInteropDgnDb.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,6 +157,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				26E0497820605B6500D8FDCE /* libuv.a in Frameworks */,
 				262B4EA72060479D00BAAB20 /* log4j.dtd in Frameworks */,
 				262B4EA82060479D00BAAB20 /* libBeOpenSSL.a in Frameworks */,
 				262B4EA92060479D00BAAB20 /* libECObjects.a in Frameworks */,
@@ -193,6 +219,18 @@
 		262B4E63206044D400BAAB20 /* NAPI-JSC-Tests */ = {
 			isa = PBXGroup;
 			children = (
+				26E0497920605E1C00D8FDCE /* ECPresentationUtils.cpp */,
+				26E0497D20605E1C00D8FDCE /* ECSchemaXmlContextUtils.cpp */,
+				26E0497A20605E1C00D8FDCE /* IModelJsNative.cpp */,
+				26E0497E20605E1D00D8FDCE /* JsInterop.cpp */,
+				26E0497B20605E1C00D8FDCE /* JsInteropBriefcaseManager.cpp */,
+				26E0497F20605E1D00D8FDCE /* JsInteropDgnDb.cpp */,
+				26E0497C20605E1C00D8FDCE /* TestUtils.cpp */,
+				26E0496F20605B0400D8FDCE /* ServicesTierEnvironment.cpp */,
+				26E0497220605B0400D8FDCE /* ServicesTierExtension.cpp */,
+				26E0497120605B0400D8FDCE /* ServicesTierHost.cpp */,
+				26E0496E20605B0400D8FDCE /* ServicesTierUtilities.cpp */,
+				26E0497020605B0400D8FDCE /* ServicesTierUvHost.cpp */,
 				262B4EDF206048B000BAAB20 /* iModelJs.h */,
 				262B4EE5206048B000BAAB20 /* iModelJsInternal.h */,
 				262B4EE2206048B000BAAB20 /* iModelJsServicesTier.h */,
@@ -342,13 +380,25 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				26E0497320605B0400D8FDCE /* ServicesTierUtilities.cpp in Sources */,
+				26E0498120605E1D00D8FDCE /* IModelJsNative.cpp in Sources */,
+				26E0497720605B0400D8FDCE /* ServicesTierExtension.cpp in Sources */,
+				26E0498320605E1D00D8FDCE /* TestUtils.cpp in Sources */,
+				26E0498220605E1D00D8FDCE /* JsInteropBriefcaseManager.cpp in Sources */,
 				262B4EEC206055E400BAAB20 /* Test.cpp in Sources */,
+				26E0497420605B0400D8FDCE /* ServicesTierEnvironment.cpp in Sources */,
+				26E0498620605E1D00D8FDCE /* JsInteropDgnDb.cpp in Sources */,
+				26E0497620605B0400D8FDCE /* ServicesTierHost.cpp in Sources */,
 				262B4EDA2060487100BAAB20 /* node_internals.cc in Sources */,
 				262B4E69206044D400BAAB20 /* ViewController.m in Sources */,
 				262B4ED92060487100BAAB20 /* node_api.cc in Sources */,
 				262B4ED62060487100BAAB20 /* Utilities.cpp in Sources */,
+				26E0498520605E1D00D8FDCE /* JsInterop.cpp in Sources */,
 				262B4EDB2060487100BAAB20 /* ServicesTierNodeHost.cpp in Sources */,
+				26E0498020605E1D00D8FDCE /* ECPresentationUtils.cpp in Sources */,
+				26E0497520605B0400D8FDCE /* ServicesTierUvHost.cpp in Sources */,
 				262B4E74206044D400BAAB20 /* main.m in Sources */,
+				26E0498420605E1D00D8FDCE /* ECSchemaXmlContextUtils.cpp in Sources */,
 				262B4EDD2060487100BAAB20 /* ServicesTierScripts.cpp in Sources */,
 				262B4E66206044D400BAAB20 /* AppDelegate.m in Sources */,
 			);
