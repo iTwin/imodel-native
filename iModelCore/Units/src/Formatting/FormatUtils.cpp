@@ -753,7 +753,7 @@ FractionalNumeric::FractionalNumeric(double dval, int denominatorBase, double pr
     NumericFormatSpec fmt;
     fmt.SetPresentationType(PresentationType::Decimal);
     fmt.SetSignOption(ShowSignOption::OnlyNegative);
-    fmt.SetFormatTraits(FormatTraits::DefaultTraits);
+    fmt.SetFormatTraits(static_cast<FormatTraits>(0x000));
     fmt.SetDecimalPrecision(DecimalPrecision::Precision0);
     size_t numer = m_numerator;
     size_t denom = m_denominator;

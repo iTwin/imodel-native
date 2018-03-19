@@ -61,7 +61,6 @@ enum class PresentationType
 //=======================================================================================
 enum class FormatTraits : int32_t
     {
-    DefaultTraits    = 0x000, // No special traits. This value is being used only for initializing.
     LeadingZeroes    = 0x001, // Indicates that one or more insignificant zeroes are to be added in front of digital expression.
     TrailingZeroes   = 0x002, // Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
     KeepDecimalPoint = 0x004, // Indicates that the decimal point is required when the fraction is zero.
@@ -341,7 +340,7 @@ public:
     static const double DefaultRoundingFactor() { return 0.0; }
     static PresentationType const DefaultPresentaitonType() { return PresentationType::Decimal; }
     static ShowSignOption const DefaultSignOption() { return ShowSignOption::OnlyNegative; }
-    static FormatTraits const DefaultFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero)); }
+    static FormatTraits const DefaultFormatTraits() { return FormatTraits::KeepSingleZero; }
     static DecimalPrecision const DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
     static FractionalPrecision const DefaultFractionalPrecision() { return  FractionalPrecision::Over_64; }
     static FractionBarType const DefaultFractionBarType() { return FractionBarType::Diagonal; }
@@ -353,7 +352,6 @@ public:
 
     static const size_t MinDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision0); }
     static const size_t MaxDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision12); }
-
 
     // FPN prefix stands for FormatParameterName
     static Utf8String FPN_NoSign() { return "NoSign"; }

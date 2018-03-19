@@ -282,7 +282,7 @@ TEST_F(FormatIntegerTest, FormatIntegerIndividualFormatTraitsTests)
     int const testValPos = 100501;
     int const testValNeg = -100501;
 
-    nfs.SetFormatTraits(FormatTraits::DefaultTraits);
+    nfs.SetFormatTraits(FormatConstant::DefaultFormatTraits());
     EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
     EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
     EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
@@ -543,13 +543,13 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests)
 
     {
     NumericFormatSpec nfs;
-    nfs.SetFormatTraits(FormatTraits::DefaultTraits);
-    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    nfs.SetFormatTraits(FormatConstant::DefaultFormatTraits());
+    EXPECT_STREQ("0.0", nfs.FormatDouble(0).c_str());
     EXPECT_STREQ("100501.125", nfs.FormatDouble(testValPos).c_str());
     EXPECT_STREQ("-100501.125", nfs.FormatDouble(testValNeg).c_str());
-    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
-    EXPECT_STREQ("100501", nfs.FormatDouble(testValPosZeroFracComp).c_str());
-    EXPECT_STREQ("-100501", nfs.FormatDouble(testValNegZeroFracComp).c_str());
+    EXPECT_STREQ("0.0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501.0", nfs.FormatDouble(testValPosZeroFracComp).c_str());
+    EXPECT_STREQ("-100501.0", nfs.FormatDouble(testValNegZeroFracComp).c_str());
     }
 
     {
