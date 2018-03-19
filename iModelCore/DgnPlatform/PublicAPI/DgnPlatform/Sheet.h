@@ -280,6 +280,7 @@ namespace Attachment
         uint32_t m_texSize;
         uint32_t m_sceneDepth = 0xffffffff;
         Render::GraphicListPtr m_scene;
+        bool m_rendering = false;
 
         Transform m_toParent = Transform::FromIdentity(); // attachment NPC to sheet world
         double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
@@ -300,7 +301,7 @@ namespace Attachment
 
         DGNVIEW_EXPORT Viewport();
         ClipVectorCP GetAttachClips() const {return m_clips.get();}
-        void SetSceneDepth(uint32_t depth);
+        void SetSceneDepth(uint32_t depth, Root& tree);
     };
 
     //=======================================================================================

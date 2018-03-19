@@ -590,10 +590,14 @@ static const uint32_t querySheetTilePixels() { return 512; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Viewport::SetSceneDepth(uint32_t depth)
+void Sheet::Attachment::Viewport::SetSceneDepth(uint32_t depth, Root& tree)
     {
     if (m_sceneDepth != depth)
         {
+        // Ensure that if we return to this depth and need to produce more tile graphics, we first recreate the scene at that depth...
+        if (0xffffffff != m_sceneDepth && State::Ready == tree.GetState(m_sceneDepth))
+            tree.SetState(m_sceneDepth, State::NotLoaded);
+
         // Discard any tiles/graphics used for previous level-of-detail - we'll generate them at the new LOD.
         InvalidateScene();
         m_viewController->_CancelAllTileLoads(false);
@@ -630,14 +634,10 @@ void Sheet::Attachment::Tile::CreateGraphics(SceneContextR context)
     // However, this means we would be using the texture for that other tile, which will be different than what we want!  We must recreate texture.
 
     BeAssert(State::Empty != currentState);
-    switch (currentState)
+    if (State::Empty == currentState)
         {
-        case State::Ready:
-            SetIsReady();
-            break;
-        case State::Empty:
-            SetNotFound();
-            return;
+        SetNotFound();
+        return;
         }
 
     auto renderSys = context.GetRenderSystem();
@@ -648,7 +648,7 @@ void Sheet::Attachment::Tile::CreateGraphics(SceneContextR context)
         {
         UpdatePlan const& plan = context.GetUpdatePlan();
 
-        viewport->SetSceneDepth(GetDepth());
+        viewport->SetSceneDepth(GetDepth(), tree);
         viewport->SetupFromViewController();
         viewport->m_renderSys = renderSys;
         viewport->m_db = &context.GetDgnDb();
@@ -668,33 +668,39 @@ void Sheet::Attachment::Tile::CreateGraphics(SceneContextR context)
             return;
         case State::Ready:
             {
-            // render the texture then create graphics from the polys and the rendered texture
-            // ###TODO: must determine whether to do this at all if there were no poly results
-            AutoRestoreFrustum autoRestore(*viewport);
-
-            // Scene rect does not match this.  That rect increases with depth.  This rect is constant, because it is the rect of the final texture.
-            uint32_t dim = querySheetTilePixels();
-            viewport->SetRect(BSIRect::From(0, 0, dim, dim));
-
-            // Change frustum so it looks at only the visible (after clipping) portion of the scene.
-            // also only look at the relevent corner of the scene
-            Frustum frust = viewport->GetFrustum(DgnCoordSystem::Npc);
-            DPoint3dP frustPts = frust.GetPtsP();
-            m_range.Get8Corners(frustPts); // use unclipped range of tile to change the frustum (this is what we're looking at)
-            DMap4dCP rootToNpc = viewport->GetWorldToNpcMap();
-            rootToNpc->M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
-            viewport->SetupFromFrustum(frust);
-
-            viewport->_RenderTexture();
-            if (viewport->m_texture.IsNull())
+            // Only render one tile per frame - otherwise we swamp the render thread and introduce lag
+            if (!viewport->m_rendering)
                 {
-                SetNotFound();
-                }
-            else
-                {
-                GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
-                m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, m_tilePolys, *viewport->m_db, gfParams);
-                SetIsReady();
+                viewport->m_rendering = true;
+
+                // render the texture then create graphics from the polys and the rendered texture
+                // ###TODO: must determine whether to do this at all if there were no poly results
+                AutoRestoreFrustum autoRestore(*viewport);
+
+                // Scene rect does not match this.  That rect increases with depth.  This rect is constant, because it is the rect of the final texture.
+                uint32_t dim = querySheetTilePixels();
+                viewport->SetRect(BSIRect::From(0, 0, dim, dim));
+
+                // Change frustum so it looks at only the visible (after clipping) portion of the scene.
+                // also only look at the relevent corner of the scene
+                Frustum frust = viewport->GetFrustum(DgnCoordSystem::Npc);
+                DPoint3dP frustPts = frust.GetPtsP();
+                m_range.Get8Corners(frustPts); // use unclipped range of tile to change the frustum (this is what we're looking at)
+                DMap4dCP rootToNpc = viewport->GetWorldToNpcMap();
+                rootToNpc->M1.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
+                viewport->SetupFromFrustum(frust);
+
+                viewport->_RenderTexture();
+                if (viewport->m_texture.IsNull())
+                    {
+                    SetNotFound();
+                    }
+                else
+                    {
+                    GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
+                    m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, m_tilePolys, *viewport->m_db, gfParams);
+                    SetIsReady();
+                    }
                 }
 
             break;
@@ -838,6 +844,9 @@ DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::Tile::SelectParent Sheet::Attachment::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
     {
+    if (0 == GetDepth())
+        GetTree().m_viewport->m_rendering = false;
+
     if (IsNotFound())
         {
         // Indicates no elements in this tile's range (or some unexpected error occurred during scene creation)
@@ -1187,7 +1196,7 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
 
     m_viewport->m_clips = m_clip; // save original clip in viewport
 
-    SetExpirationTime(BeDuration::Seconds(5)); // only save unused sheet tiles for 5 seconds
+    SetExpirationTime(BeDuration::Seconds(15)); // only save unused sheet tiles for 15 seconds
     }
 
 /*---------------------------------------------------------------------------------**//**
