@@ -12,7 +12,7 @@
 #include <Formatting/FormattingEnum.h>
 #include <Formatting/FormattingParsing.h>
 #include <Units/Units.h>
-
+#include <time.h>
 namespace BEU = BentleyApi::Units;
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
@@ -37,6 +37,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxySet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UIListEntry)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LocaleProperties)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatCore)
 
 // Json presentation
 BE_JSON_NAME(roundFactor)
@@ -494,6 +495,7 @@ public:
     UNITS_EXPORT Json::Value ToJson() const;
     bool IsEmpty() const { return m_unitName.empty(); }
     UNITS_EXPORT bool IsIdentical(UnitProxyCR other) const;
+	UNITS_EXPORT BEU::PhenomenonCP GetPhenomenon() const {return (m_unit == nullptr) ? nullptr : m_unit->GetPhenomenon();	}
     };
 
 
@@ -508,7 +510,6 @@ private:
     int mutable m_resetCount;
 
     UNITS_EXPORT int Validate() const;
-    bool IsConsistent();
     
     size_t GetSize() const { return m_proxys.size(); }
 
@@ -549,6 +550,7 @@ public:
             }
         m_unitReg = &BEU::UnitRegistry::Instance(); 
         }
+	bool IsConsistent(BEU::PhenomenonCP* phenP = nullptr);
     BEU::UnitCP GetUnit(size_t indx) const { Validate();  return IsIndexCorrect(indx) ? m_proxys[indx].GetUnit() : nullptr; }
     Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return  IsIndexCorrect(indx) ? m_proxys[indx].GetName() : subst; }
     Utf8CP GetUnitLabel(size_t indx, Utf8CP subst = nullptr) const { return IsIndexCorrect(indx) ? m_proxys[indx].GetLabel() : subst; }
@@ -585,13 +587,13 @@ protected:
     static const size_t  indxInput  = 4;
     static const size_t  indxLimit  = 5;   
     size_t m_ratio[indxSub];
-    //BEU::UnitCP m_units[indxLimit];
     UnitProxySet m_unitProx = UnitProxySet(indxLimit);
-    //Utf8CP m_unitLabel[indxLimit];
+	BEU::PhenomenonCP m_phenP;
     FormatProblemDetail m_problem;
     CompositeSpecType m_type;
     bool m_includeZero;
     Utf8String m_spacer;
+
     void SetUnitLabel(int index, Utf8CP label);
     size_t UnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
     size_t UnitRatio(size_t uppIndx, size_t lowIndx);
@@ -607,7 +609,7 @@ protected:
         }
     //size_t GetRightmostRatioIndex();
     BEU::UnitCP GetSmallestUnit() const;
-    
+	bool ValidatePhenomenon();
 
 public:
     UNITS_EXPORT void Init();
@@ -645,6 +647,8 @@ public:
     UNITS_EXPORT Json::Value ToJson() const;
     UNITS_EXPORT void LoadJsonData(JsonValueCR jval);
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
+	BEU::PhenomenonCP GetPhenomenon() const { return m_phenP; }
+	Utf8CP GetPhenomenonName() const { return (nullptr == m_phenP) ? nullptr : m_phenP->GetLabel(); }
     };
 
 struct CompositeValue
@@ -676,6 +680,101 @@ public:
     bool IsProblem() { return m_problem.IsProblem(); }
     };
 
+struct NamedFormatCore
+{
+private:
+	Utf8String         m_name;                  // name or ID of the format
+	Utf8String         m_alias;                 // short alternative name (alias)
+	Utf8String         m_description;           // @units_msg:descr_Real8@
+	Utf8String         m_displayLabel;          // @units_msg:label_Real8@
+	FormatSpecType     m_specType;
+	FormatProblemDetail m_problem;
+
+public:
+	UNITS_EXPORT void InitCore(FormatProblemCode prob = FormatProblemCode::NoProblems);
+	NamedFormatCore() { InitCore(); }
+	UNITS_EXPORT NamedFormatCore(Utf8CP name, FormatSpecType type);
+	UNITS_EXPORT void CloneCore(NamedFormatCoreCR other);
+	UNITS_EXPORT void CloneCore(NamedFormatCoreCP other);
+
+	Utf8CP SetAlias(Utf8CP alias) { m_alias.assign(alias);  return m_alias.c_str(); }
+	Utf8CP SetAlias(Utf8String alias) { m_alias = alias;  return m_alias.c_str(); }
+	Utf8CP GetAlias() const { return m_alias.c_str(); }
+	UNITS_EXPORT bool HasName(Utf8CP name) const;
+	UNITS_EXPORT bool HasAlias(Utf8CP name) const;
+
+	Utf8CP GetName() const { return m_name.c_str(); }
+	Utf8CP SetName(Utf8CP name) { m_name.assign(name);  return m_name.c_str(); }
+	Utf8CP SetName(Utf8String name) { m_name = name;  return m_name.c_str(); }
+	bool IsNameEquals(Utf8String name) const { return m_name.Equals(name); }
+	bool IsAliasEquals(Utf8String name) const { return m_alias.Equals(name); }
+	Utf8String GetDescriptionString() const { return m_description; }
+	Utf8String GetLabelString() const { return m_displayLabel; };
+	Utf8CP GetDescription() const { return m_description.c_str(); };
+	Utf8CP SetDescription(Utf8CP descr) { m_description.assign(descr);  return m_description.c_str(); }
+	Utf8CP SetDescription(Utf8String descr) { m_description = descr;  return m_description.c_str(); }
+	Utf8CP GetLabel() const { return m_displayLabel.c_str(); };
+	Utf8CP SetLabel(Utf8CP label) { m_displayLabel.assign(label);  return m_displayLabel.c_str(); }
+	Utf8CP SetLabel(Utf8String label) { m_displayLabel = label;  return m_displayLabel.c_str(); }
+	bool IsProblem() const { return m_problem.IsProblem(); }
+	FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
+	Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
+	Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
+
+	FormatSpecType  GetSpecType() const { return m_specType; }
+	FormatSpecType  SetSpecType(FormatSpecType type) { return m_specType = type; }
+	Utf8String GetTypeName() const { return Utils::FormatSpecTypeToName(m_specType);  }
+	bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
+	void UpdateProblemCode(FormatProblemCode probCode) { m_problem.UpdateProblemCode(probCode); }
+	void ResetProblem() { m_problem.Reset();}
+};
+
+struct NamedFormatSpec:NamedFormatCore
+{
+private:
+
+	NumericFormatSpec  m_numericSpec;
+	CompositeValueSpec m_compositeSpec;
+public:
+	UNITS_EXPORT void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
+	UNITS_EXPORT void Clone(NamedFormatSpecCR other);
+	UNITS_EXPORT void Clone(NamedFormatSpecCP other);
+	UNITS_EXPORT NamedFormatSpec& operator=(const NamedFormatSpec& other);
+
+	UNITS_EXPORT void LoadJson(Json::Value jval);
+	UNITS_EXPORT void LoadJson(Utf8CP jsonString);
+	UNITS_EXPORT NamedFormatSpec();
+	UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
+	UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
+	UNITS_EXPORT NamedFormatSpec(Json::Value jval);
+	UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString);
+
+	UNITS_EXPORT void ReplaceLocalizables(JsonValueCR jval);
+	UNITS_EXPORT void SetSuppressUnitLabel();
+	size_t GetCompositeUnitCount() const { return HasComposite() ? m_compositeSpec.GetUnitCount() : 0; }
+	NumericFormatSpecCP GetNumericSpec() const { return &(this->m_numericSpec); }
+	CompositeValueSpecCP GetCompositeSpec() const { return  (HasComposite() ? &m_compositeSpec : nullptr); }
+	PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
+	UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+	UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
+	BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_compositeSpec.GetMajorUnit() : nullptr; }
+	BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_compositeSpec.GetMiddleUnit() : nullptr; }
+	BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_compositeSpec.GetMinorUnit() : nullptr; }
+	BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
+	BEU::PhenomenonCP GetPhenomenon() const;
+	UNITS_EXPORT Utf8CP GetPhenomenonName() const;
+
+};
+
+//struct NamedTimeFormatSpec :NamedFormatCore
+//{
+//private:
+//	struct tm m_dateTime;
+//	Utf8String m_format;
+//public:
+//
+//};
+
 //=======================================================================================
 // Container for keeping together primary numeric, composite and other types of specs
 //  and referrring them by the unique name. Name and at the valid numeric spec are required
@@ -683,63 +782,65 @@ public:
 // moment of creation but can be added later
 // @bsiclass                                                    David.Fox-Rabinovitz  03/2017
 //=======================================================================================
-struct NamedFormatSpec
-    {
-private:
-        Utf8String         m_name;                  // name or ID of the format
-        Utf8String         m_alias;                 // short alternative name (alias)
-        Utf8String         m_description;           // @units_msg:descr_Real8@
-        Utf8String         m_displayLabel;          // @units_msg:label_Real8@
-        NumericFormatSpec  m_numericSpec;
-        CompositeValueSpec m_compositeSpec;
-        FormatSpecType     m_specType;
-        FormatProblemDetail m_problem;  
-
-        /*BEU::UnitCP GetCompositeUnit(size_t indx) const 
-            { return HasComposite()? m_compositeSpec.GetUnit(indx); }*/
-
-public:
-        UNITS_EXPORT void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
-        UNITS_EXPORT void Clone(NamedFormatSpecCR other);
-        UNITS_EXPORT void Clone(NamedFormatSpecCP other);
-        UNITS_EXPORT NamedFormatSpec& operator=(const NamedFormatSpec& other);
-
-        UNITS_EXPORT void LoadJson(Json::Value jval);
-        UNITS_EXPORT void LoadJson(Utf8CP jsonString);
-        UNITS_EXPORT NamedFormatSpec();
-        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
-        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
-        UNITS_EXPORT NamedFormatSpec(Json::Value jval);
-        UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString);
-        UNITS_EXPORT void ReplaceLocalizables(JsonValueCR jval);
-        Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
-        Utf8CP GetAlias() const { return m_alias.c_str(); }
-        UNITS_EXPORT bool HasName(Utf8CP name) const;
-        UNITS_EXPORT bool HasAlias(Utf8CP name) const;
-        UNITS_EXPORT void SetSuppressUnitLabel();
-        
-        Utf8CP GetName() const { return m_name.c_str(); };
-        Utf8CP GetDescription() const { return m_description.c_str(); };
-        Utf8CP SetDescription(Utf8CP descr) { m_description = descr;  return m_description.c_str(); };
-        Utf8CP GetLabel() const { return m_displayLabel.c_str(); };
-        Utf8CP SetLabel(Utf8CP label) { m_displayLabel = label;  return m_displayLabel.c_str(); };
-
-        FormatSpecType  GetSpecType(){return m_specType;}
-        bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
-        size_t GetCompositeUnitCount() const { return HasComposite() ? m_compositeSpec.GetUnitCount() : 0; }
-        NumericFormatSpecCP GetNumericSpec() const { return &(this->m_numericSpec); }
-        CompositeValueSpecCP GetCompositeSpec() const { return  (HasComposite() ? &m_compositeSpec : nullptr); }
-        bool IsProblem() const { return m_problem.IsProblem(); }
-        Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
-        Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
-        PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
-        UNITS_EXPORT Json::Value ToJson(bool verbose) const;
-        UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
-        BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_compositeSpec.GetMajorUnit() : nullptr; }
-        BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_compositeSpec.GetMiddleUnit() : nullptr; }
-        BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_compositeSpec.GetMinorUnit() : nullptr; }
-        BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
-    };
+//struct xxNamedFormatSpec
+//    {
+//private:
+//        Utf8String         m_name;                  // name or ID of the format
+//        Utf8String         m_alias;                 // short alternative name (alias)
+//        Utf8String         m_description;           // @units_msg:descr_Real8@
+//        Utf8String         m_displayLabel;          // @units_msg:label_Real8@
+//        NumericFormatSpec  m_numericSpec;
+//        CompositeValueSpec m_compositeSpec;
+//        FormatSpecType     m_specType;
+//        FormatProblemDetail m_problem;  
+//
+//        /*BEU::UnitCP GetCompositeUnit(size_t indx) const 
+//            { return HasComposite()? m_compositeSpec.GetUnit(indx); }*/
+//
+//public:
+//        UNITS_EXPORT void Init(FormatProblemCode prob = FormatProblemCode::NoProblems);
+//        UNITS_EXPORT void Clone(NamedFormatSpecCR other);
+//        UNITS_EXPORT void Clone(NamedFormatSpecCP other);
+//        UNITS_EXPORT NamedFormatSpec& operator=(const NamedFormatSpec& other);
+//
+//        UNITS_EXPORT void LoadJson(Json::Value jval);
+//        UNITS_EXPORT void LoadJson(Utf8CP jsonString);
+//        UNITS_EXPORT NamedFormatSpec();
+//        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8CP alias = nullptr);
+//        UNITS_EXPORT NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec, Utf8CP alias = nullptr);
+//        UNITS_EXPORT NamedFormatSpec(Json::Value jval);
+//        UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString);
+//        UNITS_EXPORT void ReplaceLocalizables(JsonValueCR jval);
+//        Utf8CP SetAlias(Utf8CP alias) { m_alias = alias;  return m_alias.c_str(); }
+//        Utf8CP GetAlias() const { return m_alias.c_str(); }
+//        UNITS_EXPORT bool HasName(Utf8CP name) const;
+//        UNITS_EXPORT bool HasAlias(Utf8CP name) const;
+//        UNITS_EXPORT void SetSuppressUnitLabel();
+//        
+//        Utf8CP GetName() const { return m_name.c_str(); };
+//        Utf8CP GetDescription() const { return m_description.c_str(); };
+//        Utf8CP SetDescription(Utf8CP descr) { m_description = descr;  return m_description.c_str(); };
+//        Utf8CP GetLabel() const { return m_displayLabel.c_str(); };
+//        Utf8CP SetLabel(Utf8CP label) { m_displayLabel = label;  return m_displayLabel.c_str(); };
+//
+//        FormatSpecType  GetSpecType(){return m_specType;}
+//        bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
+//        size_t GetCompositeUnitCount() const { return HasComposite() ? m_compositeSpec.GetUnitCount() : 0; }
+//        NumericFormatSpecCP GetNumericSpec() const { return &(this->m_numericSpec); }
+//        CompositeValueSpecCP GetCompositeSpec() const { return  (HasComposite() ? &m_compositeSpec : nullptr); }
+//        bool IsProblem() const { return m_problem.IsProblem(); }
+//        Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
+//        Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
+//        PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
+//        UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+//        UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
+//        BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_compositeSpec.GetMajorUnit() : nullptr; }
+//        BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_compositeSpec.GetMiddleUnit() : nullptr; }
+//        BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_compositeSpec.GetMinorUnit() : nullptr; }
+//        BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
+//		BEU::PhenomenonCP GetPhenomenon() const;
+//		UNITS_EXPORT Utf8CP GetPhenomenonName() const;
+//    };
 
 //=======================================================================================
 // A pair of the unit reference and the format spec 

@@ -305,7 +305,8 @@ enum class FormatSpecType
     {
     Undefined = 0,
     Numeric = 1,   // a pure numeric Spec
-    Composite = 2      // a composite spec is also defined (numeric spec is implied)
+    Composite = 2,      // a composite spec is also defined (numeric spec is implied)
+	DateTime = 3
     };
 
 enum class AccumulatorState
@@ -419,6 +420,7 @@ struct Utils
     UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
     UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name);
+	UNITS_EXPORT static bool IsWCharNullOrEmpty(WCharCP name);
     static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return Utf8String::IsNullOrEmpty(name) ? subs : name; }
     static Utf8CP SubstituteNull(Utf8CP name, Utf8CP subs) { return (nullptr == name) ? subs : name; }
     //UNITS_EXPORT static Utf8CP GetFormatProblemDescription(FormatProblemCode code);
@@ -468,6 +470,7 @@ struct FormatConstant
         static Utf8String FPN_SignAlways() { return "SignAlways"; }
         static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
 
+		static Utf8String FPN_DateTime() { return "datetime"; }
         static Utf8String FPN_Composite() { return "composite"; }
         static Utf8String FPN_Numeric() { return "numeric"; }
         static Utf8String FPN_Undefined() { return "undefined"; }

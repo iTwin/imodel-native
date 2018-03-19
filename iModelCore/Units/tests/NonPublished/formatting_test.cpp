@@ -19,6 +19,8 @@
 #include <BeSQLite/L10N.h>
 
 
+
+
 //#define FORMAT_DEBUG_PRINT
 
 using namespace BentleyApi::Formatting;
@@ -53,23 +55,21 @@ BE_JSON_NAME(roll)
 //    BeSQLite::L10N::Shutdown();
 //    }
 
+#ifdef  BENTLEYCONFIG_OS_WINDOWS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_LINUX)
+// Arbitrary locale support is inconsistent / missing on other OSes.
+#if defined(BENTLEYCONFIG_OS_WINDOWS)
 TEST(FormattingTest, Preliminary)
     {
     FormattingTestFixture::SetUpL10N();
     LOG.infov("================  Formatting Log ===========================");
 
     // Empirical evidence suggests that Windows wants hyphens, and Unix'ish system want underscores. It's not clear there's an industry standard...
-#if defined(BENTLEYCONFIG_OS_UNIX)
-    FormattingTestFixture::SetLocale("en_US");
-    FormattingTestFixture::SetLocale("de_DE");
-#else
     FormattingTestFixture::SetLocale("en-US");
     FormattingTestFixture::SetLocale("de-DE");
-#endif
+
     //FormattingDividers fdiv = FormattingDividers("()[]{}");
     //const char *uni = u8"         ЯABГCDE   型号   sautéςερ   τcañón    ";
 
@@ -221,7 +221,7 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::TearDownL10N();
     }
 #endif
-
+    
 //#ifdef _WIN32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      11/17
@@ -1233,7 +1233,20 @@ TEST(FormattingTest, LocaleTest)
 	LOG.infov("================  Locale Test (end) ===========================\n");
 
 
-	LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
+	LOG.infov("\n================  String Decomposition ===========================");
+
+
+	FormattingTestFixture::DecomposeString("-3.1415926 FT", false);
+	FormattingTestFixture::DecomposeString("-3,141,592.6 FT", false);
+	FormattingTestFixture::DecomposeString("-3.141.592,6 FT", false);
+	FormattingTestFixture::DecomposeString("-3.141.592 2/3 FT", false);
+
+	LOG.infov("================  End of String Decomposition ===========================\n");
+	//FormattingTestFixture::TestTime("", "", "%c %a (%A) ");
+	//FormattingTestFixture::TestTime("en-US", "US time", "%c %a (%A) day %d of %b (%B)");
+	//FormattingTestFixture::TestTime("de-DE", "German time", "%c %a (%A) day %d of %b (%B)");
+	//FormattingTestFixture::TestTime("fr", "French time", "%c %a (%A) day %d of %b (%B)");
+	//FormattingTestFixture::TestTime("ru", "Russian time", u8"%c %a (%A) день %d месяца %b (%B)");
 }
 
 
@@ -1251,11 +1264,11 @@ TEST(FormattingTest, PhenomenaTest)
     FormattingTestFixture::ShowSynonyms();
     LOG.infov("================  Synonyms Test (end) ===========================\n");
 
-
+	LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
     }
 
 
-
+#endif    //BENTLEYCONFIG_OS_WINDOWS
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 

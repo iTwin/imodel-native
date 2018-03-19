@@ -8,9 +8,15 @@
 #pragma once
 #if defined (BENTLEY_WIN32)
 #include <windows.h>
-#include <iostream>
+
 #endif
+#include <iostream>
+#include <time.h>
+#include <ctime>
 #include <locale>
+#include <chrono>
+#include <iomanip>
+
 #include "UnitsTests.h"
 #include <Formatting/FormattingApi.h>
 #include <Units/UnitRegistry.h>
@@ -478,6 +484,8 @@ void FormattingTestFixture::DecomposeString(Utf8CP str, bool revers)
     {
     size_t n = strlen(str);
     CursorScanPoint csp(str, revers? n:0, revers);
+
+	LOG.infov("\n Decomposed String: %s =============", str);
     LOG.infov("CSP: |%s|", csp.ToText().c_str());
 
     while (!csp.IsEndOfLine() && n > 0)
@@ -486,7 +494,35 @@ void FormattingTestFixture::DecomposeString(Utf8CP str, bool revers)
         LOG.infov("CSP: |%s|", csp.ToText().c_str());
         --n;
         }
+	LOG.infov("=================================\n", str);
     }
+
+size_t FormattingTestFixture::AddSignatureSymbol(Utf8CP outBuf, size_t bufLen, size_t* bufIndex)
+{
+	return 0;
+}
+
+Utf8String FormattingTestFixture::GetStringSignature(Utf8CP str)
+{
+#define GSS_BUFSIZE 128
+	Utf8String sig;
+	size_t n = strlen(str);
+	//Utf8Char buf[GSS_BUFSIZE + 2];
+
+	CursorScanPoint csp(str, n, false);
+
+	while (!csp.IsEndOfLine() && n > 0)
+	{
+		csp.Iterate(str,  false);
+
+		LOG.infov("CSP: |%s|", csp.ToText().c_str());
+		--n;
+	}
+
+	return sig;
+}
+
+
 
 Utf8String FormattingTestFixture::ExtractTokenValue(wchar_t* line, wchar_t* token, wchar_t* delim)
     {
@@ -649,6 +685,7 @@ void FormattingTestFixture::TestScanPointVector(Utf8CP str)
 
     FormatParseVector forw(str, false);
     bvector<CursorScanPoint> fvect = forw.GetArray();
+	LOG.infov("========ScanPointVector for %s=================", str);
     LOG.info("============= Forward Vector scan =================");
     for (CursorScanPointP csp = fvect.begin(); csp != fvect.end(); csp++)
         {
@@ -1333,6 +1370,47 @@ Utf8String FormattingTestFixture::SetLocale(Utf8CP name)
 	                                  Utils::GetCurrentGrouping().c_str());*/
 	return locName;
 }
+
+//void FormattingTestFixture::TestTime(Utf8CP localeName, Utf8CP label, Utf8CP pattern)
+//{
+//	std::locale loc(localeName);
+//	std::wstringstream strm;
+//	
+//	strm.imbue(loc);
+//	strm.clear();
+//	if (Utils::IsNameNullOrEmpty(pattern))
+//		pattern = "%c";
+//
+//	if (Utils::IsNameNullOrEmpty(label))
+//		label = "time";
+//	WString wPatt(pattern, true);
+//
+//	using std::chrono::system_clock;
+//	std::time_t tt = system_clock::to_time_t(system_clock::now());
+//
+//	struct std::tm * ptm = std::localtime(&tt);
+//
+//	strm << std::put_time(ptm, wPatt.c_str()) << '\n';
+//	Utf8String utf8Buffer(strm.str().c_str());
+//
+//	LOG.infov(u8"Locale %s %s: %s", std::locale(localeName).name().c_str(), label, utf8Buffer.c_str());
+//
+//	//Utf8String dump = Utils::HexDump((Utf8CP)((void*)(strm.str().c_str())), (int)utf8Buffer.size() * 2);
+//	//LOG.infov("Dump[%d]: %s", dump.size(), dump.c_str());
+//
+//}
+
+//WString wName(unitName, true);
+//WString wSyn(synonym, true);
+//WString wJson(jval.ToString().c_str(), true);
+//WString wBool(FormatConstant::BoolText(ident), true);
+////WChar outStr[258];
+////memset(outStr, 0, sizeof(outStr));
+////BeStringUtilities::Snwprintf(outStr, 256, L"UnitSynonymMap(%ls, %ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
+////LOG.infov(L"FormattedMapString: %ls", outStr);
+//LOG.infov(L"UnitSynonymMap(%ls, %ls) => json: %ls (%ls)", wName.c_str(), wSyn.c_str(), wJson.c_str(), wBool.c_str());
+
+
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 
