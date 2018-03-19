@@ -249,7 +249,11 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeX
     PrimitiveType const primitiveType = enumeration->GetType();
     Utf8CP childNodeName = childNode->GetName();
     if (0 != strcmp(childNodeName, ECXML_ENUMERATOR_ELEMENT))
+        {
+        if (enumeration->GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+            return SUCCESS;
         return ERROR;
+        }
 
     // Enumerator Value
     int32_t enumeratorValueInteger {};
@@ -259,10 +263,20 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeX
         xmlStatus = childNode->GetAttributeInt32Value(enumeratorValueInteger, ENUMERATOR_VALUE_ATTRIBUTE);
     else if (PrimitiveType::PRIMITIVETYPE_String == primitiveType)
         xmlStatus = childNode->GetAttributeStringValue(enumeratorValueString, ENUMERATOR_VALUE_ATTRIBUTE);
+    else if (enumeration->GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+        {
+        LOG.warningv("Enumeration %s has unknown primitive type possibly because of newer version", enumeration->GetName().c_str());
+        return SUCCESS;
+        }
+    else
+        {
+        LOG.errorv("Enumeration %s has invalid primitive type", enumeration->GetName().c_str());
+        return ERROR;
+        }
 
     if (BeXmlStatus::BEXML_Success != xmlStatus)
         {
-        LOG.warningv("Missing xml element '%s' on ECEnumerator for Enumeration '%s'.", ENUMERATOR_VALUE_ATTRIBUTE, enumeration->GetName().c_str());
+        LOG.errorv("Missing xml element '%s' on ECEnumerator for Enumeration '%s'.", ENUMERATOR_VALUE_ATTRIBUTE, enumeration->GetName().c_str());
         return ERROR;
         }
 
@@ -279,7 +293,7 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeX
         {
         if (BeXmlStatus::BEXML_Success != childNode->GetAttributeStringValue(enumeratorName, NAME_ATTRIBUTE))
             {
-            LOG.warningv("Missing xml element '%s' on ECEnumerator for Enumeration '%s'.", NAME_ATTRIBUTE, enumeration->GetName().c_str());
+            LOG.errorv("Missing xml element '%s' on ECEnumerator for Enumeration '%s'.", NAME_ATTRIBUTE, enumeration->GetName().c_str());
             return ERROR;
             }
         childNode->GetAttributeStringValue(enumeratorDescription, DESCRIPTION_ATTRIBUTE);
@@ -297,7 +311,7 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeX
         {
         if (ECObjectsStatus::Success != enumeration->CreateEnumerator(enumerator, enumeratorName, enumeratorValueInteger))
             {
-            LOG.warningv("Failed to add value '%" PRId32 "' to ECEnumeration '%s'. Duplicate or invalid entry?", enumeratorValueInteger, enumeration->GetName().c_str());
+            LOG.errorv("Failed to add value '%" PRId32 "' to ECEnumeration '%s'. Duplicate or invalid entry?", enumeratorValueInteger, enumeration->GetName().c_str());
             return ERROR;
             }
         }
@@ -305,7 +319,7 @@ static BentleyStatus createEnumeratorFromXmlNode(ECEnumerationP enumeration, BeX
         {
         if (ECObjectsStatus::Success != enumeration->CreateEnumerator(enumerator, enumeratorName, enumeratorValueString.c_str()))
             {
-            LOG.warningv("Failed to add value '%s' to ECEnumeration '%s'. Duplicate or invalid entry?", enumeratorValueString.c_str(), enumeration->GetName().c_str());
+            LOG.errorv("Failed to add value '%s' to ECEnumeration '%s'. Duplicate or invalid entry?", enumeratorValueString.c_str(), enumeration->GetName().c_str());
             return ERROR;
             }
         }
@@ -350,7 +364,10 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
         SetIsStrict(isStrict);
 
     for (BeXmlNodeP childNode = enumerationNode.GetFirstChild(); childNode != nullptr; childNode = childNode->GetNextSibling())
-        createEnumeratorFromXmlNode(this, childNode);
+        { 
+        if (SUCCESS != createEnumeratorFromXmlNode(this, childNode))
+            return SchemaReadStatus::InvalidECSchemaXml;
+        }
 
     return SchemaReadStatus::Success;
     }

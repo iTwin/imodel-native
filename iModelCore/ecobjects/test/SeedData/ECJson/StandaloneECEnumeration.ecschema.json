@@ -10,7 +10,8 @@
     {
       "name" : "EnumeratorA",
       "value": 1,
-      "label": "None"
+      "label": "None",
+      "description": "AwesomeDescription"
     },
     {
       "name" : "EnumeratorB",

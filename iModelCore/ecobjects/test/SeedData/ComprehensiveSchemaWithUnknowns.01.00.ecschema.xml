@@ -13,9 +13,9 @@
     </ECCustomAttributes>
     <ECEnumeration typeName="Enumeration" backingTypeName="int" description="This is a description." displayLabel="This is a display label." isStrict="true" unknownAttribute="foo" >
         <UnknownElement />
-        <ECEnumerator value="1" displayLabel="First" unknownAttribute="foo" />
-        <ECEnumerator value="2" displayLabel="Second"/>
-        <ECEnumerator value="3" displayLabel="Third"/>
+        <ECEnumerator name="One" value="1" displayLabel="First" unknownAttribute="foo" />
+        <ECEnumerator name="Two" value="2" displayLabel="Second"/>
+        <ECEnumerator name="Three" value="3" displayLabel="Third"/>
     </ECEnumeration>
     <ECEntityClass typeName="BaseEntity" description="Base Entity Description" displayLabel="Base Entity" modifier="Abstract" unknownAttribute="foo" >
         <UnknownElement />

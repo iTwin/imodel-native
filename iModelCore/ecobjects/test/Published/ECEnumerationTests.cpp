@@ -460,6 +460,7 @@ TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration)
     ECEnumeratorP enumeratorA;
     EC_ASSERT_SUCCESS(enumeration->CreateEnumerator(enumeratorA, "EnumeratorA", 1));
     enumeratorA->SetDisplayLabel("None");
+    enumeratorA->SetDescription("AwesomeDescription");
     ECEnumeratorP enumeratorB;
     EC_ASSERT_SUCCESS(enumeration->CreateEnumerator(enumeratorB, "EnumeratorB", 2));
     enumeratorB->SetDisplayLabel("SomeVal");
@@ -474,6 +475,125 @@ TEST_F(ECEnumerationTest, SerializeStandaloneEnumeration)
     ASSERT_EQ(BentleyStatus::SUCCESS, ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile));
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                         Kyle.Abramowitz                           03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationTest, ShouldFailWithBadBackingType)
+    {
+    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="FoodType" backingTypeName="foo" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="foo" value="Spaghetti" displayLabel="spaghetti"/>
+            </ECEnumeration>
+        </ECSchema>)xml", SchemaReadStatus::InvalidPrimitiveType, "Should fail to deserialize enumeration with nonexistant backing type");
+
+    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="FoodType" backingTypeName="boolean" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="foo" value="Spaghetti" displayLabel="spaghetti"/>
+            </ECEnumeration>
+        </ECSchema>)xml", SchemaReadStatus::InvalidPrimitiveType, "Should fail to deserialize enumeration with invalid backingType for and Enumerator");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                         Kyle.Abramowitz                           03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationTest, ShouldFailWithDuplicateName)
+    {
+    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="Bananas" value="Spaghetti" displayLabel="spaghetti"/>
+                <ECEnumerator name="Bananas" value="Stuff" displayLabel="stuff"/>
+            </ECEnumeration>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumeration with duplicate enumerator names");
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                         Kyle.Abramowitz                           03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationTest, ShouldFailWithDuplicateValues)
+    {
+    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="Bananas" value="Spaghetti" displayLabel="spaghetti"/>
+                <ECEnumerator name="Spaghetti" value="Spaghetti" displayLabel="stuff"/>
+            </ECEnumeration>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumeration with duplicate enumerator values");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                         Kyle.Abramowitz                           03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationTest, InvalidOrMissingName)
+    {
+    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator value="Spaghetti" displayLabel="spaghetti"/>
+            </ECEnumeration>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumerator with missing name");
+
+    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="" value="Spaghetti" displayLabel="spaghetti"/>
+            </ECEnumeration>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumerator with empty name");
+
+    ExpectSchemaDeserializationFailure( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="@#$%" value="Spaghetti" displayLabel="spaghetti"/>
+            </ECEnumeration>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize enumerator with invalid EC name");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                         Kyle.Abramowitz                           03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationTest, MissingOrEmptyDisplayLabel)
+    {
+    {
+    SchemaItem missing(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="Foo1" value="Spaghetti" />
+            </ECEnumeration>
+        </ECSchema>)xml");
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, missing.GetXmlString().c_str(), *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->Validate());
+    ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
+    ASSERT_NE(nullptr, enumeration);
+    ECEnumeratorCP enumerator = enumeration->FindEnumeratorByName("Foo1");
+    ASSERT_NE(nullptr, enumerator);
+    ASSERT_STRCASEEQ("Foo1", enumerator->GetInvariantDisplayLabel().c_str());
+    }
+    {
+    SchemaItem empty( R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="Foo2" value="Spaghetti" displayLabel=""/>
+            </ECEnumeration>
+        </ECSchema>)xml");
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, empty.GetXmlString().c_str(), *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->Validate());
+    ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
+    ASSERT_NE(nullptr, enumeration);
+    ECEnumeratorCP enumerator = enumeration->FindEnumeratorByName("Foo2");
+    ASSERT_NE(nullptr, enumerator);
+    ASSERT_STRCASEEQ("Foo2", enumerator->GetInvariantDisplayLabel().c_str());
+    }
     }
 
 //---------------------------------------------------------------------------------------

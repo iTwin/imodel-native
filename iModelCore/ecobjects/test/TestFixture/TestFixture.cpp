@@ -148,7 +148,7 @@ void ECTestFixture::ExpectSchemaDeserializationFailure(SchemaItem const& schemaI
     {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    deserializeSchema(schema, *context, schemaItem, SchemaReadStatus::InvalidECSchemaXml, false, failureMessage);
+    deserializeSchema(schema, *context, schemaItem, expectedError, false, failureMessage);
     }
 
 //---------------------------------------------------------------------------------------
@@ -159,7 +159,7 @@ void ECTestFixture::AssertSchemaDeserializationFailure(SchemaItem const& schemaI
     {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    deserializeSchema(schema, *context, schemaItem, SchemaReadStatus::InvalidECSchemaXml, true, failureMessage);
+    deserializeSchema(schema, *context, schemaItem, expectedError, true, failureMessage);
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2017
