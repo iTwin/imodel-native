@@ -13,7 +13,9 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct ECEnumerationTest : ECTestFixture {};
+struct ECEnumerationCompatibilityTests : ECTestFixture {};
 struct ECEnumeratorTest : ECTestFixture {};
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Caleb.Shafer                          06/2017
@@ -595,6 +597,80 @@ TEST_F(ECEnumerationTest, MissingOrEmptyDisplayLabel)
     ASSERT_STRCASEEQ("Foo2", enumerator->GetInvariantDisplayLabel().c_str());
     }
     }
+
+//=======================================================================================
+//! ECEnumerationCompatibilityTests
+//=======================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                         Kyle.Abramowitz                           03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithUnsupportedBackingTypesForFutureVersions)
+    {
+    SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <ECEnumeration typeName="FoodType" backingTypeName="boolean" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="Foo1" value="False" />
+            </ECEnumeration>
+        </ECSchema>)xml");
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, schemaXml.GetXmlString().c_str(), *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->Validate());
+    ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
+    ASSERT_NE(nullptr, enumeration);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                         Kyle.Abramowitz                           03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationCompatibilityTests, ShouldNotCrashWithOtherNodeNameInFutureVersion)
+    {
+    SchemaItem schemaXml(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <ECEnumeration typeName="FoodType" backingTypeName="boolean" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="Foo1" value="False" />
+                <Blah name="banana"/>
+            </ECEnumeration>
+        </ECSchema>)xml");
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, schemaXml.GetXmlString().c_str(), *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->Validate());
+    ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
+    ASSERT_NE(nullptr, enumeration);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                         Kyle.Abramowitz                           03/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECEnumerationCompatibilityTests, ShouldReadEnumerationFromNewerSchemaSuccessfully)
+    {
+    SchemaItem missing(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="FoodSchema" alias="food" version="01.00" displayLabel="Food Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <ECEnumeration typeName="FoodType" backingTypeName="string" description="Yummy yummy in my tummy" displayLabel="Food Type" isStrict="False">
+                <ECEnumerator name="Foo1" value="Spaghetti" />
+            </ECEnumeration>
+        </ECSchema>)xml");
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ECSchema::ReadFromXmlString(schema, missing.GetXmlString().c_str(), *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->Validate());
+    ECEnumerationCP enumeration = schema->GetEnumerationCP("FoodType");
+    ASSERT_NE(nullptr, enumeration);
+    ECEnumeratorCP enumerator = enumeration->FindEnumeratorByName("Foo1");
+    ASSERT_NE(nullptr, enumerator);
+    ASSERT_STRCASEEQ("Foo1", enumerator->GetInvariantDisplayLabel().c_str());
+    ASSERT_STRCASEEQ("Spaghetti", enumerator->GetString().c_str()); //value
+    ASSERT_STRCASEEQ("Foo1", enumerator->GetName().c_str());
+    }
+
+//=======================================================================================
+//! ECEnumeratorTests
+//=======================================================================================
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          12/2017

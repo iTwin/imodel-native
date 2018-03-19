@@ -98,8 +98,11 @@ ECObjectsStatus ECEnumeration::ParseEnumerationName(Utf8StringR alias, Utf8Strin
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECEnumeration::SetType(PrimitiveType value)
     {
-    if (value != PRIMITIVETYPE_Integer && value != PRIMITIVETYPE_String)
-        return ECObjectsStatus::DataTypeNotSupported;
+    if (!GetSchema().OriginalECXmlVersionGreaterThan(ECVersion::Latest))
+        { 
+        if (value != PRIMITIVETYPE_Integer && value != PRIMITIVETYPE_String)
+            return ECObjectsStatus::DataTypeNotSupported;
+        }
 
     m_primitiveType = value;
     return ECObjectsStatus::Success;
