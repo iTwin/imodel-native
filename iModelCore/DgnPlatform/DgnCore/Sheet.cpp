@@ -846,14 +846,17 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile::_SelectTiles(bvector<TileT
 
     Visibility vis = GetVisibility(args);
     if (Visibility::OutsideFrustum == vis)
+        {
+        _UnloadChildren(args.m_purgeOlderThan);
         return SelectParent::No;
+        }
 
-    //bool tooCoarse = d <= 2 ? true : false;//Visibility::TooCoarse == vis;
     bool tooCoarse = Visibility::TooCoarse == vis;
     auto children = tooCoarse ? _GetChildren(true) : nullptr;
 
     if (nullptr != children)
         {
+        m_childrenLastUsed = args.m_now;
         for (auto& child : *children)
             child->_SelectTiles(selected, args);
 
@@ -868,19 +871,25 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile::_SelectTiles(bvector<TileT
     if (!IsReady())
         {
         auto& ncThis = const_cast<Tile&>(*this);
-        ncThis.CreatePolys(args.m_context); // m_graphicsClip on tree must be set before creating polys (the polys that represent the tile)
+        if (m_tilePolys.empty())
+            {
+            ncThis.CreatePolys(args.m_context); // m_graphicsClip on tree must be set before creating polys (the polys that represent the tile)
+            BeAssert(!m_tilePolys.empty());
+            }
+
         ncThis.CreateGraphics(args.m_context);
         }
 
     if (IsReady())
         {
         selected.push_back(this);
+        _UnloadChildren(args.m_purgeOlderThan);
         }
     else
         {
-#if 0 // ###TODO: do something similar for the new subdividing system
         // Inform the sheet controller that it needs to recreate its scene next frame
         GetTree().m_sheetController.MarkAttachmentSceneIncomplete();
+#if 0 // ###TODO: do something similar for the new subdividing system
 
         // Select a tile to temporarily draw in its place. Note this logic will need to change when we start subdividing.
         TileTree::TilePtr sub;
