@@ -611,7 +611,7 @@ struct OffscreenViewport : DgnViewport
 {
     BSIRect m_rect;
     BSIRect _GetViewRect() const override {return m_rect;}
-    void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetViewRect(rect);}
+    void SetRect(BSIRect rect, bool temporary=false) {m_rect=rect; m_renderTarget->_SetViewRect(rect, temporary);}
     DGNVIEW_EXPORT OffscreenViewport();
     DGNVIEW_EXPORT explicit OffscreenViewport(double tileSizeModifier);
 };

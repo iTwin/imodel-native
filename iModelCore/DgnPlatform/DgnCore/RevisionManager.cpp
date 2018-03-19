@@ -480,7 +480,10 @@ static void dumpCurrentValues(DgnDbCR db, Changes::Change iter, Utf8CP tableName
     Byte* pcols = nullptr;
     int npcols = 0;
     iter.GetPrimaryKeyColumns(&pcols, &npcols);
-    
+
+    if (!pcols)
+        return;
+
     int64_t pk = 0;
     int pki = 0;
     for (int i = 0; i <= npcols; ++i)
@@ -503,11 +506,11 @@ static void dumpCurrentValues(DgnDbCR db, Changes::Change iter, Utf8CP tableName
             continue;   // this col was not changed
 
         Statement stmt;
-        stmt.Prepare(db, Utf8PrintfString("SELECT %s from %s WHERE %s=%lld", 
-                                                  columnNames[i].c_str(),
-                                                          tableName, 
-                                                                   columnNames[pki].c_str(),
-                                                                      pk).c_str());
+        stmt.Prepare(db, Utf8PrintfString("SELECT %s from %s WHERE %s=%lld",
+            columnNames[i].c_str(),
+            tableName,
+            columnNames[pki].c_str(),
+            pk).c_str());
         if (BE_SQLITE_ROW != stmt.Step())
             return; // The row is not found. This must be a NOT_FOUND conflict, i.e., there is no current row with this Id.
             
@@ -528,14 +531,19 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     DbOpcode opcode;
     DbResult result = iter.GetOperation(&tableName, &nCols, &opcode, &indirect);
     BeAssert(result == BE_SQLITE_OK);
+
     UNUSED_VARIABLE(result);
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("------------------------------------------------------------------");
         LOG.infov("Conflict detected - Cause: %s", GetConflictCauseDescription(cause));
-        iter.Dump(dgndb, false, 1);
-        dumpCurrentValues(dgndb, iter, tableName);
+        if (cause != ChangeSet::ConflictCause::ForeignKey)
+            {
+            // Note: No current or conflicting row information is provided if it's a FKey conflict
+            dumpCurrentValues(dgndb, iter, tableName);
+            iter.Dump(dgndb, false, 1);
+            }
         }
 
     if (cause == ChangeSet::ConflictCause::NotFound)

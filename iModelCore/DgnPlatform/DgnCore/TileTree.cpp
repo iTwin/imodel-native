@@ -908,7 +908,8 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
 
     // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
     Frustum box(range);
-    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation()));
+    box = box.TransformBy(args.GetLocation());
+    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box);
     bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
     return isOutside || clipped;
     }

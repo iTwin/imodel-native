@@ -59,10 +59,13 @@ static Json::Value FromAngle(Angle angle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Angle ToAngle(JsonValueCR val)
     {
-    if (val.isMember(json_degrees())) 
-        return Angle::FromDegrees(val[json_degrees()].asDouble());
-    if (val.isMember(json_radians())) 
-        return Angle::FromRadians(val[json_radians()].asDouble());
+    if (val.isObject() && !val.isNull())
+        {
+        if (val.isMember(json_degrees())) 
+            return Angle::FromDegrees(val[json_degrees()].asDouble());
+        if (val.isMember(json_radians())) 
+            return Angle::FromRadians(val[json_radians()].asDouble());
+        }
     return Angle::FromDegrees(val.asDouble());
     }
 
