@@ -3720,11 +3720,12 @@ void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     T_Super::_ToJson(val, opts);
     val[json_category()] = m_categoryId.ToHexStr();
     
-    if (opts["noGeometry"].asBool(false))
+    if (!opts["wantGeometry"].asBool())
         return;
 
     // load geometry
-    val[json_geom()] = m_geom.ToBase64();
+    GeometryCollection collection(*ToGeometrySource());
+    val[json_geom()] = collection.ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3737,7 +3738,7 @@ void GeometricElement::_FromJson(JsonValueR props)
         m_categoryId.FromJson(props[json_category()]);
     
     if (props.isMember(json_geom()))
-        m_geom.FromBase64(props[json_geom()].asString());
+        GeometryBuilder::UpdateFromJson(*ToGeometrySourceP(), props[json_geom()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3929,7 +3930,7 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
-    {
+    {        
     T_Super::_ToJson(val, opts);
     val[json_placement()] = m_placement.ToJson();
 
@@ -3942,10 +3943,10 @@ void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_FromJson(JsonValueR props)
     {
-    T_Super::_FromJson(props);
-
     if (props.isMember(json_placement()))
-        m_placement.FromJson(props[json_placement()]);
+        m_placement.FromJson(props[json_placement()]); // Update placement before calling T_Super in case GeometryStream is also being updated...
+
+    T_Super::_FromJson(props);
 
     if (props.isMember(json_typeDefinition()))
         m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);
@@ -3997,9 +3998,11 @@ void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement3d::_FromJson(JsonValueR props)
     {
-    T_Super::_FromJson(props);
     if (props.isMember(json_placement()))
-        m_placement.FromJson(props[json_placement()]);
+        m_placement.FromJson(props[json_placement()]); // Update placement before calling T_Super in case GeometryStream is also being updated...
+
+    T_Super::_FromJson(props);
+
     if (props.isMember(json_typeDefinition()))
         m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);
     }
