@@ -15,6 +15,13 @@
 		262B4E802060475B00BAAB20 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E7F2060475B00BAAB20 /* CoreFoundation.framework */; };
 		262B4E822060476000BAAB20 /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E812060476000BAAB20 /* JavaScriptCore.framework */; };
 		262B4E842060476500BAAB20 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E832060476500BAAB20 /* CFNetwork.framework */; };
+		26C3E66720613D7E002A6E96 /* ECPresentationUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26C3E65B20613D7D002A6E96 /* ECPresentationUtils.cpp */; };
+		26C3E66820613D7E002A6E96 /* IModelJsNative.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26C3E65C20613D7D002A6E96 /* IModelJsNative.cpp */; };
+		26C3E66920613D7E002A6E96 /* JsInteropBriefcaseManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26C3E65D20613D7D002A6E96 /* JsInteropBriefcaseManager.cpp */; };
+		26C3E66A20613D7E002A6E96 /* TestUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26C3E66020613D7E002A6E96 /* TestUtils.cpp */; };
+		26C3E66B20613D7E002A6E96 /* ECSchemaXmlContextUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26C3E66420613D7E002A6E96 /* ECSchemaXmlContextUtils.cpp */; };
+		26C3E66C20613D7E002A6E96 /* JsInterop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26C3E66520613D7E002A6E96 /* JsInterop.cpp */; };
+		26C3E66D20613D7E002A6E96 /* JsInteropDgnDb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26C3E66620613D7E002A6E96 /* JsInteropDgnDb.cpp */; };
 		26D2291720606C2700DA08E6 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 26D2291520606C2700DA08E6 /* AppDelegate.m */; };
 		26D2291820606C2700DA08E6 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26D2291620606C2700DA08E6 /* ViewController.m */; };
 		26D2291920606CCA00DA08E6 /* libBaseGeoCoord.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8A2060479C00BAAB20 /* libBaseGeoCoord.a */; };
@@ -42,7 +49,6 @@
 		26D2292F20606CCA00DA08E6 /* libECObjects.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E872060479C00BAAB20 /* libECObjects.a */; };
 		26D2293020606CCA00DA08E6 /* libECPresentation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9C2060479D00BAAB20 /* libECPresentation.a */; };
 		26D2293120606CCA00DA08E6 /* libfreetype2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E902060479C00BAAB20 /* libfreetype2.a */; };
-		26D2293220606CCA00DA08E6 /* libiModelJs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E952060479C00BAAB20 /* libiModelJs.a */; };
 		26D2293320606CCA00DA08E6 /* liblibapr010502.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8D2060479C00BAAB20 /* liblibapr010502.a */; };
 		26D2293420606CCA00DA08E6 /* liblibaprutil010504.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA52060479D00BAAB20 /* liblibaprutil010504.a */; };
 		26D2293520606CCA00DA08E6 /* libliblog4cxx010.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9D2060479D00BAAB20 /* libliblog4cxx010.a */; };
@@ -108,6 +114,18 @@
 		262B4EA42060479D00BAAB20 /* libBeCurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCurl.a; path = ../../../nuget/CurlNuget_iosarm64.2.0.2.13/native/lib/static/libBeCurl.a; sourceTree = "<group>"; };
 		262B4EA52060479D00BAAB20 /* liblibaprutil010504.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibaprutil010504.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.13/native/lib/static/liblibaprutil010504.a; sourceTree = "<group>"; };
 		262B4EA62060479D00BAAB20 /* libBeSQLite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLite.a; path = "../../../../out-release/iOSARM64/static/build/BeSQLite/libBeSQLite.a"; sourceTree = "<group>"; };
+		26C3E65B20613D7D002A6E96 /* ECPresentationUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ECPresentationUtils.cpp; path = ../../../../iModelJsNodeAddon/ECPresentationUtils.cpp; sourceTree = "<group>"; };
+		26C3E65C20613D7D002A6E96 /* IModelJsNative.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IModelJsNative.cpp; path = ../../../../iModelJsNodeAddon/IModelJsNative.cpp; sourceTree = "<group>"; };
+		26C3E65D20613D7D002A6E96 /* JsInteropBriefcaseManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropBriefcaseManager.cpp; path = ../../../../iModelJsNodeAddon/JsInteropBriefcaseManager.cpp; sourceTree = "<group>"; };
+		26C3E65E20613D7D002A6E96 /* ECSchemaXmlContextUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ECSchemaXmlContextUtils.h; path = ../../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.h; sourceTree = "<group>"; };
+		26C3E65F20613D7E002A6E96 /* suppress_warnings.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = suppress_warnings.h; path = ../../../../iModelJsNodeAddon/suppress_warnings.h; sourceTree = "<group>"; };
+		26C3E66020613D7E002A6E96 /* TestUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TestUtils.cpp; path = ../../../../iModelJsNodeAddon/TestUtils.cpp; sourceTree = "<group>"; };
+		26C3E66120613D7E002A6E96 /* ECPresentationUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ECPresentationUtils.h; path = ../../../../iModelJsNodeAddon/ECPresentationUtils.h; sourceTree = "<group>"; };
+		26C3E66220613D7E002A6E96 /* IModelJsNative.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IModelJsNative.h; path = ../../../../iModelJsNodeAddon/IModelJsNative.h; sourceTree = "<group>"; };
+		26C3E66320613D7E002A6E96 /* imodeljs-nodeaddonapi.package.version.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "imodeljs-nodeaddonapi.package.version.h"; path = "../../../../iModelJsNodeAddon/imodeljs-nodeaddonapi.package.version.h"; sourceTree = "<group>"; };
+		26C3E66420613D7E002A6E96 /* ECSchemaXmlContextUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ECSchemaXmlContextUtils.cpp; path = ../../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.cpp; sourceTree = "<group>"; };
+		26C3E66520613D7E002A6E96 /* JsInterop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInterop.cpp; path = ../../../../iModelJsNodeAddon/JsInterop.cpp; sourceTree = "<group>"; };
+		26C3E66620613D7E002A6E96 /* JsInteropDgnDb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropDgnDb.cpp; path = ../../../../iModelJsNodeAddon/JsInteropDgnDb.cpp; sourceTree = "<group>"; };
 		26D2291520606C2700DA08E6 /* AppDelegate.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = AppDelegate.m; sourceTree = "<group>"; };
 		26D2291620606C2700DA08E6 /* ViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		26D2293A20606D0300DA08E6 /* ServicesTierEnvironment.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierEnvironment.cpp; path = ../../../ServicesTierEnvironment.cpp; sourceTree = "<group>"; };
@@ -165,7 +183,6 @@
 				26D2292F20606CCA00DA08E6 /* libECObjects.a in Frameworks */,
 				26D2293020606CCA00DA08E6 /* libECPresentation.a in Frameworks */,
 				26D2293120606CCA00DA08E6 /* libfreetype2.a in Frameworks */,
-				26D2293220606CCA00DA08E6 /* libiModelJs.a in Frameworks */,
 				26D2293320606CCA00DA08E6 /* liblibapr010502.a in Frameworks */,
 				26D2293420606CCA00DA08E6 /* liblibaprutil010504.a in Frameworks */,
 				26D2293520606CCA00DA08E6 /* libliblog4cxx010.a in Frameworks */,
@@ -202,6 +219,18 @@
 		262B4E63206044D400BAAB20 /* NAPI-JSC-Tests */ = {
 			isa = PBXGroup;
 			children = (
+				26C3E65B20613D7D002A6E96 /* ECPresentationUtils.cpp */,
+				26C3E66120613D7E002A6E96 /* ECPresentationUtils.h */,
+				26C3E66420613D7E002A6E96 /* ECSchemaXmlContextUtils.cpp */,
+				26C3E65E20613D7D002A6E96 /* ECSchemaXmlContextUtils.h */,
+				26C3E66320613D7E002A6E96 /* imodeljs-nodeaddonapi.package.version.h */,
+				26C3E65C20613D7D002A6E96 /* IModelJsNative.cpp */,
+				26C3E66220613D7E002A6E96 /* IModelJsNative.h */,
+				26C3E66520613D7E002A6E96 /* JsInterop.cpp */,
+				26C3E65D20613D7D002A6E96 /* JsInteropBriefcaseManager.cpp */,
+				26C3E66620613D7E002A6E96 /* JsInteropDgnDb.cpp */,
+				26C3E65F20613D7E002A6E96 /* suppress_warnings.h */,
+				26C3E66020613D7E002A6E96 /* TestUtils.cpp */,
 				26D2295A20606D2100DA08E6 /* Test.cpp */,
 				26D2295920606D2100DA08E6 /* Test.h */,
 				26D2294620606D0400DA08E6 /* iModelJs.h */,
@@ -291,6 +320,7 @@
 				262B4E5D206044D400BAAB20 /* Sources */,
 				262B4E5E206044D400BAAB20 /* Frameworks */,
 				262B4E5F206044D400BAAB20 /* Resources */,
+				26C3E65A206138CE002A6E96 /* Assets */,
 			);
 			buildRules = (
 			);
@@ -348,23 +378,47 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		26C3E65A206138CE002A6E96 /* Assets */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = Assets;
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		262B4E5D206044D400BAAB20 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				26D2291820606C2700DA08E6 /* ViewController.m in Sources */,
+				26C3E66820613D7E002A6E96 /* IModelJsNative.cpp in Sources */,
 				26D2295620606D0400DA08E6 /* Utilities.cpp in Sources */,
+				26C3E66A20613D7E002A6E96 /* TestUtils.cpp in Sources */,
+				26C3E66920613D7E002A6E96 /* JsInteropBriefcaseManager.cpp in Sources */,
 				26D2295720606D0400DA08E6 /* node_internals.cc in Sources */,
 				26D2295420606D0400DA08E6 /* ServicesTierNodeHost.cpp in Sources */,
+				26C3E66D20613D7E002A6E96 /* JsInteropDgnDb.cpp in Sources */,
 				26D2295120606D0400DA08E6 /* ServicesTierHost.cpp in Sources */,
 				26D2295220606D0400DA08E6 /* ServicesTierUtilities.cpp in Sources */,
 				26D2295020606D0400DA08E6 /* ServicesTierUvHost.cpp in Sources */,
 				26D2295520606D0400DA08E6 /* ServicesTierExtension.cpp in Sources */,
 				26D2295820606D0400DA08E6 /* ServicesTierScripts.cpp in Sources */,
+				26C3E66C20613D7E002A6E96 /* JsInterop.cpp in Sources */,
 				26D2295B20606D2100DA08E6 /* Test.cpp in Sources */,
+				26C3E66720613D7E002A6E96 /* ECPresentationUtils.cpp in Sources */,
 				26D2294F20606D0400DA08E6 /* ServicesTierEnvironment.cpp in Sources */,
 				26D2291720606C2700DA08E6 /* AppDelegate.m in Sources */,
+				26C3E66B20613D7E002A6E96 /* ECSchemaXmlContextUtils.cpp in Sources */,
 				26D2295320606D0400DA08E6 /* node_api.cc in Sources */,
 				262B4E74206044D400BAAB20 /* main.m in Sources */,
 			);
