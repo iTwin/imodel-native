@@ -43,6 +43,7 @@ TEST_F(UnitsTests, BasicECUnitCreation)
     EXPECT_EQ(10.0, unit->GetNumerator());
     EXPECT_EQ(1.0, unit->GetDenominator());
     EXPECT_EQ(1.0, unit->GetOffset());
+    EXPECT_TRUE(unit->HasUnitSystem());
 
     auto testECUnit = schema->GetUnitCP("ExampleUnit");
     EXPECT_EQ(unit, testECUnit);
@@ -108,6 +109,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_EQ(nullptr, unit->GetUnitSystem());
                 EXPECT_DOUBLE_EQ(10.0, unit->GetNumerator());
                 EXPECT_DOUBLE_EQ(1.0, unit->GetDenominator());
+                EXPECT_FALSE(unit->HasUnitSystem());
                 break;
             case 1:
                 EXPECT_STREQ("ExampleUnitDescription1", unit->GetInvariantDescription().c_str());
@@ -122,6 +124,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_EQ(1.0, unit->GetDenominator());
                 EXPECT_FALSE(unit->HasOffset());
                 EXPECT_EQ(0.0, unit->GetOffset());
+                EXPECT_TRUE(unit->HasUnitSystem());
                 break;
             case 2:
                 EXPECT_STREQ("ExampleUnitDescription2", unit->GetInvariantDescription().c_str());
@@ -136,6 +139,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_EQ(1.0, unit->GetDenominator());
                 EXPECT_FALSE(unit->HasOffset());
                 EXPECT_EQ(0.0, unit->GetOffset());
+                EXPECT_TRUE(unit->HasUnitSystem());
                 break;
             case 3:
                 EXPECT_STREQ("ExampleUnit3", unit->GetInvariantDisplayLabel().c_str());
@@ -149,6 +153,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_EQ(1.0, unit->GetDenominator());
                 EXPECT_FALSE(unit->HasOffset());
                 EXPECT_EQ(0.0, unit->GetOffset());
+                EXPECT_TRUE(unit->HasUnitSystem());
                 break;
             case 4:
                 EXPECT_STREQ("ExampleUnitDescription4", unit->GetInvariantDescription().c_str());
@@ -163,6 +168,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_EQ(1.0, unit->GetDenominator());
                 EXPECT_FALSE(unit->HasOffset());
                 EXPECT_EQ(0.0, unit->GetOffset());
+                EXPECT_TRUE(unit->HasUnitSystem());
                 break;
             case 5:
                 ASSERT_TRUE(unit->IsInvertedUnit());
@@ -171,6 +177,7 @@ TEST_F(UnitsTests, ECUnitContainerTest)
                 EXPECT_STREQ("InvertedUnit", unit->GetName().c_str());
                 EXPECT_EQ(phenom, unit->GetPhenomenon());
                 EXPECT_EQ(system, unit->GetUnitSystem());
+                EXPECT_TRUE(unit->HasUnitSystem());
                 break;
             }
         curCount++;
@@ -812,6 +819,7 @@ TEST_F(InvertedUnitsDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("InvertedUnitDescription", invUnit->GetDescription().c_str());
     EXPECT_STREQ("InvertedUnitLabel", invUnit->GetInvariantDisplayLabel().c_str());
     ASSERT_TRUE(invUnit->IsInvertedUnit());
+    EXPECT_TRUE(unit->HasUnitSystem());
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
     }
     {
@@ -831,6 +839,7 @@ TEST_F(InvertedUnitsDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("InvertedUnitLabel", serializedInvertedUnit->GetInvariantDisplayLabel().c_str());
     EXPECT_STREQ("InvertedUnitDescription", serializedInvertedUnit->GetDescription().c_str());
     ASSERT_TRUE(serializedInvertedUnit->IsInvertedUnit());
+    EXPECT_TRUE(serializedInvertedUnit->HasUnitSystem());
     }
     }
 
@@ -992,16 +1001,16 @@ TEST_F(ConstantDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("M", unit->GetDefinition().c_str());
     EXPECT_DOUBLE_EQ(10.0, unit->GetNumerator());
     EXPECT_DOUBLE_EQ(1.0, unit->GetDenominator());
+    EXPECT_FALSE(unit->HasUnitSystem());
 
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(serializedSchemaXml));
     }
     {
     ECSchemaPtr serializedSchema;
     ECSchemaReadContextPtr serializedContext = ECSchemaReadContext::CreateContext();
-    printf(serializedSchemaXml.c_str());
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(serializedSchema, serializedSchemaXml.c_str(), *serializedContext));
     ASSERT_EQ(1, serializedSchema->GetUnitCount());
-    ECUnitCP serializedECUnit = serializedSchema->GetUnitCP("TestConstant");
+    ECUnitCP serializedECUnit = serializedSchema->GetConstantCP("TestConstant");
     ASSERT_TRUE(nullptr != serializedECUnit);
 
     ASSERT_TRUE(serializedECUnit->IsConstant());
@@ -1010,6 +1019,7 @@ TEST_F(ConstantDeserializationTests, BasicRoundTripTest)
     EXPECT_STREQ("M", serializedECUnit->GetDefinition().c_str());
     EXPECT_DOUBLE_EQ(10.0, serializedECUnit->GetNumerator());
     EXPECT_DOUBLE_EQ(1.0, serializedECUnit->GetDenominator());
+    EXPECT_FALSE(serializedECUnit->HasUnitSystem());
     }
     }
 

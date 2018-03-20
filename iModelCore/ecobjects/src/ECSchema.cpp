@@ -1682,34 +1682,46 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit)
 
     ECObjectsStatus status;
 
-    PhenomenonCP phenom;
-    UnitSystemCP system;
-    if(sourceUnit.GetPhenomenon()->GetSchema().GetSchemaKey().Matches(GetSchemaKey(), SchemaMatchType::Exact))
-        {
+    PhenomenonCP phenom = sourceUnit.GetPhenomenon();
+    UnitSystemCP system = sourceUnit.GetUnitSystem();
+    if (sourceUnit.GetPhenomenon()->GetSchema().GetSchemaKey().Matches(GetSchemaKey(), SchemaMatchType::Exact))
         phenom = this->GetPhenomenonCP(sourceUnit.GetPhenomenon()->GetName().c_str());
+
+    if (sourceUnit.HasUnitSystem() && sourceUnit.GetUnitSystem()->GetSchema().GetSchemaKey().Matches(GetSchemaKey(), SchemaMatchType::Exact))
         system = this->GetUnitSystemCP(sourceUnit.GetUnitSystem()->GetName().c_str());
-        }
-    else
-        {
-        phenom = sourceUnit.GetPhenomenon();
-        system = sourceUnit.GetUnitSystem();
-        }
 
     if (sourceUnit.IsConstant())
-        {
         status = CreateConstant(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *phenom, sourceUnit.GetNumerator());
-        }
+
     else if (sourceUnit.IsInvertedUnit())
         {
-        status = CreateInvertedUnit(targetUnit, *(ECUnitCP)sourceUnit.GetParent(), sourceUnit.GetName().c_str(), *system);
+        ECUnitCP parent = sourceUnit.GetInvertingUnit();
+        if (parent->GetSchema().GetSchemaKey().Matches(GetSchemaKey(), SchemaMatchType::Exact))
+            { 
+            ECUnitP copiedParent = this->GetUnitP(sourceUnit.GetInvertingUnit()->GetName().c_str());
+            if (nullptr == copiedParent)
+                { 
+                status = this->CopyUnit(copiedParent, *sourceUnit.GetInvertingUnit());
+                if(ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                    return status;
+                parent = copiedParent;
+                }
+            }
+        status = CreateInvertedUnit(targetUnit, *parent, sourceUnit.GetName().c_str(), *system);
         }
+
     else // Normal unit
         {
+        if (nullptr != GetUnitCP(sourceUnit.GetName().c_str()))
+            return ECObjectsStatus::NamedItemAlreadyExists;
         status = CreateUnit(targetUnit, sourceUnit.GetName().c_str(), sourceUnit.GetDefinition().c_str(), *phenom, *system);
         }
 
     if (ECObjectsStatus::Success != status)
         return status;
+
+    if (sourceUnit.HasNumerator())
+        targetUnit->SetNumerator(sourceUnit.GetNumerator());
 
     if (sourceUnit.HasDenominator())
         targetUnit->SetDenominator(sourceUnit.GetDenominator());
