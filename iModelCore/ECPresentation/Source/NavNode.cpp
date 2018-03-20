@@ -516,8 +516,8 @@ rapidjson::Document KeySet::AsJson(rapidjson::Document::AllocatorType* allocator
         ECClassId classId = pair.first;
         rapidjson::Value instanceIds(rapidjson::kArrayType);
         for (ECInstanceId const& instanceId : pair.second)
-            instanceIds.PushBack(instanceId.GetValueUnchecked(), json.GetAllocator());
-        instances.AddMember(rapidjson::Value(classId.ToString().c_str(), json.GetAllocator()), instanceIds, json.GetAllocator());
+            instanceIds.PushBack(rapidjson::Value(instanceId.ToHexStr().c_str(), json.GetAllocator()), json.GetAllocator());
+        instances.AddMember(rapidjson::Value(classId.ToHexStr().c_str(), json.GetAllocator()), instanceIds, json.GetAllocator());
         }
 
     rapidjson::Value nodeKeys(rapidjson::kArrayType);
@@ -543,7 +543,8 @@ KeySetPtr KeySet::FromJson(JsonValueCR json)
         bset<ECInstanceId> instanceIdSet;
         for (JsonValueCR instanceIdJson : instanceKey[classIdString.c_str()])
             {
-            uint64_t instanceId = BeJsonUtilities::UInt64FromValue(instanceIdJson);
+            ECInstanceId instanceId;
+            ECInstanceId::FromString(instanceId, instanceIdJson.asCString());
             instanceIdSet.insert(ECInstanceId(instanceId));
             }
         ECClassId ecClassId;
