@@ -281,31 +281,33 @@ napi_status napi_define_class(napi_env env,
     JSContextRef ctx = env->GetContext();
     
     JSObjectRef prototypeObj = JSObjectMake(ctx, NULL, NULL);
-    // Add Instance Properties on Prototype Object Here.
+    // Separate static and instance properties;
+    size_t static_property_count = 0;
+    size_t instance_property_count = 0;
     for (size_t i=0; i < property_count; i++) {
         const napi_property_descriptor* p = properties + i;
-        if ((p->attributes & napi_static) == 0 && p->utf8name != nullptr) {
-            if (p->getter != nullptr || p->setter != nullptr) {
-                // TODO
-            } else if (p->method != nullptr) {
-                JSClassDefinition methodDef = kJSClassDefinitionEmpty;
-                methodDef.className = p->utf8name;
-                methodDef.callAsFunction = JSCFunctionCallbackWrapper::CallAsFunction;
-                JSClassRef methodRef = JSClassCreate(&methodDef);
-                auto funcCBData = new JSCFunctionCallbackData(env,p->method,p->data);
-                JSObjectRef method = JSObjectMake(ctx,methodRef,funcCBData);
-                JSStringRef methodName = JSStringCreateWithUTF8CString(p->utf8name);
-                JSObjectSetProperty(ctx, prototypeObj, methodName, method, kJSClassAttributeNone, nullptr);
-                JSStringRelease(methodName);
-                JSClassRelease(methodRef);
-            } else {
-                JSStringRef propertyName = JSStringCreateWithUTF8CString(p->utf8name);
-                JSObjectSetProperty(ctx, prototypeObj, propertyName, p->value, kJSClassAttributeNone, NULL);
-                JSStringRelease(propertyName);
-            }
+        if ((p->attributes & napi_static) == 0) {
+            instance_property_count++;
+        } else {
+            static_property_count++;
         }
     }
 
+    // Add Instance Properties on Prototype Object Here.
+    if (instance_property_count > 0) {
+        auto instance_properties = new napi_property_descriptor[instance_property_count];
+        size_t instance_property_index = 0;
+        for (size_t i=0; i < property_count; i++) {
+            const napi_property_descriptor* p = properties + i;
+            if ((p->attributes & napi_static) == 0) {
+                instance_properties[instance_property_index] = *p;
+                instance_property_index++;
+            }
+        }
+        napi_define_properties(env, prototypeObj, instance_property_count, instance_properties);
+        delete [] instance_properties;
+    }
+    
     JSClassDefinition classDef = kJSClassDefinitionEmpty;
     classDef.className = utf8name;
     classDef.callAsConstructor = JSCFunctionCallbackWrapper::CallAsConstructor;
@@ -315,30 +317,21 @@ napi_status napi_define_class(napi_env env,
     *result = JSObjectMake(ctx,classRef,classCBData);
     JSClassRelease(classRef);
     
-    // Define static Properties here.
-    for (size_t i=0; i < property_count; i++) {
-        const napi_property_descriptor* p = properties + i;
-        if ((p->attributes & napi_static) != 0 && p->utf8name != nullptr) {
-            if (p->getter != nullptr || p->setter != nullptr) {
-                // TODO
-            } else if (p->method != nullptr) {
-                JSClassDefinition staticMethodDef = kJSClassDefinitionEmpty;
-                staticMethodDef.callAsFunction = JSCFunctionCallbackWrapper::CallAsFunction;
-                JSClassRef staticMethodRef = JSClassCreate(&staticMethodDef);
-                auto funcCBData = new JSCFunctionCallbackData(env,p->method,p->data);
-                JSObjectRef method = JSObjectMake(ctx,staticMethodRef,funcCBData);
-                JSStringRef methodName = JSStringCreateWithUTF8CString(p->utf8name);
-                JSObjectSetProperty(ctx, (JSObjectRef)*result, methodName, method, kJSClassAttributeNone, nullptr);
-                JSStringRelease(methodName);
-                JSClassRelease(staticMethodRef);
-            } else {
-                JSStringRef staticPropertyName = JSStringCreateWithUTF8CString(p->utf8name);
-                JSObjectSetProperty(ctx, (JSObjectRef)*result, staticPropertyName, p->value, kJSClassAttributeNone, NULL);
-                JSStringRelease(staticPropertyName);
+    // Add Static Properties to Result Object Here.
+    if (static_property_count > 0) {
+        auto static_properties = new napi_property_descriptor[static_property_count];
+        size_t static_property_index = 0;
+        for (size_t i=0; i < property_count; i++) {
+            const napi_property_descriptor* p = properties + i;
+            if ((p->attributes & napi_static) != 0) {
+                static_properties[static_property_index] = *p;
+                static_property_index++;
             }
         }
+        napi_define_properties(env, *result, instance_property_count, static_properties);
+        delete [] static_properties;
     }
-    
+
     return GET_RETURN_STATUS(env);
 }
 
@@ -591,16 +584,37 @@ napi_status napi_define_properties(napi_env env,
                                    napi_value object,
                                    size_t property_count,
                                    const napi_property_descriptor* properties) {
-  NAPI_PREAMBLE(env);
-  if (property_count > 0) {
+    NAPI_PREAMBLE(env);
+    if (property_count > 0) {
     CHECK_ARG(env, properties);
-  }
+    }
 
-//  JSContextRef ctx = env->GetContext();
+    JSContextRef ctx = env->GetContext();
+    for (size_t i=0; i < property_count; i++) {
+        const napi_property_descriptor* p = properties + i;
+        if (p->utf8name != nullptr) {
+            if (p->getter != nullptr || p->setter != nullptr) {
+                // TODO
+            } else if (p->method != nullptr) {
+                JSClassDefinition methodDef = kJSClassDefinitionEmpty;
+                methodDef.className = p->utf8name;
+                methodDef.callAsFunction = JSCFunctionCallbackWrapper::CallAsFunction;
+                JSClassRef methodRef = JSClassCreate(&methodDef);
+                auto funcCBData = new JSCFunctionCallbackData(env,p->method,p->data);
+                JSObjectRef method = JSObjectMake(ctx,methodRef,funcCBData);
+                JSStringRef methodName = JSStringCreateWithUTF8CString(p->utf8name);
+                JSObjectSetProperty(ctx, (JSObjectRef)object, methodName, method, kJSPropertyAttributeNone, nullptr);
+                JSStringRelease(methodName);
+                JSClassRelease(methodRef);
+            } else {
+                JSStringRef propertyName = JSStringCreateWithUTF8CString(p->utf8name);
+                JSObjectSetProperty(ctx, (JSObjectRef)object, propertyName, p->value, kJSPropertyAttributeNone, NULL);
+                JSStringRelease(propertyName);
+            }
+        }
+    }
 
-  // TODO
-
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
