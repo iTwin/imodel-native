@@ -1329,7 +1329,7 @@ bool DgnViewport::GetPixelDataWorldPoint(DPoint3dR world, IPixelDataBufferCR pix
 StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& highNpc, BSIRectCP viewRectCP)
     {
     BSIRect                 viewRect = (nullptr == viewRectCP) ? GetViewRect() : *viewRectCP;
-    IPixelDataBufferCPtr    pixels = ReadPixels(GetViewRect(), PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
 
     lowNpc  = 1.0;
     highNpc = 0.0;
@@ -1357,7 +1357,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& hig
 StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP viewRectCP)
     {
     BSIRect                 viewRect = (nullptr == viewRectCP) ? GetViewRect() : *viewRectCP;
-    IPixelDataBufferCPtr    pixels = ReadPixels(GetViewRect(), PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
     size_t                  pixelCount = 0;
 
     aveNpc = 0.0;

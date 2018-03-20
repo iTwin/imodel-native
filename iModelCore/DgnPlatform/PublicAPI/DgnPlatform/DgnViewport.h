@@ -307,7 +307,7 @@ public:
     //! Determien the nearest visible geometry point within radiusPixels of the supplied pick point.
     //! @param[out] outPoint point on visible geometry in world coordinates.
     //! @param[in] pickPoint pick point in world coordinates.
-    //! @param[radiusPixels] radius in pixels around pick point to search for visible geometry.
+    //! @param[in] radius in pixels around pick point to search for visible geometry.
     DGNPLATFORM_EXPORT StatusInt DgnViewport::DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, DPoint3dCR pickPoint, int radiusPixels);
 
     //! Compute the range of the element when displayed in this DgnViewport
