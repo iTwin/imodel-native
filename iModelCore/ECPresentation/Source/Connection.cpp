@@ -238,6 +238,7 @@ void PrimaryConnection::_OnConnectionReloaded(ECDbCR db)
     if (m_isOpen)
         {
         LOG_CONNECTIONS.infov("%p PrimaryConnection[%s] reloaded", this, m_id.c_str());
+        IConnectionPtr ref = this; // keep refcount of this instance so it doesnt get destroyed after NotifyConnectionClosed call
         m_manager.NotifyConnectionClosed(m_id);
         if (m_isPrimary)
             m_manager.NotifyPrimaryConnectionOpened(m_ecdb);
@@ -489,12 +490,7 @@ IConnection* ConnectionManager::_GetConnection(ECDbCR ecdb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 IConnectionPtr ConnectionManager::GetOrCreateConnection(ECDbR ecdb, bool isProjectPrimary)
     {
-    // note: we expect this function to be called only from the primary thread (the one
-    // that created the presentation manager and opened the ecdb). this is the thread
-    // the connection should get cached / uncached from.
-    //BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_primaryThreadId);
-
-    Utf8PrintfString connectionId("%s:%" PRIu64, ecdb.GetDbGuid().ToString().c_str(), (uint64_t)&ecdb);
+    Utf8PrintfString connectionId("%" PRIu64 ":%s:%s", (uint64_t)&ecdb, ecdb.GetDbGuid().ToString().c_str(), ecdb.GetDbFileName());
 
     BeMutexHolder lock(m_connectionsMutex);
     IConnectionPtr connection = m_activeConnections->Get(connectionId);
@@ -539,10 +535,6 @@ void ConnectionManager::NotifyPrimaryConnectionOpened(ECDbR connection)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConnectionManager::NotifyConnectionClosed(Utf8StringCR connectionId)
     {
-    // note: we expect this function to be called only from the primary thread (the one
-    // that created the presentation manager, opened the ecdb and cached its connection).
-    //BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_primaryThreadId);
-
     BeMutexHolder lock(m_connectionsMutex);
     IConnectionPtr primaryConnection = m_activeConnections->Get(connectionId);
     if (primaryConnection.IsNull())
