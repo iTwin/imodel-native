@@ -57,7 +57,7 @@ public:
     void _OnCloseBim(BentleyStatus) override;
     virtual BentleyStatus _DetectDeletedDocuments() override;
 
-    static WCharCP GetRegistrySubKey() { return L"OpenRoads Designer Bridge"; }
+    static WCharCP GetRegistrySubKey() { return L"OpenRoadsDesignerBridge"; }
     static void AppendCifSdkToDllSearchPath(BeFileNameCR libraryDir);
 
     ORDBridge() {}
