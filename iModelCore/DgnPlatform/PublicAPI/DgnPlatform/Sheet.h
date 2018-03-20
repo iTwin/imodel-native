@@ -384,7 +384,7 @@ namespace Attachment
         TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
         double _GetMaximumSize() const override {return m_maxPixelSize;}
 
-        void ChangeRange(DRange3d newRange, DPoint2d scale);
+        void ChangeRange(DRange3d newRange);
         void CreatePolys(SceneContextR context);
         void CreateGraphics(SceneContextR context);
         RootR GetTree() const {return static_cast<RootR>(m_root);}
