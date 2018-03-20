@@ -1079,10 +1079,7 @@ static SchemaWriteStatus WriteCommonPrimitivePropertyJsonAttributes(bvector<bpai
     if (nullptr == primArrProp && nullptr == primProp)
         return SchemaWriteStatus::FailedToCreateJson;
 
-    attributes.push_back(bpair<Utf8String, Json::Value>(
-        TYPE_NAME_ATTRIBUTE,
-        primProp ? primProp->GetTypeName() : primArrProp->GetTypeName()
-        ));
+    attributes.push_back(bpair<Utf8String, Json::Value>(TYPE_NAME_ATTRIBUTE, primProp ? primProp->GetTypeFullName() : primArrProp->GetTypeFullName()));
     if (primProp ? primProp->IsExtendedTypeDefinedLocally() : primArrProp->IsExtendedTypeDefinedLocally())
         attributes.push_back(bpair<Utf8String, Json::Value>(
             EXTENDED_TYPE_NAME_ATTRIBUTE,

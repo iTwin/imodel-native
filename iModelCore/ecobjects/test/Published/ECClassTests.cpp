@@ -1118,6 +1118,13 @@ TEST_F(ClassTest, SerializeClassWithProperties)
     PropertyCategoryP propertyCategory;
     schema->CreatePropertyCategory(propertyCategory, "ExamplePropertyCategory");
 
+    ECEnumerationP enumeration;
+    schema->CreateEnumeration(enumeration, "ExampleEnumeration", PrimitiveType::PRIMITIVETYPE_Integer);
+
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "TestKindOfQuantity");
+    koq->SetPersistenceUnit("M(DefaultRealU)");
+
     ECStructClassP structClass;
     schema->CreateStructClass(structClass, "ExampleStructClass");
 
@@ -1135,8 +1142,19 @@ TEST_F(ClassTest, SerializeClassWithProperties)
     primProp->SetExtendedTypeName("Example Primitive Property");
     primProp->SetIsReadOnly(true);
     primProp->SetCategory(propertyCategory);
+    primProp->SetKindOfQuantity(koq);
     primProp->SetMinimumValue(ECValue(42));
     primProp->SetMaximumValue(ECValue(1999));
+
+    PrimitiveECPropertyP enumProp;
+    entityClass->CreateEnumerationProperty(enumProp, "ExampleEnumerationProperty", *enumeration);
+    enumProp->SetDescription("An example primitive enumeration property.");
+    enumProp->SetDisplayLabel("Enumeration Property DisplayLabel");
+    enumProp->SetExtendedTypeName("Example_ExtendedType");
+    enumProp->SetIsReadOnly(true);
+    enumProp->SetCategory(propertyCategory);
+    enumProp->SetMinimumValue(ECValue(42));
+    enumProp->SetMaximumValue(ECValue(1999));
 
     StructECPropertyP structProp;
     entityClass->CreateStructProperty(structProp, "ExampleStructProperty", *structClass);
