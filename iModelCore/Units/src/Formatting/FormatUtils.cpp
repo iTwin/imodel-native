@@ -322,29 +322,6 @@ ShowSignOption Utils::NameToSignOption(Utf8CP name)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
-Utf8String Utils::FormatSpecTypeToName(FormatSpecType type)
-    {
-    switch (type)
-        {
-        case FormatSpecType::Numeric: return FormatConstant::FPN_Numeric();
-        case FormatSpecType::Composite: return FormatConstant::FPN_Composite();
-        default: return FormatConstant::FPN_Undefined();
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-FormatSpecType Utils::NameToFormatSpecType(Utf8CP name)
-    {
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Numeric().c_str()) == 0) return FormatSpecType::Numeric;
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Composite().c_str()) == 0) return FormatSpecType::Composite;
-    return FormatSpecType::Undefined;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
 Utf8CP Utils::SkipBlanks(Utf8CP str)
     {
     while (isspace(*str))
@@ -1098,6 +1075,13 @@ void FormatUnitSet::Init()
     m_localCopy = NamedFormatSpec();
     }
 
+FormatUnitSet::FormatUnitSet(FormatUnitSetCR other)
+    : m_formatSpec(other.m_formatSpec)
+    , m_unitName(other.m_unitName)
+    , m_unit(other.m_unit)
+    , m_problem(other.m_problem)
+    {}
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
@@ -1443,14 +1427,15 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
     {
     switch (m_code)
         {
+        case FormatProblemCode::NoProblems: return "No problems";
         case FormatProblemCode::UnknownStdFormatName: return "Unknown name of the standard format";
         case FormatProblemCode::UnknownUnitName: return "Unknown name of the unit";
-        case FormatProblemCode::NotInitialized: return "Format and Unit not initialized";
-        case FormatProblemCode::CNS_InconsistentFactorSet: return "Inconsistent set of factors";
-        case FormatProblemCode::CNS_InconsistentUnitSet: return "Inconsistent set of units";
-        case FormatProblemCode::CNS_UncomparableUnits: return "Units are not comparable";
-        case FormatProblemCode::CNS_InvalidUnitName: return "Unknown name of the Unit";
-        case FormatProblemCode::CNS_InvalidMajorUnit: return "Unknown name of the Major Unit";
+        case FormatProblemCode::NotInitialized: return "Object not initialized";
+        case FormatProblemCode::CVS_InconsistentFactorSet: return "Inconsistent set of factors";
+        case FormatProblemCode::CVS_InconsistentUnitSet: return "Inconsistent set of units";
+        case FormatProblemCode::CVS_UncomparableUnits: return "Units are not comparable";
+        case FormatProblemCode::CVS_InvalidUnitName: return "Unknown name of the Unit";
+        case FormatProblemCode::CVS_InvalidMajorUnit: return "Unknown name of the Major Unit";
         case FormatProblemCode::QT_PhenomenonNotDefined: return "Unknown name of the Phenomenon";
         case FormatProblemCode::QT_PhenomenaNotSame: return "Different Phenomena";
         case FormatProblemCode::QT_InvalidTopMidUnits: return "Top and Middle units are not comparable";
@@ -1477,8 +1462,7 @@ Utf8String FormatProblemDetail::GetProblemDescription() const
         case FormatProblemCode::SFS_FailedToMakeFUS: return "Invalid defintion for the FUS to be registered";
         case FormatProblemCode::NMQ_InvalidUnitName: return "Invalid unit name in the Named Quantity";
         case FormatProblemCode::NMQ_MissingName: return "Named Quantity requires a not-empty name";
-        case FormatProblemCode::NoProblems:
-        default: return "No problems";
+        default: return "Unknown problem code";
         }
     }
 

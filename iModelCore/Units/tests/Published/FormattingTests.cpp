@@ -707,9 +707,8 @@ TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
 
     BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
     BEU::UnitCP inch = s_unitsContext->LookupUnit("IN");
-    CompositeValueSpec compositeValueSpec(mile, inch);
+    CompositeValueSpec compositeValueSpec(*mile, *inch);
     ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
-    ASSERT_EQ(CompositeSpecType::Double, compositeValueSpec.GetType());
     NamedFormatSpec namedFormatSpec("TestNamedFormatSpec", numericFormatSpec, compositeValueSpec);
 
     // 1500.5 miles == 1,500 miles and 31,680 inches
@@ -826,7 +825,7 @@ TEST_F(NamedFormatSpecTest, Constructors)
     EXPECT_STREQ("", namedFmtSpec.GetName());
     EXPECT_STREQ("", namedFmtSpec.GetDescription());
     EXPECT_STREQ("", namedFmtSpec.GetDisplayLabel());
-    EXPECT_EQ(FormatSpecType::Undefined, namedFmtSpec.GetSpecType());
+    EXPECT_EQ(FormatSpecType::None, namedFmtSpec.GetSpecType());
     EXPECT_TRUE(namedFmtSpec.IsProblem());
     EXPECT_EQ(nullptr, namedFmtSpec.GetNumericSpec());
     EXPECT_EQ(nullptr, namedFmtSpec.GetCompositeSpec());
@@ -840,7 +839,7 @@ TEST_F(NamedFormatSpecTest, Constructors)
     EXPECT_STREQ("FooBar", namedFmtSpec.GetName());
     EXPECT_STREQ("", namedFmtSpec.GetDescription());
     EXPECT_STREQ("", namedFmtSpec.GetDisplayLabel());
-    EXPECT_EQ(FormatSpecType::Numeric, namedFmtSpec.GetSpecType());
+    EXPECT_EQ(FormatSpecType::None, namedFmtSpec.GetSpecType());
     EXPECT_FALSE(namedFmtSpec.IsProblem());
     ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
     EXPECT_TRUE(namedFmtSpec.GetNumericSpec()->IsIdentical(numFmtSpec));
@@ -850,14 +849,14 @@ TEST_F(NamedFormatSpecTest, Constructors)
     // Constructed with name, NumericFormatSpec, and CompositeValueSpec
     {
     NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
-    CompositeValueSpec compValSpec;
+    CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
     NamedFormatSpec namedFmtSpec("FooBar", numFmtSpec, compValSpec);
 
     EXPECT_STREQ("FooBar", namedFmtSpec.GetName());
     EXPECT_STREQ("", namedFmtSpec.GetDescription());
     EXPECT_STREQ("", namedFmtSpec.GetDisplayLabel());
-    EXPECT_EQ(FormatSpecType::Composite, namedFmtSpec.GetSpecType());
-    EXPECT_FALSE(namedFmtSpec.IsProblem());
+    EXPECT_EQ(FormatSpecType::Single, namedFmtSpec.GetSpecType());
+    EXPECT_FALSE(namedFmtSpec.IsProblem()) << namedFmtSpec.GetProblemDescription();
     ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
     EXPECT_TRUE(namedFmtSpec.GetNumericSpec()->IsIdentical(numFmtSpec));
     ASSERT_NE(nullptr, namedFmtSpec.GetCompositeSpec());
@@ -878,7 +877,7 @@ TEST_F(NamedFormatSpecTest, IsIdentical)
     // should be concidered identical by the identity principal.
     {
     NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
-    CompositeValueSpec compValSpec;
+    CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
 
     NamedFormatSpec namedFmtSpecUndefined;
     NamedFormatSpec namedFmtSpecNumeric("FooBar", numFmtSpec);
@@ -940,7 +939,7 @@ TEST_F(NamedFormatSpecTest, IsIdentical)
     {
     NumericFormatSpec numFmtSpec;
     BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
-    CompositeValueSpec compValSpecA(mile);
+    CompositeValueSpec compValSpecA(*mile);
     CompositeValueSpec compValSpecB;
     compValSpecB.SetSpacer(" # ");
 

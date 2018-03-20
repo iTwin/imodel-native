@@ -139,11 +139,11 @@ enum class FormatProblemCode
     UnknownStdFormatName = 20011,
     UnknownUnitName = 20012,
     NotInitialized = 20013,
-    CNS_InconsistentFactorSet = 20051,  //!< All ratio factors between units must be bigger than one
-    CNS_InconsistentUnitSet = 20052,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
-    CNS_UncomparableUnits = 20053,      //!< Units provided on the argument list are not comparable
-    CNS_InvalidUnitName = 20054,        //!< Not-recognizd unit name or unit is not associated with a Phenomenon
-    CNS_InvalidMajorUnit = 20055,       //!< The MajorUnit in ComboNumbers is null or invalid
+    CVS_InconsistentFactorSet = 20051,  //!< All ratio factors between units must be bigger than one
+    CVS_InconsistentUnitSet = 20052,    //!< Each pair of UOM's for parts of combo-numbers should yeild a ratio > 1
+    CVS_UncomparableUnits = 20053,      //!< Units provided on the argument list are not comparable
+    CVS_InvalidUnitName = 20054,        //!< Not-recognizd unit name or unit is not associated with a Phenomenon
+    CVS_InvalidMajorUnit = 20055,       //!< The MajorUnit in ComboNumbers is null or invalid
     QT_PhenomenonNotDefined = 20101,
     QT_PhenomenaNotSame = 20102,
     QT_InvalidTopMidUnits = 20103,
@@ -185,26 +185,15 @@ enum class FormatProblemLevel
     };
 
 //=======================================================================================
-//! Type of the ComboSpec describes one of allowable value transformations
 // @bsienum
 //=======================================================================================
-enum class CompositeSpecType
+enum class FormatSpecType : int32_t
     {
-    Undefined = 0, //!< program fails to infer the type (default)
-    Single = 1,    //!< trivial case when Combo effectively is not used - not prohibited though
-    Double = 2,    //!< indicates of using 2 levels: Major and Middle
-    Triple = 3,    //!< indicates of using 3 levels: Major, Middle and Minor UOM's
-    Quatro = 4     //!< indicates of using 4 levels: Major, Middle, Minor and SubUnit UOM's
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
-enum class FormatSpecType
-    {
-    Undefined = 0,
-    Numeric = 1,   // a pure numeric Spec
-    Composite = 2      // a composite spec is also defined (numeric spec is implied)
+    None   = 0, //!< NumericFormatSpec only.
+    Single = 1, //!< NumericFormatSpec and CompositeValueSpec with 1 UOM : Major.
+    Double = 2, //!< NumericFormatSpec and CompositeValueSpec with 2 UOMs: Major and Middle.
+    Triple = 3, //!< NumericFormatSpec and CompositeValueSpec with 3 UOMs: Major, Middle, and Minor.
+    Quad   = 4  //!< NumericFormatSpec and CompositeValueSpec with 4 UOMs: Major, Middle, Minor, and Sub.
     };
 
 //=======================================================================================
@@ -319,8 +308,6 @@ struct Utils
     UNITS_EXPORT static Utf8Char MatchingDivider(Utf8Char div);
     UNITS_EXPORT static int IndexOf(Utf8Char c, Utf8CP text);
     UNITS_EXPORT static Utf8String CharToString(Utf8Char c);
-    UNITS_EXPORT static Utf8String FormatSpecTypeToName(FormatSpecType type);
-    UNITS_EXPORT static FormatSpecType NameToFormatSpecType(Utf8CP name);
     UNITS_EXPORT static Utf8CP SkipBlanks(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetFirstSignificantChar(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetLastSignificantChar(Utf8CP str);
@@ -330,7 +317,7 @@ struct Utils
     UNITS_EXPORT static Utf8String GetCurrentGrouping();
     };
 
-// A collection of important "global" constants that are used across the whole formatting domain
+// A collection of important global constants that are used across the whole formatting domain.
 //=======================================================================================
 // @bsistruct                                                    David.Fox-Rabinovitz  11/2016
 //=======================================================================================
@@ -358,10 +345,6 @@ public:
     static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
     static Utf8String FPN_SignAlways() { return "SignAlways"; }
     static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
-
-    static Utf8String FPN_Composite() { return "composite"; }
-    static Utf8String FPN_Numeric() { return "numeric"; }
-    static Utf8String FPN_Undefined() { return "undefined"; }
 
     static Utf8String FPN_Decimal() { return "Decimal"; }
     static Utf8String FPN_Fractional() { return "Fractional"; }

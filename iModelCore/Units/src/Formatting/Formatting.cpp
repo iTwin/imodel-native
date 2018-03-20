@@ -1076,9 +1076,9 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
             FormatConstant::DefaultFormatTraits(), 0);
         fmtI.SetKeepSingleZero(false);
 
-        switch (compS->GetType())
+        switch (compS->GetUnitCount())
             {
-            case CompositeSpecType::Single: // there is only one value to report
+            case 1: // there is only one value to report
                 majT = pref + fmtP->FormatDouble(dval.GetMajor(), prec, round);
                 // if this composite only defines a single component then use format traits to determine if unit label is shown. This allows
                 // support for SuppressUnitLable options in DgnClientFx. Also in this single component situation use the define UomSeparator.
@@ -1086,7 +1086,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
                     majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), Utils::SubstituteNull(space, fmtP->GetUomSeparator())) + suff;
                 break;
 
-            case CompositeSpecType::Double:
+            case 2:
                 majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
                 majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), spacer);
                 midT = fmtP->FormatDouble(dval.GetMiddle(), prec, round);
@@ -1094,7 +1094,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
                 majT += " " + midT + suff;
                 break;
 
-            case CompositeSpecType::Triple:
+            case 3:
                 majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
                 majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), spacer);
                 midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
@@ -1104,7 +1104,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
                 majT += " " + midT + " " + minT + suff;
                 break;
 
-            case CompositeSpecType::Quatro:
+            case 4:
                 majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
                 majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), spacer);
                 midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
@@ -1230,8 +1230,6 @@ void NamedFormatSpec::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
             m_description = val.asString();
         else if (BeStringUtilities::StricmpAscii(paramName, json_SpecLabel()) == 0)
             m_displayLabel = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_SpecType()) == 0)
-            m_specType = Utils::NameToFormatSpecType(val.asCString());
         else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
             m_numericSpec = NumericFormatSpec(val);
         else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
@@ -1243,9 +1241,9 @@ void NamedFormatSpec::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NamedFormatSpec::NamedFormatSpec()
-    : m_specType(FormatSpecType::Undefined)
+    : m_specType(FormatSpecType::None)
+    , m_problem(FormatProblemCode::NotInitialized)
     {
-    m_problem.UpdateProblemCode(FormatProblemCode::NFS_Undefined);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1255,7 +1253,6 @@ NamedFormatSpec::NamedFormatSpec(NamedFormatSpecCR other)
     : m_name(other.m_name)
     , m_description(other.m_description)
     , m_displayLabel(other.m_displayLabel)
-    , m_numericSpec(other.m_numericSpec)
     , m_specType(other.m_specType)
     , m_problem(other.m_problem)
     {
@@ -1270,7 +1267,7 @@ NamedFormatSpec::NamedFormatSpec(NamedFormatSpecCR other)
 //----------------------------------------------------------------------------------------
 NamedFormatSpec::NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec)
     : m_name(name)
-    , m_specType(FormatSpecType::Numeric)
+    , m_specType(FormatSpecType::None)
     , m_numericSpec(numSpec)
     , m_problem(FormatProblemCode::NoProblems)
     {
@@ -1284,8 +1281,31 @@ NamedFormatSpec::NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec)
 NamedFormatSpec::NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
     : NamedFormatSpec(name, numSpec)
     {
-    m_specType = FormatSpecType::Composite;
     m_compositeSpec = compSpec;
+    if (m_compositeSpec.IsProblem())
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NotInitialized);
+        }
+    else
+        {
+        switch (m_compositeSpec.GetUnitCount())
+            {
+            case 1:
+                m_specType = FormatSpecType::Single;
+                break;
+            case 2:
+                m_specType = FormatSpecType::Double;
+                break;
+            case 3:
+                m_specType = FormatSpecType::Triple;
+                break;
+            case 4:
+                m_specType = FormatSpecType::Quad;
+                break;
+            default:
+                m_problem.UpdateProblemCode(FormatProblemCode::NotInitialized);
+            }
+        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -1324,6 +1344,24 @@ bool NamedFormatSpec::IsIdentical(NamedFormatSpecCR other) const
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+bool NamedFormatSpec::HasNumeric() const
+    {
+    if (IsProblem() && (m_problem.GetProblemCode() == FormatProblemCode::NotInitialized))
+        return false;
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+bool NamedFormatSpec::HasComposite() const
+    {
+    return static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
@@ -1336,7 +1374,6 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
     if (!m_displayLabel.empty())
         jNFS[json_SpecLabel()] = m_displayLabel;
 
-    jNFS[json_SpecType()] = Utils::FormatSpecTypeToName(m_specType);
     jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
     Json::Value jcs = m_compositeSpec.ToJson();
     if (!jcs.empty())

@@ -17,25 +17,78 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //
 //===================================================
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-CompositeValueSpec::CompositeValueSpec()
-    : m_type(CompositeSpecType::Undefined)
-    , m_includeZero(true)
+// Constructor
+// @bsimethod                                                   David Fox-Rabinovitz 02/17
+//---------------------------------------------------------------------------------------
+CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit)
+    : m_includeZero(true)
     , m_spacer("")
-    , m_problem(FormatProblemDetail())
+    , m_ratio {0}
     {
-    memset(m_ratio, 0, sizeof(m_ratio));
+    size_t unitCount = (nullptr != majorUnit)
+        + (nullptr != middleUnit)
+        + (nullptr != minorUnit)
+        + (nullptr != subUnit);
+    m_proxys.resize(unitCount);
+
+    if (nullptr != majorUnit)
+        m_proxys[indxMajor].SetUnit(majorUnit);
+    if (nullptr != middleUnit)
+        m_proxys[indxMiddle].SetUnit(middleUnit);
+    if (nullptr != minorUnit)
+        m_proxys[indxMinor].SetUnit(minorUnit);
+    if (nullptr != subUnit)
+        m_proxys[indxSub].SetUnit(subUnit);
+
+    if (unitCount > 0)
+        CalculateUnitRatios();
+    else
+        m_problem.UpdateProblemCode(FormatProblemCode::NotInitialized);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
+CompositeValueSpec::CompositeValueSpec()
+    : CompositeValueSpec(nullptr, nullptr, nullptr, nullptr)
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+CompositeValueSpec::CompositeValueSpec(BEU::UnitCR majorUnit)
+    : CompositeValueSpec(&majorUnit, nullptr, nullptr, nullptr)
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+CompositeValueSpec::CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit)
+    : CompositeValueSpec(&majorUnit, &middleUnit, nullptr, nullptr)
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+CompositeValueSpec::CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit)
+    : CompositeValueSpec(&majorUnit, &middleUnit, &minorUnit, nullptr)
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+CompositeValueSpec::CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit)
+    : CompositeValueSpec(&majorUnit, &middleUnit, &minorUnit, &subUnit)
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
 CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
-    : m_type(other.m_type)
-    , m_includeZero(other.m_includeZero)
+    : m_includeZero(other.m_includeZero)
     , m_spacer(other.m_spacer)
     , m_problem(other.m_problem)
+    , m_proxys(other.m_proxys)
     {
     memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
     }
@@ -43,71 +96,53 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
-size_t CompositeValueSpec::CalculateUnitRatio(BEU::UnitCP unit, BEU::UnitCP subunit)
+size_t CompositeValueSpec::CalculateUnitRatio(BEU::UnitCP upper, BEU::UnitCP lower)
     {
-    if (nullptr == subunit) // subunit is not defined - which is OK regardless of whether the unit is defined
-        return 0;
-
-    if (nullptr == unit)  // this is not allowed because defined subunit requires unit to be defined
+    if (nullptr == lower)
         {
-        UpdateProblemCode(FormatProblemCode::CNS_InconsistentUnitSet);
+        // Lower unit is not defined - which is OK regardless of whether the
+        // upper is defined.
         return 0;
         }
 
-    if (unit->GetPhenomenon() != subunit->GetPhenomenon())
+    if (nullptr == upper)
         {
-        UpdateProblemCode(FormatProblemCode::CNS_UncomparableUnits);
+        // This should never occur, since units should always be defined in the
+        // order of major, middle, minor, sub, which means the ratios
+        // major/middle, middle/minor, and minor/sub should always have a
+        // defined numerator.
+        m_problem.UpdateProblemCode(FormatProblemCode::CVS_InconsistentUnitSet);
         return 0;
         }
 
-    double rat;
-    unit->Convert(rat, 1.0, subunit);
-    if (FormatConstant::IsNegligible(fabs(rat - floor(rat))))
-        return static_cast<size_t>(rat);
-    else
-        UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
+    if (upper->GetPhenomenon() != lower->GetPhenomenon())
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
+        return 0;
+        }
 
+    double ratio;
+    upper->Convert(ratio, 1.0, lower);
+    if (FormatConstant::IsNegligible(fabs(ratio - floor(ratio))))
+        return static_cast<size_t>(ratio);
+    m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidUnitCombination);
     return 0;
     }
 
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
 void CompositeValueSpec::CalculateUnitRatios()
     {
-    m_type = CompositeSpecType::Undefined;
-    size_t ratioBits = 0; // the proper combinations are 0x1, 0x3, 0x7
     memset(m_ratio, 0, sizeof(m_ratio));
-    m_ratio[indxMajor] = CalculateUnitRatio(GetUnit(indxMajor), GetUnit(indxMiddle));
-
-    if (NoProblem())
+    for (size_t indx = indxMajor; indx < GetUnitCount()-1; ++indx)
         {
-        if (1 < m_ratio[indxMajor]) ratioBits |= 0x1;
-        m_ratio[indxMiddle] = CalculateUnitRatio(indxMiddle, indxMinor);
-        if (1 < m_ratio[indxMiddle]) ratioBits |= 0x2;
-        if (NoProblem())
-            {
-            m_ratio[indxMinor] = CalculateUnitRatio(indxMinor, indxSub);
-            if (1 < m_ratio[indxMinor]) ratioBits |= 0x4;
-            switch (ratioBits)
-                {
-                case 0x3:
-                    m_type = CompositeSpecType::Triple;
-                    break;
-                case 0x7:
-                    m_type = CompositeSpecType::Quatro;
-                    break;
-                case 0x1:
-                    m_type = CompositeSpecType::Double;
-                    break;
-                case 0:
-                    m_type = CompositeSpecType::Single;
-                    break;
-                default:
-                    UpdateProblemCode(FormatProblemCode::CNS_InconsistentFactorSet);
-                    break;
-                }
-            }
+        m_ratio[indx] = CalculateUnitRatio(GetUnit(indx), GetUnit(indx+1));
+        if (IsProblem())
+            break;
+        if (m_ratio[indx] < 1)
+            m_problem.UpdateProblemCode(FormatProblemCode::CVS_InconsistentFactorSet);
         }
     }
 
@@ -116,7 +151,7 @@ void CompositeValueSpec::CalculateUnitRatios()
 //---------------------------------------------------------------------------------------
 void CompositeValueSpec::SetUnitLabel(size_t index, Utf8CP label)
     {
-    if (!IsIndexCorrect(index))
+    if (!IsIndexValid(index))
         return;
 
     auto proxy = GetProxyP(index);
@@ -130,7 +165,7 @@ void CompositeValueSpec::SetUnitLabel(size_t index, Utf8CP label)
 //---------------------------------------------------------------------------------------
 Utf8CP CompositeValueSpec::GetUnitLabel(size_t index, Utf8CP substitute) const
     {
-    if (!IsIndexCorrect(index))
+    if (!IsIndexValid(index))
         return substitute;
 
     auto proxy = GetProxyP(index);
@@ -165,12 +200,12 @@ Utf8String CompositeValueSpec::GetEffectiveLabel(size_t indx) const
 //---------------------------------------------------------------------------------------
 BEU::UnitCP CompositeValueSpec::GetSmallestUnit() const
     {
-    switch (m_type)
+    switch (GetUnitCount())
         {
-        case CompositeSpecType::Single: return GetUnit(indxMajor);
-        case CompositeSpecType::Double: return GetUnit(indxMiddle);
-        case CompositeSpecType::Triple: return GetUnit(indxMinor);
-        case CompositeSpecType::Quatro: return GetUnit(indxSub);
+        case 1: return GetUnit(indxMajor);
+        case 2: return GetUnit(indxMiddle);
+        case 3: return GetUnit(indxMinor);
+        case 4: return GetUnit(indxSub);
         default: return nullptr;
         }
     }
@@ -186,32 +221,6 @@ Utf8CP CompositeValueSpec::GetUnitName(size_t indx, Utf8CP substitute) const
 
     Utf8CP name = proxy->GetName();
     return Utf8String::IsNullOrEmpty(name) ? substitute : name;
-    }
-
-//---------------------------------------------------------------------------------------
-// Constructor
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//---------------------------------------------------------------------------------------
-CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit)
-    : CompositeValueSpec()
-    {
-    int count = 0;
-    if (nullptr != majorUnit)
-        count += 1;
-    if (nullptr != middleUnit)
-        count += 1;
-    if (nullptr != minorUnit)
-        count += 1;
-    if (nullptr != subUnit)
-        count += 1;
-
-    m_proxys.resize(count);
-
-    SetUnit(indxMajor, majorUnit);
-    SetUnit(indxMiddle, middleUnit);
-    SetUnit(indxMinor, minorUnit);
-    SetUnit(indxSub, subUnit);
-    CalculateUnitRatios();
     }
 
 //---------------------------------------------------------------------------------------
@@ -231,11 +240,11 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
         dval = -dval;
         }
 
-    if (NoProblem())  // don't try to decompose if the spec is not valid
+    if (!IsProblem())  // don't try to decompose if the spec is not valid
         {
         if (BEU::Unit::AreCompatible(uom, smallest))
             {
-            UpdateProblemCode(FormatProblemCode::CNS_UncomparableUnits);
+            m_problem.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
             }
         else
             {
@@ -248,23 +257,23 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
             else
                 smallQ = BEU::Quantity(dval, *smallest);
 
-            switch (m_type)
+            switch (GetUnitCount())
                 {
-                case CompositeSpecType::Single: // smallQ already has the converted value
+                case 1: // smallQ already has the converted value
                     cv.SetMajor(smallQ.GetMagnitude());
                     break;
-                case CompositeSpecType::Double:
+                case 2:
                     cv.SetMajor(floor(smallQ.GetMagnitude()/ (double)m_ratio[indxMajor]));
                     cv.SetMiddle(smallQ.GetMagnitude() - cv.GetMajor() * (double)m_ratio[indxMajor]);
                     break;
-                case CompositeSpecType::Triple:
+                case 3:
                     majorMinor = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle]);
                     cv.SetMajor(floor((smallQ.GetMagnitude() + FormatConstant::FPV_RoundFactor()) / majorMinor));
                     rem = smallQ.GetMagnitude() - cv.GetMajor() * majorMinor;
                     cv.SetMiddle(floor((rem + FormatConstant::FPV_RoundFactor()) / (double)m_ratio[indxMiddle]));
                     cv.SetMinor(rem - cv.GetMiddle() * (double)m_ratio[indxMiddle]);
                     break;
-                case CompositeSpecType::Quatro:
+                case 4:
                     majorSub = (double)(m_ratio[indxMajor] * m_ratio[indxMiddle] * m_ratio[indxMinor]);
                     middleSub = (double)(m_ratio[indxMiddle] * m_ratio[indxMinor]);
                     cv.SetMajor(floor((smallQ.GetMagnitude() + FormatConstant::FPV_RoundFactor()) / majorSub));
@@ -288,9 +297,10 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
 bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
     {
     // TODO compare UnitProxies
-    return m_problem.GetProblemCode() == other.m_problem.GetProblemCode() &&
-        m_type == other.m_type && m_includeZero != other.m_includeZero &&
-        m_spacer.Equals(other.m_spacer);
+    return m_problem.GetProblemCode() == other.m_problem.GetProblemCode()
+        && GetUnitCount() == other.GetUnitCount()
+        && m_includeZero == other.m_includeZero
+        && m_spacer.Equals(other.m_spacer);
     }
 
 //--------------------------------------------------------------------------------------
@@ -302,21 +312,21 @@ Json::Value CompositeValueSpec::ToJson() const
     bool valid = false;
     bvector<Utf8CP> keyNames;
     UnitProxyCP proxP;
-    switch (m_type)
+    switch (GetUnitCount())
         {
-        case CompositeSpecType::Quatro:
+        case 4:
             proxP = GetProxy(indxSub);
             if(!proxP->IsEmpty())
                 jCVS[json_SubUnit()] = proxP->ToJson();
-        case CompositeSpecType::Triple:
+        case 3:
             proxP = GetProxy(indxMinor);
             if (!proxP->IsEmpty())
                 jCVS[json_MinorUnit()] = proxP->ToJson();
-        case CompositeSpecType::Double:
+        case 2:
             proxP = GetProxy(indxMiddle);
             if (!proxP->IsEmpty())
                 jCVS[json_MiddleUnit()] = proxP->ToJson();
-        case CompositeSpecType::Single: // smallQ already has the converted value
+        case 1: // smallQ already has the converted value
             proxP = GetProxy(indxMajor);
             if (!proxP->IsEmpty())
                 {

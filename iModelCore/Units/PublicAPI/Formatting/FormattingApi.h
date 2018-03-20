@@ -532,21 +532,19 @@ private:
     static size_t const indxSub    = 3;
 
     size_t m_ratio[indxSub];
-    CompositeSpecType m_type;
     bool m_includeZero; // Not currently used in the formatting code.
     Utf8String m_spacer;
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
 
-    //! The Ratio between Units must be a positive integer number. Otherwise forming a triad is not
-    //! possible (within the current triad concept). This function will return -1 if Units do not qualify:
+    //! Returns the unit ratio of upper/lower.
+    //! Lower may be set to nullptr, indicating the lower unit is not set on the CVS.
+    //! This function will set an error FormatProblemCode if:
     //!     1. Units do not belong to the same Phenomenon
-    //!     2. Ratio of major/minor < 1
-    //!     3. Ratio of major/minor is not an integer (within intrinsically defined tolerance)
+    //!     2. The unit ratios major/middle, middle/minor, and minor/sub are not positive integers.
+    //!     3. Upper is a null pointer (invalid CVS).
     size_t CalculateUnitRatio(BEU::UnitCP upper, BEU::UnitCP lower);
-    size_t CalculateUnitRatio(size_t uppIndx, size_t lowIndx) {return  CalculateUnitRatio(GetUnit(uppIndx), GetUnit(lowIndx));}
-    void ResetType() { m_type = CompositeSpecType::Undefined; }
-    //! Checks comparability and calculates ratios between UOM of the parts and checks their consistency
+    //! Calculate/set all unit ratios within this CVS.
     void CalculateUnitRatios();
 
     Utf8CP GetUnitName(size_t indx, Utf8CP substitute = nullptr) const;
@@ -555,7 +553,7 @@ private:
     UNITS_EXPORT Utf8String GetEffectiveLabel(size_t indx) const;
     BEU::UnitCP GetSmallestUnit() const;
 
-    UnitProxyP GetProxyP(size_t indx) const {return IsIndexCorrect(indx) ? &m_proxys[indx] : nullptr;}
+    UnitProxyP GetProxyP(size_t indx) const {return IsIndexValid(indx) ? &m_proxys[indx] : nullptr;}
     UnitProxyCP GetProxy(size_t indx) const {return GetProxyP(indx);}
     BEU::UnitCP GetUnit(size_t indx) const
         {
@@ -564,21 +562,23 @@ private:
             return nullptr;
         return proxy->GetUnit();
         }
-    bool SetUnit(size_t indx, BEU::UnitCP unitP) {return IsIndexCorrect(indx) ? m_proxys[indx].SetUnit(unitP) : false;}
-    bool IsIndexCorrect(size_t indx) const { return indx < m_proxys.size(); }
+    bool IsIndexValid(size_t indx) const { return indx < m_proxys.size(); }
 
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
 public:
     // TODO: Attempt to remove these methods from the public API================
     UNITS_EXPORT void LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP context);
     // !TODO====================================================================
 
     UNITS_EXPORT CompositeValueSpec();
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit);
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit);
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit);
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
+
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
 
-    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit=nullptr, BEU::UnitCP minorUnit=nullptr, BEU::UnitCP subUnit = nullptr);
-
-    CompositeSpecType GetType() const {return m_type;}
     size_t GetUnitCount() const {return m_proxys.size();}
 
     BEU::UnitCP GetMajorUnit()  const {return GetUnit(indxMajor);}
@@ -596,10 +596,8 @@ public:
     size_t GetMiddleToMinorRatio() const {return m_ratio[indxMiddle];}
     size_t GetMinorToSubRatio()    const {return m_ratio[indxMinor];}
 
-    bool UpdateProblemCode(FormatProblemCode code) {return m_problem.UpdateProblemCode(code);}
-    Utf8CP GetProblemDescription() const {return m_problem.GetProblemDescription().c_str();}
     bool IsProblem() const {return m_problem.IsProblem();}
-    bool NoProblem() const {return m_problem.NoProblem();}
+    Utf8CP GetProblemDescription() const {return m_problem.GetProblemDescription().c_str();}
 
     Utf8String SetSpacer(Utf8CP spacer) {return m_spacer = spacer;}
     Utf8String GetSpacer() const {return m_spacer;}
@@ -608,7 +606,7 @@ public:
     bool IsIncludeZero() const {return m_includeZero;}
 
     //! If uom is not provided we assume that the value is defined in the smallest units defined
-    //! in the current spec. 
+    //! in the current spec.
     UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
 
     UNITS_EXPORT Json::Value ToJson() const;
@@ -620,7 +618,7 @@ public:
 struct CompositeValue
 {
 private:
-    static const size_t  indxInput = 4;
+    static size_t const indxInput = 4;
     bool m_negative;
     double m_parts[5];
     FormatProblemDetail m_problem;
@@ -701,10 +699,10 @@ public:
 
     FormatSpecType GetSpecType() { return m_specType; }
     //! Returns true if this NamedFormatSpec contains a NumericFormatSpec.
-    bool HasNumeric() const { return HasComposite() || FormatSpecType::Numeric == m_specType; }
+    UNITS_EXPORT bool HasNumeric() const;
     //! Returns true if this NamedFormatSpec containst a CompositeFormatSpec.
     //! A NamedFormatSpec that contains a CompositeValueSpec will also contain a NumericFormatSpec.
-    bool HasComposite() const { return FormatSpecType::Composite == m_specType; }
+    UNITS_EXPORT bool HasComposite() const;
 
     //! Returns a const pointer to this NamedFormatSpec's NumericFormatSpec if it exists.
     //! Returns nullptr if no NumericFormatSpec is defined.
@@ -768,7 +766,7 @@ public:
     FormatUnitSet() : m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemCode::NotInitialized) {}
     FormatUnitSet(BEU::UnitCP unit) : FormatUnitSet(nullptr, unit) {}
     FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit) : FormatUnitSet(format, unit, false) {}
-    FormatUnitSet(FormatUnitSetCR other) : m_formatSpec(other.m_formatSpec), m_unitName(other.m_unitName), m_unit(other.m_unit), m_problem(other.m_problem) {}
+    UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
     UNITS_EXPORT FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cloneData);
 
     UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
