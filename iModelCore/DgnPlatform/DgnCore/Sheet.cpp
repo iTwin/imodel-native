@@ -397,6 +397,31 @@ void Sheet::ViewController::Attachments::UpdateAllLoaded()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewController::Attachments::InitBoundingBoxColors()
+    {
+    static ColorDef s_colors[] =
+        {
+        ColorDef::DarkOrange(),
+        ColorDef::DarkBlue(),
+        ColorDef::DarkRed(),
+        ColorDef::DarkCyan(),
+        ColorDef::DarkYellow(),
+        ColorDef::DarkMagenta(),
+        ColorDef::DarkBrown(),
+        ColorDef::DarkGrey(),
+        };
+
+    for (size_t i = 0; i < size(); i++)
+        {
+        auto tree = m_list[i].GetTree();
+        if (nullptr != tree)
+            tree->m_boundingBoxColor = s_colors[i % _countof(s_colors)];
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::Attachment::SetState(uint32_t depth, State state)
     {
     while (m_states.size() < depth+1)
@@ -740,6 +765,9 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
             }
 
         BeAssert(m_attachments.AllLoaded()); // ###TODO: remove this when we switch to loading incrementally
+
+        if (m_attachments.AllLoaded())
+            m_attachments.InitBoundingBoxColors();
         }
 
     for (auto& attach : m_attachments)
@@ -943,7 +971,7 @@ void Sheet::Attachment::Tile::_DrawGraphics(DrawArgsR args) const
 
     GraphicParams params;
     params.SetWidth(0);
-    ColorDef color = ColorDef::DarkOrange();
+    ColorDef color = GetTree().m_boundingBoxColor;
     params.SetLineColor(color);
     params.SetFillColor(color);
 

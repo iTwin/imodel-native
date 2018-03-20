@@ -313,6 +313,7 @@ namespace Attachment
         DEFINE_T_SUPER(TileTree::Root);
 
         ColorDef m_tileColor = ColorDef::White();
+        ColorDef m_boundingBoxColor = ColorDef::DarkOrange();
         DgnElementId m_attachmentId;
         RefCountedPtr<Viewport> m_viewport;
         double m_biasDistance;
@@ -463,6 +464,7 @@ protected:
 
         void Add(Attachment&& src);
         bool LoadTree(size_t index, DgnDbR db, ViewController& sheetController, SceneContextR context);
+        void InitBoundingBoxColors();
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
