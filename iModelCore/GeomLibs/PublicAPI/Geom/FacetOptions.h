@@ -733,14 +733,6 @@ GEOMDLLIMPEXP void AddRotationalSweep (CurveVectorPtr, DPoint3dCR center, DVec3d
 //! Add (triangulation of) the region bounded by a curve vector.
 GEOMDLLIMPEXP void AddRegion (CurveVectorCR region);
 
-//! Add (triangulation of) the region bounded by a curve vector, viewing in XY, with additional non-bounding linework controlling Z
-GEOMDLLIMPEXP void AddRegionXY
-(
-CurveVectorCR region,               //!< [in] region boundary.
-CurveVectorCR nonBoundingLineWork,  //!< [in] optional additional curves (e.g. a CurveVector with BOUNDARY_TYPE_None) that imposes interior Z data.
-IFacetOptionsCP strokeOptions = nullptr       //!< [in] options for stroking
-);
-
 //! Stroke with facet options from the PolyfaceConstruction.
 //! Return false if not a simple loop.
 //! @remark points are doubled at hard corners (so the incoming and outgoing tangents can be distinguished)

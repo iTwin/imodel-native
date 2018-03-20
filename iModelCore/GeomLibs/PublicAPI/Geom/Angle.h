@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/Angle.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,6 +42,9 @@ public:
 
     //! Strongly typed "constructor" (static method)
     static Angle FromAtan2(double sine, double cosine) {return Atan2(sine, cosine);}
+
+    //! Strongly typed "constructor" (static method) for full circle angle
+    static Angle FromFullCircle() {return Angle (msGeomConst_2pi);}
 
     //! return the sine of the angle.
     GEOMDLLIMPEXP double Sin() const;

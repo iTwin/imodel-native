@@ -29,6 +29,8 @@ $(o)SampleGeometry$(oext)   : $(testDir)src/SampleGeometry.cpp
 
 $(o)checkers$(oext)         : $(testDir)src/checkers.cpp 
 
+$(o)FileOps$(oext)         : $(testDir)src/FileOps.cpp 
+
 %if $(TARGET_PLATFORM)=="Windows"  # *** WIP_NONPORT
     $(o)GeomLibsTestOutputFiles$(oext) : $(testDir)src/GeomLibsTestOutputFiles.cpp
 %endif
