@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailAlignment/AlignmentReferent.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,17 +17,17 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //! Known location along an Alignment.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct AlignmentReferentElement : Dgn::SpatialLocationElement, LinearReferencing::ILinearlyLocatedElement, LinearReferencing::IReferent, LinearReferencing::ILinearlyLocatedSingleAt
+struct LinearlyLocatedReferentElement : Dgn::SpatialLocationElement, LinearReferencing::ILinearlyLocatedElement, LinearReferencing::IReferent, LinearReferencing::ILinearlyLocatedSingleAt
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, Dgn::SpatialLocationElement);
-    friend struct AlignmentReferentElementHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_LinearlyLocatedReferentElement, Dgn::SpatialLocationElement);
+    friend struct LinearlyLocatedReferentElementHandler;
 
 protected:
     //! @private
-    explicit AlignmentReferentElement(CreateParams const& params) : T_Super(params) {}
+    explicit LinearlyLocatedReferentElement(CreateParams const& params) : T_Super(params) {}
 
     //! @private
-    explicit AlignmentReferentElement(CreateParams const& params, double distanceAlong);
+    explicit LinearlyLocatedReferentElement(CreateParams const& params, double distanceAlong);
 
     virtual LinearReferencing::ILinearlyLocatedElementCP _ToLinearlyLocatedElement() const { return this; }
     virtual Dgn::DgnElementCR _IReferentToDgnElement() const override { return *this; }
@@ -36,18 +36,18 @@ protected:
     virtual LinearReferencing::NullableDouble _GetRestartValue() const override { return LinearReferencing::NullableDouble(); }
 
 public:
-    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentReferentElement)
+    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(LinearlyLocatedReferentElement)
 
     ROADRAILALIGNMENT_EXPORT LinearReferencing::ILinearlyLocatedElementCP ToLinearlyLocatedElement() const { return _ToLinearlyLocatedElement(); }
-}; // AlignmentReferentElement
+}; // LinearlyLocatedReferentElement
 
 //=======================================================================================
 //! Well-known station along an alignment.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct AlignmentStation : AlignmentReferentElement
+struct AlignmentStation : LinearlyLocatedReferentElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentStation, AlignmentReferentElement);
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentStation, LinearlyLocatedReferentElement);
     friend struct AlignmentStationHandler;
 
 protected:
@@ -92,18 +92,18 @@ public:
 //! ElementHandler for AlignmentReferent Elements
 //! @ingroup GROUP_RoadRailAlignment
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AlignmentReferentElementHandler : Dgn::dgn_ElementHandler::SpatialLocation
+struct EXPORT_VTABLE_ATTRIBUTE LinearlyLocatedReferentElementHandler : Dgn::dgn_ElementHandler::SpatialLocation
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, AlignmentReferentElement, AlignmentReferentElementHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
-}; //AlignmentReferentElementHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_LinearlyLocatedReferentElement, LinearlyLocatedReferentElement, LinearlyLocatedReferentElementHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
+}; //LinearlyLocatedReferentElementHandler
 
 //=================================================================================
 //! ElementHandler for AlignmentStation Elements
 //! @ingroup GROUP_RoadRailAlignment
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AlignmentStationHandler : AlignmentReferentElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE AlignmentStationHandler : LinearlyLocatedReferentElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentStation, AlignmentStation, AlignmentStationHandler, AlignmentReferentElementHandler, ROADRAILALIGNMENT_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentStation, AlignmentStation, AlignmentStationHandler, LinearlyLocatedReferentElementHandler, ROADRAILALIGNMENT_EXPORT)
 }; //AlignmentStationHandler
 
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

@@ -101,7 +101,7 @@
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="AlignmentReferentElement" modifier="Abstract" description="Base class for concrete implementations of IReferent in the context of Alignments.">
+    <ECEntityClass typeName="LinearlyLocatedReferentElement" modifier="Abstract" description="Base class for concrete implementations of IReferent that are Spatially-located as well as linearly-located.">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
         <BaseClass>lr:IReferent</BaseClass>
@@ -110,7 +110,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="AlignmentStation" modifier="Sealed" description="Well-known location along a Linear-Element, with a specific Station value assigned to it.">
-        <BaseClass>AlignmentReferentElement</BaseClass>
+        <BaseClass>LinearlyLocatedReferentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -122,7 +122,7 @@
             <Class class="Alignment"/>
         </Source>
         <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is owned by">
-            <Class class="AlignmentReferentElement"/>
+            <Class class="LinearlyLocatedReferentElement"/>
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="AlignmentProfileViewDefinition" description="A specialized view for vertical alignments.">
