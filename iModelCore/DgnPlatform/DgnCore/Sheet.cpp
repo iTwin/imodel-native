@@ -1194,7 +1194,12 @@ Sheet::Attachment::Tile::Tile(RootR root, TileCP parent, Placement placement) : 
     uint32_t dim = querySheetTilePixels();
     m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(dim, dim));
 
-    DRange3d fullRange = parent != nullptr ? parent->GetRange() : tree.GetRootRange();
+    DRange3d fullRange;
+    if (nullptr != parent)
+        fullRange = parent->GetRange();
+    else
+        fullRange = tree.GetRootRange();
+
     double z = fullRange.low.z; // all Zs should match
     DPoint3d mid = DPoint3d::FromInterpolate(fullRange.low, 0.5, fullRange.high);
 
