@@ -3476,6 +3476,9 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnMo
         if (viewedModels.empty())
             continue;
 
+        if (view->IsSpatialView())
+            continue; // WIP - we will publish these differently - for now just skip.
+
         // ###TODO: Spatial view attachments with multiple models unhandled...
         DgnModelId baseModelId = *viewedModels.begin();
         attachedModels.insert(baseModelId);
@@ -3752,7 +3755,11 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
                 auto attachId = stmt->GetValueId<DgnElementId>(0);
                 auto attach = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
                 if (attach.IsValid())
-                    GetViewedModelsFromView(viewedModels, attach->GetAttachedViewId(), false); // view attachments don't nest...
+                    {
+                    // Exclude spatial views...publish as raster tiles directly into sheet tileset.
+                    if (GetDgnDb().Elements().Get<ViewDefinition2d>(attach->GetAttachedViewId()).IsValid())
+                        GetViewedModelsFromView(viewedModels, attach->GetAttachedViewId(), false); // view attachments don't nest...
+                    }
                 }
             }
         }
