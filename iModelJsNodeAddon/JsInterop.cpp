@@ -360,6 +360,50 @@ void JsInterop::AbandonCreateChangeSet(DgnDbR dgndb)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              03/18
+//---------------------------------------------------------------------------------------
+void ConvertCodeToJson(JsonValueR json, DgnCodeCR code, int codeState)
+    {
+    json = Json::objectValue;
+    json["codeSpecId"] = code.GetCodeSpecId().ToString(BeInt64Id::UseHex::Yes);
+    json["codeScope"] = code.GetScopeString();
+    json["value"] = code.GetValueUtf8();
+    json["state"] = codeState;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              03/18
+//---------------------------------------------------------------------------------------
+void ConvertCodeSetToJson(JsonValueR json, DgnCodeSet const& codes, int codeState)
+    {
+    int i = json.size();
+    for (DgnCodeCR code : codes)
+        {
+        ConvertCodeToJson(json[i++], code, codeState);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Karolis.Dziedzelis              03/18
+//---------------------------------------------------------------------------------------
+DbResult JsInterop::ExtractCodes(JsonValueR codes, DgnDbR dgndb)
+    {
+    RevisionManagerR revisions = dgndb.Revisions();
+
+    if (!revisions.IsCreatingRevision())
+        return BE_SQLITE_ERROR;
+
+    DgnCodeSet usedCodes;
+    DgnCodeSet discardedCodes;
+    revisions.GetCreatingRevision()->ExtractCodes(usedCodes, discardedCodes, dgndb);
+
+    codes = Json::arrayValue;
+    ConvertCodeSetToJson(codes, usedCodes, 2);
+    ConvertCodeSetToJson(codes, discardedCodes, 3);
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 09/17
 //---------------------------------------------------------------------------------------
 DbResult JsInterop::SetupBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken)

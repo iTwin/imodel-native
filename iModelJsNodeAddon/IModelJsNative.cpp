@@ -818,7 +818,20 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
     void AbandonCreateChangeSet(const Napi::CallbackInfo& info)
         {
+        if (!m_dgndb.IsValid())
+            return;
+            
         JsInterop::AbandonCreateChangeSet(*m_dgndb);
+        }
+
+    Napi::Value ExtractCodes(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
+
+        Json::Value codes;
+        DbResult result = JsInterop::ExtractCodes(codes, *m_dgndb);
+        return CreateBentleyReturnObject(result, Napi::String::New(Env(), codes.ToString().c_str()));
         }
 
     Napi::Value GetCachedBriefcaseInfos(const Napi::CallbackInfo& info)
@@ -1332,6 +1345,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("startCreateChangeSet", &NativeDgnDb::StartCreateChangeSet),
             InstanceMethod("finishCreateChangeSet", &NativeDgnDb::FinishCreateChangeSet),
             InstanceMethod("abandonCreateChangeSet", &NativeDgnDb::AbandonCreateChangeSet),
+            InstanceMethod("extractCodes", &NativeDgnDb::ExtractCodes),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
