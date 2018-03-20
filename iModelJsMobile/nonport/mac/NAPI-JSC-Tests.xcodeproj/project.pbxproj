@@ -24,6 +24,7 @@
 		2643538C20533151002BC516 /* JsInteropBriefcaseManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2643538820533151002BC516 /* JsInteropBriefcaseManager.cpp */; };
 		2643538D20533151002BC516 /* JsInterop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2643538920533151002BC516 /* JsInterop.cpp */; };
 		2643538E20533151002BC516 /* JsInteropDgnDb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2643538A20533151002BC516 /* JsInteropDgnDb.cpp */; };
+		26495F6E206133F800C80C0E /* Test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26495F6D206133F800C80C0E /* Test.cpp */; };
 		264B798C20499C15001D22C2 /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 264B798820499A50001D22C2 /* libDgnPlatform.a */; };
 		264B798D20499C15001D22C2 /* pskernel_archive.lib in Frameworks */ = {isa = PBXBuildFile; fileRef = 264B798A20499AAB001D22C2 /* pskernel_archive.lib */; };
 		264B79AC20499C16001D22C2 /* libgtest.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 264B798E20499C15001D22C2 /* libgtest.a */; };
@@ -102,6 +103,8 @@
 		2643538820533151002BC516 /* JsInteropBriefcaseManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropBriefcaseManager.cpp; path = ../../../../iModelJsNodeAddon/JsInteropBriefcaseManager.cpp; sourceTree = "<group>"; };
 		2643538920533151002BC516 /* JsInterop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInterop.cpp; path = ../../../../iModelJsNodeAddon/JsInterop.cpp; sourceTree = "<group>"; };
 		2643538A20533151002BC516 /* JsInteropDgnDb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropDgnDb.cpp; path = ../../../../iModelJsNodeAddon/JsInteropDgnDb.cpp; sourceTree = "<group>"; };
+		26495F6C206133F800C80C0E /* Test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Test.h; path = ../../Test.h; sourceTree = "<group>"; };
+		26495F6D206133F800C80C0E /* Test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Test.cpp; path = ../../Test.cpp; sourceTree = "<group>"; };
 		264B798620499A37001D22C2 /* Delivery */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Delivery; path = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/DgnPlatform/Delivery"; sourceTree = "<group>"; };
 		264B798820499A50001D22C2 /* libDgnPlatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libDgnPlatform.a; path = "$(OutRoot)$(BuildArchitecture)/static/build/DgnPlatform/DgnPlatform/libDgnPlatform.a"; sourceTree = "<group>"; };
 		264B798A20499AAB001D22C2 /* pskernel_archive.lib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = pskernel_archive.lib; path = ../../../thirdparty/psolid_30_1_168_MacOSx64/lib/pskernel_archive.lib; sourceTree = "<group>"; };
@@ -256,6 +259,8 @@
 		26DF23B22037601A001FE257 /* NAPI-JSC-Tests */ = {
 			isa = PBXGroup;
 			children = (
+				26495F6D206133F800C80C0E /* Test.cpp */,
+				26495F6C206133F800C80C0E /* Test.h */,
 				2643538720533150002BC516 /* IModelJsNative.cpp */,
 				2643538920533151002BC516 /* JsInterop.cpp */,
 				2643538820533151002BC516 /* JsInteropBriefcaseManager.cpp */,
@@ -351,6 +356,7 @@
 				261908562049CCF300EC17F9 /* ServicesTierHost.cpp in Sources */,
 				2619085B2049CCF300EC17F9 /* ServicesTierExtension.cpp in Sources */,
 				261908552049CCF300EC17F9 /* Utilities.cpp in Sources */,
+				26495F6E206133F800C80C0E /* Test.cpp in Sources */,
 				2643538D20533151002BC516 /* JsInterop.cpp in Sources */,
 				261908582049CCF300EC17F9 /* node_api.cc in Sources */,
 				269489682051D9D90062429D /* ECSchemaXmlContextUtils.cpp in Sources */,

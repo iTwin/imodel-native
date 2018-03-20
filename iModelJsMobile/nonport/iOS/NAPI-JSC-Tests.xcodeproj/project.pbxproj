@@ -7,82 +7,69 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		262B4E66206044D400BAAB20 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 262B4E65206044D400BAAB20 /* AppDelegate.m */; };
-		262B4E69206044D400BAAB20 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 262B4E68206044D400BAAB20 /* ViewController.m */; };
 		262B4E6C206044D400BAAB20 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E6A206044D400BAAB20 /* Main.storyboard */; };
 		262B4E6E206044D400BAAB20 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E6D206044D400BAAB20 /* Assets.xcassets */; };
 		262B4E71206044D400BAAB20 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E6F206044D400BAAB20 /* LaunchScreen.storyboard */; };
 		262B4E74206044D400BAAB20 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 262B4E73206044D400BAAB20 /* main.m */; };
-		262B4E7B206045AC00BAAB20 /* Assets in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E7A206045AC00BAAB20 /* Assets */; };
 		262B4E7D2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */; };
 		262B4E802060475B00BAAB20 /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E7F2060475B00BAAB20 /* CoreFoundation.framework */; };
 		262B4E822060476000BAAB20 /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E812060476000BAAB20 /* JavaScriptCore.framework */; };
 		262B4E842060476500BAAB20 /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E832060476500BAAB20 /* CFNetwork.framework */; };
-		262B4EA72060479D00BAAB20 /* log4j.dtd in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E852060479C00BAAB20 /* log4j.dtd */; };
-		262B4EA82060479D00BAAB20 /* libBeOpenSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E862060479C00BAAB20 /* libBeOpenSSL.a */; };
-		262B4EA92060479D00BAAB20 /* libECObjects.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E872060479C00BAAB20 /* libECObjects.a */; };
-		262B4EAA2060479D00BAAB20 /* libBentleyGeom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E882060479C00BAAB20 /* libBentleyGeom.a */; };
-		262B4EAB2060479D00BAAB20 /* libBeLibxml2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E892060479C00BAAB20 /* libBeLibxml2.a */; };
-		262B4EAC2060479D00BAAB20 /* libBaseGeoCoord.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8A2060479C00BAAB20 /* libBaseGeoCoord.a */; };
-		262B4EAD2060479D00BAAB20 /* libBeHttp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8B2060479C00BAAB20 /* libBeHttp.a */; };
-		262B4EAE2060479D00BAAB20 /* libBeXml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8C2060479C00BAAB20 /* libBeXml.a */; };
-		262B4EAF2060479D00BAAB20 /* liblibapr010502.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8D2060479C00BAAB20 /* liblibapr010502.a */; };
-		262B4EB02060479D00BAAB20 /* libBeLibJpegTurbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8E2060479C00BAAB20 /* libBeLibJpegTurbo.a */; };
-		262B4EB12060479D00BAAB20 /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8F2060479C00BAAB20 /* libDgnPlatform.a */; };
-		262B4EB22060479D00BAAB20 /* libfreetype2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E902060479C00BAAB20 /* libfreetype2.a */; };
-		262B4EB32060479D00BAAB20 /* libBentleyGeomSerialization.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E912060479C00BAAB20 /* libBentleyGeomSerialization.a */; };
-		262B4EB42060479D00BAAB20 /* libBeZlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E922060479C00BAAB20 /* libBeZlib.a */; };
-		262B4EB52060479D00BAAB20 /* libBePng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E932060479C00BAAB20 /* libBePng.a */; };
-		262B4EB62060479D00BAAB20 /* libBeCsmapStatic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E942060479C00BAAB20 /* libBeCsmapStatic.a */; };
-		262B4EB82060479D00BAAB20 /* libBeJpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E962060479C00BAAB20 /* libBeJpeg.a */; };
-		262B4EB92060479D00BAAB20 /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E972060479C00BAAB20 /* liblzma.a */; };
-		262B4EBA2060479D00BAAB20 /* libBeFolly.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E982060479C00BAAB20 /* libBeFolly.a */; };
-		262B4EBB2060479D00BAAB20 /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E992060479C00BAAB20 /* libBentley.a */; };
-		262B4EBC2060479D00BAAB20 /* libBeSQLiteEC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9A2060479D00BAAB20 /* libBeSQLiteEC.a */; };
-		262B4EBD2060479D00BAAB20 /* libbentleylog4cxx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9B2060479D00BAAB20 /* libbentleylog4cxx.a */; };
-		262B4EBE2060479D00BAAB20 /* libECPresentation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9C2060479D00BAAB20 /* libECPresentation.a */; };
-		262B4EBF2060479D00BAAB20 /* libliblog4cxx010.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9D2060479D00BAAB20 /* libliblog4cxx010.a */; };
-		262B4EC02060479D00BAAB20 /* libsnappy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9E2060479D00BAAB20 /* libsnappy.a */; };
-		262B4EC12060479D00BAAB20 /* libBeIcu4c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9F2060479D00BAAB20 /* libBeIcu4c.a */; };
-		262B4EC22060479D00BAAB20 /* libUnits.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA02060479D00BAAB20 /* libUnits.a */; };
-		262B4EC32060479D00BAAB20 /* libBeJsonCpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA12060479D00BAAB20 /* libBeJsonCpp.a */; };
-		262B4EC42060479D00BAAB20 /* libBeJavaScript.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA22060479D00BAAB20 /* libBeJavaScript.a */; };
-		262B4EC62060479D00BAAB20 /* libBeCurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA42060479D00BAAB20 /* libBeCurl.a */; };
-		262B4EC72060479D00BAAB20 /* liblibaprutil010504.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA52060479D00BAAB20 /* liblibaprutil010504.a */; };
-		262B4EC82060479D00BAAB20 /* libBeSQLite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA62060479D00BAAB20 /* libBeSQLite.a */; };
-		262B4ED62060487100BAAB20 /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ECB2060487100BAAB20 /* Utilities.cpp */; };
-		262B4ED92060487100BAAB20 /* node_api.cc in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ECF2060487100BAAB20 /* node_api.cc */; };
-		262B4EDA2060487100BAAB20 /* node_internals.cc in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ED02060487100BAAB20 /* node_internals.cc */; };
-		262B4EDB2060487100BAAB20 /* ServicesTierNodeHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ED12060487100BAAB20 /* ServicesTierNodeHost.cpp */; };
-		262B4EDD2060487100BAAB20 /* ServicesTierScripts.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4ED32060487100BAAB20 /* ServicesTierScripts.cpp */; };
-		262B4EEC206055E400BAAB20 /* Test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 262B4EEA206055E400BAAB20 /* Test.cpp */; };
-		26E0497320605B0400D8FDCE /* ServicesTierUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0496E20605B0400D8FDCE /* ServicesTierUtilities.cpp */; };
-		26E0497420605B0400D8FDCE /* ServicesTierEnvironment.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0496F20605B0400D8FDCE /* ServicesTierEnvironment.cpp */; };
-		26E0497520605B0400D8FDCE /* ServicesTierUvHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497020605B0400D8FDCE /* ServicesTierUvHost.cpp */; };
-		26E0497620605B0400D8FDCE /* ServicesTierHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497120605B0400D8FDCE /* ServicesTierHost.cpp */; };
-		26E0497720605B0400D8FDCE /* ServicesTierExtension.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497220605B0400D8FDCE /* ServicesTierExtension.cpp */; };
-		26E0497820605B6500D8FDCE /* libuv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA32060479D00BAAB20 /* libuv.a */; };
-		26E0498020605E1D00D8FDCE /* ECPresentationUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497920605E1C00D8FDCE /* ECPresentationUtils.cpp */; };
-		26E0498120605E1D00D8FDCE /* IModelJsNative.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497A20605E1C00D8FDCE /* IModelJsNative.cpp */; };
-		26E0498220605E1D00D8FDCE /* JsInteropBriefcaseManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497B20605E1C00D8FDCE /* JsInteropBriefcaseManager.cpp */; };
-		26E0498320605E1D00D8FDCE /* TestUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497C20605E1C00D8FDCE /* TestUtils.cpp */; };
-		26E0498420605E1D00D8FDCE /* ECSchemaXmlContextUtils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497D20605E1C00D8FDCE /* ECSchemaXmlContextUtils.cpp */; };
-		26E0498520605E1D00D8FDCE /* JsInterop.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497E20605E1D00D8FDCE /* JsInterop.cpp */; };
-		26E0498620605E1D00D8FDCE /* JsInteropDgnDb.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26E0497F20605E1D00D8FDCE /* JsInteropDgnDb.cpp */; };
+		26D2291720606C2700DA08E6 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 26D2291520606C2700DA08E6 /* AppDelegate.m */; };
+		26D2291820606C2700DA08E6 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26D2291620606C2700DA08E6 /* ViewController.m */; };
+		26D2291920606CCA00DA08E6 /* libBaseGeoCoord.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8A2060479C00BAAB20 /* libBaseGeoCoord.a */; };
+		26D2291A20606CCA00DA08E6 /* libBeCsmapStatic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E942060479C00BAAB20 /* libBeCsmapStatic.a */; };
+		26D2291B20606CCA00DA08E6 /* libBeCurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA42060479D00BAAB20 /* libBeCurl.a */; };
+		26D2291C20606CCA00DA08E6 /* libBeFolly.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E982060479C00BAAB20 /* libBeFolly.a */; };
+		26D2291D20606CCA00DA08E6 /* libBeHttp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8B2060479C00BAAB20 /* libBeHttp.a */; };
+		26D2291E20606CCA00DA08E6 /* libBeIcu4c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9F2060479D00BAAB20 /* libBeIcu4c.a */; };
+		26D2291F20606CCA00DA08E6 /* libBeJavaScript.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA22060479D00BAAB20 /* libBeJavaScript.a */; };
+		26D2292020606CCA00DA08E6 /* libBeJpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E962060479C00BAAB20 /* libBeJpeg.a */; };
+		26D2292120606CCA00DA08E6 /* libBeJsonCpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA12060479D00BAAB20 /* libBeJsonCpp.a */; };
+		26D2292220606CCA00DA08E6 /* libBeLibJpegTurbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8E2060479C00BAAB20 /* libBeLibJpegTurbo.a */; };
+		26D2292320606CCA00DA08E6 /* libBeLibxml2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E892060479C00BAAB20 /* libBeLibxml2.a */; };
+		26D2292420606CCA00DA08E6 /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E992060479C00BAAB20 /* libBentley.a */; };
+		26D2292520606CCA00DA08E6 /* libBentleyGeom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E882060479C00BAAB20 /* libBentleyGeom.a */; };
+		26D2292620606CCA00DA08E6 /* libBentleyGeomSerialization.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E912060479C00BAAB20 /* libBentleyGeomSerialization.a */; };
+		26D2292720606CCA00DA08E6 /* libbentleylog4cxx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9B2060479D00BAAB20 /* libbentleylog4cxx.a */; };
+		26D2292820606CCA00DA08E6 /* libBeOpenSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E862060479C00BAAB20 /* libBeOpenSSL.a */; };
+		26D2292920606CCA00DA08E6 /* libBePng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E932060479C00BAAB20 /* libBePng.a */; };
+		26D2292A20606CCA00DA08E6 /* libBeSQLite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA62060479D00BAAB20 /* libBeSQLite.a */; };
+		26D2292B20606CCA00DA08E6 /* libBeSQLiteEC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9A2060479D00BAAB20 /* libBeSQLiteEC.a */; };
+		26D2292C20606CCA00DA08E6 /* libBeXml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8C2060479C00BAAB20 /* libBeXml.a */; };
+		26D2292D20606CCA00DA08E6 /* libBeZlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E922060479C00BAAB20 /* libBeZlib.a */; };
+		26D2292E20606CCA00DA08E6 /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8F2060479C00BAAB20 /* libDgnPlatform.a */; };
+		26D2292F20606CCA00DA08E6 /* libECObjects.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E872060479C00BAAB20 /* libECObjects.a */; };
+		26D2293020606CCA00DA08E6 /* libECPresentation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9C2060479D00BAAB20 /* libECPresentation.a */; };
+		26D2293120606CCA00DA08E6 /* libfreetype2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E902060479C00BAAB20 /* libfreetype2.a */; };
+		26D2293220606CCA00DA08E6 /* libiModelJs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E952060479C00BAAB20 /* libiModelJs.a */; };
+		26D2293320606CCA00DA08E6 /* liblibapr010502.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E8D2060479C00BAAB20 /* liblibapr010502.a */; };
+		26D2293420606CCA00DA08E6 /* liblibaprutil010504.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA52060479D00BAAB20 /* liblibaprutil010504.a */; };
+		26D2293520606CCA00DA08E6 /* libliblog4cxx010.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9D2060479D00BAAB20 /* libliblog4cxx010.a */; };
+		26D2293620606CCA00DA08E6 /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E972060479C00BAAB20 /* liblzma.a */; };
+		26D2293720606CCA00DA08E6 /* libsnappy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4E9E2060479D00BAAB20 /* libsnappy.a */; };
+		26D2293820606CCA00DA08E6 /* libUnits.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA02060479D00BAAB20 /* libUnits.a */; };
+		26D2293920606CCA00DA08E6 /* libuv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 262B4EA32060479D00BAAB20 /* libuv.a */; };
+		26D2294F20606D0400DA08E6 /* ServicesTierEnvironment.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26D2293A20606D0300DA08E6 /* ServicesTierEnvironment.cpp */; };
+		26D2295020606D0400DA08E6 /* ServicesTierUvHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26D2293B20606D0300DA08E6 /* ServicesTierUvHost.cpp */; };
+		26D2295120606D0400DA08E6 /* ServicesTierHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26D2293C20606D0300DA08E6 /* ServicesTierHost.cpp */; };
+		26D2295220606D0400DA08E6 /* ServicesTierUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26D2293D20606D0300DA08E6 /* ServicesTierUtilities.cpp */; };
+		26D2295320606D0400DA08E6 /* node_api.cc in Sources */ = {isa = PBXBuildFile; fileRef = 26D2294020606D0300DA08E6 /* node_api.cc */; };
+		26D2295420606D0400DA08E6 /* ServicesTierNodeHost.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26D2294220606D0300DA08E6 /* ServicesTierNodeHost.cpp */; };
+		26D2295520606D0400DA08E6 /* ServicesTierExtension.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26D2294320606D0300DA08E6 /* ServicesTierExtension.cpp */; };
+		26D2295620606D0400DA08E6 /* Utilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26D2294520606D0400DA08E6 /* Utilities.cpp */; };
+		26D2295720606D0400DA08E6 /* node_internals.cc in Sources */ = {isa = PBXBuildFile; fileRef = 26D2294D20606D0400DA08E6 /* node_internals.cc */; };
+		26D2295820606D0400DA08E6 /* ServicesTierScripts.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26D2294E20606D0400DA08E6 /* ServicesTierScripts.cpp */; };
+		26D2295B20606D2100DA08E6 /* Test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 26D2295A20606D2100DA08E6 /* Test.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		262B4E61206044D400BAAB20 /* NAPI-JSC-Tests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "NAPI-JSC-Tests.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		262B4E64206044D400BAAB20 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		262B4E65206044D400BAAB20 /* AppDelegate.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.m; sourceTree = "<group>"; };
-		262B4E67206044D400BAAB20 /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
-		262B4E68206044D400BAAB20 /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		262B4E6B206044D400BAAB20 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		262B4E6D206044D400BAAB20 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		262B4E70206044D400BAAB20 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		262B4E72206044D400BAAB20 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		262B4E73206044D400BAAB20 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
-		262B4E7A206045AC00BAAB20 /* Assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Assets; path = "$(OutRoot)$(BuildArchitecture)/Product/iModelJs-Tests/Assets"; sourceTree = "<group>"; };
 		262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "NAPI-JSC-Tests.xcconfig"; sourceTree = "<group>"; };
 		262B4E7F2060475B00BAAB20 /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
 		262B4E812060476000BAAB20 /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -121,35 +108,31 @@
 		262B4EA42060479D00BAAB20 /* libBeCurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCurl.a; path = ../../../nuget/CurlNuget_iosarm64.2.0.2.13/native/lib/static/libBeCurl.a; sourceTree = "<group>"; };
 		262B4EA52060479D00BAAB20 /* liblibaprutil010504.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibaprutil010504.a; path = ../../../nuget/Log4CxxNuget_iosarm64.2.0.2.13/native/lib/static/liblibaprutil010504.a; sourceTree = "<group>"; };
 		262B4EA62060479D00BAAB20 /* libBeSQLite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLite.a; path = "../../../../out-release/iOSARM64/static/build/BeSQLite/libBeSQLite.a"; sourceTree = "<group>"; };
-		262B4ECB2060487100BAAB20 /* Utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Utilities.cpp; path = ../../../Utilities.cpp; sourceTree = "<group>"; };
-		262B4ECD2060487100BAAB20 /* iModelJsApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsApp.h; path = ../../../PublicAPI/iModelJs/iModelJsApp.h; sourceTree = "<group>"; };
-		262B4ECF2060487100BAAB20 /* node_api.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_api.cc; path = ../../../jsc/node_api.cc; sourceTree = "<group>"; };
-		262B4ED02060487100BAAB20 /* node_internals.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_internals.cc; path = ../../../node_internals.cc; sourceTree = "<group>"; };
-		262B4ED12060487100BAAB20 /* ServicesTierNodeHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierNodeHost.cpp; path = ../../../ServicesTierNodeHost.cpp; sourceTree = "<group>"; };
-		262B4ED32060487100BAAB20 /* ServicesTierScripts.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierScripts.cpp; path = ../../../ServicesTierScripts.cpp; sourceTree = "<group>"; };
-		262B4EDE206048B000BAAB20 /* node_api_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_api_types.h; path = "../../../PublicAPI/node-addon-api/node_api_types.h"; sourceTree = "<group>"; };
-		262B4EDF206048B000BAAB20 /* iModelJs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJs.h; path = ../../../PublicAPI/iModelJs/iModelJs.h; sourceTree = "<group>"; };
-		262B4EE0206048B000BAAB20 /* napi-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "napi-inl.h"; path = "../../../PublicAPI/node-addon-api/napi-inl.h"; sourceTree = "<group>"; };
-		262B4EE2206048B000BAAB20 /* iModelJsServicesTier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsServicesTier.h; path = ../../../PublicAPI/iModelJs/iModelJsServicesTier.h; sourceTree = "<group>"; };
-		262B4EE3206048B000BAAB20 /* node_api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_api.h; path = "../../../PublicAPI/node-addon-api/node_api.h"; sourceTree = "<group>"; };
-		262B4EE4206048B000BAAB20 /* napi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = napi.h; path = "../../../PublicAPI/node-addon-api/napi.h"; sourceTree = "<group>"; };
-		262B4EE5206048B000BAAB20 /* iModelJsInternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsInternal.h; path = ../../../iModelJsInternal.h; sourceTree = "<group>"; };
-		262B4EE6206048B000BAAB20 /* iModelJsUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsUtilities.h; path = ../../../PublicAPI/iModelJs/iModelJsUtilities.h; sourceTree = "<group>"; };
-		262B4EE7206048B000BAAB20 /* node_internals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_internals.h; path = ../../../node_internals.h; sourceTree = "<group>"; };
-		262B4EEA206055E400BAAB20 /* Test.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Test.cpp; path = ../../Test.cpp; sourceTree = "<group>"; };
-		262B4EEB206055E400BAAB20 /* Test.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Test.h; path = ../../Test.h; sourceTree = "<group>"; };
-		26E0496E20605B0400D8FDCE /* ServicesTierUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUtilities.cpp; path = ../../../ServicesTierUtilities.cpp; sourceTree = "<group>"; };
-		26E0496F20605B0400D8FDCE /* ServicesTierEnvironment.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierEnvironment.cpp; path = ../../../ServicesTierEnvironment.cpp; sourceTree = "<group>"; };
-		26E0497020605B0400D8FDCE /* ServicesTierUvHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUvHost.cpp; path = ../../../ServicesTierUvHost.cpp; sourceTree = "<group>"; };
-		26E0497120605B0400D8FDCE /* ServicesTierHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierHost.cpp; path = ../../../ServicesTierHost.cpp; sourceTree = "<group>"; };
-		26E0497220605B0400D8FDCE /* ServicesTierExtension.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierExtension.cpp; path = ../../../ServicesTierExtension.cpp; sourceTree = "<group>"; };
-		26E0497920605E1C00D8FDCE /* ECPresentationUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ECPresentationUtils.cpp; path = ../../../../iModelJsNodeAddon/ECPresentationUtils.cpp; sourceTree = "<group>"; };
-		26E0497A20605E1C00D8FDCE /* IModelJsNative.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = IModelJsNative.cpp; path = ../../../../iModelJsNodeAddon/IModelJsNative.cpp; sourceTree = "<group>"; };
-		26E0497B20605E1C00D8FDCE /* JsInteropBriefcaseManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropBriefcaseManager.cpp; path = ../../../../iModelJsNodeAddon/JsInteropBriefcaseManager.cpp; sourceTree = "<group>"; };
-		26E0497C20605E1C00D8FDCE /* TestUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TestUtils.cpp; path = ../../../../iModelJsNodeAddon/TestUtils.cpp; sourceTree = "<group>"; };
-		26E0497D20605E1C00D8FDCE /* ECSchemaXmlContextUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ECSchemaXmlContextUtils.cpp; path = ../../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.cpp; sourceTree = "<group>"; };
-		26E0497E20605E1D00D8FDCE /* JsInterop.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInterop.cpp; path = ../../../../iModelJsNodeAddon/JsInterop.cpp; sourceTree = "<group>"; };
-		26E0497F20605E1D00D8FDCE /* JsInteropDgnDb.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = JsInteropDgnDb.cpp; path = ../../../../iModelJsNodeAddon/JsInteropDgnDb.cpp; sourceTree = "<group>"; };
+		26D2291520606C2700DA08E6 /* AppDelegate.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = AppDelegate.m; sourceTree = "<group>"; };
+		26D2291620606C2700DA08E6 /* ViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		26D2293A20606D0300DA08E6 /* ServicesTierEnvironment.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierEnvironment.cpp; path = ../../../ServicesTierEnvironment.cpp; sourceTree = "<group>"; };
+		26D2293B20606D0300DA08E6 /* ServicesTierUvHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUvHost.cpp; path = ../../../ServicesTierUvHost.cpp; sourceTree = "<group>"; };
+		26D2293C20606D0300DA08E6 /* ServicesTierHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierHost.cpp; path = ../../../ServicesTierHost.cpp; sourceTree = "<group>"; };
+		26D2293D20606D0300DA08E6 /* ServicesTierUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierUtilities.cpp; path = ../../../ServicesTierUtilities.cpp; sourceTree = "<group>"; };
+		26D2293E20606D0300DA08E6 /* node_api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_api.h; path = "../../../PublicAPI/node-addon-api/node_api.h"; sourceTree = "<group>"; };
+		26D2293F20606D0300DA08E6 /* node_internals.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_internals.h; path = ../../../node_internals.h; sourceTree = "<group>"; };
+		26D2294020606D0300DA08E6 /* node_api.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_api.cc; path = ../../../jsc/node_api.cc; sourceTree = "<group>"; };
+		26D2294120606D0300DA08E6 /* iModelJsUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsUtilities.h; path = ../../../PublicAPI/iModelJs/iModelJsUtilities.h; sourceTree = "<group>"; };
+		26D2294220606D0300DA08E6 /* ServicesTierNodeHost.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierNodeHost.cpp; path = ../../../ServicesTierNodeHost.cpp; sourceTree = "<group>"; };
+		26D2294320606D0300DA08E6 /* ServicesTierExtension.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierExtension.cpp; path = ../../../ServicesTierExtension.cpp; sourceTree = "<group>"; };
+		26D2294420606D0300DA08E6 /* node_api_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = node_api_types.h; path = "../../../PublicAPI/node-addon-api/node_api_types.h"; sourceTree = "<group>"; };
+		26D2294520606D0400DA08E6 /* Utilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Utilities.cpp; path = ../../../Utilities.cpp; sourceTree = "<group>"; };
+		26D2294620606D0400DA08E6 /* iModelJs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJs.h; path = ../../../PublicAPI/iModelJs/iModelJs.h; sourceTree = "<group>"; };
+		26D2294720606D0400DA08E6 /* napi-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "napi-inl.h"; path = "../../../PublicAPI/node-addon-api/napi-inl.h"; sourceTree = "<group>"; };
+		26D2294820606D0400DA08E6 /* ServicesTierUtilities.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ServicesTierUtilities.h; path = ../../../ServicesTierUtilities.h; sourceTree = "<group>"; };
+		26D2294920606D0400DA08E6 /* iModelJsApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsApp.h; path = ../../../PublicAPI/iModelJs/iModelJsApp.h; sourceTree = "<group>"; };
+		26D2294A20606D0400DA08E6 /* iModelJsServicesTier.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsServicesTier.h; path = ../../../PublicAPI/iModelJs/iModelJsServicesTier.h; sourceTree = "<group>"; };
+		26D2294B20606D0400DA08E6 /* napi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = napi.h; path = "../../../PublicAPI/node-addon-api/napi.h"; sourceTree = "<group>"; };
+		26D2294C20606D0400DA08E6 /* iModelJsInternal.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = iModelJsInternal.h; path = ../../../iModelJsInternal.h; sourceTree = "<group>"; };
+		26D2294D20606D0400DA08E6 /* node_internals.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = node_internals.cc; path = ../../../node_internals.cc; sourceTree = "<group>"; };
+		26D2294E20606D0400DA08E6 /* ServicesTierScripts.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ServicesTierScripts.cpp; path = ../../../ServicesTierScripts.cpp; sourceTree = "<group>"; };
+		26D2295920606D2100DA08E6 /* Test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Test.h; path = ../../Test.h; sourceTree = "<group>"; };
+		26D2295A20606D2100DA08E6 /* Test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Test.cpp; path = ../../Test.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -157,39 +140,39 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				26E0497820605B6500D8FDCE /* libuv.a in Frameworks */,
-				262B4EA72060479D00BAAB20 /* log4j.dtd in Frameworks */,
-				262B4EA82060479D00BAAB20 /* libBeOpenSSL.a in Frameworks */,
-				262B4EA92060479D00BAAB20 /* libECObjects.a in Frameworks */,
-				262B4EAA2060479D00BAAB20 /* libBentleyGeom.a in Frameworks */,
-				262B4EAB2060479D00BAAB20 /* libBeLibxml2.a in Frameworks */,
-				262B4EAC2060479D00BAAB20 /* libBaseGeoCoord.a in Frameworks */,
-				262B4EAD2060479D00BAAB20 /* libBeHttp.a in Frameworks */,
-				262B4EAE2060479D00BAAB20 /* libBeXml.a in Frameworks */,
-				262B4EAF2060479D00BAAB20 /* liblibapr010502.a in Frameworks */,
-				262B4EB02060479D00BAAB20 /* libBeLibJpegTurbo.a in Frameworks */,
-				262B4EB12060479D00BAAB20 /* libDgnPlatform.a in Frameworks */,
-				262B4EB22060479D00BAAB20 /* libfreetype2.a in Frameworks */,
-				262B4EB32060479D00BAAB20 /* libBentleyGeomSerialization.a in Frameworks */,
-				262B4EB42060479D00BAAB20 /* libBeZlib.a in Frameworks */,
-				262B4EB52060479D00BAAB20 /* libBePng.a in Frameworks */,
-				262B4EB62060479D00BAAB20 /* libBeCsmapStatic.a in Frameworks */,
-				262B4EB82060479D00BAAB20 /* libBeJpeg.a in Frameworks */,
-				262B4EB92060479D00BAAB20 /* liblzma.a in Frameworks */,
-				262B4EBA2060479D00BAAB20 /* libBeFolly.a in Frameworks */,
-				262B4EBB2060479D00BAAB20 /* libBentley.a in Frameworks */,
-				262B4EBC2060479D00BAAB20 /* libBeSQLiteEC.a in Frameworks */,
-				262B4EBD2060479D00BAAB20 /* libbentleylog4cxx.a in Frameworks */,
-				262B4EBE2060479D00BAAB20 /* libECPresentation.a in Frameworks */,
-				262B4EBF2060479D00BAAB20 /* libliblog4cxx010.a in Frameworks */,
-				262B4EC02060479D00BAAB20 /* libsnappy.a in Frameworks */,
-				262B4EC12060479D00BAAB20 /* libBeIcu4c.a in Frameworks */,
-				262B4EC22060479D00BAAB20 /* libUnits.a in Frameworks */,
-				262B4EC32060479D00BAAB20 /* libBeJsonCpp.a in Frameworks */,
-				262B4EC42060479D00BAAB20 /* libBeJavaScript.a in Frameworks */,
-				262B4EC62060479D00BAAB20 /* libBeCurl.a in Frameworks */,
-				262B4EC72060479D00BAAB20 /* liblibaprutil010504.a in Frameworks */,
-				262B4EC82060479D00BAAB20 /* libBeSQLite.a in Frameworks */,
+				26D2291920606CCA00DA08E6 /* libBaseGeoCoord.a in Frameworks */,
+				26D2291A20606CCA00DA08E6 /* libBeCsmapStatic.a in Frameworks */,
+				26D2291B20606CCA00DA08E6 /* libBeCurl.a in Frameworks */,
+				26D2291C20606CCA00DA08E6 /* libBeFolly.a in Frameworks */,
+				26D2291D20606CCA00DA08E6 /* libBeHttp.a in Frameworks */,
+				26D2291E20606CCA00DA08E6 /* libBeIcu4c.a in Frameworks */,
+				26D2291F20606CCA00DA08E6 /* libBeJavaScript.a in Frameworks */,
+				26D2292020606CCA00DA08E6 /* libBeJpeg.a in Frameworks */,
+				26D2292120606CCA00DA08E6 /* libBeJsonCpp.a in Frameworks */,
+				26D2292220606CCA00DA08E6 /* libBeLibJpegTurbo.a in Frameworks */,
+				26D2292320606CCA00DA08E6 /* libBeLibxml2.a in Frameworks */,
+				26D2292420606CCA00DA08E6 /* libBentley.a in Frameworks */,
+				26D2292520606CCA00DA08E6 /* libBentleyGeom.a in Frameworks */,
+				26D2292620606CCA00DA08E6 /* libBentleyGeomSerialization.a in Frameworks */,
+				26D2292720606CCA00DA08E6 /* libbentleylog4cxx.a in Frameworks */,
+				26D2292820606CCA00DA08E6 /* libBeOpenSSL.a in Frameworks */,
+				26D2292920606CCA00DA08E6 /* libBePng.a in Frameworks */,
+				26D2292A20606CCA00DA08E6 /* libBeSQLite.a in Frameworks */,
+				26D2292B20606CCA00DA08E6 /* libBeSQLiteEC.a in Frameworks */,
+				26D2292C20606CCA00DA08E6 /* libBeXml.a in Frameworks */,
+				26D2292D20606CCA00DA08E6 /* libBeZlib.a in Frameworks */,
+				26D2292E20606CCA00DA08E6 /* libDgnPlatform.a in Frameworks */,
+				26D2292F20606CCA00DA08E6 /* libECObjects.a in Frameworks */,
+				26D2293020606CCA00DA08E6 /* libECPresentation.a in Frameworks */,
+				26D2293120606CCA00DA08E6 /* libfreetype2.a in Frameworks */,
+				26D2293220606CCA00DA08E6 /* libiModelJs.a in Frameworks */,
+				26D2293320606CCA00DA08E6 /* liblibapr010502.a in Frameworks */,
+				26D2293420606CCA00DA08E6 /* liblibaprutil010504.a in Frameworks */,
+				26D2293520606CCA00DA08E6 /* libliblog4cxx010.a in Frameworks */,
+				26D2293620606CCA00DA08E6 /* liblzma.a in Frameworks */,
+				26D2293720606CCA00DA08E6 /* libsnappy.a in Frameworks */,
+				26D2293820606CCA00DA08E6 /* libUnits.a in Frameworks */,
+				26D2293920606CCA00DA08E6 /* libuv.a in Frameworks */,
 				262B4E842060476500BAAB20 /* CFNetwork.framework in Frameworks */,
 				262B4E822060476000BAAB20 /* JavaScriptCore.framework in Frameworks */,
 				262B4E802060475B00BAAB20 /* CoreFoundation.framework in Frameworks */,
@@ -219,46 +202,37 @@
 		262B4E63206044D400BAAB20 /* NAPI-JSC-Tests */ = {
 			isa = PBXGroup;
 			children = (
-				26E0497920605E1C00D8FDCE /* ECPresentationUtils.cpp */,
-				26E0497D20605E1C00D8FDCE /* ECSchemaXmlContextUtils.cpp */,
-				26E0497A20605E1C00D8FDCE /* IModelJsNative.cpp */,
-				26E0497E20605E1D00D8FDCE /* JsInterop.cpp */,
-				26E0497B20605E1C00D8FDCE /* JsInteropBriefcaseManager.cpp */,
-				26E0497F20605E1D00D8FDCE /* JsInteropDgnDb.cpp */,
-				26E0497C20605E1C00D8FDCE /* TestUtils.cpp */,
-				26E0496F20605B0400D8FDCE /* ServicesTierEnvironment.cpp */,
-				26E0497220605B0400D8FDCE /* ServicesTierExtension.cpp */,
-				26E0497120605B0400D8FDCE /* ServicesTierHost.cpp */,
-				26E0496E20605B0400D8FDCE /* ServicesTierUtilities.cpp */,
-				26E0497020605B0400D8FDCE /* ServicesTierUvHost.cpp */,
-				262B4EDF206048B000BAAB20 /* iModelJs.h */,
-				262B4EE5206048B000BAAB20 /* iModelJsInternal.h */,
-				262B4EE2206048B000BAAB20 /* iModelJsServicesTier.h */,
-				262B4EE6206048B000BAAB20 /* iModelJsUtilities.h */,
-				262B4EE0206048B000BAAB20 /* napi-inl.h */,
-				262B4EE4206048B000BAAB20 /* napi.h */,
-				262B4EDE206048B000BAAB20 /* node_api_types.h */,
-				262B4EE3206048B000BAAB20 /* node_api.h */,
-				262B4EE7206048B000BAAB20 /* node_internals.h */,
-				262B4ECD2060487100BAAB20 /* iModelJsApp.h */,
-				262B4ECF2060487100BAAB20 /* node_api.cc */,
-				262B4ED02060487100BAAB20 /* node_internals.cc */,
-				262B4ED12060487100BAAB20 /* ServicesTierNodeHost.cpp */,
-				262B4ED32060487100BAAB20 /* ServicesTierScripts.cpp */,
-				262B4ECB2060487100BAAB20 /* Utilities.cpp */,
-				262B4E64206044D400BAAB20 /* AppDelegate.h */,
-				262B4E65206044D400BAAB20 /* AppDelegate.m */,
-				262B4E67206044D400BAAB20 /* ViewController.h */,
-				262B4E68206044D400BAAB20 /* ViewController.m */,
-				262B4E7A206045AC00BAAB20 /* Assets */,
+				26D2295A20606D2100DA08E6 /* Test.cpp */,
+				26D2295920606D2100DA08E6 /* Test.h */,
+				26D2294620606D0400DA08E6 /* iModelJs.h */,
+				26D2294920606D0400DA08E6 /* iModelJsApp.h */,
+				26D2294C20606D0400DA08E6 /* iModelJsInternal.h */,
+				26D2294A20606D0400DA08E6 /* iModelJsServicesTier.h */,
+				26D2294120606D0300DA08E6 /* iModelJsUtilities.h */,
+				26D2294720606D0400DA08E6 /* napi-inl.h */,
+				26D2294B20606D0400DA08E6 /* napi.h */,
+				26D2294420606D0300DA08E6 /* node_api_types.h */,
+				26D2294020606D0300DA08E6 /* node_api.cc */,
+				26D2293E20606D0300DA08E6 /* node_api.h */,
+				26D2294D20606D0400DA08E6 /* node_internals.cc */,
+				26D2293F20606D0300DA08E6 /* node_internals.h */,
+				26D2293A20606D0300DA08E6 /* ServicesTierEnvironment.cpp */,
+				26D2294320606D0300DA08E6 /* ServicesTierExtension.cpp */,
+				26D2293C20606D0300DA08E6 /* ServicesTierHost.cpp */,
+				26D2294220606D0300DA08E6 /* ServicesTierNodeHost.cpp */,
+				26D2294E20606D0400DA08E6 /* ServicesTierScripts.cpp */,
+				26D2293D20606D0300DA08E6 /* ServicesTierUtilities.cpp */,
+				26D2294820606D0400DA08E6 /* ServicesTierUtilities.h */,
+				26D2293B20606D0300DA08E6 /* ServicesTierUvHost.cpp */,
+				26D2294520606D0400DA08E6 /* Utilities.cpp */,
+				26D2291520606C2700DA08E6 /* AppDelegate.m */,
+				26D2291620606C2700DA08E6 /* ViewController.m */,
 				262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */,
 				262B4E6A206044D400BAAB20 /* Main.storyboard */,
 				262B4E6D206044D400BAAB20 /* Assets.xcassets */,
 				262B4E6F206044D400BAAB20 /* LaunchScreen.storyboard */,
 				262B4E72206044D400BAAB20 /* Info.plist */,
 				262B4E73206044D400BAAB20 /* main.m */,
-				262B4EEA206055E400BAAB20 /* Test.cpp */,
-				262B4EEB206055E400BAAB20 /* Test.h */,
 			);
 			path = "NAPI-JSC-Tests";
 			sourceTree = "<group>";
@@ -338,7 +312,7 @@
 				TargetAttributes = {
 					262B4E60206044D400BAAB20 = {
 						CreatedOnToolsVersion = 9.2;
-						ProvisioningStyle = Manual;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -367,7 +341,6 @@
 			files = (
 				262B4E71206044D400BAAB20 /* LaunchScreen.storyboard in Resources */,
 				262B4E7D2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig in Resources */,
-				262B4E7B206045AC00BAAB20 /* Assets in Resources */,
 				262B4E6E206044D400BAAB20 /* Assets.xcassets in Resources */,
 				262B4E6C206044D400BAAB20 /* Main.storyboard in Resources */,
 			);
@@ -380,27 +353,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				26E0497320605B0400D8FDCE /* ServicesTierUtilities.cpp in Sources */,
-				26E0498120605E1D00D8FDCE /* IModelJsNative.cpp in Sources */,
-				26E0497720605B0400D8FDCE /* ServicesTierExtension.cpp in Sources */,
-				26E0498320605E1D00D8FDCE /* TestUtils.cpp in Sources */,
-				26E0498220605E1D00D8FDCE /* JsInteropBriefcaseManager.cpp in Sources */,
-				262B4EEC206055E400BAAB20 /* Test.cpp in Sources */,
-				26E0497420605B0400D8FDCE /* ServicesTierEnvironment.cpp in Sources */,
-				26E0498620605E1D00D8FDCE /* JsInteropDgnDb.cpp in Sources */,
-				26E0497620605B0400D8FDCE /* ServicesTierHost.cpp in Sources */,
-				262B4EDA2060487100BAAB20 /* node_internals.cc in Sources */,
-				262B4E69206044D400BAAB20 /* ViewController.m in Sources */,
-				262B4ED92060487100BAAB20 /* node_api.cc in Sources */,
-				262B4ED62060487100BAAB20 /* Utilities.cpp in Sources */,
-				26E0498520605E1D00D8FDCE /* JsInterop.cpp in Sources */,
-				262B4EDB2060487100BAAB20 /* ServicesTierNodeHost.cpp in Sources */,
-				26E0498020605E1D00D8FDCE /* ECPresentationUtils.cpp in Sources */,
-				26E0497520605B0400D8FDCE /* ServicesTierUvHost.cpp in Sources */,
+				26D2291820606C2700DA08E6 /* ViewController.m in Sources */,
+				26D2295620606D0400DA08E6 /* Utilities.cpp in Sources */,
+				26D2295720606D0400DA08E6 /* node_internals.cc in Sources */,
+				26D2295420606D0400DA08E6 /* ServicesTierNodeHost.cpp in Sources */,
+				26D2295120606D0400DA08E6 /* ServicesTierHost.cpp in Sources */,
+				26D2295220606D0400DA08E6 /* ServicesTierUtilities.cpp in Sources */,
+				26D2295020606D0400DA08E6 /* ServicesTierUvHost.cpp in Sources */,
+				26D2295520606D0400DA08E6 /* ServicesTierExtension.cpp in Sources */,
+				26D2295820606D0400DA08E6 /* ServicesTierScripts.cpp in Sources */,
+				26D2295B20606D2100DA08E6 /* Test.cpp in Sources */,
+				26D2294F20606D0400DA08E6 /* ServicesTierEnvironment.cpp in Sources */,
+				26D2291720606C2700DA08E6 /* AppDelegate.m in Sources */,
+				26D2295320606D0400DA08E6 /* node_api.cc in Sources */,
 				262B4E74206044D400BAAB20 /* main.m in Sources */,
-				26E0498420605E1D00D8FDCE /* ECSchemaXmlContextUtils.cpp in Sources */,
-				262B4EDD2060487100BAAB20 /* ServicesTierScripts.cpp in Sources */,
-				262B4E66206044D400BAAB20 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -537,7 +503,8 @@
 			baseConfigurationReference = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Manual;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = N2P4TGF347;
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
@@ -551,8 +518,8 @@
 				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bentley.NAPI-JSC-Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "d61af43b-aa7a-420f-9ff2-53e393897f92";
-				PROVISIONING_PROFILE_SPECIFIER = WIldCardProfile;
+				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -562,7 +529,8 @@
 			baseConfigurationReference = 262B4E7C2060468200BAAB20 /* NAPI-JSC-Tests.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Manual;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = N2P4TGF347;
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
@@ -576,8 +544,8 @@
 				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.bentley.NAPI-JSC-Tests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "d61af43b-aa7a-420f-9ff2-53e393897f92";
-				PROVISIONING_PROFILE_SPECIFIER = WIldCardProfile;
+				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
