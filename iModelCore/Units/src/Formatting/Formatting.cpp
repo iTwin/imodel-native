@@ -14,54 +14,53 @@
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 //===================================================
-//
 // LocaleProperties
-//
 //===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 LocaleProperties::LocaleProperties(Json::Value jval)
-{
-    if (!jval.empty())
     {
+    if (!jval.empty())
+        {
         Utf8CP paramName;
         Utf8String str;
         Utf8String jStr = jval.ToString();
         for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
+            {
             paramName = iter.memberName();
             JsonValueCR val = *iter;
             if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
-            {
+                {
                 str = val.asString();
                 m_decimalSeparator = str.c_str()[0];
-            }
+                }
             else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
-            {
+                {
                 str = val.asString();
                 m_thousandsSeparator = str.c_str()[0];
+                }
             }
         }
-    }
     else
-    {
+        {
         m_decimalSeparator = '.';
         m_thousandsSeparator = '\0';
+        }
     }
-}
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 LocaleProperties::LocaleProperties(Utf8CP localeName)
-{
+    {
     std::locale loc = std::locale(localeName);
     const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
 
     m_decimalSeparator = myfacet.decimal_point();
     m_thousandsSeparator = myfacet.thousands_sep();
-}
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
@@ -90,42 +89,41 @@ bool NumericFormatSpec::ImbueLocaleProperties(LocalePropertiesCR locProp)
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 LocaleProperties LocaleProperties::DefaultAmerican()
-{
+    {
     return LocaleProperties('.',',');
-}
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 LocaleProperties LocaleProperties::DefaultEuropean(bool useBlank)
-{
+    {
     return LocaleProperties(',', (useBlank? ' ' : '.'));
-}
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 Json::Value LocaleProperties::ToJson()
-{
+    {
     Json::Value jval;
     jval[json_decimalSeparator()] = Utils::CharToString(m_decimalSeparator);
     jval[json_thousandSeparator()] = Utils::CharToString(m_thousandsSeparator);
     return jval;
-}
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
 Utf8String LocaleProperties::ToText()
-{
-   return Utf8PrintfString("Separators: decimal |%c| thousands |%c|", m_decimalSeparator, m_thousandsSeparator);
-}
+    {
+    return Utf8PrintfString("Separators: decimal |%c| thousands |%c|", m_decimalSeparator, m_thousandsSeparator);
+    }
 
 //===================================================
-//
-// NumericFormatSpec Methods
-//
+// NumericFormatSpec
 //===================================================
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
@@ -1109,10 +1107,9 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
     }
 
 //===================================================
-//
 // NamedFormatSpec
-//
 //===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
