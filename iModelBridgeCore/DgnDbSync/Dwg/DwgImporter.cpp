@@ -1655,14 +1655,21 @@ void            DwgImporter::_BeginImport ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::_FinishImport ()
     {
+    // initialize project extents before processing views
+    m_dgndb->GeoLocation().InitializeProjectExtents();
+
     _PostProcessViewports ();
     _EmbedFonts ();
     _EmbedPresentationRules ();
 
-    m_dgndb->GeoLocation().InitializeProjectExtents();
-
-    if (m_defaultViewId.IsValid() && IsCreatingNewDgnDb())
-        GetDgnDb().SaveProperty(DgnViewProperty::DefaultView(), &m_defaultViewId, sizeof(m_defaultViewId));
+    if (m_defaultViewId.IsValid())
+        {
+        // check and add the DefaultView ID if not found in DB:
+        PropertySpec    prop = DgnViewProperty::DefaultView ();
+        DgnElementId    existingId;
+        if (m_dgndb->QueryProperty(&existingId, sizeof(existingId), prop) != DbResult::BE_SQLITE_OK || !existingId.IsValid())
+            m_dgndb->SaveProperty (prop, &m_defaultViewId, sizeof(m_defaultViewId));
+        }
 
     IDwgChangeDetector& changeDetector = _GetChangeDetector ();
     if (IsUpdating())

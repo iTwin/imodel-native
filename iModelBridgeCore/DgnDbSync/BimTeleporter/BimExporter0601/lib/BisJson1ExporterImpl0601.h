@@ -37,22 +37,9 @@ struct KnownDesktopLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     //---------------------------------------------------------------------------------------
     // @bsiclass                                                   BentleySystems
     //---------------------------------------------------------------------------------------
-    KnownDesktopLocationsAdmin()
+    KnownDesktopLocationsAdmin(BeFileName tempPath, BeFileName assetsPath) : m_tempDirectory(tempPath)
         {
-        // use the standard Windows temporary directory
-        wchar_t tempPathW[MAX_PATH];
-        ::GetTempPathW(_countof(tempPathW), tempPathW);
-        m_tempDirectory.SetName(tempPathW);
-        m_tempDirectory.AppendSeparator();
-
-        // the application directory is where the executable is located
-        wchar_t moduleFileName[MAX_PATH];
-        ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
-        BeFileName moduleDirectory(BeFileName::DevAndDir, moduleFileName);
-        m_executableDirectory = moduleDirectory;
-        m_executableDirectory.AppendSeparator();
-
-        m_assetsDirectory = m_executableDirectory;
+        m_assetsDirectory = assetsPath.GetDirectoryName();
         m_assetsDirectory.AppendToPath(L"Assets06");
         }
     };
@@ -66,6 +53,8 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         T_LogPerformanceMessage m_performanceLog;
         T_QueueJson QueueJson;
         BeFileName m_dbPath;
+        BeFileName m_tempPath;
+        BeFileName m_assetsPath;
 
         DgnElementId        m_nextAvailableId;
         ECN::ECClassCP      m_viewDefinition3dClass;
@@ -153,12 +142,12 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         //! Get the progress meter, if any.
 
         virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
-        virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
+        virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(m_tempPath, m_assetsPath); };
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
 
     public:
-        BisJson1ExporterImpl(wchar_t const* dbPath);
+        BisJson1ExporterImpl(wchar_t const* dbPath, wchar_t const* tempPath, wchar_t const* assetsPath);
         ~BisJson1ExporterImpl();
         bool OpenDgnDb();
         void SetProgressMeter(DgnProgressMeter* meter) { m_meter = meter; }

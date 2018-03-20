@@ -573,8 +573,16 @@ bool            ViewportFactory::FindEnvironmentImageFile (BeFileNameR filename)
 void            ViewportFactory::ComputeSheetDisplayStyle (DisplayStyleR displayStyle)
     {
     ViewFlags   viewFlags;
-    DwgHelper::SetViewFlags (viewFlags, m_isGridOn, m_isUcsIconOn, false, false, m_isFrontClipped, m_isBackClipped, m_importer.GetDwgDb());
+    DwgHelper::SetViewFlags (viewFlags, m_isGridOn, m_isUcsIconOn, false, true, m_isFrontClipped, m_isBackClipped, m_importer.GetDwgDb());
 
+    viewFlags.SetRenderMode (RenderMode::Wireframe);
+    viewFlags.SetShowVisibleEdges (true);
+    viewFlags.SetShowHiddenEdges (true);
+    viewFlags.SetShowCameraLights (false);
+    viewFlags.SetShowSolarLight (false);
+    viewFlags.SetShowSourceLights (false);
+    viewFlags.SetShowShadows (false);
+    
     displayStyle.SetViewFlags (viewFlags);
     displayStyle.SetBackgroundColor (m_backgroundColor);
     }
@@ -1199,6 +1207,72 @@ BentleyStatus   DwgImporter::_ImportPaperspaceViewport (DgnModelR model, Transfo
     return  BSISUCCESS;
     }
 
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          03/18
++===============+===============+===============+===============+===============+======*/
+struct ThumbnailConfig
+    {
+private:
+    enum class ViewTypes
+        {
+        None        = 0,
+        Physical    = 1 << 0,
+        Sheet       = 1 << 1,
+        };  // ViewTypes
+
+    int m_resolution;
+    Render::RenderMode m_renderModeOverride;
+    bool m_isRenderModeOverridden;
+    ViewTypes m_viewTypes;
+    
+public:
+    // the constructor
+    ThumbnailConfig (DwgImporter::Config& config)
+        {
+        // read resolution
+        m_resolution = static_cast <int> (config.GetXPathInt64("/ConvertConfig/Thumbnails/@pixelResolution", 768));
+        if (m_resolution < 64 || m_resolution > 1600)
+            m_resolution = 768;
+
+        // read render mode
+        Utf8String renderMode = config.GetXPathString("/ConvertConfig/Thumbnails/@renderModeOverride", "");
+        m_renderModeOverride = Render::RenderMode::Wireframe;
+        m_isRenderModeOverridden = true;
+        if (renderMode.EqualsI("Wireframe"))
+            m_renderModeOverride = Render::RenderMode::Wireframe;
+        else if (renderMode.EqualsI("HiddenLine"))
+            m_renderModeOverride = Render::RenderMode::HiddenLine;
+        else if (renderMode.EqualsI("SmoothShape"))
+            m_renderModeOverride = Render::RenderMode::SmoothShade;
+        else if (renderMode.EqualsI("SolidFill"))
+            m_renderModeOverride = Render::RenderMode::SolidFill;
+        else
+            m_isRenderModeOverridden = false;
+
+        // read view types desired to have thumbnails
+        Utf8String viewTypes = config.GetXPathString("/ConvertConfig/Thumbnails/@viewTypes", "");
+        size_t offset = 0;
+        Utf8String nextValue;
+        int intValue = static_cast<int> (ViewTypes::None);
+        while ((offset = viewTypes.GetNextToken(nextValue, " ", offset)) != Utf8String::npos)
+            {
+            if (nextValue.Equals("Physical"))
+                intValue |= static_cast<int> (ViewTypes::Physical);
+            else if (nextValue.Equals("Sheet"))
+                intValue |= static_cast<int> (ViewTypes::Sheet);
+            }
+        m_viewTypes = static_cast<ViewTypes> (intValue);
+        }
+
+    // call these to check the config's
+    int GetResolution () const { return m_resolution; }
+    bool IsRenderModeOverridden () const { return  m_isRenderModeOverridden; }
+    Render::RenderMode GetOverriddenRenderMode () const { return m_renderModeOverride; }
+    bool WantPhysicalThumbnail () const { return (int)ViewTypes::Physical == ((int)m_viewTypes & (int)ViewTypes::Physical); }
+    bool WantSheetThumbnail () const { return (int)ViewTypes::Sheet == ((int)m_viewTypes & (int)ViewTypes::Sheet); }
+    };  // ThumbnailConfig
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1221,6 +1295,20 @@ void            DwgImporter::_PostProcessViewports ()
         }
     
     DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (*m_dwgdb);
+    bool wantThumbnails = this->GetOptions().WantThumbnails ();
+    BeDuration timeout = this->GetOptions().GetThumbnailTimeout ();
+
+    // ensure graphics sub-system has started, if we want to generate thumbnails:
+    if (wantThumbnails)
+        {
+        this->SetStepName(ProgressMessage::STEP_CREATE_THUMBNAILS());
+        DgnViewLib::GetHost().GetViewManager().Startup();
+        }
+
+    // read thumbnail options from the config file:
+    ThumbnailConfig thumbnailConfig(m_config);
+    Render::RenderMode mode = thumbnailConfig.GetOverriddenRenderMode ();
+    Point2d size = {thumbnailConfig.GetResolution(), thumbnailConfig.GetResolution()};
 
     // update each view with models or categories we have added since the creation of the view:
     for (auto const& entry : ViewDefinition::MakeIterator(*m_dgndb))
@@ -1249,6 +1337,13 @@ void            DwgImporter::_PostProcessViewports ()
                 modelSelector.GetModelsR().insert (m_modelspaceXrefs.begin(), m_modelspaceXrefs.end());
                 modelSelector.Update ();
                 changed = true;
+                }
+
+            if (wantThumbnails && thumbnailConfig.WantPhysicalThumbnail() && nullptr != spatialView && !view->GetName().Contains("Viewport"))
+                {
+                this->SetTaskName (ProgressMessage::TASK_CREATING_THUMBNAIL(), view->GetName().c_str());
+                this->Progress ();
+                view->RenderAndSaveThumbnail (size, thumbnailConfig.IsRenderModeOverridden() ? &mode : nullptr, timeout);
                 }
             }
         else
@@ -1309,6 +1404,12 @@ void            DwgImporter::_PostProcessViewports ()
                     models.insert (xref.m_dgnModelId);
                 }
 #endif
+            if (wantThumbnails && thumbnailConfig.WantSheetThumbnail() && nullptr != sheetView)
+                {
+                this->SetTaskName (ProgressMessage::TASK_CREATING_THUMBNAIL(), view->GetName().c_str());
+                this->Progress ();
+                view->RenderAndSaveThumbnail (size, thumbnailConfig.IsRenderModeOverridden() ? &mode : nullptr, timeout);
+                }
             }
 
         if (changed)

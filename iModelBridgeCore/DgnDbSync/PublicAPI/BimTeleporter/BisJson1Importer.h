@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BimTeleporter/BisJson1Importer.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,6 +11,7 @@
 
 #include <BimTeleporter/BimTeleporter.h>
 #include <folly/ProducerConsumerQueue.h>
+#include <folly/futures/Future.h>
 #include <Bentley/BeFileName.h>
 
 namespace BentleyB0200
@@ -31,7 +32,6 @@ BEGIN_BIM_TELEPORTER_NAMESPACE
 #endif
 
 struct BisJson1ImporterImpl;
-struct BimImporterHost;
 struct PCQueue;
 
 //---------------------------------------------------------------------------------------
@@ -41,15 +41,22 @@ struct BisJson1Importer
     {
     private:
         BisJson1ImporterImpl *m_importer;
-        BimImporterHost* m_host;
         BeFileName m_outputPath;
         PCQueue* m_queue;
 
     public:
+        //! Constructor for the importer.  The calling application must have already been initialized the host.
+        //! @param[in] bimPath      Path to the output directory where the bim will be created
         BIM_IMPORTER_EXPORT BisJson1Importer(const wchar_t* bimPath);
         BIM_IMPORTER_EXPORT ~BisJson1Importer();
-        BIM_IMPORTER_EXPORT bool CreateBim();
+
+        //! Main method of the importer.  This will create a new bim, initialize it and then import JSON messages from the queue
+        BIM_IMPORTER_EXPORT bool CreateBim(folly::Future<bool>& exporterFuture);
+
+        //! Callback to add a new entry to the queue for import
         BIM_IMPORTER_EXPORT void AddToQueue(const char* entry);
+
+        //! Tells the importer that the export has been completed
         BIM_IMPORTER_EXPORT void SetDone();
     };
 

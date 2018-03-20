@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimImporter/lib/BisJson1Importer.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,56 +21,6 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
-
-struct KnownDesktopLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
-    {
-    BeFileName m_tempDirectory;
-    BeFileName m_executableDirectory;
-    BeFileName m_assetsDirectory;
-
-    virtual BeFileNameCR _GetLocalTempDirectoryBaseName() override { return m_tempDirectory; }
-    virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() override { return m_assetsDirectory; }
-
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   BentleySystems
-    //---------------------------------------------------------------------------------------
-    KnownDesktopLocationsAdmin()
-        {
-        // use the standard Windows temporary directory
-        wchar_t tempPathW[MAX_PATH];
-        ::GetTempPathW(_countof(tempPathW), tempPathW);
-        m_tempDirectory.SetName(tempPathW);
-        m_tempDirectory.AppendSeparator();
-
-        // the application directory is where the executable is located
-        wchar_t moduleFileName[MAX_PATH];
-        ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
-        BeFileName moduleDirectory(BeFileName::DevAndDir, moduleFileName);
-        m_executableDirectory = moduleDirectory;
-        m_executableDirectory.AppendSeparator();
-
-        m_assetsDirectory = m_executableDirectory;
-        m_assetsDirectory.AppendToPath(L"Assets");
-        }
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                   Carole.MacDonald            04/2017
-//---------------+---------------+---------------+---------------+---------------+-------
-struct BimImporterHost : DgnPlatformLib::Host
-    {
-    virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
-    virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
-    virtual L10N::SqlangFiles _SupplySqlangFiles() override
-        {
-        BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-        sqlangFile.AppendToPath(L"sqlang");
-        sqlangFile.AppendToPath(L"BisJson1Importer_en-US.sqlang.db3");
-
-        return L10N::SqlangFiles(sqlangFile);
-        }
-    };
-
 struct PCQueue
     {
     public:
@@ -92,18 +42,14 @@ BisJson1Importer::BisJson1Importer(const wchar_t* bimPath) : m_outputPath(bimPat
 BisJson1Importer::~BisJson1Importer()
     {
     //delete m_importer;
-    //delete m_host;
     delete m_queue;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-bool BisJson1Importer::CreateBim()
+bool BisJson1Importer::CreateBim(folly::Future<bool>& exporterFuture)
     {
-    m_host = new BimImporterHost();
-    DgnPlatformLib::Initialize(*m_host, false);
-
     //Utf8String subjectName(m_outputPath.GetFileNameWithoutExtension());
     Utf8String subjectName("TBD");
 
@@ -126,7 +72,7 @@ bool BisJson1Importer::CreateBim()
     if (SUCCESS != m_importer->CreateAndAttachSyncInfo())
         return false;
 
-    if (SUCCESS != m_importer->ImportJson(m_queue->m_objectQueue))
+    if (SUCCESS != m_importer->ImportJson(m_queue->m_objectQueue, exporterFuture))
         return false;
     dgndb->CloseDb();
     dgndb->Release();

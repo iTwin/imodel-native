@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/iModelBridge/iModelBridgeBimHost.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -66,6 +66,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeViewManager : ViewManager
 {
     Display::SystemContext* m_systemContext = nullptr;
     IMODEL_BRIDGE_EXPORT Display::SystemContext* _GetSystemContext() override;
+    IMODEL_BRIDGE_EXPORT bool _ForceSoftwareRendering() override;
     bool _DoesHostHaveFocus() override {return true;}
 };
 
@@ -106,6 +107,7 @@ struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnViewLib::Host
     ViewManager& _SupplyViewManager() override {return *new iModelBridgeViewManager ();}
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return *m_repoAdmin;}
     FontAdmin& _SupplyFontAdmin() override {return *new iModelBridgeFontAdmin;}
+    IMODEL_BRIDGE_EXPORT bool _IsFeatureEnabled(Utf8CP) override;
 
     //! Construct the host to use when running bridges.
     //! @param ra               The framework's RepositoryAdmin
