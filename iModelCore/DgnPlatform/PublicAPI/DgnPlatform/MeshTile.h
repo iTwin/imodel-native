@@ -898,7 +898,7 @@ public:
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
     void SetDgnRange(DRange3dCR range) { m_dgnRange = range; }
     void SetTileRange(DRange3dCR range) { Transform tf; DRange3d dgnRange = range; tf.InverseOf(m_transformFromDgn); tf.Multiply(dgnRange, dgnRange); SetDgnRange(dgnRange); }
-    void SetPublishedRange(DRange3dCR publishedRange) const { m_publishedRange = publishedRange; }
+    DGNPLATFORM_EXPORT void SetPublishedRange(DRange3dCR publishedRange) const;
     DRange3dCR GetPublishedRange() const { return m_publishedRange; }
 
     DGNPLATFORM_EXPORT size_t GetNodeCount() const;

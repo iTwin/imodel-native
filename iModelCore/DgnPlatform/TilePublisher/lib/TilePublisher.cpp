@@ -3770,14 +3770,8 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels;
 
-#if defined(WIP_PUBLISH_VIEW_ATTACHMENTS)
-    bool includeAttachments = true;
-#else
-    bool includeAttachments = false;
-#endif
-
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId, includeAttachments);
+        GetViewedModelsFromView (viewedModels, viewId, /*includeAttachments=*/ true);
 
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)
