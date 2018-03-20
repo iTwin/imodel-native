@@ -869,6 +869,86 @@ TEST (CurveVectorA, Holes)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+TEST (CurveVector, MeshHolesAndLinearFeatures)
+    {
+
+    // Create a parent BOUNDARY_TYPE_ParityRegion
+    CurveVectorPtr parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+
+    // Insert the outer loop . . .
+    parityRegion->Add (
+        CurveVector::CreateLinear (
+                bvector<DPoint3d> {
+                    DPoint3d::From (0,0),
+                    DPoint3d::From (20,0),
+                    DPoint3d::From (25,5),
+                    DPoint3d::From (20,10),
+                    DPoint3d::From (0,10),
+                    DPoint3d::From (0,0)},
+                CurveVector::BOUNDARY_TYPE_Outer));
+
+    // Insert inner loops . . .
+    parityRegion->Add (
+        CurveVector::CreateLinear (
+                bvector<DPoint3d> {
+                    DPoint3d::From (1,1),
+                    DPoint3d::From (9,1),
+                    DPoint3d::From (9,3),
+                    DPoint3d::From (8,3),
+                    DPoint3d::From (8,3),
+                    DPoint3d::From (5,5),
+                    DPoint3d::From (1,3),
+                    DPoint3d::From (1,1)},
+                CurveVector::BOUNDARY_TYPE_Inner));
+
+    parityRegion->Add (
+        CurveVector::CreateLinear (
+                bvector<DPoint3d> {
+                    DPoint3d::From (10,2),
+                    DPoint3d::From (15,3),
+                    DPoint3d::From (14,3.5),
+                    DPoint3d::From (10,3.5),
+                    DPoint3d::From (10,2)},
+                CurveVector::BOUNDARY_TYPE_Inner));
+
+    // Create a polyface builder . . . 
+    IFacetOptionsPtr options = IFacetOptions::Create ();
+    // facet the original region
+    options->SetMaxPerFace (3);
+    IPolyfaceConstructionPtr builder1 = IPolyfaceConstruction::Create (*options);
+
+    // Add the parity region to the mesh  . . .
+    builder1->AddRegion (*parityRegion);
+
+    // Grab the mesh from the builder . . .
+    PolyfaceHeaderPtr facets = builder1->GetClientMeshPtr ();
+    facets->MarkAllEdgesVisible ();
+
+    Check::SaveTransformed (*parityRegion);
+    Check::Shift (30,0,0);
+    Check::SaveTransformed (facets);
+    Check::Shift (30,0,0);
+
+    // Now another mesh, this time with linear features imposed .  ..
+
+    CurveVectorPtr linearFeatures = CurveVector::Create (CurveVector::BOUNDARY_TYPE_None);
+    linearFeatures->push_back (ICurvePrimitive::CreateLineString (
+            bvector<DPoint3d> {
+                DPoint3d::From (5,8), DPoint3d::From (7,8), DPoint3d::From (12,9), DPoint3d::From (15,9)
+            }));
+
+
+    PolyfaceHeaderPtr facets2 = PolyfaceHeader::CreateConstrainedTriangulation (*parityRegion, linearFeatures.get (), nullptr);
+    facets2->MarkAllEdgesVisible ();
+    Check::SaveTransformed (facets2);
+
+    Check::ClearGeometry ("CurveVector.MeshHolesAndLinearFeatures");
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  10/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST (CurveVectorA, Consolidate)
     {
     CurveVectorPtr pathA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
