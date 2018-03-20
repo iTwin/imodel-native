@@ -369,20 +369,20 @@ napi_status napi_define_class(napi_env env,
 napi_status napi_get_property_names(napi_env env,
                                     napi_value object,
                                     napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSObjectRef objectObject = JSValueToObject(ctx, object, NULL);
-  JSPropertyNameArrayRef properties = JSObjectCopyPropertyNames(ctx, objectObject);
-  size_t count = JSPropertyNameArrayGetCount(properties);
-  for (size_t i = 0; i < count; i++)
-      {
+    JSContextRef ctx = env->GetContext();
+    JSPropertyNameArrayRef properties = JSObjectCopyPropertyNames(ctx, (JSObjectRef)object);
+    size_t count = JSPropertyNameArrayGetCount(properties);
+    
+    for (size_t i = 0; i < count; i++) {
         JSStringRef propertyString = JSPropertyNameArrayGetNameAtIndex(properties,i);
         result[i] = JSValueMakeString(ctx, propertyString);
-      }
+        JSStringRelease(propertyString);
+    }
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -392,16 +392,16 @@ napi_status napi_set_property(napi_env env,
                               napi_value object,
                               napi_value key,
                               napi_value value) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, key);
-  CHECK_ARG(env, value);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, key);
+    CHECK_ARG(env, value);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  JSObjectSetProperty (ctx, objectObject, keyString, value, kJSPropertyAttributeNone, NULL);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
+    JSObjectSetProperty (ctx, (JSObjectRef)object, keyString, value, kJSPropertyAttributeNone, NULL);
+    JSStringRelease(keyString);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -411,16 +411,16 @@ napi_status napi_has_property(napi_env env,
                               napi_value object,
                               napi_value key,
                               bool* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, result);
-  CHECK_ARG(env, key);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, result);
+    CHECK_ARG(env, key);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  *result = JSObjectHasProperty(ctx, objectObject, keyString);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
+    *result = JSObjectHasProperty(ctx, (JSObjectRef)object, keyString);
+    JSStringRelease(keyString);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -430,16 +430,16 @@ napi_status napi_get_property(napi_env env,
                               napi_value object,
                               napi_value key,
                               napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, key);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, key);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  *result = JSObjectGetProperty(ctx, objectObject, keyString, NULL);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
+    *result = JSObjectGetProperty(ctx, (JSObjectRef)object, keyString, NULL);
+    JSStringRelease(keyString);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -449,15 +449,15 @@ napi_status napi_delete_property(napi_env env,
                                  napi_value object,
                                  napi_value key,
                                  bool* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, key);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, key);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  *result = JSObjectDeleteProperty(ctx, objectObject, keyString, NULL);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef keyString = JSValueToStringCopy (ctx, key, NULL);
+    *result = JSObjectDeleteProperty(ctx, (JSObjectRef)object, keyString, NULL);
+    JSStringRelease(keyString);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -470,7 +470,7 @@ napi_status napi_has_own_property(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, key);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
 
   // TODO
 
@@ -484,16 +484,15 @@ napi_status napi_set_named_property(napi_env env,
                                     napi_value object,
                                     const char* utf8name,
                                     napi_value value) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, value);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, value);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef keyString = JSStringCreateWithUTF8CString (utf8name);
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  JSObjectSetProperty (ctx, objectObject, keyString, value, kJSPropertyAttributeNone, NULL);
-  JSStringRelease(keyString);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef keyString = JSStringCreateWithUTF8CString (utf8name);
+    JSObjectSetProperty (ctx, (JSObjectRef)object, keyString, value, kJSPropertyAttributeNone, NULL);
+    JSStringRelease(keyString);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -503,16 +502,15 @@ napi_status napi_has_named_property(napi_env env,
                                     napi_value object,
                                     const char* utf8name,
                                     bool* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef keyString = JSStringCreateWithUTF8CString (utf8name);
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  *result = JSObjectHasProperty(ctx, objectObject, keyString);
-  JSStringRelease(keyString);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef keyString = JSStringCreateWithUTF8CString (utf8name);
+    *result = JSObjectHasProperty(ctx, (JSObjectRef)object, keyString);
+    JSStringRelease(keyString);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -522,16 +520,15 @@ napi_status napi_get_named_property(napi_env env,
                                     napi_value object,
                                     const char* utf8name,
                                     napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef keyString = JSStringCreateWithUTF8CString (utf8name);
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  *result = JSObjectGetProperty(ctx, objectObject, keyString, NULL);
-  JSStringRelease(keyString);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef keyString = JSStringCreateWithUTF8CString (utf8name);
+    *result = JSObjectGetProperty(ctx, (JSObjectRef)object, keyString, NULL);
+    JSStringRelease(keyString);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -541,14 +538,13 @@ napi_status napi_set_element(napi_env env,
                              napi_value object,
                              uint32_t index,
                              napi_value value) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, value);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, value);
 
-  JSContextRef ctx = env->GetContext();
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  JSObjectSetPropertyAtIndex (ctx, objectObject, index, value, NULL);
+    JSContextRef ctx = env->GetContext();
+    JSObjectSetPropertyAtIndex (ctx, (JSObjectRef)object, index, value, NULL);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -558,17 +554,16 @@ napi_status napi_has_element(napi_env env,
                              napi_value object,
                              uint32_t index,
                              bool* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  JSPropertyNameArrayRef propertiesArray = JSObjectCopyPropertyNames(ctx, objectObject);
-  size_t count = JSPropertyNameArrayGetCount(propertiesArray);
-  JSPropertyNameArrayRelease(propertiesArray);
-  *result = (index < count);
+    JSContextRef ctx = env->GetContext();
+    JSPropertyNameArrayRef propertiesArray = JSObjectCopyPropertyNames(ctx, (JSObjectRef)object);
+    size_t count = JSPropertyNameArrayGetCount(propertiesArray);
+    JSPropertyNameArrayRelease(propertiesArray);
+    *result = (index < count);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -578,14 +573,13 @@ napi_status napi_get_element(napi_env env,
                              napi_value object,
                              uint32_t index,
                              napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  *result = JSObjectGetPropertyAtIndex(ctx, objectObject, index, NULL);
+    JSContextRef ctx = env->GetContext();
+    *result = JSObjectGetPropertyAtIndex(ctx, (JSObjectRef)object, index, NULL);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -595,23 +589,20 @@ napi_status napi_delete_element(napi_env env,
                                 napi_value object,
                                 uint32_t index,
                                 bool* result) {
-  NAPI_PREAMBLE(env);
+    NAPI_PREAMBLE(env);
 
-  JSContextRef ctx = env->GetContext();
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  JSPropertyNameArrayRef propertiesArray = JSObjectCopyPropertyNames(ctx, objectObject);
-  size_t count = JSPropertyNameArrayGetCount(propertiesArray);
-  if (index < count)
-      {
-      JSStringRef propertyString = JSPropertyNameArrayGetNameAtIndex(propertiesArray, index);
-      *result = JSObjectDeleteProperty(ctx, objectObject, propertyString, NULL);
-      }
-  else
-      {
-      *result = false;
-      }
-  JSPropertyNameArrayRelease(propertiesArray);
-  return GET_RETURN_STATUS(env);
+    JSContextRef ctx = env->GetContext();
+    JSPropertyNameArrayRef propertiesArray = JSObjectCopyPropertyNames(ctx, (JSObjectRef)object);
+    size_t count = JSPropertyNameArrayGetCount(propertiesArray);
+    if (index < count) {
+        JSStringRef propertyString = JSPropertyNameArrayGetNameAtIndex(propertiesArray, index);
+        *result = JSObjectDeleteProperty(ctx, (JSObjectRef)object, propertyString, NULL);
+        JSStringRelease(propertyString);
+    } else {
+        *result = false;
+    }
+    JSPropertyNameArrayRelease(propertiesArray);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -626,7 +617,7 @@ napi_status napi_define_properties(napi_env env,
     CHECK_ARG(env, properties);
   }
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
 
   // TODO
 
@@ -637,14 +628,14 @@ napi_status napi_define_properties(napi_env env,
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_is_array(napi_env env, napi_value value, bool* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueIsArray(ctx, value);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueIsArray(ctx, value);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -653,17 +644,17 @@ napi_status napi_is_array(napi_env env, napi_value value, bool* result) {
 napi_status napi_get_array_length(napi_env env,
                                   napi_value value,
                                   uint32_t* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef lengthString = JSStringCreateWithUTF8CString ("length");
-  JSObjectRef valueObject = JSValueToObject (ctx, value, NULL);
-  JSValueRef lengthValue = JSObjectGetProperty(ctx, valueObject, lengthString, NULL);
-  *result = JSValueToNumber(ctx,lengthValue,NULL);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef lengthString = JSStringCreateWithUTF8CString ("length");
+    JSValueRef lengthValue = JSObjectGetProperty(ctx, (JSObjectRef)value, lengthString, NULL);
+    JSStringRelease(lengthString);
+    *result = JSValueToNumber(ctx,lengthValue,NULL);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -678,7 +669,7 @@ napi_status napi_strict_equals(napi_env env,
   CHECK_ARG(env, rhs);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
 
   // TODO
 
@@ -691,40 +682,39 @@ napi_status napi_strict_equals(napi_env env,
 napi_status napi_get_prototype(napi_env env,
                                napi_value object,
                                napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSObjectRef objectObject = JSValueToObject (ctx, object, NULL);
-  *result = JSObjectGetPrototype(ctx,objectObject);
+    JSContextRef ctx = env->GetContext();
+    *result = JSObjectGetPrototype(ctx,(JSObjectRef)object);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_create_object(napi_env env, napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSObjectMake(ctx, NULL, NULL);
+    JSContextRef ctx = env->GetContext();
+    *result = JSObjectMake(ctx, NULL, NULL);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_create_array(napi_env env, napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSObjectMakeArray(ctx, 0, NULL, NULL);
+    JSContextRef ctx = env->GetContext();
+    *result = JSObjectMakeArray(ctx, 0, NULL, NULL);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -733,13 +723,13 @@ napi_status napi_create_array(napi_env env, napi_value* result) {
 napi_status napi_create_array_with_length(napi_env env,
                                           size_t length,
                                           napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSObjectMakeArray(ctx, length, NULL, NULL);
+    JSContextRef ctx = env->GetContext();
+    *result = JSObjectMakeArray(ctx, length, NULL, NULL);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -752,7 +742,7 @@ napi_status napi_create_string_latin1(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -765,15 +755,15 @@ napi_status napi_create_string_utf8(napi_env env,
                                     const char* str,
                                     size_t length,
                                     napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef strString = JSStringCreateWithUTF8CString(str);
-  *result = JSValueMakeString(ctx, strString);
-  JSStringRelease(strString);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef strString = JSStringCreateWithUTF8CString(str);
+    *result = JSValueMakeString(ctx, strString);
+    JSStringRelease(strString);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -786,7 +776,7 @@ napi_status napi_create_string_utf16(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -798,13 +788,13 @@ napi_status napi_create_string_utf16(napi_env env,
 napi_status napi_create_double(napi_env env,
                                double value,
                                napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueMakeNumber(ctx, value);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueMakeNumber(ctx, value);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -813,13 +803,13 @@ napi_status napi_create_double(napi_env env,
 napi_status napi_create_int32(napi_env env,
                               int32_t value,
                               napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueMakeNumber(ctx, value);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueMakeNumber(ctx, value);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -828,13 +818,13 @@ napi_status napi_create_int32(napi_env env,
 napi_status napi_create_uint32(napi_env env,
                                uint32_t value,
                                napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueMakeNumber(ctx, value);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueMakeNumber(ctx, value);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -843,26 +833,26 @@ napi_status napi_create_uint32(napi_env env,
 napi_status napi_create_int64(napi_env env,
                               int64_t value,
                               napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueMakeNumber(ctx, value);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueMakeNumber(ctx, value);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_get_boolean(napi_env env, bool value, napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueMakeBoolean(ctx, value);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueMakeBoolean(ctx, value);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -874,7 +864,7 @@ napi_status napi_create_symbol(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -891,7 +881,7 @@ napi_status napi_create_error(napi_env env,
   CHECK_ARG(env, msg);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -908,7 +898,7 @@ napi_status napi_create_type_error(napi_env env,
   CHECK_ARG(env, msg);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -925,7 +915,7 @@ napi_status napi_create_range_error(napi_env env,
   CHECK_ARG(env, msg);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -937,14 +927,14 @@ napi_status napi_create_range_error(napi_env env,
 napi_status napi_typeof(napi_env env,
                         napi_value value,
                         napi_valuetype* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSType type = JSValueGetType(ctx, value);
+    JSContextRef ctx = env->GetContext();
+    JSType type = JSValueGetType(ctx, value);
 
-  switch (type)
+    switch (type)
       {
       case kJSTypeUndefined:
         *result = napi_undefined;
@@ -966,33 +956,33 @@ napi_status napi_typeof(napi_env env,
         break;
       }
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_get_undefined(napi_env env, napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueMakeUndefined(ctx);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueMakeUndefined(ctx);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_get_null(napi_env env, napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueMakeNull(ctx);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueMakeNull(ctx);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 // Gets all callback info in a single call. (Ugly, but faster.)
@@ -1035,9 +1025,9 @@ napi_status napi_get_cb_info(
 napi_status napi_get_new_target(napi_env env,
                                 napi_callback_info cbinfo,
                                 napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, cbinfo);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, cbinfo);
+    CHECK_ARG(env, result);
 
     JSContextRef ctx = env->GetContext();
     JSCFunctionCallbackWrapper* info = reinterpret_cast<JSCFunctionCallbackWrapper*>(cbinfo);
@@ -1046,7 +1036,7 @@ napi_status napi_get_new_target(napi_env env,
     } else {
         *result = nullptr;
     }
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1058,31 +1048,29 @@ napi_status napi_call_function(napi_env env,
                                size_t argc,
                                const napi_value* argv,
                                napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, recv);
-  if (argc > 0) {
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, recv);
+    if (argc > 0) {
     CHECK_ARG(env, argv);
-  }
+    }
 
-  JSContextRef ctx = env->GetContext();
-  JSObjectRef recvObject = JSValueToObject( ctx, recv, NULL);
-  JSObjectRef funcObject = JSValueToObject( ctx, func, NULL);
-  *result = JSObjectCallAsFunction(ctx, funcObject, recvObject, argc, argv, NULL);
+    JSContextRef ctx = env->GetContext();
+    *result = JSObjectCallAsFunction(ctx, (JSObjectRef)func, (JSObjectRef)recv, argc, argv, NULL);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_get_global(napi_env env, napi_value* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, result);
+    CHECK_ENV(env);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSContextGetGlobalObject(ctx);
+    JSContextRef ctx = env->GetContext();
+    *result = JSContextGetGlobalObject(ctx);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1092,7 +1080,7 @@ napi_status napi_throw(napi_env env, napi_value error) {
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, error);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1106,7 +1094,7 @@ napi_status napi_throw_error(napi_env env,
                              const char* msg) {
   NAPI_PREAMBLE(env);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1120,7 +1108,7 @@ napi_status napi_throw_type_error(napi_env env,
                                   const char* msg) {
   NAPI_PREAMBLE(env);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1134,7 +1122,7 @@ napi_status napi_throw_range_error(napi_env env,
                                    const char* msg) {
   NAPI_PREAMBLE(env);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1150,7 +1138,7 @@ napi_status napi_is_error(napi_env env, napi_value value, bool* result) {
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1162,16 +1150,16 @@ napi_status napi_is_error(napi_env env, napi_value value, bool* result) {
 napi_status napi_get_value_double(napi_env env,
                                   napi_value value,
                                   double* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
+    // JS exceptions.
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueToNumber(ctx, value, NULL);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueToNumber(ctx, value, NULL);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1180,16 +1168,16 @@ napi_status napi_get_value_double(napi_env env,
 napi_status napi_get_value_int32(napi_env env,
                                  napi_value value,
                                  int32_t* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
+    // JS exceptions.
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueToNumber(ctx, value, NULL);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueToNumber(ctx, value, NULL);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1198,16 +1186,16 @@ napi_status napi_get_value_int32(napi_env env,
 napi_status napi_get_value_uint32(napi_env env,
                                   napi_value value,
                                   uint32_t* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
+    // JS exceptions.
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueToNumber(ctx, value, NULL);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueToNumber(ctx, value, NULL);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1216,32 +1204,32 @@ napi_status napi_get_value_uint32(napi_env env,
 napi_status napi_get_value_int64(napi_env env,
                                  napi_value value,
                                  int64_t* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
+    // JS exceptions.
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueToNumber(ctx, value, NULL);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueToNumber(ctx, value, NULL);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
 napi_status napi_get_value_bool(napi_env env, napi_value value, bool* result) {
-  // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
-  // JS exceptions.
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    // Omit NAPI_PREAMBLE and GET_RETURN_STATUS because V8 calls here cannot throw
+    // JS exceptions.
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  *result = JSValueToBoolean(ctx, value);
+    JSContextRef ctx = env->GetContext();
+    *result = JSValueToBoolean(ctx, value);
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 // Copies a JavaScript string into a LATIN-1 string buffer. The result is the
@@ -1263,7 +1251,7 @@ napi_status napi_get_value_string_latin1(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, value);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1285,23 +1273,23 @@ napi_status napi_get_value_string_utf8(napi_env env,
                                        char* buf,
                                        size_t bufsize,
                                        size_t* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef valueString = JSValueToStringCopy(ctx, value, NULL);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef valueString = JSValueToStringCopy(ctx, value, NULL);
 
-  if (buf == nullptr) {
+    if (buf == nullptr) {
     if (result != nullptr)
       *result = JSStringGetLength(valueString);
-  } else {
+    } else {
     size_t returnSize = JSStringGetUTF8CString(valueString, buf, bufsize);
     if (result != nullptr)
       *result = returnSize;
-  }
+    }
 
-  JSStringRelease(valueString);
-  return napi_clear_last_error(env);
+    JSStringRelease(valueString);
+    return napi_clear_last_error(env);
 }
 
 // Copies a JavaScript string into a UTF-16 string buffer. The result is the
@@ -1320,13 +1308,13 @@ napi_status napi_get_value_string_utf16(napi_env env,
                                         char16_t* buf,
                                         size_t bufsize,
                                         size_t* result) {
-  CHECK_ENV(env);
-  CHECK_ARG(env, value);
+    CHECK_ENV(env);
+    CHECK_ARG(env, value);
 
-  JSContextRef ctx = env->GetContext();
-  // TODO
+//    JSContextRef ctx = env->GetContext();
+    // TODO
 
-  return napi_clear_last_error(env);
+    return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1339,7 +1327,7 @@ napi_status napi_coerce_to_object(napi_env env,
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
     *result = value;
   // TODO
 
@@ -1356,7 +1344,7 @@ napi_status napi_coerce_to_bool(napi_env env,
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
     *result = value;
   // TODO
 
@@ -1373,7 +1361,7 @@ napi_status napi_coerce_to_number(napi_env env,
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
     *result = value;
   // TODO
 
@@ -1390,7 +1378,7 @@ napi_status napi_coerce_to_string(napi_env env,
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
     *result = value;
   // TODO
 
@@ -1409,7 +1397,7 @@ napi_status napi_wrap(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, js_object);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1423,7 +1411,7 @@ napi_status napi_unwrap(napi_env env, napi_value obj, void** result) {
   // JS exceptions.
   CHECK_ENV(env);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1435,7 +1423,7 @@ napi_status napi_unwrap(napi_env env, napi_value obj, void** result) {
 napi_status napi_remove_wrap(napi_env env, napi_value obj, void** result) {
   NAPI_PREAMBLE(env);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1452,7 +1440,7 @@ napi_status napi_create_external(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1468,7 +1456,7 @@ napi_status napi_get_value_external(napi_env env,
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1488,7 +1476,7 @@ napi_status napi_create_reference(napi_env env,
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1505,7 +1493,7 @@ napi_status napi_delete_reference(napi_env env, napi_ref ref) {
   CHECK_ENV(env);
   CHECK_ARG(env, ref);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1525,7 +1513,7 @@ napi_status napi_reference_ref(napi_env env, napi_ref ref, uint32_t* result) {
   CHECK_ENV(env);
   CHECK_ARG(env, ref);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1544,7 +1532,7 @@ napi_status napi_reference_unref(napi_env env, napi_ref ref, uint32_t* result) {
   CHECK_ENV(env);
   CHECK_ARG(env, ref);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1565,7 +1553,7 @@ napi_status napi_get_reference_value(napi_env env,
   CHECK_ARG(env, ref);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1580,7 +1568,7 @@ napi_status napi_open_handle_scope(napi_env env, napi_handle_scope* result) {
   CHECK_ENV(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1595,7 +1583,7 @@ napi_status napi_close_handle_scope(napi_env env, napi_handle_scope scope) {
   CHECK_ENV(env);
   CHECK_ARG(env, scope);
   
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1612,7 +1600,7 @@ napi_status napi_open_escapable_handle_scope(
   CHECK_ENV(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1629,7 +1617,7 @@ napi_status napi_close_escapable_handle_scope(
   CHECK_ENV(env);
   CHECK_ARG(env, scope);
   
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1649,7 +1637,7 @@ napi_status napi_escape_handle(napi_env env,
   CHECK_ARG(env, escapee);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_set_last_error(env, napi_escape_called_twice);
@@ -1663,17 +1651,17 @@ napi_status napi_new_instance(napi_env env,
                               size_t argc,
                               const napi_value* argv,
                               napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, constructor);
-  if (argc > 0) {
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, constructor);
+    if (argc > 0) {
     CHECK_ARG(env, argv);
-  }
-  CHECK_ARG(env, result);
+    }
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    *result = JSObjectCallAsConstructor(ctx, (JSObjectRef)constructor, argc, argv, NULL);
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1687,7 +1675,7 @@ napi_status napi_instanceof(napi_env env,
   CHECK_ARG(env, object);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1704,7 +1692,7 @@ napi_status napi_async_init(napi_env env,
   CHECK_ARG(env, async_resource_name);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   // node::async_context* async_context = new node::async_context();
@@ -1723,7 +1711,7 @@ napi_status napi_async_destroy(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, async_context);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1745,7 +1733,7 @@ napi_status napi_make_callback(napi_env env,
     CHECK_ARG(env, argv);
   }
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1761,7 +1749,7 @@ napi_status napi_is_exception_pending(napi_env env, bool* result) {
   CHECK_ENV(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1777,7 +1765,7 @@ napi_status napi_get_and_clear_last_exception(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1792,7 +1780,7 @@ napi_status napi_is_arraybuffer(napi_env env, napi_value value, bool* result) {
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1808,7 +1796,7 @@ napi_status napi_create_arraybuffer(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1826,7 +1814,7 @@ napi_status napi_create_external_arraybuffer(napi_env env,
   NAPI_PREAMBLE(env);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -1842,7 +1830,7 @@ napi_status napi_get_arraybuffer_info(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, arraybuffer);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1856,7 +1844,7 @@ napi_status napi_is_typedarray(napi_env env, napi_value value, bool* result) {
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
  
   return napi_clear_last_error(env);
@@ -1875,7 +1863,7 @@ napi_status napi_create_typedarray(napi_env env,
   CHECK_ARG(env, arraybuffer);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   /*
@@ -1929,7 +1917,7 @@ napi_status napi_get_typedarray_info(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, typedarray);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1947,7 +1935,7 @@ napi_status napi_create_dataview(napi_env env,
   CHECK_ARG(env, arraybuffer);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
   
   return GET_RETURN_STATUS(env);
@@ -1961,7 +1949,7 @@ napi_status napi_is_dataview(napi_env env, napi_value value, bool* result) {
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -1979,7 +1967,7 @@ napi_status napi_get_dataview_info(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, dataview);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -2025,7 +2013,7 @@ napi_status napi_adjust_external_memory(napi_env env,
   CHECK_ENV(env);
   CHECK_ARG(env, adjusted_value);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -2045,7 +2033,7 @@ napi_status napi_create_async_work(napi_env env,
   CHECK_ARG(env, execute);
   CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -2058,7 +2046,7 @@ napi_status napi_delete_async_work(napi_env env, napi_async_work work) {
   CHECK_ENV(env);
   CHECK_ARG(env, work);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -2071,7 +2059,7 @@ napi_status napi_queue_async_work(napi_env env, napi_async_work work) {
   CHECK_ENV(env);
   CHECK_ARG(env, work);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -2084,7 +2072,7 @@ napi_status napi_cancel_async_work(napi_env env, napi_async_work work) {
   CHECK_ENV(env);
   CHECK_ARG(env, work);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -2100,7 +2088,7 @@ napi_status napi_create_promise(napi_env env,
   CHECK_ARG(env, deferred);
   CHECK_ARG(env, promise);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -2113,7 +2101,7 @@ napi_status napi_resolve_deferred(napi_env env,
                                   napi_deferred deferred,
                                   napi_value resolution) {
   
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -2126,7 +2114,7 @@ napi_status napi_reject_deferred(napi_env env,
                                  napi_deferred deferred,
                                  napi_value resolution) {
   
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return GET_RETURN_STATUS(env);
@@ -2142,7 +2130,7 @@ napi_status napi_is_promise(napi_env env,
   CHECK_ARG(env, promise);
   CHECK_ARG(env, is_promise);
 
-  JSContextRef ctx = env->GetContext();
+//  JSContextRef ctx = env->GetContext();
   // TODO
 
   return napi_clear_last_error(env);
@@ -2154,13 +2142,14 @@ napi_status napi_is_promise(napi_env env,
 napi_status napi_run_script(napi_env env,
                             napi_value script,
                             napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, script);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, script);
+    CHECK_ARG(env, result);
 
-  JSContextRef ctx = env->GetContext();
-  JSStringRef scriptString = JSValueToStringCopy (ctx, script, NULL);
-  *result = JSEvaluateScript(ctx,scriptString,NULL,NULL,0,NULL);
-  
-  return GET_RETURN_STATUS(env);
+    JSContextRef ctx = env->GetContext();
+    JSStringRef scriptString = JSValueToStringCopy (ctx, script, NULL);
+    *result = JSEvaluateScript(ctx,scriptString,NULL,NULL,0,NULL);
+    JSStringRelease(scriptString);
+
+    return GET_RETURN_STATUS(env);
 }
