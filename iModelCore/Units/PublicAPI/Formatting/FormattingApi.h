@@ -307,10 +307,6 @@ private:
     static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
     static bool AcceptableDifference(double dval1, double dval2, double maxDiff);
     int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
-    int FormatBinaryByte(unsigned char n, Utf8P bufOut, int bufLen);
-    int FormatBinaryShort(short int n, Utf8P bufOut, int bufLen, bool useSeparator);
-    int FormatBinaryInt(int n, Utf8P bufOut, int bufLen, bool useSeparator);
-    int FormatBinaryDouble(double x, Utf8P bufOut, int bufLen, bool useSeparator);
     NumericFormatSpec(size_t precision) { DefaultInit(precision); }
     NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
     Utf8String FormatIntegerToString(int n, int minSize) const;
