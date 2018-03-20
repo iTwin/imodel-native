@@ -7,6 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "QuantityTestFixture.h"
 
+// TFS#865198
+#if !defined(BENTLEYCONFIG_OS_LINUX)
+
 BEGIN_UNITS_UNITTESTS_NAMESPACE
 
 /*--------------------------------------------------------------------------------**//**
@@ -190,3 +193,5 @@ TEST_F(QuantityTestFixture, QuantityComparison)
     }
 
 END_UNITS_UNITTESTS_NAMESPACE
+
+#endif // !defined(BENTLEYCONFIG_OS_LINUX)
