@@ -1297,7 +1297,7 @@ Render::IPixelDataBufferCPtr DgnViewport::ReadPixels(BSIRectCR rect, Render::Pix
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnViewport::GetPixelDataNpcPoint(DPoint3dR npc, IPixelDataBufferCR pixelData, int32_t x, int32_t y)
     {
-    if (0.0 == (npc.z = pixelData.GetPixel(x, y).GetDistance()))
+    if (0.0 == (npc.z = pixelData.GetPixel(x, y).GetDistanceFraction()))
         return false;
 
     BSIRectCR       viewRect = GetViewRect();

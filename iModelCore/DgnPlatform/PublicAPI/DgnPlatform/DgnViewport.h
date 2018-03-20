@@ -276,9 +276,6 @@ public:
     DGNVIEW_EXPORT void ApplyPrevious(BeDuration animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
-    // Find world distance to nearest element in view rect.
-    DGNVIEW_EXPORT double FindNearestZ(DRange2dCR range);
-
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
     ViewDefinition3d::Camera const& GetCamera() const {return m_camera;}
