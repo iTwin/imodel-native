@@ -1506,6 +1506,7 @@ public:
     //! @param[in]  value  The new value to apply
     //! @return true if the presentation FormatUnitSet is valid, false if not.
     ECOBJECTS_EXPORT bool SetDefaultPresentationUnit(Utf8StringCR fusDescriptor);
+    ECOBJECTS_EXPORT ECObjectsStatus SetDefaultPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
     //! Gets the default presentation FormatUnitSet of this KindOfQuantity.
     Formatting::FormatUnitSetCR GetDefaultPresentationUnit() const {return 0 < m_presentationUnits.size() ? *(&m_presentationUnits[0]) : GetPersistenceUnit();}
 

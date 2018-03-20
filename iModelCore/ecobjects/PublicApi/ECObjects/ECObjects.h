@@ -189,6 +189,7 @@ enum class ECObjectsStatus
     PropertyValueNull,
     NotFound,
     InvalidUnitName,
+    InvalidConstantUnit,
     };
 
 //! Result status for deserializing an ECSchema from Xml

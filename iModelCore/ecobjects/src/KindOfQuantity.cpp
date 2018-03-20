@@ -204,6 +204,23 @@ bool KindOfQuantity::SetDefaultPresentationUnit(Utf8StringCR fusDescriptor)
     return true;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::SetDefaultPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format)
+    {
+    if (unit.IsConstant())
+        return ECObjectsStatus::InvalidConstantUnit;
+
+    auto fus = Formatting::FormatUnitSet(format, &unit);
+
+    if (fus.HasProblem())
+        return ECObjectsStatus::InvalidFormatUnitSet;
+
+    m_presentationUnits.insert(m_presentationUnits.begin(), fus);
+    return ECObjectsStatus::Success;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                06/2017
 //---------------+---------------+---------------+---------------+---------------+-------

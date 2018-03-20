@@ -15,6 +15,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
+// static
 Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::NamedFormatSpecCR formatSpec, ECQuantityFormattingStatus* formatStatus, BEF::NumericFormatSpecCP defFormat)
     {
     Utf8String str;
@@ -36,28 +37,21 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
+// static
 Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, ECQuantityFormattingStatus* formatStatus, BEF::NumericFormatSpecCP defFormat)
     {
-    Utf8String str;
-    ECQuantityFormattingStatus locStat = ECQuantityFormattingStatus::Success;
-    if (nullptr == formatStatus) formatStatus = &locStat;
     if (nullptr == defFormat) defFormat = &BEF::NumericFormatSpec::DefaultFormat();
     *formatStatus = ECQuantityFormattingStatus::Success;
 
     if (nullptr == koq)
-        str = defFormat->FormatDouble(qty.GetMagnitude());
-    else
-        {
-        Formatting::FormatUnitSet fus = koq->GetDefaultPresentationUnit();
-        if (ECUnit::AreCompatible(qty.GetUnit(), fus.GetUnit()))
-            str = fus.FormatQuantity(qty, nullptr);
-        else
-            {
-            str = defFormat->FormatDouble(qty.GetMagnitude());
-            *formatStatus = ECQuantityFormattingStatus::IncompatibleKOQ;
-            }
-        }
-    return str;
+        return defFormat->FormatDouble(qty.GetMagnitude());
+    
+    Formatting::FormatUnitSet fus = koq->GetDefaultPresentationUnit();
+    if (ECUnit::AreCompatible(qty.GetUnit(), fus.GetUnit()))
+        return fus.FormatQuantity(qty, nullptr);
+
+    *formatStatus = ECQuantityFormattingStatus::IncompatibleKOQ;
+    return defFormat->FormatDouble(qty.GetMagnitude());
     }
 
 //----------------------------------------------------------------------------------------
@@ -65,10 +59,7 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
 //----------------------------------------------------------------------------------------
 Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantityCP koq, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat)
     {
-    Formatting::FormatUnitSetCR persistFUS = koq->GetPersistenceUnit();
-    BEU::UnitCP unit = persistFUS.GetUnit();
-    BEU::Quantity q = BEU::Quantity(dval, *unit);
-    return FormatQuantity(q, koq, status, defFormat);
+    return FormatQuantity(BEU::Quantity(dval, *koq->GetPersistenceUnit().GetUnit()), koq, status, defFormat);
     }
 
 //---------------------------------------------------------------------------------------
@@ -76,30 +67,7 @@ Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantit
 //---------------------------------------------------------------------------------------
 Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::NamedFormatSpecCR formatSpec, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat)
     {
-    Formatting::FormatUnitSetCR persistFUS = koq->GetPersistenceUnit();
-    BEU::UnitCP persistUnit = persistFUS.GetUnit();
-    BEU::Quantity q = BEU::Quantity(dval, *persistUnit);
-    return FormatQuantity(q, koq, presentationUnit, formatSpec, status, defFormat);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bill.Steinbock                  11/2017
-//---------------------------------------------------------------------------------------
-BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, double* persist, KindOfQuantityCP koq, Formatting::FormatUnitSetR presentationFUS, Formatting::FormatProblemCode* probCode)
-    {
-    Formatting::FormatUnitSetCR persistFUS = koq->GetPersistenceUnit();
-    return Formatting::QuantityFormatting::CreateQuantity(input, persist, persistFUS, presentationFUS, probCode);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//   The quantity is created from the text string. it's consistency with the KOQ of the specific
-//     context must be checked by the caller. When multiple Units are being used the Quantity Unit
-//   will be the "biggest", but in the first implementaiton the biggest is assumed to be the leftmost
-//----------------------------------------------------------------------------------------
-BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, Formatting::FormatUnitSetCR fus, Formatting::FormatProblemCode* probCode)
-    {
-    return Formatting::QuantityFormatting::CreateQuantity(input, fus, probCode);
+    return FormatQuantity(BEU::Quantity(dval, *koq->GetPersistenceUnit().GetUnit()), koq, presentationUnit, formatSpec, status, defFormat);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
