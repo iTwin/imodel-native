@@ -249,7 +249,6 @@ public:
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
     DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
     void Destroy() {_Destroy();}
-    DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params);
     void InvalidateDecorations() const {m_sync.InvalidateDecorations();}
     void InvalidateController() const {m_sync.InvalidateController();}
@@ -284,13 +283,21 @@ public:
     //! due to adjustments made for front/back clipping being turned off.
     ViewDefinition3d::Camera const& GetCamera() const {return m_camera;}
 
-    //! Determine the depth, in NPC units, of the elements visible within a view.
+    //! Determine the depth range, in NPC units, of the elements visible within a view.
     //! @param[out] low the npc value of the furthest back element in the view
     //! @param[out] high the npc value of the element closest to the front of view
     //! @param[in] subRectNpc If non-NULL, only search within a sub rectangle of the view. In NPC coordinates.
     //! @return SUCCESS if there were visible elements within the view, ERROR otherwise.
     //! @private
-    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpc(double& low, double& high, DRange3dCP subRectNpc=nullptr);
+    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpcRange(double& low, double& high, BSIRectCP subRectNpc=nullptr);
+
+    //! Determine the depth range, in NPC units, of the elements visible within a view.
+    //! @param[out] low the npc value of the furthest back element in the view
+    //! @param[out] high the npc value of the element closest to the front of view
+    //! @param[in] subRectNpc If non-NULL, only search within a sub rectangle of the view. In NPC coordinates.
+    //! @return SUCCESS if there were visible elements within the view, ERROR otherwise.
+    //! @private
+    DGNPLATFORM_EXPORT StatusInt DetermineVisibleDepthNpcAverage(double& averageNpc, BSIRectCP subRectNpc=nullptr);
 
     //! @return the point to use as the default rotation point at the center of the visible elements in the view.
     //! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
@@ -601,8 +608,26 @@ public:
     //! @param[in] viewRect The area of the view to read. The origin specifies the upper-left corner. Must lie entirely within the viewport's dimensions.
     //! @param[in] selector Specifies the type(s) of data to read.
     //! @return an IPixelDataBuffer object from which the selected data can be retrieved, or nullptr on error.
-    DGNVIEW_EXPORT Render::IPixelDataBufferCPtr ReadPixels(BSIRectCR viewRect, Render::PixelData::Selector selector);
+    DGNPLATFORM_EXPORT Render::IPixelDataBufferCPtr ReadPixels(BSIRectCR viewRect, Render::PixelData::Selector selector);
+
+    //! Return the NPC geometry point for pixel data.
+    //! @param[out] npc The npc point for visible geometry at the specified location.
+    //! @param[in] pixelData Pixel data (as returned from ReadPixels).
+    //! @param[in] x value in view coordinates.
+    //! @param[in] y value in view coordinates.
+    //! @return true if there is geometry visible at the specified location.
+    bool GetPixelDataNpcPoint(DPoint3dR npc, Render::IPixelDataBufferCR pixelData, int32_t x, int32_t y);
+
+    //! Return the world geometry point for pixel data.
+    //! @param[out] world The world point for visible geometry at the specified location.
+    //! @param[in] pixelData Pixel data (as returned from ReadPixels).
+    //! @param[in] x value in view coordinates.
+    //! @param[in] y value in view coordinates.
+    //! @return true if there is geometry visible at the specified location.
+    bool GetPixelDataWorldPoint(DPoint3dR world, Render::IPixelDataBufferCR pixelData, int32_t x, int32_t y);
+
 };
+
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/17

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/FitContext.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -265,76 +265,4 @@ StatusInt DgnViewport::ComputeFittedElementRange(DRange3dR range, DgnElementIdSe
     
     range = context.m_fitRange;
     return range.IsNull() ? ERROR : SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::DetermineVisibleDepthNpc(double& lowNpc, double& highNpc, DRange3dCP subRectNpc)
-    {
-    FitViewParams params;
-    params.m_fitDepthOnly = true;
-    params.m_limitByVolume = true;
-
-    lowNpc = 0.0;
-    highNpc = 1.0;
-
-    FitContext context(params);
-    if (subRectNpc)
-        context.SetSubRectNpc(*subRectNpc);
-
-    if (SUCCESS != context.Attach(this, DrawPurpose::FitView))
-        return ERROR;
-
-    m_viewController->_ComputeFitRange(context);
-
-    DRange3d range = context.m_fitRange;
-    if (range.IsNull())
-        return ERROR;
-
-    Frustum corner(range);
-
-    DPoint3d orgView;
-    m_rotMatrix.Multiply(&orgView, &m_viewOrg, 1);
-
-    // limit values between front plane and back plane. Otherwise NPC doesn't work in camera views.
-    double min = orgView.z;
-    double max = min + m_viewDelta.z;
-
-    for (int i=0; i<8; ++i)
-        LIMIT_RANGE(min, max, corner.m_pts[i].z);
-
-    m_rotMatrix.MultiplyTranspose(corner.m_pts, corner.m_pts, 8);
-    WorldToNpc(corner.m_pts, corner.m_pts, 8);
-
-    range = corner.ToRange();
-    lowNpc = range.low.z;
-    highNpc = range.high.z;
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      09/06
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::ComputeVisibleDepthRange(double& minDepth, double& maxDepth, bool ignoreViewExtent)
-    {
-    FitViewParams params;
-    params.m_fitDepthOnly = true;
-    params.m_limitByVolume = !ignoreViewExtent;
-
-    FitContext context(params);
-    if (SUCCESS != context.Attach(this, DrawPurpose::FitView))
-        return ERROR;
-
-    m_viewController->_ComputeFitRange(context);
-
-    DRange3d range = context.m_fitRange;
-    if (range.IsNull())
-        return ERROR;
-
-    minDepth = range.low.z;
-    maxDepth = range.high.z;
-
-    return SUCCESS;
     }

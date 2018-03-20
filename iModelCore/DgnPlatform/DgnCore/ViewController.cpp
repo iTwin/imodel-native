@@ -387,7 +387,7 @@ ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     // We need to figure out a new camera target. To do that, we need to know where the geometry is in the view.
     // We use the depth of the center of the view for that.
     double low, high;
-    m_vp->DetermineVisibleDepthNpc(low, high);
+    m_vp->DetermineVisibleDepthNpcRange(low, high);
     double middle = low + ((high - low) / 2.0);
 
     DPoint3d corners[4];
