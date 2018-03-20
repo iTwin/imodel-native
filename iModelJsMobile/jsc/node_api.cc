@@ -1316,15 +1316,18 @@ napi_status napi_get_value_string_utf16(napi_env env,
 napi_status napi_coerce_to_object(napi_env env,
                                   napi_value value,
                                   napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-    *result = value;
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    if (JSValueIsObject(ctx, value)) {
+        *result = value;
+    } else {
+        *result = JSValueToObject(ctx, value, NULL);
+    }
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1333,15 +1336,19 @@ napi_status napi_coerce_to_object(napi_env env,
 napi_status napi_coerce_to_bool(napi_env env,
                                 napi_value value,
                                 napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-    *result = value;
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    if (JSValueIsBoolean(ctx, value)) {
+        *result = value;
+    } else {
+        auto resultBool = JSValueToBoolean(ctx, value);
+        *result = JSValueMakeBoolean(ctx, resultBool);
+    }
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1350,15 +1357,19 @@ napi_status napi_coerce_to_bool(napi_env env,
 napi_status napi_coerce_to_number(napi_env env,
                                   napi_value value,
                                   napi_value* result) {
-  NAPI_PREAMBLE(env);
-  CHECK_ARG(env, value);
-  CHECK_ARG(env, result);
+    NAPI_PREAMBLE(env);
+    CHECK_ARG(env, value);
+    CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-    *result = value;
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    if (JSValueIsNumber(ctx, value)) {
+        *result = value;
+    } else {
+        auto resultNumber = JSValueToNumber(ctx, value, NULL);
+        *result = JSValueMakeNumber(ctx, resultNumber);
+    }
 
-  return GET_RETURN_STATUS(env);
+    return GET_RETURN_STATUS(env);
 }
 
 //---------------------------------------------------------------------------------------
@@ -1371,9 +1382,14 @@ napi_status napi_coerce_to_string(napi_env env,
   CHECK_ARG(env, value);
   CHECK_ARG(env, result);
 
-//  JSContextRef ctx = env->GetContext();
-    *result = value;
-  // TODO
+    JSContextRef ctx = env->GetContext();
+    if (JSValueIsString(ctx, value)) {
+        *result = value;
+    } else {
+        auto resultStr = JSValueToStringCopy(ctx, value, NULL);
+        *result = JSValueMakeString(ctx, resultStr);
+        JSStringRelease(resultStr);
+    }
 
   return GET_RETURN_STATUS(env);
 }
