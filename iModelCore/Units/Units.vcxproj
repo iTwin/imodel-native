@@ -8,6 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ConstantDefinitions.cpp" />
+    <ClCompile Include="src\Formatting\NumericFormatUtils.cpp" />
     <ClCompile Include="src\PhenomenonDefinitions.cpp" />
     <ClCompile Include="src\Quantity.cpp" />
     <ClCompile Include="src\UnitDefinitions.cpp" />
@@ -29,6 +30,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h" />
+    <ClInclude Include="PrivateAPI\Formatting\NumericFormatUtils.h" />
     <ClInclude Include="PrivateAPI\Units\StandardDefinitions.h" />
     <ClInclude Include="PublicAPI\Units\Quantity.h" />
     <ClInclude Include="PublicAPI\Units\UnitNameMappings.h" />

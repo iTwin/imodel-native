@@ -68,6 +68,9 @@
     <ClCompile Include="src\UnitTypes.cpp">
       <Filter>Source Files\Units</Filter>
     </ClCompile>
+    <ClCompile Include="src\Formatting\NumericFormatUtils.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="mki\Units.mki" />
@@ -118,6 +121,9 @@
       <Filter>Header Files\Units</Filter>
     </ClInclude>
     <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h">
+      <Filter>Header Files\Formatting</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\Formatting\NumericFormatUtils.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>
   </ItemGroup>

@@ -10,6 +10,7 @@
 #include <locale>
 #include <BeSQLite/L10N.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
+#include "../../PrivateAPI/Formatting/NumericFormatUtils.h"
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 

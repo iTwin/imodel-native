@@ -56,8 +56,7 @@ $(o)Quantity$(oext)                 : $(srcDir)Quantity.cpp ${MultiCompileDepend
 
 $(o)UnitNameMappings$(oext)         : $(srcDir)UnitNameMappings.cpp ${MultiCompileDepends}
 
-# %message formatSrcDir ($(formatSrcDir))
-
+# Formatting Compilands
 $(o)Formatting$(oext)     : $(formatSrcDir)Formatting.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 $(o)FormattingIO$(oext)   : $(formatSrcDir)FormattingIO.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
@@ -67,6 +66,8 @@ $(o)FormatUtils$(oext)    : $(formatSrcDir)FormatUtils.cpp $(formatHeaderDir)For
 $(o)FormatQuantity$(oext) : $(formatSrcDir)FormatQuantity.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 $(o)FormatParsing$(oext)  : $(formatSrcDir)FormatParsing.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+
+$(o)NumericFormatUtils$(oext)  : $(formatSrcDir)NumericFormatUtils.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
