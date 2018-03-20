@@ -529,7 +529,7 @@ Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
     }
 
 //===================================================
-// FormattingSignature
+// FormatDividerInstance
 //===================================================
 
 //----------------------------------------------------------------------------------------

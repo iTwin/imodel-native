@@ -126,18 +126,6 @@ Utf8String LocaleProperties::ToText()
 //===================================================
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-double NumericFormatSpec::RoundedValue(double dval, double round) const
-    {
-    round = fabs(round);
-    if (round < FormatConstant::FPV_MinTreshold())
-        return dval;
-    double val = floor(fabs(dval) / round) * round;
-    return (0.0 < dval) ? val : -val;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
 int NumericFormatSpec::TrimTrailingZeroes(Utf8P buf, int index) const
@@ -438,14 +426,6 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
     return ind;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::FormatRoundedDouble(double dval, double round)
-    {
-    return FormatDouble(RoundedValue(dval, round));
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -477,52 +457,6 @@ int NumericFormatSpec::GetDecimalPrecisionIndex(int prec) const
 double NumericFormatSpec::GetDecimalPrecisionFactor(int prec) const
     { 
     return Utils::DecimalPrecisionFactor(m_decPrecision, prec); 
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//----------------------------------------------------------------------------------------
-void NumericFormatSpec::SetPrecisionByValue(int prec)
-    {
-    if (PresentationType::Fractional == m_presentationType)
-        m_fractPrecision = Utils::FractionalPrecisionByDenominator(prec);
-    else
-        m_decPrecision = Utils::DecimalPrecisionByIndex(prec);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-// Copies bytes from one char buffer to another starting from the last char of the source.
-// If the destination buffer is shorter than source, only the right portion of the source
-// will be copied. The destination will be terminated by zero if so indicated by the bool
-// flag and the useful capacity of the destination buffer will be reduced by 1.
-int NumericFormatSpec::RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen)
-    {
-    if (nullptr == src)
-        srcLen = 0;
-    else if (srcLen < 0)
-        srcLen = (int)strlen(src);
-
-    if (termZero) destLen--;
-    if (nullptr == dest || destLen < 1) // copying is not possible
-        return -srcLen;
-
-    int actCapacity = (destLen > srcLen) ? srcLen : destLen;
-    int deficit = srcLen - actCapacity;
-    if (actCapacity > 0)
-        memcpy(dest, &src[deficit], (size_t)actCapacity);
-    if (termZero)
-        dest[actCapacity] = 0;
-    return -deficit;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//----------------------------------------------------------------------------------------
-bool NumericFormatSpec::AcceptableDifference(double dval1, double dval2, double maxDiff)
-    {
-    return (fabs(maxDiff) > fabs(dval1 - dval2));
     }
 
 //---------------------------------------------------------------------------------------
@@ -585,16 +519,6 @@ int NumericFormatSpec::IntPartToText(double n, Utf8P bufOut, int bufLen, bool us
     return textLen;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//----------------------------------------------------------------------------------------
-NumericFormatSpec::NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision, Utf8CP uomSeparator)
-    {
-    Init(presType, signOpt, formatTraits, precision);   
-    if (uomSeparator)
-        SetUomSeparator(uomSeparator);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //---------------------------------------------------------------------------------------
@@ -635,63 +559,6 @@ Utf8String NumericFormatSpec::FormatIntegerToString(int n, int minSize) const
         str[k] = '\0';
         }
     return Utf8String(str);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//----------------------------------------------------------------------------------------
-void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
-    {
-    m_roundFactor = 0.0;
-    m_presentationType = presType;
-    m_signOption = signOpt;
-    m_formatTraits = formatTraits;
-    m_barType = FractionBarType::Diagonal;
-    if (PresentationType::Fractional == m_presentationType)
-        {
-        m_decPrecision = FormatConstant::DefaultDecimalPrecision();
-        m_fractPrecision = Utils::FractionalPrecisionByDenominator(precision);
-        }
-    else
-        {
-        m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
-        m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
-        }
-
-    ImbueLocaleProperties(LocaleProperties::DefaultAmerican());
-    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
-    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
-    m_uomSeparator = FormatConstant::BlankString();
-    m_statSeparator = '+';
-    m_minWidth = 0;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//----------------------------------------------------------------------------------------
-void NumericFormatSpec::DefaultInit(size_t precision)
-    {
-    m_roundFactor = 0.0;
-    m_presentationType = FormatConstant::DefaultPresentaitonType();
-    m_signOption = FormatConstant::DefaultSignOption();
-    m_formatTraits = FormatConstant::DefaultFormatTraits();
-    m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
-    m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
-    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
-    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
-    m_barType = FractionBarType::Diagonal;
-    ImbueLocale("");
-    m_uomSeparator = FormatConstant::BlankString();
-    m_statSeparator = '+';
-    m_minWidth = 0;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz
-//----------------------------------------------------------------------------------------
-void NumericFormatSpec::TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits)
-    {
-    outValue[bitIndex] = FormatConstant::BoolText((static_cast<int>(traits) & static_cast<int>(bit)) != 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -770,9 +637,8 @@ NumericFormatSpec::NumericFormatSpec(DecimalPrecision decimalPrecision)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
-NumericFormatSpec::NumericFormatSpec(Json::Value jval)
+NumericFormatSpec::NumericFormatSpec(Json::Value jval) : NumericFormatSpec()
     {
-    DefaultInit(FormatConstant::DefaultDecimalPrecisionIndex());
     if (jval.empty())
         return;
 
@@ -998,8 +864,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
         Utf8String suff = dval.GetSignSuffix();
         Utf8CP spacer = Utils::IsNameNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
         // for all parts but the last one we need to format an integer 
-        NumericFormatSpec fmtI = NumericFormatSpec(PresentationType::Decimal, FormatConstant::DefaultSignOption(),
-            FormatConstant::DefaultFormatTraits(), 0);
+        NumericFormatSpec fmtI = NumericFormatSpec(DecimalPrecision::Precision0);
         fmtI.SetKeepSingleZero(false);
 
         switch (compS->GetUnitCount())

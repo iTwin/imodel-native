@@ -91,36 +91,36 @@ BE_JSON_NAME(schemaName)
 // @bsistruct                                            Bill.Steinbock  11/2017
 //=======================================================================================
 struct UIListEntry
-    {
-    protected:
-        Json::Value m_json;
+{
+protected:
+    Json::Value m_json;
 
-    public:
-        UIListEntry() : m_json(Json::objectValue) {}
-        UIListEntry(Json::Value const& j) : m_json(j) {}
-        UIListEntry& operator=(UIListEntry const& rhs) { m_json = rhs.m_json; return *this; }
+public:
+    UIListEntry() : m_json(Json::objectValue) {}
+    UIListEntry(Json::Value const& j) : m_json(j) {}
+    UIListEntry& operator=(UIListEntry const& rhs) { m_json = rhs.m_json; return *this; }
 
-        void SetLabel(Utf8CP n) { m_json["label"] = n; }
-        Utf8CP GetLabel() const { return m_json["label"].asCString(); }
+    void SetLabel(Utf8CP n) { m_json["label"] = n; }
+    Utf8CP GetLabel() const { return m_json["label"].asCString(); }
 
-        void SetStringValue(Utf8CP n) { m_json["stringValue"] = n; }
-        Utf8CP GetStringValue() const { return m_json["stringValue"].asCString(); }
+    void SetStringValue(Utf8CP n) { m_json["stringValue"] = n; }
+    Utf8CP GetStringValue() const { return m_json["stringValue"].asCString(); }
 
-        void SetValue(int n) { m_json["value"] = n; }
-        int GetValue() const { return m_json["value"].asInt(); }
+    void SetValue(int n) { m_json["value"] = n; }
+    int GetValue() const { return m_json["value"].asInt(); }
 
-        UIListEntry(int value, Utf8CP label, Utf8CP stringValue=nullptr) : m_json(Json::objectValue)
-            {
-            SetLabel(label);
-            SetValue(value);
+    UIListEntry(int value, Utf8CP label, Utf8CP stringValue=nullptr) : m_json(Json::objectValue)
+        {
+        SetLabel(label);
+        SetValue(value);
 
-            // string value is optional
-            if (stringValue)
-                SetStringValue(stringValue);
-            }
+        // string value is optional
+        if (stringValue)
+            SetStringValue(stringValue);
+        }
 
-        Json::Value const& GetJson() const { return m_json; }
-    };
+    Json::Value const& GetJson() const { return m_json; }
+};
 
 //=======================================================================================
 //
@@ -214,28 +214,18 @@ private:
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
-    double RoundedValue(double dval, double round) const;
     int TrimTrailingZeroes(Utf8P buf, int index) const;
     size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
 
     // TODO: Attempt to remove these methods from the private API===============
     int FormatInteger(int n, Utf8P bufOut, int bufLen);
     size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
-    Utf8String FormatRoundedDouble(double dval, double round);
     static double RoundDouble(double dval, double roundTo);
     int GetDecimalPrecisionIndex(int prec = -1) const;
     double GetDecimalPrecisionFactor(int prec = -1) const;
-    void SetPrecisionByValue(int prec);
-    static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
-    static bool AcceptableDifference(double dval1, double dval2, double maxDiff);
     int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
-    NumericFormatSpec(size_t precision) { DefaultInit(precision); }
-    NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
     Utf8String FormatIntegerToString(int n, int minSize) const;
-    void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
-    void DefaultInit(size_t precision);
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
-    static void TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits);
     // !TODO====================================================================
 
 public:
