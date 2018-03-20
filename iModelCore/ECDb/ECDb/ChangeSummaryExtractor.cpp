@@ -510,7 +510,7 @@ BentleyStatus ChangeSummaryExtractor::FkRelChangeExtractor::Extract(Context& ctx
     // Check if the other end was/is valid to determine if there's really a relationship that was inserted/updated/deleted
     ChangeIterator::ColumnMap const& otherEndColumnMap = endTableRelMap.m_relatedInstanceIdColumnMap;
     ECInstanceId oldOtherEndInstanceId, newOtherEndInstanceId;
-    rowEntry.GetSqlChange()->GetValueIds(oldOtherEndInstanceId, newOtherEndInstanceId, otherEndColumnMap.GetIndex());
+    rowEntry.GetSqlChange()->GetValueIds<ECInstanceId>(oldOtherEndInstanceId, newOtherEndInstanceId, otherEndColumnMap.GetIndex());
     if (!oldOtherEndInstanceId.IsValid() && !newOtherEndInstanceId.IsValid())
         return SUCCESS; // no changes in relationship
 
@@ -676,7 +676,7 @@ BentleyStatus ChangeSummaryExtractor::LinkTableRelChangeExtractor::GetRelEndInst
     BeAssert(instanceIdColumnIndex >= 0);
 
     ECInstanceId oldEndInstanceId, newEndInstanceId;
-    rowEntry.GetSqlChange()->GetValueIds(oldEndInstanceId, newEndInstanceId, instanceIdColumnIndex);
+    rowEntry.GetSqlChange()->GetValueIds<ECInstanceId>(oldEndInstanceId, newEndInstanceId, instanceIdColumnIndex);
 
     if (newEndInstanceId.IsValid())
         {

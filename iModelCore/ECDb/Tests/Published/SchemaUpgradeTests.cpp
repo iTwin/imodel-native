@@ -207,6 +207,72 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECSchemaAttributes)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                  03/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ModifySchemaVersion)
+    {
+    auto verifySchemaVersion = [] (ECDbCR ecdb, Utf8CP schemaName, ECVersion expectedECVersion, uint32_t expectedOriginalXmlVersionMajor, uint32_t expectedOriginalXmlVersionMinor)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SchemaUpgrade_ModifySchemaVersion.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+        ASSERT_EQ(expectedOriginalXmlVersionMinor, (uint32_t) stmt.GetValueInt(2));
+        };
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='10.11.9' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor version when write version was incremented is supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='11.10.9' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing write version when read version was incremented is supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='12.10.8' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor version when read version was incremented is supported";
+
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='13.1.7' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor and write version when read version was incremented is supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='12.1.7' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing read version is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='13.0.7' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing write version is not supported";
+
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='13.1.6' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml"))) << "Decreasing minor version is not supported";
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     02/18
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, ECVersions)
@@ -245,7 +311,7 @@ TEST_F(SchemaUpgradeTestFixture, ECVersions)
         "<ECSchema schemaName='TestSchema' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "</ECSchema>"))) << "Downgrade of ECXml version is not supported";
     }
-
+    
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -10160,9 +10226,9 @@ TEST_F(SchemaUpgradeTestFixture, UpdateClass_AddStructProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     03/18
 //+---------------+---------------+---------------+---------------+---------------+------
-/*TEST_F(SchemaUpgradeTestFixture, BackwardIncompatibleSchemaImport)
+TEST_F(SchemaUpgradeTestFixture, DisallowMajorSchemaUpgrade)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_BackwardIncompatibleSchemaImport.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgrade_DisallowMajorSchemaUpgrade.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
                             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECEntityClass typeName="Parent" >
@@ -10170,211 +10236,457 @@ TEST_F(SchemaUpgradeTestFixture, UpdateClass_AddStructProperty)
                                        <ClassMap xmlns="ECDbMap.02.00">
                                            <MapStrategy>TablePerHierarchy</MapStrategy>
                                        </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
                                     </ECCustomAttributes>
                                     <ECProperty propertyName="Name" typeName="string" />
                                     <ECProperty propertyName="Code" typeName="int"/>
                                     <ECProperty propertyName="Val" typeName="int" />
                                 </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                </ECEntityClass>
                             </ECSchema>)xml")));
 
-    auto assertImport = [this] (bool allowMajorSchemaChange, SchemaItem const& schema)
+    //Note: for each test schema we test it with the minor version being incremented and the major version being incremented
+
+    auto assertImport = [this] (Utf8CP schemaTemplate, Utf8CP newSchemaVersion, SchemaManager::SchemaImportOptions options)
         {
-        BentleyStatus stat = GetHelper().ImportSchema(schema, allowMajorSchemaChange ? SchemaManager::SchemaImportOptions::None : SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade);
-        EXPECT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
-        return stat;
+        Utf8String schemaXml;
+        schemaXml.Sprintf(schemaTemplate, newSchemaVersion);
+        BentleyStatus actualStat = GetHelper().ImportSchema(SchemaItem(schemaXml), options);
+        EXPECT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+        return actualStat;
         };
 
-    SchemaItem newSchema(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    //Deleting a property
+    Utf8CP newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECEntityClass typeName="Parent" >
                                     <ECCustomAttributes>
                                        <ClassMap xmlns="ECDbMap.02.00">
                                            <MapStrategy>TablePerHierarchy</MapStrategy>
                                        </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a property on a shared column (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Deleting a property on a shared column";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a property on a shared column";
+
+    //Deleting a class
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
                                     <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a class (must fail because it requires the major schema version to be incremented)";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Deleting a class";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Deleting a class";
+
+    //adding IsNullable constraint
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
                                     <ECProperty propertyName="Name" typeName="string" >
                                         <ECCustomAttributes>
                                            <PropertyMap xmlns="ECDbMap.02.00">
-                                             <IsNullable>false</IsNullable>
+                                             <IsNullable>False</IsNullable>
                                            </PropertyMap>
-                                        <ECCustomAttributes>
+                                        </ECCustomAttributes>
                                     </ECProperty>
                                     <ECProperty propertyName="Code" typeName="int"/>
                                     <ECProperty propertyName="Val" typeName="int" />
                                 </ECEntityClass>
-                            </ECSchema>)xml");
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
 
-    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "IsNullable on existing property";
-    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "IsNullable on existing property";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "IsNullable on existing property is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsNullable on existing property is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "IsNullable on existing property is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsNullable on existing property is never supported because adding ECDbMap CA is not allowed";
 
-    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECEntityClass typeName="Parent" >
                                     <ECCustomAttributes>
                                        <ClassMap xmlns="ECDbMap.02.00">
                                            <MapStrategy>TablePerHierarchy</MapStrategy>
                                        </ClassMap>
-                                    <ECCustomAttributes>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
                                     <ECProperty propertyName="Name" typeName="string" />
                                     <ECProperty propertyName="Code" typeName="int"/>
                                     <ECProperty propertyName="Val" typeName="int" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
-                                    <BaseClass>Parent<BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub2" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp2" typeName="string" >
                                         <ECCustomAttributes>
                                            <PropertyMap xmlns="ECDbMap.02.00">
-                                             <IsNullable>false</IsNullable>
+                                             <IsNullable>False</IsNullable>
                                            </PropertyMap>
-                                        <ECCustomAttributes>
+                                        </ECCustomAttributes>
                                     </ECProperty>
                                 </ECEntityClass>
-                            </ECSchema>)xml");
+                            </ECSchema>)xml";
 
-    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "IsNullable on property on new subclass";
-    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "IsNullable on property on new subclass";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "IsNullable on property on new subclass";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsNullable on property on new subclass";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "IsNullable on property on new subclass works because ECDb ignores it because the class is not the root of the table.";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsNullable on property on new subclass works because ECDb ignores it because the class is not the root of the table.";
 
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema2" alias="ts2" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="TestSchema" version="01.00" alias="ts"/>
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Sub2" >
+                                    <BaseClass>ts:Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp2" typeName="string" >
+                                        <ECCustomAttributes>
+                                           <PropertyMap xmlns="ECDbMap.02.00">
+                                             <IsNullable>False</IsNullable>
+                                           </PropertyMap>
+                                        </ECCustomAttributes>
+                                    </ECProperty>
+                                </ECEntityClass>
+                            </ECSchema>)xml";
 
-    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::None)) << "IsNullable on property on new subclass in new schema";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsNullable on property on new subclass in new schema";
+
+    //adding IsUnique constraint
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECEntityClass typeName="Parent" >
                                     <ECCustomAttributes>
                                        <ClassMap xmlns="ECDbMap.02.00">
                                            <MapStrategy>TablePerHierarchy</MapStrategy>
                                        </ClassMap>
-                                    <ECCustomAttributes>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
                                     <ECProperty propertyName="Name" typeName="string" >
                                         <ECCustomAttributes>
                                            <PropertyMap xmlns="ECDbMap.02.00">
-                                             <IsUnique>true</IsUnique>
+                                             <IsUnique>True</IsUnique>
                                            </PropertyMap>
-                                        <ECCustomAttributes>
+                                        </ECCustomAttributes>
                                     </ECProperty>
                                     <ECProperty propertyName="Code" typeName="int"/>
                                     <ECProperty propertyName="Val" typeName="int" />
                                 </ECEntityClass>
-                            </ECSchema>)xml");
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
 
-    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "IsUnique on existing property";
-    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "IsUnique on existing property";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "IsUnique on existing property is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsUnique on existing property is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "IsUnique on existing property is never supported because adding ECDbMap CA is not allowed";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "IsUnique on existing property is never supported because adding ECDbMap CA is not allowed";
 
-    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECEntityClass typeName="Parent" >
                                     <ECCustomAttributes>
                                        <ClassMap xmlns="ECDbMap.02.00">
                                            <MapStrategy>TablePerHierarchy</MapStrategy>
                                        </ClassMap>
-                                    <ECCustomAttributes>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
                                     <ECProperty propertyName="Name" typeName="string" />
                                     <ECProperty propertyName="Code" typeName="int"/>
                                     <ECProperty propertyName="Val" typeName="int" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
-                                    <BaseClass>Parent<BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="string" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub2" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp2" typeName="string" >
                                         <ECCustomAttributes>
                                            <PropertyMap xmlns="ECDbMap.02.00">
-                                             <IsUnique>true</IsUnique>
+                                             <IsUnique>True</IsUnique>
                                            </PropertyMap>
-                                        <ECCustomAttributes>
+                                        </ECCustomAttributes>
                                     </ECProperty>
                                 </ECEntityClass>
-                            </ECSchema>)xml");
+                            </ECSchema>)xml";
 
-    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "IsUnique on property on new subclass";
-    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "IsUnique on property on new subclass";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Adding unique index on shared column is ignored";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Adding unique index on shared column is ignored";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Adding unique index on shared column is ignored";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Adding unique index on shared column is ignored";
 
-    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema2" alias="ts2" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="TestSchema" version="01.00" alias="ts"/>
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Sub2" >
+                                    <BaseClass>ts:Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp2" typeName="string" >
+                                        <ECCustomAttributes>
+                                           <PropertyMap xmlns="ECDbMap.02.00">
+                                             <IsUnique>True</IsUnique>
+                                           </PropertyMap>
+                                        </ECCustomAttributes>
+                                    </ECProperty>
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    {
+    ScopedDisableFailOnAssertion disableFailOnAssertion;
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::None)) << "Adding unique index on shared column is ignored";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Adding unique index on shared column is ignored";
+    }
+
+    //adding unique index
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECEntityClass typeName="Parent" >
                                     <ECCustomAttributes>
                                        <ClassMap xmlns="ECDbMap.02.00">
                                            <MapStrategy>TablePerHierarchy</MapStrategy>
                                        </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
                                        <DbIndexList xmlns="ECDbMap.02.00">
                                             <Indexes>
                                                 <DbIndex>
-                                                    <IsUnique>true</IsUnique>
+                                                    <Name>uix_Parent_Code</Name>
+                                                    <IsUnique>True</IsUnique>
                                                     <Properties>
                                                         <string>Code</string>
                                                     </Properties>
                                                 </DbIndex>
                                             </Indexes>
                                        </DbIndexList>
-                                    <ECCustomAttributes>
-                                    <ECProperty propertyName="Name" typeName="string" />
-                                    <ECProperty propertyName="Code" typeName="int"/>
-                                    <ECProperty propertyName="Val" typeName="int" />
-                                </ECEntityClass>
-                            </ECSchema>)xml");
-
-    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "Unique index on existing property";
-    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "Unique index on existing property";
-
-    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
-                                <ECEntityClass typeName="Parent" >
-                                    <ECCustomAttributes>
-                                       <ClassMap xmlns="ECDbMap.02.00">
-                                           <MapStrategy>TablePerHierarchy</MapStrategy>
-                                       </ClassMap>
-                                    <ECCustomAttributes>
+                                    </ECCustomAttributes>
                                     <ECProperty propertyName="Name" typeName="string" />
                                     <ECProperty propertyName="Code" typeName="int"/>
                                     <ECProperty propertyName="Val" typeName="int" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Sub" >
-                                   <ECCustomAttributes>
-                                       <DbIndexList xmlns="ECDbMap.02.00">
-                                            <Indexes>
-                                                <DbIndex>
-                                                    <IsUnique>true</IsUnique>
-                                                    <Properties>
-                                                        <string>NewProp</string>
-                                                    </Properties>
-                                                </DbIndex>
-                                            </Indexes>
-                                       </DbIndexList>
-                                    <ECCustomAttributes>
-                                    <BaseClass>Parent<BaseClass>
-                                    <ECProperty propertyName="NewProp" typeName="int" />
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
                                 </ECEntityClass>
-                            </ECSchema>)xml");
+                            </ECSchema>)xml";
 
-    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "Unique index on property on new subclass";
-    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "Unique index on property on new subclass";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on existing property must fail because adding a ECDbMap CA on existing class is not allowed.";
 
-    newSchema = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-                            <ECSchema schemaName="TestSchema" alias="ts" version="2.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
                                 <ECEntityClass typeName="Parent" >
                                     <ECCustomAttributes>
                                        <ClassMap xmlns="ECDbMap.02.00">
                                            <MapStrategy>TablePerHierarchy</MapStrategy>
                                        </ClassMap>
-                                    <ECCustomAttributes>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
                                     <ECProperty propertyName="Name" typeName="string" />
                                     <ECProperty propertyName="Code" typeName="int"/>
                                     <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub2" >
+                                   <ECCustomAttributes>
+                                       <DbIndexList xmlns="ECDbMap.02.00">
+                                            <Indexes>
+                                                <DbIndex>
+                                                    <Name>uix_Sub2_NewProp2</Name>
+                                                    <IsUnique>True</IsUnique>
+                                                    <Properties>
+                                                        <string>NewProp2</string>
+                                                    </Properties>
+                                                </DbIndex>
+                                            </Indexes>
+                                       </DbIndexList>
+                                    </ECCustomAttributes>
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp2" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Unique index on new property on new subclass";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on new property on new subclass";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on new property on new subclass";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on new property on new subclass";
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema2" alias="ts2" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="TestSchema" version="01.00" alias="ts"/>
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Sub2" >
+                                   <ECCustomAttributes>
+                                       <DbIndexList xmlns="ECDbMap.02.00">
+                                            <Indexes>
+                                                <DbIndex>
+                                                    <Name>uix_Sub2_NewProp2</Name>
+                                                    <IsUnique>True</IsUnique>
+                                                    <Properties>
+                                                        <string>NewProp2</string>
+                                                    </Properties>
+                                                </DbIndex>
+                                            </Indexes>
+                                       </DbIndexList>
+                                    </ECCustomAttributes>
+                                    <BaseClass>ts:Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp2" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on new property on new subclass in new schema";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on new property on new subclass in new schema";
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub2" >
+                                   <ECCustomAttributes>
+                                       <DbIndexList xmlns="ECDbMap.02.00">
+                                            <Indexes>
+                                                <DbIndex>
+                                                    <Name>uix_Sub2_Code</Name>
+                                                    <IsUnique>True</IsUnique>
+                                                    <Properties>
+                                                        <string>Code</string>
+                                                    </Properties>
+                                                </DbIndex>
+                                            </Indexes>
+                                       </DbIndexList>
+                                    </ECCustomAttributes>
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp2" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Unique index on inherited property on new subclass";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on inherited property on new subclass";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on inherited property on new subclass";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on inherited property on new subclass";
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema2" alias="ts2" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="TestSchema" version="01.00" alias="ts"/>
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Sub2" >
+                                   <ECCustomAttributes>
+                                       <DbIndexList xmlns="ECDbMap.02.00">
+                                            <Indexes>
+                                                <DbIndex>
+                                                    <Name>uix_Sub2_Code</Name>
+                                                    <IsUnique>True</IsUnique>
+                                                    <Properties>
+                                                        <string>Code</string>
+                                                    </Properties>
+                                                </DbIndex>
+                                            </Indexes>
+                                       </DbIndexList>
+                                    </ECCustomAttributes>
+                                    <BaseClass>ts:Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp2" typeName="int" />
+                                </ECEntityClass>
+                            </ECSchema>)xml";
+
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::None)) << "Unique index on inherited property on new subclass in new schema";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Unique index on inherited property on new subclass in new schema";
+
+    //adding physical FK
+
+    newSchema = R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                            <ECSchema schemaName="TestSchema" alias="ts" version="%s" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+                                <ECEntityClass typeName="Parent" >
+                                    <ECCustomAttributes>
+                                       <ClassMap xmlns="ECDbMap.02.00">
+                                           <MapStrategy>TablePerHierarchy</MapStrategy>
+                                       </ClassMap>
+                                       <ShareColumns xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                    <ECProperty propertyName="Name" typeName="string" />
+                                    <ECProperty propertyName="Code" typeName="int"/>
+                                    <ECProperty propertyName="Val" typeName="int" />
+                                </ECEntityClass>
+                                <ECEntityClass typeName="Sub" >
+                                    <BaseClass>Parent</BaseClass>
+                                    <ECProperty propertyName="NewProp" typeName="string" />
                                 </ECEntityClass>
                                 <ECEntityClass typeName="Child" >
                                     <ECCustomAttributes>
                                        <ClassMap xmlns="ECDbMap.02.00">
                                            <MapStrategy>TablePerHierarchy</MapStrategy>
                                        </ClassMap>
-                                    <ECCustomAttributes>
+                                    </ECCustomAttributes>
                                     <ECProperty propertyName="Name" typeName="string" />
                                     <ECNavigationProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="backward">
                                         <ECCustomAttributes>
                                             <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-                                         <ECCustomAttributes>
+                                         </ECCustomAttributes>
                                     </ECNavigationProperty>
                                 </ECEntityClass>
                                 <ECRelationshipClass typeName="ParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward" >
@@ -10385,10 +10697,12 @@ TEST_F(SchemaUpgradeTestFixture, UpdateClass_AddStructProperty)
                                         <Class class="Child" />
                                     </Target>
                                  </ECRelationshipClass>
-                            </ECSchema>)xml");
+                            </ECSchema>)xml";
 
-    ASSERT_EQ(SUCCESS, assertImport(BackwardIncompatibleSchemaImport::Yes, newSchema)) << "Physical FK";
-    ASSERT_EQ(ERROR, assertImport(BackwardIncompatibleSchemaImport::No, newSchema)) << "Physical FK";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::None)) << "Physical FK";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "1.1", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK";
+    EXPECT_EQ(SUCCESS, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::None)) << "Physical FK";
+    EXPECT_EQ(ERROR, assertImport(newSchema, "2.0", SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade)) << "Physical FK";
     }
-    */
+    
 END_ECDBUNITTESTS_NAMESPACE
