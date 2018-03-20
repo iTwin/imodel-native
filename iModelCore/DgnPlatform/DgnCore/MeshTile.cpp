@@ -1761,7 +1761,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     if (nullptr != getTileTree)
         {
         // ###TODO: Change point clouds to go through this path instead of _GenerateMeshTiles below.
-        if (getTileTree->_AllowPublishing())                                                                                                                                                                                                      
+        if (getTileTree->_AllowPublishing())
             return GenerateTilesFromTileTree(&collector, leafTolerance, surfacesOnly, geometricModel);
         else if (nullptr != getPublishedURL)
             return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
