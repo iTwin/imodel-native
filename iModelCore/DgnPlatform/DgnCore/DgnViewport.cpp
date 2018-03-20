@@ -1382,39 +1382,35 @@ StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP
     return SUCCESS;
     }
 
-#ifdef WIP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-    StatusInt DgnViewport::DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, DPoint3dCR pickPoint, int radiusPixels)
+StatusInt DgnViewport::DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, DPoint3dCR pickPoint, int radiusPixels)
     {
-    DPoint3d        inView;                                                                                     
-
-    WorldToToView(inView, pickPoint);
-
-    int32_t                 inCenterX = (int32_t) (inView.x + .5), inCenterY = (int32_t) (inView.y + .5);
-    BSIRect                 pickRect = BSIRect::From(inCenter.x - radiusPixels, inCenter.y - radiusPixels, inCenter.x + radiusPixels, inCenter.y + radiusPixels);
+    DPoint3d                inView = WorldToView(pickPoint);
+    Point2d                 viewCenter = { (int32_t) (inView.x + .5), (int32_t) (inView.y + .5) };
+    BSIRect                 pickRect = BSIRect::From(viewCenter.x - radiusPixels, viewCenter.y - radiusPixels, viewCenter.x + radiusPixels + 1, viewCenter.y + radiusPixels + 1);
     IPixelDataBufferCPtr    pixels = ReadPixels(pickRect, PixelData::Selector::Distance);
 
-    if (GetPixelDataWorld(outPoint, *pixels, inCenterX, inCenterY))
-        return SUCCESS;
-
+    for (int testRadius=0; testRadius<radiusPixels; testRadius++)
+        {
+        for (int x = viewCenter.x - testRadius; x <= viewCenter.x  + testRadius; x++)
+            for (int y = viewCenter.y - testRadius; y <= viewCenter.y + testRadius; y++)
+                if (GetPixelDataWorldPoint(outPoint, *pixels, x, y))
+                    return true;
+        }
+    return false;
     }
-
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d DgnViewport::DetermineDefaultRotatePoint()
     {
-//#define VISIBLE_DEPTH_WIP
-#ifdef VISIBLE_DEPTH_WIP
     double npcDepthLow, npcDepthHigh;
 
     if (IsActive()  && SUCCESS == DetermineVisibleDepthNpcRange (npcDepthLow, npcDepthHigh))
         return NpcToWorld(DPoint3d::From(0.5, 0.5, (npcDepthLow + npcDepthHigh) / 2.0));
-#endif
 
     return IsCameraOn() ? m_viewController->GetViewDefinition().GetTargetPoint() : NpcToWorld(DPoint3d::From(.5, .5, .5));
     }
