@@ -1329,7 +1329,7 @@ bool DgnViewport::GetPixelDataWorldPoint(DPoint3dR world, IPixelDataBufferCR pix
 StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& highNpc, BSIRectCP viewRectCP)
     {
     BSIRect                 viewRect = (nullptr == viewRectCP) ? GetViewRect() : *viewRectCP;
-    IPixelDataBufferCPtr    pixels = ReadPixels(GetViewRect(), PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
 
     lowNpc  = 1.0;
     highNpc = 0.0;
@@ -1357,7 +1357,7 @@ StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& hig
 StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP viewRectCP)
     {
     BSIRect                 viewRect = (nullptr == viewRectCP) ? GetViewRect() : *viewRectCP;
-    IPixelDataBufferCPtr    pixels = ReadPixels(GetViewRect(), PixelData::Selector::Distance);
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
     size_t                  pixelCount = 0;
 
     aveNpc = 0.0;
@@ -1387,17 +1387,29 @@ StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnViewport::DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, DPoint3dCR pickPoint, int radiusPixels)
     {
-    DPoint3d                inView = WorldToView(pickPoint);
-    Point2d                 viewCenter = { (int32_t) (inView.x + .5), (int32_t) (inView.y + .5) };
-    BSIRect                 pickRect = BSIRect::From(viewCenter.x - radiusPixels, viewCenter.y - radiusPixels, viewCenter.x + radiusPixels + 1, viewCenter.y + radiusPixels + 1);
-    IPixelDataBufferCPtr    pixels = ReadPixels(pickRect, PixelData::Selector::Distance);
+    DPoint3d        inView = WorldToView(pickPoint);
+    Point2d         viewCenter = { (int32_t) (inView.x + .5), (int32_t) (inView.y + .5) };
+    BSIRect         viewRect = GetViewRect(), overlapRect;
+    BSIRect         pickRect = BSIRect::From(viewCenter.x - radiusPixels, viewCenter.y - radiusPixels, viewCenter.x + radiusPixels + 1, viewCenter.y + radiusPixels + 1);
+
+    if (!pickRect.Overlap(&overlapRect, &viewRect))
+        return ERROR;
+    
+    IPixelDataBufferCPtr    pixels = ReadPixels(overlapRect, PixelData::Selector::Distance);
 
     for (int testRadius=0; testRadius<radiusPixels; testRadius++)
         {
-        for (int x = viewCenter.x - testRadius; x <= viewCenter.x  + testRadius; x++)
-            for (int y = viewCenter.y - testRadius; y <= viewCenter.y + testRadius; y++)
-                if (GetPixelDataWorldPoint(outPoint, *pixels, x, y))
+        Point2d     testPoint;
+
+        for (testPoint.x = viewCenter.x - testRadius; testPoint.x <= viewCenter.x  + testRadius; testPoint.x++)
+            {
+            for (testPoint.y = viewCenter.y - testRadius; testPoint.y <= viewCenter.y + testRadius; testPoint.y++)
+                {
+                if (overlapRect.PointInside(testPoint) &&
+                    GetPixelDataWorldPoint(outPoint, *pixels, testPoint.x, testPoint.y))
                     return true;
+                }
+            }
         }
     return false;
     }
@@ -1409,8 +1421,10 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
     {
     double npcDepthLow, npcDepthHigh;
 
+#ifdef DEPTH_TEST
     if (IsActive()  && SUCCESS == DetermineVisibleDepthNpcRange (npcDepthLow, npcDepthHigh))
         return NpcToWorld(DPoint3d::From(0.5, 0.5, (npcDepthLow + npcDepthHigh) / 2.0));
+#endif
 
     return IsCameraOn() ? m_viewController->GetViewDefinition().GetTargetPoint() : NpcToWorld(DPoint3d::From(.5, .5, .5));
     }
