@@ -266,6 +266,7 @@ public:
     bool IsInvertedUnit() const {return nullptr != m_parent;} //!< Indicates if this unit is an InverseUnit or not
     bool IsConstant() const {return m_isConstant;} //!< Indicates if this Unit is constant.
     UnitSystemCP GetUnitSystem() const {return m_system;} //!< Gets the UnitSystem for this Unit.
+    bool HasUnitSystem() const {return nullptr != m_system;} //!< Gets whether this unit has a unit system or not.
     //! Returns true if the unit is just a place holder for a real unit, invalid units are not convertible into any other unit.
     bool IsValid() const {return !m_dummyUnit;}
     PhenomenonCP GetPhenomenon() const {return m_phenomenon;} //!< Gets the Phenomenon for this Unit.
