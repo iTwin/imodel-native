@@ -13,6 +13,8 @@
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
+#ifdef ALLOW_SAVEDSELECTION_IN_SCHEMA
+
 //=======================================================================================
 // This class is used to store the specification for a set elements. The set is defined
 // in JSON format created by the SelectionManager in ECPresentation layer.
@@ -93,6 +95,6 @@ public:
         }
 
 };
-
+#endif
 
 END_BENTLEY_DGN_NAMESPACE
