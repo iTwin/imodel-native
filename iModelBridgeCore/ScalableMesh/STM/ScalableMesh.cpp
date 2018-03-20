@@ -2390,7 +2390,7 @@ template <class POINT> uint64_t ScalableMesh<POINT>::_AddClip(const DPoint3d* pt
 template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain)
     {
     bvector<bvector<DPoint3d>> coverageData;
-    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr || pts == nullptr || ptsSize == 0) return false;
 
     DRange3d extent = DRange3d::From(pts, (int)ptsSize);
     if (extent.Volume() == 0)
