@@ -2443,25 +2443,25 @@ TEST_F(FileFormatCompatibilityTests, EC31KOQs)
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only handle ECnamed units if they are prefixed with the schema alias";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
-    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="MyKoq" persistenceUnit="u:KM_PER_SEC" presentationUnits="M/SEC" relativeError=".5"/>
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 cannot use EC named units";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
-    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="MyKoq" persistenceUnit="u:KM_PER_SEC(DefaultReal)" presentationUnits="M/SEC" relativeError=".5"/>
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only EC named units";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -2470,7 +2470,7 @@ TEST_F(FileFormatCompatibilityTests, EC31KOQs)
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only handle ECnamed units if they are prefixed with the schema alias";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
@@ -2479,16 +2479,16 @@ TEST_F(FileFormatCompatibilityTests, EC31KOQs)
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only handle ECnamed units if they are prefixed with the schema alias";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
-    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="MyKoq" persistenceUnit="KM/SEC" presentationUnits="u:M_PER_SEC(DefaultReal)" relativeError=".5"/>
             <ECEntityClass typeName="Foo">
                <ECProperty propertyName="Prop" typeName="int" kindOfQuantity="MyKoq" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "EC3.1 can only EC named units";
+        </ECSchema>)xml"))) << "EC3.1 cannot handle ECnamed units";
 
     //User defined units (only possible in EC3.2, but not yet in EC3.1)
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
