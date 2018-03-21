@@ -132,6 +132,16 @@ $(o)BeSystemInfoIos$(oext)         : $(nonportDir)BeSystemInfoIos.mm $(BentleyAP
 objs + $(o)BeSystemInfoIos$(oext)
 %endif
 
+#--------------------------------------------------------------------------------------
+#   MacOS-Specific
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PLATFORM)=="MacOS"
+
+$(o)BeSystemInfoMacOS$(oext) : $(nonportDir)BeSystemInfoMacOS.mm $(BentleyAPISrc)BeSystemInfo.h ${MultiCompileDepends}
+
+objs + $(o)BeSystemInfoMacOS$(oext)
+%endif
+
 %undef MultiCompileDepends
 
 #----------------------------------------------------------------------

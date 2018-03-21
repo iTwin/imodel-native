@@ -216,7 +216,7 @@ uint32_t BeSystemInfo::GetNumberOfCpus()
     }
 
 // iOS implementations are located in BeSystemInfo.mm file
-#if !defined (BENTLEYCONFIG_OS_APPLE_IOS)
+#if !defined (BENTLEYCONFIG_OS_APPLE_IOS) && !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Grigas.Petraitis                12/14
