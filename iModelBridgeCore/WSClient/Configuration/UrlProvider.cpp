@@ -209,9 +209,19 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectSharedFederatedUIURL(
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, ILocalState* customLocalState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
+void UrlProvider::Initialize
+(
+Environment env,
+int64_t cacheTimeoutMs,
+ILocalState* customLocalState,
+IBuddiClientPtr customBuddi,
+IHttpHandlerPtr customHandler,
+ITaskSchedulerPtr customScheduler
+)
     {
-    s_thread = WorkerThread::Create("UrlProvider");
+    s_thread = customScheduler;
+    if (nullptr == s_thread)
+        s_thread = WorkerThread::Create("UrlProvider");
 
     s_localState = customLocalState ? customLocalState : &MobileDgnCommon::LocalState();
     s_customHandler = customHandler;
@@ -265,7 +275,7 @@ Utf8String UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8String* defaultUr
         if (!cachedUrl.empty() && ((currentTime - timeCached) >= s_cacheTimeoutMs))
             {
             // Refresh in background
-            AsyncTasksManager::GetDefaultScheduler()->ExecuteAsyncWithoutAttachingToCurrentTask([=]
+            s_thread->ExecuteAsyncWithoutAttachingToCurrentTask([=]
                 {
                 CacheBuddiUrl(urlName);
                 });

@@ -60,6 +60,9 @@
     <ClCompile Include="Examples\ExampleTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Configuration\UrlProviderTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Repository\WorkspaceTests.h">

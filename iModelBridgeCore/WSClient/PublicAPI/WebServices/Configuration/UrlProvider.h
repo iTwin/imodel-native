@@ -83,7 +83,8 @@ struct UrlProvider
             int64_t cacheTimeoutMs = DefaultTimeout,
             ILocalState* customlocalState = nullptr,
             IBuddiClientPtr customBuddi = nullptr,
-            IHttpHandlerPtr customHandler = nullptr
+            IHttpHandlerPtr customHandler = nullptr,
+            ITaskSchedulerPtr customScheduler = nullptr
             );
 
         WSCLIENT_EXPORT static void Uninitialize();
