@@ -36,9 +36,6 @@ always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
 always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnV8Api=$(BuildContext)SdkSources/ScalableMeshSDK/PublicAPI"
-
-always:
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
