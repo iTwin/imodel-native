@@ -2616,7 +2616,7 @@ void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewA
     m_curLeafGeometries.clear();
     m_curElemId = elemId;
 
-    auto graphic = context.CreateSceneGraphic(attach.GetPlacementTransform());
+    auto graphic = context.CreateSceneGraphic();
     GeometryParams geomParams;
     geomParams.SetCategoryId(attach.GetCategoryId());
     geomParams.SetSubCategoryId(DgnCategory::GetDefaultSubCategoryId(attach.GetCategoryId()));
@@ -2628,6 +2628,11 @@ void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewA
     context.CookGeometryParams(geomParams, *graphic);
 
     DRange3d range = attach.GetPlacement().CalculateRange();
+    DRange3d clipRange;
+    auto clip = attach.GetClip();
+    if (clip.IsValid() && clip->GetRange(clipRange, nullptr))
+        range.IntersectionOf(range, clipRange);
+
     DPoint2d box[] =
         {
         DPoint2d::From(range.low.x, range.low.y),
