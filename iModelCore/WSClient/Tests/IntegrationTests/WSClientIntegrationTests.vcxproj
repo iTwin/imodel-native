@@ -47,6 +47,7 @@
   <ItemGroup>
     <ClCompile Include="Cache\CachingDataSourceTests.cpp" />
     <ClCompile Include="Configuration\BuddiClientTests.cpp" />
+    <ClCompile Include="Configuration\UrlProviderTests.cpp" />
     <ClCompile Include="Examples\ExampleTests.cpp" />
     <ClCompile Include="Repository\Extensions\HierarchicalSearchTests.cpp" />
     <ClCompile Include="Repository\Extensions\NavigationTests.cpp" />
