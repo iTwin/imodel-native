@@ -175,6 +175,23 @@ private:
             borderRange.high = DPoint3d::From(borderRange2d.high);
 
             m_range.Extend(borderRange);
+
+            // Also include the range of all view attachments
+            bvector<DgnElementId> attachIds = sheet->GetSheetAttachmentIds();
+            for (auto attachId : attachIds)
+                {
+                auto attach = sheet->GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
+                if (attach.IsValid())
+                    {
+                    DRange3d attachRange = attach->GetPlacement().CalculateRange();
+                    DRange3d clipRange;
+                    if (attach->GetClip().IsValid() && attach->GetClip()->GetRange(clipRange, nullptr))
+                        attachRange.IntersectionOf(attachRange, clipRange);
+
+                    if (!attachRange.IsNull())
+                        m_range.Extend(attachRange);
+                    }
+                }
             }
         }
 public:
