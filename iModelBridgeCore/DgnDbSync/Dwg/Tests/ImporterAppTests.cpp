@@ -40,6 +40,10 @@ TEST_F(ImporterAppTests, createIBim)
     createCommand();
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir() );
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ( SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -59,6 +63,10 @@ TEST_F(ImporterAppTests, createIBIMandIModel)
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir());
     addCompressFlag();
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -78,6 +86,10 @@ TEST_F(ImporterAppTests, createIBIMandIModelFromDxf)
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir());
     addCompressFlag();
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -98,6 +110,10 @@ TEST_F(ImporterAppTests, Description)
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir());
     addDescription(L"TestDescription");
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
@@ -131,6 +147,10 @@ TEST_F(ImporterAppTests, BudweiserBenchmarks)
     addInputFile(inFile.c_str());
     addOutputFile(GetOutputDir());
     addCompressFlag();
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    addNoThumbnails();
+#endif
     ASSERT_EQ(SUCCESS, RunCMD(m_command));
 
     BeFileName outFile = GetIBimFileName(inFile);
