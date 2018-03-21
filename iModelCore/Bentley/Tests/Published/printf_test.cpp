@@ -162,7 +162,6 @@ EXPECT_TRUE( strcmp (buf, "abc") == 0 );
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-#if !defined(BENTLEYCONFIG_OS_APPLE)
 TEST(printf_test, Numbers)
 {
   char buf[8];
@@ -1011,6 +1010,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* NaN.  */
     char result[100];
     int retval =
@@ -1020,6 +1020,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 
   { /* Width.  */
     char result[100];
@@ -1094,6 +1095,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* FLAG_ZERO with NaN.  */
     char result[100];
     int retval =
@@ -1103,6 +1105,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 
   { /* Precision.  */
     char result[100];
@@ -1263,6 +1266,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* NaN.  */
     static long double zero = 0.0L;
     char result[100];
@@ -1273,6 +1277,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_))
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
@@ -1434,6 +1439,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* FLAG_ZERO with NaN.  */
     static long double zero = 0.0L;
     char result[100];
@@ -1444,6 +1450,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 
   { /* Precision.  */
     char result[100];
@@ -1824,6 +1831,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* NaN.  */
     char result[100];
     int retval =
@@ -1833,6 +1841,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 
   { /* Width.  */
     char result[100];
@@ -1917,6 +1926,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* FLAG_ZERO with NaN.  */
     char result[100];
     int retval =
@@ -1926,6 +1936,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 
   { /* Precision.  */
     char result[100];
@@ -2089,6 +2100,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* NaN.  */
     static long double zero = 0.0L;
     char result[100];
@@ -2099,6 +2111,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_))
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
@@ -2262,6 +2275,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* FLAG_ZERO with NaN.  */
     static long double zero = 0.0L;
     char result[100];
@@ -2272,6 +2286,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 
   { /* Precision.  */
     char result[100];
@@ -2443,6 +2458,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* NaN.  */
     char result[100];
     int retval =
@@ -2452,7 +2468,8 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
-
+#endif
+  
   { /* Width.  */
     char result[100];
     int retval =
@@ -2529,6 +2546,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* FLAG_ZERO with NaN.  */
     char result[100];
     int retval =
@@ -2538,6 +2556,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 
   { /* Precision.  */
     char result[100];
@@ -2700,6 +2719,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* NaN.  */
     static long double zero = 0.0L;
     char result[100];
@@ -2710,6 +2730,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_))
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
@@ -2873,6 +2894,7 @@ TEST(printf_test, Numbers)
   }
 #endif
 
+#if !defined(BENTLEYCONFIG_OS_APPLE) // have not found a reliable way to produce NaN on these platforms.
   { /* FLAG_ZERO with NaN.  */
     static long double zero = 0.0L;
     char result[100];
@@ -2883,6 +2905,7 @@ TEST(printf_test, Numbers)
 	    && strcmp (result + strlen (result) - 3, " 33") == 0);
     EXPECT_TRUE (retval == strlen (result));
   }
+#endif
 
   { /* Precision.  */
     char result[100];
@@ -2929,7 +2952,6 @@ TEST(printf_test, Numbers)
   }
 #endif // defined (WIP_NOT_IMPLEMENTED)
 }
-#endif // !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
 
 #if defined (NOT_YET)
 //---------------------------------------------------------------------------------------
