@@ -12,9 +12,10 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct KindOfQuantityTest : ECTestFixture     
+struct KindOfQuantityTest : ECTestFixture
     {
     ECSchemaPtr m_schema;
+    Formatting::StdFormatSet m_stdFmtSet;
 
     void CreateTestSchema(bool refUnitSchema = false)
         {
@@ -102,28 +103,33 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationUnits)
     EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationUnit("u:PI"));
     EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:IN"));
     EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:MILLIINCH"));
-
     }
 
     {
     KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
     EXPECT_STREQ("FT", koq->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
-    auto presUnitList = koq->GetPresentationUnitList();
+    auto const& presUnitList = koq->GetPresentationUnitList();
+
     EXPECT_EQ(3, presUnitList.size());
     EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName().c_str());
     EXPECT_STREQ("IN", presUnitList.at(1).GetUnit()->GetName().c_str());
     EXPECT_STREQ("MILLIINCH", presUnitList.at(2).GetUnit()->GetName().c_str());
-
-    koq->RemovePresentationUnit(presUnitList.at(1).GetUnit());
     }
+
     {
     KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
-    auto presUnitList = koq->GetPresentationUnitList();
+    auto const& presUnitList = koq->GetPresentationUnitList();
+
+    koq->RemovePresentationUnit(presUnitList.at(1));
     EXPECT_EQ(2, presUnitList.size());
     EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName().c_str());
     EXPECT_STREQ("MILLIINCH", presUnitList.at(1).GetUnit()->GetName().c_str());
+
+    koq->RemovePresentationUnit(presUnitList.at(0));
+    EXPECT_EQ(1, presUnitList.size());
+    EXPECT_STREQ("MILLIINCH", presUnitList.at(0).GetUnit()->GetName().c_str());
     }
     }
 
@@ -211,7 +217,7 @@ TEST_F(KindOfQuantityTest, PersistenceUnitDescriptor)
     ECUnitP smoot;
     m_schema->CreateUnit(smoot, "Smoot", "M", *unitSchema->GetPhenomenonCP("Length"), *unitSchema->GetUnitSystemCP("SI"), 1.7018);
 
-    auto defaultFormat = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
+    auto defaultFormat = m_stdFmtSet.FindNamedFormatSpec("DefaultRealU");
 
     {
     KindOfQuantityP koq;
@@ -265,7 +271,7 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
     ECUnitP smoot;
     m_schema->CreateUnit(smoot, "Smoot", "M", *unitSchema->GetPhenomenonCP("Length"), *unitSchema->GetUnitSystemCP("SI"), 1.7018);
 
-    auto defaultFormat = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
+    auto defaultFormat = m_stdFmtSet.FindNamedFormatSpec("DefaultRealU");
 
     {
     KindOfQuantityP koq;
@@ -472,7 +478,7 @@ TEST_F(KindOfQuantityDeserializationTest, TestUnitInSchemaAsPresentationAndPersi
             <UnitSystem typeName="TestUnitSystem" displayLabel="Unit System" description="This is an awesome new Unit System"/>
             <Unit typeName="TestUnit" phenomenon="TestPhenomenon" unitSystem="TestUnitSystem" numerator="1.0" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                displayLabel="best quantity of all times" persistenceUnit="TestUnit(real4u)" presentationUnits="TestUnit(real4u)" relativeError="10e-3"/>
+                displayLabel="best quantity of all times" persistenceUnit="TestUnit(DefaultReal)" presentationUnits="TestUnit(DefaultReal)" relativeError="10e-3"/>
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -483,8 +489,8 @@ TEST_F(KindOfQuantityDeserializationTest, TestUnitInSchemaAsPresentationAndPersi
     auto koqPerUnit = koq->GetPersistenceUnit().GetUnit();
     ASSERT_EQ(unit, koqPerUnit);
     ASSERT_EQ(unit, koq->GetDefaultPresentationUnit().GetUnit());
-    ASSERT_STREQ(koq->GetPersistenceUnit().GetNamedFormatSpec()->GetName(), "Real4U");
-    ASSERT_STREQ(koq->GetDefaultPresentationUnit().GetNamedFormatSpec()->GetName(), "Real4U");
+    ASSERT_STREQ(koq->GetPersistenceUnit().GetNamedFormatSpec()->GetName().c_str(), "DefaultReal");
+    ASSERT_STREQ(koq->GetDefaultPresentationUnit().GetNamedFormatSpec()->GetName().c_str(), "DefaultReal");
     }
 
 //---------------------------------------------------------------------------------------
@@ -827,8 +833,8 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto pres = koq->GetDefaultPresentationUnit();
     EXPECT_STRCASEEQ("THOUSAND_SQ_FT", persist.GetUnit()->GetName().c_str());
     EXPECT_STRCASEEQ("THOUSAND_SQ_FT", pres.GetUnit()->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU", persist.GetNamedFormatSpec()->GetName());
-    EXPECT_STRCASEEQ("DefaultRealU", pres.GetNamedFormatSpec()->GetName());
+    EXPECT_STRCASEEQ("DefaultRealU", persist.GetNamedFormatSpec()->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", pres.GetNamedFormatSpec()->GetName().c_str());
     }
 
     // EC3.1
@@ -845,8 +851,8 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto pres = koq->GetDefaultPresentationUnit();
     EXPECT_STRCASEEQ("THOUSAND_SQ_FT", persist.GetUnit()->GetName().c_str());
     EXPECT_STRCASEEQ("THOUSAND_SQ_FT", pres.GetUnit()->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU", persist.GetNamedFormatSpec()->GetName());
-    EXPECT_STRCASEEQ("DefaultRealU", pres.GetNamedFormatSpec()->GetName());
+    EXPECT_STRCASEEQ("DefaultRealU", persist.GetNamedFormatSpec()->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", pres.GetNamedFormatSpec()->GetName().c_str());
     }
 
     // EC3.2
@@ -871,8 +877,8 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
 
     EXPECT_EQ(presUnit, persUnit);
 
-    EXPECT_STRCASEEQ("DefaultRealU", persist.GetNamedFormatSpec()->GetName());
-    EXPECT_STRCASEEQ("DefaultRealU", pres.GetNamedFormatSpec()->GetName());
+    EXPECT_STRCASEEQ("DefaultRealU", persist.GetNamedFormatSpec()->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", pres.GetNamedFormatSpec()->GetName().c_str());
     }
 
     // Latest EC Version
@@ -895,8 +901,8 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto pres = koq2->GetDefaultPresentationUnit();
     EXPECT_STRCASEEQ("M", persist.GetUnit()->GetName().c_str());
     EXPECT_STRCASEEQ("M", pres.GetUnit()->GetName().c_str());
-    EXPECT_STRCASEEQ("DefaultRealU", persist.GetNamedFormatSpec()->GetName());
-    EXPECT_STRCASEEQ("DefaultRealU", pres.GetNamedFormatSpec()->GetName());
+    EXPECT_STRCASEEQ("DefaultRealU", persist.GetNamedFormatSpec()->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", pres.GetNamedFormatSpec()->GetName().c_str());
     }
     }
 

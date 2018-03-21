@@ -8,6 +8,8 @@
 #include "ECObjectsPch.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+static Formatting::StdFormatSet const s_stdFmtSet;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1025,7 +1027,7 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
 
     if (kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newUnit))
         {
-        newKOQ->SetPersistenceUnit(*newUnit, Formatting::StdFormatSet::FindFormatSpec("DefaultRealU"));
+        newKOQ->SetPersistenceUnit(*newUnit, s_stdFmtSet.FindNamedFormatSpec("DefaultRealU"));
         newKOQ->SetRelativeError(1e-4);
         }
     else
@@ -1036,9 +1038,9 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
         }
 
     if (nullptr != newDisplayUnit)
-        newKOQ->AddPresentationUnit(*newDisplayUnit, Formatting::StdFormatSet::FindFormatSpec("DefaultRealU"));
+        newKOQ->AddPresentationUnit(*newDisplayUnit, s_stdFmtSet.FindNamedFormatSpec("DefaultRealU"));
     else if (persistenceUnitChanged)
-        newKOQ->AddPresentationUnit(*originalUnit, Formatting::StdFormatSet::FindFormatSpec("DefaultRealU"));
+        newKOQ->AddPresentationUnit(*originalUnit, s_stdFmtSet.FindNamedFormatSpec("DefaultRealU"));
 
     return ECObjectsStatus::Success;
     }
