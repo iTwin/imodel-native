@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Logging/bentleylogging.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -101,12 +101,13 @@ public:
              LoggingManager::CreateUncachedLogger */
     virtual int STDCALL_ATTRIBUTE CreateLogger ( WCharCP nameSpace, ILogProviderContext ** ppContext ) = 0;
 
-    /** Destroy logger method. Called when user calls LoggerFactory::destroyLogger.
-        @param pContext     => Logger context value for logger to destroy.
-        @return SUCCESS or ERROR
-        @see createLogger, LoggingManager::ReleaseLogger,
-             LoggingManager::DestroyUncachedLogger */
-    virtual int STDCALL_ATTRIBUTE DestroyLogger ( ILogProviderContext * pContext ) = 0;
+    // Destroy logger method. Called when user calls LoggerFactory::destroyLogger.
+    // @param pContext     => Logger context value for logger to destroy.
+    // @return SUCCESS or ERROR
+    // @see createLogger, LoggingManager::ReleaseLogger,
+    //      LoggingManager::DestroyUncachedLogger
+    // never implemented, and thus seemingly not needed
+    // virtual int STDCALL_ATTRIBUTE DestroyLogger ( ILogProviderContext * pContext ) = 0;
 
     /** Log message method. Called when user calls any of the logging methods.
         @remarks This method can be slightly more efficient on platforms such as Windows where UTF-16 is directly supported by the C runtime.

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/bentleylogging_test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (_MSC_VER)
@@ -126,7 +126,6 @@ TEST_F(BentleyLoggingTests, LogggerCheck)
         severity.pop_back();
 
         }
-    // NativeLogging::LoggingManager::ReleaseLogger(logger);  meaningless
     NativeLogging::LoggingConfig::SetSeverity(L"bentleylogging_test", NativeLogging::LOG_DEBUG);
     logger->message(L"bentleylogging_test", NativeLogging::LOG_ERROR, L"Error Log (wide) with namespace");
     logger->message("bentleylogging_test", NativeLogging::LOG_DEBUG, "Debug Log (Utf-8) with namespace");

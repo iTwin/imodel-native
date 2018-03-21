@@ -2,7 +2,7 @@
 |
 |     $Source: LoggingSDK/src/native/interface/loggingmanager.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -57,20 +57,21 @@ ILogger* pLogger
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    TonyCleveland   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-int STDCALL_ATTRIBUTE LoggingManager::ReleaseLogger
-(
-ILogger* pLogger
-)
-    {
-    if ( NULL == pLogger )
-        {
-        throw std::invalid_argument ( "pLogger" );
-        }
+// never implemented, and thus seemingly not needed
+// int STDCALL_ATTRIBUTE LoggingManager::ReleaseLogger
+// (
+// ILogger* pLogger
+// )
+//     {
+//     if ( NULL == pLogger )
+//         {
+//         throw std::invalid_argument ( "pLogger" );
+//         }
 
-    // NEEDSWORK.
-    return SUCCESS;
-    }
-
+//     // NEEDSWORK.
+//     return SUCCESS;
+//     }
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    TonyCleveland   06/10
 +---------------+---------------+---------------+---------------+---------------+------*/
