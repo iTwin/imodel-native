@@ -236,7 +236,7 @@ TEST_F(UnitsTests, WritingToPre32VersionShouldNotWriteUnit)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(UnitsTests, AllUnitsInStandardUnitsSchemaHaveValidDefinitions)
     {
-    ECSchemaPtr schema = StandardUnitsHelper::GetSchema();
+    ECSchemaPtr schema = ECTestFixture::GetUnitsSchema();
 
     bvector<Units::UnitCP> allUnits;
     schema->GetUnitsContext().AllUnits(allUnits);

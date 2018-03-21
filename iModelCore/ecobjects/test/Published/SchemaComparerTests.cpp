@@ -177,14 +177,14 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchema)
     KindOfQuantityP koq;
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
-    m_firstSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
-    koq->SetPersistenceUnit(*StandardUnitsHelper::GetUnit("M"));
-    koq->AddPresentationUnit(*StandardUnitsHelper::GetUnit("FT"));
+    m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"));
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
-    m_secondSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
-    koq->SetPersistenceUnit(*StandardUnitsHelper::GetUnit("M"));
-    koq->AddPresentationUnit(*StandardUnitsHelper::GetUnit("FT"));
+    m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"));
 
     SchemaComparer comparer;
     SchemaChanges changes;
@@ -219,9 +219,9 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
     EC_ASSERT_SUCCESS(ref->CreateUnit(unit2, "FT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
-    m_firstSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
-    koq->SetPersistenceUnit(*StandardUnitsHelper::GetUnit("M"));
-    koq->AddPresentationUnit(*StandardUnitsHelper::GetUnit("FT"));
+    m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"));
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     koq->SetPersistenceUnit(*unit);
@@ -266,14 +266,14 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     KindOfQuantityP koq;
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
-    m_firstSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
-    koq->SetPersistenceUnit(*StandardUnitsHelper::GetUnit("CM"));
-    koq->AddPresentationUnit(*StandardUnitsHelper::GetUnit("MM"));
+    m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
+    koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
-    m_secondSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
-    koq->SetPersistenceUnit(*StandardUnitsHelper::GetUnit("M"));
-    koq->AddPresentationUnit(*StandardUnitsHelper::GetUnit("FT"));
+    m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"));
 
     SchemaComparer comparer;
     SchemaChanges changes;

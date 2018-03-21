@@ -23,7 +23,7 @@ struct ECQuantityFormattingTest : ECTestFixture {};
 
 static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer=nullptr)
     {
-    ECUnitCP unit = StandardUnitsHelper::GetUnit(fusUnit);
+    ECUnitCP unit = ECTestFixture::GetUnitsSchema()->GetUnitCP(fusUnit);
     BEF::NamedFormatSpecCP format = BEF::StdFormatSet::FindFormatSpec(formatName);
 
     BEF::FormatUnitSet fus = BEF::FormatUnitSet(format, unit);
@@ -76,9 +76,9 @@ TEST_F(ECQuantityFormattingTest, TestWithOnlyInputUnit)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
-    schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
 
-    ECUnitCP meter = StandardUnitsHelper::GetUnit("M");
+    ECUnitCP meter = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
     Formatting::NamedFormatSpecCP fi = Formatting::StdFormatSet::FindFormatSpec("fi8");
 
     KindOfQuantityP koq;
@@ -98,9 +98,9 @@ TEST_F(ECQuantityFormattingTest, FormatPersistedValueUsingKoQPersistenceUnit)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
-    schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
 
-    ECUnitCP meter = StandardUnitsHelper::GetUnit("M");
+    ECUnitCP meter = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
 
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "TestKindOfQuantity");

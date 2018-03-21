@@ -123,7 +123,7 @@ void validateUnitsInConvertedSchema(ECSchemaR convertedSchema, ECSchemaR origina
                 Utf8String unitName;
                 ECClass::ParseClassName(alias, unitName, ecName);
 
-                ECUnitCP originalUnitInNewSystem = StandardUnitsHelper::GetUnit(unitName.c_str());
+                ECUnitCP originalUnitInNewSystem = ECTestFixture::GetUnitsSchema()->GetUnitCP(unitName.c_str());
                 ASSERT_NE(nullptr, originalUnitInNewSystem) << "Could not find converted unit for old unit " << originalUnit.GetName();
 
                 bool unitShouldBeConvertedToSI = !originalUnitInNewSystem->IsSI();
@@ -326,7 +326,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceAndPresentationUnitsNotCompat
 
     ASSERT_EQ(1, schema->GetReferencedSchemas().size()) << "Expected a single schema references after conversion because the standard Units schema ia added";
 
-    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *StandardUnitsHelper::GetSchema()));
+    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *ECTestFixture::GetUnitsSchema()));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1050,7 +1050,7 @@ TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveRe
     ASSERT_EQ(SchemaWriteStatus::Success, ECSchema::WriteToEC2XmlString(convertedDuringXmlSerialization, schema.get()));
 
     ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
-    ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *StandardUnitsHelper::GetSchema()));
+    ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetUnitsSchema()));
     }
 //=======================================================================================
 //! UnitInstanceConversionTest
@@ -1133,7 +1133,7 @@ TEST_F(UnitInstanceConversionTest, BasicTest)
     Units::Quantity lengthQ;
     ASSERT_EQ(ECObjectsStatus::Success, testInstance->GetQuantity(lengthQ, "Length"));
     EXPECT_STREQ("M", lengthQ.GetUnitName());
-    ECUnitCP unit = StandardUnitsHelper::GetUnit("FT");
+    ECUnitCP unit = ECTestFixture::GetUnitsSchema()->GetUnitCP("FT");
     ASSERT_NE(nullptr, unit);
     EXPECT_EQ(50, lengthQ.ConvertTo(unit).GetMagnitude());
     }

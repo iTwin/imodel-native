@@ -17,7 +17,7 @@ USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-  
+ECSchemaPtr ECTestFixture::s_unitsSchema;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
@@ -51,6 +51,7 @@ ECTestFixture::ECTestFixture()
     BeFileName assetsDir;
     BeTest::GetHost().GetDgnPlatformAssetsDirectory (assetsDir);
     ECN::ECSchemaReadContext::Initialize (assetsDir);
+    GetUnitsSchema();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -91,6 +92,20 @@ Utf8String ECTestFixture::GetDateTime ()
     strftime(buff, sizeof(buff), "%H:%M:%S", &timeinfo);
     dateTime.append (buff);
     return dateTime.c_str();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Kyle.Abramowitz                     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ECSchemaPtr ECTestFixture::GetUnitsSchema(bool recreate)
+    {
+    if(recreate || s_unitsSchema.IsNull())
+        { 
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaKey key("Units", 1, 0, 0);
+        s_unitsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+        }
+    return s_unitsSchema;
     }
 
 //---------------------------------------------------------------------------------------

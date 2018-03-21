@@ -154,7 +154,7 @@ bool KindOfQuantity::SetPersistenceUnit(Utf8StringCR fusDescriptor)
     {
     ECUnitCP unit;
     Formatting::NamedFormatSpecCP nfs;
-    auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
+    auto status = ParseFUSDescriptorWithoutUpgrading(unit, nfs, fusDescriptor.c_str(), *this);
     if (ECObjectsStatus::Success != status)
         return false;
 
@@ -191,7 +191,7 @@ bool KindOfQuantity::SetDefaultPresentationUnit(Utf8StringCR fusDescriptor)
     {
     ECUnitCP unit;
     Formatting::NamedFormatSpecCP nfs;
-    auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
+    auto status = ParseFUSDescriptorWithoutUpgrading(unit, nfs, fusDescriptor.c_str(), *this);
     if (ECObjectsStatus::Success != status)
         return false;
 
@@ -228,7 +228,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationUnit(Utf8StringCR fusDescriptor)
     {
     ECUnitCP unit;
     Formatting::NamedFormatSpecCP nfs;
-    auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
+    auto status = ParseFUSDescriptorWithoutUpgrading(unit, nfs, fusDescriptor.c_str(), *this);
     if (ECObjectsStatus::Success != status)
         return status;
 
@@ -468,7 +468,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
     ECUnitCP persUnit;
     Formatting::NamedFormatSpecCP persNFS;
-    ECObjectsStatus status = ParseFUSDescriptor(persUnit, persNFS, value.c_str(), *this, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
+    ECObjectsStatus status = ParseFUSDescriptor(persUnit, persNFS, value.c_str(), *this, context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
     if (ECObjectsStatus::Success != status)
         return SchemaReadStatus::InvalidECSchemaXml; // log messages are in the ParseFUSDescriptor
 
@@ -493,7 +493,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             {
             ECUnitCP presUnit;
             Formatting::NamedFormatSpecCP presNFS;
-            status = ParseFUSDescriptor(presUnit, presNFS, presValue.c_str(), *this, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
+            status = ParseFUSDescriptor(presUnit, presNFS, presValue.c_str(), *this, context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
             
             if (ECObjectsStatus::Success != status)
                 return SchemaReadStatus::InvalidECSchemaXml;
@@ -533,10 +533,48 @@ Utf8String KindOfQuantity::GetFUSDescriptor(Formatting::FormatUnitSetCR fus, ECS
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                  03/2018
+//--------------------------------------------------------------------------------------
+// static
+ECObjectsStatus KindOfQuantity::ParseFUSDescriptorWithoutUpgrading(ECUnitCP& unit, Formatting::NamedFormatSpecCP& nfs, Utf8CP descriptor, KindOfQuantityR koq)
+    {
+    Utf8String unitName;
+    Utf8String format;
+    Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, descriptor);
+
+    nfs = nullptr;
+    if (Utf8String::IsNullOrEmpty(format.c_str()))
+        // Need to keep the default without a Unit for backwards compatibility.
+        nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
+    else
+        {
+        nfs = Formatting::StdFormatSet::FindFormatSpec(format.c_str());
+        if (nullptr == nfs)
+            {
+            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid format, '%s'.",
+                descriptor, koq.GetFullName().c_str(), format.c_str());
+            return ECObjectsStatus::Error;
+            }
+        }
+
+    unit = nullptr;
+    unit = koq.GetSchema().GetUnitsContext().LookupUnit(unitName.c_str());
+
+    if (nullptr == unit)
+        {
+        LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid Unit, '%s'.",
+            descriptor, koq.GetFullName().c_str(), unitName.c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::NamedFormatSpecCP& nfs, Utf8CP descriptor, KindOfQuantityR koq, Nullable<uint32_t> ecXmlMajorVersion, Nullable<uint32_t> ecXmlMinorVersion)
+ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::NamedFormatSpecCP& nfs, Utf8CP descriptor, KindOfQuantityR koq, ECSchemaReadContextR context, Nullable<uint32_t> ecXmlMajorVersion, Nullable<uint32_t> ecXmlMinorVersion)
     {
     if (ecXmlMajorVersion.IsNull())
         ecXmlMajorVersion = 3;
@@ -590,7 +628,8 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::N
         Utf8String name;
         ECClass::ParseClassName(alias, name, unitName);
 
-        auto unitsSchema = StandardUnitsHelper::GetSchema();
+        SchemaKey key("Units", 1, 0, 0);
+        auto unitsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
         // The alias should be the Units schema name from the ECName Mappings
         BeAssert(unitsSchema->GetName().EqualsI(alias));
 

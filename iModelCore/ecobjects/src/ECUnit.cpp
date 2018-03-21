@@ -358,7 +358,7 @@ SchemaReadStatus ECUnit::ReadInvertedUnitXml(BeXmlNodeR unitNode, ECSchemaReadCo
 
     SetParent(*ptrUnit);
 
-    SetPhenomenon(const_cast<PhenomenonR> (*ptrUnit->GetPhenomenon()));
+    SetPhenomenon(*ptrUnit->GetPhenomenon());
 
     return SchemaReadStatus::Success;
     }

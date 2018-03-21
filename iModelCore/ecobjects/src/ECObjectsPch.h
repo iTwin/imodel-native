@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECObjectsPch.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <Bentley/BeStringUtilities.h>
 #include "../PrivateApi/ECObjects/SchemaParseUtils.h"
+#include "../PrivateApi/ECObjects/StandardUnitsHelper.h"
 #include "DateTimeInfoAccessor.h"
 #include "ECObjectsNativeLog.h"
 #include <Bentley/BeTimeUtilities.h>
