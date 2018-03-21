@@ -1419,9 +1419,8 @@ StatusInt DgnViewport::DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3d DgnViewport::DetermineDefaultRotatePoint()
     {
-    double npcDepthLow, npcDepthHigh;
-
 #ifdef DEPTH_TEST
+    double npcDepthLow, npcDepthHigh;
     if (IsActive()  && SUCCESS == DetermineVisibleDepthNpcRange (npcDepthLow, npcDepthHigh))
         return NpcToWorld(DPoint3d::From(0.5, 0.5, (npcDepthLow + npcDepthHigh) / 2.0));
 #endif
