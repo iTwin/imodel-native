@@ -572,11 +572,11 @@ ICancellationTokenPtr ct
         {
         Utf8String schemaName = relatedObjectId.schemaName;
         Utf8String className = relatedObjectId.className;
-        instanceId = relatedObjectId.remoteId;
+        Utf8String relatedInstanceId = relatedObjectId.remoteId;
 
         url = GetUrl(CreateClassSubPath(schemaName, className));
-        if (!instanceId.empty())
-            url += "/" + instanceId;
+        if (!relatedInstanceId.empty())
+            url += "/" + relatedInstanceId;
 
         auto createdClassName = objectCreationJson["instance"]["className"];
 
