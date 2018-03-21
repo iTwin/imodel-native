@@ -2296,6 +2296,7 @@ public:
         }
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
+    void ProcessAttachment(ViewContextR context, Sheet::ViewAttachmentCR);
     TileGeneratorStatus OutputGraphics(ViewContextR context);
 
     void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
@@ -2578,7 +2579,6 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
     {
     if (nullptr != m_filter && !m_filter->_AcceptElement(elemId))
         return;
-    
 
     try
         {
@@ -2597,8 +2597,51 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
         }
     catch (...)
         {
-        // This shouldn't be necessary - but an uncaught interception will cause the processing to continue forever. 
+        // This shouldn't be necessary - but an uncaught exception will cause the processing to continue forever and our ParaSolid error handler will throw.
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewAttachmentCR attach)
+    {
+// #define WIP_PUBLISH_VIEW_ATTACHMENTS
+#if defined(WIP_PUBLISH_VIEW_ATTACHMENTS)
+    auto elemId = attach.GetElementId();
+    if (nullptr != m_filter && !m_filter->_AcceptElement(elemId))
+        return;
+
+    m_curTileGeometries.clear();
+    m_curLeafGeometries.clear();
+    m_curElemId = elemId;
+
+    auto graphic = context.CreateSceneGraphic(attach.GetPlacementTransform());
+    GeometryParams geomParams;
+    geomParams.SetCategoryId(attach.GetCategoryId());
+    geomParams.SetSubCategoryId(DgnCategory::GetDefaultSubCategoryId(attach.GetCategoryId()));
+
+    geomParams.SetFillColor(ColorDef::DarkBlue());
+    geomParams.SetLineColor(ColorDef::DarkOrange());
+    geomParams.SetFillDisplay(FillDisplay::Always);
+
+    context.CookGeometryParams(geomParams, *graphic);
+
+    DRange3d range = attach.GetPlacement().CalculateRange();
+    DPoint2d box[] =
+        {
+        DPoint2d::From(range.low.x, range.low.y),
+        DPoint2d::From(range.low.x, range.high.y),
+        DPoint2d::From(range.high.x, range.high.y),
+        DPoint2d::From(range.high.x, range.low.y),
+        DPoint2d::From(range.low.x, range.low.y)
+        };
+
+    graphic->AddShape2d(5, box, true, attach.GetDisplayPriority());
+    graphic->Finish();
+
+    PushCurrentGeometry();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2858,7 +2901,7 @@ template<typename T> struct TileGeometryProcessorContext : NullContext
 {
 DEFINE_T_SUPER(NullContext);
 
-private:
+protected:
     TileGeometryProcessor&          m_processor;
     TileGenerationCacheCR           m_cache;
     BeSQLite::CachedStatementPtr    m_statement;
@@ -2957,7 +3000,6 @@ void _DrawStyledCurveVector(Render::GraphicBuilderR builder, CurveVectorCR curve
     }
 };
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3007,6 +3049,33 @@ template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(Dg
     return status;
     }
 
+using TileGeometryProcessorContext3d = TileGeometryProcessorContext<GeometrySelector3d>;
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/18
+//=======================================================================================
+struct TileGeometryProcessorContext2d : TileGeometryProcessorContext<GeometrySelector2d>
+{
+    DEFINE_T_SUPER(TileGeometryProcessorContext<GeometrySelector2d>);
+
+    bool m_isSheet;
+
+    TileGeometryProcessorContext2d(TileGeometryProcessor& proc, DgnDbR db, TileGenerationCacheCR cache) : T_Super(proc, db, cache), m_isSheet(cache.GetModel().IsSheetModel()) { }
+
+    StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override
+        {
+        auto result = T_Super::_VisitElement(elementId, allowLoad);
+        if (SUCCESS == result || !m_isSheet)
+            return result;
+
+        auto attach = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(elementId);
+        if (attach.IsNull())
+            return result;
+
+        m_processor.ProcessAttachment(*this, *attach);
+        return SUCCESS;
+        }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
@@ -3020,13 +3089,13 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
 
     if (is2d)
         {
-        TileGeometryProcessorContext<GeometrySelector2d> context(processor, db, cache);
+        TileGeometryProcessorContext2d context(processor, db, cache);
 
         return processor.OutputGraphics(context);
         }
     else
         {
-        TileGeometryProcessorContext<GeometrySelector3d> context(processor, db, cache);
+        TileGeometryProcessorContext3d context(processor, db, cache);
         return processor.OutputGraphics(context);
         }
     }
