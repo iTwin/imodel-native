@@ -21,17 +21,18 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct ECQuantityFormattingTest : ECTestFixture {};
 
+static Formatting::StdFormatSet const stdFmtSet;
 static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer=nullptr)
     {
     ECUnitCP unit = StandardUnitsHelper::GetUnit(fusUnit);
-    BEF::NamedFormatSpecCP format = BEF::StdFormatSet::FindFormatSpec(formatName);
+    BEF::NamedFormatSpecCP format = stdFmtSet.FindNamedFormatSpec(formatName);
 
     BEF::FormatUnitSet fus = BEF::FormatUnitSet(format, unit);
     EXPECT_FALSE(fus.HasProblem()) << "FUS-Problem: %s" << fus.GetProblemDescription().c_str();
     if (fus.HasProblem())
         return;
 
-    BEF::NamedFormatSpecCP real4u = BEF::StdFormatSet::FindFormatSpec("real4u");
+    BEF::NamedFormatSpecCP real4u = stdFmtSet.FindNamedFormatSpec("real4u");
 
     Formatting::FormatProblemCode code;
     BEF::FormatUnitSet fus0 = BEF::FormatUnitSet(real4u, unit);
@@ -79,7 +80,7 @@ TEST_F(ECQuantityFormattingTest, TestWithOnlyInputUnit)
     schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
 
     ECUnitCP meter = StandardUnitsHelper::GetUnit("M");
-    Formatting::NamedFormatSpecCP fi = Formatting::StdFormatSet::FindFormatSpec("fi8");
+    Formatting::NamedFormatSpecCP fi = stdFmtSet.FindNamedFormatSpec("fi8");
 
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "Test");

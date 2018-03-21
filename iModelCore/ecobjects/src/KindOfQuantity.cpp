@@ -9,6 +9,8 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+static Formatting::StdFormatSet const s_stdFmtSet;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -554,10 +556,10 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::N
     nfs = nullptr;
     if (Utf8String::IsNullOrEmpty(format.c_str()))
         // Need to keep the default without a Unit for backwards compatibility.
-        nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
+        nfs = s_stdFmtSet.FindNamedFormatSpec("DefaultRealU");
     else
         {
-        nfs = Formatting::StdFormatSet::FindFormatSpec(format.c_str());
+        nfs = s_stdFmtSet.FindNamedFormatSpec(format.c_str());
         if (nullptr == nfs)
             {
             if (xmlLessThanOrEqual32)
@@ -568,7 +570,7 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::N
                 }
             
             // Assuming since there was previously a format that it should contain the Unit with it.
-            nfs = Formatting::StdFormatSet::FindFormatSpec("DefaultRealU");
+            nfs = s_stdFmtSet.FindNamedFormatSpec("DefaultRealU");
             LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.",
                 descriptor, koq.GetFullName().c_str());
             }

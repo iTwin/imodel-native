@@ -1045,6 +1045,7 @@ TEST_F(PropertyDeserializationTest, CategoryAttributeInherited)
 TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     {
     Utf8String schemaXml;
+    Formatting::StdFormatSet stdFormatSet;
 
     {
     ECSchemaPtr schema;
@@ -1061,7 +1062,7 @@ TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     
     ECUnitCP mmUnit = unitsSchema.GetUnitCP("MM");
     EXPECT_NE(nullptr, mmUnit);
-    EXPECT_TRUE(koq->SetPersistenceUnit(*mmUnit, Formatting::StdFormatSet::FindFormatSpec("DefaultReal")));
+    EXPECT_TRUE(koq->SetPersistenceUnit(*mmUnit, stdFormatSet.FindNamedFormatSpec("DefaultReal")));
 
     PrimitiveECPropertyP primProp;
     EC_EXPECT_SUCCESS(entity->CreatePrimitiveProperty(primProp, "TestPrimProp"));
