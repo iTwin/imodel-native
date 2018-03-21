@@ -76,6 +76,7 @@ TEST(IModelJson,ReadFiles)
             L"rotationalSweep",
             L"ruledSweep",
             L"bsurf",
+            L"indexedMesh",
             })
         {
         bvector<IGeometryPtr> geometry;

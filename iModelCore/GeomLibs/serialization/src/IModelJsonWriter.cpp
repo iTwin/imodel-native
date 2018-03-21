@@ -56,6 +56,21 @@ struct BeCGIModelJsonValueWriter
         return result;
         }
 
+    Json::Value toJson (DPoint2dCR point, bool compact)
+        {
+        if (compact)
+            {
+            auto result = Json::Value();
+            result.append (Json::Value(point.x));
+            result.append (Json::Value(point.y));
+            return result;
+            }
+        auto result = Json::Value ();
+        result["x"] = point.x;
+        result["y"] = point.y;
+        return result;
+        }
+
     Json::Value toJson (DPoint3dCR point, double weight, bool compact)
         {
         if (compact)
@@ -82,6 +97,46 @@ struct BeCGIModelJsonValueWriter
             jsonArray.append (toJson (xyz, m_packArrays));
         return jsonArray;
         }
+
+    Json::Value toJson(DPoint3dCP points, size_t n)
+        {
+        Json::Value jsonArray;
+        for (auto i = 0; i < n; i++)
+            jsonArray.append (toJson (points[i], m_packArrays));
+        return jsonArray;
+        }
+
+    Json::Value toJson(DPoint2dCP points, size_t n)
+        {
+        Json::Value jsonArray;
+        for (auto i = 0; i < n; i++)
+            jsonArray.append (toJson (points[i], m_packArrays));
+        return jsonArray;
+        }
+    Json::Value toJson(bvector<int> const &data)
+        {
+        Json::Value jsonArray;
+        for (auto &a : data)
+            jsonArray.append (a);
+        return jsonArray;
+        }
+
+    Json::Value toJson(uint32_t const *data,  size_t n)
+        {
+        Json::Value jsonArray;
+        for (size_t i = 0; i < n; i++)
+            jsonArray.append (data[i]);
+        return jsonArray;
+        }
+
+    Json::Value toJson(int32_t const *data,  size_t n)
+        {
+        Json::Value jsonArray;
+        for (size_t i = 0; i < n; i++)
+            jsonArray.append (data[i]);
+        return jsonArray;
+        }
+
 
     Json::Value toJson(bvector<double> const &data)
         {
@@ -427,6 +482,52 @@ Json::Value RotationalSweepToJson (ISolidPrimitiveCR sp)
     return Json::Value ();
     }
 
+#ifdef RawImjs
+{"indexedMesh":
+ {"color":[10,11,12,13,....,83,84,85,86,87,88,89],
+  "colorIndex":[1,1,1,0,2,2,2,0,3,3,3,0,......80,80,80,0],
+  "point":[[0,0,0], [1,0,0],[2,0,0],  [3,0,0],  [4,0,0],   . . . .   [6,5,0],  [7,5,0],  [8,5,0]],
+  "pointIndex":[  1,2,-11,0,11,10,-1,0,2,3,-12,0,   . . .32,33,-42,0,42,41,-32,0],
+  "paramIndex":{..],
+  "param":[[0,0],[1,0],...],
+  "normalIndex":{..],
+  "normal":[[1,0,0],[0,1,0],..],
+ }
+}
+#endif
+Json::Value IndexedPolyfaceToJson (PolyfaceHeaderCR mesh)
+    {
+    if (mesh.GetMeshStyle () != MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
+        return Json::Value();
+    Json::Value allData;
+    auto indexCount = mesh.GetPointIndexCount ();
+    static bool s_outputNumPerFace = false;
+    static bool s_outputTwoSided = false;
+    if (s_outputNumPerFace)
+        allData["numPerFace"] = mesh.GetNumPerFace ();
+    if (s_outputTwoSided)
+        allData["twoSided"] = mesh.GetTwoSided ();
+
+    allData["point"] = toJson (mesh.GetPointCP (), mesh.GetPointCount ());
+    allData["pointIndex"] = toJson (mesh.GetPointIndexCP (), indexCount);
+
+    if (mesh.GetColorCount() > 0)
+        allData["color"] = toJson (mesh.GetIntColorCP (), mesh.GetColorCount ());
+    if (mesh.GetColorIndexCP() != nullptr)
+        allData["colorIndex"] = toJson (mesh.GetColorIndexCP (), indexCount);
+
+    if (mesh.GetParamCount() > 0)
+        allData["param"] = toJson (mesh.GetParamCP (), mesh.GetParamCount ());
+    if (mesh.GetParamIndexCP() != nullptr)
+        allData["paramIndex"] = toJson (mesh.GetParamIndexCP (), indexCount);
+
+    if (mesh.GetNormalCount() > 0)
+        allData["normal"] = toJson (mesh.GetNormalCP (), mesh.GetNormalCount ());
+    if (mesh.GetNormalIndexCP() != nullptr)
+        allData["normalIndex"] = toJson (mesh.GetNormalIndexCP (), indexCount);
+    return singleton ("indexedMesh", allData);
+    }
+
 Json::Value CurvePrimitiveToJson (ICurvePrimitiveCR cp)
     {
     DSegment3d segment;
@@ -525,6 +626,14 @@ Json::Value SolidPrimitiveToJson (ISolidPrimitiveCR solid)
         return Json::Value ();
         }
 
+Json::Value PolyfaceToJson (PolyfaceHeaderCR mesh)
+        {
+        auto style = mesh.GetMeshStyle ();
+        if (style == MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
+            return IndexedPolyfaceToJson (mesh);
+        return Json::Value ();
+        }
+
 
     Json::Value GeometryToJson (IGeometryCR g)
         {
@@ -541,6 +650,11 @@ Json::Value SolidPrimitiveToJson (ISolidPrimitiveCR solid)
         if (sp.IsValid ())
             return SolidPrimitiveToJson (*sp);
 
+        PolyfaceHeaderPtr pf = g.GetAsPolyfaceHeader();
+        if (pf.IsValid ())
+            {
+            return PolyfaceToJson(*pf);
+            }
         return Json::Value ();
         }
 

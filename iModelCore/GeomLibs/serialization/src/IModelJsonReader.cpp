@@ -164,6 +164,43 @@ bool tryValueToBVectorDPoint3d (JsonValueCR value, bvector<DPoint3d> &data)
     return true;
     }
 
+bool tryValueToBVectorDVec3d (JsonValueCR value, bvector<DVec3d> &data)
+    {
+    data.clear ();
+    double xyzArray[3];
+    if (value.isArray ())
+        {
+        for (uint32_t i = 0; i < value.size (); i++)
+            {
+            if (!derefNumericArray (value[i], 3, xyzArray))
+                return false;
+            data.push_back (DVec3d::FromArray (xyzArray));
+            }
+        return true;
+        }
+    return true;
+    }
+
+
+bool tryValueToBVectorDPoint2d (JsonValueCR value, bvector<DPoint2d> &data)
+    {
+    data.clear ();
+    double xyzArray[2];
+    if (value.isArray ())
+        {
+        for (uint32_t i = 0; i < value.size (); i++)
+            {
+            if (!derefNumericArray (value[i], 2, xyzArray))
+                return false;
+            data.push_back (DPoint2d::FromArray (xyzArray));
+            }
+        return true;
+        }
+    return true;
+    }
+
+
+
 bool tryValueGridToBVectorDPoint3d (JsonValueCR value, bvector<DPoint3d> &data, bvector<double> &weight, bvector<uint32_t> &rowCounts)
     {
     data.clear ();
@@ -213,6 +250,38 @@ bool tryValueToBVectorDouble (JsonValueCR value, bvector<double> &data)
             if (!value[i].isNumeric ())
                 return false;
             data.push_back (value[i].asDouble ());
+            }
+        return true;
+        }
+    return true;
+    }
+
+bool tryValueToBVectorInt (JsonValueCR value, bvector<int> &data)
+    {
+    data.clear ();
+    if (value.isArray ())
+        {
+        for (uint32_t i = 0; i < value.size (); i++)
+            {
+            if (!value[i].isIntegral ())
+                return false;
+            data.push_back (value[i].asInt ());
+            }
+        return true;
+        }
+    return true;
+    }
+
+bool tryValueToBVectorUInt32 (JsonValueCR value, bvector<uint32_t> &data)
+    {
+    data.clear ();
+    if (value.isArray ())
+        {
+        for (uint32_t i = 0; i < value.size (); i++)
+            {
+            if (!value[i].isIntegral ())
+                return false;
+            data.push_back (value[i].asInt ());
             }
         return true;
         }
@@ -557,6 +626,40 @@ bool tryValueToRuledSweep (JsonValueCR value, ISolidPrimitivePtr &result)
         }
     return false;
     }
+PolyfaceHeaderPtr tryValueToPolyfaceHeader (JsonValueCR parentValue)
+    {
+    if (parentValue.isNull ())
+        return nullptr;
+    JsonValueCR value = parentValue["indexedMesh"];
+    PolyfaceHeaderPtr pf = PolyfaceHeader::CreateVariableSizeIndexed ();    // this makes numPerFace 0
+    JsonValueCR jNumPerFace = value["numPerFace"];
+    if (jNumPerFace.isIntegral ())
+        pf->SetNumPerFace (jNumPerFace.asInt ());
+    JsonValueCR jTwoSided = value["twoSided"];
+    if (jTwoSided.isBool ())
+        pf->SetTwoSided (jTwoSided.asBool ());
+
+    if (tryValueToBVectorDPoint3d (value["point"], pf->Point ()))
+        pf->Point().SetActive (true);
+    if (tryValueToBVectorInt(value["pointIndex"], pf->PointIndex ()))
+        pf->PointIndex().SetActive (true);
+
+    if (tryValueToBVectorUInt32 (value["color"], pf->IntColor ()))
+        pf->IntColor().SetActive (true);
+    if (tryValueToBVectorInt(value["colorIndex"], pf->ColorIndex ()))
+        pf->ColorIndex().SetActive (true);
+
+    if (tryValueToBVectorDVec3d (value["normal"], pf->Normal ()))
+        pf->Normal().SetActive (true);
+    if (tryValueToBVectorInt(value["normalIndex"], pf->NormalIndex()))
+        pf->NormalIndex().SetActive (true);
+
+    if (tryValueToBVectorDPoint2d (value["param"], pf->Param ()))
+        pf->Param().SetActive (true);
+    if (tryValueToBVectorInt(value["paramIndex"], pf->ParamIndex()))
+        pf->ParamIndex().SetActive (true);
+    return pf;
+    }
 
 MSBsplineSurfacePtr tryValueToMSBsplineSurface (JsonValueCR parentValue)
     {
@@ -724,6 +827,9 @@ IGeometryPtr tryValueToIGeometry (JsonValueCR value)
         MSBsplineSurfacePtr bsurf = tryValueToMSBsplineSurface(value);
         if (bsurf.IsValid ())
             return IGeometry::Create (bsurf);
+        PolyfaceHeaderPtr pf = tryValueToPolyfaceHeader(value);
+        if (pf.IsValid ())
+            return IGeometry::Create (pf);
         }
     return nullptr;
     }
