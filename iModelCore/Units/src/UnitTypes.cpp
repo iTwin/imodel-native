@@ -116,18 +116,20 @@ ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
 Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double nominator, double denominator, double offset, bool isConstant)
-    : UnitsSymbol(name, definition, nominator, denominator, offset), m_system(&system), m_phenomenon(&phenomenon), m_parent(nullptr), m_isConstant(isConstant)
+    : UnitsSymbol(name, definition, nominator, denominator, offset), m_system(&system), m_phenomenon(nullptr), m_parent(nullptr), m_isConstant(isConstant)
     {
     m_isNumber = phenomenon.IsNumber();
+    SetPhenomenon(phenomenon);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  03/2018
 //--------------------------------------------------------------------------------------
 Unit::Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition)
-    : UnitsSymbol(name, definition), m_system(&system), m_phenomenon(&phenomenon), m_parent(nullptr),  m_isConstant(false)
+    : UnitsSymbol(name, definition), m_system(&system), m_phenomenon(nullptr), m_parent(nullptr),  m_isConstant(false)
     {
     m_isNumber = phenomenon.IsNumber();
+    SetPhenomenon(phenomenon);
     }
 
 //--------------------------------------------------------------------------------------
@@ -166,7 +168,7 @@ UnitP Unit::_Create(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, dou
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-BentleyStatus Unit::SetPhenomenon(PhenomenonR phenom)
+BentleyStatus Unit::SetPhenomenon(PhenomenonCR phenom)
         {
         if (nullptr != m_phenomenon)
             return ERROR; 

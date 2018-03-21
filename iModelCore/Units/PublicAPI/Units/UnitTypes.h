@@ -229,7 +229,7 @@ protected:
     UNITS_EXPORT Unit(UnitSystemCR system, PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition);
     //! Creates a constant.
     Unit(PhenomenonCR phenomenon, Utf8CP name, Utf8CP definition, double numerator, double denominator)
-        : UnitsSymbol(name, definition, numerator, denominator, 0), m_phenomenon(&phenomenon), m_system(nullptr) { SetConstant(true);}
+        : UnitsSymbol(name, definition, numerator, denominator, 0), m_system(nullptr), m_phenomenon(nullptr) { SetPhenomenon(phenomenon); SetConstant(true);}
     //! Creates an inverted Unit.
     Unit(UnitCR parentUnit, UnitSystemCR system, Utf8CP name)
         : Unit(system, *(parentUnit.GetPhenomenon()), name, parentUnit.GetDefinition().c_str(), 0, 0, 0, false)
@@ -248,7 +248,7 @@ protected:
     //! Sets the UnitSystem of this Unit if it does not already have one.
     BentleyStatus SetSystem(UnitSystemCR system) {if (nullptr != m_system) return ERROR; m_system = &system; return SUCCESS;}
     //! Sets the Phenomenon of this Unit if it does not already have one. If it is set this Unit will be added to the phenomenon.
-    UNITS_EXPORT BentleyStatus SetPhenomenon(PhenomenonR phenom);
+    UNITS_EXPORT BentleyStatus SetPhenomenon(PhenomenonCR phenom);
 
     //! Sets the Parent Unit.
     BentleyStatus SetParent(UnitCR parentUnit) {if (IsInvertedUnit() || nullptr != m_parent) return ERROR; m_parent = &parentUnit; return SUCCESS;}
@@ -292,13 +292,13 @@ friend struct UnitRegistry;
 friend struct Expression;
 
 private:
-    bvector<UnitCP> m_units;
+    mutable bvector<UnitCP> m_units;
     mutable Utf8String m_displayLabel;
 
     // Conversion caching currently not supported
     // bmap<Utf8CP, Conversion> m_conversions;
 
-    void AddUnit(UnitCR unit)
+    void AddUnit(UnitCR unit) const
         {
         auto it = std::find_if(m_units.begin(), m_units.end(), [&unit](UnitCP existingUnit) {return existingUnit->GetName().EqualsI(unit.GetName().c_str());});
         if (it == m_units.end())
