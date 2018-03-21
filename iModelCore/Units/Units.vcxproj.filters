@@ -68,6 +68,9 @@
     <ClCompile Include="src\Formatting\StdFormatSet.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
+    <ClCompile Include="src\Formatting\NumericFormatUtils.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="mki\Units.mki" />
@@ -75,17 +78,26 @@
     <None Include="Units.mke" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PublicAPI\Formatting\FormattingDefinitions.h">
+    <ClInclude Include="PrivateAPI\Formatting\AliasMappings.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>
-    <ClInclude Include="src\UnitsPCH.h">
-      <Filter>Header Files\Units</Filter>
+    <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h">
+      <Filter>Header Files\Formatting</Filter>
+    </ClInclude>
+    <ClInclude Include="PrivateAPI\Formatting\NumericFormatUtils.h">
+      <Filter>Header Files\Formatting</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Formatting\FormattingDefinitions.h">
+      <Filter>Header Files\Formatting</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\Formatting\FormattingApi.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\Formatting\FormattingEnum.h">
       <Filter>Header Files\Formatting</Filter>
+    </ClInclude>
+    <ClInclude Include="src\UnitsPCH.h">
+      <Filter>Header Files\Units</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\Units\Units.h">
       <Filter>Header Files\Units</Filter>
@@ -116,9 +128,6 @@
     </ClInclude>
     <ClInclude Include="PublicAPI\Units\UnitsContext.h">
       <Filter>Header Files\Units</Filter>
-    </ClInclude>
-    <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h">
-      <Filter>Header Files\Formatting</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

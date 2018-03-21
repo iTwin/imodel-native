@@ -643,6 +643,7 @@ public:
 };
 
 //=======================================================================================
+//! A container to hold a set of NamedFormatSpecs.
 //! @bsistruct
 //=======================================================================================
 struct StdFormatSet
@@ -656,17 +657,22 @@ private:
     NumericFormatSpecCP AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
     NamedFormatSpecCP AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
 
-    size_t StdInit();
+    void StdInit();
 
     bool IsFormatDefined(Utf8CP name);
 
-    // This is temporary since this whole method is going away, but the IUnitsContext is provided to resolve all the names needed to create
-    // the standard set of Composite specs.
-    void CompositeSpecsInit(BEU::IUnitsContextCP unitContext);
-
 public:
+    //! Creates a StdFormatSet with an initial list of supported Formats.
     UNITS_EXPORT StdFormatSet();
     UNITS_EXPORT NamedFormatSpecCP FindNamedFormatSpec(Utf8StringCR name) const;
+
+    //! Returns all of the formats.
+    bvector<NamedFormatSpec>const& GetFormats() {return m_formatSet;}
+
+    //! Initializes a standard set of CompositeSpecs.
+    //! @param[in] unitContext A UnitContext needed to create the composite specs. The BEU::UnitRegistry contains all of the required Units
+    //! @returns Success if the CompositeSpecs are successfully created and added to this; otherwise, Error.
+    UNITS_EXPORT BentleyStatus AddCompositeSpecs(BEU::IUnitsContextCR unitContext);
 };
 
 //=======================================================================================

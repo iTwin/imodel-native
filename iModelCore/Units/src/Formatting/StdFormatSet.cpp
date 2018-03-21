@@ -7,15 +7,18 @@
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
+#include "../../PrivateAPI/Formatting/AliasMappings.h"
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+StdFormatSet::StdFormatSet() : m_problem(FormatProblemCode::NoProblems)
+    {
+    StdInit();
+    }
 
-//===================================================
-//
-// StdFormatSet Methods
-//
-//===================================================
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
@@ -154,7 +157,7 @@ NumericFormatSpec CreateNewNumericFormatSpec(PresentationType presentationType, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-size_t StdFormatSet::StdInit()
+void StdFormatSet::StdInit()
     {
     m_formatSet.clear();
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
@@ -203,10 +206,6 @@ size_t StdFormatSet::StdInit()
     stop = CreateNewNumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, 2);
     AddFormat("Stop1000-2", stop);
 
-    // %f  %.04f
-    //AddFormat("RoadStatF", CreateNewNumericFormatSpec(PresentationType::Station100, ShowSignOption::OnlyNegative, traits, 2), "rsf2");
-    //AddFormat("RoadStatM", CreateNewNumericFormatSpec(PresentationType::Station1000, ShowSignOption::OnlyNegative, traits, 2), "rsm2");
-
     AddFormat("SignedReal", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
     AddFormat("ParenthsReal", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
     AddFormat("DefaultFractional", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultFractionalDenominator()));
@@ -229,25 +228,19 @@ size_t StdFormatSet::StdInit()
     AddFormat("Fractional32U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 32));
     AddFormat("Fractional32U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 64));
     AddFormat("Fractional128U", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traitsU, 128));
-
-    size_t s = m_formatSet.size();
-    return s;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------------------------------------------------------------------------------
-void StdFormatSet::CompositeSpecsInit(BEU::IUnitsContextCP unitContext)
+BentleyStatus StdFormatSet::AddCompositeSpecs(BEU::IUnitsContextCR unitContext)
     {
-    if (nullptr == unitContext)
-        return;
-
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
     FormatTraits traitsU = FormatConstant::UnitizedFormatTraits();
 
-    BEU::UnitCP arcDeg = unitContext->LookupUnit("ARC_DEG");
-    BEU::UnitCP arcMinute = unitContext->LookupUnit("ARC_MINUTE");
-    BEU::UnitCP arcSecond = unitContext->LookupUnit("ARC_SECOND");
+    BEU::UnitCP arcDeg = unitContext.LookupUnit("ARC_DEG");
+    BEU::UnitCP arcMinute = unitContext.LookupUnit("ARC_MINUTE");
+    BEU::UnitCP arcSecond = unitContext.LookupUnit("ARC_SECOND");
 
     CompositeValueSpecP cvs = new CompositeValueSpec(*arcDeg, *arcMinute, *arcSecond);
     cvs->SetUnitLabels("\xC2\xB0", u8"'", u8"\"");
@@ -257,11 +250,11 @@ void StdFormatSet::CompositeSpecsInit(BEU::IUnitsContextCP unitContext)
     cvs->SetUnitLabels("\xC2\xB0", u8"'");
     AddFormat("AngleDM8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8), *cvs);
 
-    BEU::UnitCP mi = unitContext->LookupUnit("MILE");
-    BEU::UnitCP yrd = unitContext->LookupUnit("YRD");
-    BEU::UnitCP ft = unitContext->LookupUnit("FT");
-    BEU::UnitCP in = unitContext->LookupUnit("IN");
-    BEU::UnitCP meter = unitContext->LookupUnit("M");
+    BEU::UnitCP mi = unitContext.LookupUnit("MILE");
+    BEU::UnitCP yrd = unitContext.LookupUnit("YRD");
+    BEU::UnitCP ft = unitContext.LookupUnit("FT");
+    BEU::UnitCP in = unitContext.LookupUnit("IN");
+    BEU::UnitCP meter = unitContext.LookupUnit("M");
 
     cvs = new CompositeValueSpec(*mi, *yrd, *ft, *in);
     cvs->SetUnitLabels("mile(s)", "yrd(s)", "'", "\"");
@@ -311,40 +304,170 @@ void StdFormatSet::CompositeSpecsInit(BEU::IUnitsContextCP unitContext)
 
     // Adds trailZeroes to "Stop100-2u"
     AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2uz\", \"SpecName\" : \"Stop100-2uz\", \"SpecType\" : \"numeric\"}",
-        *unitContext);
+        unitContext);
     
     // Adds trailZeroes to "Stop100-2"
     AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-2z\", \"SpecName\" : \"Stop100-2-2z\", \"SpecType\" : \"numeric\"}",
-        *unitContext);
+        unitContext);
 
     // "Stop1000-2-3z"
     AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 3, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-3z\", \"SpecName\" : \"Stop1000-2-3z\", \"SpecType\" : \"numeric\"}",
-        *unitContext);
+        unitContext);
 
     // "hms"
     AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"hour(s)\", \"unitName\" : \"HR\"}, \"MiddleUnit\" : {\"unitLabel\":\"min\", \"unitName\" : \"MIN\"}, \"MinorUnit\" : {\"unitLabel\":\"sec\", \"unitName\" : \"S\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"decPrec\":2, \"presentType\" : \"Decimal\"}, \"SpecAlias\" : \"hms\", \"SpecName\" : \"HMS\", \"SpecType\" : \"composite\"}",
-        *unitContext);
+        unitContext);
     
     // Duplicate of "dms", just different name.
     AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":1, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms\", \"SpecName\" : \"CAngleDMS\", \"SpecType\" : \"composite\"}",
-        *unitContext);
+        unitContext);
 
     // Duplicate of "dms8", just different name.
     AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"MinorUnit\" : {\"unitLabel\":\"\\\"\", \"unitName\" : \"ARC_SECOND\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdms8\", \"SpecName\" : \"CAngleDMS8\", \"SpecType\" : \"composite\"}",
-        *unitContext);
+        unitContext);
 
     // Duplicate of "dm8", just different name.
     AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdm8\", \"SpecName\" : \"CAngleDM8\", \"SpecType\" : \"composite\"}",
-        *unitContext);
+        unitContext);
+
+    return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-StdFormatSet::StdFormatSet()
-    : m_problem(FormatProblemCode::NoProblems)
+//=======================================================================================
+// AliasMappings
+//=======================================================================================
+
+AliasMappings * AliasMappings::s_mappings = nullptr;
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+AliasMappings::AliasMappings()
     {
-    StdInit();
+    AddMappings();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+// static
+AliasMappings * AliasMappings::GetMappings()
+    {
+    if (nullptr == s_mappings)
+        s_mappings = new AliasMappings();
+    return s_mappings;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+// static
+Utf8CP AliasMappings::TryGetAliasFromName(Utf8CP name)
+    {
+    auto iter = GetMappings()->m_nameAliasMapping.find(name);
+    if (iter == GetMappings()->m_nameAliasMapping.end())
+        return nullptr;
+    return iter->second.c_str();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+// static
+Utf8CP AliasMappings::TryGetNameFromAlias(Utf8CP alias)
+    {
+    auto iter = GetMappings()->m_aliasNameMapping.find(alias);
+    if (iter == GetMappings()->m_aliasNameMapping.end())
+        return nullptr;
+    return iter->second.c_str();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+// static
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+void AliasMappings::AddMappings()
+    {
+    AddMapping("cdm8", "CAngleDM8");
+    AddMapping("cdms", "CAngleDMS");
+    AddMapping("cdms8", "CAngleDMS8");
+
+    AddMapping("decimalDeg4", "DecimalDeg4");
+    AddMapping("dm8", "AngleDM8");
+    AddMapping("dms", "AngleDMS");
+    AddMapping("dms8", "AngleDMS8");
+    AddMapping("feet4u", "Feet4u");
+    AddMapping("fi8", "AmerFI8");
+    AddMapping("fi16", "AmerFI16");
+    AddMapping("fi32", "AmerFI32");
+    AddMapping("fract", "DefaultFractional");
+    AddMapping("fractu", "DefaultFractionalU");
+    AddMapping("fract4", "Fractional4");
+    AddMapping("fract4u", "Fractional4U");
+    AddMapping("fract8", "Fractional8");
+    AddMapping("fract8u", "Fractional8U");
+    AddMapping("fract16", "Fractional16");
+    AddMapping("fract16u", "Fractional16U");
+    AddMapping("fract32", "Fractional32");
+    AddMapping("fract32u", "Fractional32U");
+    AddMapping("fract64", "Fractional64");
+    AddMapping("fract64u", "Fractional64U");
+    AddMapping("fract128", "Fractional128");
+    AddMapping("fract128u", "Fractional128U");
+
+    AddMapping("fractSign", "SignedFractional");
+
+    AddMapping("yfi8", "AmerYFI8");
+    AddMapping("meters4u", "Meters4u");
+        
+    AddMapping("inches4u", "Inches4u");
+    AddMapping("Inches18u", "Inches18u");
+    AddMapping("int", "DefaultInt");
+
+    AddMapping("myfi4", "AmerMYFI4");
+
+    AddMapping("hms", "HMS");
+
+    AddMapping("real", "DefaultReal");
+    AddMapping("realu", "DefaultRealU");
+    AddMapping("real2", "Real2");
+    AddMapping("real2u", "Real2U");
+    AddMapping("real2uns", "Real2UNS");
+    AddMapping("real3", "Real3");
+    AddMapping("real3u", "Real3U");
+    AddMapping("real3uns", "Real3UNS");
+    AddMapping("real4", "Real4");
+    AddMapping("real4u", "Real4U");
+    AddMapping("real4uns", "Real4UNS");
+    AddMapping("real6u", "Real6U");
+    AddMapping("real6uns", "Real6UNS");
+
+    AddMapping("realPth", "ParenthsReal");
+    AddMapping("realSign", "SignedReal");
+
+    AddMapping("sci", "DefaultExp");
+    AddMapping("sciN", "NormalizedExp");
+    AddMapping("sciSign", "SignedExp");
+
+    AddMapping("stationFt2", "StationFt2");
+    AddMapping("stationM4", "StationM4");
+
+    AddMapping("stop100-2-2z", "Stop100-2-2z");
+    AddMapping("stop100-2-4", "Stop100-2-4");
+    AddMapping("stop100-2-4u", "Stop100-2-4u");
+    AddMapping("stop100-2", "Stop100-2");
+    AddMapping("stop100-2u", "Stop100-2u");
+    AddMapping("stop100-2uz", "Stop100-2uz");
+
+    AddMapping("stop1000-2-3z", "Stop1000-2-3z");
+    AddMapping("stop1000-2-4", "Stop1000-2-4");
+    AddMapping("stop1000-2-4u", "Stop1000-2-4u");
+    AddMapping("stop1000-2", "Stop1000-2");
+    AddMapping("stop1000-2u", "Stop1000-2u");
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE
