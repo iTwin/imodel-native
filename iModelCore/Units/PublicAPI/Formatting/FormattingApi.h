@@ -775,7 +775,6 @@ public:
 struct FormatUnitSet
 {
 private:
-    StdFormatSet const stdFmtSet;
     NamedFormatSpecCP m_formatSpec;
     Utf8String  m_unitName;
     BEU::UnitCP m_unit;
