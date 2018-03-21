@@ -23,7 +23,7 @@ struct KindOfQuantityTest : ECTestFixture
         ASSERT_TRUE(m_schema.IsValid());
 
         if (refUnitSchema)
-            EC_EXPECT_SUCCESS(m_schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema()));
+            EC_EXPECT_SUCCESS(m_schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true)));
         }
     };
 struct KindOfQuantityRoundTripTest : ECTestFixture {};
@@ -46,7 +46,7 @@ TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
     KindOfQuantityP koq;
 
     ECSchema::CreateSchema(schema, "KindOfQuantitySchema", "koq", 5, 0, 6);
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
 
     schema->CreateEntityClass(entityClass, "Class");
     entityClass->CreatePrimitiveProperty(prop, "Property");
@@ -83,7 +83,7 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationUnits)
     ECSchemaPtr schema;
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
     ASSERT_TRUE(schema.IsValid());
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true)));
 
     {
     KindOfQuantityP kindOfQuantity;
@@ -94,12 +94,12 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationUnits)
     EXPECT_TRUE(kindOfQuantity->SetPersistenceUnit("u:CM"));
     EXPECT_FALSE(kindOfQuantity->SetPersistenceUnit("u:CM(BADFORMAT)"));
     EXPECT_FALSE(kindOfQuantity->SetPersistenceUnit("u:PI")); // constant
-    EXPECT_FALSE(kindOfQuantity->SetPersistenceUnit(*StandardUnitsHelper::GetConstant("PI"))); // constant
+    EXPECT_FALSE(kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetConstantCP("PI"))); // constant
     kindOfQuantity->SetRelativeError(10e-3);
     EXPECT_TRUE(kindOfQuantity->SetDefaultPresentationUnit("u:FT"));
     EXPECT_FALSE(kindOfQuantity->SetDefaultPresentationUnit("u:CM(BADFORMAT)"));
     EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationUnit("u:CM(BADFORMAT)"));
-    EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationUnit(*StandardUnitsHelper::GetConstant("PI")));
+    EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetConstantCP("PI")));
     EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationUnit("u:PI"));
     EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:IN"));
     EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:MILLIINCH"));
@@ -141,7 +141,7 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationUnits)
     ECSchemaPtr schema;
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
     ASSERT_TRUE(schema.IsValid());
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     
     KindOfQuantityP kindOfQuantity;
 
@@ -174,11 +174,11 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationUnits)
     ECSchemaPtr schema;
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
     ASSERT_TRUE(schema.IsValid());
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
 
-    ECUnitCP meterUnit = StandardUnitsHelper::GetUnit("M");
-    ECUnitCP centimeterUnit = StandardUnitsHelper::GetUnit("CM");
-    ECUnitCP milliGramUnit = StandardUnitsHelper::GetUnit("MG");
+    ECUnitCP meterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
+    ECUnitCP centimeterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("CM");
+    ECUnitCP milliGramUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("MG");
 
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
@@ -210,7 +210,7 @@ TEST_F(KindOfQuantityTest, PersistenceUnitDescriptor)
     CreateTestSchema(true);
 
     // already added as a reference schema
-    auto unitSchema = StandardUnitsHelper::GetSchema();
+    auto unitSchema = ECTestFixture::GetUnitsSchema();
 
     auto inchUnit = unitSchema->GetUnitCP("IN");
 
@@ -263,7 +263,7 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
     CreateTestSchema(true);
 
     // already added as a reference schema
-    auto unitSchema = StandardUnitsHelper::GetSchema();
+    auto unitSchema = ECTestFixture::GetUnitsSchema();
 
     auto inchUnit = unitSchema->GetUnitCP("IN");
     auto ftUnit = unitSchema->GetUnitCP("FT");
@@ -367,7 +367,7 @@ TEST_F(KindOfQuantityTest, SerializeStandaloneJsonChildKindOfQuantity)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
 
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "ExampleKoQ");
@@ -697,7 +697,7 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
-    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
 
     KindOfQuantityP kindOfQuantity;
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
@@ -885,7 +885,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     {
     ECSchemaPtr origSchema;
     ECSchema::CreateSchema(origSchema, "ExampleSchema", "ex", 5, 0, 5, ECVersion::Latest);
-    EC_EXPECT_SUCCESS(origSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema()));
+    EC_EXPECT_SUCCESS(origSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(origSchema->CreateKindOfQuantity(koq, "ExampleKoQ"));
     ASSERT_TRUE(koq->SetPersistenceUnit("u:M"));

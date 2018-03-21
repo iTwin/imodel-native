@@ -1454,6 +1454,8 @@ private:
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
     ECSchemaR GetSchemaR() const {return const_cast<ECSchemaR>(m_schema);}
+
+    static ECObjectsStatus ParseFUSDescriptorWithoutUpgrading(ECUnitCP& unit, Formatting::NamedFormatSpecCP& nfs, Utf8CP descriptor, KindOfQuantityR koq) ;
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 
@@ -1567,11 +1569,12 @@ public:
     //! @param[out] format The NamedFormatSpec found from the given descriptor.
     //! @param[in] descriptor String describing the FUS. @see Formatting::FormatUnitSet for more information.
     //! @param[in] koq The KoQ to use as context for locating the unit and format.
+    //! @param[in] context The Context used to locate the units schema
     //! @param[in] ecXmlMajorVersion The major version of ECXml to parse the descriptor in the context of.
     //! @param[in] ecXmlMinorVersion The minor version of ECXml to parse the descriptor in the context of.
     //! @return ECObjectsStatus::Success if the FUS is successfully created; otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseFUSDescriptor(ECUnitCP& unit, Formatting::NamedFormatSpecCP& format, Utf8CP descriptor, KindOfQuantityR koq, Nullable<uint32_t> ecXmlMajorVersion = nullptr, Nullable<uint32_t> ecXmlMinorVersion = nullptr);
-
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseFUSDescriptor(ECUnitCP& unit, Formatting::NamedFormatSpecCP& format, Utf8CP descriptor, KindOfQuantityR koq, ECSchemaReadContextR context, Nullable<uint32_t> ecXmlMajorVersion = nullptr, Nullable<uint32_t> ecXmlMinorVersion = nullptr);
+   
     //! Given an old EC3.1 FUS descriptor, {unitName}({formatName}), it will convert it into the new format.
     //! @param[out] updatedDescriptor  The updated descriptor if it is able to be updated. If not it will be an empty string.
     //! @param[in] descriptor  The descriptor that is of the format for the old FUS descriptor, format: {unitName}({formatName}), where the format part is optional.

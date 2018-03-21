@@ -1050,7 +1050,7 @@ TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
-    ECSchemaR unitsSchema = *StandardUnitsHelper::GetSchema();
+    ECSchemaR unitsSchema = *ECTestFixture::GetUnitsSchema();
     schema->AddReferencedSchema(unitsSchema);
 
     ECEntityClassP entity;
@@ -1582,7 +1582,7 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     {
     ECSchemaPtr ecSchema;
     ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
-    ecSchema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
+    ecSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
 
     ECEntityClassP a;
     ECEntityClassP b;

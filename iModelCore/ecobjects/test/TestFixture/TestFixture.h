@@ -48,6 +48,8 @@ struct SchemaItem final
 //=======================================================================================
 struct ECTestFixture : ::testing::Test
 {
+private:
+    static ECN::ECSchemaPtr s_unitsSchema;
 protected:
     ECTestFixture();
     virtual void SetUp() override;
@@ -57,6 +59,7 @@ public:
     static WString GetTestDataPath(WCharCP fileName);
     static WString GetTempDataPath(WCharCP fileName);
     static Utf8String GetDateTime();
+    static ECN::ECSchemaPtr GetUnitsSchema(bool recreate = false);
 
     static void DeserializeSchema(ECN::ECSchemaPtr& schema, ECN::ECSchemaReadContextR context, SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::Success, Utf8CP failureMessage = "");
     static void ExpectSchemaDeserializationFailure(SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::InvalidECSchemaXml, Utf8CP failureMessage = "");

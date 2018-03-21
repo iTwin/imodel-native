@@ -152,7 +152,7 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     schema->SetDescription("Comprehensive Schema to demonstrate use of all ECSchema concepts.");
     schema->SetDisplayLabel("Comprehensive Schema");
     schema->AddReferencedSchema(*standardCASchema);
-    schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
 
     ECEntityClassP baseEntityClass;
     ECEntityClassP entityClass;
@@ -303,7 +303,7 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
     schema->SetDescription("Schema to test Kind of Quantity Inheritance serialization.");
     schema->SetDisplayLabel("KOQ Inheritance Test Schema");
-    schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
 
     ECEntityClassP parentEntityClass;
     ECEntityClassP derivedEntityClass1;
@@ -420,7 +420,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithNoChildren)
 TEST_F(SchemaJsonSerializationTest, SchemaWithChildren)
     {
     ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoChildren();
-    schema->AddReferencedSchema(*StandardUnitsHelper::GetSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
 
     // Entity Class / Mixin Classes
     ECEntityClassP baseEntityClass;

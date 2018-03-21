@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/ECObjects/StandardUnitsHelper.h $
+|     $Source: PrivateApi/ECObjects/StandardUnitsHelper.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |

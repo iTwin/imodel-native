@@ -99,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\PrivateApi\ECObjects\SchemaParseUtils.h" />
+    <ClInclude Include="..\PrivateApi\ECObjects\StandardUnitsHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\AdHocJsonValue.h" />
     <ClInclude Include="..\PublicApi\ECObjects\CalculatedProperty.h" />
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
@@ -126,7 +127,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\SchemaResourceKeyHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandardCustomAttributeHelper.h" />
-    <ClInclude Include="..\PublicApi\ECObjects\StandardUnitsHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SupplementalSchema.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SystemSymbolProvider.h" />
     <ClInclude Include="..\PublicApi\ECObjects\VirtualCollectionIterator.h" />
