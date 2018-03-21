@@ -1181,7 +1181,7 @@ double taperB              //!< [in] taper distance along vectorB
         Check::Print (chain, "SymmetricTaper");
         }
     }
-#if !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1204,7 +1204,7 @@ TEST(CurveCurve,TaperFilletTaper)
                         ));
     testCurveCurveTaperFilletTaper (*arcA, *arcB, 0.3, 0.3, 0.1, 1.5, 1.0, 0.2, 1.0);
     }
-#endif // !defined(BENTLEYCONFIG_OS_APPLE_MACOS)
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/

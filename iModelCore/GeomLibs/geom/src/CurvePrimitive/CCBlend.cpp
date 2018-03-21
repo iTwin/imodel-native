@@ -897,10 +897,10 @@ double offsetB
     double tol = Angle::SmallAngle ();
     NewtonIterationsRRToRR newton (tol);
     TaperFilletTaperBlendConstructionObject blendBuilder (setbackA, taperA, filletRadius, setbackB, taperB, offsetA, offsetB);
-    CompoundBlendFunction F (blendBuilder,
-        ParameterToPointEvaluator::CurvePrimitiveEvaluator(curveA),
-        ParameterToPointEvaluator::CurvePrimitiveEvaluator(curveB)
-        );
+    ParameterToPointEvaluator::CurvePrimitiveEvaluator curveAEval(curveA);
+    ParameterToPointEvaluator::CurvePrimitiveEvaluator curveBEval(curveB);
+    CompoundBlendFunction F(blendBuilder, curveAEval, curveBEval);
+    
     double fA = fractionA, fB = fractionB;
     double eA, eB;
     if (newton.RunApproximateNewton (fA, fB, F, maxStep, maxStep)
