@@ -295,6 +295,12 @@ public:
     //! @see @ref ECDbChange
     ECDB_EXPORT DbResult AttachChangeCache(BeFileNameCR changeCachePath) const;
 
+    //! Detaches the Changes cache file from this %ECDb file, if it was attached.
+    //! @note Detaching commits any open transactions first (see BentleyApi::BeSQLite::Db::DetachDb).
+    //! @return BE_SQLITE_OK in case of success, error codes otherwise
+    //! @see @ref ECDbChange
+    ECDB_EXPORT DbResult DetachChangeCache() const;
+
     //! Creates a new Changes cache file for this %ECDb file but does not attach it.
     //! @remarks This method will return an error, if the cache file already exists.
     //!

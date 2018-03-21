@@ -859,7 +859,7 @@ DbResult ChangeSummaryExtractor::Context::Initialize()
 
     if (!m_attachedChangeCachePath.empty())
         {
-        DbResult r = GetPrimaryECDb().DetachDb(TABLESPACE_ECChange);
+        DbResult r = GetPrimaryECDb().DetachChangeCache();
         if (BE_SQLITE_OK != r)
             {
             Issues().ReportV("Failed to extract ChangeSummaries from change set: Could not detach ChangeSummary cache file  from '%s': %s", GetPrimaryECDb().GetDbFileName(), GetPrimaryECDb().GetLastError().c_str());

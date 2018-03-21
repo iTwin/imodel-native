@@ -689,6 +689,11 @@ TEST_F(ChangeSummaryTestFixture, ValidCache_InvalidCache)
     assertCache(m_ecdb, false, "Cache does not exist and is not attached");
     ASSERT_EQ(BE_SQLITE_OK, AttachCache());
     assertCache(m_ecdb, true, "Cache has been attached");
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.DetachChangeCache());
+    assertCache(m_ecdb, false, "Cache has been detached");
+    ASSERT_EQ(BE_SQLITE_OK, AttachCache());
+    assertCache(m_ecdb, true, "Cache has been reattached");
+
     ASSERT_EQ(BE_SQLITE_OK, ReopenECDb(ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
     assertCache(m_ecdb, false, "Opened readwrite");
 
@@ -888,7 +893,7 @@ TEST_F(ChangeSummaryTestFixture, NonDefaultCachePath)
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AttachChangeCache(cacheFilePath));
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
     ASSERT_EQ(BE_SQLITE_ERROR, m_ecdb.AttachChangeCache(cacheFilePath)) << "already attached";
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.DetachDb("ecchange"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.DetachChangeCache());
 
     ASSERT_EQ(BE_SQLITE_OK, AttachCache()) << "No cache at default location -> another cache is created";
     ASSERT_TRUE(m_ecdb.IsChangeCacheAttached());
