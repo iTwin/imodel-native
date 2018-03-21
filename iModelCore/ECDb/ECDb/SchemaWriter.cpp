@@ -3517,9 +3517,24 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         updateBuilder.AddSetExp("Name", schemaChange.GetName().GetNew().Value().c_str());
         }
 
+    if (schemaChange.GetDisplayLabel().IsValid())
+        {
+        if (schemaChange.GetDisplayLabel().GetNew().IsNull())
+            updateBuilder.AddSetToNull("DisplayLabel");
+        else
+            updateBuilder.AddSetExp("DisplayLabel", schemaChange.GetDisplayLabel().GetNew().Value().c_str());
+        }
 
-    const bool versionReadHasChanged = schemaChange.GetVersionRead().IsValid();
-    if (versionReadHasChanged)
+    if (schemaChange.GetDescription().IsValid())
+        {
+        if (schemaChange.GetDescription().GetNew().IsNull())
+            updateBuilder.AddSetToNull("Description");
+        else
+            updateBuilder.AddSetExp("Description", schemaChange.GetDescription().GetNew().Value().c_str());
+        }
+
+    const bool readVersionHasChanged = schemaChange.GetVersionRead().IsValid();
+    if (readVersionHasChanged)
         {
         if (schemaChange.GetVersionRead().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionRead().GetValue(ValueId::New).Value())
             {
@@ -3539,10 +3554,10 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         updateBuilder.AddSetExp("VersionDigit1", schemaChange.GetVersionRead().GetNew().Value());
         }
 
-    const bool versionWriteHasChanged = schemaChange.GetVersionWrite().IsValid();
-    if (versionWriteHasChanged)
+    const bool writeVersionHasChanged = schemaChange.GetVersionWrite().IsValid();
+    if (writeVersionHasChanged)
         {
-        if (!versionReadHasChanged && schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
+        if (!readVersionHasChanged && schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionWrite' of an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());
@@ -3554,7 +3569,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
 
     if (schemaChange.GetVersionMinor().IsValid())
         {
-        if (!versionReadHasChanged && !versionWriteHasChanged && schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
+        if (!readVersionHasChanged && !writeVersionHasChanged && schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionMinor' of an ECSchema is not supported.",
                                       oldSchema.GetFullSchemaName().c_str());
@@ -3569,34 +3584,18 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (schemaChange.GetAlias().GetNew().IsNull())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias must always be set.",
-                             oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
 
         if (ctx.GetSchemaManager().ContainsSchema(schemaChange.GetAlias().GetNew().Value(), SchemaLookupMode::ByAlias))
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias is already used by another existing ECSchema.",
-                             oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
 
         updateBuilder.AddSetExp("Alias", schemaChange.GetAlias().GetNew().Value().c_str());
-        }
-
-    if (schemaChange.GetDisplayLabel().IsValid())
-        {
-        if (schemaChange.GetDisplayLabel().GetNew().IsNull())
-            updateBuilder.AddSetToNull("DisplayLabel");
-        else
-            updateBuilder.AddSetExp("DisplayLabel", schemaChange.GetDisplayLabel().GetNew().Value().c_str());
-        }
-
-    if (schemaChange.GetDescription().IsValid())
-        {
-        if (schemaChange.GetDescription().GetNew().IsNull())
-            updateBuilder.AddSetToNull("Description");
-        else
-            updateBuilder.AddSetExp("Description", schemaChange.GetDescription().GetNew().Value().c_str());
         }
 
     if (schemaChange.GetECVersion().IsValid())

@@ -229,9 +229,9 @@
         - @ref BentleyApi::ECN::ECSchema::GetDescription "Description"
         - @ref BentleyApi::ECN::ECSchema::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECSchema::GetAlias "Alias"
-        - @b Version (@ref BentleyApi::ECN::ECSchema::GetVersionWrite "VersionWrite", @ref BentleyApi::ECN::ECSchema::GetVersionMinor "VersionMinor").
-            - Modifying @ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead" is not allowed though as read version changes cannot be performed through
-            an ECSchema upgrade.
+        - Schema Version (@ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead", @ref BentleyApi::ECN::ECSchema::GetVersionWrite "VersionWrite", @ref BentleyApi::ECN::ECSchema::GetVersionMinor "VersionMinor"):
+            - Version can be incremented. Major version changes, however, can only be performed if 
+            @ref BentleyApi::BeSQLite::EC::SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade "SchemaImportOptions::DisallowMajorSchemaUpgrade" is false.
     - @ref BentleyApi::ECN::ECSchema::GetReferencedSchemas "ECSchema references"
         - @b Add, @b delete, @b modify
     - @ref BentleyApi::ECN::ECSchema::GetClasses "ECClasses"
@@ -241,6 +241,9 @@
                 - does not have subclasses
                 - is not used as constraint class in an @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint"
             - an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" which is mapped as <b>link table</b>
+            - @b Note: This is a major schema upgrade which can only be done if the @ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead"
+            is incremented and if @ref BentleyApi::BeSQLite::EC::SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade "SchemaImportOptions::DisallowMajorSchemaUpgrade"
+            is false.
     - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations"
         - @b Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration"
     - @ref BentleyApi::ECN::ECSchema::GetKindOfQuantities "KindOfQuantities"
@@ -275,6 +278,9 @@
             - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
             - not overridden
             - @ref BentleyApi::ECN::NavigationECProperty cannot be deleted
+            - @b Note: This is a major schema upgrade which can only be done if the @ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead"
+            is incremented and if @ref BentleyApi::BeSQLite::EC::SchemaManager::SchemaImportOptions::DisallowMajorSchemaUpgrade "SchemaImportOptions::DisallowMajorSchemaUpgrade"
+            is false.
     - @b CustomAttributes on the ECClass
         - @b Add, @b delete, @b modify
 

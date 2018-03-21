@@ -211,16 +211,12 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECSchemaAttributes)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, ModifySchemaVersion)
     {
-    auto verifySchemaVersion = [] (ECDbCR ecdb, Utf8CP schemaName, ECVersion expectedECVersion, uint32_t expectedOriginalXmlVersionMajor, uint32_t expectedOriginalXmlVersionMinor)
-    {
     ASSERT_EQ(SUCCESS, SetupECDb("SchemaUpgrade_ModifySchemaVersion.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
     <ECSchema schemaName='TestSchema1' alias='ts1' version='10.10.10' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
         <ECEntityClass typeName='TestClassA' >
             <ECProperty propertyName='L1' typeName='double'/>
         </ECEntityClass>
     </ECSchema>)xml")));
-        ASSERT_EQ(expectedOriginalXmlVersionMinor, (uint32_t) stmt.GetValueInt(2));
-        };
 
     ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
     <ECSchema schemaName='TestSchema1' alias='ts1' version='10.11.9' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
