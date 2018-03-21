@@ -153,6 +153,11 @@ declare class NativeDgnDb {
     */
     attachChangeCache(changeCachePath: string): DbResult;
 
+    /** Detaches the EC change cache file from this iModel. 
+     * @return non-zero error status if operation failed.
+     */
+    detachChangeCache(): DbResult;
+
     /** Determines whether the EC Changes cache file is attached to this iModel. 
      * @return true if the changes cache is attached. false otherwise
     */

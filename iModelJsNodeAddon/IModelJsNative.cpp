@@ -1069,7 +1069,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         BeFileName changeCachePath(changeCachePathStr.c_str(), true);
-        DbResult stat = GetDgnDb().CreateChangeCache(changeCacheECDb->GetECDb(), changeCachePath);
+        const DbResult stat = GetDgnDb().CreateChangeCache(changeCacheECDb->GetECDb(), changeCachePath);
         return Napi::Number::New(Env(), (int) stat);
         }
 
@@ -1080,7 +1080,16 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         RETURN_IF_HAD_EXCEPTION
 
         BeFileName changeCachePath(changeCachePathStr.c_str(), true);
-        DbResult stat = GetDgnDb().AttachChangeCache(changeCachePath);
+        const DbResult stat = GetDgnDb().AttachChangeCache(changeCachePath);
+        return Napi::Number::New(Env(), (int) stat);
+        }
+
+    Napi::Value DetachChangeCache(const Napi::CallbackInfo& info)
+        {
+        REQUIRE_DB_TO_BE_OPEN
+        RETURN_IF_HAD_EXCEPTION
+
+        const DbResult stat = GetDgnDb().DetachChangeCache();
         return Napi::Number::New(Env(), (int) stat);
         }
 
@@ -1089,7 +1098,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_DB_TO_BE_OPEN
         RETURN_IF_HAD_EXCEPTION
 
-        bool isAttached = GetDgnDb().IsChangeCacheAttached();
+        const bool isAttached = GetDgnDb().IsChangeCacheAttached();
         return Napi::Boolean::New(Env(), isAttached);
         }
 
@@ -1348,6 +1357,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("extractCodes", &NativeDgnDb::ExtractCodes),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
             InstanceMethod("attachChangeCache", &NativeDgnDb::AttachChangeCache),
+            InstanceMethod("detachChangeCache", &NativeDgnDb::DetachChangeCache),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("extractChangeSummary", &NativeDgnDb::ExtractChangeSummary),
             InstanceMethod("setBriefcaseId", &NativeDgnDb::SetBriefcaseId),
