@@ -101,13 +101,12 @@ public:
              LoggingManager::CreateUncachedLogger */
     virtual int STDCALL_ATTRIBUTE CreateLogger ( WCharCP nameSpace, ILogProviderContext ** ppContext ) = 0;
 
-    // Destroy logger method. Called when user calls LoggerFactory::destroyLogger.
-    // @param pContext     => Logger context value for logger to destroy.
-    // @return SUCCESS or ERROR
-    // @see createLogger, LoggingManager::ReleaseLogger,
-    //      LoggingManager::DestroyUncachedLogger
-    // never implemented, and thus seemingly not needed
-    // virtual int STDCALL_ATTRIBUTE DestroyLogger ( ILogProviderContext * pContext ) = 0;
+    /** Destroy logger method. Called when user calls LoggerFactory::destroyLogger.
+        @param pContext     => Logger context value for logger to destroy.
+        @return SUCCESS or ERROR
+        @see createLogger,
+             LoggingManager::DestroyUncachedLogger */
+    virtual int STDCALL_ATTRIBUTE DestroyLogger ( ILogProviderContext * pContext ) = 0;
 
     /** Log message method. Called when user calls any of the logging methods.
         @remarks This method can be slightly more efficient on platforms such as Windows where UTF-16 is directly supported by the C runtime.
@@ -503,7 +502,6 @@ public:
               EMERGENCY_LOGGING is defined with the value CONSOLE for
               FILE,pathToOuputFile log messages will be sent to the
               emergency output
-            @see ReleaseLogger 
         @endif
         */
     static ILogger* STDCALL_ATTRIBUTE GetLogger ( WCharCP nameSpace );
@@ -535,14 +533,15 @@ public:
         @see CreateUncachedLogger */
     static int STDCALL_ATTRIBUTE DestroyUncachedLogger ( ILogger* pLogger );
 
-    /** Remove the provided logger from the cache and destroy it.
-        This method is not typically called and should only be
-        called when the logger is no longer needed by application.
-        @private
-        @param pLogger      => pointer to logger interface to destroy
-        @return SUCCESS or ERROR
-        @see GetLogger */
-    static int STDCALL_ATTRIBUTE ReleaseLogger ( ILogger* pLogger );
+        // Remove the provided logger from the cache and destroy it.
+        // This method is not typically called and should only be
+        // called when the logger is no longer needed by application.
+        // @private
+        // @param pLogger      => pointer to logger interface to destroy
+        // @return SUCCESS or ERROR
+        // @see GetLogger
+    // never implemented, and thus seemingly not needed
+    // static int STDCALL_ATTRIBUTE ReleaseLogger ( ILogger* pLogger );
 
 private:
     //! Private constructor so class can not be instanced
