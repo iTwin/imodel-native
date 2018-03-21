@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/SolidPrimitive.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -422,6 +422,14 @@ GEOMDLLIMPEXP bool IsCircular (
     double &radiusB,
     bool &capped
     ) const;
+//! Return true (with supporting data) if the cone is a (constant radius) cylinder.
+GEOMDLLIMPEXP bool IsCylinder
+(
+DPoint3dR centerA,
+DPoint3dR centerB,
+double &radius,
+bool &capped
+) const;
 
 //! Compute intersections with a ray and add to the pickData.
 //! @param [in] ray origin and direction

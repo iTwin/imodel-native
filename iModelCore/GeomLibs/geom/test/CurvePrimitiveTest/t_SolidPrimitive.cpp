@@ -2829,3 +2829,102 @@ TEST(SolidPrimitive,Seams)
         }
     Check::ClearGeometry ("SolidPrimitive.Seams");
     }
+// find s such that (vectorR + s * vectorV) DOT planeNormal = 0.
+DVec3d MoveVectorToPlane (DVec3dCR vectorR, DVec3dCR vectorV, DVec3dCR planeNormal)
+    {
+    double dotRN = vectorR.DotProduct (planeNormal);
+    double dotVN = vectorV.DotProduct (planeNormal);
+    auto s = DoubleOps::ValidatedDivideDistance ( -dotRN, dotVN, 0.0);
+    return vectorR + s.Value () * vectorV;
+    }
+
+// Create Chiseled pipe surfaces for a string of centerlines.
+// At each end of each pipe, the pipe is cut by the plane that bisects the angle between successive pipe centerlines.
+// 
+void CreateChiseledPipes (
+bvector<DPoint3d> &centerline,  //!< [in] points on pipe centerlines.
+double radius,                      //!< [in] pipe radius.
+bool combineAllPipesToSingleSolid,  //!< [in] if true, combine all pipes into a single DgnRuledSweep with many contours.
+                                    //! If false, create an array of single pipes.
+bvector<DEllipse3d>   &sectionArcs,    //!< [out] elliptic sections at the successive centerline points.
+bvector<IGeometryPtr> &pipes       //!< [out] constructed geometry
+)
+    {
+    pipes.clear ();
+    sectionArcs.clear ();
+    if (centerline.size () < 2)
+        return;
+    // establish coordinate system on first section . . .
+    DVec3d axis0 = centerline[1] - centerline[0];
+    DVec3d unitX, unitY, unitZ;
+    axis0.GetNormalizedTriad (unitX, unitY, unitZ);
+    // circular section on base plane ....
+    auto ellipseA = DEllipse3d::FromVectors (centerline[0], radius * unitX, radius * unitY, 0.0, Angle::TwoPi ());
+    DEllipse3d ellipseB = ellipseA;
+    sectionArcs.push_back (ellipseA);
+    for (auto i = 1; i < centerline.size (); i++, ellipseA = ellipseB)
+        {
+        ellipseB.center = centerline[i];
+        DVec3d vectorAB = ellipseB.center - ellipseA.center;
+        DVec3d vectorBC = i + 1 < centerline.size () ? centerline[i+1] - ellipseB.center : vectorAB;
+        // The bisector plane normal is the average of the unit normals along incoming and outgoing centerlines . ..
+        auto unitAB = vectorAB.ValidatedNormalize ();
+        auto unitBC = vectorBC.ValidatedNormalize ();
+        if (unitAB.IsValid () && unitBC.IsValid ())
+            {
+            auto bisector = 0.5 * (unitAB.Value () + unitBC.Value ());
+            // On the end ellipse for this pipe section. ..
+            // center comes directly from centerline[i]
+            // vector0 and vector90 are obtained by sweeping the corresponding vectors of the start ellipse to the split plane.
+            ellipseB.center = centerline[i];
+            ellipseB.vector0 = MoveVectorToPlane (ellipseA.vector0, vectorAB, bisector);
+            ellipseB.vector90 = MoveVectorToPlane (ellipseA.vector90, vectorAB, bisector);
+            sectionArcs.push_back (ellipseB);
+            if (!combineAllPipesToSingleSolid){
+                auto cvA = CurveVector::CreateDisk (ellipseA);
+                auto cvB = CurveVector::CreateDisk (ellipseB);
+                auto sections = bvector<CurveVectorPtr> { cvA, cvB};
+                auto pipeSurface = ISolidPrimitive::CreateDgnRuledSweep (DgnRuledSweepDetail (sections, false));
+                pipes.push_back (IGeometry::Create (pipeSurface));
+                }
+            }
+        }
+
+    if (combineAllPipesToSingleSolid)
+        {
+        bvector<CurveVectorPtr> sections;
+        for (auto &arc : sectionArcs)
+            sections.push_back (CurveVector::CreateDisk (arc));
+        auto pipeSurface = ISolidPrimitive::CreateDgnRuledSweep (DgnRuledSweepDetail (sections, false));
+        pipes.push_back (IGeometry::Create (pipeSurface));
+        }
+    }
+TEST(RuledSurface,ChiseledPipes)
+    {
+    bvector<DPoint3d> centerline {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (10,0,0),
+        DPoint3d::From (20, 10, 0),
+        DPoint3d::From (30, 10, 0),
+        DPoint3d::From (30,10, 5)
+        };
+    double r = 0.5;
+    bvector<IGeometryPtr> pipes;
+    bvector<DEllipse3d> sectionArcs;
+
+    // construct separate pipes ...
+    CreateChiseledPipes (centerline, r, false, sectionArcs, pipes);
+    Check::SaveTransformed (centerline);
+    for (auto &arc : sectionArcs)
+        Check::SaveTransformed (arc);
+        
+    Check::Shift (0,10,0);
+    Check::SaveTransformed (pipes);
+
+    // consturct a single welded pipe...
+    CreateChiseledPipes (centerline, r, true, sectionArcs, pipes);
+    Check::Shift (0,10,0);
+    Check::SaveTransformed (pipes);
+
+    Check::ClearGeometry ("RuledSurface.ChiseledPipes");
+    }
