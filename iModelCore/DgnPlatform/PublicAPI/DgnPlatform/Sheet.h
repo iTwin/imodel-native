@@ -364,7 +364,7 @@ namespace Attachment
         };
 
         bvector<PolyfaceHeaderPtr> m_tilePolys;
-        DRange3d m_polysRange; // this is clipped range. unclipped range is m_range.
+        DRange3d m_polysRange; // this is clipped range.  m_range is this with aspect ratio scale factor applied.
         uint32_t m_maxPixelSize;
         bvector<Render::GraphicPtr> m_graphics;
         Placement m_placement;
@@ -384,6 +384,7 @@ namespace Attachment
         TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
         double _GetMaximumSize() const override {return m_maxPixelSize;}
 
+        void ChangeRange(DRange3d newRange);
         void CreatePolys(SceneContextR context);
         void CreateGraphics(SceneContextR context);
         RootR GetTree() const {return static_cast<RootR>(m_root);}

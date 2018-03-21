@@ -276,9 +276,6 @@ public:
     DGNVIEW_EXPORT void ApplyPrevious(BeDuration animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
-    // Find world distance to nearest element in view rect.
-    DGNVIEW_EXPORT double FindNearestZ(DRange2dCR range);
-
     //! @return the current Camera for this DgnViewport. Note that the DgnViewport's camera may not match its ViewController's camera
     //! due to adjustments made for front/back clipping being turned off.
     ViewDefinition3d::Camera const& GetCamera() const {return m_camera;}
@@ -303,6 +300,12 @@ public:
     //! @note this method calls DetermineVisibleDepthNpc, which can be time consuming.
     //! @private
     DGNPLATFORM_EXPORT DPoint3d DetermineDefaultRotatePoint();
+
+    //! Determien the nearest visible geometry point within radiusPixels of the supplied pick point.
+    //! @param[out] outPoint point on visible geometry in world coordinates.
+    //! @param[in] pickPoint pick point in world coordinates.
+    //! @param[in] radiusPixels radius in pixels around pick point to search for visible geometry.
+    DGNPLATFORM_EXPORT StatusInt DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, DPoint3dCR pickPoint, int radiusPixels);
 
     //! Compute the range of the element when displayed in this DgnViewport
     //! @private
