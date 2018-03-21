@@ -123,5 +123,8 @@
     <ClInclude Include="PrivateAPI\Formatting\NumericFormatUtils.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>
+    <ClInclude Include="PrivateAPI\Formatting\AliasMappings.h">
+      <Filter>Header Files\Formatting</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

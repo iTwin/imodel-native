@@ -29,6 +29,7 @@
     <None Include="Units.mke" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PrivateAPI\Formatting\AliasMappings.h" />
     <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h" />
     <ClInclude Include="PrivateAPI\Formatting\NumericFormatUtils.h" />
     <ClInclude Include="PrivateAPI\Units\StandardDefinitions.h" />
