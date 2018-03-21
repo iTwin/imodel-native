@@ -12,9 +12,7 @@
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 //===================================================
-//
-// FormattingScannerCursorMethods
-//
+// FormattingScannerCursor
 //===================================================
 
 //----------------------------------------------------------------------------------------
@@ -48,7 +46,7 @@ FormattingScannerCursor::FormattingScannerCursor(Utf8CP utf8Text, int scanLength
     {
     m_text = Utf8String(utf8Text);  // we make a copy of the original string
     Rewind();
-    //m_unicodeConst = new UnicodeConstant();
+
     m_totalScanLength = Utils::TextLength(utf8Text);
     if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
@@ -530,6 +528,10 @@ Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
     return str;
     }
 
+//===================================================
+// FormatDividerInstance
+//===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
@@ -637,9 +639,7 @@ Utf8String FormatDividerInstance::ToText()
     }
 
 //===================================================
-//
-// FormattingSignature Methods
-//
+// FormattingSignature
 //===================================================
 
 //----------------------------------------------------------------------------------------
@@ -847,9 +847,7 @@ size_t FormattingSignature::CompressPattern()
     }
 
 //===================================================
-//
-// NumericAccumulator Methods
-//
+// NumericAccumulator
 //===================================================
 
 //----------------------------------------------------------------------------------------
@@ -1028,53 +1026,7 @@ Utf8String NumericAccumulator::ToText()
     }
 
 //===================================================
-// UnitProxy Methods
-//===================================================
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-Json::Value UnitProxy::ToJson() const
-    {
-    Json::Value jUP;
-
-    if(nullptr != m_unit)
-        jUP[json_unitName()] = m_unit->GetName().c_str();
-    if (!m_unitLabel.empty())
-        jUP[json_unitLabel()] = m_unitLabel.c_str();
-    return jUP;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
-    {
-    m_unitLabel.clear();
-    m_unit = nullptr;
-    if (jval.empty())
-        return;
-
-    Utf8CP paramName;
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
-            {
-            Utf8CP str = val.asCString();
-            if (nullptr != str)
-                m_unit = context->LookupUnit(str);
-            }
-        else if (BeStringUtilities::StricmpAscii(paramName, json_unitLabel()) == 0)
-            m_unitLabel = val.asString().c_str();
-        }
-    }
-
-//===================================================
-//
-// CursorScanPoint Methods
-//
+// CursorScanPoint
 //===================================================
 
 //----------------------------------------------------------------------------------------
@@ -1303,10 +1255,9 @@ Utf8PrintfString CursorScanPoint::ToText()
     }
 
 //===================================================
-//
-// FormatParseVector Methods
-//
+// FormatParseVector
 //===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -1346,6 +1297,7 @@ bool FormatParseVector::MoveFrame(bool forw)
        ExtractTriplet();
     return mov;
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -1362,6 +1314,7 @@ FormatParseVector::FormatParseVector(Utf8CP input, bool revers)
         }
     ExtractTriplet();
     }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
@@ -1636,10 +1589,9 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
     }
 
 //===================================================
-//
 // FormatParsingSegment Methods
-//
 //===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------

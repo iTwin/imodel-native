@@ -137,16 +137,9 @@ private:
     double m_dval;
     ParsingSegmentType m_type;
 
-    void Init(Utf8CP input, size_t start)
-        {
-        m_input = input;
-        m_start = start;
-        m_next = start;
-        m_type = ParsingSegmentType::NotNumber;
-        }
 public:
-    NumberGrabber() { Init(nullptr, 0); }
-    NumberGrabber(Utf8CP input, size_t start = 0) { Init(input, start); }
+    NumberGrabber() : NumberGrabber(nullptr) {}
+    NumberGrabber(Utf8CP input, size_t start = 0) : m_input(input), m_start(start), m_next(start), m_type(ParsingSegmentType::NotNumber) {}
     UNITS_EXPORT  size_t Grab(Utf8CP input=nullptr, size_t start = 0);
     ParsingSegmentType GetType() const { return m_type; }
     size_t GetStartIndex() const { return m_start; }

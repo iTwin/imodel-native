@@ -12,10 +12,9 @@
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 //===================================================
-//
-// CompositeValueSpec Methods
-//
+// CompositeValueSpec
 //===================================================
+
 //---------------------------------------------------------------------------------------
 // Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
@@ -395,11 +394,56 @@ void CompositeValueSpec::LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP con
     }
 
 //===================================================
-//
-// QuantityFormatting Methods
-//
+// UnitProxy Methods
 //===================================================
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+Json::Value UnitProxy::ToJson() const
+    {
+    Json::Value jUP;
+
+    if(nullptr != m_unit)
+        jUP[json_unitName()] = m_unit->GetName().c_str();
+    if (!m_unitLabel.empty())
+        jUP[json_unitLabel()] = m_unitLabel.c_str();
+    return jUP;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
+void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
+    {
+    m_unitLabel.clear();
+    m_unit = nullptr;
+    if (jval.empty())
+        return;
+
+    Utf8CP paramName;
+    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+        {
+        paramName = iter.memberName();
+        JsonValueCR val = *iter;
+        if (BeStringUtilities::StricmpAscii(paramName, json_unitName()) == 0)
+            {
+            Utf8CP str = val.asCString();
+            if (nullptr != str)
+                m_unit = context->LookupUnit(str);
+            }
+        else if (BeStringUtilities::StricmpAscii(paramName, json_unitLabel()) == 0)
+            m_unitLabel = val.asString().c_str();
+        }
+    }
+
+//===================================================
+// QuantityFormatting Methods
+//===================================================
+
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//----------------------------------------------------------------------------------------
 Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
     {
     BEU::UnitCP persUnit = outputFUS.GetUnit();
@@ -422,6 +466,9 @@ Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist
     return qty;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod
+//----------------------------------------------------------------------------------------
 Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
     {
     Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, inputFUS.GetUnit());

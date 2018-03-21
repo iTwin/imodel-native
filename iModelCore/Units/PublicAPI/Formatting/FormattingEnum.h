@@ -285,7 +285,7 @@ struct FormatProblemDetail
 //! @bsistruct
 //=======================================================================================
 struct Utils
-    {
+{
     UNITS_EXPORT static ShowSignOption NameToSignOption(Utf8CP name);
     static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
     UNITS_EXPORT static DecimalPrecision DecimalPrecisionByIndex(size_t num);
@@ -315,14 +315,14 @@ struct Utils
     UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
     UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
     UNITS_EXPORT static Utf8String GetCurrentGrouping();
-    };
+};
 
 // A collection of important global constants that are used across the whole formatting domain.
 //=======================================================================================
 // @bsistruct                                                    David.Fox-Rabinovitz  11/2016
 //=======================================================================================
 struct FormatConstant
-    {
+{
 public:
     static const double DefaultRoundingFactor() { return 0.0; }
     static PresentationType const DefaultPresentaitonType() { return PresentationType::Decimal; }
@@ -428,6 +428,6 @@ public:
         return false;
         }
     UNITS_EXPORT const static FormatSpecialCodes ParsingPatternCode(Utf8CP name);
-    };
+};
 
 END_BENTLEY_FORMATTING_NAMESPACE

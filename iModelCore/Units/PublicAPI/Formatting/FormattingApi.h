@@ -14,13 +14,11 @@
 namespace BEU = BentleyApi::Units;
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
-struct StdFormatSet;
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValue)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CompositeValueSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(StdFormatSet)
-DEFINE_POINTER_SUFFIX_TYPEDEFS(FactorPower)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UIListEntry)
@@ -93,36 +91,36 @@ BE_JSON_NAME(schemaName)
 // @bsistruct                                            Bill.Steinbock  11/2017
 //=======================================================================================
 struct UIListEntry
-    {
-    protected:
-        Json::Value m_json;
+{
+protected:
+    Json::Value m_json;
 
-    public:
-        UIListEntry() : m_json(Json::objectValue) {}
-        UIListEntry(Json::Value const& j) : m_json(j) {}
-        UIListEntry& operator=(UIListEntry const& rhs) { m_json = rhs.m_json; return *this; }
+public:
+    UIListEntry() : m_json(Json::objectValue) {}
+    UIListEntry(Json::Value const& j) : m_json(j) {}
+    UIListEntry& operator=(UIListEntry const& rhs) { m_json = rhs.m_json; return *this; }
 
-        void SetLabel(Utf8CP n) { m_json["label"] = n; }
-        Utf8CP GetLabel() const { return m_json["label"].asCString(); }
+    void SetLabel(Utf8CP n) { m_json["label"] = n; }
+    Utf8CP GetLabel() const { return m_json["label"].asCString(); }
 
-        void SetStringValue(Utf8CP n) { m_json["stringValue"] = n; }
-        Utf8CP GetStringValue() const { return m_json["stringValue"].asCString(); }
+    void SetStringValue(Utf8CP n) { m_json["stringValue"] = n; }
+    Utf8CP GetStringValue() const { return m_json["stringValue"].asCString(); }
 
-        void SetValue(int n) { m_json["value"] = n; }
-        int GetValue() const { return m_json["value"].asInt(); }
+    void SetValue(int n) { m_json["value"] = n; }
+    int GetValue() const { return m_json["value"].asInt(); }
 
-        UIListEntry(int value, Utf8CP label, Utf8CP stringValue=nullptr) : m_json(Json::objectValue)
-            {
-            SetLabel(label);
-            SetValue(value);
+    UIListEntry(int value, Utf8CP label, Utf8CP stringValue=nullptr) : m_json(Json::objectValue)
+        {
+        SetLabel(label);
+        SetValue(value);
 
-            // string value is optional
-            if (stringValue)
-                SetStringValue(stringValue);
-            }
+        // string value is optional
+        if (stringValue)
+            SetStringValue(stringValue);
+        }
 
-        Json::Value const& GetJson() const { return m_json; }
-    };
+    Json::Value const& GetJson() const { return m_json; }
+};
 
 //=======================================================================================
 //
@@ -164,82 +162,6 @@ struct UIUtils
     UNITS_EXPORT static UIList GetAvailableThousandSeparators();
     UNITS_EXPORT static UIList GetAvailableUnitLabelSeparators();
     UNITS_EXPORT static UIList GetAvailableTraits();
-};
-
-//=======================================================================================
-//! @bsistruct
-//=======================================================================================
-struct FactorPower
-{
-private:
-    size_t m_divisor;  // the value of divisor
-    size_t m_power;    // the degree of the divisor
-    int m_index;    // the index of the divisor in the prime set
-    static size_t GetMin(size_t i1, size_t i2) { return (i1 <= i2) ? i1 : i2; }
-public:
-    FactorPower() { m_divisor = 0; m_power = 0; m_index = -1; }
-    FactorPower(size_t div, size_t pow, int ind) : m_divisor(div), m_power(pow), m_index(ind) {}
-    UNITS_EXPORT void CopyValues(FactorPowerCP other);
-    UNITS_EXPORT void Merge(FactorPowerCP fp1, FactorPowerCP fp2);
-    const int GetDivisor() { return static_cast<int>(m_divisor); }
-    const size_t GetPower() { return m_power; }
-    const int GetIndex() { return m_index; }
-    UNITS_EXPORT const size_t GetFactor();
-    UNITS_EXPORT Utf8String ToText(Utf8Char pref);
-};
-
-//=======================================================================================
-//! @bsistruct
-//=======================================================================================
-struct FactorizedNumber
-{
-private:
-    size_t m_ival;
-    bvector<FactorPower> m_factors;
-    static const size_t* GetPrimes(int* length);
-    static size_t PowerOfPrime(size_t ival, size_t prim, size_t* result);
-    size_t RestoreNumber();
-
-public:
-    UNITS_EXPORT static size_t GetPrimeCount();
-    UNITS_EXPORT FactorizedNumber(size_t ival);
-    bvector<FactorPower> GetFactors() { return m_factors; }
-    void ResetFactors(bvector<FactorPower> fact);
-    UNITS_EXPORT FactorPowerP FindDivisor(int div);
-    UNITS_EXPORT size_t GetGreatestCommonFactor(FactorizedNumber other);
-    size_t GetValue() { return m_ival; }
-    UNITS_EXPORT Utf8String ToText();
-    UNITS_EXPORT Utf8String DebugText();
-};
-
-//=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz  10/2016
-//=======================================================================================
-struct FractionalNumeric
-{
-private:
-    int64_t m_integral;
-    size_t m_numerator;
-    size_t m_denominator;
-    size_t m_gcf;
-    bvector<Utf8String> m_textParts;
-
-    void Calculate(double dval, size_t denominator);
-    size_t GCF(size_t numer, size_t denom); 
-public:
-    size_t GetDenominator() { return m_denominator; }
-    size_t GetNumerator() { return m_numerator; }
-    int64_t GetIntegral() { return m_integral; }
-    UNITS_EXPORT FractionalNumeric(double dval, FractionalPrecision fprec);
-    UNITS_EXPORT FractionalNumeric(double dval, int denominator);
-    UNITS_EXPORT FractionalNumeric(double dval, int denominatorBase, double precision);
-    UNITS_EXPORT Utf8String ToTextDefault(bool reduce);
-    UNITS_EXPORT Utf8String GetIntegralString();
-    UNITS_EXPORT Utf8String GetDenominatorString();
-    UNITS_EXPORT Utf8String GetNumeratorString();
-    UNITS_EXPORT void FormTextParts(bool reduce);
-    bool HasFractionPart() { return 1 < m_textParts.size(); }
-    bool IsZero() { return (0 == m_numerator); }
 };
 
 //=======================================================================================
@@ -292,28 +214,18 @@ private:
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
 
-    double RoundedValue(double dval, double round) const;
     int TrimTrailingZeroes(Utf8P buf, int index) const;
     size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
 
     // TODO: Attempt to remove these methods from the private API===============
     int FormatInteger(int n, Utf8P bufOut, int bufLen);
     size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
-    Utf8String FormatRoundedDouble(double dval, double round);
     static double RoundDouble(double dval, double roundTo);
     int GetDecimalPrecisionIndex(int prec = -1) const;
     double GetDecimalPrecisionFactor(int prec = -1) const;
-    void SetPrecisionByValue(int prec);
-    static int RightAlignedCopy(Utf8P dest, int destLen, bool termZero, CharCP src, int srcLen);
-    static bool AcceptableDifference(double dval1, double dval2, double maxDiff);
     int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
-    NumericFormatSpec(size_t precision) { DefaultInit(precision); }
-    NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision, Utf8CP uomSeparator=nullptr);
     Utf8String FormatIntegerToString(int n, int minSize) const;
-    void Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
-    void DefaultInit(size_t precision);
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
-    static void TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits);
     // !TODO====================================================================
 
 public:
