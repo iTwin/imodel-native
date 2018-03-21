@@ -60,7 +60,7 @@ $(o)UnitNameMappings$(oext)         : $(srcDir)UnitNameMappings.cpp ${MultiCompi
 
 $(o)Formatting$(oext)     : $(formatSrcDir)Formatting.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
-$(o)FormattingIO$(oext)   : $(formatSrcDir)FormattingIO.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+$(o)StdFormatSet$(oext)   : $(formatSrcDir)StdFormatSet.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 $(o)FormatUtils$(oext)    : $(formatSrcDir)FormatUtils.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 

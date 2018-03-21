@@ -1089,7 +1089,7 @@ FormatUnitSet::FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit, bool cl
     {
     m_formatSpec = format;
     if (nullptr == m_formatSpec)
-        m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
+        m_formatSpec = stdFmtSet.FindNamedFormatSpec(FormatConstant::DefaultFormatName());
     
     m_unit = unit;
     if (nullptr == m_unit)
@@ -1170,9 +1170,9 @@ void FormatUnitSet::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
             {
             format = val.asString();
             if (format.empty())
-                m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
+                m_formatSpec = stdFmtSet.FindNamedFormatSpec(FormatConstant::DefaultFormatName());
             else
-                m_formatSpec = StdFormatSet::FindFormatSpec(format.c_str());
+                m_formatSpec = stdFmtSet.FindNamedFormatSpec(format.c_str());
             }
         else if (BeStringUtilities::StricmpAscii(paramName, json_cloneData()) == 0)
             cloneData = val.asBool();
@@ -1185,7 +1185,7 @@ void FormatUnitSet::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
         }
     // last check if the referenced data is to be copied locally
     if(nullptr == m_formatSpec)
-        m_formatSpec = StdFormatSet::FindFormatSpec(FormatConstant::DefaultFormatName());
+        m_formatSpec = stdFmtSet.FindNamedFormatSpec(FormatConstant::DefaultFormatName());
     if (cloneData && !local && (nullptr != m_formatSpec))
         {
         m_localCopy = *m_formatSpec;
@@ -1213,9 +1213,9 @@ FormatUnitSet::FormatUnitSet(Utf8CP description, BEU::IUnitsContextCP context)
         Utf8String unit;
         ParseUnitFormatDescriptor(unit, fnam, description);
         if (Utf8String::IsNullOrEmpty(fnam.c_str()))
-            m_formatSpec = StdFormatSet::FindFormatSpec("DefaultReal");
+            m_formatSpec = stdFmtSet.FindNamedFormatSpec("DefaultReal");
         else
-            m_formatSpec = StdFormatSet::FindFormatSpec(fnam.c_str());
+            m_formatSpec = stdFmtSet.FindNamedFormatSpec(fnam.c_str());
         m_unit = context->LookupUnit(unit.c_str());
         if (nullptr == m_formatSpec)
             m_problem.UpdateProblemCode(FormatProblemCode::UnknownStdFormatName);
@@ -1289,7 +1289,7 @@ Utf8String FormatUnitSet::ToText() const
     if (HasProblem())
         return "";
     char buf[256];
-    sprintf(buf, "%s(%s)", m_unit->GetName().c_str(), m_formatSpec->GetName());
+    sprintf(buf, "%s(%s)", m_unit->GetName().c_str(), m_formatSpec->GetName().c_str());
     return buf;
     }
 

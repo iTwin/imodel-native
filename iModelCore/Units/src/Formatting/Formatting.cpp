@@ -971,12 +971,12 @@ Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round) 
 //---------------------------------------------------------------------------------------
 Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int prec, double round)
     {
-    NumericFormatSpecCP fmtP = StdFormatSet::GetNumericFormat(stdName);
-    if (nullptr == fmtP)  // invalid name
-        fmtP = StdFormatSet::DefaultDecimal();
-    if (nullptr == fmtP)
-        return "";
-    return fmtP->FormatDouble(dval, prec, round);
+    static StdFormatSet std;
+    NumericFormatSpecCP fmtP = std.FindNamedFormatSpec(stdName)->GetNumericSpec();
+    NumericFormatSpec fmt;
+    if (nullptr != fmtP) // invalid name
+        fmt = *fmtP;
+    return fmt.FormatDouble(dval, prec, round);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1047,7 +1047,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
     else
         {
         if (nullptr == fmtP)  // invalid name
-            fmtP = StdFormatSet::DefaultDecimal();
+            fmtP = &NumericFormatSpec::DefaultFormat();
         if (nullptr == fmtP)
             return "";
         majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
@@ -1113,16 +1113,6 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
 // NamedFormatSpec
 //
 //===================================================
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-bool NamedFormatSpec::HasName(Utf8CP name) const 
-    {
-    if (Utils::IsNameNullOrEmpty(name))
-        return false;
-    return (0 == BeStringUtilities::StricmpAscii(name, m_name.c_str())); 
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
@@ -1306,195 +1296,6 @@ Json::Value NamedFormatSpec::ToJson(bool verbose) const
     if (!jcs.empty())
         jNFS[json_CompositeFormat()] = jcs; // m_compositeSpec.ToJson();
     return jNFS;
-    }
-
-//===================================================
-//
-// StdFormatSet Methods
-//
-//===================================================
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS)
-    {
-    if (IsFormatDefined(name))
-        {
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
-        return nullptr;
-        }
-    NamedFormatSpecCP nfs = new NamedFormatSpec(name, fmtP, compS);
-    if (nullptr == nfs || nfs->IsProblem())
-        {
-        if (nullptr != nfs)
-            delete nfs;
-        return nullptr;
-        }
-    m_formatSet.push_back(nfs);
-    return nfs->GetNumericSpec();
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP)
-    {
-    if (IsFormatDefined(name))
-        {
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
-        return nullptr;
-        }
-    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP);
-    if (nullptr == nfs || nfs->IsProblem())
-        {
-        if (nullptr != nfs)
-            delete nfs;
-        return nullptr;
-        }
-    m_formatSet.push_back(nfs);
-    return nfs->GetNumericSpec();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
-NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context)
-    {
-    NamedFormatSpecCP nfs = AddNamedFormat(jsonString, context);
-    if (nullptr == nfs)
-        return nullptr;
-    return nfs->GetNumericSpec();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context)
-    {
-    Json::Value jval (Json::objectValue);
-    Json::Reader::Parse(jsonString, jval);
-    NamedFormatSpecP nfs = new NamedFormatSpec(jval, &context);
-    if (nullptr == nfs)
-        return nullptr;
-    Utf8String tval = jval.ToString();
-    tval.empty();
-
-    if (nfs->IsProblem())
-        {
-        delete nfs;
-        return nullptr;
-        }
-    if (IsFormatDefined(nfs->GetName()))
-        {
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
-        delete nfs;
-        return nullptr;
-        }
-    m_formatSet.push_back(nfs);
-    return nfs;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-// static
-bool StdFormatSet::IsFormatDefined(Utf8CP name)
-    {
-    bvector<NamedFormatSpecCP> const& fmtSet = Set()->m_formatSet;
-    return fmtSet.end() != std::find_if(fmtSet.begin(), fmtSet.end(),
-        [name](NamedFormatSpecCP pNamedFmtSpec) -> bool
-            {return pNamedFmtSpec->HasName(name) || pNamedFmtSpec->HasName(name);});
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-// static
-NumericFormatSpecCP StdFormatSet::DefaultDecimal()
-    {
-    NamedFormatSpecCP fmtP;
-
-    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
-        {
-        fmtP = *itr;
-        if (PresentationType::Decimal == fmtP->GetPresentationType())
-            return fmtP->GetNumericSpec();
-        }
-    return nullptr;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-// static
-NumericFormatSpecCP StdFormatSet::GetNumericFormat(Utf8CP name)
-    {
-    NamedFormatSpecCP fmtP = FindFormatSpec(name);
-    if(nullptr == fmtP)
-        return nullptr;
-    return fmtP->GetNumericSpec();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-// static
-NamedFormatSpecCP StdFormatSet::FindFormatSpec(Utf8CP name)
-    {
-    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
-    if (Set()->m_formatSet.size() > 0)
-        {
-        for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
-            {
-            fmtP = *itr;
-            if (fmtP->HasName(name))
-                {
-                return fmtP;
-                }
-            }
-        }
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-// static
-bvector<Utf8CP> StdFormatSet::StdFormatNames()
-    {
-    bvector<Utf8CP> vec;
-    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
-    Utf8CP name;
-
-    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
-        {
-        fmtP = *itr;
-        name = fmtP->GetName();
-        vec.push_back(name);
-        }
-    return vec;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-// static
-Utf8String StdFormatSet::StdFormatNameList()
-    {
-    Utf8String  txt;
-    NamedFormatSpecCP fmtP = *Set()->m_formatSet.begin();
-    Utf8CP name;
-    int i = 0;
-    for (auto itr = Set()->m_formatSet.begin(); itr != Set()->m_formatSet.end(); ++itr)
-        {
-        fmtP = *itr;
-        name = fmtP->GetName();
-        if (i > 0)
-            txt += " ";
-        txt += name;
-        i++;
-        }
-    return txt;
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

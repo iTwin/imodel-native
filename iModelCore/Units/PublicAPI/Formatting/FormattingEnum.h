@@ -261,7 +261,7 @@ enum class FormatSpecialCodes
 struct FormatProblemDetail
     {
     private:
-        FormatProblemCode  m_code;
+        FormatProblemCode m_code;
 
     public:
 

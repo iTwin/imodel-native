@@ -44,9 +44,6 @@
     <ClCompile Include="src\Formatting\FormatParsing.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="src\Formatting\FormattingIO.cpp">
-      <Filter>Source Files\Formatting</Filter>
-    </ClCompile>
     <ClCompile Include="src\UnitNameMappings.cpp">
       <Filter>Source Files\Units</Filter>
     </ClCompile>
@@ -67,6 +64,9 @@
     </ClCompile>
     <ClCompile Include="src\UnitTypes.cpp">
       <Filter>Source Files\Units</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Formatting\StdFormatSet.cpp">
+      <Filter>Source Files\Formatting</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

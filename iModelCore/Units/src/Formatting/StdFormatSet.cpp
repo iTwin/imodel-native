@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/Formatting/FormattingIO.cpp $
+|     $Source: src/Formatting/StdFormatSet.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,23 +10,113 @@
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
+
 //===================================================
 //
 // StdFormatSet Methods
 //
 //===================================================
 //---------------------------------------------------------------------------------------
-// @bsimethod
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-StdFormatSetP StdFormatSet::Set() 
-    { 
-    static StdFormatSetP set = nullptr; 
-    if (nullptr == set)
+NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS)
+    {
+    if (IsFormatDefined(name))
         {
-        set = new StdFormatSet();
-        set->StdInit();
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
+        return nullptr;
         }
-    return set;
+    NamedFormatSpecCP nfs = new NamedFormatSpec(name, fmtP, compS);
+    if (nullptr == nfs || nfs->IsProblem())
+        {
+        if (nullptr != nfs)
+            delete nfs;
+        return nullptr;
+        }
+    m_formatSet.push_back(*nfs);
+    return nfs->GetNumericSpec();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
+NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmtP)
+    {
+    if (IsFormatDefined(name))
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
+        return nullptr;
+        }
+    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP);
+    if (nullptr == nfs || nfs->IsProblem())
+        {
+        if (nullptr != nfs)
+            delete nfs;
+        return nullptr;
+        }
+    m_formatSet.push_back(*nfs);
+    return nfs->GetNumericSpec();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    02/2018
+//--------------------------------------------------------------------------------------
+NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context)
+    {
+    NamedFormatSpecCP nfs = AddNamedFormat(jsonString, context);
+    if (nullptr == nfs)
+        return nullptr;
+    return nfs->GetNumericSpec();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 12/16
+//---------------------------------------------------------------------------------------
+NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context)
+    {
+    Json::Value jval (Json::objectValue);
+    Json::Reader::Parse(jsonString, jval);
+    NamedFormatSpecP nfs = new NamedFormatSpec(jval, &context);
+    if (nullptr == nfs)
+        return nullptr;
+    Utf8String tval = jval.ToString();
+    tval.empty();
+
+    if (nfs->IsProblem())
+        {
+        delete nfs;
+        return nullptr;
+        }
+    if (IsFormatDefined(nfs->GetName().c_str()))
+        {
+        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
+        delete nfs;
+        return nullptr;
+        }
+    m_formatSet.push_back(*nfs);
+    return nfs;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+bool StdFormatSet::IsFormatDefined(Utf8CP name)
+    {
+    return m_formatSet.end() != std::find_if(m_formatSet.begin(), m_formatSet.end(),
+        [name](NamedFormatSpecCR pNamedFmtSpec) -> bool {return pNamedFmtSpec.GetName() == name;});
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+NamedFormatSpecCP StdFormatSet::FindNamedFormatSpec(Utf8StringCR name) const
+    {
+    for (auto const& fmt : m_formatSet)
+        {
+        if (fmt.GetName() == name)
+            return &fmt;
+        }
+
+    return nullptr;
     }
 
 // Specialized "Constructor" to replace the now removed constructor in NumericFormatSpec.
@@ -246,6 +336,15 @@ void StdFormatSet::CompositeSpecsInit(BEU::IUnitsContextCP unitContext)
     // Duplicate of "dm8", just different name.
     AddFormat("{\"CompositeFormat\":{\"MajorUnit\":{\"unitLabel\":\"\xC2\xB0\", \"unitName\" : \"ARC_DEG\"}, \"MiddleUnit\" : {\"unitLabel\":\"'\", \"unitName\" : \"ARC_MINUTE\"}, \"includeZero\" : true}, \"NumericFormat\" : {\"fractPrec\":8, \"presentType\" : \"Fractional\"}, \"SpecAlias\" : \"cdm8\", \"SpecName\" : \"CAngleDM8\", \"SpecType\" : \"composite\"}",
         *unitContext);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+StdFormatSet::StdFormatSet()
+    : m_problem(FormatProblemCode::NoProblems)
+    {
+    StdInit();
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

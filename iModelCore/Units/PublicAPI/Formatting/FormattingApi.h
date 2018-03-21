@@ -666,8 +666,6 @@ private:
 
 public:
     // TODO: Attempt to remove these methods from the public API================
-    UNITS_EXPORT bool HasName(Utf8CP name) const;
-
     UNITS_EXPORT void LoadJson(Utf8CP jsonString, BEU::IUnitsContextCP context);
     UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
     // !TODO====================================================================
@@ -685,16 +683,16 @@ public:
     //! and other are identical.
     UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
 
-    Utf8CP GetName() const { return m_name.c_str(); };
+    Utf8StringCR GetName() const { return m_name; };
 
     void SetDescription(Utf8CP descr) { m_description = descr; };
-    Utf8CP GetDescription() const { return m_description.c_str(); };
+    Utf8StringCR GetDescription() const { return m_description; };
 
     void SetDisplayLabel(Utf8CP label) { m_displayLabel = label;};
-    Utf8CP GetDisplayLabel() const { return m_displayLabel.c_str(); };
+    Utf8StringCR GetDisplayLabel() const { return m_displayLabel; };
 
     FormatSpecType GetSpecType() { return m_specType; }
-    //! Returns true if this NamedFormatSpec contains a NumericFormatSpec.
+    //! Returns true if this NamedFormat`Spec contains a NumericFormatSpec.
     UNITS_EXPORT bool HasNumeric() const;
     //! Returns true if this NamedFormatSpec containst a CompositeFormatSpec.
     //! A NamedFormatSpec that contains a CompositeValueSpec will also contain a NumericFormatSpec.
@@ -733,6 +731,33 @@ public:
 };
 
 //=======================================================================================
+//! @bsistruct
+//=======================================================================================
+struct StdFormatSet
+{
+private:
+    bvector<NamedFormatSpec> m_formatSet;
+    FormatProblemDetail m_problem;
+
+    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP);
+    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS); 
+    NumericFormatSpecCP AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
+    NamedFormatSpecCP AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
+
+    size_t StdInit();
+
+    bool IsFormatDefined(Utf8CP name);
+
+    // This is temporary since this whole method is going away, but the IUnitsContext is provided to resolve all the names needed to create
+    // the standard set of Composite specs.
+    void CompositeSpecsInit(BEU::IUnitsContextCP unitContext);
+
+public:
+    UNITS_EXPORT StdFormatSet();
+    UNITS_EXPORT NamedFormatSpecCP FindNamedFormatSpec(Utf8StringCR name) const;
+};
+
+//=======================================================================================
 //! The Format-Unit Set(FUS) has two parts describing how a Quantity transformation
 //! between an internal form and presentation form should be handled.
 //! 
@@ -749,8 +774,8 @@ public:
 //=======================================================================================
 struct FormatUnitSet
 {
-friend struct StdFormatSet;
 private:
+    StdFormatSet const stdFmtSet;
     NamedFormatSpecCP m_formatSpec;
     Utf8String  m_unitName;
     BEU::UnitCP m_unit;
@@ -841,52 +866,6 @@ public:
     BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_formatSpec->GetCompositeSubUnit() : nullptr; }
 
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
-};
-
-//=======================================================================================
-//! Singleton container for known NamedFormatSpecs and FormatUnitSets.
-//!
-//! @bsistruct
-//=======================================================================================
-struct StdFormatSet
-{
-private:
-    bvector<NamedFormatSpecCP> m_formatSet;    // core + app
-    FormatProblemDetail m_problem; 
-
-    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP);
-    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS); 
-    NumericFormatSpecCP AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
-    NamedFormatSpecCP AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
-
-    size_t StdInit();
-
-    StdFormatSet() { m_problem = FormatProblemDetail(); }
-    static StdFormatSetP Set();
-    static bool IsFormatDefined(Utf8CP name);
-
-public:
-    // This is temporary since this whole method is going away, but the IUnitsContext is provided to resolve all the names needed to create
-    // the standard set of Composite specs.
-    void CompositeSpecsInit(BEU::IUnitsContextCP unitContext);
-
-    UNITS_EXPORT static NumericFormatSpecCP DefaultDecimal();
-    static NamedFormatSpecCP DefaultFormatSpec() {return FindFormatSpec(FormatConstant::DefaultFormatName());}
-    static size_t GetFormatSetSize() {return Set()->m_formatSet.size();}
-    UNITS_EXPORT static NumericFormatSpecCP GetNumericFormat(Utf8CP name);
-    UNITS_EXPORT static NamedFormatSpecCP FindFormatSpec(Utf8CP name);
-    UNITS_EXPORT static bvector<Utf8CP> StdFormatNames();
-    UNITS_EXPORT static Utf8String StdFormatNameList();
-    size_t GetFormatCount() { return m_formatSet.size(); }
-    bool HasProblem() const { return m_problem.IsProblem(); }
-    FormatProblemCode GetProblemCode() { return m_problem.GetProblemCode(); }
-    void ResetProblemCode() {m_problem.Reset();}
-
-    static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
-
-    //! Whether or not the StdFormatSet has a problem.
-    //! @return true if the Set has a problem; false, otherwise.
-    static bool FusRegistrationHasProblem() {return Set()->HasProblem();}
 };
 
 //=======================================================================================
