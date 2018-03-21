@@ -205,6 +205,7 @@ protected:
     DGNPLATFORM_EXPORT void SuspendViewport();
     DGNPLATFORM_EXPORT virtual void _AdjustZPlanes(DPoint3dR origin, DVec3dR delta) const;
     virtual double _GetCameraFrustumNearScaleLimit() const {return GetRenderTarget()->_GetCameraFrustumNearScaleLimit();}
+
     virtual bool _IsVisible() const {return true;}
     DGNPLATFORM_EXPORT virtual void _CallDecorators(DecorateContextR);
     virtual Render::Plan::AntiAliasPref _WantAntiAliasLines() const {return Render::Plan::AntiAliasPref::Off;}

@@ -528,8 +528,8 @@ ViewportStatus DgnViewport::SetupFromViewController()
                 double frontDist = eyeOrg.z - delta.z; // front distance is backDist - delta.z
                 BeAssert(frontDist >= 0.0);
 
-                // allow viewcontroller to specify a minimum front dist, but in no case less than 6 inches
-                double minFrontDist = std::max(15.2 * DgnUnits::OneCentimeter(), m_viewController->_ToSpatialView()->_ForceMinFrontDist());
+                // allow viewcontroller to specify a minimum front dist, but in no case less than minimum front distance.
+                double minFrontDist = std::max(cameraView->MinimumFrontDistance(_GetCameraFrustumNearScaleLimit()), m_viewController->_ToSpatialView()->_ForceMinFrontDist());
                 if (frontDist < minFrontDist)
                     {
                     // camera is too close to front plane, move origin away from eye to maintain a minimum front distance.
@@ -1440,3 +1440,5 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
 
     return IsCameraOn() ? m_viewController->GetViewDefinition().GetTargetPoint() : NpcToWorld(DPoint3d::From(.5, .5, .5));
     }
+
+

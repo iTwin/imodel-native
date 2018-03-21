@@ -1876,7 +1876,7 @@ ViewportStatus ViewDefinition3d::LookAt(DPoint3dCR eyePoint, DPoint3dCR targetPo
     double frontDist = frontDistIn ? *frontDistIn : GetFrontDistance();
     DVec3d delta     = extentsIn   ? DVec3d::From(fabs(extentsIn->x),fabs(extentsIn->y),GetExtents().z) : GetExtents();
 
-    frontDist = std::max(frontDist, (.5 *DgnUnits::OneMeter())); 
+    frontDist = std::max(frontDist, MinimumFrontDistance()); 
     backDist  = std::max(backDist, focusDist+(.5*DgnUnits::OneMeter()));
 
     if (backDist < focusDist) // make sure focus distance is in front of back distance.
@@ -2558,3 +2558,10 @@ ViewControllerPtr TemplateViewDefinition3d::_SupplyController() const
     return new TemplateViewController3d(*this);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+double  ViewDefinition3d::MinimumFrontDistance(double nearScaleLimit) const
+    {
+    return GetDgnDb().GeoLocation().GetProjectExtents().DiagonalDistance() * nearScaleLimit;
+    }
