@@ -1382,9 +1382,7 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual size_t _GetPointCount() const override;                
 
-        virtual bool _IsHeaderLoaded() const override;
-
-        virtual bool _IsMeshLoaded() const override;
+        virtual bool _IsHeaderLoaded() const override;        
 
         virtual void _LoadHeader() const override;
 
@@ -1641,9 +1639,7 @@ template<class POINT> class ScalableMeshNodeEdit : public IScalableMeshNodeEdit,
 
         virtual StatusInt _SetResolution(float geometricResolution, float textureResolution) override;
 
-        virtual bool _IsHeaderLoaded() const override;
-
-        virtual bool _IsMeshLoaded() const override;
+        virtual bool _IsHeaderLoaded() const override;        
 
         virtual void _LoadHeader() const override;
 

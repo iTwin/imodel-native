@@ -1546,8 +1546,7 @@ void RunGetMeshParts(WString& stmFileName)
        /* bvector<bvector<uint8_t>> tex;
         bvector<Utf8String> metadata;
         bvector<ScalableMesh::IScalableMeshMeshPtr> meshes;
-        node->GetMeshParts(meshes, metadata, tex);*/
-        node->IsMeshLoaded();
+        node->GetMeshParts(meshes, metadata, tex);*/        
         }
     //std::cout << elementId << std::endl;
     }
