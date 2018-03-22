@@ -89,7 +89,7 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             {
             schemaChange->SetStatus(ECChange::Status::Done);
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Deleting an ECSchema is not supported.",
-                                 ecSchema.GetFullSchemaName().c_str());
+                                 ecSchema.GetName().c_str());
             return ERROR;
             }
         }
@@ -3510,7 +3510,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (schemaChange.GetName().GetNew().IsNull())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Name must always be set.",
-                                      oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetName().c_str());
             return ERROR;
             }
 
@@ -3539,14 +3539,14 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (schemaChange.GetVersionRead().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionRead().GetValue(ValueId::New).Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionRead' of an ECSchema is not supported.",
-                                      oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetName().c_str());
             return ERROR;
             }
 
         if (!ctx.AreMajorSchemaVersionChangesAllowed())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Major schema version changes are disabled.",
-                                 oldSchema.GetFullSchemaName().c_str());
+                                 oldSchema.GetName().c_str());
             return ERROR;
             }
 
@@ -3560,7 +3560,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (!readVersionHasChanged && schemaChange.GetVersionWrite().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionWrite().GetValue(ValueId::New).Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionWrite' of an ECSchema is not supported.",
-                                      oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetName().c_str());
             return ERROR;
             }
 
@@ -3572,7 +3572,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (!readVersionHasChanged && !writeVersionHasChanged && schemaChange.GetVersionMinor().GetValue(ValueId::Deleted).Value() > schemaChange.GetVersionMinor().GetValue(ValueId::New).Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'VersionMinor' of an ECSchema is not supported.",
-                                      oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetName().c_str());
             return ERROR;
             }
 
@@ -3584,14 +3584,14 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (schemaChange.GetAlias().GetNew().IsNull())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias must always be set.",
-                                      oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetName().c_str());
             return ERROR;
             }
 
         if (ctx.GetSchemaManager().ContainsSchema(schemaChange.GetAlias().GetNew().Value(), SchemaLookupMode::ByAlias))
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias is already used by another existing ECSchema.",
-                                      oldSchema.GetFullSchemaName().c_str());
+                                      oldSchema.GetName().c_str());
             return ERROR;
             }
 
@@ -3603,7 +3603,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (schemaChange.GetECVersion().GetOld().Value() > schemaChange.GetECVersion().GetNew().Value())
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'ECVersion' of an ECSchema is not supported.",
-                             oldSchema.GetFullSchemaName().c_str());
+                             oldSchema.GetName().c_str());
             return ERROR;
             }
 
@@ -3617,7 +3617,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (schemaChange.GetOriginalECXmlVersionMajor().GetOld().Value() > newVal)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMajor' of an ECSchema is not supported.",
-                             oldSchema.GetFullSchemaName().c_str());
+                             oldSchema.GetName().c_str());
             return ERROR;
             }
 
@@ -3632,7 +3632,7 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         if (!originalVersionMajorHasChanged && schemaChange.GetOriginalECXmlVersionMinor().GetOld().Value() > newVal)
             {
             ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Decreasing 'OriginalECXmlVersionMinor' of an ECSchema is not supported.",
-                             oldSchema.GetFullSchemaName().c_str());
+                             oldSchema.GetName().c_str());
             return ERROR;
             }
 
