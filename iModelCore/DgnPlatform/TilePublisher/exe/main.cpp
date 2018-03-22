@@ -17,7 +17,7 @@
 #include <DgnPlatform/DesktopTools/ConfigurationManager.h>
 #include <Logging/bentleylogging.h>
 #include <WebServices/iModelHub/Client/ClientHelper.h>
-
+#include <DgnView/DgnViewLib.h>
 
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"TilePublisher"))
 
@@ -476,9 +476,19 @@ static void printUsage(WCharCP exePath)
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
-struct Host : DgnPlatformLib::Host
+struct Host : DgnViewLib::Host
 {
 private:
+    struct ViewMgr : ViewManager
+    {
+        // Combination of software rendering and null system context causes use of p-buffer surface for rendering.
+        bool _ForceSoftwareRendering() override { return true; }
+        Display::SystemContext* _GetSystemContext() override { return nullptr; }
+        bool _DoesHostHaveFocus() override { return true; }
+    };
+
+    ViewManagerR _SupplyViewManager() override { return *new ViewMgr(); }
+public:
     void _SupplyProductName(Utf8StringR name) override { name.assign("TilePublisher"); }
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); }
     BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
@@ -497,7 +507,7 @@ private:
         {
         LOG.errorv("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
         }
-public:
+
     Host() { EnsureAssertHandler(); }
 
     static void EnsureAssertHandler()
@@ -575,7 +585,7 @@ int wmain(int ac, wchar_t const** av)
         createParams.SetBimiumDistDir(BeFileName(bimiumVar.c_str()));
 
     Host host;
-    DgnPlatformLib::Initialize(host, false);
+    DgnViewLib::Initialize(host, false);
 
     DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
@@ -585,6 +595,9 @@ int wmain(int ac, wchar_t const** av)
     ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
 
     Host::EnsureAssertHandler();
+
+    if (host._IsFeatureEnabled("TilePublisher.PublishViewAttachments"))
+        host.GetViewManager().Startup();
 
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
