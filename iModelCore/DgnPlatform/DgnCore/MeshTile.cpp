@@ -37,6 +37,14 @@ static DPoint2d getSheetSize(Sheet::Model const& sheet)
     return sheetSize;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool wantPublishViewAttachments()
+    {
+    return T_HOST._IsFeatureEnabled("TilePublisher.PublishViewAttachments");
+    }
+
 END_UNNAMED_NAMESPACE
 
 //#define POINT_SUPPORT
@@ -2727,8 +2735,9 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewAttachmentCR attach)
     {
-//#define WIP_PUBLISH_VIEW_ATTACHMENTS
-#if defined(WIP_PUBLISH_VIEW_ATTACHMENTS)
+    if (!wantPublishViewAttachments())
+        return;
+
     auto elemId = attach.GetElementId();
     if (nullptr != m_filter && !m_filter->_AcceptElement(elemId))
         return;
@@ -2737,14 +2746,20 @@ void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewA
     m_curLeafGeometries.clear();
     m_curElemId = elemId;
 
-    ColorDef fillColor = ColorDef::DarkBlue();
-    fillColor.SetAlpha(0x7f);
     GeometryParams geomParams;
     geomParams.SetCategoryId(attach.GetCategoryId());
     geomParams.SetSubCategoryId(DgnCategory::GetDefaultSubCategoryId(attach.GetCategoryId()));
-    geomParams.SetFillColor(fillColor);
     geomParams.SetLineColor(ColorDef::DarkOrange());
     geomParams.SetFillDisplay(FillDisplay::Always);
+
+    double keyValues[] = {0.0, 0.5};
+    ColorDef keyColors[] = {ColorDef::DarkBlue(), ColorDef::DarkOrange()};
+    keyColors[0].SetAlpha(0x7f);
+    keyColors[1].SetAlpha(0x7f);
+    auto gradient = GradientSymb::Create();
+    gradient->SetMode(GradientSymb::Mode::Linear);
+    gradient->SetKeys(2, keyColors, keyValues);
+    geomParams.SetGradient(gradient.get());
 
     GraphicParams gfParams;
     context.CookGeometryParams(geomParams, gfParams);
@@ -2757,7 +2772,6 @@ void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewA
 
     AddElementGeometry(*TileGeometry::Create(attach, tf, range, displayParams));
     PushCurrentGeometry();
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

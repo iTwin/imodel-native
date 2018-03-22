@@ -488,6 +488,11 @@ private:
         return BeSQLite::L10N::SqlangFiles(sqlang);
         }
 
+    bool _IsFeatureEnabled(Utf8CP featureName) override
+        {
+        return 0 == strcmp(featureName, "TilePublisher.PublishViewAttachments");
+        }
+
     static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
         {
         LOG.errorv("Assertion Failure: %ls (%ls:%d)\n", msg, file, line);
