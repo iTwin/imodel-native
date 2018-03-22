@@ -1377,11 +1377,11 @@ size_t AttachmentTileGeometry::_GetFacetCount(FacetCounter&) const
 bvector<DPoint3d> AttachmentTileGeometry::GetBox() const
     {
     DRange3d range = GetTileRange();
-    Transform tf = GetTransform();
-    DRange3d clipRange;
-    auto clip = m_attachment->GetClip();
-    if (clip.IsValid() && clip->GetRange(clipRange, &tf))
-        range.IntersectionOf(range, clipRange);
+    ////Transform tf = GetTransform();
+    ////DRange3d clipRange;
+    ////auto clip = m_attachment->GetClip();
+    ////if (clip.IsValid() && clip->GetRange(clipRange, &tf))
+    ////    range.IntersectionOf(range, clipRange);
 
     bvector<DPoint3d> box;
     box.push_back(range.low);
@@ -1423,11 +1423,32 @@ TileGeometry::T_TilePolyfaces AttachmentTileGeometry::_GetPolyfaces(IFacetOption
     auto box = GetBox();
     auto builder = IPolyfaceConstruction::Create(facetOptions);
     builder->AddTriangulation(box);
-
     auto polyface = builder->GetClientMeshPtr();
-    if (polyface.IsValid())
-        polyfaces.push_back(TilePolyface(GetDisplayParams(), *polyface));
 
+    auto clip = m_attachment->GetClip();
+    if (clip.IsNull())
+        {
+        polyfaces.push_back(TilePolyface(GetDisplayParams(), *polyface));
+        return polyfaces;
+        }
+
+    auto tf = GetTransform();
+    clip = clip->Clone(&tf);
+    Render::Primitives::GeometryClipper::PolyfaceClipper clipper;
+    clipper.ClipPolyface(*polyface, clip.get(), true);
+
+    // We've either got our original unclipped polyface, or any number of clipped polyfaces.
+    if (!clipper.HasClipped())
+        {
+        if (clipper.HasOutput())
+            polyfaces.push_back(TilePolyface(GetDisplayParams(), *polyface));
+        }
+    else
+        {
+        BeAssert(clipper.GetOutput().size() == clipper.GetClipped().size());
+        for (auto& clippedPolyface : clipper.GetClipped())
+            polyfaces.push_back(TilePolyface(GetDisplayParams(), *clippedPolyface));
+        }
 #endif
 
     return polyfaces;
