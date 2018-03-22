@@ -1202,7 +1202,10 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
     Tile* rTile;
     m_rootTile = rTile = new Tile(*this, nullptr, Sheet::Attachment::Tile::Placement::Root);
     rTile->CreatePolys(context); // m_graphicsClip must be set before creating polys (the polys that represent the tile)
+
+#if defined(WIP_CLIP_TILE_RANGE)
     rTile->ChangeRange(rTile->m_polysRange);
+#endif
 
     // alter location translation based on range of clipped polys
     trans = m_viewport->m_toParent;
