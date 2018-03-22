@@ -675,8 +675,6 @@ void Sheet::Attachment::Tile::CreateGraphics(SceneContextR context)
 
         viewport->SetSceneDepth(GetDepth(), tree);
         viewport->SetupFromViewController();
-        viewport->m_renderSys = renderSys;
-        viewport->m_db = &context.GetDgnDb();
 
         // Create the scene, and if the scene is complete, mark state ready
         currentState = viewport->_CreateScene(plan, currentState);
@@ -723,7 +721,7 @@ void Sheet::Attachment::Tile::CreateGraphics(SceneContextR context)
                 else
                     {
                     GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
-                    m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, m_tilePolys, *viewport->m_db, gfParams);
+                    m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, m_tilePolys, viewport->GetViewController().GetDgnDb(), gfParams);
                     SetIsReady();
                     }
                 }
@@ -1123,11 +1121,8 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
     uint32_t dim = querySheetTilePixels();
     m_viewport->SetRect(BSIRect::From(0, 0, dim, dim));
     m_viewport->ChangeViewController(view);
-
     m_viewport->SetupFromViewController();
-    m_viewport->ChangeViewController(view);
 
-    m_viewport->SetupFromViewController();
     Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(scale.x, scale.y, 1.0));
     m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
     m_viewport->SetupFromFrustum(frust);
@@ -1172,8 +1167,6 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
         env.m_groundPlane.m_enabled = false;
         env.m_skybox.m_enabled = false;
         }
-
-    m_viewport->SetupFromFrustum(m_viewport->GetFrustum(DgnCoordSystem::World));
 
     auto& box = attach.GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach.GetPlacement().CalculateRange();
