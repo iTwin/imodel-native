@@ -220,7 +220,7 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
 void BisJson1ImporterImpl::FinalizeImport()
     {
     m_dgndb->GeoLocation().InitializeProjectExtents();
-    m_dgndb->Schemas().CreateClassViewsInDb();
+//    m_dgndb->Schemas().CreateClassViewsInDb();
     m_dgndb->SaveChanges();
     delete m_syncInfo;
     }

@@ -1510,6 +1510,16 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             SchemaFlattener flattener(m_importer->m_schemaReadContext);
             flattener.FlattenSchemas(ecSchema.get());
             }
+        else if (ecSchema->GetName().StartsWithIAscii("SP3D"))
+            {
+            ECClassCP baseInterface = ecSchema->GetClassCP("BaseInterface");
+            ECClassCP baseObject = ecSchema->GetClassCP("BaseObject");
+            if (nullptr != baseInterface && nullptr != baseObject)
+                {
+                SchemaFlattener flattener(m_importer->m_schemaReadContext);
+                flattener.ProcessSP3DSchema(ecSchema.get(), baseInterface, baseObject);
+                }
+            }
         ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest);
 #define EXPORT_FLATTENEDECSCHEMAS 1
 #ifdef EXPORT_FLATTENEDECSCHEMAS

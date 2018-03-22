@@ -2,7 +2,7 @@
 |
 |  $Source: Dwg/Tests/ImporterCommandBuilder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,6 +27,7 @@ public:
     void addUpdateFlag(WString description=L"");
     void addCompressFlag();
     void addNoAssertDialogFlag();
+    void addNoThumbnails();
     void addConfigFile(WString fileName);
     void addPassword(WString pw);
     void resetCommand();

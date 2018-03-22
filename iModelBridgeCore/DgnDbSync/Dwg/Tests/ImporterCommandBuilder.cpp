@@ -2,7 +2,7 @@
 |
 |  $Source: Dwg/Tests/ImporterCommandBuilder.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -100,4 +100,12 @@ void ImporterCommandBuilder::addUpdateFlag(WString description)
 void ImporterCommandBuilder::addNoAssertDialogFlag()
     {
     COMMANDPLUS(L" --no-assert-dialogs")
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImporterCommandBuilder::addNoThumbnails ()
+    {
+    COMMANDPLUS(L" --no-thumbnails");
     }

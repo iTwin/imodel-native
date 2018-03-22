@@ -11,6 +11,7 @@
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"DgnDbToBimConverter"))
 #include "SchemaFlattener.h"
 
+USING_NAMESPACE_BENTLEY_EC
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
 //---------------------------------------------------------------------------------------
@@ -689,6 +690,11 @@ BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
 void SchemaFlattener::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP baseInterface, ECN::ECClassCP baseObject)
     {
     bool wasFlattened = false;
+    m_baseInterface = baseInterface;
+    m_baseObject = baseObject;
+
+    bset<ECClassP> rootClasses;
+
     for (ECN::ECClassP ecClass : schema->GetClasses())
         {
         ECN::ECEntityClassP entityClass = ecClass->GetEntityClassP();
@@ -705,6 +711,11 @@ void SchemaFlattener::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP ba
             bvector<ECN::ECClassP> toRemove;
             for (auto& baseClass : ecClass->GetBaseClasses())
                 {
+                if (baseClass->GetSchema().GetName().Equals("BisCore") || baseClass->GetSchema().GetName().Equals("Generic"))
+                    {
+                    rootClasses.insert(ecClass);
+                    continue;
+                    }
                 ECN::ECEntityClassCP asEntity = baseClass->GetEntityClassCP();
                 if (nullptr == asEntity)
                     continue;
@@ -750,5 +761,186 @@ void SchemaFlattener::ProcessSP3DSchema(ECN::ECSchemaP schema, ECN::ECClassCP ba
             schema->SetCustomAttribute(*flattenedInstance);
             }
         }
+
+    for (ECClassP rootClass : rootClasses)
+        {
+        CheckForMixinConversion(*rootClass);
+        }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void SchemaFlattener::CheckForMixinConversion(ECN::ECClassR inputClass)
+    {
+    ECSchemaR targetSchema = inputClass.GetSchemaR();
+    if (ShouldConvertECClassToMixin(targetSchema, inputClass))
+        {
+        ECClassP appliesTo;
+        if (BSISUCCESS == FindAppliesToClass(appliesTo, targetSchema, inputClass))
+            ConvertECClassToMixin(targetSchema, inputClass, *appliesTo);
+        }
+
+    for (ECClassP childClass : inputClass.GetDerivedClasses())
+        CheckForMixinConversion(*childClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SchemaFlattener::ShouldConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass)
+    {
+    if (inputClass.GetClassModifier() != ECClassModifier::Abstract)
+        return false;
+
+    // check base class
+    for (auto baseClass : inputClass.GetBaseClasses())
+        {
+        if (baseClass->GetSchemaR().GetName().EqualsI("BisCore"))
+            continue;
+        if (baseClass->IsEntityClass())
+            {
+            auto baseEntityClass = baseClass->GetEntityClassP();
+            if (!baseEntityClass->IsMixin() && !ShouldConvertECClassToMixin(baseEntityClass->GetSchemaR(), *baseEntityClass))
+                return false;
+            }
+        else
+            return false;
+        }
+
+    if (!inputClass.Is(m_baseInterface) || inputClass.Is(m_baseObject))
+        return false;
+
+    return true;
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SchemaFlattener::ConvertECClassToMixin(ECN::ECSchemaR targetSchema, ECN::ECClassR inputClass, ECN::ECClassCR appliesTo)
+    {
+    if (ECN::ECClassModifier::Abstract != inputClass.GetClassModifier())
+        return BSIERROR;
+
+    ECN::IECInstancePtr mixinInstance = ECN::CoreCustomAttributeHelper::CreateCustomAttributeInstance("IsMixin");
+    if (!mixinInstance.IsValid())
+        return BSIERROR;
+
+    auto& coreCA = mixinInstance->GetClass().GetSchema();
+    if (!ECN::ECSchema::IsSchemaReferenced(targetSchema, coreCA))
+        targetSchema.AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
+    ECValue appliesToClass(ECN::ECClass::GetQualifiedClassName(targetSchema, appliesTo).c_str());
+
+    ECN::ECObjectsStatus status;
+
+    status = mixinInstance->SetValue("AppliesToEntityClass", appliesToClass);
+    if (ECN::ECObjectsStatus::Success != status)
+        return BSIERROR;
+
+    status = inputClass.SetCustomAttribute(*mixinInstance);
+    if (ECN::ECObjectsStatus::Success != status)
+        return BSIERROR;
+
+    for (auto baseClass : inputClass.GetBaseClasses())
+        {
+        if (baseClass->GetSchemaR().GetName().EqualsI("BisCore"))
+            inputClass.RemoveBaseClass(*baseClass);
+        }
+
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SchemaFlattener::FindAppliesToClass(ECN::ECClassP& appliesTo, ECN::ECSchemaR targetSchema, ECN::ECClassR mixinClass)
+    { 
+    auto applies = m_mixinAppliesToMap.find(mixinClass.GetEntityClassCP());
+    if (applies != m_mixinAppliesToMap.end())
+        {
+        appliesTo = applies->second;
+        return BSISUCCESS;
+        }
+
+    bvector<ECClassCP> propogationFilter;
+    propogationFilter.push_back(m_baseObject);
+
+    ECDerivedClassesList derivedClasses = mixinClass.GetDerivedClasses();
+    ECDerivedClassesList searchClasses;
+    for (auto derived : derivedClasses)
+        {
+        ECClassP derivedAppliesTo;
+        // if concrete class
+        if (derived->Is(m_baseObject))
+            searchClasses.push_back(derived);
+        else if (BSISUCCESS == FindAppliesToClass(derivedAppliesTo, derived->GetSchemaR(), *derived))
+            searchClasses.push_back(derivedAppliesTo);
+        else
+            return BSIERROR;
+        }
+
+    if (searchClasses.empty())
+        appliesTo = targetSchema.GetClassP(m_baseObject->GetName().c_str());
+    else
+        FindCommonBaseClass(appliesTo, searchClasses.front(), searchClasses, propogationFilter);
+
+    if (appliesTo == nullptr)
+        return BSIERROR;
+
+    return AddMixinAppliesToMapping(mixinClass.GetEntityClassCP(), appliesTo);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SchemaFlattener::AddMixinAppliesToMapping(ECClassCP mixinClass, ECClassP appliesToClass)
+    {
+    BeAssert(m_mixinAppliesToMap.find(mixinClass) == m_mixinAppliesToMap.end());
+    m_mixinAppliesToMap.Insert(mixinClass, appliesToClass);
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void SchemaFlattener::FindCommonBaseClass(ECN::ECClassP& commonClass, ECN::ECClassP currentClass, ECN::ECBaseClassesList const& classes, const bvector<ECN::ECClassCP> propogationFilter)
+    {
+    ECClassP tempCommonClass = currentClass;
+    for (const auto &secondConstraint : classes)
+        {
+        ECClassCP secondClass = secondConstraint;
+        ECEntityClassCP asEntity = secondClass->GetEntityClassCP();
+        if (nullptr != asEntity && asEntity->IsMixin() && asEntity->GetAppliesToClass()->Is(tempCommonClass->GetEntityClassCP()))
+            continue;
+        if (secondClass->Is(tempCommonClass))
+            continue;
+
+        for (const auto baseClass : tempCommonClass->GetBaseClasses())
+            {
+            bool shouldPropogate = false;
+            for (const auto filterClass : propogationFilter)
+                {
+                if (baseClass->Is(filterClass))
+                    {
+                    shouldPropogate = true;
+                    break;
+                    }
+                }
+            if (!shouldPropogate)
+                continue;
+
+            FindCommonBaseClass(commonClass, baseClass->GetEntityClassP(), classes, propogationFilter);
+            if (commonClass != nullptr)
+                return;
+            }
+
+        tempCommonClass = nullptr;
+        break;
+        }
+
+    if (nullptr != tempCommonClass)
+        commonClass = tempCommonClass;
+    }
+
 END_BIM_TELEPORTER_NAMESPACE
