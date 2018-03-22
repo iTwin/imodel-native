@@ -957,7 +957,7 @@ bool FormatUnitSet::IsIdentical(FormatUnitSetCR other) const
 //----------------------------------------------------------------------------------------
 Utf8String FormatUnitSet::FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const
     {
-    return NumericFormatSpec::StdFormatQuantity(*m_formatSpec, qty.ConvertTo(m_unit), nullptr, space);
+    return NamedFormatSpec::StdFormatQuantity(*m_formatSpec, qty.ConvertTo(m_unit), nullptr, space);
     }
 
 //----------------------------------------------------------------------------------------
@@ -968,7 +968,7 @@ Json::Value FormatUnitSet::FormatQuantityJson(BEU::QuantityCR qty, Utf8CP space)
     Utf8String str;
     Json::Value jval = ToJson();
     BEU::Quantity conv = qty.ConvertTo(m_unit);
-    Utf8String txt = NumericFormatSpec::StdFormatQuantity(*m_formatSpec, conv, nullptr, space);
+    Utf8String txt = NamedFormatSpec::StdFormatQuantity(*m_formatSpec, conv, nullptr, space);
     jval[FormatConstant::FUSJsonValue()] = conv.GetMagnitude();
     jval[FormatConstant::FUSJsonDispValue()] = txt.c_str();
     return jval;

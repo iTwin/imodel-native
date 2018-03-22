@@ -23,7 +23,7 @@ FormatParsingSetTest.TestParseToStd
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
 # Implementation is bugged.
-NumericFormatSpecTest.StdFormatQuantityUsesThousandSeparatorForAllUnits
+NamedFormatSpecTest.StdFormatQuantityUsesThousandSeparatorForAllUnits
 
 # Implementation is bugged.
 FormatDoubleTest.FormatDoublePresentationTypeTests_IGNORED

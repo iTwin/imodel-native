@@ -244,6 +244,8 @@ public:
 
     UNITS_EXPORT static NumericFormatSpecCR DefaultFormat();
 
+    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+
     //======================================
     // Data Member Setters/Getters
     //======================================
@@ -347,12 +349,11 @@ public:
     //! @param[in] dval Double to format.
     //! @return dval as a formatted string.
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
-
-    UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
-    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
-
-    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+    //! Format a double using the format settings of numericFormatSpec.
+    //! @param[in] nfs  NumericFormatSpec used for formatting.
+    //! @param[in] dval Double to format.
+    //! @return dval as a formatted string.
+    UNITS_EXPORT static Utf8String FormatDouble(NumericFormatSpecCR nfs, double dval, int prec = -1, double round = -1.0);
 };
 
 //=======================================================================================
@@ -627,6 +628,9 @@ public:
     bool IsProblem() const { return m_problem.IsProblem(); }
     Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
+
+    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
 
     //! Creates a Json::Value representing this.
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;

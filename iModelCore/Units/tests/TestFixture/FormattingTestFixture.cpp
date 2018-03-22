@@ -55,14 +55,6 @@ void FormattingTestFixture::TearDown()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestUtils::StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue)
-    {
-    EXPECT_STREQ (expectedValue, NumericFormatSpec::StdFormatDouble(formatName, dval).c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
 void FormattingTestUtils::SignaturePattrenCollapsing(Utf8CP txt, int tstN)
     {
     LOG.infov("Signature Test%02d  >%s<================", tstN, txt);
@@ -527,18 +519,6 @@ void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
     jval = nfs.ToJson(false);
     nfs1 = NumericFormatSpec(jval);
     EXPECT_TRUE(nfs.IsIdentical(nfs1));
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::FormatDoubleTest(double dval, Utf8CP fmtName, int prec, double round, Utf8CP expect)
-    {
-    Utf8String txt = NumericFormatSpec::StdFormatDouble(fmtName, dval, prec, round);
-    if(Utf8String::IsNullOrEmpty(expect))
-        LOG.infov("%f formatted: %s (%d)", dval, txt.c_str(), txt.size());
-    else
-        EXPECT_STREQ(expect, txt.c_str());
     }
 
 //----------------------------------------------------------------------------------------
