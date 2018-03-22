@@ -1439,11 +1439,6 @@
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="SavedSelection" displayLabel="Selection of elements" description="a named set of elements.">
-        <!-- selected element definitions are stored in JsonProperties -->
-        <BaseClass>DefinitionElement</BaseClass>
-    </ECEntityClass>
-
     <ECEntityClass typeName="RenderMaterial" modifier="Sealed" displayLabel="Render Material">
         <!-- Marked as "Sealed" because JsonProperties will be used to persist data. This allows a single instance to "morph" between a DgnV8 render material and a future PBR material. -->
         <BaseClass>DefinitionElement</BaseClass>

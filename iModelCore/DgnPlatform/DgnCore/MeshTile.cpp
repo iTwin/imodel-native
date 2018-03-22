@@ -2027,6 +2027,21 @@ void TileNode::ComputeChildTileRanges(bvector<DRange3d>& subRanges, DRange3dCR r
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileNode::SetPublishedRange(DRange3dCR publishedRange) const
+    {
+    m_publishedRange = publishedRange;
+    if (m_model->IsSheetModel())
+        {
+        // The z range of view attachments may exceed that of the sheet itself...
+        auto tileRange = GetTileRange();
+        m_publishedRange.low.z = tileRange.low.z;
+        m_publishedRange.high.z = tileRange.high.z;
+        }
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================

@@ -1202,6 +1202,7 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
     Tile* rTile;
     m_rootTile = rTile = new Tile(*this, nullptr, Sheet::Attachment::Tile::Placement::Root);
     rTile->CreatePolys(context); // m_graphicsClip must be set before creating polys (the polys that represent the tile)
+    rTile->ChangeRange(rTile->m_polysRange);
 
     // alter location translation based on range of clipped polys
     trans = m_viewport->m_toParent;
@@ -1210,6 +1211,23 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
     m_viewport->m_clips = m_clip; // save original clip in viewport
 
     SetExpirationTime(BeDuration::Seconds(15)); // only save unused sheet tiles for 15 seconds
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mark.Schlosser  03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::Attachment::Tile::ChangeRange(DRange3d newRange)
+    {
+    // make range square (extend shortest side to match length of longest side)
+    if (newRange.XLength() > newRange.YLength())
+        newRange.high.y = newRange.low.y + newRange.XLength();
+    else // y length >= x length
+        newRange.high.x = newRange.low.x + newRange.YLength();
+
+    // alter range so that it matches the actual range of the tile after being clipped
+    m_range.Init();
+    m_range.Extend(newRange.low);
+    m_range.Extend(newRange.high);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1227,12 +1245,10 @@ Sheet::Attachment::Tile::Tile(RootR root, TileCP parent, Placement placement) : 
         fullRange = parent->GetRange();
     else
         fullRange = tree.GetRootRange();
-
     double z = fullRange.low.z; // all Zs should match
     DPoint3d mid = DPoint3d::FromInterpolate(fullRange.low, 0.5, fullRange.high);
 
     m_range.Init();
-
     switch (m_placement)
         {
         case Placement::UpperLeft:

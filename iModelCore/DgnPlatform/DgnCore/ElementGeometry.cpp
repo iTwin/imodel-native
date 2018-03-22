@@ -4406,17 +4406,65 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 }
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
-                break;
+                break; // NEEDSWORK...
 
-            case GeometryStreamIO::OpCode::Polyface:
-            case GeometryStreamIO::OpCode::SolidPrimitive:
-            case GeometryStreamIO::OpCode::BsplineSurface:
+            case GeometryStreamIO::OpCode::TextString:
+                {
+                TextStringPtr text = TextString::Create();
+
+                if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, m_state.m_dgnDb))
+                    break;
+
+                TextStringStyleCR style = text->GetStyle();
+                DgnFontId fontId = m_state.m_dgnDb.Fonts().AcquireId(style.GetFont());
+
+                if (!fontId.IsValid())
+                    break; // Shouldn't happen...DecodeFromFlatBuf would have failed...
+
+                Json::Value value;
+
+                // we're going to store the fontid as a 32 bit value, even though in memory we have a 64bit value. Make sure the high bits are 0.
+                BeAssert(fontId.GetValue() == (int64_t)((uint32_t)fontId.GetValue())); 
+                value["font"] = (uint32_t)fontId.GetValue();
+                value["text"] = text->GetText().c_str();
+                value["height"] = style.GetHeight();
+
+                double widthFactor = (style.GetWidth() / style.GetHeight());
+                if (!DoubleOps::AlmostEqual(widthFactor, 1.0))
+                    value["widthFactor"] = widthFactor;
+
+                if (style.IsBold())
+                    value["bold"] = true;
+
+                if (style.IsItalic())
+                    value["italic"] = true;
+
+                if (style.IsUnderlined())
+                    value["underline"] = true;
+
+                if (!text->GetOrigin().IsEqual(DPoint3d::FromZero()))
+                    JsonUtils::DPoint3dToJson(value["origin"], text->GetOrigin());
+
+                if (!text->GetOrientation().IsIdentity())
+                    {
+                    YawPitchRollAngles angles;
+                    BeAssert(YawPitchRollAngles::TryFromRotMatrix(angles, text->GetOrientation()));
+                    value["rotation"] = JsonUtils::YawPitchRollToJson(angles);
+                    }
+
+                Json::Value textValue;
+                textValue["textString"] = value;
+                output.append(textValue);
+                break;
+                }
+
             case GeometryStreamIO::OpCode::ParasolidBRep:
             case GeometryStreamIO::OpCode::BRepPolyface:
             case GeometryStreamIO::OpCode::BRepCurveVector:
-            case GeometryStreamIO::OpCode::TextString:
-            case GeometryStreamIO::OpCode::Image:
                 break; // NEEDSWORK...Ignore these for now...
+
+            case GeometryStreamIO::OpCode::Image:
+                break; // Doesn't currently exist...
 
             default:
                 {
@@ -4441,6 +4489,24 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                     case GeometricPrimitive::GeometryType::CurveVector:
                         {
                         geomPtr = IGeometry::Create(geom->GetAsCurveVector());
+                        break;
+                        }
+
+                    case GeometricPrimitive::GeometryType::SolidPrimitive:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsISolidPrimitive());
+                        break;
+                        }
+
+                    case GeometricPrimitive::GeometryType::BsplineSurface:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsMSBsplineSurface());
+                        break;
+                        }
+
+                    case GeometricPrimitive::GeometryType::Polyface:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsPolyfaceHeader());
                         break;
                         }
                     }

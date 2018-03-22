@@ -3393,25 +3393,25 @@ struct PixelData
     };
 private:
     DgnElementId    m_elementId;
-    double          m_distance;
+    double          m_distanceFraction;
     GeometryType    m_type;
     Planarity       m_planarity;
 public:
-    PixelData() : m_distance(-1.0), m_type(GeometryType::Unknown), m_planarity(Planarity::Unknown) { }
-    PixelData(DgnElementId id, double distance, GeometryType geomType, Planarity planarity)
-        : m_elementId(id), m_distance(distance), m_type(geomType), m_planarity(planarity) { }
+    PixelData() : m_distanceFraction(-1.0), m_type(GeometryType::Unknown), m_planarity(Planarity::Unknown) { }
+    PixelData(DgnElementId id, double distanceFraction, GeometryType geomType, Planarity planarity)
+        : m_elementId(id), m_distanceFraction(distanceFraction), m_type(geomType), m_planarity(planarity) { }
 
     //! Returns the ID of the foremost element which contributed to the pixel, or an invalid ID if no element or if element IDs were not selected.
     DgnElementId GetElementId() const { return m_elementId; }
-    //! Returns the distance from the near plane in world units, or a negative value if distances were not selected.
-    double GetDistance() const { return m_distance; }
+    //! Returns the fraction between the far and near clip planes (0 = far, 1.0 = near)
+    double GetDistanceFraction() const { return m_distanceFraction; }
     //! Returns the foremost type of geometry that produced this pixel, or Unknown if geometry was not selected
     GeometryType GetGeometryType() const { return m_type; }
     //! Returns the planarity of the foremost geometry that produced this pixel, or Unknown if geometry was not selected
     Planarity GetPlanarity() const { return m_planarity; }
 
     void SetElementId(DgnElementId elemId) { m_elementId=elemId; }
-    void SetDistance(double dist) { m_distance=dist; }
+    void SetDistanceFraction(double fraction) { m_distanceFraction = fraction; }
     void SetGeometry(GeometryType type, Planarity planarity) { m_type=type; m_planarity=planarity; }
 };
 
