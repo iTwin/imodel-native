@@ -535,8 +535,8 @@ void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
 void FormattingTestUtils::FormatDoubleTest(double dval, Utf8CP fmtName, int prec, double round, Utf8CP expect)
     {
     Utf8String txt = NumericFormatSpec::StdFormatDouble(fmtName, dval, prec, round);
-    if(Utils::IsNameNullOrEmpty(expect))
-       LOG.infov("%f formatted: %s (%d)", dval, txt.c_str(), txt.size());
+    if(Utf8String::IsNullOrEmpty(expect))
+        LOG.infov("%f formatted: %s (%d)", dval, txt.c_str(), txt.size());
     else
         EXPECT_STREQ(expect, txt.c_str());
     }

@@ -579,7 +579,7 @@ FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8CP divs)
     m_totLen = 0;
     m_mate = FormatConstant::EndOfLine();
     int indx;
-    if (Utils::IsNameNullOrEmpty(divs))
+    if (Utf8String::IsNullOrEmpty(divs))
         m_problem = FormatProblemDetail(FormatProblemCode::DIV_UnknownDivider);
     else
         {
@@ -1318,15 +1318,6 @@ FormatParseVector::FormatParseVector(Utf8CP input, bool revers)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------
-size_t FormatParseVector::AddPoint(CursorScanPointCR pnt)
-    {
-    m_vect.push_back(pnt);
-    return m_vect.size();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
 Utf8String FormatParseVector::GetPattern()
     {
     Utf8Char last, foll;
@@ -1364,71 +1355,7 @@ Utf8String FormatParseVector::GetSignature()
     }
 
 //===================================================
-//
-// CursorScanTriplet Methods
-//
-//============================================
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-void CursorScanTriplet::Init(bool rev)
-    {
-    m_strInd = 0;
-    m_revers = rev;
-    m_tripInd = m_revers? 3 : 0;
-    memset(m_triple, 0, sizeof(m_triple));
-    memset(m_patt, '\0', sizeof(m_patt));
-    }
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-CursorScanTriplet::CursorScanTriplet()
-    {
-    Init(false);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 06/17
-//----------------------------------------------------------------------------------------
-bool CursorScanTriplet::SetReverse(bool rev) 
-    {
-    Init(rev);
-    return m_revers;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-void CursorScanTriplet::PushSymbol(size_t symb) 
-    {
-    if (m_revers)
-        {
-        if (m_tripInd == 0)
-            {
-            m_triple[2] = m_triple[1];
-            m_triple[1] = m_triple[0];
-            m_triple[0] = symb;
-            }
-        else
-            m_triple[--m_tripInd] = symb;
-        }
-    else
-        {
-        if(m_tripInd < 2)
-          m_triple[m_tripInd++] = symb;
-        else
-            {
-            m_triple[0] = m_triple[1];
-            m_triple[1] = m_triple[2];
-            m_triple[2] = symb;
-            }
-        }
-    }
-
-//===================================================
-//
-// NumberGrabber Methods
-//
+// NumberGrabber
 //===================================================
 
 //----------------------------------------------------------------------------------------
@@ -1436,7 +1363,7 @@ void CursorScanTriplet::PushSymbol(size_t symb)
 //----------------------------------------------------------------------------------------
 size_t NumberGrabber::Grab(Utf8CP input, size_t start)
     {
-    if (!Utils::IsNameNullOrEmpty(input))
+    if (!Utf8String::IsNullOrEmpty(input))
         {
         m_input = input;
         m_start = start;
@@ -1589,7 +1516,7 @@ size_t NumberGrabber::Grab(Utf8CP input, size_t start)
     }
 
 //===================================================
-// FormatParsingSegment Methods
+// FormatParsingSegment
 //===================================================
 
 //----------------------------------------------------------------------------------------
@@ -1679,10 +1606,9 @@ Utf8PrintfString FormatParsingSegment::ToText(int n)
     }
 
 //===================================================
-//
-// FormatParsingSet Methods
-//
+// FormatParsingSet
 //===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 06/17
 //----------------------------------------------------------------------------------------

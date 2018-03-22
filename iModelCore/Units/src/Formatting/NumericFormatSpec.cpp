@@ -1,129 +1,19 @@
-﻿/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/Formatting/Formatting.cpp $
+|     $Source: src/Formatting/NumericFormatSpec.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
+
 #include <Formatting/FormattingApi.h>
-#include <locale>
-#include <BeSQLite/L10N.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
 #include "../../PrivateAPI/Formatting/NumericFormatUtils.h"
 
+#include <locale>
+
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
-
-//===================================================
-// LocaleProperties
-//===================================================
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-LocaleProperties::LocaleProperties(Json::Value jval)
-    {
-    if (!jval.empty())
-        {
-        Utf8CP paramName;
-        Utf8String str;
-        Utf8String jStr = jval.ToString();
-        for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-            {
-            paramName = iter.memberName();
-            JsonValueCR val = *iter;
-            if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
-                {
-                str = val.asString();
-                m_decimalSeparator = str.c_str()[0];
-                }
-            else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
-                {
-                str = val.asString();
-                m_thousandsSeparator = str.c_str()[0];
-                }
-            }
-        }
-    else
-        {
-        m_decimalSeparator = '.';
-        m_thousandsSeparator = '\0';
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-LocaleProperties::LocaleProperties(Utf8CP localeName)
-    {
-    std::locale loc = std::locale(localeName);
-    const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
-
-    m_decimalSeparator = myfacet.decimal_point();
-    m_thousandsSeparator = myfacet.thousands_sep();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-bool NumericFormatSpec::ImbueLocale(Utf8CP name) // en-US en-UK   en-GB
-    {
-    std::locale loc = std::locale(name);
-    const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
-
-    m_decimalSeparator = myfacet.decimal_point();
-    m_thousandsSeparator = myfacet.thousands_sep(); 
-    return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-bool NumericFormatSpec::ImbueLocaleProperties(LocalePropertiesCR locProp)
-    {
-    m_decimalSeparator = locProp.GetDecimalSeparator();
-    m_thousandsSeparator = locProp.GetThousandSeparator();
-    return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-LocaleProperties LocaleProperties::DefaultAmerican()
-    {
-    return LocaleProperties('.',',');
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-LocaleProperties LocaleProperties::DefaultEuropean(bool useBlank)
-    {
-    return LocaleProperties(',', (useBlank? ' ' : '.'));
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-Json::Value LocaleProperties::ToJson()
-    {
-    Json::Value jval;
-    jval[json_decimalSeparator()] = Utils::CharToString(m_decimalSeparator);
-    jval[json_thousandSeparator()] = Utils::CharToString(m_thousandsSeparator);
-    return jval;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/18
-//----------------------------------------------------------------------------------------
-Utf8String LocaleProperties::ToText()
-    {
-    return Utf8PrintfString("Separators: decimal |%c| thousands |%c|", m_decimalSeparator, m_thousandsSeparator);
-    }
-
-//===================================================
-// NumericFormatSpec
-//===================================================
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -452,11 +342,26 @@ int NumericFormatSpec::GetDecimalPrecisionIndex(int prec) const
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
 //----------------------------------------------------------------------------------------
-double NumericFormatSpec::GetDecimalPrecisionFactor(int prec) const
-    { 
-    return Utils::DecimalPrecisionFactor(m_decPrecision, prec); 
+bool NumericFormatSpec::ImbueLocale(Utf8CP name) // en-US en-UK   en-GB
+    {
+    std::locale loc = std::locale(name);
+    const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
+
+    m_decimalSeparator = myfacet.decimal_point();
+    m_thousandsSeparator = myfacet.thousands_sep(); 
+    return true;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+bool NumericFormatSpec::ImbueLocaleProperties(LocalePropertiesCR locProp)
+    {
+    m_decimalSeparator = locProp.GetDecimalSeparator();
+    m_thousandsSeparator = locProp.GetThousandSeparator();
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -732,14 +637,6 @@ bool NumericFormatSpec::GetTraitsBit(FormatTraits traits, FormatTraits bit)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-bool NumericFormatSpec::GetTraitsBit(FormatTraits bit) const
-    {
-    return NumericFormatSpec::GetTraitsBit(m_formatTraits, bit);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    David Fox-Rabinovitz
 //---------------+---------------+---------------+---------------+---------------+-------
 void NumericFormatSpec::TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose) const
@@ -853,7 +750,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
     NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
     bool composite = nfs.HasComposite();
     BEU::Quantity temp = qty.ConvertTo(useUnit);
-    Utf8CP uomLabel = Utils::IsNameNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel().c_str()) : useLabel;
+    Utf8CP uomLabel = Utf8String::IsNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel().c_str()) : useLabel;
     Utf8String majT, midT, minT, subT;
 
     if (composite)  // procesing composite parts
@@ -862,7 +759,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
         CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
         Utf8String pref = dval.GetSignPrefix();
         Utf8String suff = dval.GetSignSuffix();
-        Utf8CP spacer = Utils::IsNameNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
+        Utf8CP spacer = Utf8String::IsNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
         // for all parts but the last one we need to format an integer 
         NumericFormatSpec fmtI = NumericFormatSpec(DecimalPrecision::Precision0);
         fmtI.SetKeepSingleZero(false);
@@ -960,205 +857,16 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
     if (verbose || m_barType != defSpec.m_barType)
         jNFC[json_barType()] = Utils::FractionBarName(m_barType);
     if (verbose || m_decimalSeparator != defSpec.m_decimalSeparator)
-        jNFC[json_decimalSeparator()] = Utils::CharToString(m_decimalSeparator);
+        jNFC[json_decimalSeparator()] = m_decimalSeparator;
     if (verbose || m_thousandsSeparator != defSpec.m_thousandsSeparator)
-        jNFC[json_thousandSeparator()] = Utils::CharToString(m_thousandsSeparator);
+        jNFC[json_thousandSeparator()] = m_thousandsSeparator;
     if (verbose || !m_uomSeparator.Equals(defSpec.m_uomSeparator.c_str()))
         jNFC[json_uomSeparator()] = m_uomSeparator;
     if (verbose || m_statSeparator != defSpec.m_statSeparator)
-        jNFC[json_statSeparator()] = Utils::CharToString(m_statSeparator);
+        jNFC[json_statSeparator()] = m_statSeparator;
     if (verbose || m_minWidth != defSpec.m_minWidth)
         jNFC[json_minWidth()] = m_minWidth;
     return jNFC;
-    }
-
-//===================================================
-// NamedFormatSpec
-//===================================================
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz
-//----------------------------------------------------------------------------------------
-void NamedFormatSpec::LoadJson(Utf8CP jsonString, BEU::IUnitsContextCP context)
-    {
-    Json::Value jval (Json::objectValue);
-    Json::Reader::Parse(jsonString, jval);
-    LoadJson(jval, context);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-void NamedFormatSpec::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
-    {
-    Utf8CP paramName;
-    *this = NamedFormatSpec();
-    m_problem = FormatProblemCode::NoProblems;
-    if (jval.empty())
-        {
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidJsonObject);
-        return;
-        }
-
-    for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
-        {
-        paramName = iter.memberName();
-        JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_SpecName()) == 0)
-            m_name = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_SpecDescript()) == 0)
-            m_description = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_SpecLabel()) == 0)
-            m_displayLabel = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
-            m_numericSpec = NumericFormatSpec(val);
-        else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
-            m_compositeSpec.LoadJsonData(val, context);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-NamedFormatSpec::NamedFormatSpec()
-    : m_specType(FormatSpecType::None)
-    , m_problem(FormatProblemCode::NotInitialized)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-NamedFormatSpec::NamedFormatSpec(NamedFormatSpecCR other)
-    : m_name(other.m_name)
-    , m_description(other.m_description)
-    , m_displayLabel(other.m_displayLabel)
-    , m_specType(other.m_specType)
-    , m_problem(other.m_problem)
-    {
-    if (other.HasNumeric())
-        m_numericSpec = other.m_numericSpec;
-    if (other.HasComposite())
-        m_compositeSpec = other.m_compositeSpec;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec)
-    : m_name(name)
-    , m_specType(FormatSpecType::None)
-    , m_numericSpec(numSpec)
-    , m_problem(FormatProblemCode::NoProblems)
-    {
-    if (name.empty())
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
-    : NamedFormatSpec(name, numSpec)
-    {
-    m_compositeSpec = compSpec;
-    if (m_compositeSpec.IsProblem())
-        {
-        m_problem.UpdateProblemCode(FormatProblemCode::NotInitialized);
-        }
-    else
-        {
-        switch (m_compositeSpec.GetUnitCount())
-            {
-            case 1:
-                m_specType = FormatSpecType::Single;
-                break;
-            case 2:
-                m_specType = FormatSpecType::Double;
-                break;
-            case 3:
-                m_specType = FormatSpecType::Triple;
-                break;
-            case 4:
-                m_specType = FormatSpecType::Quad;
-                break;
-            default:
-                m_problem.UpdateProblemCode(FormatProblemCode::NotInitialized);
-            }
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec(Json::Value jval, BEU::IUnitsContextCP context)
-    {
-    LoadJson(jval, context);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec(Utf8CP jsonString, BEU::IUnitsContextCP context)
-    {
-    Json::Value jval (Json::objectValue);
-    Json::Reader::Parse(jsonString, jval);
-    LoadJson(jval, context);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 02/17
-//----------------------------------------------------------------------------------------
-bool NamedFormatSpec::IsIdentical(NamedFormatSpecCR other) const
-    {
-    if (m_name != other.m_name)
-        return false;
-    if (m_specType != other.m_specType)
-        return false;
-    if (HasNumeric() && !m_numericSpec.IsIdentical(other.m_numericSpec))
-        return false;
-    if (HasComposite() && !m_compositeSpec.IsIdentical(other.m_compositeSpec))
-        return false;
-    if (m_problem.GetProblemCode() != other.m_problem.GetProblemCode())
-        return false;
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-bool NamedFormatSpec::HasNumeric() const
-    {
-    if (IsProblem() && (m_problem.GetProblemCode() == FormatProblemCode::NotInitialized))
-        return false;
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-bool NamedFormatSpec::HasComposite() const
-    {
-    return static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-Json::Value NamedFormatSpec::ToJson(bool verbose) const
-    {
-    Json::Value jNFS;
-    jNFS[json_SpecName()] = m_name;
-    if (!m_description.empty())
-        jNFS[json_SpecDescript()] = m_description;
-    if (!m_displayLabel.empty())
-        jNFS[json_SpecLabel()] = m_displayLabel;
-
-    jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
-    Json::Value jcs = m_compositeSpec.ToJson();
-    if (!jcs.empty())
-        jNFS[json_CompositeFormat()] = jcs; // m_compositeSpec.ToJson();
-    return jNFS;
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

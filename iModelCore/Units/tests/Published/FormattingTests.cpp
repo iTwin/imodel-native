@@ -174,7 +174,6 @@ TEST_F(NumericFormatSpecTest, IsIdentical)
 TEST_F(FormatIntegerTest, FormatIntegerSignOptionTests)
     {
     NumericFormatSpec nfs;
-    Utf8String string;
 
     // NoSign
     {
@@ -781,37 +780,6 @@ TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
     EXPECT_TRUE(MMFusJsonAllMembers.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
     }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                            David.Fox-Rabinovitz                      02/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST(FormattingTest, LocaleTest)
-    {
-    LOG.infov("\n================  Locale Test ===========================");
-    
-    LocaleProperties lop = LocaleProperties::DefaultAmerican();
-    Json::Value jval = lop.ToJson();
-    LOG.infov("American Default %s", jval.ToString().c_str());
-    LocaleProperties lop1 = LocaleProperties(jval);
-    LOG.infov("American Default origin %s", lop.ToText().c_str());
-    LOG.infov("American Default restor %s", lop1.ToText().c_str());
-
-    lop = LocaleProperties::DefaultEuropean();
-    jval = lop.ToJson();
-    LOG.infov("European Default %s", jval.ToString().c_str());
-    lop1 = LocaleProperties(jval);
-    LOG.infov("European Default origin %s", lop.ToText().c_str());
-    LOG.infov("European Default restor %s", lop1.ToText().c_str());
-
-    lop = LocaleProperties::DefaultEuropean(true);
-    jval = lop.ToJson();
-    LOG.infov("European1 Default %s", jval.ToString().c_str());
-    lop1 = LocaleProperties(jval);
-    LOG.infov("European1 Default origin %s", lop.ToText().c_str());
-    LOG.infov("European1 Default restor %s", lop1.ToText().c_str());
-
-    LOG.infov("================  Locale Test (end) ===========================\n");
-}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18

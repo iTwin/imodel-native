@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
+#include <Units/Units.h>
 #include <Formatting/FormattingDefinitions.h>
 #include <Formatting/FormattingEnum.h>
-#include <Units/Units.h>
 
 namespace BEU = BentleyApi::Units;
 
@@ -75,14 +75,6 @@ BE_JSON_NAME(SubUnit)
 BE_JSON_NAME(InputUnit)
 BE_JSON_NAME(includeZero)
 BE_JSON_NAME(spacer)
-
-// KOQ
-BE_JSON_NAME(KOQName)
-BE_JSON_NAME(persistFUS)
-BE_JSON_NAME(presentFUS)
-BE_JSON_NAME(relativeErr)
-BE_JSON_NAME(schemaName)
-
 
 //=======================================================================================
 //
@@ -175,21 +167,20 @@ private:
 public:
 
     UNITS_EXPORT LocaleProperties(Json::Value jval);
-    UNITS_EXPORT LocaleProperties(Utf8Char decimal, Utf8Char thousand) : m_decimalSeparator(decimal), m_thousandsSeparator(thousand) {}
+    LocaleProperties(Utf8Char decimal, Utf8Char thousand) : m_decimalSeparator(decimal), m_thousandsSeparator(thousand) {}
     UNITS_EXPORT LocaleProperties(Utf8CP localeName = nullptr);
-    UNITS_EXPORT static LocaleProperties DefaultAmerican();
-    UNITS_EXPORT static LocaleProperties DefaultEuropean(bool useBlank = false);
+    static LocaleProperties DefaultAmerican() {return LocaleProperties('.',',');}
+    static LocaleProperties DefaultEuropean(bool useBlank = false) {return LocaleProperties(',', (useBlank? ' ' : '.'));}
 
-    Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
-    Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
-    Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
-    Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
+    Utf8Char SetDecimalSeparator(Utf8Char sep) {return m_decimalSeparator = sep;}
+    Utf8Char GetDecimalSeparator() const {return m_decimalSeparator;}
+    Utf8Char SetThousandSeparator(char sep) {return m_thousandsSeparator = sep;}
+    Utf8Char GetThousandSeparator() const {return m_thousandsSeparator; }
     UNITS_EXPORT Json::Value ToJson();
-    UNITS_EXPORT Utf8String ToText();
 };
 
 //=======================================================================================
-// @bsiclass                                                    David.Fox-Rabinovitz  10/2016
+// @bsistruct                                              David.Fox-Rabinovitz  10/2016
 //=======================================================================================
 struct NumericFormatSpec
 {
@@ -222,7 +213,7 @@ private:
     size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
     static double RoundDouble(double dval, double roundTo);
     int GetDecimalPrecisionIndex(int prec = -1) const;
-    double GetDecimalPrecisionFactor(int prec = -1) const;
+    double GetDecimalPrecisionFactor(int prec = -1) const {return Utils::DecimalPrecisionFactor(m_decPrecision, prec);}
     int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
     Utf8String FormatIntegerToString(int n, int minSize) const;
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
@@ -306,7 +297,7 @@ public:
     UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits traits, FormatTraits bit, bool setTo);
     UNITS_EXPORT static bool GetTraitsBit(FormatTraits traits, FormatTraits bit);
     void SetTraitsBit(FormatTraits bit, bool setTo) {m_formatTraits = NumericFormatSpec::SetTraitsBit(m_formatTraits, bit, setTo);}
-    UNITS_EXPORT bool GetTraitsBit(FormatTraits bit) const;
+    bool GetTraitsBit(FormatTraits bit) const {return NumericFormatSpec::GetTraitsBit(m_formatTraits, bit);}
     UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose=false) const;
     
     UNITS_EXPORT void SetFormatTraitsFromJson(JsonValueCR jval);
@@ -578,16 +569,14 @@ private:
 
 public:
     // TODO: Attempt to remove these methods from the public API================
-    UNITS_EXPORT void LoadJson(Utf8CP jsonString, BEU::IUnitsContextCP context);
-    UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
+    UNITS_EXPORT void FromJson(Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
+    UNITS_EXPORT void FromJson(Json::Value jval, BEU::IUnitsContextCP context = nullptr);
     // !TODO====================================================================
 
     UNITS_EXPORT NamedFormatSpec();
     UNITS_EXPORT NamedFormatSpec(NamedFormatSpecCR other);
     UNITS_EXPORT NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec);
     UNITS_EXPORT NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
-    UNITS_EXPORT NamedFormatSpec(Json::Value jval, BEU::IUnitsContextCP context = nullptr);
-    UNITS_EXPORT NamedFormatSpec(Utf8CP jsonString, BEU::IUnitsContextCP context = nullptr);
 
     NamedFormatSpecR operator=(const NamedFormatSpec& other) = default;
 
@@ -604,11 +593,11 @@ public:
     Utf8StringCR GetDisplayLabel() const { return m_displayLabel; };
 
     FormatSpecType GetSpecType() { return m_specType; }
-    //! Returns true if this NamedFormat`Spec contains a NumericFormatSpec.
-    UNITS_EXPORT bool HasNumeric() const;
+    //! Returns true if this NamedFormatSpec contains a NumericFormatSpec.
+    bool HasNumeric() const {return !IsProblem() || (m_problem.GetProblemCode() != FormatProblemCode::NotInitialized);}
     //! Returns true if this NamedFormatSpec containst a CompositeFormatSpec.
     //! A NamedFormatSpec that contains a CompositeValueSpec will also contain a NumericFormatSpec.
-    UNITS_EXPORT bool HasComposite() const;
+    bool HasComposite() const {return static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;}
 
     //! Returns a const pointer to this NamedFormatSpec's NumericFormatSpec if it exists.
     //! Returns nullptr if no NumericFormatSpec is defined.
@@ -639,6 +628,7 @@ public:
     Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
 
+    //! Creates a Json::Value representing this.
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
 };
 

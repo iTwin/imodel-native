@@ -32,12 +32,6 @@
     <ClCompile Include="src\UnitsPCH.cpp">
       <Filter>Source Files\Units</Filter>
     </ClCompile>
-    <ClCompile Include="src\Formatting\FormatQuantity.cpp">
-      <Filter>Source Files\Formatting</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Formatting\Formatting.cpp">
-      <Filter>Source Files\Formatting</Filter>
-    </ClCompile>
     <ClCompile Include="src\Formatting\FormatUtils.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
@@ -69,6 +63,15 @@
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
     <ClCompile Include="src\Formatting\NumericFormatUtils.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Formatting\CompositeValueSpec.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Formatting\NumericFormatSpec.cpp">
+      <Filter>Source Files\Formatting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Formatting\NamedFormatSpec.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
   </ItemGroup>

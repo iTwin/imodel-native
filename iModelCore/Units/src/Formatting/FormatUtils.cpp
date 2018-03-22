@@ -310,6 +310,7 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
+// static
 ShowSignOption Utils::NameToSignOption(Utf8CP name)
     {
     if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_OnlyNegative().c_str()) == 0) return ShowSignOption::OnlyNegative;
@@ -321,6 +322,7 @@ ShowSignOption Utils::NameToSignOption(Utf8CP name)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
+// static
 Utf8CP Utils::SkipBlanks(Utf8CP str)
     {
     while (isspace(*str))
@@ -331,9 +333,10 @@ Utf8CP Utils::SkipBlanks(Utf8CP str)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
+// static
 Utf8Char Utils::GetFirstSignificantChar(Utf8CP str)
     {
-    if (Utils::IsNameNullOrEmpty(str))
+    if (Utf8String::IsNullOrEmpty(str))
         return '\0';
     while (isspace(*str))
         str++;
@@ -345,7 +348,7 @@ Utf8Char Utils::GetFirstSignificantChar(Utf8CP str)
 //----------------------------------------------------------------------------------------
 Utf8Char Utils::GetLastSignificantChar(Utf8CP str)
     {
-    size_t len = Utils::IsNameNullOrEmpty(str)? 0 : strlen(str);
+    size_t len = Utf8String::IsNullOrEmpty(str)? 0 : strlen(str);
     if(len == 0)
         return '\0';
     len--;
@@ -362,6 +365,7 @@ Utf8Char Utils::GetLastSignificantChar(Utf8CP str)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 Utf8String Utils::GetCurrentDecimalSeparator()
     {
     struct lconv *lc = localeconv();
@@ -374,6 +378,7 @@ Utf8String Utils::GetCurrentDecimalSeparator()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 Utf8String Utils::GetCurrentGrouping()
     {
 #define UGCG_BUFLEN 10
@@ -400,6 +405,7 @@ Utf8String Utils::GetCurrentGrouping()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 Utf8String Utils::GetCurrentThousandSeparator()
     {
     struct lconv *lc = localeconv();
@@ -412,17 +418,7 @@ Utf8String Utils::GetCurrentThousandSeparator()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8String Utils::CharToString(Utf8Char c)
-    {
-    Utf8Char buf[2];
-    buf[0] = c;
-    buf[1] = '\0';
-    return Utf8String(buf);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
+// static
 DecimalPrecision Utils::DecimalPrecisionByIndex(size_t num)
     {
     if (num > FormatConstant::MaxDecimalPrecisionIndex())
@@ -449,6 +445,7 @@ DecimalPrecision Utils::DecimalPrecisionByIndex(size_t num)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 double Utils::DecimalPrecisionFactor(DecimalPrecision decP, int index = -1)
     {
     static double FactorSet[13] = { 1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10, 1.0e11, 1.0e12 };
@@ -460,6 +457,7 @@ double Utils::DecimalPrecisionFactor(DecimalPrecision decP, int index = -1)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 Utf8String  Utils::PresentationTypeName(PresentationType type)
     {
     switch (type)
@@ -477,6 +475,7 @@ Utf8String  Utils::PresentationTypeName(PresentationType type)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 PresentationType Utils::NameToPresentationType(Utf8CP name)
     {
     if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Fractional().c_str()) == 0) return PresentationType::Fractional;
@@ -490,6 +489,7 @@ PresentationType Utils::NameToPresentationType(Utf8CP name)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 Utf8String Utils::SignOptionName(ShowSignOption opt)
     {
     switch (opt)
@@ -505,7 +505,8 @@ Utf8String Utils::SignOptionName(ShowSignOption opt)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
-Utf8String  Utils::FractionBarName(FractionBarType bar)
+// static
+Utf8String Utils::FractionBarName(FractionBarType bar)
     {
     switch (bar)
         {
@@ -520,6 +521,7 @@ Utf8String  Utils::FractionBarName(FractionBarType bar)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 FractionBarType Utils::NameToFractionBarType(Utf8CP name)
     {
     if (BeStringUtilities::StricmpAscii(name, "diagonal") == 0) return FractionBarType::Diagonal;
@@ -531,6 +533,7 @@ FractionBarType Utils::NameToFractionBarType(Utf8CP name)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 FractionalPrecision Utils::FractionalPrecisionByDenominator(size_t prec)
     {
     switch (prec)
@@ -551,6 +554,7 @@ FractionalPrecision Utils::FractionalPrecisionByDenominator(size_t prec)
  //----------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //----------------------------------------------------------------------------------------
+ // static
 const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
     {
     switch (prec)
@@ -571,6 +575,7 @@ const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
+// static
 size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
     {
     int cap = static_cast<int>(bufLen) - static_cast<int>(index) - 1;
@@ -588,11 +593,12 @@ size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //----------------------------------------------------------------------------------------
+// static
 Utf8String Utils::AppendUnitName(Utf8CP txtValue, Utf8CP unitName, Utf8CP space)
     {
-    size_t txtL = Utils::IsNameNullOrEmpty(txtValue) ? 0 : strlen(txtValue);
-    size_t uomL = Utils::IsNameNullOrEmpty(unitName) ? 0 : strlen(unitName);
-    size_t spcL = Utils::IsNameNullOrEmpty(space) ? 0 : strlen(space);
+    size_t txtL = Utf8String::IsNullOrEmpty(txtValue) ? 0 : strlen(txtValue);
+    size_t uomL = Utf8String::IsNullOrEmpty(unitName) ? 0 : strlen(unitName);
+    size_t spcL = Utf8String::IsNullOrEmpty(space) ? 0 : strlen(space);
     if (0 == txtL)
         txtValue = "";
     if (0 == uomL)
@@ -606,15 +612,7 @@ Utf8String Utils::AppendUnitName(Utf8CP txtValue, Utf8CP unitName, Utf8CP space)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
-bool Utils::IsNameNullOrEmpty(Utf8CP name) 
-    {
-    size_t len = (nullptr == name) ? 0 : strlen(name);
-    return (len == 0); 
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 04/17
-//----------------------------------------------------------------------------------------
+// static
 Utf8Char Utils::MatchingDivider(Utf8Char div)
     {
     Utf8CP fd= FormatConstant::FUSDividers();
@@ -630,10 +628,11 @@ Utf8Char Utils::MatchingDivider(Utf8Char div)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
+// static
 int Utils::IndexOf(Utf8Char c, Utf8CP text)
     {
     int indx = -1;
-    if (Utils::IsNameNullOrEmpty(text))
+    if (Utf8String::IsNullOrEmpty(text))
         return indx;
     while (*text != FormatConstant::EndOfLine())
         {
@@ -643,6 +642,66 @@ int Utils::IndexOf(Utf8Char c, Utf8CP text)
         text++;
         }
     return -1;
+    }
+
+//===================================================
+// LocaleProperties
+//===================================================
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+LocaleProperties::LocaleProperties(Json::Value jval)
+    {
+    if (!jval.empty())
+        {
+        Utf8CP paramName;
+        Utf8String str;
+        Utf8String jStr = jval.ToString();
+        for (Json::Value::iterator iter = jval.begin(); iter != jval.end(); iter++)
+            {
+            paramName = iter.memberName();
+            JsonValueCR val = *iter;
+            if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
+                {
+                str = val.asString();
+                m_decimalSeparator = str.c_str()[0];
+                }
+            else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
+                {
+                str = val.asString();
+                m_thousandsSeparator = str.c_str()[0];
+                }
+            }
+        }
+    else
+        {
+        m_decimalSeparator = '.';
+        m_thousandsSeparator = '\0';
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+LocaleProperties::LocaleProperties(Utf8CP localeName)
+    {
+    std::locale loc = std::locale(localeName);
+    const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
+
+    m_decimalSeparator = myfacet.decimal_point();
+    m_thousandsSeparator = myfacet.thousands_sep();
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 02/18
+//----------------------------------------------------------------------------------------
+Json::Value LocaleProperties::ToJson()
+    {
+    Json::Value jval;
+    jval[json_decimalSeparator()] = &m_decimalSeparator;
+    jval[json_thousandSeparator()] = &m_thousandsSeparator;
+    return jval;
     }
 
 //===================================================
@@ -766,7 +825,7 @@ void FormatUnitSet::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
             cloneData = val.asBool();
         else if (BeStringUtilities::StricmpAscii(paramName, json_formatSpec()) == 0)
             {
-            m_localCopy.LoadJson(val, context);
+            m_localCopy.FromJson(val, context);
             m_formatSpec = &m_localCopy;
             local = true;
             }

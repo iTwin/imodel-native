@@ -89,7 +89,7 @@ private:
 
 public:
     UNITS_EXPORT FormatParseVector(Utf8CP input, bool revers);
-    UNITS_EXPORT size_t AddPoint(CursorScanPointCR pnt);
+    size_t AddPoint(CursorScanPointCR pnt) {m_vect.push_back(pnt); return m_vect.size();}
     bvector<CursorScanPoint> GetArray() { return m_vect; }
     UNITS_EXPORT Utf8String GetPattern();
     UNITS_EXPORT Utf8String GetSignature();
@@ -97,31 +97,6 @@ public:
     Utf8String GetTriplet() { return Utf8String(m_patt.byte); }
     size_t GetTripletIndex() { return m_tripletIndx; }
     Utf8Char GetFrameChar() { return m_patt.byte[0]; }
-};
-
-//=======================================================================================
-// @bsistruct
-//=======================================================================================
-struct CursorScanTriplet
-{
-private:
-    size_t m_strInd;      // index to the text location
-    size_t m_tripInd;     // index to the triplet
-    bool m_revers;        // indicator that symbols must be inserted in a reverse order
-    size_t m_triple[3];  // Unicode code points of 3 consequtive symbols
-    Utf8Char m_patt[3];  // A pattern of the triple
-
-    void Init(bool rev);
-
-public:
-    UNITS_EXPORT CursorScanTriplet();
-
-    size_t SetTextIndex(size_t ind) { return m_strInd = ind; }
-
-    //! This method creates a "sliding" cursor that exposes three consequtive symbols from
-    //! the input string the "reading head" is always at the current position in the string
-    UNITS_EXPORT void PushSymbol(size_t symb); // returns remaining capacity
-    UNITS_EXPORT bool SetReverse(bool rev);   // resetting the direction destroys current state
 };
 
 //=======================================================================================
@@ -404,7 +379,6 @@ private:
     ScannerCursorStatus m_status;
     size_t m_effectiveBytes;
     char m_temp;
-    CursorScanTriplet m_triplet;
     FormattingSignature m_traits;
 
     // takes an logical index to an array of ordered bytes representing an integer entity in memory and 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/Formatting/FormatQuantity.cpp $
+|     $Source: src/Formatting/CompositeValueSpec.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -444,19 +444,16 @@ void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
+// static
 Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
     {
-    BEU::UnitCP persUnit = outputFUS.GetUnit();
-    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, inputFUS.GetUnit());
-    Formatting::FormatProblemCode locCode;
-    if (nullptr == problemCode) problemCode = &locCode;
     *problemCode = Formatting::FormatProblemCode::NoProblems;
-    BEU::Quantity qty = fps.GetQuantity(problemCode, &inputFUS);
+    BEU::Quantity qty = Formatting::FormatParsingSet(input, inputFUS.GetUnit()).GetQuantity(problemCode, &inputFUS);
     if (*problemCode == Formatting::FormatProblemCode::NoProblems)
         {
         if (nullptr != persist)
             {
-            BEU::Quantity persQty = qty.ConvertTo(persUnit);
+            BEU::Quantity persQty = qty.ConvertTo(outputFUS.GetUnit());
             *persist = persQty.GetMagnitude();
             }
         }
@@ -469,11 +466,10 @@ Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist
 //----------------------------------------------------------------------------------------
 // @bsimethod
 //----------------------------------------------------------------------------------------
-Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
+// static
+BEU::Quantity CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
     {
-    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, inputFUS.GetUnit());
-    BEU::Quantity qty = fps.GetQuantity(problemCode, &inputFUS);
-    return qty;
+    return Formatting::FormatParsingSet(input, inputFUS.GetUnit()).GetQuantity(problemCode, &inputFUS);
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

@@ -9,16 +9,12 @@
 //__PUBLISH_SECTION_START__
 
 #include <Formatting/FormattingDefinitions.h>
-#include <Units/Units.h>
-
-namespace BEU = BentleyApi::Units;
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
+
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatProblemDetail)
 //===================================================
-//
 // Enumerations
-//
 //===================================================
 
 //=======================================================================================
@@ -259,27 +255,27 @@ enum class FormatSpecialCodes
 //! @bsistruct
 //=======================================================================================
 struct FormatProblemDetail
-    {
-    private:
-        FormatProblemCode m_code;
+{
+private:
+    FormatProblemCode m_code;
 
-    public:
+public:
 
-        FormatProblemDetail() { m_code = FormatProblemCode::NoProblems; }
-        FormatProblemDetail(FormatProblemCode code) {  m_code = code;  }
-        bool IsCritical() const { return (static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Critical)); }
-        bool IsWarning() const {
-            return (static_cast<int>(m_code) < static_cast<int>(FormatProblemLevel::Critical) &&
-                static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Warning));
-            }
-        bool IsProblem() const { return m_code != FormatProblemCode::NoProblems; }
-        bool NoProblem() const { return m_code == FormatProblemCode::NoProblems; }
+    FormatProblemDetail() { m_code = FormatProblemCode::NoProblems; }
+    FormatProblemDetail(FormatProblemCode code) {  m_code = code;  }
+    bool IsCritical() const { return (static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Critical)); }
+    bool IsWarning() const {
+        return (static_cast<int>(m_code) < static_cast<int>(FormatProblemLevel::Critical) &&
+            static_cast<int>(m_code) > static_cast<int>(FormatProblemLevel::Warning));
+        }
+    bool IsProblem() const { return m_code != FormatProblemCode::NoProblems; }
+    bool NoProblem() const { return m_code == FormatProblemCode::NoProblems; }
 
-        FormatProblemCode GetProblemCode() const { return m_code; }
-        UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
-        UNITS_EXPORT Utf8String GetProblemDescription() const;
-        UNITS_EXPORT void Reset() { m_code = FormatProblemCode::NoProblems; }
-    };
+    FormatProblemCode GetProblemCode() const { return m_code; }
+    UNITS_EXPORT bool UpdateProblemCode(FormatProblemCode code);
+    UNITS_EXPORT Utf8String GetProblemDescription() const;
+    UNITS_EXPORT void Reset() { m_code = FormatProblemCode::NoProblems; }
+};
 
 //=======================================================================================
 //! @bsistruct
@@ -299,7 +295,6 @@ struct Utils
     static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
     UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
-    UNITS_EXPORT static bool IsNameNullOrEmpty(Utf8CP name);
     static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return Utf8String::IsNullOrEmpty(name) ? subs : name; }
     static Utf8CP SubstituteNull(Utf8CP name, Utf8CP subs) { return (nullptr == name) ? subs : name; }
     static size_t MinInt(size_t a, size_t b) { return(a <= b) ? a : b; }
@@ -307,7 +302,6 @@ struct Utils
     UNITS_EXPORT static Utf8String AppendUnitName(Utf8CP txtValue, Utf8CP unitName = nullptr, Utf8CP space = nullptr);
     UNITS_EXPORT static Utf8Char MatchingDivider(Utf8Char div);
     UNITS_EXPORT static int IndexOf(Utf8Char c, Utf8CP text);
-    UNITS_EXPORT static Utf8String CharToString(Utf8Char c);
     UNITS_EXPORT static Utf8CP SkipBlanks(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetFirstSignificantChar(Utf8CP str);
     UNITS_EXPORT static Utf8Char GetLastSignificantChar(Utf8CP str);

@@ -57,17 +57,20 @@ $(o)Quantity$(oext)                 : $(srcDir)Quantity.cpp ${MultiCompileDepend
 $(o)UnitNameMappings$(oext)         : $(srcDir)UnitNameMappings.cpp ${MultiCompileDepends}
 
 # Formatting Compilands
-$(o)Formatting$(oext)     : $(formatSrcDir)Formatting.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
-$(o)StdFormatSet$(oext)   : $(formatSrcDir)StdFormatSet.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
-
-$(o)FormatUtils$(oext)    : $(formatSrcDir)FormatUtils.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
-
-$(o)FormatQuantity$(oext) : $(formatSrcDir)FormatQuantity.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+$(o)CompositeValueSpec$(oext) : $(formatSrcDir)CompositeValueSpec.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 $(o)FormatParsing$(oext)  : $(formatSrcDir)FormatParsing.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
+$(o)FormatUtils$(oext)    : $(formatSrcDir)FormatUtils.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+
+$(o)NamedFormatSpec$(oext)     : $(formatSrcDir)NamedFormatSpec.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+
+$(o)NumericFormatSpec$(oext)  : $(formatSrcDir)NumericFormatSpec.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+
 $(o)NumericFormatUtils$(oext)  : $(formatSrcDir)NumericFormatUtils.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+
+$(o)StdFormatSet$(oext)   : $(formatSrcDir)StdFormatSet.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

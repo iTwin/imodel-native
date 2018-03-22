@@ -78,23 +78,15 @@ NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsCon
     {
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
-    NamedFormatSpecP nfs = new NamedFormatSpec(jval, &context);
-    if (nullptr == nfs)
-        return nullptr;
-    Utf8String tval = jval.ToString();
-    tval.empty();
+    NamedFormatSpecP nfs = new NamedFormatSpec();
+    nfs->FromJson(jval, &context);
 
     if (nfs->IsProblem())
-        {
-        delete nfs;
         return nullptr;
-        }
+
     if (IsFormatDefined(nfs->GetName().c_str()))
-        {
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
-        delete nfs;
         return nullptr;
-        }
+
     m_formatSet.push_back(*nfs);
     return nfs;
     }
@@ -381,11 +373,6 @@ Utf8CP AliasMappings::TryGetNameFromAlias(Utf8CP alias)
         return nullptr;
     return iter->second.c_str();
     }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-// static
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
