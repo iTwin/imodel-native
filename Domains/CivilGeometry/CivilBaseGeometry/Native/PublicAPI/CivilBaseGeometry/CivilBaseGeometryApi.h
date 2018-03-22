@@ -9,10 +9,12 @@
 
 //__PUBLISH_SECTION_START__
 #include "CivilBaseGeometry.h"
-
 #include "StationRange.h"
 #include "AlignmentPair.h"
 #include "AlignmentPairEditor.h"
-#include "GeometryDebug.h"
 #include "GeometryHelper.h"
+
+//__PUBLISH_SECTION_END__
+
+#include "GeometryDebug.h"
 #include "ProfilingMacros.h"
