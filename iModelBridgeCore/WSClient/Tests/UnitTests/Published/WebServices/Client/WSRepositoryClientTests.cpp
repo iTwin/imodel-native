@@ -1311,9 +1311,12 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV25WithRelatedObje
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.5/Repositories/foo/RelatedObjectSchema/RelatedObjectClass/RelatedObjectId/TargetObjectClass", request.GetUrl().c_str());
         EXPECT_EQ(objectCreationJson, request.GetRequestBody()->AsJson());
-        return StubHttpResponse(ConnectionStatus::OK);
+        return StubHttpResponse(HttpStatus::Created);
         });
-    client->SendCreateObjectRequest(relatedObject, objectCreationJson)->Wait();
+    client->SendCreateObjectRequest(relatedObject, objectCreationJson)->Then([=] (WSCreateObjectResult result)
+        {
+        EXPECT_TRUE(result.IsSuccess());
+        })->Wait();
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV2WithCorrectJson_TakesClassInfoFromJsonAndSendsObjectCreationJsonWithRequest)
