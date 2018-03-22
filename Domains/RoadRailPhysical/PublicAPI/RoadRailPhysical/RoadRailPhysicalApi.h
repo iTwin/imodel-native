@@ -8,17 +8,19 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-
 #include "RoadRailPhysical.h"
 #include "RoadRailCategory.h"
 #include "RoadRailPhysicalDomain.h"
-#include "ElementAspects.h"
-#include "RoadDesignSpeed.h"
-#include "RoadClass.h"
 #include "Pathway.h"
-#include "TypicalSectionPoint.h"
-#include "TypicalSection.h"
+
+//__PUBLISH_SECTION_END__
+#include "ElementAspects.h"
+#include "RoadClass.h"
+#include "RoadDesignSpeed.h"
+#include "RoadSegment.h"
 #include "TravelwaySegment.h"
 #include "TravelwaySideSegment.h"
 #include "TravelwayStructureSegment.h"
-#include "RoadSegment.h"
+#include "TypicalSection.h"
+#include "TypicalSectionPoint.h"
+

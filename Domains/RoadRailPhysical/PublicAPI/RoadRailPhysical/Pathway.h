@@ -10,7 +10,6 @@
 //__PUBLISH_SECTION_START__
 #include "RoadRailPhysical.h"
 #include "RoadRailCategory.h"
-#include "TravelwaySegment.h"
 
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
