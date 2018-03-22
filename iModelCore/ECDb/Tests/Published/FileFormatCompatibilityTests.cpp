@@ -2629,7 +2629,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
         {
         EXPECT_EQ(expectedIsValidUnit, fus.GetUnit()->IsValid()) << fus.ToJsonString();
         EXPECT_STRCASEEQ(expectedUnitName, fus.GetUnitName().c_str()) << fus.ToJsonString();
-        EXPECT_STRCASEEQ(expectedFusName, fus.GetNamedFormatSpec()->GetName()) << fus.ToJsonString();
+        EXPECT_STRCASEEQ(expectedFusName, fus.GetNamedFormatSpec()->GetName().c_str()) << fus.ToJsonString();
         };
 
     //garbage units
