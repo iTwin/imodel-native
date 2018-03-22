@@ -104,7 +104,7 @@ ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken) const
+iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken, bool filterInitialized) const
     {
     const Utf8String methodName = "Client::GetiModels";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -127,6 +127,10 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
     Utf8String select = "*";
     iModelInfo::AddHasCreatorInfoSelect(select);
     query.SetSelect(select);
+    if (filterInitialized)
+        {
+        query.SetFilter("Initialized+eq+true");
+        }
 
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", projectId.c_str());

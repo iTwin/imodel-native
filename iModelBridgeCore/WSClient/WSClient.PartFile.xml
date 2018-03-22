@@ -116,7 +116,7 @@
     <Part Name="FakeServer-PublicAPI" DeferType="BuildUnitTests" BentleyBuildMakeFile="FakeServerPrewire.mke">
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <Bindings>
-            <PublicAPI Domain="WebServices" />
+            <PublicAPI Domain="FakeServer" />
         </Bindings>
     </Part>
 
