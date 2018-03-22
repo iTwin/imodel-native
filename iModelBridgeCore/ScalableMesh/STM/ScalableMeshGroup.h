@@ -187,6 +187,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
+        virtual bool                               _IsInsertingClips() override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
 
         virtual bool                               _ShouldInvertClips() override { return false; }
@@ -201,6 +202,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
 		virtual void                               _WriteExtraFiles() override {}
 
+        virtual bool                               _GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirt) override;
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;

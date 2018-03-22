@@ -6,7 +6,7 @@
 |       $Date: 2015/09/14 15:28:03 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -19,6 +19,7 @@ ClipRegistry::ClipRegistry(ISMDataStoreTypePtr<Extent3dType>& smDataStore)
     m_smDataStore = smDataStore;                
     m_maxID = 0;  
     m_lastClipID = 0;   
+    m_lastClipSet = false;
     }
 
 ClipRegistry::~ClipRegistry()
@@ -71,10 +72,18 @@ void ClipRegistry::AddClipWithParameters(uint64_t clipID, const DPoint3d* pts, s
 
 void ClipRegistry::DeleteClip(uint64_t id)
     {       
+    std::lock_guard<std::mutex> lock(m_lastClipMutex);
+
     ISM3DPtDataStorePtr dataStore;
     if (!m_smDataStore->GetSisterNodeDataStore(dataStore, 0, SMStoreDataType::ClipDefinition, false))
         return;
-    dataStore->DestroyBlock(/*m_clips[id].GetBlockID()*/id);    
+    dataStore->DestroyBlock(/*m_clips[id].GetBlockID()*/id);
+    if (m_lastClipSet && m_lastClipID == id)
+        {
+        m_lastClipID = 0;
+        m_lastClipSet = false;
+        m_lastClipValue.clear();
+        }
     }
 
 bool ClipRegistry::HasClip(uint64_t id)

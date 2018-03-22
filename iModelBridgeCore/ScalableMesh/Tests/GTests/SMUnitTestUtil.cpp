@@ -175,6 +175,30 @@ BeFileName ScalableMeshGTestUtil::GetUserSMTempDir()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Richard.Bois                   10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName ScalableMeshGTestUtil::GetTempPathFromProjectPath(const BeFileName& path)
+    {
+    BeFileName extraFileDir;
+
+#ifndef VANCOUVER_API
+    Desktop::FileSystem::BeGetTempPath(extraFileDir);
+#else
+    BeFileName::BeGetTempPath(extraFileDir);
+#endif
+
+    WString substrFile = path.c_str();
+    substrFile.ReplaceAll(L"/", L"_");
+    substrFile.ReplaceAll(L"\\", L"_");
+    substrFile.ReplaceAll(L":", L"_");
+    substrFile.ReplaceAll(L"\"", L"_");
+    substrFile.ReplaceAll(L"'", L"_");
+
+    extraFileDir.AppendToPath(substrFile.c_str());
+    return extraFileDir;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Elenie.Godzaridis                     11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 bvector<std::tuple<BeFileName, DMatrix4d,bvector<DPoint3d>, bvector<DPoint3d>>> ScalableMeshGTestUtil::GetListOfValues(BeFileName listingFile)
@@ -330,12 +354,11 @@ bool ScalableMeshGTestUtil::InitScalableMesh()
     if (!bInitialized)
         {
         static ScalableMeshModule smApp;
-        smApp.Initialize();
-
-        bInitialized = true;
+        if (SUCCESS == smApp.Initialize())
+            bInitialized = true;
         }
 
-    return true;
+    return bInitialized;
     };
 
 
@@ -390,11 +413,13 @@ BentleyStatus ScalableMeshModule::Initialize()
     {
     struct SMHost : public BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshLib::Host
         {
+        bool m_isScalableMeshAdminSupplied = false;
         SMHost()
             {}
         protected:
             ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
                 {
+                m_isScalableMeshAdminSupplied = true;
                 return *new ScalableMesh::ScalableMeshAdmin(); // delete will be hopefully called by ScalableMeshAdmin::_OnHostTermination
                 };
         };
@@ -404,7 +429,11 @@ BentleyStatus ScalableMeshModule::Initialize()
 #else
     DgnPlatformLib::Initialize(*this, true);
 #endif	
-    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
+    SMHost* smHost = new SMHost();
+    ScalableMesh::ScalableMeshLib::Initialize(*smHost);
+
+    if (smHost->m_isScalableMeshAdminSupplied == false)
+        return ERROR;
 
                                          // Initialize RasterLib
                                          //DgnDomains::RegisterDomain(RasterSchema::RasterDomain::GetDomain());

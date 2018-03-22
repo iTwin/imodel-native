@@ -2917,7 +2917,7 @@ template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetContentExtent() con
     {
     LOAD_NODE        
 
-    if (!m_node->m_nodeHeader.m_totalCountDefined)
+    if (m_node->m_nodeHeader.m_totalCountDefined && m_node->m_nodeHeader.m_totalCount == 0)
         { 
         return DRange3d::NullRange();
         }
@@ -3035,12 +3035,6 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     if (m_meshNode == nullptr) return true;
     if (m_meshNode->m_nbClips == 0) return true;
     else return m_meshNode->IsClippingUpToDate();
-    }
-
-template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips(Transform tr) const
-    {
-       
-    _RefreshMergedClip(tr);    
     }
 
 template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip(Transform tr) const

@@ -2800,10 +2800,10 @@ void IScalableMeshNode::LoadNodeHeader() const
     return _LoadHeader();
     }
 
-void IScalableMeshNode::ApplyAllExistingClips(Transform tr) const
-    {
-    return _ApplyAllExistingClips(tr);
-    }
+//void IScalableMeshNode::ApplyAllExistingClips(Transform tr) const
+//    {
+//    return _ApplyAllExistingClips(tr);
+//    }
 
 void     IScalableMeshNode::RefreshMergedClip(Transform tr) const
     {
