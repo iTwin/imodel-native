@@ -675,8 +675,6 @@ void Sheet::Attachment::Tile::CreateGraphics(SceneContextR context)
 
         viewport->SetSceneDepth(GetDepth(), tree);
         viewport->SetupFromViewController();
-        viewport->m_renderSys = renderSys;
-        viewport->m_db = &context.GetDgnDb();
 
         // Create the scene, and if the scene is complete, mark state ready
         currentState = viewport->_CreateScene(plan, currentState);
@@ -723,7 +721,7 @@ void Sheet::Attachment::Tile::CreateGraphics(SceneContextR context)
                 else
                     {
                     GraphicParams gfParams = GraphicParams::FromSymbology(tree.m_tileColor, tree.m_tileColor, 0);
-                    m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, m_tilePolys, *viewport->m_db, gfParams);
+                    m_graphics = renderSys->_CreateSheetTile(*viewport->m_texture, m_tilePolys, viewport->GetViewController().GetDgnDb(), gfParams);
                     SetIsReady();
                     }
                 }
@@ -1123,11 +1121,8 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
     uint32_t dim = querySheetTilePixels();
     m_viewport->SetRect(BSIRect::From(0, 0, dim, dim));
     m_viewport->ChangeViewController(view);
-
     m_viewport->SetupFromViewController();
-    m_viewport->ChangeViewController(view);
 
-    m_viewport->SetupFromViewController();
     Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(scale.x, scale.y, 1.0));
     m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
     m_viewport->SetupFromFrustum(frust);
@@ -1173,19 +1168,11 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
         env.m_skybox.m_enabled = false;
         }
 
-    m_viewport->SetupFromFrustum(m_viewport->GetFrustum(DgnCoordSystem::World));
-
     auto& box = attach.GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach.GetPlacement().CalculateRange();
 
     int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach.GetDisplayPriority());
     m_biasDistance = double(biasDistance);
-    DPoint3d org = range.low;
-
-    org.z = 0.0; // ###TODO m_biasDistance;?
-    Transform trans = Transform::From(org);
-    trans.ScaleMatrixColumns(box.GetWidth() * scale.x, box.GetHeight() * scale.y, 1.0);
-    SetLocation(trans);
 
     bsiTransform_initFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
     m_viewport->m_toParent.ScaleMatrixColumns(scale.x, scale.y, 1.0);
@@ -1202,10 +1189,12 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
     Tile* rTile;
     m_rootTile = rTile = new Tile(*this, nullptr, Sheet::Attachment::Tile::Placement::Root);
     rTile->CreatePolys(context); // m_graphicsClip must be set before creating polys (the polys that represent the tile)
-    rTile->ChangeRange(rTile->m_polysRange);
 
-    // alter location translation based on range of clipped polys
-    trans = m_viewport->m_toParent;
+#if defined(WIP_CLIP_TILE_RANGE)
+    rTile->ChangeRange(rTile->m_polysRange);
+#endif
+
+    Transform trans = m_viewport->m_toParent;
     SetLocation(trans);
 
     m_viewport->m_clips = m_clip; // save original clip in viewport
