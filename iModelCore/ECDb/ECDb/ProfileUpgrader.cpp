@@ -71,13 +71,29 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    //all affected schemas are now 
+    //Set ECVersion of all schemas to EC3.2
     if (BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE main." TABLE_Schema " SET ECVersion=" SQLVAL_ECVersion_V3_2))
         {
         LOG.error("ECDb profile upgrade failed: Could not update ECVersion to 3.2 for the upgraded ECSchema.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
+    {
+    ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
+    SchemaKey key("Units", 1, 0, 0);
+    ECSchemaPtr unitSchema = ECSchema::LocateSchema(key, *readCtx);
+    if (unitSchema == nullptr)
+        {
+        LOG.error("ECDb profile upgrade failed: Could not deserialize the standard Units ECSchema.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (SUCCESS != ecdb.Schemas().ImportSchemas({unitSchema.get()}, ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()))
+        {
+        LOG.error("ECDb profile upgrade failed: Could not import the standard Units ECSchema.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+    }
     return BE_SQLITE_OK;
     }
 
@@ -333,17 +349,13 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    bvector<ECSchemaCP> unitSchemaList;
-    unitSchemaList.push_back(unitSchema.get());
-    if (SUCCESS != ecdb.Schemas().ImportSchemas(unitSchemaList, ecdb.GetImpl().GetSettingsManager().GetSchemaImportToken()) ||
-        !unitSchema->HasId())
+    if (SUCCESS != SchemaWriter::InsertSchemaEntry(ecdb, *unitSchema))
         {
-        LOG.error("ECDb profile upgrade failed: Importing the standard Units ECSchema failed.");
+        LOG.error("ECDb profile upgrade failed: Importing the Units schema stub failed.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
     unitSchemaId = unitSchema->GetId();
-    ecdb.ClearECDbCache();
     }
 
     Statement stmt;

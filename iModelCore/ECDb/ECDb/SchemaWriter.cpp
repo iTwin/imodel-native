@@ -1094,11 +1094,11 @@ BentleyStatus SchemaWriter::ImportCustomAttributes(Context& ctx, IECCustomAttrib
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SchemaWriter::InsertSchemaEntry(Context& ctx, ECSchemaCR schema)
+BentleyStatus SchemaWriter::InsertSchemaEntry(ECDbCR ecdb, ECSchemaCR schema)
     {
     BeAssert(!schema.HasId());
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,ECVersion,OriginalECXmlVersionMajor,OriginalECXmlVersionMinor) VALUES(?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO main.ec_Schema(Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3,ECVersion,OriginalECXmlVersionMajor,OriginalECXmlVersionMinor) VALUES(?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -1151,7 +1151,7 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(Context& ctx, ECSchemaCR schema)
     if (BE_SQLITE_DONE != stmt->Step())
         return ERROR;
 
-    const ECSchemaId id = DbUtilities::GetLastInsertedId<ECSchemaId>(ctx.GetECDb());
+    const ECSchemaId id = DbUtilities::GetLastInsertedId<ECSchemaId>(ecdb);
     if (!id.IsValid())
         return ERROR;
 

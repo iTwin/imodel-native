@@ -33,7 +33,7 @@ private:
     //! Minimum version of the ECDb profile which can still be auto-upgraded to the latest profile version.
     static ProfileVersion GetMinimumSupportedVersion() { return ProfileVersion(4, 0, 0, 0); }
 
-    static DbResult RunUpgraders(ECDbCR);
+    static DbResult RunUpgraders(ECDbCR, ProfileVersion const& actualFileProfileVersion);
 
     static PropertySpec GetProfileVersionPropertySpec() { return PropertySpec("SchemaVersion", ECDB_PROPSPEC_NAMESPACE); }
     static PropertySpec GetInitialProfileVersionPropertySpec() { return PropertySpec("InitialSchemaVersion", ECDB_PROPSPEC_NAMESPACE); }

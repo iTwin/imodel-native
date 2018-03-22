@@ -16,6 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct SchemaWriter final
     {
+    friend struct ProfileUpgrader_4002;
     public:
         struct Context final
             {
@@ -79,7 +80,8 @@ struct SchemaWriter final
         static BentleyStatus BindPropertyKindOfQuantity(Context&, Statement&, int paramIndex, ECN::ECPropertyCR);
         static BentleyStatus BindPropertyCategory(Context&, Statement&, int paramIndex, ECN::ECPropertyCR);
 
-        static BentleyStatus InsertSchemaEntry(Context&, ECN::ECSchemaCR);
+        static BentleyStatus InsertSchemaEntry(Context& ctx, ECN::ECSchemaCR schema) { return InsertSchemaEntry(ctx.GetECDb(), schema); }
+        static BentleyStatus InsertSchemaEntry(ECDbCR, ECN::ECSchemaCR);  //!< Also used by ProfileUpgrader_4002
         static BentleyStatus InsertBaseClassEntry(Context&, ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);
         static BentleyStatus InsertRelationshipConstraintEntry(Context&, ECRelationshipConstraintId& constraintId, ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
         static BentleyStatus InsertSchemaReferenceEntries(Context&, ECN::ECSchemaCR);
@@ -131,7 +133,6 @@ struct SchemaWriter final
 
     public:
         static BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, ECDbCR, SchemaImportContext&, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);
-
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

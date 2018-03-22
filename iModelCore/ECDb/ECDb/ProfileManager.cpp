@@ -102,15 +102,7 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
 
     BeAssert(!ecdb.IsReadonly());
 
-    //let upgraders incrementally upgrade the profile
-    //to the latest state
-    if (BE_SQLITE_OK != RunUpgraders(ecdb))
-        {
-        ecdb.AbandonChanges();
-        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-        }
-
-    //after upgrade procedure set new profile version in ECDb file
+    //Assign new profile version before upgrading as some upgraders might have to import schemas
     if (BE_SQLITE_OK != AssignProfileVersion(ecdb, false))
         {
         ecdb.AbandonChanges();
@@ -118,6 +110,15 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
                    ecdb.GetDbFileName(), ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
+
+    //let upgraders incrementally upgrade the profile
+    //to the latest state
+    if (BE_SQLITE_OK != RunUpgraders(ecdb, actualProfileVersion))
+        {
+        ecdb.AbandonChanges();
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
 
     if (BE_SQLITE_OK != ProfileSchemaUpgrader::ImportProfileSchemas(ecdb))
         {
@@ -140,13 +141,16 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
 // @bsimethod                                                   Krischan.Eberle  06/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-DbResult ProfileManager::RunUpgraders(ECDbCR ecdb)
+DbResult ProfileManager::RunUpgraders(ECDbCR ecdb, ProfileVersion const& actualFileProfileVersion)
     {
     //IMPORTANT: order from low to high version
     //Note: If, for a version there is no upgrader it means just one of the profile ECSchemas needs to be reimported.
     std::vector<std::unique_ptr<ProfileUpgrader>> upgraders;
-    upgraders.push_back(std::make_unique<ProfileUpgrader_4001>());
-    upgraders.push_back(std::make_unique<ProfileUpgrader_4002>());
+    if (actualFileProfileVersion < ProfileVersion(4, 0, 0, 1))
+        upgraders.push_back(std::make_unique<ProfileUpgrader_4001>());
+
+    if (actualFileProfileVersion < ProfileVersion(4, 0, 0, 2))
+        upgraders.push_back(std::make_unique<ProfileUpgrader_4002>());
 
     for (std::unique_ptr<ProfileUpgrader> const& upgrader : upgraders)
         {
