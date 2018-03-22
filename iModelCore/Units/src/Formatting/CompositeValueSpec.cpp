@@ -467,7 +467,7 @@ Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist
 // @bsimethod
 //----------------------------------------------------------------------------------------
 // static
-BEU::Quantity CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
+BEU::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
     {
     return Formatting::FormatParsingSet(input, inputFUS.GetUnit()).GetQuantity(problemCode, &inputFUS);
     }
