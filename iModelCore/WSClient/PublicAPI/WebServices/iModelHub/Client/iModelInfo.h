@@ -36,13 +36,14 @@ private:
     Utf8String m_userCreated;
     DateTime   m_createdDate;
     UserInfoPtr m_ownerInfo;
+    bool       m_isInitialized;
 
     iModelInfo() {}
     iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id) : m_serverUrl(serverUrl), m_id(id) {}
     iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, 
-               DateTimeCR date, UserInfoPtr ownerInfo)
+               DateTimeCR date, UserInfoPtr ownerInfo, bool isInitialized)
         : m_serverUrl(serverUrl), m_id(id), m_name(name), m_description(description), m_userCreated(user), m_createdDate(date), 
-        m_ownerInfo(ownerInfo){}
+        m_ownerInfo(ownerInfo), m_isInitialized(isInitialized) {}
 
     bool operator==(iModelInfoCR rhs) const {return rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL();}
     static iModelInfoPtr Parse(WSObjectsReader::Instance instance, Utf8StringCR url);
@@ -62,6 +63,7 @@ public:
     Utf8StringCR GetUserCreated() const {return m_userCreated;}
     DateTimeCR GetCreatedDate() const {return m_createdDate;}
     UserInfoPtr GetOwnerInfo() const {return m_ownerInfo;}
+    bool IsInitialized() const { return m_isInitialized; }
 
     static void AddHasCreatorInfoSelect(Utf8StringR);
 };

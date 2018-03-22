@@ -57,6 +57,7 @@ TEST_F(iModelTests, SuccessfulCreateiModel)
 
     iModelResult getResult = s_client->GetiModelById(s_projectId, createResult.GetValue()->GetId())->GetResult();
     ASSERT_SUCCESS(getResult) << "Needs defect filed";
+    EXPECT_TRUE(getResult.GetValue()->IsInitialized());
     EXPECT_EQ(getResult.GetValue()->GetUserCreated(), getResult.GetValue()->GetOwnerInfo()->GetId());
 
     auto queryResult = s_client->GetiModels(s_projectId)->GetResult();
@@ -150,6 +151,29 @@ TEST_F(iModelTests, UnsuccessfulGetiModels)
     iModelsResult result = s_client->GetiModels("bad project")->GetResult();
     ASSERT_FAILURE(result);
     EXPECT_EQ(Error::Id::FailedToGetProjectPermissions, result.GetError().GetId());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                    Karolis.Dziedzelis              03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(iModelTests, FilterGetiModels)
+    {
+    Utf8String imodelName = GetTestiModelName();
+    iModelResult createResult;
+    iModelHubHelpers::CreateUninitializediModel(createResult, s_client, s_projectId, imodelName);
+
+    iModelsResult filteredResult = s_client->GetiModels(s_projectId, nullptr, true)->GetResult();
+    ASSERT_SUCCESS(filteredResult);
+    iModelsResult unfilteredResult = s_client->GetiModels(s_projectId, nullptr, false)->GetResult();
+    ASSERT_SUCCESS(unfilteredResult);
+    ASSERT_GT(unfilteredResult.GetValue().size(), filteredResult.GetValue().size());
+    for (iModelInfoPtr info : filteredResult.GetValue())
+        EXPECT_NE(imodelName, info->GetName());
+    bool found = false;
+    for (iModelInfoPtr info : unfilteredResult.GetValue())
+        if (imodelName == info->GetName())
+            found = true;
+    EXPECT_TRUE(found);
     }
 
 /*--------------------------------------------------------------------------------------+
