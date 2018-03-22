@@ -185,7 +185,8 @@ private:
                     {
                     DRange3d attachRange = attach->GetPlacement().CalculateRange();
                     DRange3d clipRange;
-                    if (attach->GetClip().IsValid() && attach->GetClip()->GetRange(clipRange, nullptr))
+                    auto clip = attach->GetClip();
+                    if (clip.IsValid() && clip->GetRange(clipRange, nullptr))
                         attachRange.IntersectionOf(attachRange, clipRange);
 
                     if (!attachRange.IsNull())
@@ -1342,6 +1343,97 @@ public:
 };  // GeomPartInstanceTileGeometry 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+struct AttachmentTileGeometry : TileGeometry
+{
+private:
+    Sheet::ViewAttachmentCPtr m_attachment;
+
+    T_TilePolyfaces _GetPolyfaces(IFacetOptionsR) override;
+    T_TileStrokes _GetStrokes(IFacetOptionsR) override;
+    size_t _GetFacetCount(FacetCounter&) const override;
+    
+    bvector<DPoint3d> GetBox() const;
+public:
+    AttachmentTileGeometry(Sheet::ViewAttachmentCR attachment, TransformCR tf, DRange3dCR range, TileDisplayParamsCR params)
+        : TileGeometry(tf, range, attachment.GetElementId(), params, false, attachment.GetDgnDb()), m_attachment(&attachment)
+        {
+        //
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t AttachmentTileGeometry::_GetFacetCount(FacetCounter&) const
+    {
+    return 4; // ignores clip.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<DPoint3d> AttachmentTileGeometry::GetBox() const
+    {
+    DRange3d range = GetTileRange();
+    Transform tf = GetTransform();
+    DRange3d clipRange;
+    auto clip = m_attachment->GetClip();
+    if (clip.IsValid() && clip->GetRange(clipRange, &tf))
+        range.IntersectionOf(range, clipRange);
+
+    bvector<DPoint3d> box;
+    box.push_back(range.low);
+    box.push_back(DPoint3d::FromXYZ(range.low.x, range.high.y, range.low.z));
+    box.push_back(range.high);
+    box.push_back(DPoint3d::FromXYZ(range.high.x, range.low.y, range.low.z));
+#if defined(VIEW_ATTACHMENTS_AS_STROKES)
+    box.push_back(range.low);
+#endif
+
+    return box;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometry::T_TileStrokes AttachmentTileGeometry::_GetStrokes(IFacetOptionsR facetOptions)
+    {
+    T_TileStrokes strokes;
+
+#if defined(VIEW_ATTACHMENTS_AS_STROKES)
+    auto box = GetBox();
+    bvector<bvector<DPoint3d>> strokesList;
+    strokesList.push_back(box);
+    strokes.push_back(TileStrokes(GetDisplayParams(), std::move(strokesList), false));
+#endif
+
+    return strokes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometry::T_TilePolyfaces AttachmentTileGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
+    {
+    T_TilePolyfaces polyfaces;
+
+#if !defined(VIEW_ATTACHMENTS_AS_STROKES)
+    auto box = GetBox();
+    auto builder = IPolyfaceConstruction::Create(facetOptions);
+    builder->AddTriangulation(box);
+
+    auto polyface = builder->GetClientMeshPtr();
+    if (polyface.IsValid())
+        polyfaces.push_back(TilePolyface(GetDisplayParams(), *polyface));
+
+#endif
+
+    return polyfaces;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley   07/08
 +---------------+---------------+---------------+---------------+---------------+------*/
 static int     compareDoubleArray (double const* array1, double const* array2, size_t count, double tolerance)
@@ -1428,6 +1520,14 @@ TileGeometryPtr TileGeometry::Create(IBRepEntityR solid, TransformCR tf, DRange3
 TileGeometryPtr TileGeometry::Create(TileGeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, DgnDbR db)
     {
     return GeomPartInstanceTileGeometry::Create(part, transform, range, entityId, params, db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometryPtr TileGeometry::Create(Sheet::ViewAttachmentCR attach, TransformCR tf, DRange3dCR range, TileDisplayParamsCR params)
+    {
+    return new AttachmentTileGeometry(attach, tf, range, params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2606,7 +2706,7 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewAttachmentCR attach)
     {
-// #define WIP_PUBLISH_VIEW_ATTACHMENTS
+//#define WIP_PUBLISH_VIEW_ATTACHMENTS
 #if defined(WIP_PUBLISH_VIEW_ATTACHMENTS)
     auto elemId = attach.GetElementId();
     if (nullptr != m_filter && !m_filter->_AcceptElement(elemId))
@@ -2616,35 +2716,25 @@ void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewA
     m_curLeafGeometries.clear();
     m_curElemId = elemId;
 
-    auto graphic = context.CreateSceneGraphic();
+    ColorDef fillColor = ColorDef::DarkBlue();
+    fillColor.SetAlpha(0x7f);
     GeometryParams geomParams;
     geomParams.SetCategoryId(attach.GetCategoryId());
     geomParams.SetSubCategoryId(DgnCategory::GetDefaultSubCategoryId(attach.GetCategoryId()));
-
-    geomParams.SetFillColor(ColorDef::DarkBlue());
+    geomParams.SetFillColor(fillColor);
     geomParams.SetLineColor(ColorDef::DarkOrange());
     geomParams.SetFillDisplay(FillDisplay::Always);
 
-    context.CookGeometryParams(geomParams, *graphic);
+    GraphicParams gfParams;
+    context.CookGeometryParams(geomParams, gfParams);
 
     DRange3d range = attach.GetPlacement().CalculateRange();
-    DRange3d clipRange;
-    auto clip = attach.GetClip();
-    if (clip.IsValid() && clip->GetRange(clipRange, nullptr))
-        range.IntersectionOf(range, clipRange);
+    auto tf = m_transformFromDgn;
+    tf.Multiply(range, range);
 
-    DPoint2d box[] =
-        {
-        DPoint2d::From(range.low.x, range.low.y),
-        DPoint2d::From(range.low.x, range.high.y),
-        DPoint2d::From(range.high.x, range.high.y),
-        DPoint2d::From(range.high.x, range.low.y),
-        DPoint2d::From(range.low.x, range.low.y)
-        };
+    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gfParams, geomParams, true, false);
 
-    graphic->AddShape2d(5, box, true, attach.GetDisplayPriority());
-    graphic->Finish();
-
+    AddElementGeometry(*TileGeometry::Create(attach, tf, range, displayParams));
     PushCurrentGeometry();
 #endif
     }

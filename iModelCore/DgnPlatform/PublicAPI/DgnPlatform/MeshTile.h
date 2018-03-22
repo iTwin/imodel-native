@@ -697,6 +697,8 @@ public:
     static TileGeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, DgnDbR db);
     //! Create a TileGeometry for a part instance.
     static TileGeometryPtr Create(TileGeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, DgnDbR db);
+    //! Create a TileGeometry for a view attachment
+    static TileGeometryPtr Create(Sheet::ViewAttachmentCR, TransformCR, DRange3dCR, TileDisplayParamsCR);
 
 };
 //=======================================================================================

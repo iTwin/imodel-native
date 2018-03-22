@@ -237,6 +237,11 @@ public:
     //! @see SetClip
     DGNPLATFORM_EXPORT ClipVectorPtr GetClip() const;
 
+    //! Get the clip to be applied to this attachment, or if none is defined,
+    //! create one based on the attachment's range.
+    //! @see GetClip
+    ClipVectorPtr GetOrCreateClip(TransformCP transform=nullptr) const;
+
     //! Set the clip to be applied to this attachment.
     //! @see ClearClip
     DGNPLATFORM_EXPORT void SetClip(ClipVectorCR);
