@@ -1105,15 +1105,14 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas(Json::Value& out) const
 
                 if (!ecClass->IsRelationshipClass())
                     continue;
-                if (nonConstClass->GetBaseClasses().size() < 2)
+                
+                if (nonConstClass->GetBaseClasses().size() > 1)
                     {
                     if (!(*nonConstClass->GetBaseClasses().begin())->Is(defaultBase))
                         continue;
                     nonConstClass->RemoveBaseClass(*(*nonConstClass->GetBaseClasses().begin()));
                     }
-                for (ECN::ECClassCP base : nonConstClass->GetBaseClasses())
-                    nonConstClass->RemoveBaseClass(*base);
-
+                
                 ECClassCP base = defaultBase;
                 for (ECN::ECEntityClassP constraint : nonConstClass->GetRelationshipClassP()->GetTarget().GetClasses())
                     {
@@ -1135,7 +1134,8 @@ BentleyStatus BisJson1ExporterImpl::ExportSchemas(Json::Value& out) const
             schemaXml.ReplaceAll("generic:ElementRefersToElement", "bis:ElementRefersToElements");
             schemaXml.ReplaceAll("ECStructArrayProperty", "ECProperty");
             schemaXml.ReplaceAll("generic:PhysicalObject", "bis:PhysicalElement");
-            schemaXml.ReplaceAll("generic:SpatialGroup", "generic:Group");
+            schemaXml.ReplaceAll("generic:SpatialGroup", "bis:GroupInformationElement");
+            schemaXml.ReplaceAll("generic:MultiAspect", "bis:ElementMultiAspect");
 
 
             auto& entry = out.append(Json::ValueType::objectValue);
