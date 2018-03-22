@@ -818,14 +818,17 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     // SM_NEEDS_WORK : is there a transformation to apply at some point?
     //transformDbToTile.Multiply(transformedRange, transformedRange);
 
-    DRange3d tileRange = header->m_nodeExtent;
     tile["refine"] = "replace";
     tile["geometricError"] = tolerance;
-    TilePublisher::WriteBoundingVolume(tile, tileRange);
+    if (!tile.isMember("boundingVolume"))
+        {
+        DRange3d tileRange = header->m_nodeExtent;
+        TilePublisher::WriteBoundingVolume(tile, tileRange);
+        }
 
     if (header->m_nodeCount > 0)
         {
-        if (header->m_contentExtentDefined)
+        if (header->m_contentExtentDefined && !tile["content"].isMember("boundingVolume"))
             {
             DRange3d contentRange = !header->m_contentExtent.IsNull() ? header->m_contentExtent : header->m_nodeExtent;
             TilePublisher::WriteBoundingVolume(tile["content"], contentRange);
@@ -2179,9 +2182,8 @@ template <class DATATYPE, class EXTENT> StreamingDataBlock& SMStreamingNodeDataS
         block.reset(new StreamingDataBlock());
         //auto dataURL = this->m_nodeGroup->GetDataURLForNode(blockID);
         assert(!m_jsonHeader->isNull());
-        if (m_jsonHeader->isMember("content"))
+        if (m_jsonHeader->isMember("content") && (*m_jsonHeader)["content"].isMember("url"))
             {
-            assert((*m_jsonHeader)["content"].isMember("url"));
             auto dataURL = WString((*m_jsonHeader)["content"]["url"].asCString(), BentleyCharEncoding::Utf8);
             block->SetURL(DataSourceURL(dataURL.c_str()));
             block->SetDataSourceURL(m_dataSourceURL);
