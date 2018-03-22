@@ -35,7 +35,10 @@ class RequestHandler
         Response CreateFileInstance(Request req);
         Response GetiModels(Request req);
         Response DeleteiModels(Request req);
-        
+        Response Push(Request req);
+        Response Pull(Request req);
+        Response GetChangeSetInfo(Request req);
+
         static DbResult Initialize(BeFileName temporaryDir, BeSQLiteLib::LogErrors logSqliteErrors = BeSQLiteLib::LogErrors::No);
         void CheckDb();
         void Insert(bvector<Utf8String> insertStr);

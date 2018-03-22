@@ -37,7 +37,7 @@ class FakeServer
         static BeFileNameStatus DownloadiModel(BeFileName downloadPath, CharCP serverPath, CharCP fileToDownload);
         //acquire an instance of an existing iModel
         BeFileNameStatus AcquireiModel();
-
+        BeFileNameStatus CreateChangeSet();
 
         //!!!
         //!!! Operations related to an instance of iModel

@@ -134,10 +134,12 @@ void RequestHandler::CheckDb()
         {
         if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
             return;
-        if(!m_db.TableExists("instances"))
-            CreateTable("instances", m_db, "instanceid STRING, className STRING, schemaName STRING, Description STRING, Name STRING, Initialized STRING");
-        if(!m_db.TableExists("users"))
-            CreateTable("users", m_db, "UserCreated STRING, CreatedDate STRING");
+        if(!m_db.TableExists("Instances"))
+            CreateTable("Instances", m_db, "iModelId STRING, ClassName STRING, SchemaName STRING, Description STRING, Name STRING, Initialized STRING");
+        if(!m_db.TableExists("Users"))
+            CreateTable("Users", m_db, "UserCreated STRING, CreatedDate STRING");
+        if(!m_db.TableExists("ChangeSets"))
+            CreateTable("ChangeSets", m_db, "Id STRING, SeedFileId STRING, ParentId STRING, UserCreated ChangeSetId, CreatedDate STRING");
         }
     m_db.CloseDb();
     }
@@ -152,7 +154,7 @@ void RequestHandler::Insert(bvector<Utf8String> insertStr)
         return;
     
     Statement insertSt;
-    insertSt.Prepare(m_db, "INSERT INTO instances(instanceid, className, schemaName, Description, Name) VALUES (?,?,?,?,?)");
+    insertSt.Prepare(m_db, "INSERT INTO Instances(iModelId, ClassName, SchemaName, Description, Name) VALUES (?,?,?,?,?)");
     insertSt.BindText(1, insertStr[0], Statement::MakeCopy::No);
     insertSt.BindText(2, insertStr[1], Statement::MakeCopy::No);
     insertSt.BindText(3, insertStr[2], Statement::MakeCopy::No);
@@ -257,7 +259,7 @@ Response RequestHandler::UploadNewSeedFile(Request req)
         if (BeFileNameStatus::Success == FakeServer::CreateiModelFromSeed(filePath.GetWCharCP(), serverFilePath.GetWCharCP()))
             {
             Statement st;
-            st.Prepare(m_db, "Select Name from instances where instanceid = ?");
+            st.Prepare(m_db, "Select Name from Instances where iModelId = ?");
             st.BindText(1, instanceid, Statement::MakeCopy::No);
 
             st.Step();
@@ -270,7 +272,7 @@ Response RequestHandler::UploadNewSeedFile(Request req)
             st.Finalize();
             
             Statement stUpdate;
-            stUpdate.Prepare(m_db, "UPDATE instances SET Name = ? where instanceid = ?");
+            stUpdate.Prepare(m_db, "UPDATE Instances SET Name = ? where iModelId = ?");
             WString fileName = BeFileName(BeFileName::GetFileNameAndExtension(filePath)).GetFileNameWithoutExtension();
             Utf8String name = BeFileName(fileName).GetNameUtf8();
             stUpdate.BindText(1, name, Statement::MakeCopy::No);
@@ -301,7 +303,7 @@ Response RequestHandler::DownloadiModel(Request req)
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
-        st.Prepare(m_db, "Select Name from instances where instanceid = ?");
+        st.Prepare(m_db, "Select Name from Instances where iModelId = ?");
         st.BindText(1, instanceid, Statement::MakeCopy::No);
 
         st.Step();
@@ -352,7 +354,7 @@ Response RequestHandler::GetBriefcaseId(Request req)
         CharCP filetoDownload;
         CharCP description ;
         Statement st;
-        st.Prepare(m_db, "Select Name, Description from instances where instanceid = ?");
+        st.Prepare(m_db, "Select Name, Description from Instances where iModelId = ?");
         st.BindText(1, iModelId, Statement::MakeCopy::No);
         st.Step();
         filetoDownload = st.GetValueText(0);
@@ -413,7 +415,7 @@ Response RequestHandler::GetiModels(Request req)
     else
         {
         Statement st;
-        st.Prepare(m_db, "Select * from instances");
+        st.Prepare(m_db, "Select * from Instances");
         
         DbResult result  = DbResult::BE_SQLITE_ROW;
         Json::Value instancesinfo(Json::objectValue);
@@ -457,7 +459,7 @@ Response RequestHandler::DeleteiModels(Request req)
     if (BeFileNameStatus::Success == FakeServer::DeleteiModel(serverPath, iModelId))
         {
         Statement stDelete;
-        stDelete.Prepare(m_db, "Delete from instances where instanceid = ?");
+        stDelete.Prepare(m_db, "Delete from Instances where iModelId = ?");
         stDelete.BindText(1, iModelId, Statement::MakeCopy::No);
         stDelete.Step();
         stDelete.Finalize();
@@ -479,6 +481,29 @@ Response RequestHandler::DeleteiModels(Request req)
     return Response();
     }
 
+Response RequestHandler::Push(Request req)
+    {
+    bvector<Utf8String> args = ParseUrl(req);
+    Utf8String iModelId = GetInstanceid(args[4]);
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+    BentleyB0200::BeSQLite::Db m_db;
+    CheckDb();
+    return Response();
+    }
+Response RequestHandler::Pull(Request req)
+    {
+    bvector<Utf8String> args = ParseUrl(req);
+    Utf8String iModelId = GetInstanceid(args[4]);
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+    BentleyB0200::BeSQLite::Db m_db;
+    CheckDb();
+    return Response();
+    }
+
 Response RequestHandler::CreateFileInstance(Request req) 
     {
     return Response();
@@ -496,7 +521,8 @@ Response RequestHandler::PerformGetRequest(Request req)
         return RequestHandler::GetiModels(req);
     if (req.GetUrl().Contains("https://imodelhubqasa01.blob.core.windows.net/imodelhub"))//detect imodelhub
         return DownloadiModel(req);
-    
+    if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/ChangeSet"))
+        return RequestHandler::Pull(req);
     return Response();
     }
 Response RequestHandler::PerformOtherRequest(Request req)
