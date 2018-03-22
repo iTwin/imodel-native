@@ -1017,16 +1017,6 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
                 );
         }
 
-//    if (fbPolyface->has_doubleColor ())
-//        {
-//        auto fbDoubleColors = fbPolyface->doubleColor ();
-//        LoadBlockedVector<BlockedVectorRgbFactorR, RgbFactor> (
-//                polyface->DoubleColor (),
-//                ((RgbFactor*)fbDoubleColors->GetStructFromOffset(0)),
-//                (size_t)(fbDoubleColors->Length () / 3)
-//                );
-//        }
-
 
     if (fbPolyface->has_pointIndex ())
         {
@@ -1098,15 +1088,6 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
                 );
         }
 
-//    if (fbPolyface->has_colorTable ())
-//        {
-//        auto fbData = fbPolyface->colorTable ();
-//        LoadBlockedVector<BlockedVectorUInt32R, uint32_t> (
-//                polyface->ColorTable (),
-//                (uint32_t*)fbData->GetStructFromOffset(0),
-//                (size_t)fbData->Length ()
-//                );
-//        }
 
     return polyface;
     }
@@ -1134,8 +1115,6 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
     FacetFaceDataCP pFaceData = nullptr;
 //    RgbFactor const* pDoubleColor = nullptr;
     uint32_t const* pIntColor = nullptr;
-//    uint32_t const* pColorTable = nullptr;
-    wchar_t const*          pIlluminationName = nullptr;
 
     // Blocked vectors need non-zero numPerRow ...
     if (numPerRow < 1)
@@ -1246,7 +1225,6 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
         numNormal, pNormals, pNormalIndex,
         numParam,  pParams, pParamIndex,
         numColor,  pColorIndex, pIntColor,
-        pIlluminationName,
         meshStyle, numPerRow
         );
 

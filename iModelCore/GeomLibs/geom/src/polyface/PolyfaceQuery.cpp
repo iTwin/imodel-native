@@ -27,8 +27,6 @@ ImplementNullArgPolyfaceQueryDispatcher (DPoint2dCP,GetParam)
 ImplementNullArgPolyfaceQueryDispatcher (FacetFaceDataCP,GetFaceData)
 ImplementNullArgPolyfaceQueryDispatcher (PolyfaceEdgeChainCP, GetEdgeChain)
 ImplementNullArgPolyfaceQueryDispatcher (uint32_t const*,GetIntColor)
-ImplementNullArgPolyfaceQueryDispatcher (wchar_t const*,GetIlluminationName)
-ImplementNullArgPolyfaceQueryDispatcher1 (uintptr_t,GetTextureId)
 ImplementNullArgPolyfaceQueryDispatcher (int32_t const*,GetPointIndex)
 
 PolyfaceVectors* PolyfaceQuery::_AsPolyfaceVectorsP () const { return nullptr;}

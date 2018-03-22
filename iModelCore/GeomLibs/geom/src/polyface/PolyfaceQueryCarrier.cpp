@@ -21,7 +21,6 @@ PolyfaceQueryCarrier::PolyfaceQueryCarrier (
     size_t normalCount,     DVec3dCP  pNormal, int32_t const* pNormalIndex,
     size_t paramCount,      DPoint2dCP pParam, int32_t const* pParamIndex,
     size_t colorCount,      int32_t const* pColorIndex, uint32_t const* pIntColor,
-    wchar_t const*          pIlluminationName,
     uint32_t                meshStyle,
     uint32_t                numPerRow
     )
@@ -41,22 +40,14 @@ PolyfaceQueryCarrier::PolyfaceQueryCarrier (
     m_normalCount       = normalCount;
     m_colorCount        = colorCount;
     m_indexCount        = indexCount;
-    m_illuminationNamePtr = pIlluminationName;
     m_meshStyle         = meshStyle;
     m_numPerRow         = numPerRow;
     m_faceCount         = 0;
     m_edgeChainCount    = 0;
-    m_textureId         = 0;
     m_faceDataPtr       = NULL;
     m_faceIndexPtr      = NULL;
     m_edgeChainsPtr     = NULL;
     }
-
-
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-void PolyfaceQueryCarrier::SetTextureId (uintptr_t id) {m_textureId = id;}
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz  02/18
@@ -74,4 +65,5 @@ void PolyfaceQueryCarrier::SetFaceIndex (int32_t const *indexArray)
     m_faceIndexPtr = indexArray;
     }
  
+
 END_BENTLEY_GEOMETRY_NAMESPACE
