@@ -1,11 +1,10 @@
 #include "Helpers.h"
-#include <FakeServer/FakeServer.h>
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include "IntegrationTestsBase.h"
 #include <FakeServer/MockIMHubHttpHandler.h>
-//#include <WebServices\iModelHub\Utils.h>
+#include <WebServices\iModelHub\Utils.h>
 #include <BeXml/BeXml.h>
 
 
@@ -42,12 +41,10 @@ class FakeServerFixture : public testing::Test
             BeFileName seedFileName = iModelHubHost::Instance().BuildDbFileName("Test_Seed");
             if (seedFileName.DoesPathExist())
                 {
-                //s_seed = seedFileName;
                 return;
                 }
             DgnDbPtr seedDb = iModelHubHost::Instance().CreateTestDb("Test_Seed");
             ASSERT_TRUE(seedDb.IsValid());
-            //s_seed = seedDb->GetFileName();
             CreateCategory("DefaultCategory", *seedDb);
             BeSQLite::DbResult result = seedDb->SaveChanges();
             EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, result);
@@ -72,21 +69,21 @@ class FakeServerFixture : public testing::Test
 Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description)
     {
     Json::Value iModelCreation(Json::objectValue);
-    // JsonValueR instance = iModelCreation[ServerSchema::Instance] = Json::objectValue;
-    // instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
-    // instance[ServerSchema::ClassName] = ServerSchema::Class::iModel;
-    // JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
-    // properties[ServerSchema::Property::iModelName] = iModelName;
-    // properties[ServerSchema::Property::iModelDescription] = description;
+    JsonValueR instance = iModelCreation[ServerSchema::Instance] = Json::objectValue;
+    instance[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+    instance[ServerSchema::ClassName] = ServerSchema::Class::iModel;
+    JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+    properties[ServerSchema::Property::iModelName] = iModelName;
+    properties[ServerSchema::Property::iModelDescription] = description;
     return iModelCreation;
     }
-
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(FakeServerFixture, CreateiModel)
     {
+
     Utf8String iModelName("BriefcaseTest");
     Utf8String description("This is a test uploadfile2");
     Json::Value objectCreationJson = iModelCreationJson(iModelName, description);
@@ -101,6 +98,12 @@ TEST_F(FakeServerFixture, CreateiModel)
     Response response = request.PerformAsync()->GetResult();
     ASSERT_EQ(HttpStatus::Created ,  response.GetHttpStatus());
     }
+
+//TEST_F(FakeServerFixture, PushModelChangeSets)
+//    {
+//    Request request(url, method, handlePtr);
+//    request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)));
+//    }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
