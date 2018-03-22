@@ -1173,12 +1173,6 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
 
     int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach.GetDisplayPriority());
     m_biasDistance = double(biasDistance);
-    DPoint3d org = range.low;
-
-    org.z = 0.0; // ###TODO m_biasDistance;?
-    Transform trans = Transform::From(org);
-    trans.ScaleMatrixColumns(box.GetWidth() * scale.x, box.GetHeight() * scale.y, 1.0);
-    SetLocation(trans);
 
     bsiTransform_initFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
     m_viewport->m_toParent.ScaleMatrixColumns(scale.x, scale.y, 1.0);
@@ -1200,8 +1194,7 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
     rTile->ChangeRange(rTile->m_polysRange);
 #endif
 
-    // alter location translation based on range of clipped polys
-    trans = m_viewport->m_toParent;
+    Transform trans = m_viewport->m_toParent;
     SetLocation(trans);
 
     m_viewport->m_clips = m_clip; // save original clip in viewport
