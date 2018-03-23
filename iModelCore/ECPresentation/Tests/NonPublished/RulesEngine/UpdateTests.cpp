@@ -4479,6 +4479,35 @@ TEST_F (HierarchyUpdateTests, UpdatesLocalizedCustomNodesOnUserSettingChange)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (HierarchyUpdateTests, DoesntUpdateHierarchiesOfClosedConnectionsOnUserSettingChange)
+    {
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance("DoesntUpdateHierarchiesOfClosedConnectionsOnUserSettingChange", 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRule* rule = new RootNodeRule("0 = GetSettingIntValue(\"test\")", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new CustomNodeSpecification(1, false, "Custom", "Label", "Description", "ImageId"));
+    rules->AddPresentationRule(*rule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, rootNodes.GetSize());
+    EXPECT_STREQ("Label", rootNodes[0]->GetLabel().c_str());
+
+    // close the dataset
+    m_db.CloseDb();
+
+    // change a setting
+    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
+
+    // expect no update records
+    ASSERT_TRUE(m_updateRecordsHandler->GetRecords().empty());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HierarchyUpdateTests, DoesNotUpdateHierarchyWhenNodeRemovedFromCollapsedHierarchy)
