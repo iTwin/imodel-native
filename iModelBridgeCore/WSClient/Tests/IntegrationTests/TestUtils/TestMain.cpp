@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/TestUtils/TestMain.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -18,5 +18,7 @@ int main(int argc, char** argv)
     auto host = WSClientIntegrationTestsHost::Create(argv[0]);
     BeTest::Initialize(*host);
 
-    return RUN_ALL_TESTS();
+    auto status = RUN_ALL_TESTS();
+    HttpClient::Uninitialize();
+    return status;
     }
