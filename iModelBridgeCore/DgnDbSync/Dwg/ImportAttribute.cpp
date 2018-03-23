@@ -443,7 +443,7 @@ BentleyStatus   DwgImporter::AddPresentationRuleContent (DgnElementCR hostElemen
     -----------------------------------------------------------------------------------*/
     ECClassCP   elementClass = hostElement.GetElementClass ();
     if (nullptr == elementClass)
-        return  BentleyStatus::SUCCESS;
+        return  BentleyStatus::BSIERROR;
 
     PresentationRuleContent content(attrdefName, elementClass->GetName(),  elementClass->GetSchema().GetName());
 
@@ -451,7 +451,7 @@ BentleyStatus   DwgImporter::AddPresentationRuleContent (DgnElementCR hostElemen
     if (found == m_presentationRuleContents.end())
         m_presentationRuleContents.push_back (content);
 
-    return  BSIERROR;
+    return  BentleyStatus::SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
