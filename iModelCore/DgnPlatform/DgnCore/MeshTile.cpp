@@ -291,6 +291,16 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TileDisplayParamsCPtr TileDisplayParams::CreateForAttachment(GraphicParamsCR gfParams, GeometryParamsCR geomParams, TileTextureImageR texture)
+    {
+    auto params = new TileDisplayParams(&gfParams, &geomParams, true, false);
+    params->m_textureImage = &texture;
+    return params;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareColor) const
@@ -303,6 +313,9 @@ bool TileDisplayParams::IsLessThan(TileDisplayParams const& rhs, bool compareCol
 
     if (m_linePixels != rhs.m_linePixels)
         return m_linePixels < rhs.m_linePixels;                                                                                        
+
+    if (m_textureImage.get() != rhs.m_textureImage.get())
+        return m_textureImage.get() < rhs.m_textureImage.get();
 
     if (m_gradient.get() != rhs.m_gradient.get())
         {
@@ -360,7 +373,6 @@ TileTextureImagePtr TileTextureImage::Create(GradientSymbCR gradient)
     return TileTextureImage::Create(Render::ImageSource (gradient.GetImage(s_size, s_size), Render::ImageSource::Format::Png), false);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -380,7 +392,6 @@ void TileDisplayParams::ResolveTextureImage(DgnDbR db) const
     if (renderImage.IsValid())
         m_textureImage = TileTextureImage::Create(std::move(renderImage));
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -2742,6 +2753,81 @@ void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewA
     if (nullptr != m_filter && !m_filter->_AcceptElement(elemId))
         return;
 
+    // Create an offscreen viewport to render the attached view to a texture
+    auto viewId = attach.GetAttachedViewId();
+    auto vc = ViewDefinition::LoadViewController(viewId, attach.GetDgnDb());
+    if (vc.IsNull())
+        return;
+
+    auto vp = T_HOST._CreateSheetAttachViewport();
+    if (vp.IsNull())
+        return;
+
+    BeAssert(nullptr != vp->GetRenderTarget());
+    auto& renderSys = vp->GetRenderTarget()->GetSystem();
+
+    // ###TODO: These members are redundant...
+    vp->m_renderSys = &renderSys;
+    vp->m_db = &attach.GetDgnDb();
+
+    DRange3d range = attach.GetPlacement().CalculateRange();
+    auto clip = attach.GetClip();
+    if (clip.IsValid())
+        {
+        DRange3d clipRange;
+        if (clip->GetRange(clipRange, nullptr))
+            range.IntersectionOf(range, clipRange);
+        }
+
+    // Ensure square power-of-two texture dimensions
+    uint32_t dim = 512;
+    vp->SetRect(BSIRect::From(0, 0, dim, dim));
+    vp->ChangeViewController(*vc);
+    vp->SetupFromViewController();
+
+    DPoint2d scale;
+    auto& def = vc->GetViewDefinitionR();
+    double aspect = def.GetAspectRatio();
+    if (aspect < 1.0)
+        scale.Init(1.0 / aspect, 1.0);
+    else
+        scale.Init(1.0, aspect);
+
+    Frustum frust = vp->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(scale.x, scale.y, 1.0));
+    vp->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
+    vp->SetupFromFrustum(frust);
+
+    ColorDef bgColor = ColorDef::White(); // ###TODO: Assuming white sheet bg...reasonable but not necessarily true...
+    bgColor.SetAlpha(0xff);
+    def.GetDisplayStyle().SetBackgroundColor(bgColor);
+
+    auto spatial = def.ToSpatialViewP();
+    if (nullptr != spatial)
+        {
+        auto& env = spatial->GetDisplayStyle3d().GetEnvironmentDisplayR();
+        env.m_groundPlane.m_enabled = env.m_skybox.m_enabled = false;
+        }
+
+    // Set up the scene
+    UpdatePlan plan;
+    plan.SetQuitTime(BeTimePoint::FromNow(BeDuration::FromSeconds(60.0)));
+    plan.SetWait(true);
+    plan.SetWantDecorators(false);
+
+    Sheet::Attachment::State state = vp->_CreateScene(plan, Sheet::Attachment::State::NotLoaded);
+    if (Sheet::Attachment::State::Ready != state)
+        state = vp->_CreateScene(plan, Sheet::Attachment::State::NotLoaded);
+
+    if (Sheet::Attachment::State::Ready != state)
+        return;
+
+    // Render the scene into the texture
+    Image image = vp->_RenderImage();
+    if (!image.IsValid())
+        return;
+
+    TileTextureImagePtr texture = TileTextureImage::Create(ImageSource(image, ImageSource::Format::Png), false);
+
     m_curTileGeometries.clear();
     m_curLeafGeometries.clear();
     m_curElemId = elemId;
@@ -2749,28 +2835,25 @@ void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewA
     GeometryParams geomParams;
     geomParams.SetCategoryId(attach.GetCategoryId());
     geomParams.SetSubCategoryId(DgnCategory::GetDefaultSubCategoryId(attach.GetCategoryId()));
-    geomParams.SetLineColor(ColorDef::DarkOrange());
-    geomParams.SetFillDisplay(FillDisplay::Always);
-
-    double keyValues[] = {0.0, 0.5};
-    ColorDef keyColors[] = {ColorDef::DarkBlue(), ColorDef::DarkOrange()};
-    keyColors[0].SetAlpha(0x7f);
-    keyColors[1].SetAlpha(0x7f);
-    auto gradient = GradientSymb::Create();
-    gradient->SetMode(GradientSymb::Mode::Linear);
-    gradient->SetKeys(2, keyColors, keyValues);
-    geomParams.SetGradient(gradient.get());
+    geomParams.SetLineColor(ColorDef::White());
+    geomParams.SetFillColor(ColorDef::White());
 
     GraphicParams gfParams;
     context.CookGeometryParams(geomParams, gfParams);
 
-    DRange3d range = attach.GetPlacement().CalculateRange();
+    // Add the texture to the graphics
+    Material::CreateParams matParams;
+    matParams.MapTexture(*vp->m_texture, TextureMapping::Params());
+    auto material = renderSys._CreateMaterial(matParams, attach.GetDgnDb());
+    gfParams.SetMaterial(material.get());
+
+    // Create the tile geometry
     auto tf = m_transformFromDgn;
     tf.Multiply(range, range);
 
-    TileDisplayParamsCR displayParams = m_displayParamsCache.Get(gfParams, geomParams, true, false);
+    TileDisplayParamsCPtr displayParams = TileDisplayParams::CreateForAttachment(gfParams, geomParams, *texture);
 
-    AddElementGeometry(*TileGeometry::Create(attach, tf, range, displayParams));
+    AddElementGeometry(*TileGeometry::Create(attach, tf, range, *displayParams));
     PushCurrentGeometry();
     }
 

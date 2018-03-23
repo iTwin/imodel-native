@@ -487,10 +487,17 @@ private:
         bool _DoesHostHaveFocus() override { return true; }
     };
 
+    struct TileMgr : TileAdmin
+    {
+        bool _WantCachedTiles(DgnDbR) const override { return false; }
+    };
+
     ViewManagerR _SupplyViewManager() override { return *new ViewMgr(); }
+    TileAdmin& _SupplyTileAdmin() override { return *new TileMgr(); }
 public:
     void _SupplyProductName(Utf8StringR name) override { name.assign("TilePublisher"); }
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); }
+    Sheet::Attachment::ViewportPtr _CreateSheetAttachViewport() override { return new Sheet::Attachment::Viewport(); }
     BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
         BeFileName sqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());

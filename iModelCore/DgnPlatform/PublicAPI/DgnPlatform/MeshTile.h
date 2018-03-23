@@ -141,6 +141,7 @@ public:
     static TileDisplayParamsCPtr Create(uint32_t color, GeometryParamsCR geomParams) { return new TileDisplayParams(color, geomParams); }
     static TileDisplayParamsCPtr Create(uint32_t color, TileTextureImageP texture, bool ignoreLighting) { return new TileDisplayParams(color, texture, ignoreLighting); }
     static TileDisplayParamsCPtr Create() { return new TileDisplayParams(); }
+    static TileDisplayParamsCPtr CreateForAttachment(GraphicParamsCR gfParams, GeometryParamsCR geomParams, TileTextureImageR texture);
 
     // These comparisons ignore category, subcategory, and class.
     bool operator<(TileDisplayParamsCR rhs) const { return IsLessThan(rhs, true); }

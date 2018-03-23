@@ -293,6 +293,7 @@ namespace Attachment
         ClipVectorCPtr m_clips;
 
         DGNVIEW_EXPORT virtual State _CreateScene(UpdatePlan const& updatePlan, State currentState);
+        DGNVIEW_EXPORT virtual Render::Image _RenderImage();
         DGNVIEW_EXPORT virtual void _RenderTexture();
         void QueueScene(SceneContextR);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
