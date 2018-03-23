@@ -13,3 +13,11 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 
 # TFS#819769:InstanceLabelOverride is not applied for child in hierarchy
 RulesDrivenECPresentationManagerNavigationTests.AllInstanceNodesSpecification_LabelOverridesAppliedForSpecifiedClass
+
+DiskNodesCacheTests.ClearsOldestConnectionCacheWhenCacheFileSizeExceedsLimit
+
+    # TFS#867146
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Date: 03/24/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\NonPublished\RulesEngine\NavNodesCacheTests.cpp(2213): error: Value of: m_cache->GetDataSource(newInfo2).IsNull()
+    # Actual: true
+    # Expected: false
