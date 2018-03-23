@@ -11,6 +11,7 @@
 //__PUBLISH_SECTION_START__
 
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystemClassDefinition)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(CIBSEClassDefinition)
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
@@ -36,7 +37,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinition : Dgn::Defini
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassDefinition
     {
-    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition, Dgn::DefinitionElement);
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition, ClassificationSystemClassDefinition);
     private:
 
     protected:
@@ -47,12 +48,12 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates an egress path from known egress sections.
-        //! @param[in]  model       model to create ClassificationSystems path in
-        //! @param[in]  sections    ClassificationSystems sections as a sequence
-        //! @param[in]  isPrimary   true to make this egress path primary. NOTE: This will also make all the given egress sequences primary
-        //! @return     a ptr to created egress path
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemsPathPtr Create(Dgn::DgnModelP model, ClassificationSystemsSectionSequence const& sections, bool isPrimary = true);
+        //! Creates a CIBSEClassDefinition
+        //! @param[in]  db          db to insert class definition in
+        //! @param[in]  name        name of the CIBSE Class definition
+        //! @param[in]  Category    Category of the CIBSE Class definition
+        //! @return     a ptr to created CIBSEClassDefinition
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static CIBSEClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category);
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(CIBSEClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
         

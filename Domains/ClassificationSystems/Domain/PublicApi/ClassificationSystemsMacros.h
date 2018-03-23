@@ -9,9 +9,9 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
 
-#define BENTLEY_CLASSIFICATIONSYSTEMS_NAMESPACE_NAME BENTLEY_BUILDING_NAMESPACE_NAME::ClassificationSystems
-#define BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE BEGIN_BUILDING_NAMESPACE namespace ClassificationSystems {
-#define END_CLASSIFICATIONSYSTEMS_NAMESPACE } END_BUILDING_NAMESPACE
+#define BENTLEY_CLASSIFICATIONSYSTEMS_NAMESPACE_NAME BENTLEY_NAMESPACE_NAME::ClassificationSystems
+#define BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace ClassificationSystems {
+#define END_CLASSIFICATIONSYSTEMS_NAMESPACE } END_BENTLEY_NAMESPACE
 #define USING_NAMESPACE_CLASSIFICATIONSYSTEMS using namespace BENTLEY_CLASSIFICATIONSYSTEMS_NAMESPACE_NAME;
 
 #define CLASSIFICATIONSYSTEMS_SCHEMA_NAME                         "ClassificationSystems"
@@ -43,10 +43,10 @@
     __exportstr__        __name__##CPtr Update(Dgn::DgnDbStatus* stat=nullptr); 
 
 #define DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(__name__) \
-    __name__##CPtr __name__::Get       (DgnDbR db, DgnElementId id) { return db.Elements().Get< __name__ >(id); } \
-    __name__##Ptr  __name__::GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit< __name__ >(id); } \
-    __name__##CPtr __name__::Insert    (DgnDbStatus* stat)         { return GetDgnDb().Elements().Insert< __name__ >(*this, stat);} \
-    __name__##CPtr __name__::Update    (DgnDbStatus* stat)         { return GetDgnDb().Elements().Update< __name__ >(*this, stat);}
+    __name__##CPtr __name__::Get       (Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().Get< __name__ >(id); } \
+    __name__##Ptr  __name__::GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id) { return db.Elements().GetForEdit< __name__ >(id); } \
+    __name__##CPtr __name__::Insert    (Dgn::DgnDbStatus* stat)         { return GetDgnDb().Elements().Insert< __name__ >(*this, stat);} \
+    __name__##CPtr __name__::Update    (Dgn::DgnDbStatus* stat)         { return GetDgnDb().Elements().Update< __name__ >(*this, stat);}
 
 #if defined (__CLASSIFICATIONSYSTEMSDOMAIN_BUILD__)
 #define CLASSIFICATIONSYSTEMSDOMAIN_EXPORT EXPORT_ATTRIBUTE
@@ -74,8 +74,8 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with CLASSIFICATIONSYSTEMS_ECCHEMA_NAME macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemsPath                               "ClassificationSystemsPath"
-#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemsPathSection                        "ClassificationSystemsPathSection"
+#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinition                     "ClassificationSystemClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition                                    "CIBSEClassDefinition"
 
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemsSectionConnectsElements                            "ClassificationSystemsSectionConnectsElements"
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemsPathHasSections                                    "ClassificationSystemsPathHasSections"
