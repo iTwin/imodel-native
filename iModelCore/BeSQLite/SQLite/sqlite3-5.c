@@ -15992,8 +15992,7 @@ static void yy_reduce(
   if( yymsp[-8].minor.yy387!=0 ){
     const char *z = s.z+6;
     int i;
-    sqlite3_snprintf(sizeof(yymsp[-8].minor.yy387->zSelName), yymsp[-8].minor.yy387->zSelName, "#%d",
-                     ++pParse->nSelect);
+    sqlite3_snprintf(sizeof(yymsp[-8].minor.yy387->zSelName), yymsp[-8].minor.yy387->zSelName,"#%d",++pParse->nSelect);
     while( z[0]==' ' ) z++;
     if( z[0]=='/' && z[1]=='*' ){
       z += 2;
@@ -18506,7 +18505,7 @@ SQLITE_API const char *sqlite3_libversion(void){ return sqlite3_version; }
 ** an edited copy of the amalgamation, then the last four characters of
 ** the hash might be different from SQLITE_SOURCE_ID.
 */
-SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
+/* SQLITE_API const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; } */
 
 /* IMPLEMENTATION-OF: R-35210-63508 The sqlite3_libversion_number() function
 ** returns an integer equal to SQLITE_VERSION_NUMBER.

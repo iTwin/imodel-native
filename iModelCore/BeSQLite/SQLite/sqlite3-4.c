@@ -5003,6 +5003,58 @@ SQLITE_PRIVATE int sqlite3ExprImpliesExpr(Parse *pParse, Expr *pE1, Expr *pE2, i
 }
 
 /*
+** This is the Expr node callback for sqlite3ExprImpliesNotNullRow().
+** If the expression node requires that the table at pWalker->iCur
+** have a non-NULL column, then set pWalker->eCode to 1 and abort.
+*/
+static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
+  if( ExprHasProperty(pExpr, EP_FromJoin) ) return WRC_Prune;
+  switch( pExpr->op ){
+    case TK_ISNULL:
+    case TK_IS:
+    case TK_OR:
+    case TK_FUNCTION:
+    case TK_AGG_FUNCTION:
+      return WRC_Prune;
+    case TK_COLUMN:
+    case TK_AGG_COLUMN:
+      if( pWalker->u.iCur==pExpr->iTable ){
+        pWalker->eCode = 1;
+        return WRC_Abort;
+      }
+      return WRC_Prune;
+    default:
+      return WRC_Continue;
+  }
+}
+
+/*
+** Return true (non-zero) if expression p can only be true if at least
+** one column of table iTab is non-null.  In other words, return true
+** if expression p will always be NULL or false if every column of iTab
+** is NULL.
+**
+** Terms of p that are marked with EP_FromJoin (and hence that come from
+** the ON or USING clauses of LEFT JOINS) are excluded from the analysis.
+**
+** This routine is used to check if a LEFT JOIN can be converted into
+** an ordinary JOIN.  The p argument is the WHERE clause.  If the WHERE
+** clause requires that some column of the right table of the LEFT JOIN
+** be non-NULL, then the LEFT JOIN can be safely converted into an
+** ordinary join.
+*/
+SQLITE_PRIVATE int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
+  Walker w;
+  w.xExprCallback = impliesNotNullRow;
+  w.xSelectCallback = 0;
+  w.xSelectCallback2 = 0;
+  w.eCode = 0;
+  w.u.iCur = iTab;
+  sqlite3WalkExpr(&w, p);
+  return w.eCode;
+}
+
+/*
 ** An instance of the following structure is used by the tree walker
 ** to determine if an expression can be evaluated by reference to the
 ** index only, without having to do a search for the corresponding
@@ -10925,8 +10977,6 @@ SQLITE_PRIVATE void sqlite3EndTable(
   p = pParse->pNewTable;
   if( p==0 ) return;
 
-  assert( !db->init.busy || !pSelect );
-
   /* If the db->init.busy is 1 it means we are reading the SQL off the
   ** "sqlite_master" or "sqlite_temp_master" table on the disk.
   ** So do not write to the disk again.  Extract the root page number
@@ -10937,6 +10987,10 @@ SQLITE_PRIVATE void sqlite3EndTable(
   ** table itself.  So mark it read-only.
   */
   if( db->init.busy ){
+    if( pSelect ){
+      sqlite3ErrorMsg(pParse, "");
+      return;
+    }
     p->tnum = db->init.newTnum;
     if( p->tnum==1 ) p->tabFlags |= TF_Readonly;
   }
@@ -18513,11 +18567,12 @@ static int readsTable(Parse *p, int iDb, Table *pTab){
 ** first use of table pTab.  On 2nd and subsequent uses, the original
 ** AutoincInfo structure is used.
 **
-** Three memory locations are allocated:
+** Four consecutive registers are allocated:
 **
-**   (1)  Register to hold the name of the pTab table.
-**   (2)  Register to hold the maximum ROWID of pTab.
-**   (3)  Register to hold the rowid in sqlite_sequence of pTab
+**   (1)  The name of the pTab table.
+**   (2)  The maximum ROWID of pTab.
+**   (3)  The rowid in sqlite_sequence of pTab
+**   (4)  The original value of the max ROWID in pTab, or NULL if none
 **
 ** The 2nd register is the one that is returned.  That is all the
 ** insert routine needs to know about.
@@ -18545,7 +18600,7 @@ static int autoIncBegin(
       pInfo->iDb = iDb;
       pToplevel->nMem++;                  /* Register to hold name of table */
       pInfo->regCtr = ++pToplevel->nMem;  /* Max rowid register */
-      pToplevel->nMem++;                  /* Rowid in sqlite_sequence */
+      pToplevel->nMem +=2;       /* Rowid in sqlite_sequence + orig max val */
     }
     memId = pInfo->regCtr;
   }
@@ -18573,15 +18628,17 @@ SQLITE_PRIVATE void sqlite3AutoincrementBegin(Parse *pParse){
     static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList autoInc[] = {
       /* 0  */ {OP_Null,    0,  0, 0},
-      /* 1  */ {OP_Rewind,  0,  9, 0},
+      /* 1  */ {OP_Rewind,  0, 10, 0},
       /* 2  */ {OP_Column,  0,  0, 0},
-      /* 3  */ {OP_Ne,      0,  7, 0},
+      /* 3  */ {OP_Ne,      0,  9, 0},
       /* 4  */ {OP_Rowid,   0,  0, 0},
       /* 5  */ {OP_Column,  0,  1, 0},
-      /* 6  */ {OP_Goto,    0,  9, 0},
-      /* 7  */ {OP_Next,    0,  2, 0},
-      /* 8  */ {OP_Integer, 0,  0, 0},
-      /* 9  */ {OP_Close,   0,  0, 0} 
+      /* 6  */ {OP_AddImm,  0,  0, 0},
+      /* 7  */ {OP_Copy,    0,  0, 0},
+      /* 8  */ {OP_Goto,    0, 11, 0},
+      /* 9  */ {OP_Next,    0,  2, 0},
+      /* 10 */ {OP_Integer, 0,  0, 0},
+      /* 11 */ {OP_Close,   0,  0, 0} 
     };
     VdbeOp *aOp;
     pDb = &db->aDb[p->iDb];
@@ -18592,14 +18649,17 @@ SQLITE_PRIVATE void sqlite3AutoincrementBegin(Parse *pParse){
     aOp = sqlite3VdbeAddOpList(v, ArraySize(autoInc), autoInc, iLn);
     if( aOp==0 ) break;
     aOp[0].p2 = memId;
-    aOp[0].p3 = memId+1;
+    aOp[0].p3 = memId+2;
     aOp[2].p3 = memId;
     aOp[3].p1 = memId-1;
     aOp[3].p3 = memId;
     aOp[3].p5 = SQLITE_JUMPIFNULL;
     aOp[4].p2 = memId+1;
     aOp[5].p3 = memId;
-    aOp[8].p2 = memId;
+    aOp[6].p1 = memId;
+    aOp[7].p2 = memId+2;
+    aOp[7].p1 = memId;
+    aOp[10].p2 = memId;
   }
 }
 
@@ -18646,6 +18706,8 @@ static SQLITE_NOINLINE void autoIncrementEnd(Parse *pParse){
 
     iRec = sqlite3GetTempReg(pParse);
     assert( sqlite3SchemaMutexHeld(db, 0, pDb->pSchema) );
+    sqlite3VdbeAddOp3(v, OP_Le, memId+2, sqlite3VdbeCurrentAddr(v)+7, memId);
+    VdbeCoverage(v);
     sqlite3OpenTable(pParse, 0, p->iDb, pDb->pSchema->pSeqTab, OP_OpenWrite);
     aOp = sqlite3VdbeAddOpList(v, ArraySize(autoIncEnd), autoIncEnd, iLn);
     if( aOp==0 ) break;
@@ -25279,7 +25341,7 @@ static void corruptSchema(
     char *z;
     if( zObj==0 ) zObj = "?";
     z = sqlite3MPrintf(db, "malformed database schema (%s)", zObj);
-    if( zExtra ) z = sqlite3MPrintf(db, "%z - %s", z, zExtra);
+    if( zExtra && zExtra[0] ) z = sqlite3MPrintf(db, "%z - %s", z, zExtra);
     sqlite3DbFree(db, *pData->pzErrMsg);
     *pData->pzErrMsg = z;
   }
@@ -26173,8 +26235,7 @@ SQLITE_API int sqlite3_prepare16_v3(
 /***/ int sqlite3SelectTrace = 0;
 # define SELECTTRACE(K,P,S,X)  \
   if(sqlite3SelectTrace&(K))   \
-    sqlite3DebugPrintf("%*s%s.%p: ",(P)->nSelectIndent*2-2,"",\
-        (S)->zSelName,(S)),\
+    sqlite3DebugPrintf("%s/%p: ",(S)->zSelName,(S)),\
     sqlite3DebugPrintf X
 #else
 # define SELECTTRACE(K,P,S,X)
@@ -26531,6 +26592,29 @@ static void setJoinExpr(Expr *p, int iTable){
       }
     }
     setJoinExpr(p->pLeft, iTable);
+    p = p->pRight;
+  } 
+}
+
+/* Undo the work of setJoinExpr().  In the expression tree p, convert every
+** term that is marked with EP_FromJoin and iRightJoinTable==iTable into
+** an ordinary term that omits the EP_FromJoin mark.
+**
+** This happens when a LEFT JOIN is simplified into an ordinary JOIN.
+*/
+static void unsetJoinExpr(Expr *p, int iTable){
+  while( p ){
+    if( ExprHasProperty(p, EP_FromJoin)
+     && (iTable<0 || p->iRightJoinTable==iTable) ){
+      ExprClearProperty(p, EP_FromJoin);
+    }
+    if( p->op==TK_FUNCTION && p->x.pList ){
+      int i;
+      for(i=0; i<p->x.pList->nExpr; i++){
+        unsetJoinExpr(p->x.pList->a[i].pExpr, iTable);
+      }
+    }
+    unsetJoinExpr(p->pLeft, iTable);
     p = p->pRight;
   } 
 }
@@ -29987,12 +30071,21 @@ static int flattenSubquery(
 **   (3) The inner query has a LIMIT clause (since the changes to the WHERE
 **       close would change the meaning of the LIMIT).
 **
-**   (4) The inner query is the right operand of a LEFT JOIN.  (The caller
-**       enforces this restriction since this routine does not have enough
-**       information to know.)
+**   (4) (** This restriction was removed on 2018-03-21.  It used to read:
+**       The inner query is the right operand of a LEFT JOIN. **)
 **
 **   (5) The WHERE clause expression originates in the ON or USING clause
-**       of a LEFT JOIN.
+**       of a LEFT JOIN where iCursor is not the right-hand table of that
+**       left join.  An example:
+**
+**           SELECT *
+**           FROM (SELECT 1 AS a1 UNION ALL SELECT 2) AS aa
+**           JOIN (SELECT 1 AS b2 UNION ALL SELECT 2) AS bb ON (a1=b2)
+**           LEFT JOIN (SELECT 8 AS c3 UNION ALL SELECT 9) AS cc ON (b2=2);
+**
+**       The correct answer is three rows:  (1,1,NULL),(2,2,8),(2,2,9).
+**       But if the (b2=2) term were to be pushed down into the bb subquery,
+**       then the (1,1,NULL) row would be suppressed.
 **
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
@@ -30028,12 +30121,15 @@ static int pushDownWhereTerms(
     nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight, iCursor);
     pWhere = pWhere->pLeft;
   }
-  if( ExprHasProperty(pWhere,EP_FromJoin) ) return 0; /* restriction (5) */
+  if( ExprHasProperty(pWhere,EP_FromJoin) && pWhere->iRightJoinTable!=iCursor ){
+    return 0; /* restriction (5) */
+  }
   if( sqlite3ExprIsTableConstant(pWhere, iCursor) ){
     nChng++;
     while( pSubq ){
       SubstContext x;
       pNew = sqlite3ExprDup(pParse->db, pWhere, 0);
+      unsetJoinExpr(pNew, -1);
       x.pParse = pParse;
       x.iTable = iCursor;
       x.iNewTable = iCursor;
@@ -31066,14 +31162,6 @@ static void explainSimpleCount(
 #endif
 
 /*
-** Context object for havingToWhereExprCb().
-*/
-struct HavingToWhereCtx {
-  Expr **ppWhere;
-  ExprList *pGroupBy;
-};
-
-/*
 ** sqlite3WalkExpr() callback used by havingToWhere().
 **
 ** If the node passed to the callback is a TK_AND node, return 
@@ -31086,15 +31174,16 @@ struct HavingToWhereCtx {
 */
 static int havingToWhereExprCb(Walker *pWalker, Expr *pExpr){
   if( pExpr->op!=TK_AND ){
-    struct HavingToWhereCtx *p = pWalker->u.pHavingCtx;
-    if( sqlite3ExprIsConstantOrGroupBy(pWalker->pParse, pExpr, p->pGroupBy) ){
+    Select *pS = pWalker->u.pSelect;
+    if( sqlite3ExprIsConstantOrGroupBy(pWalker->pParse, pExpr, pS->pGroupBy) ){
       sqlite3 *db = pWalker->pParse->db;
       Expr *pNew = sqlite3ExprAlloc(db, TK_INTEGER, &sqlite3IntTokens[1], 0);
       if( pNew ){
-        Expr *pWhere = *(p->ppWhere);
+        Expr *pWhere = pS->pWhere;
         SWAP(Expr, *pNew, *pExpr);
         pNew = sqlite3ExprAnd(db, pWhere, pNew);
-        *(p->ppWhere) = pNew;
+        pS->pWhere = pNew;
+        pWalker->eCode = 1;
       }
     }
     return WRC_Prune;
@@ -31117,23 +31206,19 @@ static int havingToWhereExprCb(Walker *pWalker, Expr *pExpr){
 ** entirely of constants and expressions that are also GROUP BY terms that
 ** use the "BINARY" collation sequence.
 */
-static void havingToWhere(
-  Parse *pParse,
-  ExprList *pGroupBy,
-  Expr *pHaving, 
-  Expr **ppWhere
-){
-  struct HavingToWhereCtx sCtx;
+static void havingToWhere(Parse *pParse, Select *p){
   Walker sWalker;
-
-  sCtx.ppWhere = ppWhere;
-  sCtx.pGroupBy = pGroupBy;
-
   memset(&sWalker, 0, sizeof(sWalker));
   sWalker.pParse = pParse;
   sWalker.xExprCallback = havingToWhereExprCb;
-  sWalker.u.pHavingCtx = &sCtx;
-  sqlite3WalkExpr(&sWalker, pHaving);
+  sWalker.u.pSelect = p;
+  sqlite3WalkExpr(&sWalker, p->pHaving);
+#if SELECTTRACE_ENABLED
+  if( sWalker.eCode && (sqlite3SelectTrace & 0x100)!=0 ){
+    SELECTTRACE(0x100,pParse,p,("Move HAVING terms into WHERE:\n"));
+    sqlite3TreeViewSelect(0, p, 0);
+  }
+#endif
 }
 
 /*
@@ -31294,7 +31379,6 @@ SQLITE_PRIVATE int sqlite3Select(
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
 #if SELECTTRACE_ENABLED
-  pParse->nSelectIndent++;
   SELECTTRACE(1,pParse,p, ("begin processing:\n"));
   if( sqlite3SelectTrace & 0x100 ){
     sqlite3TreeViewSelect(0, p, 0);
@@ -31340,13 +31424,29 @@ SQLITE_PRIVATE int sqlite3Select(
     generateColumnNames(pParse, p);
   }
 
-  /* Try to flatten subqueries in the FROM clause up into the main query
+  /* Try to various optimizations (flattening subqueries, and strength
+  ** reduction of join operators) in the FROM clause up into the main query
   */
 #if !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW)
   for(i=0; !p->pPrior && i<pTabList->nSrc; i++){
     struct SrcList_item *pItem = &pTabList->a[i];
     Select *pSub = pItem->pSelect;
     Table *pTab = pItem->pTab;
+
+    /* Convert LEFT JOIN into JOIN if there are terms of the right table
+    ** of the LEFT JOIN used in the WHERE clause.
+    */
+    if( (pItem->fg.jointype & JT_LEFT)!=0
+     && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor)
+     && OptimizationEnabled(db, SQLITE_SimplifyJoin)
+    ){
+      SELECTTRACE(0x100,pParse,p,
+                ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
+      pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
+      unsetJoinExpr(p->pWhere, pItem->iCursor);
+    }
+
+    /* No futher action if this term of the FROM clause is no a subquery */
     if( pSub==0 ) continue;
 
     /* Catch mismatch in the declared columns of a view and the number of
@@ -31415,7 +31515,6 @@ SQLITE_PRIVATE int sqlite3Select(
     explainSetInteger(pParse->iSelectId, iRestoreSelectId);
 #if SELECTTRACE_ENABLED
     SELECTTRACE(1,pParse,p,("end compound-select processing\n"));
-    pParse->nSelectIndent--;
 #endif
     return rc;
   }
@@ -31488,7 +31587,7 @@ SQLITE_PRIVATE int sqlite3Select(
     /* Make copies of constant WHERE-clause terms in the outer query down
     ** inside the subquery.  This can help the subquery to run more efficiently.
     */
-    if( (pItem->fg.jointype & JT_OUTER)==0
+    if( OptimizationEnabled(db, SQLITE_PushDown)
      && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem->iCursor)
     ){
 #if SELECTTRACE_ENABLED
@@ -31497,6 +31596,8 @@ SQLITE_PRIVATE int sqlite3Select(
         sqlite3TreeViewSelect(0, p, 0);
       }
 #endif
+    }else{
+      SELECTTRACE(0x100,pParse,p,("Push-down not possible\n"));
     }
 
     zSavedAuthContext = pParse->zAuthContext;
@@ -31699,6 +31800,7 @@ SQLITE_PRIVATE int sqlite3Select(
     wctrlFlags |= p->selFlags & SF_FixedLimit;
 
     /* Begin the database scan. */
+    SELECTTRACE(1,pParse,p,("WhereBegin\n"));
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, sSort.pOrderBy,
                                p->pEList, wctrlFlags, p->nSelectRow);
     if( pWInfo==0 ) goto select_end;
@@ -31800,7 +31902,9 @@ SQLITE_PRIVATE int sqlite3Select(
     if( pHaving ){
       if( pGroupBy ){
         assert( pWhere==p->pWhere );
-        havingToWhere(pParse, pGroupBy, pHaving, &p->pWhere);
+        assert( pHaving==p->pHaving );
+        assert( pGroupBy==p->pGroupBy );
+        havingToWhere(pParse, p);
         pWhere = p->pWhere;
       }
       sqlite3ExprAnalyzeAggregates(&sNC, pHaving);
@@ -31887,6 +31991,7 @@ SQLITE_PRIVATE int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
+      SELECTTRACE(1,pParse,p,("WhereBegin\n"));
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, 0,
           WHERE_GROUPBY | (orderByGrp ? WHERE_SORTBYGROUP : 0), 0
       );
@@ -32142,6 +32247,7 @@ SQLITE_PRIVATE int sqlite3Select(
         assert( minMaxFlag==WHERE_ORDERBY_NORMAL || pMinMaxOrderBy!=0 );
         assert( pMinMaxOrderBy==0 || pMinMaxOrderBy->nExpr==1 );
 
+        SELECTTRACE(1,pParse,p,("WhereBegin\n"));
         pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pMinMaxOrderBy,
                                    0, minMaxFlag, 0);
         if( pWInfo==0 ){
@@ -32197,7 +32303,6 @@ select_end:
   sqlite3DbFree(db, sAggInfo.aFunc);
 #if SELECTTRACE_ENABLED
   SELECTTRACE(1,pParse,p,("end processing\n"));
-  pParse->nSelectIndent--;
 #endif
   return rc;
 }

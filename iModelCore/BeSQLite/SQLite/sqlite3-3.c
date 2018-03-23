@@ -19048,7 +19048,9 @@ SQLITE_API int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   Vdbe *pVdbe = (Vdbe*)pStmt;
   u32 v;
 #ifdef SQLITE_ENABLE_API_ARMOR
-  if( !pStmt ){
+  if( !pStmt 
+   || (op!=SQLITE_STMTSTATUS_MEMUSED && (op<0||op>=ArraySize(pVdbe->aCounter)))
+  ){
     (void)SQLITE_MISUSE_BKPT;
     return 0;
   }
@@ -23934,6 +23936,10 @@ case OP_NewRowid: {           /* out2 */
   pOut = out2Prerelease(p, pOp);
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
+  if( !pC->isTable ){
+    rc = SQLITE_CORRUPT_BKPT;
+    goto abort_due_to_error;
+  }
   assert( pC!=0 );
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->uc.pCursor!=0 );

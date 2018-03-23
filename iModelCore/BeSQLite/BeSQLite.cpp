@@ -8,6 +8,7 @@
 #define ZLIB_INTERNAL
 
 #define SQLITE_AMALGAMATION 1
+#define SQLITE_HAS_CODEC 1
 
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/BeLzma.h>
