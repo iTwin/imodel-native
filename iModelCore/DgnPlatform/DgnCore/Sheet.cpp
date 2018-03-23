@@ -1168,7 +1168,6 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
         env.m_skybox.m_enabled = false;
         }
 
-    auto& box = attach.GetPlacement().GetElementBox();
     AxisAlignedBox3d range = attach.GetPlacement().CalculateRange();
 
     int32_t biasDistance = Render::Target::DepthFromDisplayPriority(attach.GetDisplayPriority());
