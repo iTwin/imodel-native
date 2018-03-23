@@ -7,17 +7,20 @@
 #--------------------------------------------------------------------------------------
 
 #-----------------------------------------------------------------------------------
+#
 # NOTES: If you think you need to edit this file:
+#
 # DO NOT PUT SQLite options in this file. They should ONLY be in bentley-sqlite.c!!!!
 # DO NOT change compiler warning flags here. They should be in bentley-sqlite.c
-# DO NOT edit the sqlite3-* source files. They are generated and come from sqlite.org.
+# DO NOT edit the sqlite3 source files. They are generated during the build, and the original 
+# source comes from sqlite.org anyway.
+#
 #-----------------------------------------------------------------------------------
 
-GCC_DEFAULT_VISIBILITY              = default
-GCC_NOSTRICT                        = 1
-HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
+GCC_DEFAULT_VISIBILITY = default
+GCC_NOSTRICT = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3 = 1
 
-# disable checking of assignment to smaller data types. SQLite does this a lot.
 # VERACODE - requires default runtime checks (e.g. cannot explicitly set any -RTC options).
 %if !defined(IS_VERACODE_BUILD)
     VCRuntimeCheckOption = -RTCsu
