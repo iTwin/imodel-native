@@ -78,7 +78,7 @@ $(o)bentley-sqlite$(oext): $(SQLiteDir)bentley-sqlite.c $(SQLiteDir)sqlite3.c $(
 
 %include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
 
-objs + $(o)SQLite$(oext)
+objs + $(o)bentley-sqlite$(oext)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)
