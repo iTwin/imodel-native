@@ -10,13 +10,13 @@
     <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
     <ECSchemaReference name="AecUnits" version="01.00" alias="AECU" />
 
-    <!-- Whatever for str replace later when we figure out what a classificationSystem is - aspect, type, or just a definition element -->
-    <ECEntityClass typeName="ClassificationSystemWhatever" displayLabel="ClassificationSystem Whatever" description="The Whatever used to store classificationSystem type data.">
+    <!-- ClassDefinition for str replace later when we figure out what a classificationSystem is - aspect, type, or just a definition element -->
+    <ECEntityClass typeName="ClassificationSystemClassDefinition" modifier="Abstract" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem type data.">
         <BaseClass>bis:DefinitionElement</BaseClass>
     </ECEntityClass>
     
-    <ECEntityClass typeName="CIBSEWhatever" displayLabel="CIBSE Whatever" description="The Whatever used to store CIBSE classificationSystem type data">
-        <BaseClass>ClassificationSystemWhatever</BaseClass>
+    <ECEntityClass typeName="CIBSEClassDefinition" displayLabel="CIBSE ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem type data">
+        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
@@ -24,8 +24,8 @@
         <ECProperty propertyName="Category" typeName="string" displayLabel="Category"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ASHRAEWhatever" displayLabel="ASHRAE Whatever" description="The Whatever used to store CIBSE classificationSystem type data">
-        <BaseClass>ClassificationSystemWhatever</BaseClass>
+    <ECEntityClass typeName="ASHRAEClassDefinition" displayLabel="ASHRAE ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem type data">
+        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
@@ -33,22 +33,22 @@
         <ECProperty propertyName="Category" typeName="string" displayLabel="Category"/>
     </ECEntityClass>
 
-    <ECEntityClass typeName="ASHRAE2004Whatever" displayLabel="ASHRAE2004 Whatever" description="The Whatever used to store CIBSE classificationSystem type data">
-        <BaseClass>ASHRAEWhatever</BaseClass>
+    <ECEntityClass typeName="ASHRAE2004ClassDefinition" displayLabel="ASHRAE2004 ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem type data">
+        <BaseClass>ASHRAEClassDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
     
-    <ECEntityClass typeName="ASHRAE2010Whatever" displayLabel="ASHRAE2010 Whatever" description="The Whatever used to store CIBSE classificationSystem type data">
-        <BaseClass>ASHRAEWhatever</BaseClass>
+    <ECEntityClass typeName="ASHRAE2010ClassDefinition" displayLabel="ASHRAE2010 ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem type data">
+        <BaseClass>ASHRAEClassDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
     
-    <ECEntityClass typeName="OmniClassWhatever" displayLabel="OmniClass Whatever" description="The Whatever used to store CIBSE classificationSystem type data">
-        <BaseClass>ClassificationSystemWhatever</BaseClass>
+    <ECEntityClass typeName="OmniClassClassDefinition" displayLabel="OmniClass ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem type data">
+        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
@@ -57,24 +57,22 @@
         <ECProperty propertyName="OmniClassID" typeName="string" displayLabel="OmniClassID"/>
     </ECEntityClass>
     
-    <ECEntityClass typeName="MasterFormatWhatever" displayLabel="MasterFormat Whatever" description="The Whatever used to store CIBSE classificationSystem type data">
-        <BaseClass>ClassificationSystemWhatever</BaseClass>
+    <ECEntityClass typeName="MasterFormatClassDefinition" displayLabel="MasterFormat ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem type data">
+        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
         <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
-        <ECProperty propertyName="OmniClassID" typeName="string" displayLabel="OmniClassID"/>
     </ECEntityClass>
     
-    <ECEntityClass typeName="UniFormatWhatever" displayLabel="UniFormat Whatever" description="The Whatever used to store CIBSE classificationSystem type data">
-        <BaseClass>ClassificationSystemWhatever</BaseClass>
+    <ECEntityClass typeName="UniFormatClassDefinition" displayLabel="UniFormat ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem type data">
+        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
         <ECProperty propertyName="Description" typeName="string" displayLabel="Description"/>
-        <ECProperty propertyName="OmniClassID" typeName="string" displayLabel="OmniClassID"/>
     </ECEntityClass>
     
 </ECSchema>
