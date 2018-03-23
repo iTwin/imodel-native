@@ -327,7 +327,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp -RL Assets/* $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/";
+			shellScript = "cp -fRL Assets/* $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME/";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
