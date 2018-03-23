@@ -3579,10 +3579,10 @@
                     <KeyName>EPSG:3414</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Kertau.SingaporeGrid</KeyName>
+                    <KeyName>KertauGC.SingaporeGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:24500</KeyName>
+                    <KeyName>Kertau.SingaporeGrid</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -6198,6 +6198,9 @@
                 <Members>
                   <Member>
                     <KeyName>CzechJTSK/5b.Krovak</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>CzechJTSK/05.Krovak</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Czech/JTSK.Krovak</KeyName>
@@ -30327,6 +30330,14 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Singapore</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:24500</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>Sweden</Name>
                 <Members>
                   <Member>
@@ -33236,6 +33247,9 @@
               <Group>
                 <Name>Czechoslovakia</Name>
                 <Members>
+                  <Member>
+                    <KeyName>CzechJTSK/05.LL</KeyName>
+                  </Member>
                   <Member>
                     <KeyName>CzechJTSK/5b.LL</KeyName>
                   </Member>
