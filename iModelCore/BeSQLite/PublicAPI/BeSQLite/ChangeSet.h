@@ -279,6 +279,11 @@ public:
 };
 
 //=======================================================================================
+//! A set of "rebases" that hold the result of conflict resolutions during a call to ChangeSet::ApplyChanges from
+//! a ChangeSet received from a remote session. 
+//! All ChangeSets for the local session should be "rebased" via calls to Rebaser::AddRebease + Rebaser::DoRebase
+//! before sending to the server. This essentially moves the local ChangeSet to be "based on" the state of the 
+//! database AFTER the remote changes were made, rather than the state of the database at the start of the session.
 // @bsiclass                                                    Keith.Bentley   03/18
 //=======================================================================================
 struct Rebase : NonCopyableClass
@@ -297,6 +302,9 @@ public:
 };
 
 //=======================================================================================
+//! Tool to "rebase" a ChangeSet to become based on the state of the database "as of" a new state, different than the beginning
+//! of the session in which the changes were recoreded. This is only necessary remote changes are applied and conflicts are resolved. 
+//! See SQlite documentation on "Rebasing changesets" for complete explanation.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
 struct Rebaser : NonCopyableClass
@@ -307,6 +315,7 @@ private:
 public:
     BE_SQLITE_EXPORT Rebaser();
     BE_SQLITE_EXPORT ~Rebaser();
+    
     BE_SQLITE_EXPORT void AddRebase(Rebase& rebase);
     BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeSet const&in, struct ChangeSet& out);
     BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeStream const& in, struct ChangeStream& out);

@@ -77,7 +77,7 @@
     #define HAVE_STRCHRNUL 0
 #endif
 
-#include "sqlite3-all.c"
+#include "sqlite3.c"
 #include "zipvfs.c"
 #include "closure.c"
 #include "see-aes128-ofb.c"

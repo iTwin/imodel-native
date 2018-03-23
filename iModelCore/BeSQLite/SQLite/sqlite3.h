@@ -125,7 +125,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.23.0"
 #define SQLITE_VERSION_NUMBER 3023000
-#define SQLITE_SOURCE_ID      "2018-03-23 00:31:53 2f2be1b1811e6b83fc8945da06e57b8b54233ff8a6ebd9d71b22c6bab2e74afb"
+#define SQLITE_SOURCE_ID      "2018-03-23 16:31:34 0b06ce6d8e7cff5cd5d467a94522dfef5593d7c26663ce03c2c2b663a2641551"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -8811,7 +8811,7 @@ SQLITE_API unsigned char *sqlite3_serialize(
 ** CAPI3REF: Deserialize a database
 **
 ** The sqlite3_deserialize(D,S,P,N,M,F) interface causes the 
-** [database connection] D to disconnection from database S and then
+** [database connection] D to disconnect from database S and then
 ** reopen S as an in-memory database based on the serialization contained
 ** in P.  The serialized database P is N bytes in size.  M is the size of
 ** the buffer P, which might be larger than N.  If M is larger than N, and
@@ -10323,7 +10323,7 @@ SQLITE_API int sqlite3changeset_apply_v2(
 **   <li> Each local changeset is rebased by calling sqlite3rebaser_rebase().
 **   <li> The sqlite3_rebaser object is deleted by calling
 **        sqlite3rebaser_delete().
-** </ol>    ap
+** </ol>
 */
 typedef struct sqlite3_rebaser sqlite3_rebaser;
 

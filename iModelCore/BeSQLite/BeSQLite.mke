@@ -71,8 +71,7 @@ CCompFpOpts=precise
 # Third-party section of this library.
 %include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
 
-$(o)SQLite$(oext): $(SQLiteDir)bentley-sqlite.c $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
-            $(SQLiteDir)sqlite3-5.c $(SQLiteDir)sqlite3-6.c $(SQLiteDir)sqlite3-7.c $(SQLiteDir)zipvfs.c $(SQLiteDir)closure.c $(SQLiteDir)see-aes128-ofb.c
+$(o)bentley-sqlite$(oext): $(SQLiteDir)bentley-sqlite.c $(SQLiteDir)sqlite3.c $(SQLiteDir)zipvfs.c $(SQLiteDir)closure.c $(SQLiteDir)see-aes128-ofb.c
 
 %include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
 

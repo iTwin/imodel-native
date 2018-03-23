@@ -45,19 +45,10 @@ bash ..\configure
 
 rem Process the source
 make sqlite3.c
-make sqlite3-all.c
 
 rem Copy to bentley source tree
 set BeSqlOutRoot=%SrcRoot%BeSQLite\SQLite\
-copy sqlite3-all.c  %BeSqlOutRoot%
-copy sqlite3-1.c    %BeSqlOutRoot%
-copy sqlite3-2.c    %BeSqlOutRoot%
-copy sqlite3-3.c    %BeSqlOutRoot%
-copy sqlite3-4.c    %BeSqlOutRoot%
-copy sqlite3-5.c    %BeSqlOutRoot%
-copy sqlite3-6.c    %BeSqlOutRoot%
-copy sqlite3-7.c    %BeSqlOutRoot%
-copy sqlite3.c      %BeSqlOutRoot%sqlite3.amalgam.c
+copy sqlite3.c      %BeSqlOutRoot%
 copy shell.c        %BeSqlOutRoot%
 copy sqlite3.h      %BeSqlOutRoot%
 
