@@ -6937,35 +6937,26 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
         currentIter = 0;
         }
 
-    pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
+    bool doSkip = false;
+    if (m_nodeHeader.m_IsLeaf && IsEmpty())
+        {
+        doSkip = true;
+        }
+    if (m_nodeHeader.m_nodeExtent.IsNull() || (m_nodeHeader.m_contentExtentDefined && m_nodeHeader.m_contentExtent.IsNull()))
+        {
+        doSkip = true;
+        }
+
+    if (!doSkip) pi_pGroup->AddNode<EXTENT>(this->m_nodeHeader);
     
-    if (!m_nodeHeader.m_IsLeaf)
+    if (!doSkip && !m_nodeHeader.m_IsLeaf)
         {
         pi_pGroup->IncreaseDepth();
         SMNodeGroupPtr nextGroup = pi_pGroup->GetStrategy<EXTENT>()->GetNextGroup(this->m_nodeHeader, pi_pGroup);
 
-        //static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
-        //    {
-        //    child->SetParentNodePtr(0);
-        //
-        //    s_createdNodeMutex.lock();
-        //
-        //    CreatedNodeMap::iterator nodeIter(child->m_createdNodeMap->find(child->GetBlockID().m_integerID));
-        //
-        //    if (nodeIter != child->m_createdNodeMap->end())
-        //        {
-        //        child->m_createdNodeMap->erase(nodeIter);
-        //        }
-        //
-        //    s_createdNodeMutex.unlock();
-        //    child = NULL;
-        //    };
-
         if (m_pSubNodeNoSplit != NULL)
             {
             if (!static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveGroupedNodeHeaders(nextGroup, progress)) return false;
-            //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
-            //this->m_pSubNodeNoSplit = nullptr;
             // Ensure coherent id values
             ((this->m_nodeHeader).m_apSubNodeID)[0] = (this->m_nodeHeader).m_SubNodeNoSplitID;
             pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, 0, pi_pGroup, nextGroup);
@@ -6975,8 +6966,6 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::SaveGr
             for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
                 if (!static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup, progress)) return false;
-                //disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
-                //this->m_apSubNodes[indexNode] = nullptr;
                 pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, indexNode, pi_pGroup, nextGroup);
 
                 }
