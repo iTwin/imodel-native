@@ -886,6 +886,11 @@ static DgnCode GetCodeFromChangeOrDb(DgnDbCR db, ChangeIterator::ColumnIterator 
     if (!codeSpec.IsValid())
         return DgnCode();
 
+    // Filter code specs for internal-used-only codes (e.g. GeometryParts)
+    bset<CodeSpecId> filteredCodeSpecIds = db.GetExistingBriefcaseManager()->GetFilteredCodeSpecIds();
+    if (filteredCodeSpecIds.find(codeSpec->GetCodeSpecId()) != filteredCodeSpecIds.end())
+        return DgnCode();
+
     DgnElementCPtr scopeElement = db.Elements().GetElement(scopeElementId.GetValueId<DgnElementId>());
     if (!scopeElement.IsValid())
         return DgnCode();
