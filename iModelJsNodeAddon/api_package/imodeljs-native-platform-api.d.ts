@@ -135,11 +135,6 @@ declare class NativeDgnDb {
      */
     abandonCreateChangeSet(): void;
 
-    /**
-     * Start creating a new change set with local changes
-     */
-    extractCodes(): ErrorStatusOrResult<DbResult, string>;
-
     /** Creates an EC change cache for this iModel (but does not attach it). 
      * @param changeCacheFile The created change cache ECDb file
      * @param changeCachePath The full path to the EC change cache file in the local file system
@@ -152,11 +147,6 @@ declare class NativeDgnDb {
      * @return non-zero error status if operation failed.
     */
     attachChangeCache(changeCachePath: string): DbResult;
-
-    /** Detaches the EC change cache file from this iModel. 
-     * @return non-zero error status if operation failed.
-     */
-    detachChangeCache(): DbResult;
 
     /** Determines whether the EC Changes cache file is attached to this iModel. 
      * @return true if the changes cache is attached. false otherwise
