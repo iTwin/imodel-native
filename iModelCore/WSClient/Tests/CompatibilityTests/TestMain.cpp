@@ -38,6 +38,8 @@ int main(int argc, char** argv)
 
     int runStatus = RUN_ALL_TESTS();
 
+    HttpClient::Uninitialize();
+
     if (runStatus != 0)
         return runStatus;
     return parseStatus;
