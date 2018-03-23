@@ -516,19 +516,11 @@ int NumericFormatSpec::FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NumericFormatSpec::NumericFormatSpec()
-    : NumericFormatSpec(Utils::DecimalPrecisionByIndex(FormatConstant::DefaultDecimalPrecisionIndex()))
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-NumericFormatSpec::NumericFormatSpec(DecimalPrecision decimalPrecision)
     : m_roundFactor(0.0)
     , m_presentationType(FormatConstant::DefaultPresentaitonType())
     , m_signOption(FormatConstant::DefaultSignOption())
     , m_formatTraits(FormatConstant::DefaultFormatTraits())
-    , m_decPrecision(decimalPrecision)
+    , m_decPrecision(FormatConstant::DefaultDecimalPrecision())
     , m_fractPrecision(FormatConstant::DefaultFractionalPrecision())
     , m_barType(FractionBarType::Diagonal)
     , m_decimalSeparator(FormatConstant::FPV_DecimalSeparator())

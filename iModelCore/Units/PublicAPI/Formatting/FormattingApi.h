@@ -230,7 +230,6 @@ public:
 
     UNITS_EXPORT NumericFormatSpec();
     NumericFormatSpec(NumericFormatSpecCR other) = default;
-    UNITS_EXPORT NumericFormatSpec(DecimalPrecision decimalPrecision);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     ~NumericFormatSpec() = default;
 

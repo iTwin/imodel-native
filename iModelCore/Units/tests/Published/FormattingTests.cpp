@@ -136,24 +136,6 @@ TEST_F(NumericFormatSpecTest, Constructors)
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     }
-
-    // Constructed with provided precision.
-    {
-    NumericFormatSpec nfs(DecimalPrecision::Precision9);
-    EXPECT_DOUBLE_EQ(FormatConstant::DefaultRoundingFactor(), nfs.GetRoundingFactor());
-    EXPECT_EQ(FormatConstant::DefaultPresentaitonType(), nfs.GetPresentationType());
-    EXPECT_EQ(FormatConstant::DefaultSignOption(), nfs.GetSignOption());
-    EXPECT_EQ(FormatConstant::DefaultFormatTraits(), nfs.GetFormatTraits());
-    EXPECT_EQ(DecimalPrecision::Precision9, nfs.GetDecimalPrecision());
-    EXPECT_EQ(FormatConstant::DefaultFractionalPrecision(), nfs.GetFractionalPrecision());
-    EXPECT_EQ(FormatConstant::DefaultFractionBarType(), nfs.GetFractionalBarType());
-    EXPECT_EQ(FormatConstant::DefaultDecimalSeparator(), nfs.GetDecimalSeparator());
-    EXPECT_EQ(FormatConstant::DefaultThousandSeparator(), nfs.GetThousandSeparator());
-    EXPECT_EQ(FormatConstant::DefaultUomSeparator(), nfs.GetUomSeparator());
-    EXPECT_EQ(FormatConstant::DefaultStopSeparator(), nfs.GetStopSeparator());
-    EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
-    EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
-    }
     }
 
 //---------------------------------------------------------------------------------------
@@ -162,7 +144,8 @@ TEST_F(NumericFormatSpecTest, Constructors)
 TEST_F(NumericFormatSpecTest, IsIdentical)
     {
     NumericFormatSpec nfsA;
-    NumericFormatSpec nfsB(DecimalPrecision::Max);
+    NumericFormatSpec nfsB;
+    nfsB.SetDecimalPrecision(DecimalPrecision::Max);
 
     EXPECT_TRUE(nfsA.IsIdentical(nfsA)) << "NumericFormatSpec is not identical to itself.";
     EXPECT_FALSE(nfsA.IsIdentical(nfsB));
@@ -780,7 +763,7 @@ TEST_F(NamedFormatSpecTest, Constructors)
 
     // Constructed with name and NumericFormatSpec
     {
-    NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
+    NumericFormatSpec numFmtSpec;
     NamedFormatSpec namedFmtSpec("FooBar", numFmtSpec);
 
     EXPECT_STREQ("FooBar", namedFmtSpec.GetName().c_str());
@@ -795,7 +778,7 @@ TEST_F(NamedFormatSpecTest, Constructors)
 
     // Constructed with name, NumericFormatSpec, and CompositeValueSpec
     {
-    NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
+    NumericFormatSpec numFmtSpec;
     CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
     NamedFormatSpec namedFmtSpec("FooBar", numFmtSpec, compValSpec);
 
@@ -823,7 +806,7 @@ TEST_F(NamedFormatSpecTest, IsIdentical)
     // In these cases, only NumericFormatSpecs that are compared against themselves
     // should be concidered identical by the identity principal.
     {
-    NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
+    NumericFormatSpec numFmtSpec;
     CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
 
     NamedFormatSpec namedFmtSpecUndefined;
@@ -873,8 +856,10 @@ TEST_F(NamedFormatSpecTest, IsIdentical)
 
     // NamedFormatSpecs with differing NumericFormatSpecs.
     {
-    NumericFormatSpec numFmtSpecA(DecimalPrecision::Precision8);
-    NumericFormatSpec numFmtSpecB(DecimalPrecision::Precision9);
+    NumericFormatSpec numFmtSpecA;
+    numFmtSpecA.SetDecimalPrecision(DecimalPrecision::Precision8);
+    NumericFormatSpec numFmtSpecB;
+    numFmtSpecB.SetDecimalPrecision(DecimalPrecision::Precision9);
 
     NamedFormatSpec namedFmtSpecA("FooBar", numFmtSpecA);
     NamedFormatSpec namedFmtSpecB("FooBar", numFmtSpecB);
@@ -955,7 +940,10 @@ TEST_F(NamedFormatSpecTest, ParseFormatString)
 
     // Parsing with a defined mapping function.
     {
-    NamedFormatSpec const exampleNamedFmtSpec("ExampleFmt", NumericFormatSpec(DecimalPrecision::Precision9));
+    NumericFormatSpec exampleNumericFmtSpec;
+    exampleNumericFmtSpec.SetPresentationType(PresentationType::Decimal);
+    exampleNumericFmtSpec.SetDecimalPrecision(DecimalPrecision::Precision9);
+    NamedFormatSpec const exampleNamedFmtSpec("ExampleFmt", exampleNumericFmtSpec);
     auto const mapper = [exampleNamedFmtSpec](Utf8StringCR name) -> NamedFormatSpecCP
         {
         return name == "ExampleFmt" ? &exampleNamedFmtSpec : nullptr;

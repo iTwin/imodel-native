@@ -168,7 +168,8 @@ Utf8String NamedFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quanti
         Utf8String suff = dval.GetSignSuffix();
         Utf8CP spacer = Utf8String::IsNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
         // for all parts but the last one we need to format an integer 
-        NumericFormatSpec fmtI = NumericFormatSpec(DecimalPrecision::Precision0);
+        NumericFormatSpec fmtI;
+        fmtI.SetDecimalPrecision(DecimalPrecision::Precision0);
         fmtI.SetKeepSingleZero(false);
 
         switch (compS->GetUnitCount())
