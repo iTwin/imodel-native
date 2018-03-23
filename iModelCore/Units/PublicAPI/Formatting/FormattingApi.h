@@ -634,6 +634,28 @@ public:
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
 
+    //! Parse a NamedFormatSpec from the provided format string. A format string takes the form
+    //! <code>
+    //! FORMAT_NAME<PRECISION_OVERRIDE>
+    //! </code>
+    //! where FORMAT_NAME is a defined named format that will be located using the defaultNamedFormatSpecMapper parameter and PRECISION_OVERRIDE is
+    //! a decimal/fractional precision override for the NamedFormatSpec.
+    //! Examples:
+    //! <code>
+    //! "Real<2>"
+    //! "Fractional<64>"
+    //! "Scientific<12>"
+    //! </code>
+    //! @param[out] nfs                          NamedFormatSpec to be populated with the settings parsed from the format string.
+    //! @param[in]  formatString                 String to be parsed.
+    //! @param[in]  defaultNamedFormatSpecMapper Functor that maps a format name to a NumericformatSpec containing default settings for the parsed,
+    //!                                          NumericFormatSpec, overrides specified within the format string will override these defaults.
+    //!                                          defaultNamedFormatSpecMapper should return a pointer to some NamedFormatSpec if any such mapping
+    //!                                          exists or nullptr if no such mapping exists. For example the mapping "Real" --> <default real spec>
+    //!                                          is a supported within EC, so an EC mapping function should map "Real" to the DefaultReal format
+    //!                                          spec. However the mapping "BlaBlaBla" does not exist within EC by default, so the mapping function
+    //!                                          would return nullptr for a format string with name "BlaBlaBla".
+    //! @returns BentleyStatus::SUCCESS if the string was successfully parsed.
     UNITS_EXPORT static BentleyStatus ParseFormatString(NamedFormatSpecR nfs, Utf8StringCR formatString, std::function<NamedFormatSpecCP(Utf8StringCR)> defaultNamedFormatSpecMapper);
 };
 
