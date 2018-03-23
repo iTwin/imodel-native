@@ -406,14 +406,14 @@ bool BisJson1ExporterImpl::ExportDgnDb()
     LogPerformanceMessage(timer, "Export Models");
 
     timer.Start();
-    if (SUCCESS != (stat = ExportViews(tableData)))
-        return false;
-    LogPerformanceMessage(timer, "Export Views");
-
-    timer.Start();
     if (SUCCESS != (stat = ExportCategories(tableData)))
         return false;
     LogPerformanceMessage(timer, "Export Categories");
+
+    timer.Start();
+    if (SUCCESS != (stat = ExportViews(tableData)))
+        return false;
+    LogPerformanceMessage(timer, "Export Views");
 
     timer.Start();
     if (SUCCESS != (stat = ExportGeometryParts(tableData)))
@@ -798,6 +798,11 @@ DgnElementId BisJson1ExporterImpl::CreateCategorySelector(Json::Value& out, View
         {
         Json::Value category(Json::ValueType::uintValue);
         category = IdToString(id.GetValue());
+        if (vc.IsDrawingView() || vc.IsSheetView())
+            {
+            if (m_mappedDrawingCategories.find(id) != m_mappedDrawingCategories.end())
+                category = IdToString(m_mappedDrawingCategories[id].GetValue());
+            }
         row["Categories"].append(category);
         }
     (QueueJson)(categorySelector.toStyledString().c_str());
@@ -1005,15 +1010,33 @@ BentleyStatus BisJson1ExporterImpl::ExportViews(Json::Value& out)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out)
     {
-    ExportCategories(out, "dgn_GeometricElement2d", "BisCore.DrawingCategory", m_authorityIds["bis:DrawingCategory"].c_str());
-    ExportCategories(out, "dgn_GeometricElement3d", "BisCore.SpatialCategory", m_authorityIds["bis:SpatialCategory"].c_str());
+    bvector<DgnCategoryId> duplicateIds;
+    ExportCategories(out, "dgn_GeometricElement3d", "BisCore.SpatialCategory", m_authorityIds["bis:SpatialCategory"].c_str(), duplicateIds);
+
+    Utf8PrintfString sql("select DISTINCT g.CategoryId FROM dgn_GeometricElement3d g INTERSECT select DISTINCT g2.CategoryId FROM dgn_GeometricElement2d g2");
+    Statement stmt;
+    auto stat = stmt.Prepare(*m_dgndb, sql.c_str());
+    if (DbResult::BE_SQLITE_OK != stat)
+        {
+        Utf8String error;
+        error.Sprintf("Failed get prepared SQL statement for SELECTing duplicate categories: %s", sql.c_str());
+        LogMessage(TeleporterLoggingSeverity::LOG_WARNING, error.c_str());
+        return ERROR;
+        }
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        DgnCategoryId categoryId = stmt.GetValueId<DgnCategoryId>(0);
+        duplicateIds.push_back(categoryId);
+        }
+    ExportCategories(out, "dgn_GeometricElement2d", "BisCore.DrawingCategory", m_authorityIds["bis:DrawingCategory"].c_str(), duplicateIds);
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out, Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr)
+BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out, Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr, bvector<DgnCategoryId>& duplicateIds)
     {
     Utf8PrintfString sql("select DISTINCT g.CategoryId, e.ModelId,  s.NAME, c.NAME FROM ec_Schema s, ec_Class c, %s g, dgn_Element e WHERE g.CategoryId = e.Id AND e.ECClassId = c.[Id] and c.[SchemaId] = s.[Id]", tableName);
     Statement stmt;
@@ -1028,15 +1051,28 @@ BentleyStatus BisJson1ExporterImpl::ExportCategories(Json::Value& out, Utf8CP ta
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        ECInstanceId categoryId = stmt.GetValueId<ECInstanceId>(0);
+        DgnCategoryId categoryId = stmt.GetValueId<DgnCategoryId>(0);
         if (m_insertedElements.find(DgnElementId(categoryId.GetValue())) != m_insertedElements.end())
+            {
+            if (std::find(duplicateIds.begin(), duplicateIds.end(), categoryId) == duplicateIds.end())
+                continue;
+            }
+        if (m_mappedDrawingCategories.find(categoryId) != m_mappedDrawingCategories.end())
             continue;
-        Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, categoryId.GetValue());
-        ExportElements(out, stmt.GetValueText(2), stmt.GetValueText(3), stmt.GetValueId<DgnModelId>(1), whereClause.c_str());
-        auto& entry = out[out.size() - 1][JSON_OBJECT_KEY];
-        entry[JSON_CLASSNAME] = bisClassName;
 
-        MakeNavigationProperty(entry, BIS_ELEMENT_PROP_CodeSpec, bisAuthorityStr);
+        Utf8PrintfString whereClause(" AND ECInstanceId=%" PRIu64, categoryId.GetValue());
+        ExportElements(out, stmt.GetValueText(2), stmt.GetValueText(3), stmt.GetValueId<DgnModelId>(1), whereClause.c_str(), false, true);
+        auto& entry = out[out.size() - 1];
+        auto& obj = entry[JSON_OBJECT_KEY];
+        obj[JSON_CLASSNAME] = bisClassName;
+        if (std::find(duplicateIds.begin(), duplicateIds.end(), categoryId) != duplicateIds.end())
+            {
+            m_nextAvailableId = DgnElementId(m_nextAvailableId.GetValue() + 1);
+            obj[JSON_INSTANCE_ID] = IdToString(m_nextAvailableId.GetValue()).c_str();
+            m_mappedDrawingCategories[categoryId] = DgnCategoryId(m_nextAvailableId.GetValue());
+            }
+        MakeNavigationProperty(obj, BIS_ELEMENT_PROP_CodeSpec, bisAuthorityStr);
+        (QueueJson) (entry.toStyledString().c_str());
         }
     return SUCCESS;
     }
@@ -1410,7 +1446,7 @@ void RenameConflictMembers(Json::Value& obj, Utf8CP prefix, Utf8CP member)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause, bool sendToQueue)
+BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause, bool sendToQueue, bool allowDuplicates)
     {
     Utf8PrintfString ecSql("SELECT ECInstanceId, * FROM ONLY %s.%s WHERE ModelId=?", schemaName, className);
     if (nullptr != whereClause)
@@ -1429,7 +1465,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
     while (BE_SQLITE_ROW == statement->Step())
         {
         ECInstanceId actualElementId = statement->GetValueId<ECInstanceId>(0);
-        if (m_insertedElements.end() != m_insertedElements.find(DgnElementId(actualElementId.GetValue())))
+        if (!allowDuplicates && m_insertedElements.end() != m_insertedElements.find(DgnElementId(actualElementId.GetValue())))
             continue;
 
         DgnElementCPtr element = m_dgndb->Elements().GetElement(DgnElementId(actualElementId.GetValue()));
@@ -1491,10 +1527,14 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
             obj.removeMember("ModelId");
             }
 
+        uint64_t oldCatId = -1;
         if (obj.isMember("CategoryId"))
             {
             if (!obj["CategoryId"].isNull())
+                {
                 MakeNavigationProperty(obj, "Category", IdToString(obj["CategoryId"].asString().c_str()).c_str());
+                BE_STRING_UTILITIES_UTF8_SSCANF(obj["CategoryId"].asCString(), "%" PRId64, &oldCatId);
+                }
             obj.removeMember("CategoryId");
             }
 
@@ -1514,6 +1554,7 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
         else if (element->GetElementClass()->Is(m_categoryClass))
             {
             entry[JSON_TYPE_KEY] = JSON_TYPE_Category;
+            // This gets renamed to the correct Spatial/DrawingCategory classname in the actual ExportCategories method
             obj[JSON_CLASSNAME] = "BisCore.SpatialCategory";
             obj[BIS_ELEMENT_PROP_CodeSpec]["id"] = m_authorityIds["bis:SpatialCategory"].c_str();
             obj.removeMember("Scope");
@@ -1522,7 +1563,14 @@ BentleyStatus BisJson1ExporterImpl::ExportElements(Json::Value& out, Utf8CP sche
         else if (element->IsGeometricElement())
             {
             if (element->Is2d())
+                {
                 entry[JSON_TYPE_KEY] = JSON_TYPE_GeometricElement2d;
+                DgnCategoryId cat(oldCatId);
+                if (m_mappedDrawingCategories.find(cat) != m_mappedDrawingCategories.end())
+                    {
+                    MakeNavigationProperty(obj, "Category", m_mappedDrawingCategories[cat].GetValue());
+                    }
+                }
             else
                 entry[JSON_TYPE_KEY] = JSON_TYPE_GeometricElement3d;
             // The GeomStream retrieved directly from the database is apparently incomplete.  Need to actually get it off the element
