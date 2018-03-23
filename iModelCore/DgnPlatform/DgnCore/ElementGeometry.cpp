@@ -5848,8 +5848,11 @@ static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input,
                 text->SetOrientation(rMatrix);
                 }
 
-            builder.Append(params);
-            builder.Append(*text);
+            if (!builder.Append(params))
+                return false;
+
+            if (!builder.Append(*text))
+                return false;
             }
         else
             {
@@ -5858,8 +5861,11 @@ static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input,
             if (!IModelJson::TryIModelJsonValueToGeometry(entry, geometry) || 1 != geometry.size())
                 return false; // Should only ever be a single entry...
 
-            builder.Append(params);
-            builder.Append(*geometry.at(0));
+            if (!builder.Append(params))
+                return false;
+
+            if (!builder.Append(*geometry.at(0)))
+                return false;
             }
         }
 
