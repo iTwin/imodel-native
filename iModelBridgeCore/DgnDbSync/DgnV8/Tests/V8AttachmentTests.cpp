@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Tests/V8AttachmentTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterTestsBaseFixture.h"
@@ -406,10 +406,10 @@ TEST_F(V8AttachmentTests, AttachIfc)
     LineUpFiles(L"ifc.ibim", L"Test3d.dgn", false);
     ASSERT_EQ( 0 , m_count ) << L"Expect an empty seed file!";
     if (true)
-        AttachForeignReferenceFile (L"candles.fbx");
+        AttachForeignReferenceFile (L"roof.ifc");
     DoConvert(m_dgnDbFileName, m_v8FileName); 
     if (true)
-        CheckForeignReferenceOutput (103);
+        CheckForeignReferenceOutput (1097);
     }
 
 /*---------------------------------------------------------------------------------**//**
