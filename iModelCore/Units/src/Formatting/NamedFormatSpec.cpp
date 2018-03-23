@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
+#include <regex>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -222,6 +223,95 @@ Utf8String NamedFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quanti
            majT = Utils::AppendUnitName(majT.c_str(), uomLabel, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
         }
     return majT;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus NamedFormatSpec::ParseFormatString(NamedFormatSpecR nfs, Utf8StringCR formatString, std::function<NamedFormatSpecCP(Utf8StringCR)> defaultNamedFormatSpecMapper)
+    {
+    static size_t const precisionOverrideIndx = 0;
+    static std::regex const rgx(R"REGEX((\w+)(<([^,<>]*,?)+>)?)REGEX", std::regex::optimize);
+    std::cmatch match;
+
+    if (!std::regex_match(formatString.c_str(), match, rgx))
+        return BentleyStatus::ERROR;
+
+    Utf8String const namedFormat(match[1].str().c_str());
+    Utf8String const overrideStr(match[2].str().c_str());
+    // BeStringUtilities::Split ignores empty tokens. Since overrides are
+    // position dependent, we actually need to count tokens even if they are
+    // the empty string. This function does just that using ',' as a separator.
+    bvector<Utf8String> overrides = [](Utf8StringCR str) -> bvector<Utf8String>
+        {
+        bvector<Utf8String> tokens;
+        size_t prevPos = 1; // Initial position is the character directly after the opening '<' in the override string.
+        size_t currPos;
+        while (str.npos != (currPos = str.find_first_of(",>", prevPos)))
+            {
+            tokens.push_back(Utf8String(str.substr(prevPos, currPos-prevPos).c_str()).Trim());
+            prevPos = currPos+1;
+            }
+        return tokens;
+        }(overrideStr);
+
+    NamedFormatSpecCP defaultNamedFormatSpec = defaultNamedFormatSpecMapper(namedFormat);
+    if (nullptr == defaultNamedFormatSpec)
+        {
+        LOG.errorv("failed to map a format name to a NamedFormatSpec");
+        return BentleyStatus::ERROR;
+        }
+    nfs = *defaultNamedFormatSpec;
+
+    // It is considered an error to pass in a format string with empty
+    // override brackets. If no overrides are needed, the user should instead
+    // leave the brackets off altogether. As an example the incorrect format
+    // string "SomeFormat<>" should instead be written as "SomeFormat".
+    // Additionally, if a format would be specified using an override string
+    // With no items actually overridden such as "SomeFormat<,,,,>" the string
+    // is also erroneous.
+    if (!overrideStr.empty()
+        && overrides.end() == std::find_if_not(overrides.begin(), overrides.end(),
+            [](Utf8StringCR ovrstr) -> bool
+                {
+                return std::all_of(ovrstr.begin(), ovrstr.end(), ::isspace);
+                }))
+        {
+        LOG.errorv("override list must contain at least one override");
+        return BentleyStatus::ERROR;
+        }
+
+    // The first override parameter overrides the default precision for the format.
+    if (overrides.size() < precisionOverrideIndx+1) // Bail if the user didn't include this override.
+        return BentleyStatus::SUCCESS;
+    if (!overrides[precisionOverrideIndx].empty())
+        {
+        uint64_t precision;
+        BentleyStatus status = BeStringUtilities::ParseUInt64(precision, overrides[precisionOverrideIndx].c_str());
+        if (BentleyStatus::SUCCESS != status)
+            {
+            LOG.errorv("failed to parse integer for precision override");
+            return status;
+            }
+        switch (nfs.m_numericSpec.GetPresentationType())
+            {
+            case PresentationType::Decimal:        /* intentional fallthrough */
+            case PresentationType::Scientific:     /* intentional fallthrough */
+            case PresentationType::ScientificNorm: /* intentional fallthrough */
+            case PresentationType::Stop100:        /* intentional fallthrough */
+            case PresentationType::Stop1000:       /* intentional fallthrough */
+                nfs.m_numericSpec.SetDecimalPrecision(Utils::DecimalPrecisionByIndex(precision));
+                break;
+            case PresentationType::Fractional:
+                nfs.m_numericSpec.SetFractionalPrecision(Utils::FractionalPrecisionByDenominator(precision));
+                break;
+            default:
+                LOG.errorv("unknown presentation type");
+                return BentleyStatus::ERROR;
+            }
+        }
+
+    return BentleyStatus::SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------

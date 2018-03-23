@@ -921,6 +921,130 @@ TEST_F(NamedFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NamedFormatSpecTest, ParseFormatString)
+    {
+    // Valid format strings.
+    Utf8String const fmtStrBasic("ExampleFmt<9>");
+    Utf8String const fmtStrBasicTrailingComma("ExampleFmt<9,>");
+    Utf8String const fmtStrBasicNoOverrides("ExampleFmt");
+    Utf8String const fmtStrFutureAddition("ExampleFmt<9,banana>");
+    Utf8String const fmtStrFutureAdditionWhiteSpace("ExampleFmt \n < 9 \t , banana > ");
+    Utf8String const fmtStrFutureAdditionTrailingComma("ExampleFmt<9,banana,>");
+    Utf8String const fmtStrFutureAdditionNoFirstOverride("ExampleFmt<,banana>");
+
+    // Invalid format strings.
+    Utf8String const fmtStrBasicNoOverridesButStillHasBrackets("ExampleFmt<>");
+    Utf8String const fmtStrBasicNoOverridesButStillHasBracketsWithCommas("ExampleFmt<,,,,>");
+
+    // Mapping function that returns nullptr should always fail.
+    {
+    static auto const nullMapper = [](Utf8StringCR name) -> NamedFormatSpecCP {return nullptr;};
+    NamedFormatSpec parsedNfs;
+
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasic, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicTrailingComma, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverrides, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAddition, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, nullMapper));
+
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBrackets, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBracketsWithCommas, nullMapper));
+    }
+
+    // Parsing with a defined mapping function.
+    {
+    NamedFormatSpec const exampleNamedFmtSpec("ExampleFmt", NumericFormatSpec(DecimalPrecision::Precision9));
+    auto const mapper = [exampleNamedFmtSpec](Utf8StringCR name) -> NamedFormatSpecCP
+        {
+        return name == "ExampleFmt" ? &exampleNamedFmtSpec : nullptr;
+        };
+    NamedFormatSpec parsedNfs;
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasic, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicTrailingComma, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverrides, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAddition, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBrackets, mapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBracketsWithCommas, mapper));
+    }
+
+    // Test using different expected format types.
+    {
+    NumericFormatSpec exampleNumericFmtSpecDec;
+    exampleNumericFmtSpecDec.SetPresentationType(PresentationType::Decimal);
+    exampleNumericFmtSpecDec.SetDecimalPrecision(DecimalPrecision::Precision5);
+    NamedFormatSpec const exampleNamedFmtSpecDec("ExDec", exampleNumericFmtSpecDec);
+
+    NumericFormatSpec exampleNumericFmtSpecFrac;
+    exampleNumericFmtSpecFrac.SetPresentationType(PresentationType::Fractional);
+    exampleNumericFmtSpecFrac.SetFractionalPrecision(FractionalPrecision::Over_128);
+    NamedFormatSpec const exampleNamedFmtSpecFrac("ExFrac", exampleNumericFmtSpecFrac);
+
+    NumericFormatSpec exampleNumericFmtSpecSci;
+    exampleNumericFmtSpecSci.SetDecimalPrecision(DecimalPrecision::Precision4);
+    exampleNumericFmtSpecSci.SetPresentationType(PresentationType::Scientific);
+    NamedFormatSpec const exampleNamedFmtSpecSci("ExSci", exampleNumericFmtSpecSci);
+
+    NumericFormatSpec exampleNumericFmtSpecSciNorm;
+    exampleNumericFmtSpecSciNorm.SetDecimalPrecision(DecimalPrecision::Precision7);
+    exampleNumericFmtSpecSciNorm.SetPresentationType(PresentationType::ScientificNorm);
+    NamedFormatSpec const exampleNamedFmtSpecSciNorm("ExSciNorm", exampleNumericFmtSpecSciNorm);
+
+    NumericFormatSpec exampleNumericFmtSpecStation;
+    exampleNumericFmtSpecStation.SetPresentationType(PresentationType::Stop100);
+    exampleNumericFmtSpecStation.SetDecimalPrecision(DecimalPrecision::Precision9);
+    NamedFormatSpec const exampleNamedFmtSpecStation("ExStation", exampleNumericFmtSpecStation);
+    auto const mapper = [&](Utf8StringCR name) -> NamedFormatSpecCP
+        {
+        if (name == "ExDec")
+            return &exampleNamedFmtSpecDec;
+        if (name == "ExFrac")
+            return &exampleNamedFmtSpecFrac;
+        if (name == "ExSci")
+            return &exampleNamedFmtSpecSci;
+        if (name == "ExSciNorm")
+            return &exampleNamedFmtSpecSciNorm;
+        if (name == "ExStation")
+            return &exampleNamedFmtSpecStation;
+        return nullptr;
+        };
+    NamedFormatSpec parsedNfs;
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExDec<5>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecDec));
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExFrac<128>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecFrac));
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExSci<4>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSci));
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExSciNorm<7>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSciNorm));
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExStation<9>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecStation));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatParsingSetTest, IdentityWholeNumber)
     {
     TestValidParseToQuantity("1 MILE", mile, 1.0);

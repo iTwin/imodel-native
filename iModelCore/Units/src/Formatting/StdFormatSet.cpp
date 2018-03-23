@@ -128,12 +128,12 @@ NumericFormatSpec CreateNewNumericFormatSpec(PresentationType presentationType, 
     if (PresentationType::Fractional == presentationType)
     {
         nfs.SetDecimalPrecision(FormatConstant::DefaultDecimalPrecision());
-        nfs.SetFractionaPrecision(Utils::FractionalPrecisionByDenominator(precision));
+        nfs.SetFractionalPrecision(Utils::FractionalPrecisionByDenominator(precision));
     }
     else
     {
         nfs.SetDecimalPrecision(Utils::DecimalPrecisionByIndex(precision));
-        nfs.SetFractionaPrecision(FormatConstant::DefaultFractionalPrecision());
+        nfs.SetFractionalPrecision(FormatConstant::DefaultFractionalPrecision());
     }
     nfs.SetDecimalSeparator(FormatConstant::FPV_DecimalSeparator());
     nfs.SetThousandSeparator(FormatConstant::FPV_ThousandSeparator());

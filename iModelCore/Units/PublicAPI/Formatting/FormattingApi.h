@@ -272,7 +272,7 @@ public:
     DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
     bool IsPrecisionZero() const { return m_decPrecision == DecimalPrecision::Precision0; }
 
-    void SetFractionaPrecision(FractionalPrecision precision) { m_fractPrecision = precision; }
+    void SetFractionalPrecision(FractionalPrecision precision) { m_fractPrecision = precision; }
     FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
 
     void SetFractionalBarType(FractionBarType barType) { m_barType = barType; }
@@ -585,6 +585,9 @@ public:
     //! and other are identical.
     UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
 
+    //! Creates a Json::Value representing this.
+    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+
     Utf8StringCR GetName() const { return m_name; };
 
     void SetDescription(Utf8CP descr) { m_description = descr; };
@@ -632,8 +635,7 @@ public:
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
     UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
 
-    //! Creates a Json::Value representing this.
-    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+    UNITS_EXPORT static BentleyStatus ParseFormatString(NamedFormatSpecR nfs, Utf8StringCR formatString, std::function<NamedFormatSpecCP(Utf8StringCR)> defaultNamedFormatSpecMapper);
 };
 
 //=======================================================================================
