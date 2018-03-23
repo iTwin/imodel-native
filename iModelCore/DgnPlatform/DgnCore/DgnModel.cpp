@@ -1186,7 +1186,7 @@ DgnDbStatus DgnModel::Insert()
     {
     if (!m_modeledElementId.IsValid())
         {
-        BeAssert(false && "A DgnModel must be modeling a DgnElement (that is above it in the hiearchy)");
+        BeAssert(false && "A DgnModel must be modeling a DgnElement (that is above it in the hierarchy)");
         return DgnDbStatus::BadElement;
         }
 
@@ -1200,6 +1200,10 @@ DgnDbStatus DgnModel::Insert()
     // give the element being modeled a chance to reject the insert
     DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(GetModeledElementId());
     BeAssert(modeledElement.IsValid());
+
+    BeAssert(m_parentModelId == modeledElement->GetModelId()); // alert caller that we're going to change this value
+    m_parentModelId = modeledElement->GetModelId(); // this is redundant data, make sure it's right
+
     if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelInsert(*this))))
         return status;
 
@@ -1529,7 +1533,6 @@ DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
-    model->m_parentModelId = db.Elements().QueryModelId(params.m_modeledElementId);
     stat = model->_SetProperties(properties);
     return (DgnDbStatus::Success == stat)? model : nullptr;
     }
