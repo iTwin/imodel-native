@@ -45,10 +45,7 @@ interface ErrorStatusOrResult<ErrorCodeType, ResultType> {
  * A request to send on to iModelHub.
  */
 declare class NativeBriefcaseManagerResourcesRequest {
-
-    /**
-     * Forget the requests.
-     */
+    /** Forget the requests. */
     reset(): void;
 
     /** Contains no requests? */
@@ -67,7 +64,8 @@ export const enum NativeBriefcaseManagerOnConflict {
 }
 */
 
-/** The options for how conflicts are to be handled during change-merging in an OptimisticConcurrencyControlPolicy.
+/**
+ * The options for how conflicts are to be handled during change-merging in an OptimisticConcurrencyControlPolicy.
  * The scenario is that the caller has made some changes to the *local* briefcase. Now, the caller is attempting to
  * merge in changes from iModelHub. The properties of this policy specify how to handle the *incoming* changes from iModelHub.
  */
@@ -85,7 +83,6 @@ export interface NativeBriefcaseManagerOnConflictPolicy {
  */
 declare class NativeDgnDb {
     constructor();
-
     /**
      * Get information on all briefcases cached on disk
      * @param cachePath Path to the root of the disk cache
@@ -437,12 +434,12 @@ declare class NativeECDb implements IDisposable {
     openDb(dbname: string, mode: OpenMode): DbResult;
 
     /** Check to see if connection to ECDb is open or not.
-    * @return true if connection is open otherwise false.
+    * @return true if connection is open
     */
     isOpen(): boolean;
 
     /** Check to see if connection to ECDb is open or not.
-    * @return true if connection is open otherwise false.
+    * @return true if connection was closed
     */
     closeDb(): void;
 
@@ -538,7 +535,7 @@ declare class NativeECSqlBinder implements IDisposable {
     /** Binds a BLOB, formatted as Base64 string, to the parameter represented by this binder
      * @return non-zero error status in case of failure.
      */
-    bindBlob(base64String: string): DbResult;
+    bindBlob(base64String: string | ArrayBuffer | SharedArrayBuffer): DbResult;
 
     /** Binds a Boolean to the parameter represented by this binder
      * @return non-zero error status in case of failure.
@@ -666,7 +663,7 @@ declare class NativeECSqlValue implements IDisposable {
 
     isNull(): boolean;
     /** Get value as a BLOB, formatted as Base64-encoded string. */
-    getBlob(): string;
+    getBlob(): ArrayBuffer;
     /** Get value as boolean. */
     getBoolean(): boolean;
     /** Get value as date time, formatted as ISO8601 string. */
@@ -757,7 +754,6 @@ declare namespace NativeECSchemaXmlContext {
 /* The NativeECSchemaXmlContext class that is projected by IModelJsNative. */
 declare class NativeECSchemaXmlContext {
     constructor();
-
     addSchemaPath(path: string): void;
     setSchemaLocater(locater: NativeECSchemaXmlContext.SchemaLocaterCallback): void;
     readSchemaFromXmlFile(filePath: string): ErrorStatusOrResult<BentleyStatus, string>;

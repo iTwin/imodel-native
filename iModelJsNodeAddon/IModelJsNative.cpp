@@ -1447,10 +1447,20 @@ public:
 
     Napi::Value BindBlob(Napi::CallbackInfo const& info)
         {
-        Napi::Value blobVal;
-        if (info.Length() == 0 || !(blobVal = info[0]).IsString())
-            Napi::TypeError::New(info.Env(), "BindBlob expects a base64 string").ThrowAsJavaScriptException();
-
+        if (info.Length() == 0)
+            THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires an argument", Env().Undefined());
+        
+        Napi::Value blobVal = info[0];
+        if (blobVal.IsArrayBuffer())
+            {
+            auto arrayBuf = blobVal.As<Napi::ArrayBuffer>();
+            ECSqlStatus stat = GetBinder().BindBlob(arrayBuf.Data(), (int) arrayBuf.ByteLength(), IECSqlBinder::MakeCopy::Yes);
+            return Napi::Number::New(Env(), (int) ToDbResult(stat));
+            }
+        
+        if (!blobVal.IsString())
+            THROW_TYPE_EXCEPTION_AND_RETURN("BindBlob requires either a base64-encoded-string or an ArrayBuffer", Env().Undefined());
+        
         Utf8String base64Str(blobVal.ToString().Utf8Value().c_str());
         ByteStream blob;
         Base64Utilities::Decode(blob, base64Str);
@@ -1960,13 +1970,11 @@ public:
 
     Napi::Value GetBlob(Napi::CallbackInfo const& info)
         {
-        int blobSize = -1;
-        void const* blob = GetECSqlValue().GetBlob(&blobSize);
-
-        Utf8String base64Str;
-        Base64Utilities::Encode(base64Str, (Byte const*) blob, (size_t) blobSize);
-
-        return Napi::String::New(Env(), base64Str.c_str());
+        int blobSize;
+        void const* data = GetECSqlValue().GetBlob(&blobSize);
+        auto blob = Napi::ArrayBuffer::New(Env(), blobSize);
+        memcpy(blob.Data(), data, blobSize);
+        return blob;
         }
 
     Napi::Value GetBoolean(Napi::CallbackInfo const& info)
