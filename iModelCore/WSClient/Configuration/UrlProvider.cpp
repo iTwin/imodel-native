@@ -95,7 +95,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
     );
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
-    "Mobile.ConnectWsgProjectShare",
+    "ProjectShare.Url",
     "https://dev-projectsharestorage-eus.cloudapp.net",
     "https://qa-connect-projectsharestorage.bentley.com",
     "https://connect-projectsharestorage.bentley.com",
