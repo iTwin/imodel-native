@@ -13,39 +13,3 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 
 # TFS#819769:InstanceLabelOverride is not applied for child in hierarchy
 RulesDrivenECPresentationManagerNavigationTests.AllInstanceNodesSpecification_LabelOverridesAppliedForSpecifiedClass
-
-ContentUpdateTests.InvalidatesWhenUserSettingChanges_UsedInInstanceFilter
-
-    # TFS#854552
-    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
-    # Failing
-
-DiskNodesCacheTests.ShareCachedHierarchiesBetweenSessions
-
-    # TFS#854549
-    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
-    # Failing
-
-DiskNodesCacheTests.ClearsOldestConnectionCacheWhenCacheFileSizeExceedsLimit
-
-    # TFS#854549
-    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
-    # Failing
-
-DiskNodesCacheTests.DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual
-
-    # TFS#854549
-    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadAir2
-    # Failing
-
-SupplementalRuleSetLocater.FindsSupplementalRuleSetsAndSetsProvidedId 
-
-    # TFS#855344
-    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadPro
-    # Failing
-
-ContentUpdateTests.InvalidatesWhenUserSettingChanges_UsedInRuleCondition
-
-    # TFS#855347
-    # Stream:Bim0200, build architecture: (iOSARM64), Device: iPadPro
-    # Failing
