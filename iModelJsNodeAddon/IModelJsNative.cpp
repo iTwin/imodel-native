@@ -334,18 +334,16 @@ struct NativeECSchemaXmlContext : Napi::ObjectWrap<NativeECSchemaXmlContext>
             return obj.InstanceOf(s_constructor.Value());
             }
 
-        Napi::Value SetSchemaLocater(Napi::CallbackInfo const& info)
+        void SetSchemaLocater(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_FUNCTION(0, locaterCallback, Env().Undefined());
+            REQUIRE_ARGUMENT_FUNCTION(0, locaterCallback, );
             ECSchemaXmlContextUtils::SetSchemaLocater(*m_context, m_locater, Napi::Persistent(locaterCallback));
-            return Env().Undefined();
             }
 
-        Napi::Value AddSchemaPath(Napi::CallbackInfo const& info)
+        void AddSchemaPath(Napi::CallbackInfo const& info)
             {
-            REQUIRE_ARGUMENT_STRING(0, schemaPath, Env().Undefined());
+            REQUIRE_ARGUMENT_STRING(0, schemaPath, );
             ECSchemaXmlContextUtils::AddSchemaPath(*m_context, schemaPath);
-            return Env().Undefined();
             }
 
         Napi::Value ReadSchemaFromXmlFile(Napi::CallbackInfo const& info)
