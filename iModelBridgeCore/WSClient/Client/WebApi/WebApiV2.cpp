@@ -18,7 +18,7 @@
 #define VALUE_FileAccessUrlType_Azure   "AzureBlobSasUrl"
 #define VALUE_True                      "true"
 
-const BeVersion WebApiV2::s_maxTestedWebApi(2, 5);
+const BeVersion WebApiV2::s_maxTestedWebApi(2, 7);
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
@@ -752,6 +752,10 @@ ICancellationTokenPtr ct
         request.GetHandshakeRequest().GetHeaders().SetValue(HEADER_MasAllowRedirect, VALUE_True);
         request.GetHandshakeRequest().SetFollowRedirects(false);
         }
+
+    //TODO TFS#866928 SendUpdateFileRequest temporary disabled
+    if (options && options->GetJobOptions()->IsJobsApiEnabled())
+        options->GetJobOptions()->DisableJobs();
 
     auto finalResult = std::make_shared<WSUpdateFileResult>();
     return m_jobApi

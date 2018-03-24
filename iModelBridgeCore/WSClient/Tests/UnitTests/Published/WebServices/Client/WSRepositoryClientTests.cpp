@@ -41,7 +41,7 @@ Json::Value StubWSObjectCreationJson()
             })");
     }
 
-void Expect4_jSrS(MockHttpHandler& handler)
+void Expect4_jSrS(MockHttpHandler& handler, HttpStatus status)
     {
     handler.ExpectRequests(4);
     handler.ForRequest(1, StubWSInfoHttpResponseWebApi27());
@@ -60,14 +60,14 @@ void Expect4_jSrS(MockHttpHandler& handler)
                 "className": "Job",
                 "properties" :
                     {
-                    "ResponseStatusCode":200,
+                    "ResponseStatusCode":%i,
                     "ResponseContent":"Good Content",
                     "ResponseHeaders":"",
                     "ScheduleTime": "%s",
                     "Status":"Succeeded"
                     }
                 }]
-            })", scheduleTime.c_str());
+            })", status, scheduleTime.c_str());
 
     handler.ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
     handler.ForRequest(4, StubHttpResponse(HttpStatus::OK));
@@ -1623,7 +1623,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_EnableJobsWebApiV2JobSuc
 
     auto relatedObject = ObjectId("RelatedObjectSchema", "RelatedObjectClass", "RelatedObjectId");
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::Created);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
@@ -1752,7 +1752,7 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_EnableJobsWebApiV2JobSuccee
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::OK);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
@@ -1932,7 +1932,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_EnableJobsWebApiV2JobSuc
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::OK);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
@@ -2189,7 +2189,7 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobSuc
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::OK);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
@@ -2582,7 +2582,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucce
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::OK);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
