@@ -500,7 +500,38 @@ Response RequestHandler::Pull(Request req)
     BeFileName dbPath(serverPath);
     dbPath.AppendToPath(dbName);
     BentleyB0200::BeSQLite::Db m_db;
-    CheckDb();
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Read, DefaultTxn::Yes)))
+        {
+        Statement st;
+
+        Json::Value instancesinfo(Json::objectValue);
+        JsonValueR instanceArray = instancesinfo[ServerSchema::Instances] = Json::arrayValue;
+        JsonValueR instance = instanceArray[0] = Json::objectValue;
+        instance[ServerSchema::InstanceId] = st.GetValueText(0);
+        instance[ServerSchema::SchemaName] = st.GetValueText(1);
+        instance[ServerSchema::ClassName] = st.GetValueText(2);
+        JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+        properties[ServerSchema::Property::Id] = st.GetValueText(3);
+        properties[ServerSchema::Property::ParentId] = st.GetValueText(4);
+        properties[ServerSchema::Property::SeedFileId] = "";
+        JsonValueR relationshipInstances =  properties[ServerSchema::RelationshipInstances] = Json::objectValue;
+        relationshipInstances[ServerSchema::InstanceId] = "";
+        relationshipInstances[ServerSchema::SchemaName] = "";
+        relationshipInstances[ServerSchema::ClassName] = "";
+        relationshipInstances["direction"] = "forward";
+        JsonValueR propertiesl1 = relationshipInstances[ServerSchema::Properties] = Json::objectValue;
+        JsonValueR relatedInstance = relationshipInstances[ServerSchema::RelatedInstance] = Json::objectValue;;
+        relatedInstance[ServerSchema::InstanceId] = "";
+        relatedInstance[ServerSchema::SchemaName] = "";
+        relatedInstance[ServerSchema::ClassName] = "";
+        JsonValueR propertiesl2 = relatedInstance[ServerSchema::Properties] = Json::objectValue;
+        propertiesl2[ServerSchema::Property::DownloadUrl] = "";
+        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
+
+        st.Finalize();
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
+        }
     return Response();
     }
 
