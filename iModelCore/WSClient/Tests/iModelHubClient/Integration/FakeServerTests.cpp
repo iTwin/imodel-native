@@ -99,11 +99,14 @@ TEST_F(FakeServerFixture, CreateiModel)
     ASSERT_EQ(HttpStatus::Created ,  response.GetHttpStatus());
     }
 
-//TEST_F(FakeServerFixture, PushModelChangeSets)
-//    {
-//    Request request(url, method, handlePtr);
-//    request.SetRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)));
-//    }
+TEST_F(FakeServerFixture, PulliModelChangeSets)
+    {
+    Utf8String url("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--9c99389f-a732-40ee-abb1-7c7435829f99/iModelScope/ChangeSet?$select=Id,Index,ParentId,SeedFileId,FileAccessKey-forward-AccessKey.DownloadURL&$filter=FollowingChangeSet-backward-ChangeSet.Id+eq+'44749acc1992a7195531a534fb806b7d3c75fa47'+and+SeedFileId+eq+'ceb4a114-e347-49af-809f-aaf535ca2d50'  ");
+    Utf8String method("GET");
+    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
+    Request request(url, method, handlePtr);
+    Response resp = request.PerformAsync()->GetResult();
+    }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
