@@ -16,36 +16,46 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct PerformancePropertiesTest : PerformanceTestFixture 
 {
-    void AddElementsOneAtATime(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName)
-        {
-        Utf8Char timerName[256];
-        BeStringUtilities::Snprintf(timerName, "Adding 10000 array elements one at a time to %ls", propertyName.c_str());
-        StopWatch timer(timerName, false);
-        StandaloneECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-        timer.Start();
-        for (int i = 0; i < 10000; i++)
-            instanceA->AddArrayElements(propertyName.c_str(), 1);
-        timer.Stop();
-
-        PERFORMANCELOG.infov("%s - %lf", timerName, timer.GetElapsedSeconds());
-        LOGTODB(testcaseName.c_str(), testName.c_str(), timer.GetElapsedSeconds(), 1000, Utf8PrintfString("Adding array elements one at a time: %s", propertyName.c_str()).c_str());
-        results[Utf8String(timerName)] = timer.GetElapsedSeconds();
-        }
-    void AddElementsOnce(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName)
-        {
-        Utf8Char timerName[256];
-        BeStringUtilities::Snprintf(timerName, "Adding 10000 array elements at once to %ls", propertyName.c_str());
-        StopWatch timer(timerName, false);
-        StandaloneECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
-        timer.Start();
-        instanceA->AddArrayElements(propertyName.c_str(), 10000);
-        timer.Stop();
-
-        PERFORMANCELOG.infov("ls - %lf", timerName, timer.GetElapsedSeconds());
-        LOGTODB(testcaseName.c_str(), testName.c_str(), timer.GetElapsedSeconds(), 1000, Utf8PrintfString("Adding array elements at once: %s", propertyName.c_str()).c_str());
-        results[Utf8String(timerName)] = timer.GetElapsedSeconds();
-        }
+    void AddElementsOneAtATime(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName);
+    void AddElementsOnce(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName);
 };
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+void PerformancePropertiesTest::AddElementsOneAtATime(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName)
+    {
+    Utf8Char timerName[256];
+    BeStringUtilities::Snprintf(timerName, "Adding 10000 array elements one at a time to %ls", propertyName.c_str());
+    StopWatch timer(timerName, false);
+    StandaloneECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    timer.Start();
+    for (int i = 0; i < 10000; i++)
+        instanceA->AddArrayElements(propertyName.c_str(), 1);
+    timer.Stop();
+
+    PERFORMANCELOG.infov("%s - %lf", timerName, timer.GetElapsedSeconds());
+    LOGTODB(testcaseName.c_str(), testName.c_str(), timer.GetElapsedSeconds(), 10000, Utf8PrintfString("Adding array elements one at a time: %s", propertyName.c_str()).c_str());
+    results[Utf8String(timerName)] = timer.GetElapsedSeconds();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod
+//--------------------------------------------------------------------------------------
+void PerformancePropertiesTest::AddElementsOnce(ECClassP classA, Utf8StringCR propertyName, bmap<Utf8String, double>& results, Utf8String testcaseName, Utf8String testName)
+    {
+    Utf8Char timerName[256];
+    BeStringUtilities::Snprintf(timerName, "Adding 10000 array elements at once to %ls", propertyName.c_str());
+    StopWatch timer(timerName, false);
+    StandaloneECInstancePtr instanceA = classA->GetDefaultStandaloneEnabler()->CreateInstance();
+    timer.Start();
+    instanceA->AddArrayElements(propertyName.c_str(), 10000);
+    timer.Stop();
+
+    PERFORMANCELOG.infov("ls - %lf", timerName, timer.GetElapsedSeconds());
+    LOGTODB(testcaseName.c_str(), testName.c_str(), timer.GetElapsedSeconds(), 10000, Utf8PrintfString("Adding array elements at once: %s", propertyName.c_str()).c_str());
+    results[Utf8String(timerName)] = timer.GetElapsedSeconds();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Carole.MacDonald                    10/2013

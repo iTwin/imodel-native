@@ -19,7 +19,7 @@ void PerformanceTestFixture::LogResultsToFile(bmap<Utf8String, double> results)
     FILE* logFile= nullptr;
 
     BeFileName dir;
-    BeTest::GetHost().GetOutputRoot (dir);
+    BeTest::GetHost().GetOutputRoot(dir);
     WCharCP processorArchitecture = (8 == sizeof(void*)) ? L"Winx64" : L"Winx86";
     dir.AppendToPath(processorArchitecture);
     dir.AppendToPath(L"TestResults");
@@ -31,17 +31,17 @@ void PerformanceTestFixture::LogResultsToFile(bmap<Utf8String, double> results)
     bool existingFile = dir.DoesPathExist();
 
     logFile = fopen(dir.GetNameUtf8().c_str(), "a+"); 
-    PERFORMANCELOG.infov (L"CSV Results filename: %ls\n", dir.GetName());
+    PERFORMANCELOG.infov(L"CSV Results filename: %ls\n", dir.GetName());
 
     if (!existingFile)
-        fprintf (logFile, "Date, Test Description, Baseline, Time (secs)\n");
+        fprintf(logFile, "Date, Test Description, Baseline, Time (secs)\n");
 
     Utf8String dateTime = DateTime::GetCurrentTime().ToString();
 
     for (auto const& pair : results)
         fprintf(logFile, "%s, %s,, %.4f\n", dateTime.c_str(), pair.first.c_str(), pair.second);
 
-    fclose (logFile);
+    fclose(logFile);
     }
 
 //--------------------------------------------------------------------------------------
