@@ -125,7 +125,7 @@ extern "C" {
 */
 #define SQLITE_VERSION        "3.23.0"
 #define SQLITE_VERSION_NUMBER 3023000
-#define SQLITE_SOURCE_ID      "2018-03-23 16:31:34 0b06ce6d8e7cff5cd5d467a94522dfef5593d7c26663ce03c2c2b663a2641551"
+#define SQLITE_SOURCE_ID      "2018-03-24 23:16:05 ccf734f7d2bf8f99f3c55124b05c1835e4371bc269f27700f40afc26e7c1bc55"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -10230,6 +10230,7 @@ SQLITE_API int sqlite3changeset_apply_v2(
 
 /* 
 ** CAPI3REF: Rebasing changesets
+** EXPERIMENTAL
 **
 ** Suppose there is a site hosting a database in state S0. And that
 ** modifications are made that move that database to state S1 and a
@@ -10328,30 +10329,33 @@ SQLITE_API int sqlite3changeset_apply_v2(
 typedef struct sqlite3_rebaser sqlite3_rebaser;
 
 /*
-** CAPIREF: Create a changeset rebaser object.
+** CAPI3REF: Create a changeset rebaser object.
+** EXPERIMENTAL
 **
 ** Allocate a new changeset rebaser object. If successful, set (*ppNew) to
 ** point to the new object and return SQLITE_OK. Otherwise, if an error
 ** occurs, return an SQLite error code (e.g. SQLITE_NOMEM) and set (*ppNew) 
 ** to NULL. 
 */
-int sqlite3rebaser_create(sqlite3_rebaser **ppNew);
+SQLITE_API int sqlite3rebaser_create(sqlite3_rebaser **ppNew);
 
 /*
-** CAPIREF: Configure a changeset rebaser object.
+** CAPI3REF: Configure a changeset rebaser object.
+** EXPERIMENTAL
 **
 ** Configure the changeset rebaser object to rebase changesets according
 ** to the conflict resolutions described by buffer pRebase (size nRebase
 ** bytes), which must have been obtained from a previous call to
 ** sqlite3changeset_apply_v2().
 */
-int sqlite3rebaser_configure(
+SQLITE_API int sqlite3rebaser_configure(
   sqlite3_rebaser*, 
   int nRebase, const void *pRebase
 ); 
 
 /*
-** CAPIREF: Rebase a changeset
+** CAPI3REF: Rebase a changeset
+** EXPERIMENTAL
 **
 ** Argument pIn must point to a buffer containing a changeset nIn bytes
 ** in size. This function allocates and populates a buffer with a copy
@@ -10363,20 +10367,21 @@ int sqlite3rebaser_configure(
 ** sqlite3_free(). Otherwise, if an error occurs, (*ppOut) and (*pnOut)
 ** are set to zero and an SQLite error code returned.
 */
-int sqlite3rebaser_rebase(
+SQLITE_API int sqlite3rebaser_rebase(
   sqlite3_rebaser*,
   int nIn, const void *pIn, 
   int *pnOut, void **ppOut 
 );
 
 /*
-** CAPIREF: Delete a changeset rebaser object.
+** CAPI3REF: Delete a changeset rebaser object.
+** EXPERIMENTAL
 **
 ** Delete the changeset rebaser object and all associated resources. There
 ** should be one call to this function for each successful invocation
 ** of sqlite3rebaser_create().
 */
-void sqlite3rebaser_delete(sqlite3_rebaser *p); 
+SQLITE_API void sqlite3rebaser_delete(sqlite3_rebaser *p); 
 
 /*
 ** CAPI3REF: Streaming Versions of API functions.
@@ -10535,7 +10540,7 @@ SQLITE_API int sqlite3changegroup_output_strm(sqlite3_changegroup*,
     int (*xOutput)(void *pOut, const void *pData, int nData), 
     void *pOut
 );
-int sqlite3rebaser_rebase_strm(
+SQLITE_API int sqlite3rebaser_rebase_strm(
   sqlite3_rebaser *pRebaser,
   int (*xInput)(void *pIn, void *pData, int *pnData),
   void *pIn,
