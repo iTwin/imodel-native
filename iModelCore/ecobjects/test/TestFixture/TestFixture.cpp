@@ -1,4 +1,3 @@
-#include "TestFixture.h"
 /*--------------------------------------------------------------------------------------+
 |
 |     $Source: test/TestFixture/TestFixture.cpp $

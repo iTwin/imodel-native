@@ -239,6 +239,7 @@
     <Part Name="PerformanceTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="TestFixture"/>
+        <SubPart PartName="TestsSqlang"  PartFile="Units" Repository="Units" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Performance" SourceName="Delivery/UnitTests/Objects/Performance"/>
         </Bindings>
