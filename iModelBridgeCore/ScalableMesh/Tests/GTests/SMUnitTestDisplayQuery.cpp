@@ -313,13 +313,16 @@ void DisplayQueryTester::VerifyDisplayNodeFunctions(bvector<IScalableMeshCachedD
     {    
     for (auto& node : meshNodes)
         { 
+        node->LoadNodeHeader();
+        ASSERT_EQ(node->IsHeaderLoaded(), true);
+
         bvector<SmCachedDisplayMesh*>  cachedMeshes;
         bvector<bpair<bool, uint64_t>> textureIds;
-        
+                
         StatusInt status = node->GetCachedMeshes(cachedMeshes, textureIds);
         
-        ASSERT_EQ(status == SUCCESS || node->GetPointCount() == 0, true);
-
+        ASSERT_EQ(status == SUCCESS || node->GetPointCount() == 0, true);        
+                
         if (textureIds.size() > 0)
             {
             bvector<SmCachedDisplayTexture*> cachedTextures; 
@@ -393,6 +396,11 @@ void DisplayQueryTester::GetActiveClips(bset<uint64_t>& clips)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                 11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool StopQueryCallback()
+    {
+    return false;
+    }
+
 void DisplayQueryTester::DoQuery()
     {
 
@@ -407,7 +415,9 @@ void DisplayQueryTester::DoQuery()
 
     DPoint3d dummyViewBox[8]; 
     viewDependentQueryParams->SetViewBox(dummyViewBox);
-    viewDependentQueryParams->SetProgressiveDisplay(true);
+    viewDependentQueryParams->SetProgressiveDisplay(true);    
+    viewDependentQueryParams->SetStopQueryCallback(&StopQueryCallback);
+
 
     int queryId = 0;
     bvector<bool> clips;
@@ -450,7 +460,7 @@ void DisplayQueryTester::DoQuery()
     
     status = GetProgressiveQueryEngine()->GetOverviewNodes(overviewMeshNodes, queryId);
     EXPECT_EQ(status == SUCCESS, true);
-                            
+                                
     int nbReturnedNodes = (int)meshNodes.size();
 
     VerifyDisplayNodeFunctions(meshNodes);
@@ -463,6 +473,8 @@ void DisplayQueryTester::DoQuery()
     status = GetProgressiveQueryEngine()->StopQuery(queryId);
     EXPECT_EQ(status == SUCCESS, true);
 
+    GetProgressiveQueryEngine()->ClearOverviews(m_smPtr.get());
+        
     status = GetProgressiveQueryEngine()->GetRequiredNodes(meshNodes, queryId);
     EXPECT_EQ(status != SUCCESS, true);
 

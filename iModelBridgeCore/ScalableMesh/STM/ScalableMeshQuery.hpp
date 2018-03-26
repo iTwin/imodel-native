@@ -2950,16 +2950,6 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsHeaderLoaded() const
     return m_node->IsLoaded();
     }
 
-template <class POINT> bool ScalableMeshNode<POINT>::_IsMeshLoaded() const
-    {   
-    LOAD_NODE
-
-    //NEEDS_WORK_SM : Only good for points, not whole mesh.
-    assert(!"Only good for points, not whole mesh.");
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr(false));
-    return pointsPtr.IsValid();    
-    }
-
 template <class POINT> void ScalableMeshNode<POINT>::_LoadHeader() const
     {    
     return m_node->Load();    
@@ -3476,14 +3466,6 @@ template <class POINT> ScalableMeshNodeEdit<POINT>::ScalableMeshNodeEdit(HFCPtr<
 template <class POINT> bool ScalableMeshNodeEdit<POINT>::_IsHeaderLoaded() const
     {    
     return m_node->IsLoaded();
-    }
-
-template <class POINT> bool ScalableMeshNodeEdit<POINT>::_IsMeshLoaded() const
-    {        
-    //NEEDS_WORK_SM : Only good for points, not whole mesh.
-    assert(!"Only good for points, not whole mesh.");
-    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(m_node->GetPointsPtr(false));
-    return pointsPtr.IsValid();        
     }
 
 template <class POINT> void ScalableMeshNodeEdit<POINT>::_LoadHeader() const

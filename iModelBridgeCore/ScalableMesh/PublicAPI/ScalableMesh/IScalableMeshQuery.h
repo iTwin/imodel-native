@@ -514,9 +514,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         virtual size_t  _GetPointCount() const = 0;                
 
         virtual bool _IsHeaderLoaded() const = 0;
-
-        virtual bool _IsMeshLoaded() const = 0;        
-
+        
         virtual void _LoadHeader() const = 0;
 
         virtual bool _HasClip(uint64_t id) const = 0;
@@ -602,9 +600,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT size_t GetPointCount() const;        
 
         BENTLEY_SM_EXPORT bool IsHeaderLoaded() const;
-
-        BENTLEY_SM_EXPORT bool IsMeshLoaded() const;
-
+        
         BENTLEY_SM_EXPORT void LoadNodeHeader() const;
 
         BENTLEY_SM_EXPORT bool HasClip(uint64_t id) const;
