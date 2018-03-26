@@ -1403,10 +1403,11 @@ bvector<DPoint3d> AttachmentTileGeometry::GetBox() const
     ////    range.IntersectionOf(range, clipRange);
 
     bvector<DPoint3d> box;
+    range.low.z = range.high.z = 0.0; // ###TODO: display priority...
+    box.push_back(DPoint3d::FromXYZ(range.high.x, range.low.y, range.low.z));
     box.push_back(range.low);
     box.push_back(DPoint3d::FromXYZ(range.low.x, range.high.y, range.low.z));
     box.push_back(range.high);
-    box.push_back(DPoint3d::FromXYZ(range.high.x, range.low.y, range.low.z));
 #if defined(VIEW_ATTACHMENTS_AS_STROKES)
     box.push_back(range.low);
 #endif

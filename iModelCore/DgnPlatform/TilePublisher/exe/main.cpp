@@ -507,7 +507,7 @@ public:
 
     bool _IsFeatureEnabled(Utf8CP featureName) override
         {
-        return 0 == strcmp(featureName, "TilePublisher.PublishViewAttachments");
+        return false; // WIP... 0 == strcmp(featureName, "TilePublisher.PublishViewAttachments");
         }
 
     static void OnAssert(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType type)
