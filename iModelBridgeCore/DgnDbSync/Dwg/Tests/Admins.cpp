@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Tests/Admins.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Tests.h"
@@ -13,9 +13,54 @@
 //=======================================================================================
 struct ImporterViewManager : ViewManager
 {
+private:
+    Display::SystemContext* m_systemContext = nullptr;
+
 protected:
-    virtual Display::SystemContext* _GetSystemContext() override {return nullptr;}
+    virtual Display::SystemContext* _GetSystemContext() override
+        {
+#if defined(_WIN32)
+        if (nullptr == m_systemContext)
+            {
+            static ATOM classAtom = 0;
+            if (0 == classAtom)
+                {
+                // This code is needed when running in non-graphics mode (i.e. Print Organizer worker process).
+                WNDCLASS wndClass;
+                memset(&wndClass, 0, sizeof (wndClass));
+                wndClass.lpfnWndProc   = DefWindowProc;
+                wndClass.lpszClassName = L"DgnViewNonInteractiveWindow";
+
+                classAtom = RegisterClass(&wndClass);
+                if (0 == classAtom)
+                    {
+                    BeAssert(false);
+                    return nullptr;
+                    }
+                }
+
+            m_systemContext = (Display::SystemContext*) ::CreateWindowEx (
+                                WS_EX_NOPARENTNOTIFY,
+                                MAKEINTATOM(classAtom),
+                                L"DgnViewNonInteractiveWindow",
+                                0,
+                                CW_USEDEFAULT, 
+                                CW_USEDEFAULT, 
+                                CW_USEDEFAULT, 
+                                CW_USEDEFAULT, 
+                                nullptr,
+                                nullptr,
+                                nullptr,
+                                0
+                                );
+            }
+#endif
+        BeAssert (nullptr != m_systemContext && "Thumbnail generation requires Display::SystemContext!");
+        return m_systemContext;
+        }
     virtual bool _DoesHostHaveFocus() override {return true;}
+    // In the common case, we're running on a server, probably inside a VM...no guaranteed access to a usable GPU.
+    bool _ForceSoftwareRendering() override {return true;}
 };
 
 /*---------------------------------------------------------------------------------**//**

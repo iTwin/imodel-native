@@ -631,6 +631,8 @@ BentleyStatus SchemaFlattener::FlattenSchemas(ECN::ECSchemaP ecSchema)
                         addDroppedDerivedClass(flatBase, targetClass);
                         }
                     }
+                if (targetClass->GetBaseClasses().size() == 0)
+                    FindBisBaseClass(targetClass, sourceClass);
                 }
             else if (totalBaseClasses > 1)
                 {
