@@ -314,13 +314,14 @@ private:
     BeSQLite::DbResult SaveChanges(BeSQLite::IByteArrayCR changeset, Utf8CP operation, bool isSchemaChange);
     BeSQLite::DbResult SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation);
     BeSQLite::DbResult SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation);
+    BeSQLite::DbResult SaveRebase(BeSQLite::Rebase const& rebase, Utf8StringCR revisionId);
 
     Byte* ReadChanges(uint32_t& sizeRead, TxnId rowId);
     void ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet&, TxnId rowid);
     void ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* == nullptr);
     BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
     void OnBeginApplyChanges();
     void OnEndApplyChanges();

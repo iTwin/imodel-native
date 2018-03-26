@@ -137,6 +137,28 @@ DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, boo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::SaveRebase(Rebase const& rebase, Utf8StringCR revisionId)
+    {
+    BeAssert(0 != rebase.GetSize());
+
+    if (!m_dgndb->TableExists(DGN_TABLE_Rebase))
+        {
+        m_dgndb->CreateTable(DGN_TABLE_Rebase, "RevId TEXT PRIMARY KEY, Rebase BLOB");
+        }
+
+    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Rebase "(RevId, Rebase) VALUES(?,?)");
+
+    stmt->BindText(1, revisionId, Statement::MakeCopy::No()); 
+    stmt->BindBlob(2, rebase.GetData(), rebase.Size(), Statement::MakeCopy::No);
+
+    auto rc = stmt->Step();
+    BeAssert(BE_SQLITE_DONE == rc);
+    return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Read the description of a Txn
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -743,7 +765,8 @@ RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision
 +---------------+---------------+---------------+---------------+---------------+------*/
 RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream, bool containsSchemaChanges)
     {
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges);
+    Rebase rebase();
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, &rebase);
     if (!EXPECTED_CONDITION(result == BE_SQLITE_OK && "Could not apply/merge data changes in revision"))
         {
         BeAssert(false);
@@ -795,11 +818,21 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
                     {
                     BeAssert(false);
                     status = RevisionStatus::SQLiteError;
-                    }
+                    }                
                 }
             }
 
         OnEndValidate();
+        }
+
+    if ((RevisionStatus::Success != status) && (0 != rebase.GetSize()))
+        {
+        result = SaveRebase(*rebase, revision.GetId());
+        if (BE_SQLITE_DONE != result)
+            {
+            BeAssert(false);
+            status = RevisionStatus::SQLiteError;
+            }
         }
 
     if (status == RevisionStatus::Success)
@@ -808,7 +841,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
 
         if (status == RevisionStatus::Success)
             {
-            result = m_dgndb.SaveChanges(); 
+            result = m_dgndb.SaveChanges();
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
             // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
@@ -1008,7 +1041,7 @@ void TxnManager::AddChanges(Changes const& changes)
 * and after it is applied.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool containsSchemaChanges)
+DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase)
     {
     BeAssert(action != TxnAction::None);
     m_action = action;
@@ -1018,9 +1051,23 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     if (!IsInAbandon())
         OnBeginApplyChanges();
     
+#ifndef NDEBUG
+    bool expectsRebase = (nullptr != rebase);
+    if (!expectsRebase)
+        rebase = new Rebase();
+#endif
+
     bool wasTracking = EnableTracking(false);
-    DbResult result = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
+    DbResult result = changeset.ApplyChanges(m_dgndb, rebase); // this actually updates the database with the changes
     EnableTracking(wasTracking);
+
+#ifndef NDEBUG
+    if (!expectsRebase)
+        {
+        BeAssert(rebase->GetSize() == 0);
+        delete rebase;
+        }
+#endif
 
     if (containsSchemaChanges)
         {
