@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnSqlFuncs.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -11,21 +11,21 @@ BEGIN_UNNAMED_NAMESPACE
 
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
-/** @addtogroup DgnDbSqlFunctions DgnDb SQL Functions
+/** @addtogroup iModelSqlFunctions iModel SQL Functions
  *  @{
 
-DgnDb defines types and built-in functions that you can use in SQL statements.
+iModel define types and built-in functions that you can use in SQL statements.
 
-@see DGN_placement, DGN_angles, DGN_bbox, DGN_point
+@see iModel_placement, iModel_angles, iModel_bbox, iModel_point
 */
 
 //  The following are not real C++ structs. They are here to document the objects that our SQL extensions work with.
 //  Likewise, all of the function declarations within #ifdef DOCUMENTATION_GENERATOR/#endif are not real C functions.
 //  They are here to represent the SQL extension functions, so that Doyxgen will generate doc for them.
 
-//! A point in the DgnDb's Cartesian coordinate system. All coordinates are in meters. If the point represents a location in a 2D model, then the z-coordinate will be zero.
-//! @see DGN_point_value, DGN_point_distance, DGN_point_min_distance_to_bbox
-struct DGN_point
+//! A point in the iModel's Cartesian coordinate system. All coordinates are in meters. If the point represents a location in a 2D model, then the z-coordinate will be zero.
+//! @see iModel_point_value, iModel_point_distance, iModel_point_min_distance_to_bbox
+struct iModel_point
 {
     double x;   //!< The x-coordinate
     double y;   //!< The y-coordinate
@@ -33,8 +33,8 @@ struct DGN_point
 };
 
 //! An object that contains Yaw, Pitch, and Roll angles in degrees. If this object represents a rotation in a 2D model, then the pitch and roll members will be zero.
-//! @see DGN_angles_value, DGN_angles_maxdiff
-struct DGN_angles
+//! @see iModel_angles_value, iModel_angles_maxdiff
+struct iModel_angles
 {
     double yaw;  //!< The Yaw angle in degrees
     double pitch;//!< The Yaw angle in degrees
@@ -45,8 +45,8 @@ struct DGN_angles
 //! If the box represents a range in a 3-D model, then the box will have 8 corners and will have width(X), depth(Y), and height(Z). 
 //! If the box represents a range in a 2-D model, then the box will still have 8 corners but the z-coordinates will be all be zero, and the height will be zero.
 //! All coordinates are in meters.
-//! @see DGN_bbox_value, DGN_bbox_width, DGN_bbox_height, DGN_bbox_depth, DGN_bbox_volume, DGN_bbox_areaxy, DGN_bbox_overlaps, DGN_bbox_contains, DGN_bbox_union, DGN_point_min_distance_to_bbox
-struct DGN_bbox
+//! @see iModel_bbox_value, iModel_bbox_width, iModel_bbox_height, iModel_bbox_depth, iModel_bbox_volume, iModel_bbox_areaxy, iModel_bbox_overlaps, iModel_bbox_contains, iModel_bbox_union, iModel_point_min_distance_to_bbox
+struct iModel_bbox
 {
     double XLow;  //!< The low X coordinate of the bounding box
     double YLow;  //!< The low Y coordinate of the bounding box
@@ -57,13 +57,13 @@ struct DGN_bbox
 };
 
 //! An object that contains an origin and rotation angles, plus a bounding box.
-//! You can obtain an element's placement by selecting the placement column of the dgn_ElementGeom table.
-//! @see DGN_placement_origin, DGN_placement_angles, DGN_placement_eabb, DGN_placement_aabb
-struct DGN_placement
+//! You can obtain an element's placement by selecting the placement column of the ElementGeom table.
+//! @see iModel_placement_origin, iModel_placement_angles, iModel_placement_eabb, iModel_placement_aabb
+struct iModel_placement
 {
-    DGN_point origin;   //!< Origin
-    DGN_angles angles;  //!< Angles
-    DGN_bbox bbox;      //!< Element-aligned bounding box
+    iModel_point origin;   //!< Origin
+    iModel_angles angles;  //!< Angles
+    iModel_bbox bbox;      //!< Element-aligned bounding box
 };
 // __PUBLISH_SECTION_END__
 #endif
@@ -84,9 +84,9 @@ protected:
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DGN_point : BlobFunction
+struct iModel_point : BlobFunction
 {
-    DGN_point() : BlobFunction("DGN_point", 3) {}
+    iModel_point(Utf8CP name) : BlobFunction(name, 3) {}
 
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -98,9 +98,9 @@ struct DGN_point : BlobFunction
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DGN_placement : BlobFunction
+struct iModel_placement : BlobFunction
 {
-    DGN_placement() : BlobFunction("DGN_placement", 3) {}
+    iModel_placement(Utf8CP name) : BlobFunction(name, 3) {}
 
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -128,15 +128,15 @@ struct PlacementFunc : ScalarFunction
 // __PUBLISH_SECTION_START__
 /**
     Get the axis-aligned bounding box from a placement
-    @param placement   The DGN_placement object to query
+    @param placement   The iModel_placement object to query
     @return the bounding box
     <p><b>Example (C++)</b>
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_bbox_union.sampleCode
 */
-DGN_bbox DGN_placement_aabb(DGN_placement placement);
+iModel_bbox iModel_placement_aabb(iModel_placement placement);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_placement_aabb : PlacementFunc
+struct iModel_placement_aabb : PlacementFunc
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -160,7 +160,7 @@ struct DGN_placement_aabb : PlacementFunc
 
         ctx.SetResultBlob(&bb, sizeof(bb));
         }
-    DGN_placement_aabb() : PlacementFunc("DGN_placement_aabb", DbValueType::BlobVal) {}
+    iModel_placement_aabb(Utf8CP name) : PlacementFunc(name, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
@@ -171,15 +171,15 @@ struct DGN_placement_aabb : PlacementFunc
 // __PUBLISH_SECTION_START__
 /**
     Get the element-aligned bounding box from a placement
-    @param placement   The DGN_placement object to query
+    @param placement   The iModel_placement object to query
     @return the bounding box
     <p><b>Example (C++)</b>
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_bbox_areaxy_sum.sampleCode
 */
-DGN_bbox DGN_placement_eabb(DGN_placement placement);
+iModel_bbox iModel_placement_eabb(iModel_placement placement);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_placement_eabb : PlacementFunc
+struct iModel_placement_eabb : PlacementFunc
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -203,24 +203,24 @@ struct DGN_placement_eabb : PlacementFunc
 
         ctx.SetResultBlob(&bb, sizeof(bb));
         }
-    DGN_placement_eabb() : PlacementFunc("DGN_placement_eabb", DbValueType::BlobVal) {}
+    iModel_placement_eabb(Utf8CP name) : PlacementFunc(name, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
-// Get the DPoint3d Origin fron a placement
+// Get the DPoint3d Origin from a placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
     Get the placement origin
-    @param placement   The DGN_placement object to query
+    @param placement   The iModel_placement object to query
     @return the origin in world coordinates
 */
-DGN_point DGN_placement_origin(DGN_placement placement);
+iModel_point iModel_placement_origin(iModel_placement placement);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_placement_origin : PlacementFunc
+struct iModel_placement_origin : PlacementFunc
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -246,26 +246,26 @@ struct DGN_placement_origin : PlacementFunc
 
         ctx.SetResultBlob(&org, sizeof(org));
         }
-    DGN_placement_origin() : PlacementFunc("DGN_placement_origin", DbValueType::BlobVal) {}
+    iModel_placement_origin(Utf8CP name) : PlacementFunc(name, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
-// Get the YawPitchRollAngles fron a placement
+// Get the YawPitchRollAngles from a placement
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
     Get the placement angles
-    @param placement   The DGN_placement object to query
+    @param placement   The iModel_placement object to query
     @return the placement angles
     <p><b>Example (C++)</b>
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_angles.sampleCode
 */
-DGN_angles DGN_placement_angles(DGN_placement placement);
+iModel_angles iModel_placement_angles(iModel_placement placement);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_placement_angles : PlacementFunc
+struct iModel_placement_angles : PlacementFunc
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -292,7 +292,7 @@ struct DGN_placement_angles : PlacementFunc
         ctx.SetResultBlob(&angles, sizeof(angles));
         }
 
-    DGN_placement_angles() : PlacementFunc("DGN_placement_angles", DbValueType::BlobVal) {}
+    iModel_placement_angles(Utf8CP name) : PlacementFunc(name, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
@@ -302,25 +302,25 @@ struct DGN_placement_angles : PlacementFunc
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Construct a DGN_angles from 3 values
+    Construct a iModel_angles from 3 values
     @param yaw The Yaw angle in degrees
     @param pitch The Pitch angle in degrees
     @param roll The Roll angle in degrees
-    @return a DGN_angles object
+    @return a iModel_angles object
     <p><b>Example (C++)</b>
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_angles.sampleCode
 */
-DGN_angles DGN_angles(double yaw, double pitch, double roll);
+iModel_angles iModel_angles(double yaw, double pitch, double roll);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_angles : ScalarFunction
+struct iModel_angles : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
         YawPitchRollAngles angles = YawPitchRollAngles::FromDegrees(args[0].GetValueDouble(),args[1].GetValueDouble(),args[2].GetValueDouble());
         ctx.SetResultBlob(&angles, sizeof(angles));
         }
-    DGN_angles() : ScalarFunction("DGN_angles", 3, DbValueType::BlobVal) {}
+    iModel_angles(Utf8CP name) : ScalarFunction(name, 3, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
@@ -330,17 +330,17 @@ struct DGN_angles : ScalarFunction
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Get a member of a DGN_angles object
-    @param angles   The DGN_angles object to query
+    Get a member of a iModel_angles object
+    @param angles   The iModel_angles object to query
     @param member   The index of the member to get: Yaw=0, Pitch=1, Roll=2 
-    @return the selected angle (in degrees); or an error if member is out of range or if \a angles is not a DGN_angles object
+    @return the selected angle (in degrees); or an error if member is out of range or if \a angles is not a iModel_angles object
     <p><b>Example (C++)</b>
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_angles_value.sampleCode
 */
-double DGN_angles_value(DGN_angles angles, int member);
+double iModel_angles_value(iModel_angles angles, int member);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_angles_value : ScalarFunction
+struct iModel_angles_value : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -357,7 +357,7 @@ struct DGN_angles_value : ScalarFunction
         double const* angles= (double const*)(args[0].GetValueBlob());
         ctx.SetResultDouble(angles[member]);
         }
-    DGN_angles_value() : ScalarFunction("DGN_angles_value", 2, DbValueType::FloatVal) {}
+    iModel_angles_value(Utf8CP name) : ScalarFunction(name, 2, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -368,16 +368,16 @@ struct DGN_angles_value : ScalarFunction
 // __PUBLISH_SECTION_START__
 /**
     Return the maximum absolute difference among the angles in degrees.
-    @param angle1 a DGN_angles object
-    @param angle2 a DGN_angles object
+    @param angle1 a iModel_angles object
+    @param angle2 a iModel_angles object
     @return the maximum absolute difference among the angles in degrees.
     <p><b>Example (C++)</b>
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_angles_maxdiff.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_angles_maxdiff.sampleCode
 */
-double DGN_angles_maxdiff(DGN_angles angle1, DGN_angles angle2);
+double iModel_angles_maxdiff(iModel_angles angle1, iModel_angles angle2);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_angles_maxdiff : ScalarFunction
+struct iModel_angles_maxdiff : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -396,7 +396,7 @@ struct DGN_angles_maxdiff : ScalarFunction
 
         ctx.SetResultDouble(angle1.MaxDiffDegrees(angle2));
         }
-    DGN_angles_maxdiff() : ScalarFunction("DGN_angles_maxdiff", 2, DbValueType::FloatVal) {}
+    iModel_angles_maxdiff(Utf8CP name) : ScalarFunction(name, 2, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -414,12 +414,12 @@ struct DGN_angles_maxdiff : ScalarFunction
     @param XHigh    The high X coordinate of the bounding box
     @param YHigh    The high Y coordinate of the bounding box
     @param ZHigh    The high Z coordinate of the bounding box
-    @return a DGN_bbox object
+    @return a iModel_bbox object
 */
-DGN_bbox DGN_bbox(double XLow, double YLow, double Zlow, double XHigh, double YHigh, double ZHigh);
+iModel_bbox iModel_bbox(double XLow, double YLow, double Zlow, double XHigh, double YHigh, double ZHigh);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox : ScalarFunction
+struct iModel_bbox : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -433,7 +433,7 @@ struct DGN_bbox : ScalarFunction
 
         ctx.SetResultBlob(&box, sizeof(box));
         }
-    DGN_bbox() : ScalarFunction("DGN_bbox", 6, DbValueType::BlobVal) {}
+    iModel_bbox(Utf8CP name) : ScalarFunction(name, 6, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
@@ -445,12 +445,12 @@ struct DGN_bbox : ScalarFunction
     Compute the "width" of a bounding box
     @param bb       a bounding box
     @return the difference between the high and low X coordinates of the box, in meters.
-    @see DGN_bbox_areaxy
+    @see iModel_bbox_areaxy
 */
-double DGN_bbox_width(DGN_bbox bb);
+double iModel_bbox_width(iModel_bbox bb);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox_width : ScalarFunction
+struct iModel_bbox_width : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -459,7 +459,7 @@ struct DGN_bbox_width : ScalarFunction
 
         ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetWidth());
         }
-    DGN_bbox_width() : ScalarFunction("DGN_bbox_width", 1, DbValueType::FloatVal) {}
+    iModel_bbox_width(Utf8CP name) : ScalarFunction(name, 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -472,10 +472,10 @@ struct DGN_bbox_width : ScalarFunction
     @param bb       a bounding box
     @return the difference between the high and low Z coordinates of the box, in meters.
 */
-double DGN_bbox_height(DGN_bbox bb);
+double iModel_bbox_height(iModel_bbox bb);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox_height : ScalarFunction
+struct iModel_bbox_height : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -484,7 +484,7 @@ struct DGN_bbox_height : ScalarFunction
 
         ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetHeight());
         }
-    DGN_bbox_height() : ScalarFunction("DGN_bbox_height", 1, DbValueType::FloatVal) {}
+    iModel_bbox_height(Utf8CP name) : ScalarFunction(name, 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -496,12 +496,12 @@ struct DGN_bbox_height : ScalarFunction
     Compute the "depth" of a bounding box
     @param bb       a bounding box
     @return the difference between the high and low Y coordinates of the box, in meters.
-    @see DGN_bbox_areaxy
+    @see iModel_bbox_areaxy
 */
-double DGN_bbox_depth(DGN_bbox bb);
+double iModel_bbox_depth(iModel_bbox bb);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox_depth : ScalarFunction
+struct iModel_bbox_depth : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -510,7 +510,7 @@ struct DGN_bbox_depth : ScalarFunction
 
         ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->GetDepth());
         }
-    DGN_bbox_depth() : ScalarFunction("DGN_bbox_depth", 1, DbValueType::FloatVal) {}
+    iModel_bbox_depth(Utf8CP name) : ScalarFunction(name, 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -522,12 +522,12 @@ struct DGN_bbox_depth : ScalarFunction
     Compute the volume of the bounding box
     @param bb       a bounding box
     @return Its volume in cubic meters
-    @see DGN_bbox_areaxy
+    @see iModel_bbox_areaxy
 */
-double DGN_bbox_volume(DGN_bbox bb);
+double iModel_bbox_volume(iModel_bbox bb);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox_volume : ScalarFunction
+struct iModel_bbox_volume : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -536,7 +536,7 @@ struct DGN_bbox_volume : ScalarFunction
 
         ctx.SetResultDouble(((ElementAlignedBox3d*)(args[0].GetValueBlob()))->Volume());
         }
-    DGN_bbox_volume() : ScalarFunction("DGN_bbox_volume", 1, DbValueType::FloatVal) {}
+    iModel_bbox_volume(Utf8CP name) : ScalarFunction(name, 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -547,19 +547,19 @@ struct DGN_bbox_volume : ScalarFunction
 /**
     Compute the depth times the width of a bounding box
     @param bb       a bounding box
-    @return the depth of \a bb times its width; or, an error if the input object is not a DGN_bbox
-    @see DGN_bbox_volume
-    @see DGN_bbox_depth, DGN_bbox_width
+    @return the depth of \a bb times its width; or, an error if the input object is not a iModel_bbox
+    @see iModel_bbox_volume
+    @see iModel_bbox_depth, iModel_bbox_width
     <p><b>Example (C++)</b>
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_bbox_areaxy_sum.sampleCode
     <p>
-    <p>Here is an example of an \em incorrect call to DGN_bbox_areaxy
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_error.sampleCode
+    <p>Here is an example of an \em incorrect call to iModel_bbox_areaxy
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_bbox_areaxy_error.sampleCode
 */
-double DGN_bbox_areaxy(DGN_bbox bb);
+double iModel_bbox_areaxy(iModel_bbox bb);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox_areaxy : ScalarFunction
+struct iModel_bbox_areaxy : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -571,7 +571,7 @@ struct DGN_bbox_areaxy : ScalarFunction
         ctx.SetResultDouble(box.GetWidth() * box.GetDepth());
         }
 
-    DGN_bbox_areaxy() : ScalarFunction("DGN_bbox_areaxy", 1, DbValueType::FloatVal) {}
+    iModel_bbox_areaxy(Utf8CP name) : ScalarFunction(name, 1, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -584,12 +584,12 @@ struct DGN_bbox_areaxy : ScalarFunction
     @param bb1       The first bounding box
     @param bb2       The second bounding box
     @return 1 if the boxes overlap or 0 if not.
-    @see DGN_bbox_contains
+    @see iModel_bbox_contains
 */
-int DGN_bbox_overlaps(DGN_bbox bb1, DGN_bbox bb2);
+int iModel_bbox_overlaps(iModel_bbox bb1, iModel_bbox bb2);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox_overlaps : ScalarFunction
+struct iModel_bbox_overlaps : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -601,7 +601,7 @@ struct DGN_bbox_overlaps : ScalarFunction
         ElementAlignedBox3d& box2 = *((ElementAlignedBox3d*)(args[1].GetValueBlob()));
         ctx.SetResultInt(box1.IntersectsWith(box2));
         }
-    DGN_bbox_overlaps() : ScalarFunction("DGN_bbox_overlaps", 2, DbValueType::IntegerVal) {}
+    iModel_bbox_overlaps(Utf8CP name) : ScalarFunction(name, 2, DbValueType::IntegerVal) {}
 };
 
 //=======================================================================================
@@ -614,12 +614,12 @@ struct DGN_bbox_overlaps : ScalarFunction
     @param bb_outer  The containing bounding box
     @param bb_inner  The contained bounding box
     @return 1 if bb_outer contains bb_inner or 0 if not.
-    @see DGN_bbox_overlaps
+    @see iModel_bbox_overlaps
 */
-int DGN_bbox_contains(DGN_bbox bb_outer, DGN_bbox bb_inner);
+int iModel_bbox_contains(iModel_bbox bb_outer, iModel_bbox bb_inner);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox_contains : ScalarFunction
+struct iModel_bbox_contains : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -631,7 +631,7 @@ struct DGN_bbox_contains : ScalarFunction
         ElementAlignedBox3d& box2 = *((ElementAlignedBox3d*)(args[1].GetValueBlob()));
         ctx.SetResultInt(box2.IsContained(box1));
         }
-    DGN_bbox_contains() : ScalarFunction("DGN_bbox_contains", 2, DbValueType::IntegerVal) {}
+    iModel_bbox_contains(Utf8CP name) : ScalarFunction(name, 2, DbValueType::IntegerVal) {}
 };
 
 //=======================================================================================
@@ -641,15 +641,15 @@ struct DGN_bbox_contains : ScalarFunction
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Get a member of a DGN_bbox object
+    Get a member of a iModel_bbox object
     @param bb       a bounding box
     @param member   The index of the member to get: XLow=0, YLow=1, Zlow=2, XHigh=3, YHigh=4, ZHigh=5
-    @return the requested member of the bounding box; or an error if member is out of range or bb is not a DGN_bbox object.
+    @return the requested member of the bounding box; or an error if member is out of range or bb is not a iModel_bbox object.
 */
-double DGN_bbox_value(DGN_bbox bb, int member);
+double iModel_bbox_value(iModel_bbox bb, int member);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox_value : ScalarFunction
+struct iModel_bbox_value : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -660,7 +660,7 @@ struct DGN_bbox_value : ScalarFunction
         double const* box = (double const*)(args[0].GetValueBlob());
         ctx.SetResultDouble(box[member]);
         }
-    DGN_bbox_value() : ScalarFunction("DGN_bbox_value", 2, DbValueType::FloatVal) {}
+    iModel_bbox_value(Utf8CP name) : ScalarFunction(name, 2, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -672,12 +672,12 @@ struct DGN_bbox_value : ScalarFunction
     \em Aggregate function that computes the union of a series of bounding boxes
     @return a bounding box that contains the aggregated range.
     <p><b>Example (C++)</b>
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_bbox_union.sampleCode
 */
-DGN_bbox DGN_bbox_union(DGN_bbox);
+iModel_bbox iModel_bbox_union(iModel_bbox);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_bbox_union : AggregateFunction
+struct iModel_bbox_union : AggregateFunction
 {
     struct Result {bool m_valid; DRange3d m_range;};
 
@@ -711,7 +711,7 @@ struct DGN_bbox_union : AggregateFunction
             ctx.SetResultNull();
         }
 
-    DGN_bbox_union() : AggregateFunction("DGN_bbox_union", 1, DbValueType::BlobVal) {}
+    iModel_bbox_union(Utf8CP name) : AggregateFunction(name, 1, DbValueType::BlobVal) {}
 };
 
 //=======================================================================================
@@ -721,15 +721,15 @@ struct DGN_bbox_union : AggregateFunction
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Compute the distance between two DGN_Points, in meters.
+    Compute the distance between two iModel_Points, in meters.
     @param point1   A point 
     @param point2   A second point 
-    @return the distance between the two points; or an error if either input is not a DGN_point object
+    @return the distance between the two points; or an error if either input is not a iModel_point object
 */
-double DGN_point_distance(DGN_point point1, DGN_point point2);
+double iModel_point_distance(iModel_point point1, iModel_point point2);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_point_distance : ScalarFunction
+struct iModel_point_distance : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -741,7 +741,7 @@ struct DGN_point_distance : ScalarFunction
         DPoint3d& pt2 = *((DPoint3d*)(args[1].GetValueBlob()));
         ctx.SetResultDouble(pt1.Distance(pt2));
         }
-    DGN_point_distance() : ScalarFunction("DGN_point_distance", 2, DbValueType::FloatVal) {}
+    iModel_point_distance(Utf8CP name) : ScalarFunction(name, 2, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -756,10 +756,10 @@ struct DGN_point_distance : ScalarFunction
     @param bbox     A bounding box
     @return the distance from \a point to the closest point on \a bbox; or an error if either input is of the wrong type.
 */
-double DGN_point_min_distance_to_bbox(DGN_point point, DGN_bbox bbox);
+double iModel_point_min_distance_to_bbox(iModel_point point, iModel_bbox bbox);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_point_min_distance_to_bbox : ScalarFunction
+struct iModel_point_min_distance_to_bbox : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -771,7 +771,7 @@ struct DGN_point_min_distance_to_bbox : ScalarFunction
         DRange3d& bbox = *((DRange3d*)(args[1].GetValueBlob()));
         ctx.SetResultDouble(bbox.DistanceOutside(pt));
         }
-    DGN_point_min_distance_to_bbox() : ScalarFunction("DGN_point_min_distance_to_bbox", 2, DbValueType::FloatVal) {}
+    iModel_point_min_distance_to_bbox(Utf8CP name) : ScalarFunction(name, 2, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -781,15 +781,15 @@ struct DGN_point_min_distance_to_bbox : ScalarFunction
 #ifdef DOCUMENTATION_GENERATOR
 // __PUBLISH_SECTION_START__
 /**
-    Get a member of a DGN_Point object.
+    Get a member of a iModel_Point object.
     @param point    The point to query
     @param member   The index of the coordinate to get: X=0, Y=1, Z=2
     @return a coordindate of the point in meters; or an error if \a member is out of range or \a point is not a point object
 */
-double DGN_point_value(DGN_point point, int member);
+double iModel_point_value(iModel_point point, int member);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_point_value : ScalarFunction
+struct iModel_point_value : ScalarFunction
 {
     void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override
         {
@@ -800,7 +800,7 @@ struct DGN_point_value : ScalarFunction
         double const* pt= (double const*)(args[0].GetValueBlob());
         ctx.SetResultDouble(pt[member]);
         }
-    DGN_point_value() : ScalarFunction("DGN_point_value", 2, DbValueType::FloatVal) {}
+    iModel_point_value(Utf8CP name) : ScalarFunction(name, 2, DbValueType::FloatVal) {}
 };
 
 //=======================================================================================
@@ -811,13 +811,13 @@ struct DGN_point_value : ScalarFunction
 /**
     An rtree MATCH function that only accepts objects from the spatial index whose range overlap an aabb (axis-aligned bounding box).
     <p><b>Example (C++)</b>
-    <p>Here is an example of DGN_spatial_overlap_aabb that searches for elements using both an axis-aligned bounding box and additonal WHERE criteria.
-    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_DGN_spatial_overlap_aabb.sampleCode
+    <p>Here is an example of iModel_spatial_overlap_aabb that searches for elements using both an axis-aligned bounding box and additional WHERE criteria.
+    __PUBLISH_INSERT_FILE__ DgnSchemaDomain_SqlFuncs_iModel_spatial_overlap_aabb.sampleCode
 */
-void DGN_spatial_overlap_aabb(DGN_aabb);
+void iModel_spatial_overlap_aabb(iModel_aabb);
 // __PUBLISH_SECTION_END__
 #endif
-struct DGN_spatial_overlap_aabb : RTreeMatchFunction
+struct iModel_spatial_overlap_aabb : RTreeMatchFunction
 {
     int _TestRange(QueryInfo const& info) override
         {
@@ -848,60 +848,61 @@ struct DGN_spatial_overlap_aabb : RTreeMatchFunction
         return BE_SQLITE_OK;
         }
 
-    DGN_spatial_overlap_aabb() : RTreeMatchFunction("DGN_spatial_overlap_aabb", 1) {}
+    iModel_spatial_overlap_aabb(Utf8CP name) : RTreeMatchFunction(name, 1) {}
 };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   01/16
 //=======================================================================================
-struct DGN_rtree : RTreeMatchFunction
+struct iModel_rtree : RTreeMatchFunction
 {
     int _TestRange(QueryInfo const& info) override
         {
         auto matcher = (SpatialViewController::SpatialQuery*) info.m_args[0].GetValueInt64();
         return matcher->_TestRTree(info);
         }
-    DGN_rtree() : RTreeMatchFunction("DGN_rtree", 1) {}
+    iModel_rtree(Utf8CP name) : RTreeMatchFunction(name, 1) {}
 };
 
 END_UNNAMED_NAMESPACE
 
+#define ADD_FUNC(name) new iModel_ ## name("DGN_"#name), new iModel_ ## name("iModel_"#name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BisCoreDomain::_OnDgnDbOpened(DgnDbR db) const
     {
     static DbFunction* s_funcs[] = 
-                          {
-                          new DGN_angles_value,
-                          new DGN_angles,
-                          new DGN_angles_maxdiff,
-                          new DGN_bbox_areaxy,
-                          new DGN_bbox_depth,
-                          new DGN_bbox_height,
-                          new DGN_bbox_contains,
-                          new DGN_bbox_overlaps,
-                          new DGN_bbox_union,
-                          new DGN_bbox_value,
-                          new DGN_bbox_volume,
-                          new DGN_bbox_width,
-                          new DGN_bbox,
-                          new DGN_placement_aabb,
-                          new DGN_placement_angles,
-                          new DGN_placement_eabb,
-                          new DGN_placement_origin,
-                          new DGN_point_distance,
-                          new DGN_point_min_distance_to_bbox,
-                          new DGN_point_value,
-                          new DGN_point,
-                          new DGN_placement
-                          };
+        {
+        ADD_FUNC(angles_value),
+        ADD_FUNC(angles),
+        ADD_FUNC(angles_maxdiff),
+        ADD_FUNC(bbox_areaxy),
+        ADD_FUNC(bbox_depth),
+        ADD_FUNC(bbox_height),
+        ADD_FUNC(bbox_contains),
+        ADD_FUNC(bbox_overlaps),
+        ADD_FUNC(bbox_union),
+        ADD_FUNC(bbox_value),
+        ADD_FUNC(bbox_volume),
+        ADD_FUNC(bbox_width),
+        ADD_FUNC(bbox),
+        ADD_FUNC(placement_aabb),
+        ADD_FUNC(placement_angles),
+        ADD_FUNC(placement_eabb),
+        ADD_FUNC(placement_origin),
+        ADD_FUNC(point_distance),
+        ADD_FUNC(point_min_distance_to_bbox),
+        ADD_FUNC(point_value),
+        ADD_FUNC(point),
+        ADD_FUNC(placement),
+        };
 
     static RTreeMatchFunction* s_matchFuncs[] = 
-                         {
-                         new DGN_rtree,
-                         new DGN_spatial_overlap_aabb
-                         };
+        {
+        ADD_FUNC(rtree),
+        ADD_FUNC(spatial_overlap_aabb)
+        };
 
     for (DbFunction* func : s_funcs)
         db.AddFunction(*func);
@@ -910,7 +911,7 @@ void BisCoreDomain::_OnDgnDbOpened(DgnDbR db) const
         db.AddRTreeMatchFunction(*func);
     }
 
-#ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup DgnDbSqlFunctions @{  at the top of the file
+#ifdef DOCUMENTATION_GENERATOR  // -- NB: This closing @}  closes the @addtogroup iModelSqlFunctions @{  at the top of the file
 // __PUBLISH_SECTION_START__
 //! @}
 // __PUBLISH_SECTION_END__

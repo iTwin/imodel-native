@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnSqlTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -132,16 +132,16 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     // Example of passing the wrong object to a SQL function
     if (true)
         {
-        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_error.sampleCode
-        // This is an example of passing the wrong type of object to DGN_bbox_areaxy and getting an error.
-        // This statement is wrong, because DGN_placement_angles returns a DGN_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
+        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_iModel_bbox_areaxy_error.sampleCode
+        // This is an example of passing the wrong type of object to iModel_bbox_areaxy and getting an error.
+        // This statement is wrong, because iModel_placement_angles returns a iModel_angles object, while DGN_bbox_areaxy expects a DGN_bbox object.
         // Note that the error is detected when you try to step the statement, not when you prepare it.
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT DGN_bbox_areaxy(DGN_angles(Yaw,Pitch,Roll)) FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d));
-        DbResult rc = stmt.Step(); // rc will be BE_SQLITE_ERROR, and m_db->GetLastError() will return "Illegal input to DGN_bbox_areaxy"
+        stmt.Prepare(*m_db, "SELECT iModel_bbox_areaxy(iModel_angles(Yaw,Pitch,Roll)) FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d));
+        DbResult rc = stmt.Step(); // rc will be BE_SQLITE_ERROR, and m_db->GetLastError() will return "Illegal input to iModel_bbox_areaxy"
         //__PUBLISH_EXTRACT_END__
         ASSERT_EQ( BE_SQLITE_ERROR , rc );
-        BeTest::Log("SqlFunctionsTest", BeTest::PRIORITY_INFO, Utf8PrintfString("SQLite error: %s\n", m_db->GetLastError().c_str()).c_str()); // displays "SQLite error: Illegal input to DGN_bbox_areaxy"
+        BeTest::Log("SqlFunctionsTest", BeTest::PRIORITY_INFO, Utf8PrintfString("SQLite error: %s\n", m_db->GetLastError().c_str()).c_str()); // displays "SQLite error: Illegal input to iModel_bbox_areaxy"
         }
 
     //  The X-Y area is width (X) time depth (Y)
@@ -174,7 +174,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
         // This is an example of using DGN_placement_eabb to sum up element areas. Note that we must to use 
         // element-aligned bounding boxes in this query, rather than axis-aligned bounding boxes.
         Statement stmt;
-        stmt.Prepare(*m_db, "SELECT SUM(DGN_bbox_areaxy(" EABB_FROM_GEOM ")) FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d));
+        stmt.Prepare(*m_db, "SELECT SUM(iModel_bbox_areaxy(" EABB_FROM_GEOM ")) FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d));
         //__PUBLISH_EXTRACT_END__
 
         ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
@@ -193,8 +193,8 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
 
     }
 
-#define ANGLES_FROM_PLACEMENT "DGN_angles(g.Yaw,g.Pitch,g.Roll)"
-#define EC_ANGLES_FROM_PLACEMENT "DGN_angles(g.Yaw,g.Pitch,g.Roll)"
+#define ANGLES_FROM_PLACEMENT "iModel_angles(g.Yaw,g.Pitch,g.Roll)"
+#define EC_ANGLES_FROM_PLACEMENT "iModel_angles(g.Yaw,g.Pitch,g.Roll)"
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      05/15
@@ -220,7 +220,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
 
     //  Verify that only one is found with a placement angle of 90
     Statement stmt;
-    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g WHERE DGN_angles_maxdiff(" ANGLES_FROM_PLACEMENT ",DGN_Angles(90,0,0)) < 1.0");
+    stmt.Prepare(*m_db, "SELECT g.ElementId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g WHERE iModel_angles_maxdiff(" ANGLES_FROM_PLACEMENT ",DGN_Angles(90,0,0)) < 1.0");
 
     ASSERT_EQ( BE_SQLITE_ROW , stmt.Step() );
     ASSERT_EQ( elem1At90->GetElementId() , stmt.GetValueId<DgnElementId>(0) );
@@ -861,10 +861,10 @@ TEST_F(SqlFunctionsTest, bbox_union) // FIXME: Hard-coded DgnModelId
     m_db->SaveChanges();
 
     Statement stmt;
-    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_union.sampleCode
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_iModel_bbox_union.sampleCode
     // This is an example of accumlating the union of bounding boxes.
     // Note that when computing a union, it only makes sense to use axis-aligned bounding boxes, not element-aligned bounding boxes.
-    SqlPrintfString str = SqlPrintfString("SELECT DGN_bbox_union(" AABB_FROM_PLACEMENT ") FROM " BIS_TABLE(BIS_CLASS_Element) " AS e," BIS_TABLE(BIS_CLASS_GeometricElement3d)
+    SqlPrintfString str = SqlPrintfString("SELECT iModel_bbox_union(" AABB_FROM_PLACEMENT ") FROM " BIS_TABLE(BIS_CLASS_Element) " AS e," BIS_TABLE(BIS_CLASS_GeometricElement3d)
                     " AS g WHERE e.ModelId=%llu AND e.id=g.ElementId", m_defaultModelId.GetValue());
 
     stmt.Prepare(*m_db, str.GetUtf8CP());
