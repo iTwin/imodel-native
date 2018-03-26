@@ -15,12 +15,161 @@ namespace Handlers
 HANDLER_DEFINE_MEMBERS(Element);
 HANDLER_DEFINE_MEMBERS(AttachmentElement)
 HANDLER_DEFINE_MEMBERS(Model)
+
 }
+
+namespace Attachment
+{
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile3d);
+DEFINE_REF_COUNTED_PTR(Tile3d);
+DEFINE_REF_COUNTED_PTR(Root3d);
+
+//=======================================================================================
+// Contains a chain of tiles containing a texture renderings of the sheet (increasing in level of detail).
+// @bsistruct                                                   Mark.Schlosser  02/2018
+//=======================================================================================
+struct Root3d : Attachment::Root
+{
+    DEFINE_T_SUPER(Attachment::Root);
+
+    ColorDef m_tileColor = ColorDef::White();
+    DgnElementId m_attachmentId;
+    RefCountedPtr<Attachment::Viewport> m_viewport;
+    ClipVectorPtr m_graphicsClip;
+    Sheet::ViewController& m_sheetController;
+private:
+    Root3d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Attachment::Viewport& viewport, Dgn::ViewControllerR view);
+
+    Render::ViewFlagsOverrides _GetViewFlagsOverrides() const override;
+public:
+    static Attachment::Root3dPtr Create(Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context);
+
+    virtual ~Root3d() { ClearAllTiles(); }
+
+    Utf8CP _GetName() const override {return "SheetTile3d";}
+    ClipVectorCP _GetClipVector() const override { return m_clip.get(); } // clip vector used by DrawArgs when rendering
+
+    DRange3d GetRootRange() const;
+    void Draw(SceneContextR);
+    Tile3dR GetRootAttachmentTile();
+    Attachment::State GetState(uint32_t depth) const;
+    void SetState(uint32_t depth, Attachment::State state);
+};
+
+//=======================================================================================
+// @bsistruct                                                   Mark.Schlosser  02/2018
+//=======================================================================================
+struct Tile3d : TileTree::Tile
+{
+    DEFINE_T_SUPER(TileTree::Tile);
+
+    //=======================================================================================
+    // Describes the location of a tile within the range of a quad subdivided in four parts.
+    // @bsistruct                                                   Mark.Schlosser  03/2018
+    //=======================================================================================
+    enum class Placement 
+    {
+        UpperLeft,
+        UpperRight,
+        LowerLeft,
+        LowerRight,
+        Root, // root placement is for root tile of a tree: a single placement representing entire image (not subdivided)
+    };
+
+    bvector<PolyfaceHeaderPtr> m_tilePolys;
+    DRange3d m_polysRange; // this is clipped range.  m_range is this with aspect ratio scale factor applied.
+    uint32_t m_maxPixelSize;
+    bvector<Render::GraphicPtr> m_graphics;
+    Placement m_placement;
+
+    void _Invalidate() override { }
+    bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
+    void _UpdateRange(DRange3dCR, DRange3dCR) override { }
+
+    bool _HasChildren() const override;
+    bool _HasGraphics() const override {return IsReady()/*###TODO: && m_graphic.IsValid()*/;}
+    void _DrawGraphics(TileTree::DrawArgsR) const override;
+    ChildTiles const* _GetChildren(bool) const override;
+    void _ValidateChildren() const override { }
+    Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
+    SelectParent Select(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args);
+    SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
+    double _GetMaximumSize() const override {return m_maxPixelSize;}
+
+    void ChangeRange(DRange3d newRange);
+    void CreatePolys(SceneContextR context);
+    void CreateGraphics(SceneContextR context);
+    Root3dR GetTree() const {return static_cast<Root3dR>(m_root);}
+    Attachment::State GetState() const { return GetTree().GetState(GetDepth()); }
+    void SetState(Attachment::State state) { GetTree().SetState(GetDepth(), state); }
+
+    Tile3d(Root3dR root, Tile3dCP parent, Placement placement);
+};
+} // namespace Attachment
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/18
+//=======================================================================================
+struct Attachment3d : Sheet::ViewController::Attachment
+{
+    friend struct Sheet::ViewController::Attachments;
+    using State = Sheet::Attachment::State;
+private:
+    Sheet::Attachment::Root3dPtr    m_tree = nullptr;
+    bvector<State>      m_states; // per level of the tree
+
+    bool _Load(DgnDbR db, ViewController& sheetController, SceneContextR context) override;
+    TileTree::RootP _GetTree() const override { return m_tree.get(); }
+public:
+    explicit Attachment3d(DgnElementId id) : Sheet::ViewController::Attachment(id) { }
+
+    Sheet::Attachment::Root3dP GetTree() { return m_tree.get(); }
+    Sheet::Attachment::Root3dCP GetTree() const { return m_tree.get(); }
+    State GetState(uint32_t depth) const { return depth < m_states.size() ? m_states[depth] : State::NotLoaded; }
+    void SetState(uint32_t depth, State state);
+};
+
+#if defined(WIP_ATTACHMENTS)
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   03/18
+//=======================================================================================
+struct Attachment2d : Sheet::ViewController::Attachment
+{
+private:
+    ViewControllerPtr   m_view;
+    Root2dPtr           m_tree;
+
+    bool _Load(DgnDbR db, ViewController& sheetController, SceneContextR context) override;
+    TileTree::RootP _GetTree() const override { return m_tree.get(); }
+public:
+    explicit Attachment2d(DgnElementId id) : Sheet::ViewController::Attachment(id) { }
+};
+#else
+    using Attachment2d = Attachment3d;
+#endif
+
 END_SHEET_NAMESPACE
 
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_SHEET
 using namespace Attachment;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Sheet::ViewController::AttachmentPtr Sheet::ViewController::Attachment::Create(DgnElementId attachId, DgnDbR db)
+    {
+    auto attach = db.Elements().Get<ViewAttachment>(attachId);
+    auto view = attach.IsValid() ? db.Elements().Get<ViewDefinition>(attach->GetAttachedViewId()) : nullptr;
+    BeAssert(view.IsValid());
+    if (view.IsNull())
+        return nullptr;
+    else if (view->IsView3d())
+        return new Attachment3d(attachId);
+    else
+        return new Attachment2d(attachId);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
@@ -426,7 +575,7 @@ void Sheet::ViewController::Attachments::InitBoundingBoxColors()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::ViewController::Attachment3d::SetState(uint32_t depth, State state)
+void Attachment3d::SetState(uint32_t depth, State state)
     {
     while (m_states.size() < depth+1)
         m_states.push_back(State::NotLoaded);
@@ -437,13 +586,34 @@ void Sheet::ViewController::Attachment3d::SetState(uint32_t depth, State state)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Sheet::ViewController::Attachment3d::_Load(DgnDbR db, Sheet::ViewController& sheetController, SceneContextR context)
+bool Attachment3d::_Load(DgnDbR db, Sheet::ViewController& sheetController, SceneContextR context)
     {
     if (!m_tree.IsValid())
-        m_tree = Sheet::Attachment::Root::Create(db, sheetController, GetId(), context);
+        m_tree = Sheet::Attachment::Root3d::Create(sheetController, GetId(), context);
 
     return m_tree.IsValid();
     }
+
+#if defined(WIP_ATTACHMENTS)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Attachment2d::_Load(DgnDbR db, Sheet::ViewController& sheetController, SceneContextR context)
+    {
+    auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
+    if (attach.IsNull())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    auto viewId = attach->GetAttachedViewId();
+    m_view = ViewDefinition::LoadViewController(viewId, db);
+    if (m_view.IsNull())
+        return nullptr;
+
+    }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
@@ -473,9 +643,10 @@ void Sheet::ViewController::_LoadState()
         AttachmentPtr tree = FindAttachment(attachId);
 
         if (tree.IsNull())
-            tree = Attachment3d::Create(attachId);
+            tree = Attachment::Create(attachId, GetDgnDb());
 
-        attachments.Add(*tree);
+        if (tree.IsValid())
+            attachments.Add(*tree);
         }
 
     // save new list of attachment
@@ -586,7 +757,7 @@ Render::GraphicPtr Sheet::Model::CreateBorder(DecorateContextR context, DPoint2d
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Sheet::Attachment::Tile::_HasChildren() const // { return false; }
+bool Sheet::Attachment::Tile3d::_HasChildren() const // { return false; }
     { // this method actually means "I have children I may need to create" not "I currently have children in my m_children list".
     return true;
     }
@@ -594,14 +765,14 @@ bool Sheet::Attachment::Tile::_HasChildren() const // { return false; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::Tile::ChildTiles const* Sheet::Attachment::Tile::_GetChildren(bool load) const
+TileTree::Tile::ChildTiles const* Sheet::Attachment::Tile3d::_GetChildren(bool load) const
     {
     if (m_children.empty() && load)
         {
-        TilePtr childTileUL = new Sheet::Attachment::Tile(GetTree(), this, Sheet::Attachment::Tile::Placement::UpperLeft);
-        TilePtr childTileUR = new Sheet::Attachment::Tile(GetTree(), this, Sheet::Attachment::Tile::Placement::UpperRight);
-        TilePtr childTileLL = new Sheet::Attachment::Tile(GetTree(), this, Sheet::Attachment::Tile::Placement::LowerLeft);
-        TilePtr childTileLR = new Sheet::Attachment::Tile(GetTree(), this, Sheet::Attachment::Tile::Placement::LowerRight);
+        TilePtr childTileUL = new Attachment::Tile3d(GetTree(), this, Attachment::Tile3d::Placement::UpperLeft);
+        TilePtr childTileUR = new Attachment::Tile3d(GetTree(), this, Attachment::Tile3d::Placement::UpperRight);
+        TilePtr childTileLL = new Attachment::Tile3d(GetTree(), this, Attachment::Tile3d::Placement::LowerLeft);
+        TilePtr childTileLR = new Attachment::Tile3d(GetTree(), this, Attachment::Tile3d::Placement::LowerRight);
         m_children.push_back(childTileUL);
         m_children.push_back(childTileUR);
         m_children.push_back(childTileLL);
@@ -619,7 +790,7 @@ static const uint32_t querySheetTilePixels() { return 512; }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Viewport::SetSceneDepth(uint32_t depth, Root& tree)
+void Sheet::Attachment::Viewport::SetSceneDepth(uint32_t depth, Root3d& tree)
     {
     if (m_sceneDepth != depth)
         {
@@ -654,9 +825,9 @@ struct AutoRestoreFrustum
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Tile::CreateGraphics(SceneContextR context)
+void Sheet::Attachment::Tile3d::CreateGraphics(SceneContextR context)
     {
-    Root& tree = GetTree();
+    auto& tree = GetTree();
     auto currentState = GetState();
 
     // State::Ready is a valid situation.  It means another tile created the scene for this level of detail.  We will use that scene.
@@ -872,15 +1043,15 @@ DgnElementId Sheet::Model::FindFirstViewOfSheet(DgnDbR db, DgnModelId mid)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::Tile::SelectParent Sheet::Attachment::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
+TileTree::Tile::SelectParent Sheet::Attachment::Tile3d::_SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const
     {
-    return const_cast<Tile&>(*this).Select(selected, args);
+    return const_cast<Attachment::Tile3d&>(*this).Select(selected, args);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::Tile::SelectParent Sheet::Attachment::Tile::Select(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args)
+TileTree::Tile::SelectParent Sheet::Attachment::Tile3d::Select(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args)
     {
     if (0 == GetDepth())
         GetTree().m_viewport->m_rendering = false;
@@ -960,7 +1131,7 @@ TileTree::Tile::SelectParent Sheet::Attachment::Tile::Select(bvector<TileTree::T
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Tile::_DrawGraphics(DrawArgsR args) const
+void Sheet::Attachment::Tile3d::_DrawGraphics(DrawArgsR args) const
     {
     BeAssert(IsReady());
     for (auto& graphic : m_graphics)
@@ -990,14 +1161,14 @@ void Sheet::Attachment::Tile::_DrawGraphics(DrawArgsR args) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Tile::CreatePolys(SceneContextR context)
+void Sheet::Attachment::Tile3d::CreatePolys(SceneContextR context)
     {
     auto renderSys = context.GetRenderSystem();
 
     // ###TODO: an optimization could be to make the texture non-square to save on space (make match cropped tile aspect ratio)
 
     // set up initial corner values (before cropping to clip)
-    Sheet::Attachment::Root& tree = GetTree();
+    auto& tree = GetTree();
 
     // set up initial corner values (before cropping to clip); m_range must be already setup (m_range = unclipped range)
     Render::GraphicBuilder::TileCorners corners; 
@@ -1021,7 +1192,7 @@ void Sheet::Attachment::Tile::CreatePolys(SceneContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d Sheet::Attachment::Root::GetRootRange() const
+DRange3d Sheet::Attachment::Root3d::GetRootRange() const
     {
     static const double s_tileSize = 1.0;
     double east  = 0.0;
@@ -1041,8 +1212,9 @@ DRange3d Sheet::Attachment::Root::GetRootRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Sheet::Attachment::RootPtr Sheet::Attachment::Root::Create(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context)
+Attachment::Root3dPtr Attachment::Root3d::Create(Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context)
     {
+    auto& db = sheetController.GetDgnDb();
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
         {
@@ -1059,29 +1231,37 @@ Sheet::Attachment::RootPtr Sheet::Attachment::Root::Create(DgnDbR db, Sheet::Vie
     if (!viewport.IsValid())
         return nullptr;
 
-    return new Sheet::Attachment::Root(db, sheetController, *attach, context, *viewport, *view);
+    return new Sheet::Attachment::Root3d(sheetController, *attach, context, *viewport, *view);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Sheet::Attachment::Tile& Sheet::Attachment::Root::GetRootAttachmentTile()
+Sheet::Attachment::RootPtr Sheet::Attachment::Root::Create(Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context)
+    {
+    return Sheet::Attachment::Root3d::Create(sheetController, attachmentId, context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Sheet::Attachment::Tile3d& Sheet::Attachment::Root3d::GetRootAttachmentTile()
     {
     BeAssert(GetRootTile().IsValid());
-    return static_cast<TileR>(*GetRootTile());
+    return static_cast<Attachment::Tile3dR>(*GetRootTile());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Sheet::Attachment::State Sheet::Attachment::Root::GetState(uint32_t depth) const
+Sheet::Attachment::State Sheet::Attachment::Root3d::GetState(uint32_t depth) const
     {
     // ###TODO: Fix this silly lookup, called from an iterator over the Attachment list...
     auto attach = m_sheetController.GetAttachments().Find(m_attachmentId);
     BeAssert(nullptr != attach);
 
     // ###TODO: WIP_ATTACHMENTS
-    auto attach3d = dynamic_cast<Sheet::ViewController::Attachment3d*>(attach);
+    auto attach3d = dynamic_cast<Attachment3d*>(attach);
     if (nullptr == attach3d)
         return Sheet::Attachment::State::Empty;
 
@@ -1091,14 +1271,14 @@ Sheet::Attachment::State Sheet::Attachment::Root::GetState(uint32_t depth) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Root::SetState(uint32_t depth, State state)
+void Sheet::Attachment::Root3d::SetState(uint32_t depth, State state)
     {
     // ###TODO: Fix this silly lookup, called from an iterator over the Attachment list...
     auto attach = m_sheetController.GetAttachments().Find(m_attachmentId);
     BeAssert(nullptr != attach);
 
     // ###TODO: WUIP_ATTACHMENTS
-    auto attach3d = dynamic_cast<Sheet::ViewController::Attachment3d*>(attach);
+    auto attach3d = dynamic_cast<Attachment3d*>(attach);
     if (nullptr != attach3d)
         attach3d->SetState(depth, state);
     }
@@ -1106,7 +1286,7 @@ void Sheet::Attachment::Root::SetState(uint32_t depth, State state)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::ViewFlagsOverrides Sheet::Attachment::Root::_GetViewFlagsOverrides() const
+Render::ViewFlagsOverrides Sheet::Attachment::Root3d::_GetViewFlagsOverrides() const
     {
     // TFS#863662: If sheet's ViewFlags has transparency turned off, background pixels of
     // attachments will render opaque black...
@@ -1134,10 +1314,19 @@ ClipVectorPtr ViewAttachment::GetOrCreateClip(TransformCP tf) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Sheet::Attachment::Root::Root(DgnModelId modelId, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewControllerR view)
+  : T_Super(sheetController.GetDgnDb(), modelId, /*is3d=*/false, Transform::FromIdentity(), nullptr, nullptr)
+    {
+    // ###TODO: WIP_ATTACHMENTS: Common initialization (view controller etc)
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view)
-  : T_Super(db, DgnModelId(), /*is3d=*/false, Transform::FromIdentity(), nullptr, nullptr),
+Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view)
+  : T_Super(DgnModelId(), sheetController, attach, context, view),
     m_attachmentId(attach.GetElementId()), m_viewport(&viewport), m_sheetController(sheetController)
     {
     DPoint2d scale;
@@ -1215,8 +1404,8 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
     fromParent.InverseOf(m_viewport->m_toParent);
     m_graphicsClip = m_clip->Clone(&fromParent);
 
-    Tile* rTile;
-    m_rootTile = rTile = new Tile(*this, nullptr, Sheet::Attachment::Tile::Placement::Root);
+    Tile3d* rTile;
+    m_rootTile = rTile = new Tile3d(*this, nullptr, Sheet::Attachment::Tile3d::Placement::Root);
     rTile->CreatePolys(context); // m_graphicsClip must be set before creating polys (the polys that represent the tile)
 
 #if defined(WIP_CLIP_TILE_RANGE)
@@ -1234,7 +1423,7 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Tile::ChangeRange(DRange3d newRange)
+void Sheet::Attachment::Tile3d::ChangeRange(DRange3d newRange)
     {
     // make range square (extend shortest side to match length of longest side)
     if (newRange.XLength() > newRange.YLength())
@@ -1251,9 +1440,9 @@ void Sheet::Attachment::Tile::ChangeRange(DRange3d newRange)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-Sheet::Attachment::Tile::Tile(RootR root, TileCP parent, Placement placement) : T_Super(root, parent), m_placement(placement)
+Sheet::Attachment::Tile3d::Tile3d(Root3dR root, Tile3dCP parent, Placement placement) : T_Super(root, parent), m_placement(placement)
     {
-    Sheet::Attachment::Root& tree = GetTree();
+    auto& tree = GetTree();
 
     uint32_t dim = querySheetTilePixels();
     m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(dim, dim));

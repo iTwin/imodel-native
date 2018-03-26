@@ -258,10 +258,7 @@ namespace Attachment
 {
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Root);
     DEFINE_REF_COUNTED_PTR(Root);
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile);
-    DEFINE_REF_COUNTED_PTR(Tile);
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(IAttachment);
-    DEFINE_REF_COUNTED_PTR(IAttachment);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Root3d);
 
     //=======================================================================================
     // Describes the state of the scene for a given level of the tile tree.
@@ -307,97 +304,30 @@ namespace Attachment
 
         DGNVIEW_EXPORT Viewport();
         ClipVectorCP GetAttachClips() const {return m_clips.get();}
-        void SetSceneDepth(uint32_t depth, Root& tree);
+        void SetSceneDepth(uint32_t depth, Root3dR tree);
     };
 
     //=======================================================================================
-    // Contains a chain of tiles containing a texture renderings of the sheet (increasing in level of detail).
     // @bsistruct                                                   Mark.Schlosser  02/2018
     //=======================================================================================
     struct Root : TileTree::Root
     {
         DEFINE_T_SUPER(TileTree::Root);
 
-        ColorDef m_tileColor = ColorDef::White();
         ColorDef m_boundingBoxColor = ColorDef::DarkOrange();
-        DgnElementId m_attachmentId;
-        RefCountedPtr<Viewport> m_viewport;
         double m_biasDistance;
-        ClipVectorPtr m_clip;      //! clip volume applied to tiles, in root coordinates
-        ClipVectorPtr m_graphicsClip;
-        Sheet::ViewController& m_sheetController;
-    private:
-        Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view);
-
-        Render::ViewFlagsOverrides _GetViewFlagsOverrides() const override;
-    public:
-        static RootPtr Create(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context);
-
-        virtual ~Root() { ClearAllTiles(); }
+        ClipVectorPtr m_clip;
+    protected:
+        Root(DgnModelId modelId, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewControllerR view);
 
         void _OnAddToRangeIndex(DRange3dCR, DgnElementId) override { }
         void _OnRemoveFromRangeIndex(DRange3dCR, DgnElementId) override { }
         void _OnUpdateRangeIndex(DRange3dCR, DRange3dCR, DgnElementId) override { }
         void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override { }
-        Utf8CP _GetName() const override {return "SheetTile";}
-        ClipVectorCP _GetClipVector() const override { return m_clip.get(); } // clip vector used by DrawArgs when rendering
 
-        DRange3d GetRootRange() const;
-        void Draw(SceneContextR);
-        TileR GetRootAttachmentTile();
-        State GetState(uint32_t depth) const;
-        void SetState(uint32_t depth, State state);
-    };
-
-    //=======================================================================================
-    // @bsistruct                                                   Mark.Schlosser  02/2018
-    //=======================================================================================
-    struct Tile : TileTree::Tile
-    {
-        DEFINE_T_SUPER(TileTree::Tile);
-
-        //=======================================================================================
-        // Describes the location of a tile within the range of a quad subdivided in four parts.
-        // @bsistruct                                                   Mark.Schlosser  03/2018
-        //=======================================================================================
-        enum class Placement 
-        {
-            UpperLeft,
-            UpperRight,
-            LowerLeft,
-            LowerRight,
-            Root, // root placement is for root tile of a tree: a single placement representing entire image (not subdivided)
-        };
-
-        bvector<PolyfaceHeaderPtr> m_tilePolys;
-        DRange3d m_polysRange; // this is clipped range.  m_range is this with aspect ratio scale factor applied.
-        uint32_t m_maxPixelSize;
-        bvector<Render::GraphicPtr> m_graphics;
-        Placement m_placement;
-
-        void _Invalidate() override { }
-        bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
-        void _UpdateRange(DRange3dCR, DRange3dCR) override { }
-
-        bool _HasChildren() const override;
-        bool _HasGraphics() const override {return IsReady()/*###TODO: && m_graphic.IsValid()*/;}
-        void _DrawGraphics(TileTree::DrawArgsR) const override;
-        ChildTiles const* _GetChildren(bool) const override;
-        void _ValidateChildren() const override { }
-        Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
-        SelectParent Select(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args);
-        SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
-        double _GetMaximumSize() const override {return m_maxPixelSize;}
-
-        void ChangeRange(DRange3d newRange);
-        void CreatePolys(SceneContextR context);
-        void CreateGraphics(SceneContextR context);
-        RootR GetTree() const {return static_cast<RootR>(m_root);}
-        State GetState() const { return GetTree().GetState(GetDepth()); }
-        void SetState(State state) { GetTree().SetState(GetDepth(), state); }
-
-        Tile(RootR root, TileCP parent, Placement placement);
+        ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
+    public:
+        static RootPtr Create(Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context);
     };
 }
 
@@ -409,8 +339,8 @@ struct ViewController : Dgn::ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
     friend SheetViewDefinition;
+    friend Sheet::Attachment::Root;
 
-protected:
     struct Attachments;
     struct Attachment : RefCountedBase
     {
@@ -419,6 +349,8 @@ protected:
 
         explicit Attachment(DgnElementId id) : m_id(id) { }
     public:
+        static RefCountedPtr<Attachment> Create(DgnElementId id, DgnDbR db);
+
         DgnElementId GetId() const { return m_id; }
 
         virtual bool _Load(DgnDbR db, ViewController& sheetController, SceneContextR context) = 0;
@@ -438,32 +370,8 @@ protected:
             }
     };
 
-    friend Sheet::Attachment::Root;
-
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
     DEFINE_REF_COUNTED_PTR(Attachment);
-
-    struct Attachment3d : Attachment
-    {
-        friend struct Attachments;
-        using State = Sheet::Attachment::State;
-    private:
-        Sheet::Attachment::RootPtr  m_tree = nullptr;
-        bvector<State>              m_states; // per level of the tree
-
-        bool _Load(DgnDbR db, ViewController& sheetController, SceneContextR context) override;
-        TileTree::RootP _GetTree() const override { return m_tree.get(); }
-
-        explicit Attachment3d(DgnElementId id) : Attachment(id) { }
-    public:
-        static AttachmentPtr Create(DgnElementId id=DgnElementId()) { return new Attachment3d(id); }
-
-        DgnElementId GetId() const { return m_id; }
-        Sheet::Attachment::RootP GetTree() { return m_tree.get(); }
-        Sheet::Attachment::RootCP GetTree() const { return m_tree.get(); }
-        State GetState(uint32_t depth) const { return depth < m_states.size() ? m_states[depth] : State::NotLoaded; }
-        void SetState(uint32_t depth, State state);
-    };
 
     struct Attachments
     {
@@ -505,7 +413,7 @@ protected:
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachments);
-
+protected:
     DPoint2d m_size;
     Attachments m_attachments;
     bool m_allAttachmentTilesReady = true;
