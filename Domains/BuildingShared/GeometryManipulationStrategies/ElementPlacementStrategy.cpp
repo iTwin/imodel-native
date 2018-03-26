@@ -25,7 +25,6 @@ bvector<DPoint3d> ElementPlacementStrategy::_GetKeyPoints() const
     GeometryPlacementStrategyCPtr strategy = TryGetGeometryPlacementStrategy();
     if (strategy.IsNull())
         {
-        BeAssert(false && "Invalid geometry placement strategy");
         return bvector<DPoint3d>();
         }
     return strategy->GetKeyPoints();
