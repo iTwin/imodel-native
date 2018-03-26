@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#define SQLITE_HAS_CODEC 1
+
 #include <BeSQLite/BeSQLite.h>
 #include "sqlite3.h"
 

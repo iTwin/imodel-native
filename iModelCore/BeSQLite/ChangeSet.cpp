@@ -290,9 +290,10 @@ static int filterTableCallback(void *pCtx, Utf8CP tableName) {return (int) ((Cha
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeSet::_ApplyChanges(DbR db)
+DbResult ChangeSet::_ApplyChanges(DbR db, Rebase* rebase)
     {
-    return (DbResult) sqlite3changeset_apply(db.GetSqlDb(), m_size, m_changeset, filterTableCallback, conflictCallback, this);
+    return (DbResult) sqlite3changeset_apply_v2(db.GetSqlDb(), m_size, m_changeset, filterTableCallback, conflictCallback, this, 
+        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -769,9 +770,10 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert /*=false*/)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                  Ramanujam.Raman                   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult ChangeStream::_ApplyChanges(DbR db)
+DbResult ChangeStream::_ApplyChanges(DbR db, Rebase* rebase)
     {
-    DbResult result = (DbResult) sqlite3changeset_apply_strm(db.GetSqlDb(), InputCallback, (void*) this, FilterTableCallback, ConflictCallback, (void*) this);
+    DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(db.GetSqlDb(), InputCallback, (void*) this, FilterTableCallback, ConflictCallback, (void*) this,
+        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr);
     _Reset();
     return result;
     }
@@ -860,3 +862,12 @@ DbResult ChangeStream::FromConcatenatedChangeStreams(ChangeStream& inStream1, Ch
 
     return result;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Rebaser::Rebaser() {sqlite3rebaser_create(&m_rebaser);}
+Rebaser::~Rebaser() {sqlite3rebaser_delete(m_rebaser);}
+void Rebaser::AddRebase(Rebase& rebase) {sqlite3rebaser_configure(m_rebaser, rebase.GetSize(), rebase.GetData());}
+DbResult Rebaser::DoRebase(ChangeSet const&in, ChangeSet& out) {return (DbResult) sqlite3rebaser_rebase(m_rebaser, in.m_size, in.m_changeset, &out.m_size, &out.m_changeset);}
+DbResult Rebaser::DoRebase(ChangeStream const& in, ChangeStream& out) {return (DbResult) sqlite3rebaser_rebase_strm(m_rebaser, in.InputCallback, (void*) &in, out.OutputCallback, &out);}

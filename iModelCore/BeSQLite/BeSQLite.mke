@@ -5,11 +5,22 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-GCC_DEFAULT_VISIBILITY              = default
-GCC_NOSTRICT                        = 1
-HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
 
-# disable checking of assignment to smaller data types. SQLite does this a lot.
+#-----------------------------------------------------------------------------------
+#
+# NOTES: If you think you need to edit this file:
+#
+# DO NOT PUT SQLite options in this file. They should ONLY be in bentley-sqlite.c!!!!
+# DO NOT change compiler warning flags here. They should be in bentley-sqlite.c
+# DO NOT edit the sqlite3 source files. They are generated during the build, and the original 
+# source comes from sqlite.org anyway.
+#
+#-----------------------------------------------------------------------------------
+
+GCC_DEFAULT_VISIBILITY = default
+GCC_NOSTRICT = 1
+HAVE_PERMISSION_TO_COMPILE_AT_W3 = 1
+
 # VERACODE - requires default runtime checks (e.g. cannot explicitly set any -RTC options).
 %if !defined(IS_VERACODE_BUILD)
     VCRuntimeCheckOption = -RTCsu
@@ -19,39 +30,18 @@ HAVE_PERMISSION_TO_COMPILE_AT_W3    = 1
 
 cDefs +% -D__BE_SQLITE_HOST_DLL__
 
-%ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
-    cDefs + -DSQLITE_ENABLE_EXPLAIN_COMMENTS
-%endif
-
 %if $(TARGET_PLATFORM) == "WinRT"
     cDefs + -D__BE_SQLITE_WINRT__
 %endif
 
-# Alloc 4000 pages allocated in advance  (default 20)
-cDefs + -DSQLITE_DEFAULT_PCACHE_INITSZ=4000
-# Alloc 4000 pages is page cache size (default 2000)
-cDefs + -DSQLITE_DEFAULT_CACHE_SIZE=4000
-
-#64*4096 default(64*1024)
-cDefs + -DSQLITE_MAX_VARIABLE_NUMBER=20000
-cDefs + -DSQLITE_STMTJRNL_SPILL=262144
-cDefs + -DSQLITE_DEFAULT_AUTOVACUUM=1
-cDefs + -DSQLITE_TEMP_STORE=3
-cDefs + -DSQLITE_OMIT_DEPRECATED
-cDefs + -DSQLITE_OMIT_AUTHORIZATION
-cDefs + -DSQLITE_OMIT_PROGRESS_CALLBACK
-cDefs + -DSQLITE_OMIT_COMPLETE
-cDefs + -DSQLITE_OMIT_WAL
-cDefs + -DSQLITE_HAS_CODEC=1
-
-baseDir                 = $(_MakeFilePath)
-SQLiteDir               = $(baseDir)SQLite/
-SubpartLibs             = $(BuildContext)SubParts/Libs/
-o                       = $(OutBuildDir)BeSQLite/
+baseDir = $(_MakeFilePath)
+SQLiteDir = $(baseDir)SQLite/
+SubpartLibs = $(BuildContext)SubParts/Libs/
+o = $(OutBuildDir)BeSQLite/
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
-appName                 = BeSQLite
-CCompPDBName            = $(appName)
+appName = BeSQLite
+CCompPDBName = $(appName)
 
 always:
     !~@mkdir $(o)
@@ -84,12 +74,11 @@ CCompFpOpts=precise
 # Third-party section of this library.
 %include $(SrcRoot)bsicommon/sharedmki/PushThirdPartyIgnores.mki
 
-$(o)SQLite$(oext): $(SQLiteDir)sqlite3-all.c $(SQLiteDir)sqlite3-1.c $(SQLiteDir)sqlite3-2.c $(SQLiteDir)sqlite3-3.c $(SQLiteDir)sqlite3-4.c \
-            $(SQLiteDir)sqlite3-5.c $(SQLiteDir)sqlite3-6.c $(SQLiteDir)sqlite3-7.c $(SQLiteDir)zipvfs.c $(SQLiteDir)closure.c $(SQLiteDir)see-aes128-ofb.c
+$(o)bentley-sqlite$(oext): $(SQLiteDir)bentley-sqlite.c $(SQLiteDir)sqlite3.c $(SQLiteDir)zipvfs.c $(SQLiteDir)closure.c $(SQLiteDir)see-aes128-ofb.c
 
 %include $(SrcRoot)bsicommon/sharedmki/PopThirdPartyIgnores.mki
 
-objs + $(o)SQLite$(oext)
+objs + $(o)bentley-sqlite$(oext)
 
 BeSQLiteRequiredLibs = $(ContextSubPartsStaticLibs)$(stlibprefix)BeZlib$(stlibext)
 BeSQLiteRequiredLibs + $(ContextSubPartsStaticLibs)$(stlibprefix)snappy$(stlibext)

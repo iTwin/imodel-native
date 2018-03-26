@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeSQLite/ChangeSet.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,6 +16,8 @@ BESQLITE_TYPEDEFS(IChangeSet);
 BESQLITE_TYPEDEFS(ChangeSet);
 BESQLITE_TYPEDEFS(ChangeStream);
 BESQLITE_TYPEDEFS(DbSchemaChangeSet);
+
+struct sqlite3_rebaser;
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 
@@ -34,10 +36,10 @@ protected:
 
 public:
     //! Get the number of bytes
-    int GetSize() const { return _GetSize(); }
+    int GetSize() const {return _GetSize();}
 
     //! Get a pointer to the data
-    void const* GetData() const { return _GetData(); }
+    void const* GetData() const {return _GetData();}
 };
 
 //=======================================================================================
@@ -48,12 +50,12 @@ struct DbSchemaChangeSet : IByteArray
 private:
     Utf8String m_ddl;
 
-    int _GetSize() const override final { return IsEmpty() ? 0 : (int) m_ddl.SizeInBytes(); }
-    void const* _GetData() const override final { return m_ddl.c_str(); }
+    int _GetSize() const override final {return IsEmpty() ? 0 : (int) m_ddl.SizeInBytes();}
+    void const* _GetData() const override final {return m_ddl.c_str();}
 
 public:
     //! Create a new schema change set
-    DbSchemaChangeSet(Utf8CP ddl = nullptr) { m_ddl.AssignOrClear(ddl); }
+    DbSchemaChangeSet(Utf8CP ddl = nullptr) {m_ddl.AssignOrClear(ddl);}
 
     //! Destructor
     ~DbSchemaChangeSet() = default;
@@ -62,13 +64,13 @@ public:
     BE_SQLITE_EXPORT void AddDDL(Utf8CP ddl);
 
     //! Returns true if the schema change set is empty
-    bool IsEmpty() const { return m_ddl.empty(); }
+    bool IsEmpty() const {return m_ddl.empty();}
 
     //! Clear the schema change set
-    void Clear() { m_ddl.clear(); }
+    void Clear() {m_ddl.clear();}
 
     //! Return the contents of the schema change set
-    Utf8StringCR ToString() const { return m_ddl; }
+    Utf8StringCR ToString() const {return m_ddl;}
 
     //! Dump the contents
     BE_SQLITE_EXPORT void Dump(Utf8CP label) const;
@@ -110,7 +112,7 @@ protected:
     Db* GetDb() {return m_db;}
     Utf8CP GetName() const {return m_name.c_str();}
 
-    DbSchemaChangeSetCR GetDbSchemaChanges() const { return m_dbSchemaChanges; }
+    DbSchemaChangeSetCR GetDbSchemaChanges() const {return m_dbSchemaChanges;}
 
 public:
     ChangeTracker(Utf8CP name=NULL) : m_name(name) {m_session=0; m_db=0; m_isTracking=false;}
@@ -154,7 +156,7 @@ public:
     BE_SQLITE_EXPORT bool HasDataChanges() const;
 
     //! Determine whether any db-schema changes have beeen tracked by this ChangeTracker
-    bool HasDbSchemaChanges() const { return !m_dbSchemaChanges.IsEmpty(); } 
+    bool HasDbSchemaChanges() const {return !m_dbSchemaChanges.IsEmpty();} 
 
     //! Clear the contents of this ChangeTracker and re-start it.
     void Restart() {EndTracking(); EnableTracking(true);}
@@ -277,6 +279,49 @@ public:
 };
 
 //=======================================================================================
+//! A set of "rebases" that hold the result of conflict resolutions during a call to ChangeSet::ApplyChanges from
+//! a ChangeSet received from a remote session. 
+//! All ChangeSets for the local session should be "rebased" via calls to Rebaser::AddRebease + Rebaser::DoRebase
+//! before sending to the server. This essentially moves the local ChangeSet to be "based on" the state of the 
+//! database AFTER the remote changes were made, rather than the state of the database at the start of the session.
+// @bsiclass                                                    Keith.Bentley   03/18
+//=======================================================================================
+struct Rebase : NonCopyableClass
+{
+    friend struct ChangeSet;
+    friend struct ChangeStream;
+private:
+    int m_size = 0;
+    void* m_data = nullptr;
+public:
+    Rebase() {}
+    ~Rebase() {if (m_data) BeSQLiteLib::FreeMem(m_data);}
+    bool HasData() const {return m_size != 0;}
+    int GetSize() const {return m_size;}
+    void* GetData() const {return m_data;}
+};
+
+//=======================================================================================
+//! Tool to "rebase" a ChangeSet to become based on the state of the database "as of" a new state, different than the beginning
+//! of the session in which the changes were recoreded. This is only necessary remote changes are applied and conflicts are resolved. 
+//! See SQlite documentation on "Rebasing changesets" for complete explanation.
+// @bsiclass                                                    Keith.Bentley   06/15
+//=======================================================================================
+struct Rebaser : NonCopyableClass
+{
+private:
+    sqlite3_rebaser* m_rebaser;
+    
+public:
+    BE_SQLITE_EXPORT Rebaser();
+    BE_SQLITE_EXPORT ~Rebaser();
+    
+    BE_SQLITE_EXPORT void AddRebase(Rebase& rebase);
+    BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeSet const&in, struct ChangeSet& out);
+    BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeStream const& in, struct ChangeStream& out);
+};
+
+//=======================================================================================
 // @bsiclass                                                     Paul.Connelly   11/15
 //=======================================================================================
 struct IChangeSet
@@ -290,46 +335,47 @@ public:
 private:
     virtual DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) = 0;
     virtual DbResult _FromChangeGroup(ChangeGroupCR changeGroup) = 0;
-    virtual DbResult _ApplyChanges(DbR db) = 0;
+    virtual DbResult _ApplyChanges(DbR db, Rebase* rebase) = 0;
     virtual Changes _GetChanges() = 0;
 
 protected:
     ~IChangeSet() = default;
     
-    virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) { return ApplyChangesForTable::Yes; }
+    virtual ApplyChangesForTable _FilterTable(Utf8CP tableName) {return ApplyChangesForTable::Yes;}
     virtual ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) = 0;
 
 public:
     //! Implement to handle conflicts when applying changes
     //! @see ApplyChanges
-    ApplyChangesForTable FilterTable(Utf8CP tableName) { return _FilterTable(tableName); }
+    ApplyChangesForTable FilterTable(Utf8CP tableName) {return _FilterTable(tableName);}
 
     //! Implement to filter out specific tables when applying changes
     //! @see ApplyChanges
-    ConflictResolution OnConflict(ConflictCause cause, Changes::Change iter) { return _OnConflict(cause, iter); }
+    ConflictResolution OnConflict(ConflictCause cause, Changes::Change iter) {return _OnConflict(cause, iter);}
 
     //! Create a ChangeSet/ChangeStream from a ChangeTracker. The ChangeSet can then be saved persistently.
     //! @param[in] tracker  ChangeTracker from which to create ChangeSet or PatchSet
     //! @param[in] setType  whether to create a full ChangeSet or just a PatchSet
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     //! @remarks If using a ChangeStream, implement _OutputPage to receive the stream
-    DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType=SetType::Full) { return _FromChangeTrack(tracker, setType); }
+    DbResult FromChangeTrack(ChangeTracker& tracker, SetType setType=SetType::Full) {return _FromChangeTrack(tracker, setType);}
 
     //! Create a ChangeSet/ChangeStream by merging the contents of a ChangeGroup
     //! @param[in] changeGroup ChangeGroup to be merged together. 
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     //! @remarks If using a ChangeStream, implement _OutputPage to receive the stream
-    DbResult FromChangeGroup(ChangeGroupCR changeGroup) { return _FromChangeGroup(changeGroup); }
+    DbResult FromChangeGroup(ChangeGroupCR changeGroup) {return _FromChangeGroup(changeGroup);}
 
     //! Apply all of the changes in this IChangeSet to the supplied database.
     //! @param[in] db the database to which the changes are applied.
+    //! @param[in] rebase a Rebase object to record conflict resolutions
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
     //! @remarks If using a ChangeStream, implement _InputPage to send the stream
-    DbResult ApplyChanges(DbR db) { return _ApplyChanges(db); }
+    DbResult ApplyChanges(DbR db, Rebase* rebase=nullptr) {return _ApplyChanges(db, rebase);}
 
     //! Returns a Changes object for iterating over the changes contained within this IChangeSet
     //! @remarks If using a ChangeStream, implement _InputPage to send the stream
-    Changes GetChanges() { return _GetChanges(); }
+    Changes GetChanges() {return _GetChanges();}
 };
 
 //=======================================================================================
@@ -346,17 +392,19 @@ public:
 //=======================================================================================
 struct ChangeSet : NonCopyableClass, IChangeSet, IByteArray
 {
+    friend struct Rebaser;
 private:
+
     int    m_size;
     void*  m_changeset;
 
-    int _GetSize() const override { return m_size; }
-    void const* _GetData() const override { return m_changeset; }
+    int _GetSize() const override {return m_size;}
+    void const* _GetData() const override {return m_changeset;}
 
     BE_SQLITE_EXPORT DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override final;
     BE_SQLITE_EXPORT DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override final;
-    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db) override final;
-    Changes _GetChanges() override final { return Changes(*this); }
+    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db, Rebase*) override final;
+    Changes _GetChanges() override final {return Changes(*this);}
 
 public:
     //! construct a blank, empty ChangeSet
@@ -410,7 +458,8 @@ private:
 //=======================================================================================
 struct ChangeStream : NonCopyableClass, IChangeSet
 {
-friend struct Changes;
+    friend struct Changes;
+    friend struct Rebaser;
 private:
     static int OutputCallback(void *pOut, const void *pData, int nData);
     static int InputCallback(void *pIn, void *pData, int *pnData);
@@ -419,26 +468,26 @@ private:
 
     // Resets the change stream, and is internally called at the 
     // end of various change stream operations
-    void Reset() { _Reset(); }
+    void Reset() {_Reset();}
     static DbResult TransferBytesBetweenStreams(ChangeStream& inStream, ChangeStream& outStream);
 
     BE_SQLITE_EXPORT DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override final;
     BE_SQLITE_EXPORT DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override final;
-    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db) override final;
-    Changes _GetChanges() override final { return Changes(*this); }
+    BE_SQLITE_EXPORT DbResult _ApplyChanges(DbR db, Rebase*) override final;
+    Changes _GetChanges() override final {return Changes(*this);}
 
     //! Application implements this to supply input to the system. 
     //! @param[out] pData Buffer to copy data into. 
     //! @param[in,out] pnData System sets this to the size of the buffer. Implementation sets it to the 
     //! actual number of bytes copied. If the input is exhausted implementation should set this to 0. 
     //! @return BE_SQLITE_OK if successfully copied data. Return BE_SQLITE_ERROR otherwise. 
-    virtual DbResult _InputPage(void *pData, int *pnData) { return BE_SQLITE_OK; }
+    virtual DbResult _InputPage(void *pData, int *pnData) {return BE_SQLITE_OK;}
 
     //! Application implements this to receive data from the system. 
     //! @param[in] pData Points to a buffer containing the output data
     //! @param[in] nData Size of buffer
     //! @return BE_SQLITE_OK if the data has been successfully processed. Return BE_SQLITE_ERROR otherwise. 
-    virtual DbResult _OutputPage(const void *pData, int nData) { return BE_SQLITE_OK; }
+    virtual DbResult _OutputPage(const void *pData, int nData) {return BE_SQLITE_OK;}
 
     //! Override to reset any state of the change stream
     //! @remarks Called at end of various change stream operations, and is used by application to reset the stream and 
