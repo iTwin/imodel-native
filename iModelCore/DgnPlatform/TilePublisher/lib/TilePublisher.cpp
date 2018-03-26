@@ -3460,7 +3460,7 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels)
     {
-    bvector<DgnElementId> attachmentIds = sheet.GetSheetAttachmentIds();
+    bvector<DgnElementId> attachmentIds; // = sheet.GetSheetAttachmentIds();
     Json::Value attachmentsJson(Json::arrayValue);
     for (DgnElementId attachmentId : attachmentIds)
         {
@@ -3778,7 +3778,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     DgnModelIdSet viewedModels;
 
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId, /*includeAttachments=*/ true);
+        GetViewedModelsFromView (viewedModels, viewId, /*includeAttachments=*/ /*true*/ false);
 
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)

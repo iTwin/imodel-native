@@ -4406,7 +4406,27 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 }
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
-                break; // NEEDSWORK...
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
+                Json::Value value;
+
+                DgnGeometryPartId partId = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
+                value["part"] = partId.ToHexStr();
+
+                if (ppfb->has_origin())
+                    JsonUtils::DPoint3dToJson(value["origin"], *((DPoint3dCP) ppfb->origin()));
+
+                if (ppfb->has_yaw() || ppfb->has_pitch() || ppfb->has_roll())
+                    value["rotation"] = JsonUtils::YawPitchRollToJson(YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll()));
+
+                if (ppfb->has_scale())
+                    value["scale"] = ppfb->scale();
+
+                Json::Value partValue;
+                partValue["geomPart"] = value;
+                output.append(partValue);
+                break;
+                }
 
             case GeometryStreamIO::OpCode::TextString:
                 {
@@ -4448,7 +4468,7 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 if (!text->GetOrientation().IsIdentity())
                     {
                     YawPitchRollAngles angles;
-                    BeAssert(YawPitchRollAngles::TryFromRotMatrix(angles, text->GetOrientation()));
+                    YawPitchRollAngles::TryFromRotMatrix(angles, text->GetOrientation()); // NOTE: Text orientation should not have scale/skew...can ignore strict Angle::SmallAngle check.
                     value["rotation"] = JsonUtils::YawPitchRollToJson(angles);
                     }
 
@@ -5731,26 +5751,9 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::UpdateFromJson(DgnGeometryPartR part, JsonValueCR input, JsonValueCR opts)
+static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input, JsonValueCR opts)
     {
-    // NEEDSWORK...
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::UpdateFromJson(GeometrySourceR source, JsonValueCR input, JsonValueCR opts)
-    {
-    if (!input.isArray())
-        return false;
-
-    GeometryBuilderPtr builder = Create(source);
-
-    if (!builder.IsValid())
-        return false;
-
-    Render::GeometryParams params = builder->GetGeometryParams();
+    Render::GeometryParams params = builder.GetGeometryParams();
     int n = input.size();
 
     for (int i = 0; i < n; i++)
@@ -5804,6 +5807,108 @@ bool GeometryBuilder::UpdateFromJson(GeometrySourceR source, JsonValueCR input, 
             if (!appearance["geometryClass"].isNull())
                 params.SetGeometryClass((Render::DgnGeometryClass) (appearance["geometryClass"].asInt()));
             }
+        else if (entry.isMember("geomPart"))
+            {
+            Json::Value geomPart = entry["geomPart"];
+
+            if (geomPart["part"].isNull())
+                return false; // A part id is required...
+
+            DgnGeometryPartId partId;
+            partId.FromJson(geomPart["part"]);
+            if (!partId.IsValid())
+                return false;
+
+            DPoint3d origin = DPoint3d::FromZero();
+            if (!geomPart["origin"].isNull())
+                JsonUtils::DPoint3dFromJson(origin, geomPart["origin"]);
+
+            YawPitchRollAngles angles;
+            if (!geomPart["rotation"].isNull())
+                angles = JsonUtils::YawPitchRollFromJson(geomPart["rotation"]);
+
+            Transform geomToSource = angles.ToTransform(origin);
+
+            if (!geomPart["scale"].isNull())
+                {
+                double scale = geomPart["scale"].asDouble();
+                if (scale > 0.0 && 1.0 != scale)
+                    geomToSource.ScaleMatrixColumns(geomToSource, scale, scale, scale);
+                }
+
+            if (!builder.Append(params))
+                return false;
+
+            if (!builder.Append(partId, geomToSource))
+                return false;
+            }
+        else if (entry.isMember("textString"))
+            {
+            Json::Value textString = entry["textString"];
+
+            if (textString["font"].isNull() || textString["height"].isNull() || textString["text"].isNull())
+                return false; // A font, height, and text are required...
+
+            DgnFontCP font = builder.GetDgnDb().Fonts().FindFontById(DgnFontId((uint64_t) textString["font"].asInt()));
+
+            if (nullptr == font)
+                return false; // Invalid font id...
+
+            double  height = textString["height"].asDouble();
+            double  width = height;
+
+            if (0.0 == height)
+                return false; // Invalid height...
+
+            if (!textString["widthFactor"].isNull())
+                {
+                double widthFactor = textString["widthFactor"].asDouble();
+                
+                if (0.0 != widthFactor)
+                    width = height * widthFactor;
+                }
+
+            TextStringStylePtr style = TextStringStyle::Create();
+
+            style->SetFont(*font);
+            style->SetSize(width, height);
+
+            if (!textString["bold"].isNull())
+                style->SetIsBold(textString["bold"].asBool());
+
+            if (!textString["italic"].isNull())
+                style->SetIsItalic(textString["italic"].asBool());
+
+            if (!textString["underline"].isNull())
+                style->SetIsUnderlined(textString["underline"].asBool());
+
+            TextStringPtr text = TextString::Create();
+
+            text->SetStyle(*style);
+            text->SetText(textString["text"].asString().c_str());
+
+            if (!textString["origin"].isNull())
+                {
+                DPoint3d origin;
+
+                JsonUtils::DPoint3dFromJson(origin, textString["origin"]);
+                text->SetOrigin(origin);
+                }
+
+            if (!textString["rotation"].isNull())
+                {
+                YawPitchRollAngles angles = JsonUtils::YawPitchRollFromJson(textString["rotation"]);
+                RotMatrix rMatrix = angles.ToRotMatrix();
+
+                text->SetOrientation(rMatrix);
+                }
+
+            if (!builder.Append(params))
+                return false;
+
+            if (!builder.Append(*text))
+                return false;
+            }
         else
             {
             bvector<IGeometryPtr> geometry;
@@ -5811,10 +5916,51 @@ bool GeometryBuilder::UpdateFromJson(GeometrySourceR source, JsonValueCR input, 
             if (!IModelJson::TryIModelJsonValueToGeometry(entry, geometry) || 1 != geometry.size())
                 return false; // Should only ever be a single entry...
 
-            builder->Append(params);
-            builder->Append(*geometry.at(0));
+            if (!builder.Append(params))
+                return false;
+
+            if (!builder.Append(*geometry.at(0)))
+                return false;
             }
         }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::UpdateFromJson(DgnGeometryPartR part, JsonValueCR input, JsonValueCR opts)
+    {
+    if (!input.isArray())
+        return false;
+
+    GeometryBuilderPtr builder = CreateGeometryPart(part.GetDgnDb(), true); // NEEDSWORK...supply 2d/3d in opts?
+
+    if (!builder.IsValid())
+        return false;
+
+    if (!populateBuilderFromJson(*builder, input, opts))
+        return false;
+
+    return (SUCCESS == builder->Finish(part));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::UpdateFromJson(GeometrySourceR source, JsonValueCR input, JsonValueCR opts)
+    {
+    if (!input.isArray())
+        return false;
+
+    GeometryBuilderPtr builder = Create(source);
+
+    if (!builder.IsValid())
+        return false;
+
+    if (!populateBuilderFromJson(*builder, input, opts))
+        return false;
 
     return (SUCCESS == builder->Finish(source));
     }

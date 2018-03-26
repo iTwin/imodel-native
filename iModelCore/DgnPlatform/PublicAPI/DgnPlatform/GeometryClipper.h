@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeometryClipper.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,7 +39,9 @@ public:
     public:
         void ClipPolyface(PolyfaceQueryCR mesh, ClipVectorCP clip, bool triangulate) { clip->ClipPolyface(mesh, *this, triangulate); }
         bool HasOutput() const { return !m_output.empty(); }
+        bool HasClipped() const { return !m_clipped.empty(); }
         bvector<PolyfaceQueryCP>& GetOutput() { return m_output; }
+        bvector<PolyfaceHeaderPtr>& GetClipped() { return m_clipped; }
     };
 
     GeometryClipper(ClipVectorCP clip) : m_clip(clip) { }

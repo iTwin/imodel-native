@@ -2726,6 +2726,7 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, Tile
         selected.resize(initialSize);
         }
 
+
     if (_HasGraphics())
         {
         // This tile might have 'backup' graphics after having been modified. Ask it to load its 'real' graphics.
@@ -2772,8 +2773,8 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
     {
     try
         {
-#ifndef NDEBUG
-        static DgnElementId             s_debugId; // ((uint64_t) 2877);
+#ifdef DEBUG_ELEMENT_FILTER
+        static DgnElementId             s_debugId((uint64_t) 73634);
 
         if (s_debugId.IsValid() && s_debugId != elemId)
             return;
