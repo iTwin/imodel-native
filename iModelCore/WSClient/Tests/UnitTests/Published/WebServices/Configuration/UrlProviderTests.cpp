@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/UrlProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "UrlProviderTests.h"
@@ -19,13 +19,29 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN
 
 #define URL_COUNT 17
 
+WorkerThreadPtr UrlProviderTests::s_thread;
+
+void UrlProviderTests::SetUp()
+    {
+    BaseMockHttpHandlerTest::SetUp();
+    if (nullptr == s_thread)
+        s_thread = WorkerThread::Create("UrlProviderTests");
+    s_thread->OnEmpty()->Wait();
+    }
+
+void UrlProviderTests::TearDown()
+    {
+    s_thread->OnEmpty()->Wait();
+    BaseMockHttpHandlerTest::TearDown();
+    }
+
 #ifdef USE_GTEST
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoBuddiUrl_ReturnsDefaultUrl)
     {
     auto client = std::make_shared<MockBuddiClient>();
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(""))));
 
@@ -37,7 +53,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_NoCachedAndNoConnectionError_Returns
     auto client = std::make_shared<MockBuddiClient>();
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Error(BuddiError::Status::ConnectionError))));
 
@@ -49,7 +65,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeWhenUrlIsCached_Gets
     auto client = std::make_shared<MockBuddiClient>();
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("TestUrl"))));
 
@@ -62,19 +78,19 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutSetToZero_ReturnsCachedUrlBut
     auto client = std::make_shared<MockBuddiClient>();
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, 0, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, 0, &localState, client, nullptr, s_thread);
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("A"))));
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
-    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+    s_thread->OnEmpty()->Wait();
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("B"))));
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
-    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+    s_thread->OnEmpty()->Wait();
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("C"))));
     EXPECT_EQ("B", UrlProvider::Urls::ConnectWsgPunchList.Get());
-    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+    s_thread->OnEmpty()->Wait();
     }
 
 TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeAfterTimeoutAndBuddiCannotConnect_ReturnsLastCachedUrl)
@@ -82,7 +98,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_CalledSecondTimeAfterTimeoutAndBuddi
     auto client = std::make_shared<MockBuddiClient>();
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, 0, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, 0, &localState, client, nullptr, s_thread);
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("A"))));
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
@@ -96,17 +112,17 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBu
     auto client = std::make_shared<MockBuddiClient>();
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, 5, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, 5, &localState, client, nullptr, s_thread);
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("A"))));
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
-    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+    s_thread->OnEmpty()->Wait();
 
     BeThreadUtilities::BeSleep(10);
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("B"))));
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
-    AsyncTasksManager::GetDefaultScheduler()->OnEmpty()->Wait();
+    s_thread->OnEmpty()->Wait();
 
     ON_CALL(*client, GetUrl(_, _)).WillByDefault(Return(CreateCompletedAsyncTask(BuddiUrlResult::Error({}))));
     EXPECT_EQ("B", UrlProvider::Urls::ConnectWsgPunchList.Get());
@@ -117,7 +133,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_Returns
     auto client = std::make_shared<MockBuddiClient>();
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, 3600 * 1000, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, 3600 * 1000, &localState, client, nullptr, s_thread);
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("A"))));
     EXPECT_EQ("A", UrlProvider::Urls::ConnectWsgPunchList.Get());
@@ -134,7 +150,7 @@ TEST_F(UrlProviderTests, GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_Ig
     ON_CALL(localState, SaveValue(_, _, _)).WillByDefault(Return());
     ON_CALL(*client, GetUrl(_, _)).WillByDefault(Return(CreateCompletedAsyncTask(BuddiUrlResult())));
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
     Json::Value newValue;
 
@@ -162,7 +178,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
         return CreateCompletedAsyncTask(BuddiUrlResult::Success(url));
         }));
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectTermsOfServiceUrl.Get().c_str());
@@ -213,7 +229,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
         .Times(URL_COUNT)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
 
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectEula.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectTermsOfServiceUrl.Get().c_str());
@@ -270,13 +286,13 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithDifferentEnvironment_Cle
         .WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(urlQa))))
         .WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(urlDev))));
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
     EXPECT_STREQ(urlDev.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
 
-    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
     EXPECT_STREQ(urlQa.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
     EXPECT_STREQ(urlDev.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
@@ -287,10 +303,10 @@ TEST_F(UrlProviderTests, Initialize_CalledSecondTimeWithSameEnvironment_DoesNotC
 
     EXPECT_CALL(*client, GetUrl(_, _)).WillOnce(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success("TestUrl"))));
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
     EXPECT_STREQ("TestUrl", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client, nullptr, s_thread);
     EXPECT_STREQ("TestUrl", UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     }
 
@@ -298,7 +314,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithDev_DoesNotSetVa
     {
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState);
+    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
 
     GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
@@ -315,7 +331,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithQa_DoesNotSetVal
     {
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState);
+    UrlProvider::Initialize(UrlProvider::Environment::Qa, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
 
     GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
@@ -332,7 +348,7 @@ TEST_F(UrlProviderTests, GetSecurityConfigurator_InitializedWithRelease_SetsVali
     {
     StubLocalState localState;
 
-    UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &localState);
+    UrlProvider::Initialize(UrlProvider::Environment::Release, UrlProvider::DefaultTimeout, &localState, nullptr, nullptr, s_thread);
     auto configurator = UrlProvider::GetSecurityConfigurator(GetHandlerPtr());
 
     GetHandler().ExpectOneRequest().ForAnyRequest([=] (HttpRequestCR request)
