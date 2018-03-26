@@ -24,7 +24,7 @@ nameToDefine = __CLASSIFICATIONSYSTEMSHANDLERS_BUILD__
 MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)ClassificationSystemsPathHandlers$(oext) : $(_MakeFilePath)ClassificationSystemsPathHandlers.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsHandlers.h
+$(o)ClassificationSystemsHandlers$(oext) : $(_MakeFilePath)ClassificationSystemsHandlers.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ClassificationSystemsHandlers.h
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

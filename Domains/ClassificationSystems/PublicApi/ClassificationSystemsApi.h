@@ -11,7 +11,7 @@
 #include "Domain/ClassificationSystemsMacros.h"
 //#include "Domain/ClassificationSystemsDomain.h"
 #include "Elements/ClassificationSystemsElements.h"
-//#include "Handlers/ClassificationSystemsPathSectionHandler.h"
+#include "Handlers/ClassificationSystemsHandlers.h"
 //#include "Handlers/ClassificationSystemsPathHandler.h"
 
 

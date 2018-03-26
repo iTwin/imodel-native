@@ -7,21 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-BEGIN_EGRESS_NAMESPACE
+BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
-struct EgressPathHandler : Dgn::dgn_ElementHandler::SpatialLocation, BENTLEY_BUILDING_SHARED_NAMESPACE_NAME::IElementChangedHandler
+
+struct CIBSEClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(EGRESS_CLASS_EgressPath, EgressPath, EgressPathHandler, Dgn::dgn_ElementHandler::SpatialLocation, EGRESSHANDLERS_EXPORT)
-
-    protected:
-    //IElementChangedHandler
-    EGRESSHANDLERS_EXPORT virtual void OnElementInserted(Dgn::DgnDbR db, Dgn::DgnElementId elementId) override;
-    EGRESSHANDLERS_EXPORT virtual void OnElementUpdated(Dgn::DgnDbR db, Dgn::DgnElementId elementId) override;
-    EGRESSHANDLERS_EXPORT virtual void OnElementDeleted(Dgn::DgnDbR db, Dgn::DgnElementId elementId) override;
-    public:
-    
-    EGRESSHANDLERS_EXPORT static BentleyStatus FindShortestPathsForAllSpacesInAFloor(bmap<bpair<Dgn::DgnElementId, Dgn::DgnElementId>, EgressPathPtr>& shortestPaths, bmap<bpair<Dgn::DgnElementId, Dgn::DgnElementId>, EgressPathPtr>& secondaryShortestPaths, Dgn::DgnModelP floorSubModel);
-    EGRESSHANDLERS_EXPORT static BentleyStatus UpdateAllShortestPathsInModel(Dgn::DgnModelP model);
+    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition, CIBSEClassDefinition, CIBSEClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
     };
 
-END_EGRESS_NAMESPACE
+END_CLASSIFICATIONSYSTEMS_NAMESPACE
