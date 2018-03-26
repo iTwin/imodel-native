@@ -801,6 +801,20 @@ void PolyfaceHeader::CopyFrom (PolyfaceQueryCR source)
     m_paramIndex.SetStructsPerRow (numIndexPerRow);
     m_colorIndex.SetStructsPerRow (numIndexPerRow);
     m_faceIndex.SetStructsPerRow (numIndexPerRow);
+
+
+    m_illuminationName.clear ();
+    wchar_t const *pChars = source.GetIlluminationNameCP ();
+    if (pChars != NULL)
+        {
+        for (size_t i = 0;;i++)
+            {
+            m_illuminationName.push_back (pChars[i]);
+            if (pChars[i] == 0)
+                break;
+            }
+        }
+
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -1390,7 +1404,7 @@ BlockedVectorDVec3dR                PolyfaceHeader::Normal ()           { return
 BlockedVectorUInt32R                PolyfaceHeader::IntColor ()         { return m_intColor;}
 BlockedVector<FacetFaceData>&       PolyfaceHeader::FaceData ()         { return m_faceData; } 
 BlockedVector<PolyfaceEdgeChain>&   PolyfaceHeader::EdgeChain ()        { return m_edgeChain; } 
-PolyfaceAuxDataPtr&                 PolyfaceHeader::AuxData()           { return m_auxData; }
+WString&                            PolyfaceHeader::IlluminationName()  { return m_illuminationName;}
 
 
 
@@ -1608,6 +1622,17 @@ bool PolyfaceHeader::AddIndexedFacet
         return true;
         }
     return false;
+    }
+
+void    PolyfaceHeader::SetTextureId (uintptr_t id)        { m_textureId = id; }
+
+ /*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+void PolyfaceHeader::SetIlluminationName (wchar_t const *name)
+    {
+    if (NULL != name)
+        m_illuminationName = WString (name);
     }
 
 /*--------------------------------------------------------------------------------**//**

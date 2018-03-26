@@ -1047,6 +1047,8 @@ bvector<PolyfaceHeaderPtr> &submeshArray
             submeshArray.back ()->CopyAllActiveFlagsFrom (*thisAsHeader);
         else
             submeshArray.back ()->CopyAllActiveFlagsFromQuery (*this);
+            
+        submeshArray.back ()->SetTextureId (GetTextureId ());
         }
 
     PolyfaceVisitorPtr      visitor = PolyfaceVisitor::Attach (*this, true);
@@ -1089,6 +1091,7 @@ bvector<PolyfaceHeaderPtr> &submeshArray
         {
         submeshArray.push_back (PolyfaceHeader::CreateVariableSizeIndexed ());
         submeshArray.back ()->CopyAllActiveFlagsFromQuery (*this);
+        submeshArray.back ()->SetTextureId (GetTextureId ());
         for (size_t readIndex : blockedReadIndex[partitionIndex])
             {
             faceIndex++;
