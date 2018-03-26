@@ -81,8 +81,8 @@
         <ProductDirectory Name="TestingProjects-Documents-DgnDb" Path="Assets/Documents/DgnClientFxTestData" LibType="static"/>
 		<ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false"/>
         <ProductDirectory Name="TestingProjects_Documents_DgnDb" Deliver="false" LibType="static"/>
-		<ProductDirectory Name="ImodelHubTestData"         Path="Assets/Documents/ImodelHubTestData"/>
-		<ProductDirectory Name="ImodelHubTestData"         Path="Assets/Documents/ImodelHubTestData" LibType="static"/>
+		<ProductDirectory Name="ImodelHubTestData" Deliver="false" Path="Assets/Documents/ImodelHubTestData"/>
+		<ProductDirectory Name="ImodelHubTestData" Deliver="false" Path="Assets/Documents/ImodelHubTestData" LibType="static"/>
 		
     </ProductDirectoryList>
 
