@@ -260,6 +260,8 @@ namespace Attachment
     DEFINE_REF_COUNTED_PTR(Root);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile);
     DEFINE_REF_COUNTED_PTR(Tile);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(IAttachment);
+    DEFINE_REF_COUNTED_PTR(IAttachment);
 
     //=======================================================================================
     // Describes the state of the scene for a given level of the tile tree.
@@ -410,33 +412,62 @@ struct ViewController : Dgn::ViewController2d
 
 protected:
     struct Attachments;
-    struct Attachment
+    struct Attachment : RefCountedBase
+    {
+    protected:
+        DgnElementId m_id;
+
+        explicit Attachment(DgnElementId id) : m_id(id) { }
+    public:
+        DgnElementId GetId() const { return m_id; }
+
+        virtual bool _Load(DgnDbR db, ViewController& sheetController, SceneContextR context) = 0;
+        virtual TileTree::RootP _GetTree() const = 0;
+
+        void CancelAllTileLoads()
+            {
+            auto tree = _GetTree();
+            if (nullptr != tree)
+                tree->CancelAllTileLoads();
+            }
+        void WaitForAllLoads()
+            {
+            auto tree = _GetTree();
+            if (nullptr != tree)
+                tree->WaitForAllLoads();
+            }
+    };
+
+    friend Sheet::Attachment::Root;
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
+    DEFINE_REF_COUNTED_PTR(Attachment);
+
+    struct Attachment3d : Attachment
     {
         friend struct Attachments;
         using State = Sheet::Attachment::State;
     private:
-        DgnElementId                m_id;
         Sheet::Attachment::RootPtr  m_tree = nullptr;
         bvector<State>              m_states; // per level of the tree
 
-        bool LoadTree(DgnDbR db, ViewController& sheetController, SceneContextR context);
+        bool _Load(DgnDbR db, ViewController& sheetController, SceneContextR context) override;
+        TileTree::RootP _GetTree() const override { return m_tree.get(); }
+
+        explicit Attachment3d(DgnElementId id) : Attachment(id) { }
     public:
-        explicit Attachment(DgnElementId id=DgnElementId()) : m_id(id), m_tree(nullptr) { }
-        explicit Attachment(Attachment&& src) = default;
-        Attachment& operator=(Attachment&& src) = default;
+        static AttachmentPtr Create(DgnElementId id=DgnElementId()) { return new Attachment3d(id); }
 
         DgnElementId GetId() const { return m_id; }
         Sheet::Attachment::RootP GetTree() { return m_tree.get(); }
         Sheet::Attachment::RootCP GetTree() const { return m_tree.get(); }
         State GetState(uint32_t depth) const { return depth < m_states.size() ? m_states[depth] : State::NotLoaded; }
         void SetState(uint32_t depth, State state);
-        void CancelAllTileLoads() { if (nullptr != GetTree()) GetTree()->CancelAllTileLoads(); }
-        void WaitForAllLoads() { if (nullptr != GetTree()) GetTree()->WaitForAllLoads(); }
     };
 
     struct Attachments
     {
-        using List = bvector<Attachment>;
+        using List = bvector<AttachmentPtr>;
         using iterator = List::iterator;
         using const_iterator = List::const_iterator;
     private:
@@ -461,14 +492,14 @@ protected:
         Attachment* Find(DgnElementId id)
             {
             for (auto& attach : *this)
-                if (attach.GetId() == id)
-                    return &attach;
+                if (attach->GetId() == id)
+                    return attach.get();
 
             return nullptr;
             }
 
-        void Add(Attachment&& src);
-        bool LoadTree(size_t index, DgnDbR db, ViewController& sheetController, SceneContextR context);
+        void Add(AttachmentR src);
+        bool Load(size_t index, DgnDbR db, ViewController& sheetController, SceneContextR context);
         void InitBoundingBoxColors();
     };
 

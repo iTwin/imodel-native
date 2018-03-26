@@ -352,27 +352,27 @@ AxisAlignedBox3d Sheet::Model::GetSheetExtents() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::ViewController::Attachments::Add(Sheet::ViewController::Attachment&& attach)
+void Sheet::ViewController::Attachments::Add(Sheet::ViewController::AttachmentR attach)
     {
     BeAssert(nullptr == Find(attach.GetId()));
-    m_allAttachmentsLoaded = m_allAttachmentsLoaded && nullptr != attach.GetTree();
-    m_list.push_back(std::move(attach));
+    m_allAttachmentsLoaded = m_allAttachmentsLoaded && nullptr != attach._GetTree();
+    m_list.push_back(&attach);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Sheet::ViewController::Attachments::LoadTree(size_t index, DgnDbR db, ViewController& sheetController, SceneContextR context)
+bool Sheet::ViewController::Attachments::Load(size_t index, DgnDbR db, ViewController& sheetController, SceneContextR context)
     {
     BeAssert(index < size());
     if (index >= size())
         return false;
 
     auto& attach = m_list[index];
-    if (nullptr != attach.GetTree())
+    if (nullptr != attach->_GetTree())
         return true;
 
-    bool loaded = attach.LoadTree(db, sheetController, context);
+    bool loaded = attach->_Load(db, sheetController, context);
     if (!loaded)
         m_list.erase(m_list.begin() + index);
 
@@ -388,7 +388,7 @@ void Sheet::ViewController::Attachments::UpdateAllLoaded()
     m_allAttachmentsLoaded = true;
     for (auto const& attach : m_list)
         {
-        if (nullptr == attach.GetTree())
+        if (nullptr == attach->_GetTree())
             {
             m_allAttachmentsLoaded = false;
             break;
@@ -413,18 +413,20 @@ void Sheet::ViewController::Attachments::InitBoundingBoxColors()
         ColorDef::DarkGrey(),
         };
 
+#if defined(WIP_ATTACHMENTS)
     for (size_t i = 0; i < size(); i++)
         {
-        auto tree = m_list[i].GetTree();
+        auto tree = m_list[i]->_GetTree();
         if (nullptr != tree)
             tree->m_boundingBoxColor = s_colors[i % _countof(s_colors)];
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::ViewController::Attachment::SetState(uint32_t depth, State state)
+void Sheet::ViewController::Attachment3d::SetState(uint32_t depth, State state)
     {
     while (m_states.size() < depth+1)
         m_states.push_back(State::NotLoaded);
@@ -435,7 +437,7 @@ void Sheet::ViewController::Attachment::SetState(uint32_t depth, State state)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Sheet::ViewController::Attachment::LoadTree(DgnDbR db, Sheet::ViewController& sheetController, SceneContextR context)
+bool Sheet::ViewController::Attachment3d::_Load(DgnDbR db, Sheet::ViewController& sheetController, SceneContextR context)
     {
     if (!m_tree.IsValid())
         m_tree = Sheet::Attachment::Root::Create(db, sheetController, GetId(), context);
@@ -468,12 +470,12 @@ void Sheet::ViewController::_LoadState()
     while (BE_SQLITE_ROW == stmt->Step())
         {
         auto attachId = stmt->GetValueId<DgnElementId>(0);
-        auto tree = FindAttachment(attachId);
+        AttachmentPtr tree = FindAttachment(attachId);
 
-        if (nullptr != tree)
-            attachments.Add(std::move(*tree));
-        else
-            attachments.Add(Attachment(attachId));
+        if (tree.IsNull())
+            tree = Attachment3d::Create(attachId);
+
+        attachments.Add(*tree);
         }
 
     // save new list of attachment
@@ -760,7 +762,7 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
         while (i < m_attachments.size())
             {
             // If LoadTree fails, the attachment will be dropped from m_attachments.
-            if (m_attachments.LoadTree(i, GetDgnDb(), *this, context))
+            if (m_attachments.Load(i, GetDgnDb(), *this, context))
                 ++i;
             }
 
@@ -772,11 +774,11 @@ BentleyStatus Sheet::ViewController::_CreateScene(SceneContextR context)
 
     for (auto& attach : m_attachments)
         {
-        BeAssert(nullptr != attach.GetTree());
+        BeAssert(nullptr != attach->_GetTree());
         // if (!attach.GetTree()->GetRootTile()->IsReady())
         //     continue;
 
-        attach.GetTree()->DrawInView(context);
+        attach->_GetTree()->DrawInView(context);
         }
 
     return SUCCESS;
@@ -830,7 +832,7 @@ void Sheet::ViewController::_CancelAllTileLoads(bool wait)
         m_root->CancelAllTileLoads();
 
     for (auto& attach : m_attachments)
-        attach.CancelAllTileLoads();
+        attach->CancelAllTileLoads();
 
     if (!wait)
         return;
@@ -839,7 +841,7 @@ void Sheet::ViewController::_CancelAllTileLoads(bool wait)
         m_root->WaitForAllLoads();
 
     for (auto& attach : m_attachments)
-        attach.WaitForAllLoads();
+        attach->WaitForAllLoads();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1077,7 +1079,13 @@ Sheet::Attachment::State Sheet::Attachment::Root::GetState(uint32_t depth) const
     // ###TODO: Fix this silly lookup, called from an iterator over the Attachment list...
     auto attach = m_sheetController.GetAttachments().Find(m_attachmentId);
     BeAssert(nullptr != attach);
-    return attach->GetState(depth);
+
+    // ###TODO: WIP_ATTACHMENTS
+    auto attach3d = dynamic_cast<Sheet::ViewController::Attachment3d*>(attach);
+    if (nullptr == attach3d)
+        return Sheet::Attachment::State::Empty;
+
+    return attach3d->GetState(depth);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1088,7 +1096,11 @@ void Sheet::Attachment::Root::SetState(uint32_t depth, State state)
     // ###TODO: Fix this silly lookup, called from an iterator over the Attachment list...
     auto attach = m_sheetController.GetAttachments().Find(m_attachmentId);
     BeAssert(nullptr != attach);
-    attach->SetState(depth, state);
+
+    // ###TODO: WUIP_ATTACHMENTS
+    auto attach3d = dynamic_cast<Sheet::ViewController::Attachment3d*>(attach);
+    if (nullptr != attach3d)
+        attach3d->SetState(depth, state);
     }
 
 /*---------------------------------------------------------------------------------**//**
