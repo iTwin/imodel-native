@@ -273,6 +273,8 @@ struct RectanglePoints
             }
         }
 
+    template<typename T> RectanglePoints(T const& range) : RectanglePoints(range.low.x, range.low.y, range.high.x, range.high.y) { }
+
     operator DPoint2dP() {return m_pts;}
     operator DPoint2dCP() const {return m_pts;}
 };
@@ -1102,6 +1104,24 @@ Render::ViewFlagsOverrides Sheet::Attachment::Root::_GetViewFlagsOverrides() con
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorPtr ViewAttachment::GetOrCreateClip(TransformCP tf) const
+    {
+    auto clip = GetClip();
+    if (clip.IsNull())
+        {
+        RectanglePoints box(GetPlacement().CalculateRange());
+        clip = new ClipVector(ClipPrimitive::CreateFromShape(box, 5, false, nullptr, nullptr, nullptr).get());
+        }
+
+    if (nullptr != tf)
+        clip = clip->Clone(tf);
+
+    return clip;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view)
@@ -1177,9 +1197,7 @@ Sheet::Attachment::Root::Root(DgnDbR db, Sheet::ViewController& sheetController,
     m_viewport->m_toParent.ScaleMatrixColumns(scale.x, scale.y, 1.0);
 
     // set a clip volume around view, so we only show the original volume
-    m_clip = attach.GetClip();
-    if (!m_clip.IsValid())
-        m_clip = new ClipVector(ClipPrimitive::CreateFromShape(RectanglePoints(range.low.x, range.low.y, range.high.x, range.high.y), 5, false, nullptr, nullptr, nullptr).get());
+    m_clip = attach.GetOrCreateClip();
 
     Transform fromParent;
     fromParent.InverseOf(m_viewport->m_toParent);

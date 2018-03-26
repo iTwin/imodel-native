@@ -237,6 +237,11 @@ public:
     //! @see SetClip
     DGNPLATFORM_EXPORT ClipVectorPtr GetClip() const;
 
+    //! Get the clip to be applied to this attachment, or if none is defined,
+    //! create one based on the attachment's range.
+    //! @see GetClip
+    ClipVectorPtr GetOrCreateClip(TransformCP transform=nullptr) const;
+
     //! Set the clip to be applied to this attachment.
     //! @see ClearClip
     DGNPLATFORM_EXPORT void SetClip(ClipVectorCR);
@@ -286,6 +291,7 @@ namespace Attachment
         ClipVectorCPtr m_clips;
 
         DGNVIEW_EXPORT virtual State _CreateScene(UpdatePlan const& updatePlan, State currentState);
+        DGNVIEW_EXPORT virtual Render::Image _RenderImage();
         DGNVIEW_EXPORT virtual void _RenderTexture();
         void QueueScene(SceneContextR);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
