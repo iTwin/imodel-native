@@ -307,7 +307,28 @@ table DgnRuledSweep
     curves:     [CurveVector];
     capped:     bool;
     }
-        
+    
+    
+table PolyfaceAuxChannelData
+    {
+	input       	:   double;
+	values      	:  [double];
+	}
+table PolyfaceAuxChannel
+    {
+    blockSize       :   int;
+	transformType   :   int;
+	name            :   string;
+	inputName       :   string;
+	data            :  [PolyfaceAuxChannelData];
+	}
+
+table PolyfaceAuxData
+    {
+	indices         : [int];
+	channels        : [PolyfaceAuxChannel];
+	}
+
    
 table Polyface
     {
@@ -326,7 +347,8 @@ table Polyface
     meshStyle   : int;
     twoSided    : bool;
     faceIndex   : [int];
-    faceData   : [double];
+    faceData    : [double];
+	auxData     : PolyfaceAuxData; 
     }    
 
 struct TransitionSpiralDetail

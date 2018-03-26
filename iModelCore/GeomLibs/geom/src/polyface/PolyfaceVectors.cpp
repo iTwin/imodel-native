@@ -27,31 +27,27 @@ DVec3dCP                PolyfaceVectors::_GetNormalCP ()             const  {ret
 DPoint2dCP              PolyfaceVectors::_GetParamCP ()              const  {return m_param.GetCP();}
 FacetFaceDataCP         PolyfaceVectors::_GetFaceDataCP ()           const  {return m_faceData.GetCP(); }
 PolyfaceEdgeChainCP     PolyfaceVectors::_GetEdgeChainCP ()          const  {return m_edgeChain.GetCP(); }
-
-uint32_t const*           PolyfaceVectors::_GetIntColorCP ()           const  {return (uint32_t*)m_intColor.GetCP();}
+PolyfaceAuxDataCPtr     PolyfaceVectors::_GetAuxDataCP()             const  {return m_auxData; }
+uint32_t const*         PolyfaceVectors::_GetIntColorCP ()           const  {return (uint32_t*)m_intColor.GetCP();}
 
 /** For Color, Param, and normal indices, resolveToDefaults allows caller to request using
 PointIndex (or other default decision) if respective index is same as PointIndex. */
-int32_t const*            PolyfaceVectors::_GetPointIndexCP  ()        const  {return m_pointIndex.GetCP ();  }
-int32_t const*            PolyfaceVectors::_GetColorIndexCP  ()        const  {return m_colorIndex.GetCP ();  }
-int32_t const*            PolyfaceVectors::_GetParamIndexCP  ()        const  {return m_paramIndex.GetCP ();  }
-int32_t const*            PolyfaceVectors::_GetNormalIndexCP ()        const  {return m_normalIndex.GetCP (); }
-int32_t const*            PolyfaceVectors::_GetFaceIndexCP ()          const  {return m_faceIndex.GetCP ();   }
-uintptr_t               PolyfaceVectors::_GetTextureId ()            const  {return m_textureId;}
+int32_t const*          PolyfaceVectors::_GetPointIndexCP  ()        const  {return m_pointIndex.GetCP ();  }
+int32_t const*          PolyfaceVectors::_GetColorIndexCP  ()        const  {return m_colorIndex.GetCP ();  }
+int32_t const*          PolyfaceVectors::_GetParamIndexCP  ()        const  {return m_paramIndex.GetCP ();  }
+int32_t const*          PolyfaceVectors::_GetNormalIndexCP ()        const  {return m_normalIndex.GetCP (); }
+int32_t const*          PolyfaceVectors::_GetFaceIndexCP ()          const  {return m_faceIndex.GetCP ();   }
 bool                    PolyfaceVectors::_GetTwoSided ()             const  {return m_twoSided;}
 uint32_t                PolyfaceVectors::_GetNumPerFace ()           const  {return m_numPerFace;}
 uint32_t                PolyfaceVectors::_GetNumPerRow ()            const  {return m_numPerRow;}
 uint32_t                PolyfaceVectors::_GetMeshStyle()             const  {return m_meshStyle;}
-wchar_t const*          PolyfaceVectors::_GetIlluminationNameCP ()   const  {return m_illuminationName.empty() ? NULL : &m_illuminationName[0]; }
 
 PolyfaceVectors* PolyfaceVectors::_AsPolyfaceVectorsP () const { return const_cast <PolyfaceVectors*> (this);}
 void    PolyfaceVectors::SetTwoSided (bool twoSided)        { m_twoSided = twoSided; }
 void    PolyfaceVectors::SetNumPerFace (uint32_t numPerFace)  { m_numPerFace = numPerFace; }
 void    PolyfaceVectors::SetNumPerRow (uint32_t numPerRow)    { m_numPerRow = numPerRow; }
-void    PolyfaceVectors::SetMeshStyle (uint32_t meshStyle) 
-    {
-    m_meshStyle  = meshStyle;
-    }
+void    PolyfaceVectors::SetMeshStyle (uint32_t meshStyle)    { m_meshStyle  = meshStyle;     }
+void    PolyfaceVectors::SetAuxData(PolyfaceAuxDataPtr& auxData) { m_auxData = auxData; }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -71,7 +67,6 @@ PolyfaceVectors::PolyfaceVectors() :
     m_colorIndex        (1, 1, 0, 0, 0, false),
     m_faceIndex         (1, 1, 0, 0, 0, false),
     m_faceData (),
-    m_textureId (0),
     m_numPerFace (0),
     m_twoSided (false),
     m_meshStyle (MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
@@ -111,6 +106,7 @@ void PolyfaceVectors::ClearAllArrays ()
     m_intColor.clear ();
     m_faceData.clear ();
     m_faceIndex.clear ();
+    m_auxData = nullptr;
     }
 
 /*--------------------------------------------------------------------------------**//**

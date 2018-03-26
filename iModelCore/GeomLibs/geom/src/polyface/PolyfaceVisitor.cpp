@@ -20,7 +20,6 @@ BlockedVectorDPoint3dR              PolyfaceVisitor::Point ()                   
 BlockedVectorDPoint2dR              PolyfaceVisitor::Param ()                           { return m_param; }
 BlockedVectorDVec3dR                PolyfaceVisitor::Normal ()                          { return m_normal; }
 BlockedVectorUInt32R                PolyfaceVisitor::IntColor ()                        { return m_intColor; }
-WString&                            PolyfaceVisitor::IlluminationName()                 { return m_illuminationName; }
 
 BlockedVectorIntR                   PolyfaceVisitor::ClientPointIndex  ()               { return m_pointIndex; }
 BlockedVectorIntR                   PolyfaceVisitor::ClientParamIndex  ()               { return m_paramIndex; }

@@ -27,11 +27,12 @@ ImplementNullArgPolyfaceQueryDispatcher (DPoint2dCP,GetParam)
 ImplementNullArgPolyfaceQueryDispatcher (FacetFaceDataCP,GetFaceData)
 ImplementNullArgPolyfaceQueryDispatcher (PolyfaceEdgeChainCP, GetEdgeChain)
 ImplementNullArgPolyfaceQueryDispatcher (uint32_t const*,GetIntColor)
-ImplementNullArgPolyfaceQueryDispatcher (wchar_t const*,GetIlluminationName)
-ImplementNullArgPolyfaceQueryDispatcher1 (uintptr_t,GetTextureId)
 ImplementNullArgPolyfaceQueryDispatcher (int32_t const*,GetPointIndex)
-
+                                                                                                
+                                                                                                
 PolyfaceVectors* PolyfaceQuery::_AsPolyfaceVectorsP () const { return nullptr;}
+PolyfaceAuxDataCPtr PolyfaceQuery::_GetAuxDataCP() const { return nullptr; }
+
 
 //! Select an index pointer -- e.g. normal, param, color -- with optional fallback to point index.
 //! @param[in] firstChoice first choice (e.g. the available nomal, param, or color index)
@@ -47,15 +48,17 @@ static int32_t const* ResolveIndexPtr (int32_t const * firstChoice, bool resolve
         return queryObject->GetPointIndexCP ();
     return NULL;
     }
-int32_t const*     PolyfaceQuery::GetColorIndexCP  (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetColorIndexCP (),  resolveToDefaults, this);}
-int32_t const*     PolyfaceQuery::GetParamIndexCP  (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetParamIndexCP (),  resolveToDefaults, this);}
-int32_t const*     PolyfaceQuery::GetNormalIndexCP (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetNormalIndexCP (), resolveToDefaults, this);}
-int32_t const*     PolyfaceQuery::GetFaceIndexCP (bool resolveToDefaults) const           { return ResolveIndexPtr (_GetFaceIndexCP (),   resolveToDefaults, this);}
+int32_t const*      PolyfaceQuery::GetColorIndexCP  (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetColorIndexCP (),  resolveToDefaults, this);}
+int32_t const*      PolyfaceQuery::GetParamIndexCP  (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetParamIndexCP (),  resolveToDefaults, this);}
+int32_t const*      PolyfaceQuery::GetNormalIndexCP (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetNormalIndexCP (), resolveToDefaults, this);}
+int32_t const*      PolyfaceQuery::GetFaceIndexCP (bool resolveToDefaults) const           { return ResolveIndexPtr (_GetFaceIndexCP (),   resolveToDefaults, this);}
 
-uint32_t         PolyfaceQuery::GetNumPerFace () const                                  { return _GetNumPerFace ();}
-uint32_t         PolyfaceQuery::GetNumPerRow () const                                   { return _GetNumPerRow ();}
-bool             PolyfaceQuery::GetTwoSided () const                                    { return _GetTwoSided (); }
-uint32_t         PolyfaceQuery::GetMeshStyle () const                                   { return _GetMeshStyle ();}
+uint32_t            PolyfaceQuery::GetNumPerFace () const                                  { return _GetNumPerFace ();}
+uint32_t            PolyfaceQuery::GetNumPerRow () const                                   { return _GetNumPerRow ();}
+bool                PolyfaceQuery::GetTwoSided () const                                    { return _GetTwoSided (); }
+uint32_t            PolyfaceQuery::GetMeshStyle () const                                   { return _GetMeshStyle ();}
+PolyfaceAuxDataCPtr PolyfaceQuery::GetAuxDataCP() const                                    { return _GetAuxDataCP ();}
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
@@ -171,6 +174,9 @@ BlockedVectorInt::IndexAction           normalArrayIndexAction
         ReverseInRange (pColorIndex, iFirst, iLast);  // No sign effects for color indices.
     if (pParamIndex)
         ReverseInRange (pParamIndex, iFirst, iLast);  // No sign effects for param indices.
+
+    if (GetAuxDataCP().IsValid())
+        ReverseInRange(const_cast<int32_t*> (GetAuxDataCP()->GetIndices().data()), iFirst, iLast);
     }
 
 /** From given start position, find final (inclusive) position and position for next start search.
@@ -354,6 +360,7 @@ BlockedVectorInt::IndexAction normalIndexAction
 
     return true;
     }
+
 
 
 

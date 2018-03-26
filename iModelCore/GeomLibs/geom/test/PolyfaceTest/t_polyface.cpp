@@ -1620,16 +1620,6 @@ TEST(PolyfaceHeader, BsplineCurve2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (Polyface,IlluminationName)
-    {
-    PolyfaceHeaderPtr header = PolyfaceHeader::CreateVariableSizeIndexed ();
-    wchar_t const* name1 = L"name1";
-    header->SetIlluminationName (name1);
-    wchar_t const* name2 = header->GetIlluminationNameCP ();
-    for (size_t i = 0; name1[i] != 0; i++)
-        Check::True (name1[i] == name2[i]);    
-    }
-
 void testContours (int splineOrder, double z0, double zStep, bool capped)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
