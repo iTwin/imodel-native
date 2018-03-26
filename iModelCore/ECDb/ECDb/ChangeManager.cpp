@@ -154,6 +154,17 @@ DbResult ChangeManager::AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool c
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                              Krischan.Eberle     03/2018
+//---------------------------------------------------------------------------------------
+DbResult ChangeManager::DetachChangeCacheFile() const
+    {
+    if (!m_ecdb.IsDbOpen())
+        return BE_SQLITE_ERROR;
+
+    return m_ecdb.DetachDb(TABLESPACE_ECChange);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                              Krischan.Eberle     11/2017
 //---------------------------------------------------------------------------------------
 DbResult ChangeManager::CreateChangeCacheFile(ECDbR cacheDb, BeFileNameCR cachePath) const

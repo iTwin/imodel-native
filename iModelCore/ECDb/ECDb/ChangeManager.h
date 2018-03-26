@@ -56,6 +56,7 @@ struct ChangeManager final
         static bool IsChangeCacheValid(ECDbCR cacheFile, bool logError = false);
 
         DbResult AttachChangeCacheFile(BeFileNameCR cacheFilePath, bool createIfNotExists) const;
+        DbResult DetachChangeCacheFile() const;
         DbResult CreateChangeCacheFile(ECDbR, BeFileNameCR cacheFilePath) const;
 
         void RegisterSqlFunctions() const;
