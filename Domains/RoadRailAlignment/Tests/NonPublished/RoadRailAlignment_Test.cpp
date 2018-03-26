@@ -8,6 +8,9 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     DgnDbPtr projectPtr = CreateProject(L"BasicAlignmentTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
+    auto names = AlignmentModel::QueryAlignmentPartitionNames(*projectPtr->Elements().GetRootSubject());
+    ASSERT_EQ(1, names.size());
+
     DgnModelId modelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
     auto alignModelPtr = AlignmentModel::Get(*projectPtr, modelId);
 
@@ -16,6 +19,8 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
     alignmentPtr->SetStartStation(1000);
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
+
+    ASSERT_EQ(1, alignModelPtr->QueryAlignmentIds().size());
 
     // Create Horizontal 
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };

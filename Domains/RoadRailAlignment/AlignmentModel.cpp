@@ -14,6 +14,28 @@ HANDLER_DEFINE_MEMBERS(AlignmentModelHandler)
 HANDLER_DEFINE_MEMBERS(HorizontalAlignmentModelHandler)
 HANDLER_DEFINE_MEMBERS(VerticalAlignmentModelHandler)
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<Utf8String> AlignmentModel::QueryAlignmentPartitionNames(SubjectCR parentSubject)
+    {
+    auto stmtPtr = parentSubject.GetDgnDb().GetPreparedECSqlStatement(
+        "SELECT slp.CodeValue FROM "
+        BRRA_SCHEMA(BRRA_CLASS_AlignmentModel) " am, "
+        BIS_SCHEMA(BIS_CLASS_SpatialLocationPartition) " slp "
+        "WHERE am.ModeledElement.Id = slp.ECInstanceId AND slp.Parent.Id = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, parentSubject.GetElementId());
+
+    bset<Utf8String> retVal;
+    while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        retVal.insert(Utf8String(stmtPtr->GetValueText(0)));
+
+    return retVal;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -43,6 +65,25 @@ HorizontalAlignmentsCPtr AlignmentModel::QueryHorizontalPartition() const
         return nullptr;
 
     return HorizontalAlignments::Get(GetDgnDb(), stmt.GetValueId<DgnElementId>(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet AlignmentModel::QueryAlignmentIds() const
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_Alignment)
+        " WHERE Model.Id = ?");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, GetModelId());
+
+    DgnElementIdSet retVal;
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        retVal.insert(stmt.GetValueId<DgnElementId>(0));
+
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**
