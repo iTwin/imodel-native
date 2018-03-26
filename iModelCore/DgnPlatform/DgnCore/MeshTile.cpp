@@ -2767,10 +2767,6 @@ void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewA
     BeAssert(nullptr != vp->GetRenderTarget());
     auto& renderSys = vp->GetRenderTarget()->GetSystem();
 
-    // ###TODO: These members are redundant...
-    vp->m_renderSys = &renderSys;
-    vp->m_db = &attach.GetDgnDb();
-
     DRange3d range = attach.GetPlacement().CalculateRange();
     auto clip = attach.GetClip();
     if (clip.IsValid())
