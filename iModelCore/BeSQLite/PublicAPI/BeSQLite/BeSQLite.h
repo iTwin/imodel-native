@@ -1072,6 +1072,7 @@ protected:
 public:
     virtual bool _IsAggregate() {return false;}
     virtual ~DbFunction() {}
+    
     Utf8CP GetName() const {return m_name.c_str();} //!< Get the name of this function
     int GetNumArgs() const {return m_nArgs;}    //!< Get the number of arguments to this function
     DbValueType GetReturnType() const {return m_returnType;}//!< Gets the return type of the function.
