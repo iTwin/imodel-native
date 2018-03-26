@@ -539,26 +539,53 @@ struct PolyfaceAuxData : RefCountedBase
 {
     struct Data : RefCountedBase
         { 
+        private:
         double              m_input;
         bvector<double>     m_values;
+
+        public:
+        double  GetInput() const                        { return m_input; }
+        bvector<double> const& GetValues()              { return m_values; }
+
+        Data(double input, bvector<double>&& values) : m_input(input), m_values(values) { }
         };
     DEFINE_REF_COUNTED_PTR(Data);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Data);
 
     struct Channel : RefCountedBase
         {
+        private:
+
         uint32_t            m_blockSize;        // Block size. 
         uint32_t            m_transformType;    // 0 = none, 1 = vector, 2 = convector, 3 = point.
         Utf8String          m_name;             // Channel name (stress, temperature etc...)
         Utf8String          m_inputName;        // Input that may vary, time, force etc...
         bvector<DataPtr>    m_data;
+
+        public:
+        uint32_t            GetBlockSize() const        { return m_blockSize; }
+        uint32_t            GetTransformType() const    { return m_transformType; }
+        Utf8StringCR        GetName() const             { return m_name; }
+        Utf8StringCR        GetInputName() const        { return m_inputName; }
+        bvector<DataPtr> const& GetData() const         { return m_data; }     
         };
     DEFINE_REF_COUNTED_PTR(Channel);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Channel);
 
+    private:
     bvector<int32_t>        m_indices;
     bvector<ChannelPtr>     m_channels; 
 
+    public:
+    bvector<int32_t> const& GetIndices() const          { return m_indices; }
+    bvector<ChannelPtr> const& GetChannels() const      { return m_channels; }
+
+    PolyfaceAuxData(bvector<int32_t>&& indices, bvector<ChannelPtr>&& channels) : m_indices(indices), m_channels(channels) { }
+
 };  // PolyfaceAuxData
 DEFINE_REF_COUNTED_PTR(PolyfaceAuxData);
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(PolyfaceAuxData);
+
 
 //=======================================================================================
 //! 
@@ -723,7 +750,7 @@ GEOMAPI_VIRTUAL uint32_t                     _GetNumPerFace () const = 0;
 GEOMAPI_VIRTUAL uint32_t                     _GetNumPerRow () const = 0;
 GEOMAPI_VIRTUAL uint32_t                     _GetMeshStyle () const = 0;
 GEOMAPI_VIRTUAL PolyfaceEdgeChainCP          _GetEdgeChainCP () const = 0;
-GEOMAPI_VIRTUAL PolyfaceAuxDataCPtr          _GetAuxDataCP() const = 0;
+GEOMAPI_VIRTUAL PolyfaceAuxDataCPtr          _GetAuxDataCP() const { return nullptr; }
 
 GEOMAPI_VIRTUAL PolyfaceVectors *            _AsPolyfaceVectorsP() const; // Default implementation returns nullptr.  Only PolyfaceVectors overrides.
 
@@ -764,7 +791,7 @@ GEOMDLLIMPEXP FacetFaceDataCP               GetFaceDataCP () const;
 //! Return a pointer to contiguous edge chain structs
 GEOMDLLIMPEXP PolyfaceEdgeChainCP           GetEdgeChainCP () const;
 //! Return a pointer to Aux data
-GEOMDLLIMPEXP PolyfaceAuxDataCPtr                   GetAuxDataCP() const;
+GEOMDLLIMPEXP PolyfaceAuxDataCPtr           GetAuxDataCP() const;
 
 
 //! For Color, Param, and normal indices, resolveToDefaults allows caller to request using
@@ -1610,7 +1637,7 @@ private:
     int32_t const*      m_faceIndexPtr;
     FacetFaceDataCP     m_faceDataPtr;
     PolyfaceEdgeChainCP m_edgeChainsPtr;
-    PolyfaceAuxDataCPtr         m_auxDataPtr;
+    PolyfaceAuxDataCPtr m_auxDataPtr;
 
     //bool              m_twoSided;
     size_t              m_pointCount;
@@ -1646,7 +1673,7 @@ GEOMDLLIMPEXP void SetFacetFaceData (FacetFaceDataCP facetFaceData, size_t n);
 //! set face index pointer in the carrier.  Note that the number of entries must match all other index arrays (point, normal, param, color)
 GEOMDLLIMPEXP void SetFaceIndex (int32_t const *indexArray);
 //! set Aux data in the carrier.  Note that the number of entries must match all other index arrays (point, normal, param, color)
-GEOMDLLIMPEXP void SetPolyfaceAuxData (PolyfaceAuxDataCPtr& auxData) { m_auxDataPtr = auxData; }
+void SetAuxData (PolyfaceAuxDataCPtr& auxData) { m_auxDataPtr = auxData; }
 
 public:
 
@@ -1738,7 +1765,7 @@ protected:
     bool                                m_twoSided;
     uint32_t                            m_meshStyle;
     uint32_t                            m_numPerRow;
-    PolyfaceAuxDataPtr                          m_auxData;
+    PolyfaceAuxDataPtr                  m_auxData;
 
 protected:
 size_t                  _GetPointCount ()       const override;
@@ -1755,7 +1782,7 @@ DPoint2dCP              _GetParamCP ()          const override;
 uint32_t const*         _GetIntColorCP ()       const override;
 FacetFaceDataCP         _GetFaceDataCP ()       const override;
 PolyfaceEdgeChainCP     _GetEdgeChainCP ()      const override;
-PolyfaceAuxDataCPtr             _GetAuxDataCP ()        const override;
+PolyfaceAuxDataCPtr     _GetAuxDataCP ()        const override;
 
 
 //! These virtuals are called by plain methods with additional argument for default control.
@@ -1916,7 +1943,7 @@ GEOMDLLIMPEXP BlockedVector<FacetFaceData> & FaceData ();
 //! Return a reference to the edge chain index vector.
 GEOMDLLIMPEXP BlockedVector<PolyfaceEdgeChain>& EdgeChain();
 //! Return a the aux data pointer.
-GEOMDLLIMPEXP PolyfaceAuxDataPtr PolyfaceAuxDataPtr() { return m_auxData; }
+GEOMDLLIMPEXP PolyfaceAuxDataPtr& AuxData();
 //! Clear all index vectors.
 GEOMDLLIMPEXP void ClearAllIndexVectors ();
 //! Clear all facets.

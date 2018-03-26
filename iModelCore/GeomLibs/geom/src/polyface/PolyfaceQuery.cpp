@@ -45,15 +45,17 @@ static int32_t const* ResolveIndexPtr (int32_t const * firstChoice, bool resolve
         return queryObject->GetPointIndexCP ();
     return NULL;
     }
-int32_t const*     PolyfaceQuery::GetColorIndexCP  (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetColorIndexCP (),  resolveToDefaults, this);}
-int32_t const*     PolyfaceQuery::GetParamIndexCP  (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetParamIndexCP (),  resolveToDefaults, this);}
-int32_t const*     PolyfaceQuery::GetNormalIndexCP (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetNormalIndexCP (), resolveToDefaults, this);}
-int32_t const*     PolyfaceQuery::GetFaceIndexCP (bool resolveToDefaults) const           { return ResolveIndexPtr (_GetFaceIndexCP (),   resolveToDefaults, this);}
+int32_t const*      PolyfaceQuery::GetColorIndexCP  (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetColorIndexCP (),  resolveToDefaults, this);}
+int32_t const*      PolyfaceQuery::GetParamIndexCP  (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetParamIndexCP (),  resolveToDefaults, this);}
+int32_t const*      PolyfaceQuery::GetNormalIndexCP (bool resolveToDefaults) const         { return ResolveIndexPtr (_GetNormalIndexCP (), resolveToDefaults, this);}
+int32_t const*      PolyfaceQuery::GetFaceIndexCP (bool resolveToDefaults) const           { return ResolveIndexPtr (_GetFaceIndexCP (),   resolveToDefaults, this);}
 
-uint32_t         PolyfaceQuery::GetNumPerFace () const                                  { return _GetNumPerFace ();}
-uint32_t         PolyfaceQuery::GetNumPerRow () const                                   { return _GetNumPerRow ();}
-bool             PolyfaceQuery::GetTwoSided () const                                    { return _GetTwoSided (); }
-uint32_t         PolyfaceQuery::GetMeshStyle () const                                   { return _GetMeshStyle ();}
+uint32_t            PolyfaceQuery::GetNumPerFace () const                                  { return _GetNumPerFace ();}
+uint32_t            PolyfaceQuery::GetNumPerRow () const                                   { return _GetNumPerRow ();}
+bool                PolyfaceQuery::GetTwoSided () const                                    { return _GetTwoSided (); }
+uint32_t            PolyfaceQuery::GetMeshStyle () const                                   { return _GetMeshStyle ();}
+PolyfaceAuxDataCPtr PolyfaceQuery::GetAuxDataCP() const                                    { return _GetAuxDataCP ();}
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012

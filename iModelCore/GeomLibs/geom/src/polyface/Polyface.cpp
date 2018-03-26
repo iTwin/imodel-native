@@ -1390,6 +1390,7 @@ BlockedVectorDVec3dR                PolyfaceHeader::Normal ()           { return
 BlockedVectorUInt32R                PolyfaceHeader::IntColor ()         { return m_intColor;}
 BlockedVector<FacetFaceData>&       PolyfaceHeader::FaceData ()         { return m_faceData; } 
 BlockedVector<PolyfaceEdgeChain>&   PolyfaceHeader::EdgeChain ()        { return m_edgeChain; } 
+PolyfaceAuxDataPtr&                 PolyfaceHeader::AuxData()           { return m_auxData; }
 
 
 
