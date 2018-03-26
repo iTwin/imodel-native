@@ -9,7 +9,6 @@ CCompPDBName = $(AppName)
 
 o = $(OutputRootDir)build/ClassificationSystems/Handlers/
 
-
 nameToDefine = __CLASSIFICATIONSYSTEMSHANDLERS_BUILD__
 %include cdefapnd.mki
 
