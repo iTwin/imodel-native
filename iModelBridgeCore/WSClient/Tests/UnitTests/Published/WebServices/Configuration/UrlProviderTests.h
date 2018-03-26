@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Configuration/UrlProviderTests.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,5 +10,9 @@
 
 #include "../../Utils/WebServicesTestsHelper.h"
 
-class UrlProviderTests : public BaseMockHttpHandlerTest
-    {};
+struct UrlProviderTests : BaseMockHttpHandlerTest
+    {
+    static WorkerThreadPtr s_thread;
+    void SetUp();
+    void TearDown();
+    };
