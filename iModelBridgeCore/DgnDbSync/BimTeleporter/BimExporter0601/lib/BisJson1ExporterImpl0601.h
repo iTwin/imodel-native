@@ -77,6 +77,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
 
         bmap<DgnElementId, int> m_insertedElements;
         bmap<DgnModelId, int> m_insertedModels;
+        bmap<DgnCategoryId, DgnCategoryId> m_mappedDrawingCategories;
 
         BENTLEY_TRANSLATABLE_STRINGS_START(ProgressMessage, export_progress)
             L10N_STRING(STEP_EXPORT_SCHEMAS)         // =="Exporting ECSchemas"==
@@ -99,7 +100,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         BentleyStatus ExportAuthorities(Json::Value& out);
         BentleyStatus ExportViews(Json::Value& out);
         BentleyStatus ExportCategories(Json::Value& out);
-        BentleyStatus ExportCategories(Json::Value& out, Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr);
+        BentleyStatus ExportCategories(Json::Value& out, Utf8CP tableName, Utf8CP bisClassName, Utf8CP bisAuthorityStr, bvector<DgnCategoryId>& duplicateIds);
         DgnElementId CreateModelSelector(Json::Value& out, ViewControllerCR vc, Utf8CP name);
         DgnElementId CreateCategorySelector(Json::Value& out, ViewControllerCR vc, Utf8CP name);
         DgnElementId CreateDisplayStyle(Json::Value& out, ViewControllerCR vc, Utf8CP name, bool is3d);
@@ -107,7 +108,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         BentleyStatus ExportModel(Json::Value& out, Utf8CP schemaName, Utf8CP className, Utf8CP whereClause = nullptr);
         BentleyStatus ExportElements(Json::Value& out);
         BentleyStatus ExportElements(Json::Value& out, DgnModelId parentModel);
-        BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true);
+        BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true, bool allowDuplicates = false);
         BentleyStatus ExportNamedGroups(Json::Value& out);
         BentleyStatus ExportElementHasLinks(Json::Value& out);
         BentleyStatus ExportV8Relationships(Json::Value& out);

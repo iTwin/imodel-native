@@ -30,6 +30,10 @@
 #define EXPECT_NULL(statement)          EXPECT_TRUE (NULL == statement)
 #define EXPECT_NOT_NULL(statement)      EXPECT_TRUE (NULL != statement)
 
+#ifndef PRG
+    #define WIP_GENRATE_THUMBNAILS
+#endif
+
 
 /*================================================================================**//**
 * @bsiclass                                                     Umar Hayat      07/14

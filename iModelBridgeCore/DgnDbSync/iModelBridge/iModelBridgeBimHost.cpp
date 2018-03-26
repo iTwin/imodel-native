@@ -63,31 +63,12 @@ bool iModelBridgeViewManager::_ForceSoftwareRendering()
 Display::SystemContext* iModelBridgeViewManager::_GetSystemContext() 
     {
 #if defined(_WIN32)
-    if (nullptr == m_systemContext)
-        {
-        static ATOM classAtom = 0;
-        if (0 == classAtom)
-            {
-            // This code is needed when running in non-graphics mode (i.e. Print Organizer worker process).
-            WNDCLASS wndClass;
-            memset(&wndClass, 0, sizeof (wndClass));
-            wndClass.lpfnWndProc   = DefWindowProc;
-            wndClass.lpszClassName = L"DgnViewNonInteractiveWindow";
-
-            classAtom = RegisterClass(&wndClass);
-            if (0 == classAtom)
-                {
-                BeAssert(false);
-                return nullptr;
-                }
-            }
-
-        m_systemContext = (Display::SystemContext*) ::CreateWindowEx(WS_EX_NOPARENTNOTIFY, MAKEINTATOM(classAtom), L"DgnViewNonInteractiveWindow", 0,
-                                CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, NULL, 0);
-        }
-#endif
-
+    // We don't want to render to a window, and we may not be able to depending upon the context in which we're executing.
+    // Returning nullptr tells DgnView to render to an in-memory, offscreen buffer instead. (aka a 'p-buffer')
+    return nullptr;
+#else
     return m_systemContext;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

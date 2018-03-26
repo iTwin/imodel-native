@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimExporter0601/exe/BimExporter0601.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -257,7 +257,21 @@ int BimExporter0601::Run(int argc, WCharCP argv[])
         }
 
     _Initialize(argc, argv);
-    BentleyB0200::Dgn::BimTeleporter::BisJson1Exporter0601 exporter(m_inputFileName.GetName());
+
+    // use the standard Windows temporary directory
+    wchar_t tempPathW[MAX_PATH];
+    ::GetTempPathW(_countof(tempPathW), tempPathW);
+
+    // the application directory is where the executable is located
+    wchar_t moduleFileName[MAX_PATH];
+    ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
+    BeFileName moduleDirectory(BeFileName::DevAndDir, moduleFileName);
+    BeFileName executableDirectory = moduleDirectory;
+    executableDirectory.AppendSeparator();
+
+    BeFileName assetsDirectory = executableDirectory;
+    assetsDirectory.AppendToPath(L"Assets");
+    BentleyB0200::Dgn::BimTeleporter::BisJson1Exporter0601 exporter(m_inputFileName.GetName(), tempPathW, assetsDirectory.GetName());
 
     LOG->infov(L"Successfully opened %ls\n", m_inputFileName.GetName());
 

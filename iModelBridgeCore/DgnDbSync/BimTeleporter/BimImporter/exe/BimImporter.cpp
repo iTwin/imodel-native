@@ -2,7 +2,7 @@
 |
 |     $Source: BimTeleporter/BimImporter/exe/BimImporter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,6 +13,9 @@
 
 #include <BimTeleporter/BisJson1Importer.h>
 #include "BimImporter.h"
+#include <folly/futures/Future.h>
+#include <folly/ProducerConsumerQueue.h>
+#include <folly/BeFolly.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY
@@ -320,8 +323,7 @@ int BimImporter::Run(int argc, WCharCP argv[])
     ReadJsonInputFromFile(jsonInput, m_inputFileName);
 
     BisJson1Importer importer(m_outputPath.GetName());
-    std::thread consumer([&importer] { importer.CreateBim(); });
-
+    
     for (Json::Value::iterator iter = jsonInput.begin(); iter != jsonInput.end(); iter++)
         {
         Json::Value& entry = *iter;
@@ -329,9 +331,6 @@ int BimImporter::Run(int argc, WCharCP argv[])
             continue;
         importer.AddToQueue(entry.toStyledString().c_str());
         }
-    BentleyApi::BeThreadUtilities::BeSleep(10000);
-    importer.SetDone();
-    consumer.join();
     return 0;
     }
 END_BIM_TELEPORTER_NAMESPACE
