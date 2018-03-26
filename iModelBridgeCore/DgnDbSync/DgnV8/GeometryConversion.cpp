@@ -389,7 +389,7 @@ void Converter::ConvertPolyface(BentleyApi::PolyfaceHeaderPtr& clone, Bentley::P
                                                 v8Entity.GetNormalCount(), DoInterop(v8Entity.GetNormalCP()), v8Entity.GetNormalIndexCP(),
                                                 v8Entity.GetParamCount(), DoInterop(v8Entity.GetParamCP()), v8Entity.GetParamIndexCP(),
                                                 v8Entity.GetColorCount(), v8Entity.GetColorIndexCP(), v8Entity.GetIntColorCP(),
-                                                v8Entity.GetMeshStyle(), v8Entity.GetNumPerRow());
+                                                v8Entity.GetIlluminationNameCP(), v8Entity.GetMeshStyle(), v8Entity.GetNumPerRow());
 
     clone = BentleyApi::PolyfaceHeader::New();
     clone->CopyFrom(sourceData);
