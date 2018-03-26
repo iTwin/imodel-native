@@ -36,9 +36,6 @@
 #define BIS_CODESPEC_PhysicalType                   BIS_CODESPEC(BIS_CLASS_PhysicalType)
 #define BIS_CODESPEC_InformationPartitionElement    BIS_CODESPEC(BIS_CLASS_InformationPartitionElement)
 #define BIS_CODESPEC_RenderMaterial                 BIS_CODESPEC(BIS_CLASS_RenderMaterial)
-#ifdef ALLOW_SAVEDSELECTION_IN_SCHEMA
-#define BIS_CODESPEC_SavedSelection                 BIS_CODESPEC(BIS_CLASS_SavedSelection)
-#endif
 #define BIS_CODESPEC_Sheet                          BIS_CODESPEC(BIS_CLASS_Sheet)
 #define BIS_CODESPEC_SpatialCategory                BIS_CODESPEC(BIS_CLASS_SpatialCategory)
 #define BIS_CODESPEC_SpatialLocationType            BIS_CODESPEC(BIS_CLASS_SpatialLocationType)

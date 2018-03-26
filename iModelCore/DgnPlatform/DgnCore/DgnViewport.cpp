@@ -528,8 +528,8 @@ ViewportStatus DgnViewport::SetupFromViewController()
                 double frontDist = eyeOrg.z - delta.z; // front distance is backDist - delta.z
                 BeAssert(frontDist >= 0.0);
 
-                // allow viewcontroller to specify a minimum front dist, but in no case less than 6 inches
-                double minFrontDist = std::max(15.2 * DgnUnits::OneCentimeter(), m_viewController->_ToSpatialView()->_ForceMinFrontDist());
+                // allow viewcontroller to specify a minimum front dist, but in no case less than minimum front distance.
+                double minFrontDist = std::max(cameraView->MinimumFrontDistance(_GetCameraFrustumNearScaleLimit()), m_viewController->_ToSpatialView()->_ForceMinFrontDist());
                 if (frontDist < minFrontDist)
                     {
                     // camera is too close to front plane, move origin away from eye to maintain a minimum front distance.
@@ -1326,20 +1326,26 @@ bool DgnViewport::GetPixelDataWorldPoint(DPoint3dR world, IPixelDataBufferCR pix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& highNpc, BSIRectCP viewRectCP)
+StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& highNpc, BSIRectCP inViewRect)
     {
-    BSIRect                 viewRect = (nullptr == viewRectCP) ? GetViewRect() : *viewRectCP;
+    BSIRect                 viewRect = GetViewRect();
     IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
 
     lowNpc  = 1.0;
     highNpc = 0.0;
-    for (int32_t x = viewRect.Left(); x <= viewRect.Right(); x++)
+
+    if (nullptr != inViewRect && !viewRect.Overlap (&viewRect, inViewRect))
+        return ERROR;
+
+    Point2d     testPoint;
+    for (testPoint.x = viewRect.Left(); testPoint.x <= viewRect.Right(); testPoint.x++)
         {
-        for (int32_t y = viewRect.Top(); y <= viewRect.Bottom(); y++)
+        for (testPoint.y = viewRect.Top(); testPoint.y <= viewRect.Bottom(); testPoint.y++)
             {
             DPoint3d    npc;
             
-            if (GetPixelDataNpcPoint (npc, *pixels, x, y))
+            if (viewRect.PointInside(testPoint) &&
+                GetPixelDataNpcPoint (npc, *pixels, testPoint.x, testPoint.y))
                 {
                 lowNpc = std::min(lowNpc, npc.z);
                 highNpc = std::max(highNpc, npc.z);
@@ -1354,20 +1360,26 @@ StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& hig
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP viewRectCP)
+StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP inViewRect)
     {
-    BSIRect                 viewRect = (nullptr == viewRectCP) ? GetViewRect() : *viewRectCP;
+    BSIRect                 viewRect = GetViewRect();
     IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
     size_t                  pixelCount = 0;
 
+    if (nullptr != inViewRect && !viewRect.Overlap (&viewRect, inViewRect))
+        return ERROR;
+
     aveNpc = 0.0;
-    for (int32_t x = viewRect.Left(); x <= viewRect.Right(); x++)
+
+    Point2d     testPoint;
+    for (testPoint.x = viewRect.Left(); testPoint.x <= viewRect.Right(); testPoint.x++)
         {
-        for (int32_t y = viewRect.Top(); y <= viewRect.Bottom(); y++)
+        for (testPoint.y = viewRect.Top(); testPoint.y <= viewRect.Bottom(); testPoint.y++)
             {
             DPoint3d    npc;
             
-            if (GetPixelDataNpcPoint (npc, *pixels, x, y))
+            if (viewRect.PointInside(testPoint) &&
+                GetPixelDataNpcPoint (npc, *pixels, testPoint.x, testPoint.y))
                 {
                 pixelCount++;
                 aveNpc += npc.z;
@@ -1427,3 +1439,5 @@ DPoint3d DgnViewport::DetermineDefaultRotatePoint()
 
     return IsCameraOn() ? m_viewController->GetViewDefinition().GetTargetPoint() : NpcToWorld(DPoint3d::From(.5, .5, .5));
     }
+
+

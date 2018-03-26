@@ -216,6 +216,7 @@ struct BulkUpdateBriefcaseManager : BriefcaseManagerBase
 protected:
     Request m_req;      // locks and codes that we must acquire before we can say that update has succeeded
     int m_inBulkUpdate = 0;
+    bset<CodeSpecId>    m_filterCodeSpecs;  // code specs to filter from code requests
 #ifndef NDEBUG
     intptr_t m_threadId = 0;
 #endif
@@ -241,6 +242,44 @@ protected:
         if (nullptr != status && _IsBulkOperation() && !m_req.IsEmpty())
             *status = RepositoryStatus::Success; // Don't report missing locks and codes if we are in the middle of a bulk op and haven't made our request yet.
         return ret;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * Create the set to filter codes from request
+     * @bsimethod                                                    Diego.Pinate    03/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void _PopulateFilterCodeSpecs()
+        {
+        m_filterCodeSpecs = bset<CodeSpecId>();
+        // Geometry Parts
+        auto geomPartCodeSpec = GetDgnDb().CodeSpecs().GetCodeSpec(BIS_CODESPEC_GeometryPart);
+        m_filterCodeSpecs.insert(geomPartCodeSpec->GetCodeSpecId());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    03/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    bset<CodeSpecId> _GetFilteredCodeSpecIds() override
+        {
+        // Cache filter code spec set
+        if (m_filterCodeSpecs.empty())
+            _PopulateFilterCodeSpecs();
+        
+        return m_filterCodeSpecs;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    03/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void FilterCodes(DgnCodeSet& outputCodes, DgnCodeSet const& inputCodes)
+        {
+        if (m_filterCodeSpecs.empty())
+            _PopulateFilterCodeSpecs();
+
+        // Only add output codes that are not in our filter set
+        for (auto code : inputCodes)
+            if (m_filterCodeSpecs.find(code.GetCodeSpecId()) == m_filterCodeSpecs.end())
+                outputCodes.insert(code);
         }
 
     // Note: functions like _QueryCodeStates and _QueryLockLevel do NOT look in m_req. They check what we actually have obtained from the server.
@@ -2440,8 +2479,11 @@ bool IBriefcaseManager::Response::FromJson(JsonValueCR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::AccumulateRequests(Request const& req)
     {
+    DgnCodeSet filteredCodes;
+    FilterCodes(filteredCodes, req.Codes());
+
     BeAssert(m_inBulkUpdate);
-    m_req.Codes().insert(req.Codes().begin(), req.Codes().end());
+    m_req.Codes().insert(filteredCodes.begin(), filteredCodes.end());
     m_req.Locks().GetLockSet().insert(req.Locks().GetLockSet().begin(), req.Locks().GetLockSet().end());
     }
 

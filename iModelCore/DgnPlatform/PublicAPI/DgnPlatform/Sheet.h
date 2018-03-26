@@ -279,9 +279,7 @@ namespace Attachment
     //=======================================================================================
     struct Viewport : OffscreenViewport
     {
-        Render::SystemP m_renderSys;
         Render::TexturePtr m_texture;
-        DgnDb* m_db;
         uint32_t m_texSize;
         uint32_t m_sceneDepth = 0xffffffff;
         Render::GraphicListPtr m_scene;
