@@ -46,7 +46,11 @@ $(o)BuildingUtils$(oext) : $(_MakeFilePath)BuildingUtils.cpp ${MultiCompileDepen
 
 $(o)GeometryDebug$(oext) : $(_MakeFilePath)GeometryDebug.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/GeometryDebug.h   
 
-$(o)ShortestPath$(oext) : $(_MakeFilePath)ShortestPath.cpp ${MultiCompileDepends} $(BuildingUtilsPublicApi)ShortestPath.h                                                 
+$(o)ShortestPath$(oext) : $(_MakeFilePath)ShortestPath.cpp ${MultiCompileDepends} $(BuildingUtilsPublicApi)ShortestPath.h
+
+$(o)RegionsApiWrapper$(oext) : $(_MakeFilePath)RegionsApiWrapper.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RegionsApiWrapper.h                                              
+
+$(o)ConflictSolver$(oext) : $(_MakeFilePath)ConflictSolver.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ConflictSolver.h
 
 
 %include MultiCppCompileGo.mki

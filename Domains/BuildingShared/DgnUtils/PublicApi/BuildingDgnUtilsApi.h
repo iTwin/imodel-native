@@ -10,6 +10,8 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnClientFx/Messages.h>
 #include <BuildingShared/Utils/UtilsApi.h>
+#include <Regions/regionsAPI.h>
+#include <Regions/rimsbsAPI.h>
 #include "DgnGeometryUtils.h"
 #include "Interfaces/IElementChangedHandler.h"
 #include "Interfaces/IBuildingUpdatedHandler.h"
@@ -22,3 +24,5 @@
 #include "BuildingEvents.h"
 #include "BuildingUtils.h"
 #include "ShortestPath.h"
+#include "RegionsApiWrapper.h"
+#include "ConflictSolver.h"
