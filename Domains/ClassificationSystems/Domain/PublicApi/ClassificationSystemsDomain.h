@@ -26,18 +26,12 @@ private:
     WCharCP _GetSchemaRelativePath () const override { return CLASSIFICATIONSYSTEMS_SCHEMA_PATH; }
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
 
-    void InsertDomainAuthorities (Dgn::DgnDbR) const;
-    static void InsertCodeSpec (Dgn::DgnDbR, Utf8CP);
 //__PUBLISH_SECTION_END__
 
 //__PUBLISH_SECTION_START__
 public:
     ClassificationSystemsDomain ();
     ~ClassificationSystemsDomain ();
-
-    CLASSIFICATIONSYSTEMSDOMAIN_EXPORT static bool EnsureECSchemaIsLoaded(Dgn::DgnDbR db);
-    CLASSIFICATIONSYSTEMSDOMAIN_EXPORT static bool EnsureDomainCategoriesExist (Dgn::DgnDbR db);
-    CLASSIFICATIONSYSTEMSDOMAIN_EXPORT static void EnsureDomainAuthoritiesExist (Dgn::DgnDbR db);
 
 };
 
