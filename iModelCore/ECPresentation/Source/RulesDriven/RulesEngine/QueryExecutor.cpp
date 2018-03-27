@@ -145,6 +145,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
             LoggingHelper::LogMessage(Log::Default, Utf8PrintfString("[QueryExecutor] Finished reading %d records", recordsRead).c_str(), NativeLogging::LOG_TRACE);
             break;
         case BE_SQLITE_INTERRUPT:
+            Reset();
             LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read interrupted", NativeLogging::LOG_TRACE);
             break;
         default:
