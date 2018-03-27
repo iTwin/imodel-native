@@ -549,6 +549,9 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
         }
 
     LOG.info(FormatChange(db, tableName, opcode, indirect, detailLevel).c_str());
+
+    if ((detailLevel > 0) && (DbOpcode::Insert != opcode))
+        DumpCurrentValuesOfChangedColumns(db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -571,18 +574,103 @@ void ChangeSet::Dump(Utf8CP label, Db const& db, bool isPatchSet, int detailLeve
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ChangeSet::InterpretConflictCause(ChangeSet::ConflictCause cause)
+Utf8CP ChangeSet::InterpretConflictCause(ChangeSet::ConflictCause cause, int detailLevel)
     {
+    bool brief = (detailLevel == 0);
     switch (cause)
         {
-        case ChangeSet::ConflictCause::Data: return "data";
-        case ChangeSet::ConflictCause::NotFound: return "not found";
-        case ChangeSet::ConflictCause::Conflict: return "conflict";
-        case ChangeSet::ConflictCause::Constraint: return "constraint";
-        case ChangeSet::ConflictCause::ForeignKey: return "foreign key";
+        case ChangeSet::ConflictCause::Data:
+            return brief? "data": "Data (PRIMARY KEY found, but data was changed)";
+        case ChangeSet::ConflictCause::NotFound:
+            return brief? "not found": "Not Found (PRIMARY KEY)";
+        case ChangeSet::ConflictCause::Conflict:
+            return brief? "conflict": "Conflict (Causes duplicate PRIMARY KEY)";
+        case ChangeSet::ConflictCause::Constraint:
+            return brief? "constraint": "Constraint (Causes UNIQUE, CHECK or NOT NULL constraint violation)";
+        case ChangeSet::ConflictCause::ForeignKey:
+            return brief? "foreign key": "ForeignKey (Causes FOREIGN KEY constraint violation)";
         }
     BeAssert(false);
     return "?";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static Utf8String formatOldValue(Statement& stmt)
+    {
+    switch (stmt.GetColumnType(0))
+        {
+        case DbValueType::IntegerVal:
+            return Utf8PrintfString("%" PRId64, stmt.GetValueInt64(0));
+
+        case DbValueType::FloatVal:
+            return Utf8PrintfString("%lg", stmt.GetValueDouble(0));
+
+        case DbValueType::TextVal:
+            return Utf8PrintfString("\"%s\"", stmt.GetValueText(0));
+
+        case DbValueType::NullVal:
+            return "null";
+        }
+
+    return "?";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
+    {
+    Utf8CP tableName = nullptr;
+    int nCols, indirect;
+    DbOpcode opcode;
+    DbResult result = GetOperation(&tableName, &nCols, &opcode, &indirect);
+
+    bvector<Utf8String> columnNames;
+    db.GetColumns(columnNames, tableName);
+
+    Byte* pcols = nullptr;
+    int npcols = 0;
+    GetPrimaryKeyColumns(&pcols, &npcols);
+
+    if (!pcols)
+        return;
+
+    int64_t pk = 0;
+    int pki = 0;
+    for (int i = 0; i <= npcols; ++i)
+        {
+        if (pcols[i] == 0)
+            continue;
+
+        pk = GetValue(i, Changes::Change::Stage::Old).GetValueInt64();
+        pki = i;
+        break;
+        }
+
+    for (int i = 0; i <= npcols; ++i)
+        {
+        if (pcols[i] > 0)
+            continue;
+
+        if (!GetValue(i, Changes::Change::Stage::Old).IsValid()
+         && !GetValue(i, Changes::Change::Stage::New).IsValid())
+            continue;   // this col was not changed
+
+        Statement stmt;
+        stmt.Prepare(db, Utf8PrintfString("SELECT %s from %s WHERE %s=%lld",
+            columnNames[i].c_str(),
+            tableName,
+            columnNames[pki].c_str(),
+            pk).c_str());
+        if (BE_SQLITE_ROW != stmt.Step())
+            return; // The row is not found. This must be a NOT_FOUND conflict, i.e., there is no current row with this Id.
+            
+        Utf8String oldVal = formatOldValue(stmt);
+
+        LOG.infov(Utf8PrintfString("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str()).c_str());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -871,3 +959,4 @@ Rebaser::~Rebaser() {sqlite3rebaser_delete(m_rebaser);}
 void Rebaser::AddRebase(Rebase& rebase) {sqlite3rebaser_configure(m_rebaser, rebase.GetSize(), rebase.GetData());}
 DbResult Rebaser::DoRebase(ChangeSet const&in, ChangeSet& out) {return (DbResult) sqlite3rebaser_rebase(m_rebaser, in.m_size, in.m_changeset, &out.m_size, &out.m_changeset);}
 DbResult Rebaser::DoRebase(ChangeStream const& in, ChangeStream& out) {return (DbResult) sqlite3rebaser_rebase_strm(m_rebaser, in.InputCallback, (void*) &in, out.OutputCallback, &out);}
+Rebase::~Rebase() {if (m_data) BeSQLiteLib::FreeMem(m_data);}

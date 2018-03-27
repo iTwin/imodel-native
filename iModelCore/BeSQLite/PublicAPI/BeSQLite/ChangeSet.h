@@ -243,6 +243,7 @@ public:
 
             //! Dump to stdout for debugging purposes.
             BE_SQLITE_EXPORT void Dump(Db const&, bool isPatchSet, bset<Utf8String>& tablesSeen, int detailLevel) const;
+            BE_SQLITE_EXPORT void DumpCurrentValuesOfChangedColumns(Db const& db) const;
 
             void Dump(Db const& db, bool isPatchSet, int detailLevel) const {bset<Utf8String> tablesSeen; Dump(db, isPatchSet, tablesSeen, detailLevel);}
 
@@ -295,7 +296,7 @@ private:
     void* m_data = nullptr;
 public:
     Rebase() {}
-    ~Rebase() {if (m_data) BeSQLiteLib::FreeMem(m_data);}
+    BE_SQLITE_EXPORT ~Rebase();
     bool HasData() const {return m_size != 0;}
     int GetSize() const {return m_size;}
     void* GetData() const {return m_data;}
@@ -433,7 +434,7 @@ public:
     BE_SQLITE_EXPORT void Dump(Utf8CP label, Db const&, bool isPatchSet=false, int detailLevel=0) const;
 
     //! Get a description of a conflict cause for debugging purposes.
-    BE_SQLITE_EXPORT static Utf8String InterpretConflictCause(ChangeSet::ConflictCause);
+    BE_SQLITE_EXPORT static Utf8CP InterpretConflictCause(ConflictCause, int detailLevel=0);
 };
 
 //=======================================================================================
