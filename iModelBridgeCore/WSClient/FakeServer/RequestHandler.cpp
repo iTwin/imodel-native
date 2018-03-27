@@ -383,7 +383,6 @@ Response RequestHandler::GetBriefcaseId(Request req)
         relationshipInstancesSub[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
         relationshipInstancesSub[ServerSchema::ClassName] = ServerSchema::Relationship::FileAccessKey;
         relationshipInstancesSub["direction"] = "forward";
-        // unused - JsonValueR propertiesl1 = relationshipInstancesSub[ServerSchema::Properties] = Json::objectValue;
         JsonValueR relatedInstance = relationshipInstancesSub[ServerSchema::RelatedInstance] = Json::objectValue;
         relatedInstance[ServerSchema::InstanceId] = "";
         relatedInstance[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
@@ -471,7 +470,6 @@ Response RequestHandler::DeleteiModels(Request req)
         instanceAfterChange[ServerSchema::InstanceId] = iModelId;
         instanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
         instanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
-        // unused - JsonValueR properties = instanceAfterChange[ServerSchema::Properties] = Json::objectValue;
 
         Utf8String contentToWrite(Json::FastWriter().write(instanceDeletion));
         
