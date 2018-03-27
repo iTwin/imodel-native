@@ -1501,6 +1501,7 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
     DPoint3d worldToAttachment = DPoint3d::From(attach.GetPlacement().GetOrigin());
     worldToAttachment.z = Render::Target::DepthFromDisplayPriority(attach.GetDisplayPriority());
     double scaleOnSheet = attach.GetScale();
+    scaleOnSheet = 0.0 != scaleOnSheet ? 1.0 / scaleOnSheet : 1.0;
 
     Transform location = Transform::From(worldToAttachment);
     location.ScaleMatrixColumns(scaleOnSheet, scaleOnSheet, 1.0);
