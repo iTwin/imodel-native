@@ -77,16 +77,13 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
 
     double roundFactor;
     status = unitFormatNode.GetAttributeDoubleValue(roundFactor, FORMAT_ROUND_FACTOR_ATTRIBUTE);
-    if (BeXmlStatus::BEXML_Success != status)
+    if (BeXmlStatus::BEXML_Success == status)
+        spec.SetRoundingFactor(roundFactor);
+    else if (BeXmlStatus::BEXML_AttributeNotFound != status)
         {
-        if (BeXmlStatus::BEXML_AttributeNotFound != status)
-            {
-            LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_ROUND_FACTOR_ATTRIBUTE);
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-        roundFactor = 0.0;
+        LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_ROUND_FACTOR_ATTRIBUTE);
+        return SchemaReadStatus::InvalidECSchemaXml;
         }
-    spec.SetRoundingFactor(roundFactor);
 
     Utf8String specType;
     if (BeXmlStatus::BEXML_Success != unitFormatNode.GetAttributeStringValue(specType, FORMAT_TYPE_ATTRIBUTE))
@@ -137,111 +134,94 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
     spec.SetPresentationType(type);
 
     Utf8String showSignName;
-    if (BeXmlStatus::BEXML_Success != unitFormatNode.GetAttributeStringValue(showSignName, FORMAT_SIGN_OPTION_ATTRIBUTE))
-        showSignName = "onlyNegative";
-
-    Formatting::ShowSignOption showSign;
-    if (!Formatting::Utils::NameToSignOption(showSignName.c_str(), showSign))
-        {
-        LOG.errorv("%s node contains an invalid %s %s", FORMAT_ELEMENT, FORMAT_SIGN_OPTION_ATTRIBUTE, specType.c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
+    if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(showSignName, FORMAT_SIGN_OPTION_ATTRIBUTE))
+        {        
+        Formatting::ShowSignOption showSign;
+        if (!Formatting::Utils::NameToSignOption(showSignName.c_str(), showSign))
+            {
+            LOG.errorv("%s node contains an invalid %s %s", FORMAT_ELEMENT, FORMAT_SIGN_OPTION_ATTRIBUTE, specType.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        spec.SetSignOption(showSign);
         }
-    spec.SetSignOption(showSign);
 
     Utf8String formatTraits;
-    if (BeXmlStatus::BEXML_Success != unitFormatNode.GetAttributeStringValue(formatTraits, FORMAT_TRAITS_ATTRIBUTE))
-        formatTraits = "keepDecPnt|keepSingleZero";
-
-    if (!spec.SetFormatTraitsFromString(formatTraits))
-        {
-        LOG.errorv("%s node contains an invalid %s %s", FORMAT_ELEMENT, FORMAT_TRAITS_ATTRIBUTE, specType.c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
+    if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(formatTraits, FORMAT_TRAITS_ATTRIBUTE))
+        { 
+        if (!spec.SetFormatTraitsFromString(formatTraits))
+            {
+            LOG.errorv("%s node contains an invalid %s %s", FORMAT_ELEMENT, FORMAT_TRAITS_ATTRIBUTE, specType.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
         }
 
     uint32_t precision;
     status = unitFormatNode.GetAttributeUInt32Value(precision, FORMAT_PRECISION_ATTRIBUTE);
-    if (BeXmlStatus::BEXML_Success != status)
+    if (BeXmlStatus::BEXML_Success != status && BeXmlStatus::BEXML_AttributeNotFound != status)
         { 
-        if (BeXmlStatus::BEXML_AttributeNotFound != status)
-            {
-            LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-
-        precision = 6;
-        }
-
-    if(type == Formatting::PresentationType::Fractional)
-        {
-        Formatting::FractionalPrecision unitsFractionalPrecision;
-        if (!Formatting::Utils::FractionalPrecisionByDenominator(precision, unitsFractionalPrecision))
-            {
-            LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-        spec.SetFractionalPrecision(unitsFractionalPrecision);
-        }
-    else
-        {
-        Formatting::DecimalPrecision unitsDecimalPrecision;
-        if (!Formatting::Utils::DecimalPrecisionByIndex(precision, unitsDecimalPrecision))
-            {
-            LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-        spec.SetDecimalPrecision(unitsDecimalPrecision);
-        }
-
-    Utf8String fracBarTypeName;
-    if (BeXmlStatus::BEXML_Success != unitFormatNode.GetAttributeStringValue(fracBarTypeName, FORMAT_FRACTIONAL_BAR_TYPE_ATTRIBUTE))
-        fracBarTypeName = "diagonal";
-
-    Formatting::FractionBarType fracBarType;
-    if (!Formatting::Utils::NameToFractionBarType(fracBarTypeName.c_str(), fracBarType))
-        {
-        LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_FRACTIONAL_BAR_TYPE_ATTRIBUTE, fracBarTypeName.c_str());
+        LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-    spec.SetFractionalBarType(fracBarType);
+    else 
+        {
+        if(type == Formatting::PresentationType::Fractional)
+            {
+            Formatting::FractionalPrecision unitsFractionalPrecision;
+            if (!Formatting::Utils::FractionalPrecisionByDenominator(precision, unitsFractionalPrecision))
+                {
+                LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+            spec.SetFractionalPrecision(unitsFractionalPrecision);
+            }
+        else
+            {
+            Formatting::DecimalPrecision unitsDecimalPrecision;
+            if (!Formatting::Utils::DecimalPrecisionByIndex(precision, unitsDecimalPrecision))
+                {
+                LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+            spec.SetDecimalPrecision(unitsDecimalPrecision);
+            }
+        }
 
     Utf8String decimalSeparator;
-    if (BeXmlStatus::BEXML_Success != unitFormatNode.GetAttributeStringValue(decimalSeparator, FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE))
-        decimalSeparator = "."; //TODO: get localized separator here !//
-
-    if (decimalSeparator.length() > 1 || decimalSeparator.length() == 0)
-        {
-        LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE, decimalSeparator.c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
+    if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(decimalSeparator, FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE))
+        { 
+        if (decimalSeparator.length() > 1 || decimalSeparator.length() == 0)
+            {
+            LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE, decimalSeparator.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        spec.SetDecimalSeparator(decimalSeparator.at(0));
         }
-    spec.SetDecimalSeparator(decimalSeparator.at(0));
 
     Utf8String thousandSeparator;
-    if (BeXmlStatus::BEXML_Success != unitFormatNode.GetAttributeStringValue(thousandSeparator, FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE))
-        thousandSeparator = "."; //TODO: get localized separator here !//   
-
-    if (thousandSeparator.length() > 1 || thousandSeparator.length() == 0)
+    if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(thousandSeparator, FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE))
         {
-        LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, thousandSeparator.c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
+        if (thousandSeparator.length() > 1 || thousandSeparator.length() == 0)
+            {
+            LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, thousandSeparator.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        spec.SetThousandSeparator(thousandSeparator.at(0));
         }
-    spec.SetThousandSeparator(thousandSeparator.at(0));
     
     Utf8String uomSeparator;
-    if (BeXmlStatus::BEXML_Success != unitFormatNode.GetAttributeStringValue(uomSeparator, FORMAT_UOM_SEPARATOR_ATTRIBUTE))
-        uomSeparator = " ";
-
-    spec.SetUomSeparator(uomSeparator.c_str());
+    if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(uomSeparator, FORMAT_UOM_SEPARATOR_ATTRIBUTE))
+        spec.SetUomSeparator(uomSeparator.c_str());
 
     Utf8String statSeparator;
-    if (BeXmlStatus::BEXML_Success != unitFormatNode.GetAttributeStringValue(statSeparator, FORMAT_STAT_SEPARATOR_ATTRIBUTE))
-        statSeparator = "+";
-
-    if (statSeparator.length() > 1 || statSeparator.length() == 0)
+    if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(statSeparator, FORMAT_STAT_SEPARATOR_ATTRIBUTE))
         {
-        LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_STAT_SEPARATOR_ATTRIBUTE, statSeparator.c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-    spec.SetStatSeparator(statSeparator.at(0));
+        if (statSeparator.length() > 1 || statSeparator.length() == 0)
+            {
+            LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_STAT_SEPARATOR_ATTRIBUTE, statSeparator.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        spec.SetStatSeparator(statSeparator.at(0));
+        }   
 
     SetNumericSpec(spec);
     auto child = unitFormatNode.GetFirstChild();
@@ -280,7 +260,7 @@ SchemaReadStatus Format::_ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchem
 
     uint32_t numChildren = 0;
     bvector<ECUnitCP> units;
-    bvector<Utf8String> labels;
+    bvector<Nullable<Utf8String>> labels;
     for (BeXmlNodeP childNode = compositeNode.GetFirstChild(); childNode != nullptr; childNode = childNode->GetNextSibling())
         {
         if (SchemaReadStatus::Success != _ReadCompositeUnitXml(*childNode, context, units, labels))
@@ -297,12 +277,17 @@ SchemaReadStatus Format::_ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchem
         LOG.errorv("%s node has no children units", FORMAT_COMPOSITE_ELEMENT);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-    bvector<std::pair<Units::UnitCP, Utf8String>> unitsAndLabels;
-    for(int i = 0; i < units.size(); i++)
-        {
-        unitsAndLabels.push_back({units[i], labels[i]});
-        }
-    auto comp = Formatting::CompositeValueSpec(unitsAndLabels, unit);
+    bvector<Units::UnitCP> unitsVector(units.begin(), units.end());
+    auto comp = Formatting::CompositeValueSpec(unitsVector);
+    if (labels[0].IsValid())
+        comp.SetMajorLabel(labels[0].Value());
+    if (labels.size() > 1 && labels[1].IsValid())
+        comp.SetMiddleLabel(labels[1].Value());
+    if (labels.size() > 2 && labels[2].IsValid())
+        comp.SetMinorLabel(labels[2].Value());
+    if (labels.size() > 3 && labels[3].IsValid())
+        comp.SetSubLabel(labels[3].Value());
+    comp.SetInputUnit(unit);
     comp.SetSpacer(spacer.c_str());
     SetCompositeSpec(comp);
 
@@ -312,7 +297,7 @@ SchemaReadStatus Format::_ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus Format::_ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Utf8String>& labels)
+SchemaReadStatus Format::_ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels)
     {
     Utf8String unitName;
     if (BEXML_Success != unitNode.GetContent(unitName))
@@ -333,7 +318,7 @@ SchemaReadStatus Format::_ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaRead
     if (BEXML_Success == unitNode.GetAttributeStringValue(label, COMPOSITE_UNIT_LABEL_ATTRIBUTE))
         labels.push_back(label);
     else
-        labels.push_back(unit->GetDisplayLabel());
+        labels.push_back(nullptr);
 
     return SchemaReadStatus::Success;
     }
@@ -352,36 +337,57 @@ SchemaWriteStatus Format::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
     if (GetIsDisplayLabelDefined())
         xmlWriter.WriteAttribute(ECXML_DISPLAY_LABEL_ATTRIBUTE, GetInvariantDisplayLabel().c_str());
     xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
-    xmlWriter.WriteAttribute(FORMAT_ROUND_FACTOR_ATTRIBUTE, this->GetNumericSpec()->GetRoundingFactor());
-    xmlWriter.WriteAttribute(FORMAT_TYPE_ATTRIBUTE, Formatting::Utils::PresentationTypeName(this->GetNumericSpec()->GetPresentationType()).c_str());
-    xmlWriter.WriteAttribute(FORMAT_SIGN_OPTION_ATTRIBUTE, Formatting::Utils::SignOptionName(this->GetNumericSpec()->GetSignOption()).c_str());
-    xmlWriter.WriteAttribute(FORMAT_TRAITS_ATTRIBUTE, GetNumericSpec()->GetFormatTraitsString().c_str());
-    xmlWriter.WriteAttribute(FORMAT_PRECISION_ATTRIBUTE, GetPresentationType() == Formatting::PresentationType::Fractional ? 
-        static_cast<uint32_t>(pow(2u, static_cast<uint32_t>(GetNumericSpec()->GetFractionalPrecision()))) : 
-        static_cast<uint32_t>(GetNumericSpec()->GetDecimalPrecision()));
-    xmlWriter.WriteAttribute(FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, Formatting::Utils::ScientificTypeName(GetNumericSpec()->GetScientificType()).c_str());
-    xmlWriter.WriteAttribute(FORMAT_FRACTIONAL_BAR_TYPE_ATTRIBUTE, Formatting::Utils::FractionBarName(GetNumericSpec()->GetFractionalBarType()).c_str());
-    xmlWriter.WriteAttribute(FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE, Utf8String(1, GetNumericSpec()->GetDecimalSeparator()).c_str());
-    xmlWriter.WriteAttribute(FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, Utf8String(1,GetNumericSpec()->GetThousandSeparator()).c_str());
-    xmlWriter.WriteAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE, GetNumericSpec()->GetUomSeparator());
-    xmlWriter.WriteAttribute(FORMAT_STAT_SEPARATOR_ATTRIBUTE, Utf8String(1, GetNumericSpec()->GetStatSeparator()).c_str());
+    if (HasNumeric())
+        { 
+        auto nfs = GetNumericSpec();
+        if (nfs->HasRoundingFactor())
+            xmlWriter.WriteAttribute(FORMAT_ROUND_FACTOR_ATTRIBUTE, this->GetNumericSpec()->GetRoundingFactor());
+        xmlWriter.WriteAttribute(FORMAT_TYPE_ATTRIBUTE, Formatting::Utils::PresentationTypeName(this->GetNumericSpec()->GetPresentationType()).c_str());
+        if (nfs->HasSignOption())
+            xmlWriter.WriteAttribute(FORMAT_SIGN_OPTION_ATTRIBUTE, Formatting::Utils::SignOptionName(this->GetNumericSpec()->GetSignOption()).c_str());
+        if (nfs->HasFormatTraits())
+            xmlWriter.WriteAttribute(FORMAT_TRAITS_ATTRIBUTE, GetNumericSpec()->GetFormatTraitsString().c_str());
+        if (nfs->HasPrecision())
+            { 
+            xmlWriter.WriteAttribute(FORMAT_PRECISION_ATTRIBUTE, GetPresentationType() == Formatting::PresentationType::Fractional ? 
+                static_cast<uint32_t>(pow(2u, static_cast<uint32_t>(GetNumericSpec()->GetFractionalPrecision()))) : 
+                static_cast<uint32_t>(GetNumericSpec()->GetDecimalPrecision()));
+            }
+        xmlWriter.WriteAttribute(FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, Formatting::Utils::ScientificTypeName(GetNumericSpec()->GetScientificType()).c_str());
+        if (nfs->HasDecimalSeparator())
+            xmlWriter.WriteAttribute(FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE, Utf8String(1, GetNumericSpec()->GetDecimalSeparator()).c_str());
+        if (nfs->HasThousandsSeparator())
+            xmlWriter.WriteAttribute(FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, Utf8String(1,GetNumericSpec()->GetThousandSeparator()).c_str());
+        if (nfs->HasUomSeparator())
+            xmlWriter.WriteAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE, GetNumericSpec()->GetUomSeparator());
+        if (nfs->HasStatSeparator())
+            xmlWriter.WriteAttribute(FORMAT_STAT_SEPARATOR_ATTRIBUTE, Utf8String(1, GetNumericSpec()->GetStatSeparator()).c_str());
+        }
     if (HasComposite())
         {
+        auto comp = GetCompositeSpec();
         xmlWriter.WriteElementStart(FORMAT_COMPOSITE_ELEMENT);
-        xmlWriter.WriteAttribute(COMPOSITE_SPACER_ATTRIBUTE, GetCompositeSpec()->GetSpacer().c_str());
-        xmlWriter.WriteAttribute(COMPOSITE_INPUT_UNIT_ATTRIBUTE, ((ECUnitCP)GetCompositeSpec()->GetInputUnit())->GetQualifiedName(GetSchema()).c_str());
-        auto writeUnit = [&](Utf8String label, Units::UnitCP unit)
+        if (comp->HasSpacer())
+            xmlWriter.WriteAttribute(COMPOSITE_SPACER_ATTRIBUTE, GetCompositeSpec()->GetSpacer().c_str());
+        if (comp->HasInputUnit())
+            xmlWriter.WriteAttribute(COMPOSITE_INPUT_UNIT_ATTRIBUTE, ((ECUnitCP)GetCompositeSpec()->GetInputUnit())->GetQualifiedName(GetSchema()).c_str());
+        auto writeUnit = [&](Nullable<Utf8String> label, Units::UnitCP unit)
             {
             xmlWriter.WriteElementStart(FORMAT_COMPOSITE_UNIT_ELEMENT);
-            xmlWriter.WriteAttribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE, label.c_str());
+            if(label.IsValid())
+                xmlWriter.WriteAttribute(COMPOSITE_UNIT_LABEL_ATTRIBUTE, label.Value().c_str());
             xmlWriter.WriteText(((ECUnitCP)unit)->GetQualifiedName(GetSchema()).c_str());
             xmlWriter.WriteElementEnd();
             };
         auto spec = GetCompositeSpec();
-        writeUnit(spec->GetMajorLabel(), spec->GetMajorUnit());
-        writeUnit(spec->GetMiddleLabel(), spec->GetMiddleUnit());
-        writeUnit(spec->GetMinorLabel(), spec->GetMinorUnit());
-        writeUnit(spec->GetSubLabel(), spec->GetSubUnit());
+        if (HasCompositeMajorUnit())
+            writeUnit(spec->HasMajorLabel() ? spec->GetMajorLabel() : nullptr, spec->GetMajorUnit());
+        if (HasCompositeMiddleUnit())
+            writeUnit(spec->HasMiddleLabel() ? spec->GetMiddleLabel() : nullptr, spec->GetMiddleUnit());
+        if (HasCompositeMinorUnit())
+            writeUnit(spec->HasMinorLabel() ? spec->GetMinorLabel() : nullptr, spec->GetMinorUnit());
+        if (HasCompositeSubUnit())
+            writeUnit(spec->HasSubLabel() ? spec->GetSubLabel() : nullptr, spec->GetSubUnit());
         xmlWriter.WriteElementEnd();
         }
     xmlWriter.WriteElementEnd();
@@ -416,7 +422,6 @@ SchemaWriteStatus Format::WriteJson(Json::Value & outValue, bool standalone, boo
         static_cast<uint32_t>(GetNumericSpec()->GetFractionalPrecision()) : 
         static_cast<uint32_t>(GetNumericSpec()->GetDecimalPrecision());
     outValue[FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE] = Formatting::Utils::ScientificTypeName(GetNumericSpec()->GetScientificType());
-    outValue[FORMAT_FRACTIONAL_BAR_TYPE_ATTRIBUTE] = Formatting::Utils::FractionBarName(GetNumericSpec()->GetFractionalBarType());
     outValue[FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE] = GetNumericSpec()->GetDecimalSeparator();
     outValue[FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE] = GetNumericSpec()->GetThousandSeparator();
     outValue[FORMAT_UOM_SEPARATOR_ATTRIBUTE] = GetNumericSpec()->GetUomSeparator();

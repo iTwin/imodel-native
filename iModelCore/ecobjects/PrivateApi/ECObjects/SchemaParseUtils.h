@@ -74,7 +74,6 @@
 #define FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE        "scientificType"
 #define FORMAT_TRAITS_ATTRIBUTE                 "formatTraits"
 #define FORMAT_PRECISION_ATTRIBUTE              "precision"
-#define FORMAT_FRACTIONAL_BAR_TYPE_ATTRIBUTE    "fracBarType"
 #define FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE      "decSeparator"
 #define FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE    "thousandSeparator"
 #define FORMAT_UOM_SEPARATOR_ATTRIBUTE          "uomSeparator"

@@ -10,6 +10,7 @@
 
 #include <ECObjects/ECObjects.h>
 #include <Units/Units.h>
+#include <Bentley/Nullable.h>
 #include <Formatting/FormattingApi.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
@@ -253,7 +254,7 @@ private:
 
     SchemaReadStatus ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR context);
     SchemaReadStatus _ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context);
-    SchemaReadStatus _ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Utf8String>& labels);
+    SchemaReadStatus _ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels);
 
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;

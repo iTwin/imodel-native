@@ -53,7 +53,7 @@ TEST_F(FormatTest, BasicRoundTripTest)
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00" alias="u"/>
-            <Format typeName="AmerMYFI4" displayLabel="myfi4" description="" roundFactor="0.0" type="fractional" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitName" precision="4" fracBarType="diagonal" decSeparator="." thousandSeparator="," uomSeparator=" ">
+            <Format typeName="AmerMYFI4" displayLabel="myfi4" description="" roundFactor="0.0" type="fractional" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitName" precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
                 <Composite spacer="-" inputUnit="u:M">
                   <Unit label="mile(s)">u:MILE</Unit>
                   <Unit label="yrd(s)">u:YRD</Unit>
@@ -77,7 +77,6 @@ TEST_F(FormatTest, BasicRoundTripTest)
         ASSERT_EQ(Formatting::PresentationType::Fractional, ufmt->GetNumericSpec()->GetPresentationType());
         ASSERT_EQ(Formatting::ShowSignOption::OnlyNegative, ufmt->GetNumericSpec()->GetSignOption());
         ASSERT_EQ(Formatting::FractionalPrecision::Quarter, ufmt->GetNumericSpec()->GetFractionalPrecision());
-        ASSERT_EQ(Formatting::FractionBarType::Diagonal, ufmt->GetNumericSpec()->GetFractionalBarType());
         ASSERT_EQ('.', ufmt->GetNumericSpec()->GetDecimalSeparator());
         ASSERT_EQ(',', ufmt->GetNumericSpec()->GetThousandSeparator());
         ASSERT_DOUBLE_EQ(0.0, ufmt->GetNumericSpec()->GetRoundingFactor());
