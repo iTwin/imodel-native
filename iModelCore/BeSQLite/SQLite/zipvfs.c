@@ -3345,7 +3345,7 @@ static int zipvfsOpen(
     );
     assert( rc!=SQLITE_OK || sqlite3PagerFile(pZipFd->pPager)->pMethods );
     if( rc==SQLITE_OK ){
-      sqlite3PagerSetBusyhandler(
+      sqlite3PagerSetBusyHandler(
           pZipFd->pPager, zipvfsBusyHandler, (void *)pZipFd
       );
       pZipFd->nMaxFree = ZIPVFS_DEFAULT_MAXFREE;
