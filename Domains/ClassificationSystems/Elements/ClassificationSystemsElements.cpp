@@ -58,7 +58,10 @@ void InsertCIBSE
 ) 
     {
         CIBSEClassDefinitionPtr classDefinition = CIBSEClassDefinition::Create(db, name,Category);
-        classDefinition->Insert();
+        if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(CIBSEClassDefinitionPtr.Get(), BeSQLite::DbOpcode::Insert, "CIBSEClassDefinition : Insertion"))
+        {
+            classDefinition->Insert();
+        }
     }
 */
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
