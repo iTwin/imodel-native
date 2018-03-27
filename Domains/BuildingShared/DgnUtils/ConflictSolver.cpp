@@ -33,19 +33,12 @@ bvector<Conflict> ConflictSolver::GetConflictsWithGeometry
     bvector<Conflict> cvs;
     for (bmap<MTGNodeId, Conflict>::iterator ppIter = conflictsMap.begin(); ppIter != conflictsMap.end(); ppIter++)
         {
-        bvector<DPoint3d>* pEnds = m_regionsApi.GetFacePoints(ppIter->first);
-        if (!pEnds)
-            {
+        bvector<DPoint3d> facePoints;
+        if (BentleyStatus::SUCCESS != m_regionsApi.GetFacePoints(facePoints, ppIter->first))
             continue;
-            }
 
-        DPoint3d* pPointArray = &(*pEnds)[0];
-        size_t    pointCount = pEnds->size();
         bool hasHoles = includeHoles && m_regionsApi.DoesFaceHaveHole(ppIter->first);
-        CurveVectorPtr cvPtr = CurveVector::CreateLinear(pPointArray, pointCount, hasHoles ? CurveVector::BOUNDARY_TYPE_ParityRegion : CurveVector::BOUNDARY_TYPE_Outer);
-
-        delete pEnds;
-        pEnds = nullptr;
+        CurveVectorPtr cvPtr = CurveVector::CreateLinear(facePoints, hasHoles ? CurveVector::BOUNDARY_TYPE_ParityRegion : CurveVector::BOUNDARY_TYPE_Outer);
 
         if (hasHoles)
             {
@@ -56,24 +49,18 @@ bvector<Conflict> ConflictSolver::GetConflictsWithGeometry
             int iFace = 0;
             while (jmdlEmbeddedIntArray_getInt(&holeNodeIdArray, &holeNodeId, iFace++))
                 {
-                pEnds = m_regionsApi.GetFacePoints(holeNodeId);
-                if (pEnds)
+                bvector<DPoint3d> holePoints;
+                if (BentleyStatus::SUCCESS != m_regionsApi.GetFacePoints(holePoints, holeNodeId))
+                    continue;
+
+                CurveVectorPtr cvHolePtr = CurveVector::CreateLinear(holePoints, CurveVector::BOUNDARY_TYPE_Inner);
+                double   areaHole;
+                DPoint3d centroidHole;
+                cvHolePtr->CentroidAreaXY(centroidHole, areaHole);
+
+                if (fabs(areaHole) > 0.1)
                     {
-                    DPoint3d* pPointArray = &(*pEnds)[0];
-                    size_t    pointCount = pEnds->size();
-
-                    CurveVectorPtr cvHolePtr = CurveVector::CreateLinear(pPointArray, pointCount, CurveVector::BOUNDARY_TYPE_Inner);
-                    double   areaHole;
-                    DPoint3d centroidHole;
-                    cvHolePtr->CentroidAreaXY(centroidHole, areaHole);
-
-                    if (fabs(areaHole) > 0.1)
-                        {
-                        cvPtr->Add(cvHolePtr);
-                        }
-
-                    delete pEnds;
-                    pEnds = nullptr;
+                    cvPtr->Add(cvHolePtr);
                     }
                 }
             }
@@ -124,9 +111,9 @@ bmap<MTGNodeId, Conflict> ConflictSolver::GetProblemFaces()
     return pfcs;
     }
 
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                    Wouter.Rombouts                 10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
 bool ConflictSolver::IsFaceProblem(MTGNodeId fid, Conflict& conflict)
     {
     if(m_regionsApi.IsFaceNull(fid) || m_regionsApi.DoesFaceHaveNegativeArea(fid))
