@@ -20,7 +20,7 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinition : Dgn::DefinitionElement
     {
-    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinition, Dgn::DefinitionElement);
+    DEFINE_T_SUPER(Dgn::DefinitionElement);
     private:
 
     protected:
@@ -69,4 +69,5 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         void SetCategory (Utf8CP Category) { SetPropertyValue(prop_Category(), Category); }   
         
     };
+
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
