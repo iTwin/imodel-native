@@ -175,12 +175,31 @@ bool ConflictSolver::IsFaceProblem(MTGNodeId fid, Conflict& conflict)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                03/2018
 //---------------+---------------+---------------+---------------+---------------+------
+bool ConflictSolver::IsBoundaryValid
+(
+    CurveVectorCR boundary
+)
+    {
+    double area;
+    DPoint3d centroid;
+    DVec3d normal;
+
+    return boundary.CentroidNormalArea(centroid, normal, area) 
+        && !DoubleOps::AlmostEqual(area, 0);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
 void ConflictSolver::AddContainerBoundary
 (
     CurveVectorCR boundary,
     BeInt64Id const& id
 )
     {
+    if (!IsBoundaryValid(boundary))
+        return;
+
     m_regionsApi.ImprintCurveVector(
         boundary, 
         static_cast<int32_t>(EdgeUserType::Container), 
@@ -199,6 +218,9 @@ void ConflictSolver::AddInnerBoundary
     BeInt64Id const& id
 )
     {
+    if (!IsBoundaryValid(boundary))
+        return;
+
     m_regionsApi.ImprintCurveVector(
         boundary, 
         static_cast<int32_t>(EdgeUserType::Inner), 

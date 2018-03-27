@@ -393,3 +393,27 @@ TEST_F(ConflictSolverTestFixture, 2OverlappingInnerBoundariesAboveXYPlane)
     ASSERT_TRUE(actualConflict.IsValid());
     ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*actualConflict, *expectedConflict));
     }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConflictSolverTestFixture, InnerBoundaryWithNoArea)
+    {
+    ConflictSolver sut;
+    sut.AddContainerBoundary(*CurveVector::CreateRectangle(0, 0, 10, 10, 0), BeInt64Id(1));
+    sut.AddInnerBoundary(*CurveVector::CreateLinear({{1,1,0},{3,1,0}}, CurveVector::BOUNDARY_TYPE_Outer), BeInt64Id(2));
+
+    ASSERT_TRUE(sut.Solve().empty());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConflictSolverTestFixture, InnerBoundaryWithNoArea_OverlapsOtherInnerBoundaryThatHasArea)
+    {
+    ConflictSolver sut;
+    sut.AddInnerBoundary(*CurveVector::CreateRectangle(0, 0, 10, 10, 0), BeInt64Id(1));
+    sut.AddInnerBoundary(*CurveVector::CreateLinear({{-1,1,0},{3,1,0}}, CurveVector::BOUNDARY_TYPE_Outer), BeInt64Id(2));
+
+    ASSERT_TRUE(sut.Solve().empty());
+    }
