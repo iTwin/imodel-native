@@ -26,6 +26,8 @@ $(o)ScalableMeshUnitTests.obj   : $(_MakeFilePath)/ScalableMeshUnitTests.cpp ${M
 
 $(o)SMUnitTestDisplayQuery.obj   : $(_MakeFilePath)/SMUnitTestDisplayQuery.cpp ${MultiCompileDepends}
 
+$(o)SMUnitTestGroundDetection.obj   : $(_MakeFilePath)/SMUnitTestGroundDetection.cpp ${MultiCompileDepends}
+
 $(o)SMUnitTestUtil.obj   : $(_MakeFilePath)/SMUnitTestUtil.cpp $(_MakeFilePath)/SMUnitTestUtil.h ${MultiCompileDepends}
 
 $(o)SMUnitTestProgress.obj   : $(_MakeFilePath)/SMUnitTestProgress.cpp ${MultiCompileDepends}

@@ -276,6 +276,7 @@ Json::Value ScalableMeshGTestUtil::GetGroundTruthJsonFile(BeFileName jsonFile)
 
     return result;
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Mathieu.St-Pierre                       11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -341,8 +342,49 @@ bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>> S
     return resultList;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Mathieu.St-Pierre                       03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<std::tuple<BeFileName, bvector<DPoint3d>, uint64_t>> ScalableMeshGTestUtil::GetListOfGroundDetectionValues(BeFileName listingFile)
+    {   
+    std::ifstream f;
+    bvector<std::tuple<BeFileName, bvector<DPoint3d>, uint64_t>> resultList;
+    if (!ScalableMeshGTestUtil::GetDataPath(listingFile))
+        return resultList;
+    f.open(listingFile.c_str());
+    if (f.fail())
+        return resultList;
+    while (!f.eof())
+        {
+        std::string nameStr;
+        f >> nameStr;
 
+        int nOfAreaPts;
+        f >> nOfAreaPts;
 
+        bvector<DPoint3d> groundArea;
+        for (size_t i = 0; i < nOfAreaPts; ++i)
+            {
+            DPoint3d pt;
+            f >> pt.x;
+            f >> pt.y;
+            f >> pt.z;            
+            groundArea.push_back(pt);
+            }    
+
+        uint64_t expectedGroundPts;
+        f >> expectedGroundPts;
+
+        BeFileName name;
+        ScalableMeshGTestUtil::GetDataPath(name);
+        name.AppendToPath(SM_GROUND_DETECTION_PATH);
+        name.AppendToPath(WString(nameStr.c_str()).c_str());
+        std::tuple<BeFileName, bvector<DPoint3d>, uint64_t> entries(name, groundArea, expectedGroundPts);
+        resultList.push_back(entries);
+        }
+
+    return resultList;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Richard.Bois                   10/2017

@@ -23,9 +23,16 @@
 #define SM_DATA_SOURCE_PATH L"SMDataSource"
 #endif
 
+#ifndef SM_GROUND_DETECTION_PATH
+#define SM_GROUND_DETECTION_PATH L"SMGroundDetectionData"
+#endif
 
 #ifndef SM_DISPLAY_QUERY_TEST_CASES
 #define SM_DISPLAY_QUERY_TEST_CASES L"displayQueryTestCases.txt"
+#endif
+
+#ifndef SM_GROUND_DETECTION_TEST_CASES
+#define SM_GROUND_DETECTION_TEST_CASES L"groundDetectionTestCases.txt"
 #endif
 
 //#define VANCOUVER_API
@@ -76,6 +83,8 @@ namespace ScalableMeshGTestUtil
 	bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint3d>, bvector<DPoint3d>>> GetListOfValues(BeFileName listingFile);
 
     bvector<std::tuple<BeFileName, DMatrix4d, bvector<DPoint4d>, bvector<double>>>   GetListOfDisplayQueryValues(BeFileName listingFile);
+
+    bvector<std::tuple<BeFileName, bvector<DPoint3d>, uint64_t>>                     GetListOfGroundDetectionValues(BeFileName listingFile);
     
     SMMeshType GetFileType(BeFileName file);
 
