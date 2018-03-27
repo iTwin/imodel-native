@@ -55,6 +55,7 @@ DwgDbStatus         DwgDbDatabase::SetPDSIZE (double s) { DWGDB_CALLSDKMETHOD(T_
 size_t              DwgDbDatabase::GetISOLINES () const { return DWGDB_CALLSDKMETHOD(T_Super::getISOLINES, T_Super::isolines)(); }
 double              DwgDbDatabase::GetTEXTSIZE () const { return DWGDB_CALLSDKMETHOD(T_Super::getTEXTSIZE, T_Super::textsize)(); }
 DwgDbObjectId       DwgDbDatabase::GetTEXTSTYLE () const { return DWGDB_CALLSDKMETHOD(T_Super::getTEXTSTYLE, T_Super::textstyle)(); }
+bool                DwgDbDatabase::GetVISRETAIN () const { return DWGDB_CALLSDKMETHOD(T_Super::getVISRETAIN, T_Super::visretain)(); }
 bool                DwgDbDatabase::GetLineweightDisplay () const { return DWGDB_CALLSDKMETHOD(T_Super::getLWDISPLAY, T_Super::lineWeightDisplay)(); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeByBlockId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeByBlockId(), T_Super::byBlockLinetype()); }
 DwgDbObjectId       DwgDbDatabase::GetLinetypeByLayerId () const { return DWGDB_CALLSDKMETHOD(T_Super::getLinetypeByLayerId(), T_Super::byLayerLinetype()); }

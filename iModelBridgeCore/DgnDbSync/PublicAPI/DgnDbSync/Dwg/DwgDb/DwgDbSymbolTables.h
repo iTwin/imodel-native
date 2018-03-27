@@ -109,6 +109,7 @@ public:
     //! Are reconciled layers excluded in the layer table iterator?
     DWGDB_EXPORT bool   GetSkipReconciledLayers () const;
     };  // DwgDbSymbolTableIterator
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbSymbolTableIterator)
 
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
@@ -247,6 +248,8 @@ public:
     DWGDB_DECLARE_COMMON_MEMBERS(LayerTable)
 
     DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
+    DWGDB_EXPORT bool           HasUnreconciledLayers () const;
+    DWGDB_EXPORT DwgDbStatus    GetUnreconciledLayers (DwgDbObjectIdArrayR layers) const;
     };  // DwgDbLayerTable
 DWGDB_DEFINE_OBJECTPTR (LayerTable)
 

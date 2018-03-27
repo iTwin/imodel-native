@@ -193,6 +193,9 @@ public:
     static bool     IsValidBulgeFactor (double bulge);
     };  // PolylineFactory
 
+// ECClass requires unique property names
+typedef bset<Utf8String>    ECPropertyNameSet;
+
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          09/16
 +===============+===============+===============+===============+===============+======*/
@@ -206,6 +209,7 @@ private:
     IECInstancePtr                      m_ecInstance;
     size_t                              m_propertyCount;
     size_t                              m_adhocCount;
+    ECPropertyNameSet                   m_ecPropertyNames;
 
     bool            AddPropertyOrAdhocFromAttribute (DwgDbAttributeCR attrib);
     ECObjectsStatus AddConstantProperty (DwgDbAttributeDefinitionCR attrdef);

@@ -9,13 +9,24 @@
 
 USING_NAMESPACE_DGNDBSYNC_DWG
 
+// Invalid property names taken from SchemaValidator::ValidPropertyRule::ValidatePropertyName:
+#ifndef ECDBSYS_PROPALIAS_Id
+#define ECDBSYS_PROPALIAS_Id "Id"
+#endif
+#ifndef ECDBSYS_PROP_ECClassId
+#define ECDBSYS_PROP_ECClassId "ECClassId"
+#endif
+#ifndef ECDBSYS_PROP_ECInstanceId
+#define ECDBSYS_PROP_ECInstanceId "ECInstanceId"
+#endif
+
 
 static Utf8CP   s_blankTagName = "BLANKTAG";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GetPropertyNameFromAttributeName (Utf8StringR propName, DwgStringCR tagName)
+bool GetPropertyNameFromAttributeName (Utf8StringR propName, DwgStringCR tagName, ECPropertyNameSet& uniqueNames)
     {
     // replace blank tag name with "BLANKTAG"
     bool    validated = false;
@@ -29,8 +40,25 @@ bool GetPropertyNameFromAttributeName (Utf8StringR propName, DwgStringCR tagName
     ECNameValidation::EncodeToValidName (propName, proposed);
     
     // above validation allows "id", but SchemaValidator::ValidPropertyRule::ValidatePropertyName does not, resulting in failure importing our schema:
-    if (propName.EqualsI("id"))
+    if (propName.EqualsI(ECDBSYS_PROPALIAS_Id) || propName.EqualsI(ECDBSYS_PROP_ECInstanceId) || propName.EqualsI(ECDBSYS_PROP_ECClassId))
         propName += "_";
+
+    // ECClass requires unique property names - de-duplicate tag names:
+    if (uniqueNames.find(propName) != uniqueNames.end())
+        {
+        Utf8String  baseName = propName;
+        if (baseName.EndsWith("_"))
+            baseName.erase (baseName.find_last_of('_'));
+        
+        for (size_t count = 1; uniqueNames.find(propName) != uniqueNames.end(); count++)
+            {
+            Utf8PrintfString suffix("_%d", count);
+            propName = baseName + suffix;
+            }
+
+        }
+
+    uniqueNames.insert (propName);
 
     if (!validated && !propName.EqualsI(proposed))
         validated = true;
@@ -46,6 +74,7 @@ AttributeFactory::AttributeFactory (DwgImporter& importer, DgnElementR hostEleme
     {
     m_propertyCount = 0;
     m_adhocCount = 0;
+    m_ecPropertyNames.clear ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,7 +84,7 @@ bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttribut
     {
     // build an internal EC property name from the tag name
     Utf8String  propName;
-    GetPropertyNameFromAttributeName (propName, attrib.GetTag());
+    GetPropertyNameFromAttributeName (propName, attrib.GetTag(), m_ecPropertyNames);
 
     Utf8String  valueString;
     DwgString   text;
@@ -112,7 +141,7 @@ bool            AttributeFactory::AddPropertyOrAdhocFromAttribute (DwgDbAttribut
 ECObjectsStatus AttributeFactory::AddConstantProperty (DwgDbAttributeDefinitionCR attrdef)
     {
     Utf8String  tag;
-    GetPropertyNameFromAttributeName (tag, attrdef.GetTag());
+    GetPropertyNameFromAttributeName (tag, attrdef.GetTag(), m_ecPropertyNames);
     
     Utf8String  valueString;
     DwgString   text;
@@ -367,6 +396,7 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
             return  ECObjectsStatus::Error;
 
         ConstantBlockAttrdefs       constantAttrdefs(block.GetObjectId());
+        ECPropertyNameSet           uniqueNames;
 
         // get all attrdefs in the block and create a string property for each and everyone of them:
         for (entityIter.Start(); !entityIter.Done(); entityIter.Step())
@@ -377,7 +407,7 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
 
             PrimitiveECPropertyP    prop = nullptr;
             Utf8String              propName;
-            GetPropertyNameFromAttributeName (propName, attrdef->GetTag());
+            GetPropertyNameFromAttributeName (propName, attrdef->GetTag(), uniqueNames);
 
             // Property tag
             status = attrdefClass->CreatePrimitiveProperty (prop, propName.c_str(), PRIMITIVETYPE_String);
