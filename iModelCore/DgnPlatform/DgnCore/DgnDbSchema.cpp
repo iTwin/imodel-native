@@ -285,6 +285,14 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/11
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult DgnDb::CreateRebaseTable()
+    {
+    return CreateTable(DGN_TABLE_Rebase, "Id INTEGER PRIMARY KEY AUTOINCREMENT, Rebase BLOB");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   02/11
++---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
     {
     CreateTable(DGN_TABLE_Domain,   "Name TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY,"
@@ -304,6 +312,7 @@ DbResult DgnDb::CreateDgnDbTables(CreateDgnDbParams const& params)
                                 "IsSchemaChange BOOLEAN,"
                                 "Time TIMESTAMP DEFAULT(julianday('now')),"
                                 "Change BLOB");
+    CreateRebaseTable();
 
     Fonts().DbFontMap().CreateFontTable();
 
@@ -459,15 +468,30 @@ struct ProjectSchemaUpgrader
     virtual DbResult _Upgrade(DgnDbR project, DgnDbProfileVersion version) = 0;
     };
 
+struct RebaseSupportUpgrader : ProjectSchemaUpgrader
+    {
+    DgnDbProfileVersion _GetVersion() override {return DgnDbProfileVersion(2, 1);}
+    DbResult _Upgrade(DgnDbR db, DgnDbProfileVersion version)
+        {
+        // DGN_TABLE_Rebase was introduced in 2.1
+        if ((version.GetMajor() != 2) || (version.GetMinor() >= 1))
+            return BE_SQLITE_OK;
 
-#if defined (WHEN_FIRST_UPGRADER)
+        if (db.TableExists(DGN_TABLE_Rebase))
+            return BE_SQLITE_OK;
+            
+        return db.CreateRebaseTable();
+        }
+    };
+
+static RebaseSupportUpgrader s_rebaseSupportUpgrader;
+
 static ProjectSchemaUpgrader* s_upgraders[] =
     {
     // NOTE: entries in this list *must* be sorted in ascending version order.
     // Add a new version here
-
+    &s_rebaseSupportUpgrader
     };
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * Each call to _DoUpgradeProfile will upgrade the profile from its stored version to the immediately succeeding version.
@@ -475,7 +499,6 @@ static ProjectSchemaUpgrader* s_upgraders[] =
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::OpenParams::_DoUpgradeProfile(DgnDbR project, DgnDbProfileVersion& version) const
     {
-#if defined (WHEN_FIRST_UPGRADER)
     for (auto upgrader : s_upgraders)
         {
         if (version < upgrader->_GetVersion())
@@ -488,7 +511,6 @@ DbResult DgnDb::OpenParams::_DoUpgradeProfile(DgnDbR project, DgnDbProfileVersio
             }
         }
 
-#endif
     version = DgnDbProfileVersion::GetCurrent();
     return  BE_SQLITE_OK;
     }

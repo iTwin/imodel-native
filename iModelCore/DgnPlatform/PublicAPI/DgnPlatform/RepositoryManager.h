@@ -648,8 +648,8 @@ struct OptimisticConcurrencyControl : RefCounted<OptimisticConcurrencyControlBas
 
     private:
     Policy m_policy;
-    bvector<DgnElementId> m_conflictingElementsRejected;
-    bvector<DgnElementId> m_conflictingElementsAccepted;
+    bset<DgnElementId> m_conflictingElementsRejected;
+    bset<DgnElementId> m_conflictingElementsAccepted;
 
     BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) override;
 
@@ -658,8 +658,8 @@ struct OptimisticConcurrencyControl : RefCounted<OptimisticConcurrencyControlBas
     public:
     DGNPLATFORM_EXPORT OptimisticConcurrencyControl(Policy conflicts);
 
-    bvector<DgnElementId> const& GetConflictingElementsRejected() const {return m_conflictingElementsRejected;}
-    bvector<DgnElementId> const& GetConflictingElementsAccepted() const {return m_conflictingElementsAccepted;}
+    bset<DgnElementId> const& GetConflictingElementsRejected() const {return m_conflictingElementsRejected;}
+    bset<DgnElementId> const& GetConflictingElementsAccepted() const {return m_conflictingElementsAccepted;}
     void ConflictsProcessed() {m_conflictingElementsRejected.clear(); m_conflictingElementsAccepted.clear();}
     };
 

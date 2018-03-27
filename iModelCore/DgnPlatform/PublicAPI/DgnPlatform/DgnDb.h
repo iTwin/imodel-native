@@ -24,7 +24,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 enum DgnDbProfileValues : int32_t
 {
     DGNDB_CURRENT_VERSION_Major = 2,
-    DGNDB_CURRENT_VERSION_Minor = 0,
+    DGNDB_CURRENT_VERSION_Minor = 1,
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 0,
 
@@ -451,6 +451,8 @@ public:
     //! Utility method to get the next id in a sequence
     //! @private internal use only
     BeSQLite::BeBriefcaseBasedIdSequence const& GetElementIdSequence() const { return m_elementIdSequence; }
+
+    BeSQLite::DbResult CreateRebaseTable(); //!< @private
 };
 
 END_BENTLEY_DGN_NAMESPACE

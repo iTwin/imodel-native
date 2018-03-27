@@ -139,23 +139,45 @@ DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::SaveRebase(Rebase const& rebase, Utf8StringCR revisionId)
+DbResult TxnManager::SaveRebase(int64_t& id, Rebase const& rebase)
     {
     BeAssert(0 != rebase.GetSize());
 
-    if (!m_dgndb->TableExists(DGN_TABLE_Rebase))
-        {
-        m_dgndb->CreateTable(DGN_TABLE_Rebase, "RevId TEXT PRIMARY KEY, Rebase BLOB");
-        }
+    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Rebase "(Rebase) VALUES(?)");
 
-    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Rebase "(RevId, Rebase) VALUES(?,?)");
-
-    stmt->BindText(1, revisionId, Statement::MakeCopy::No()); 
-    stmt->BindBlob(2, rebase.GetData(), rebase.Size(), Statement::MakeCopy::No);
+    stmt->BindBlob(1, rebase.GetData(), rebase.GetSize(), Statement::MakeCopy::No);
 
     auto rc = stmt->Step();
-    BeAssert(BE_SQLITE_DONE == rc);
+    if (BE_SQLITE_DONE == rc)
+        id = m_dgndb.GetLastInsertRowId();
+    else
+        {
+        BeAssert(false);
+        }
     return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TxnManager::DeleteRebases(int64_t id)
+    {
+    if (id == 0)
+        return DgnDbStatus::Success;
+    auto delStmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
+    delStmt->BindInt64(1, id);
+    return (BE_SQLITE_DONE == delStmt->Step())? DgnDbStatus::Success: DgnDbStatus::SQLiteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t TxnManager::QueryLastRebaseId()
+    {
+    if (!m_dgndb.TableExists(DGN_TABLE_Rebase))
+        return 0;
+    auto queryLastRebaseId = GetTxnStatement("SELECT MAX(Id) FROM " DGN_TABLE_Rebase);
+    return (BE_SQLITE_ROW == queryLastRebaseId->Step())? queryLastRebaseId->GetValueInt64(0): 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -520,6 +542,9 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     if (0 == strncmp(DGN_TABLE_Txns, tableName, sizeof(DGN_TABLE_Txns)-1))
         return  TrackChangesForTable::No;
 
+    if (0 == strncmp(DGN_TABLE_Rebase, tableName, sizeof(DGN_TABLE_Rebase)-1))
+        return  TrackChangesForTable::No;
+
     if (DgnSearchableText::IsUntrackedFts5Table(tableName))
         return  TrackChangesForTable::No;
 
@@ -765,7 +790,7 @@ RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision
 +---------------+---------------+---------------+---------------+---------------+------*/
 RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream, bool containsSchemaChanges)
     {
-    Rebase rebase();
+    Rebase rebase;
     DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, &rebase);
     if (!EXPECTED_CONDITION(result == BE_SQLITE_OK && "Could not apply/merge data changes in revision"))
         {
@@ -825,9 +850,10 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
         OnEndValidate();
         }
 
-    if ((RevisionStatus::Success != status) && (0 != rebase.GetSize()))
+    if ((RevisionStatus::Success == status) && (0 != rebase.GetSize()))
         {
-        result = SaveRebase(*rebase, revision.GetId());
+        int64_t rebaseId;
+        result = SaveRebase(rebaseId, rebase);
         if (BE_SQLITE_DONE != result)
             {
             BeAssert(false);
@@ -1051,23 +1077,10 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     if (!IsInAbandon())
         OnBeginApplyChanges();
     
-#ifndef NDEBUG
-    bool expectsRebase = (nullptr != rebase);
-    if (!expectsRebase)
-        rebase = new Rebase();
-#endif
 
     bool wasTracking = EnableTracking(false);
     DbResult result = changeset.ApplyChanges(m_dgndb, rebase); // this actually updates the database with the changes
     EnableTracking(wasTracking);
-
-#ifndef NDEBUG
-    if (!expectsRebase)
-        {
-        BeAssert(rebase->GetSize() == 0);
-        delete rebase;
-        }
-#endif
 
     if (containsSchemaChanges)
         {

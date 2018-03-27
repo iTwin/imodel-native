@@ -15,6 +15,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 #define CHANGESET_LZMA_MARKER   "ChangeSetLzma"
 #define CURRENT_CS_END_TXN_ID   "CurrentChangeSetEndTxnId"
+#define LAST_REBASE_ID          "LastRebaseId"
 #define INITIAL_PARENT_CS_ID    "InitialParentChangeSetId"
 #define PARENT_CS_ID           "ParentChangeSetId"
 #define REVERSED_CS_ID         "ReversedChangeSetId"
@@ -425,102 +426,6 @@ ChangeSet::ConflictResolution ApplyRevisionChangeSet::_OnConflict(ChangeSet::Con
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2018
-//---------------------------------------------------------------------------------------
-Utf8CP GetConflictCauseDescription(ChangeSet::ConflictCause cause)
-    {
-    switch (cause)
-        {
-        case ChangeSet::ConflictCause::Data:
-            return "Data (PRIMARY KEY found, but data was changed)";
-        case ChangeSet::ConflictCause::NotFound:
-            return "Not Found (PRIMARY KEY)";
-        case ChangeSet::ConflictCause::Conflict:
-            return "Conflict (Causes duplicate PRIMARY KEY)";
-        case ChangeSet::ConflictCause::Constraint:
-            return "Constraint (Causes UNIQUE, CHECK or NOT NULL constraint violation)";
-        case ChangeSet::ConflictCause::ForeignKey:
-            return "ForeignKey (Causes FOREIGN KEY constraint violation)";
-        default:
-            return "Unknown";
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String formatOldValue(Statement& stmt)
-    {
-    switch (stmt.GetColumnType(0))
-        {
-        case DbValueType::IntegerVal:
-            return Utf8PrintfString("%" PRId64, stmt.GetValueInt64(0));
-
-        case DbValueType::FloatVal:
-            return Utf8PrintfString("%lg", stmt.GetValueDouble(0));
-
-        case DbValueType::TextVal:
-            return Utf8PrintfString("\"%s\"", stmt.GetValueText(0));
-
-        case DbValueType::NullVal:
-            return "null";
-        }
-
-    return "?";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void dumpCurrentValues(DgnDbCR db, Changes::Change iter, Utf8CP tableName)
-    {
-    bvector<Utf8String> columnNames;
-    db.GetColumns(columnNames, tableName);
-
-    Byte* pcols = nullptr;
-    int npcols = 0;
-    iter.GetPrimaryKeyColumns(&pcols, &npcols);
-
-    if (!pcols)
-        return;
-
-    int64_t pk = 0;
-    int pki = 0;
-    for (int i = 0; i <= npcols; ++i)
-        {
-        if (pcols[i] == 0)
-            continue;
-
-        pk = iter.GetValue(i, Changes::Change::Stage::Old).GetValueInt64();
-        pki = i;
-        break;
-        }
-
-    for (int i = 0; i <= npcols; ++i)
-        {
-        if (pcols[i] > 0)
-            continue;
-
-        if (!iter.GetValue(i, Changes::Change::Stage::Old).IsValid()
-         && !iter.GetValue(i, Changes::Change::Stage::New).IsValid())
-            continue;   // this col was not changed
-
-        Statement stmt;
-        stmt.Prepare(db, Utf8PrintfString("SELECT %s from %s WHERE %s=%lld",
-            columnNames[i].c_str(),
-            tableName,
-            columnNames[pki].c_str(),
-            pk).c_str());
-        if (BE_SQLITE_ROW != stmt.Step())
-            return; // The row is not found. This must be a NOT_FOUND conflict, i.e., there is no current row with this Id.
-            
-        Utf8String oldVal = formatOldValue(stmt);
-
-        LOG.infov(Utf8PrintfString("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str()).c_str());
-        }
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 // static
@@ -537,11 +442,10 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("------------------------------------------------------------------");
-        LOG.infov("Conflict detected - Cause: %s", GetConflictCauseDescription(cause));
+        LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
         if (cause != ChangeSet::ConflictCause::ForeignKey)
             {
             // Note: No current or conflicting row information is provided if it's a FKey conflict
-            dumpCurrentValues(dgndb, iter, tableName);
             iter.Dump(dgndb, false, 1);
             }
         }
@@ -1230,9 +1134,13 @@ Utf8String RevisionManager::QueryInitialParentRevisionId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId)
+RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId, int64_t rebaseId)
     {
     DbResult result = m_dgndb.SaveBriefcaseLocalValue(CURRENT_CS_END_TXN_ID, txnId.GetValue());
+
+    if (BE_SQLITE_DONE == result)
+        result = m_dgndb.SaveBriefcaseLocalValue(LAST_REBASE_ID, rebaseId);
+
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1255,6 +1163,9 @@ RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId tx
 RevisionStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
     {
     DbResult result = m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
+    if (BE_SQLITE_DONE == result)
+        result = m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
+
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1279,6 +1190,16 @@ TxnManager::TxnId RevisionManager::QueryCurrentRevisionEndTxnId() const
     uint64_t val;
     DbResult result = m_dgndb.QueryBriefcaseLocalValue(val, CURRENT_CS_END_TXN_ID);
     return (BE_SQLITE_ROW == result) ? TxnManager::TxnId(val) : TxnManager::TxnId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         03/2018
+//---------------------------------------------------------------------------------------
+int64_t RevisionManager::QueryLastRebaseId() const
+    {
+    uint64_t val;
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(val, LAST_REBASE_ID);
+    return (BE_SQLITE_ROW == result) ? val : 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1514,7 +1435,9 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
     if (!currentRevision.IsValid())
         return nullptr;
 
-    status = SaveCurrentRevisionEndTxnId(endTxnId);
+    int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
+
+    status = SaveCurrentRevisionEndTxnId(endTxnId, lastRebaseId);
     if (RevisionStatus::Success != status)
         return nullptr;
 
@@ -1538,6 +1461,9 @@ RevisionStatus RevisionManager::FinishCreateRevision()
     BeAssert(endTxnId.IsValid());
 
     if (DgnDbStatus::Success != m_dgndb.Txns().DeleteFromStartTo(endTxnId))
+        return RevisionStatus::SQLiteError;
+
+    if (DgnDbStatus::Success != m_dgndb.Txns().DeleteRebases(QueryLastRebaseId()))
         return RevisionStatus::SQLiteError;
 
     RevisionStatus status = SaveParentRevisionId(currentRevision->GetId());
@@ -1749,17 +1675,17 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConf
         return BeSQLite::ChangeSet::ConflictResolution::Replace;
 
     BeSQLite::ChangeSet::ConflictResolution res;
-    bvector<DgnElementId>* vec;
+    bset<DgnElementId>* eset;
 
     if (OptimisticConcurrencyControl::OnConflict::RejectIncomingChange == onConflict)
         {
         res = BeSQLite::ChangeSet::ConflictResolution::Skip;
-        vec = &m_conflictingElementsRejected;
+        eset = &m_conflictingElementsRejected;
         }
     else
         {
         res = BeSQLite::ChangeSet::ConflictResolution::Replace;
-        vec = &m_conflictingElementsAccepted;
+        eset = &m_conflictingElementsAccepted;
         }
 
     if (!indirect)
@@ -1768,7 +1694,7 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConf
         auto stage = (BeSQLite::DbOpcode::Insert == opcode)? BeSQLite::Changes::Change::Stage::New: BeSQLite::Changes::Change::Stage::Old;
         DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueUInt64());
         if (elementId.IsValid())
-            vec->push_back(elementId);
+            eset->insert(elementId);
         }
 
     return res;

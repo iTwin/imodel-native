@@ -314,14 +314,15 @@ private:
     BeSQLite::DbResult SaveChanges(BeSQLite::IByteArrayCR changeset, Utf8CP operation, bool isSchemaChange);
     BeSQLite::DbResult SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation);
     BeSQLite::DbResult SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation);
-    BeSQLite::DbResult SaveRebase(BeSQLite::Rebase const& rebase, Utf8StringCR revisionId);
+    
+    BeSQLite::DbResult SaveRebase(int64_t& id, BeSQLite::Rebase const& rebase);
 
     Byte* ReadChanges(uint32_t& sizeRead, TxnId rowId);
     void ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet&, TxnId rowid);
     void ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* == nullptr);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr);
     BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
@@ -348,6 +349,7 @@ private:
 
 public:
     DgnDbStatus DeleteFromStartTo(TxnId lastId); //!< @private
+    DgnDbStatus DeleteRebases(int64_t lastRebaseId); //!< @private
     void DeleteReversedTxns(); //!< @private
     void OnBeginValidate(); //!< @private
     void OnEndValidate(); //!< @private
@@ -430,6 +432,9 @@ public:
     //! @return the current TxnId. This value can be saved and later used to reverse changes that happen after this time.
     //! @see   ReverseTo CancelTo
     TxnId GetCurrentTxnId() const {return m_curr;}
+
+    //! @private
+    DGNPLATFORM_EXPORT int64_t QueryLastRebaseId();
 
     //! Get the current SessionId.
     SessionId GetCurrentSessionId() const {return m_curr.GetSession();}
