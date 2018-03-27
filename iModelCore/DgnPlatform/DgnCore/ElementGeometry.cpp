@@ -4406,7 +4406,27 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 }
 
             case GeometryStreamIO::OpCode::GeometryPartInstance:
-                break; // NEEDSWORK...
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
+                Json::Value value;
+
+                DgnGeometryPartId partId = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
+                value["part"] = partId.ToHexStr();
+
+                if (ppfb->has_origin())
+                    JsonUtils::DPoint3dToJson(value["origin"], *((DPoint3dCP) ppfb->origin()));
+
+                if (ppfb->has_yaw() || ppfb->has_pitch() || ppfb->has_roll())
+                    value["rotation"] = JsonUtils::YawPitchRollToJson(YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll()));
+
+                if (ppfb->has_scale())
+                    value["scale"] = ppfb->scale();
+
+                Json::Value partValue;
+                partValue["geomPart"] = value;
+                output.append(partValue);
+                break;
+                }
 
             case GeometryStreamIO::OpCode::TextString:
                 {
@@ -5786,6 +5806,41 @@ static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input,
 
             if (!appearance["geometryClass"].isNull())
                 params.SetGeometryClass((Render::DgnGeometryClass) (appearance["geometryClass"].asInt()));
+            }
+        else if (entry.isMember("geomPart"))
+            {
+            Json::Value geomPart = entry["geomPart"];
+
+            if (geomPart["part"].isNull())
+                return false; // A part id is required...
+
+            DgnGeometryPartId partId;
+            partId.FromJson(geomPart["part"]);
+            if (!partId.IsValid())
+                return false;
+
+            DPoint3d origin = DPoint3d::FromZero();
+            if (!geomPart["origin"].isNull())
+                JsonUtils::DPoint3dFromJson(origin, geomPart["origin"]);
+
+            YawPitchRollAngles angles;
+            if (!geomPart["rotation"].isNull())
+                angles = JsonUtils::YawPitchRollFromJson(geomPart["rotation"]);
+
+            Transform geomToSource = angles.ToTransform(origin);
+
+            if (!geomPart["scale"].isNull())
+                {
+                double scale = geomPart["scale"].asDouble();
+                if (scale > 0.0 && 1.0 != scale)
+                    geomToSource.ScaleMatrixColumns(geomToSource, scale, scale, scale);
+                }
+
+            if (!builder.Append(params))
+                return false;
+
+            if (!builder.Append(partId, geomToSource))
+                return false;
             }
         else if (entry.isMember("textString"))
             {
