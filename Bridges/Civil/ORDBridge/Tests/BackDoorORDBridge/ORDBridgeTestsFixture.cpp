@@ -156,9 +156,27 @@ void CiviliModelBridgesORDBridgeTestsFixture::TearDownTestCase()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CiviliModelBridgesORDBridgeTestsFixture::CopyTestFile(Utf8CP source, Utf8CP target)
+    {
+    char* outPath = getenv("OutRoot");
+
+    BeFileName sourcePath(outPath);
+    sourcePath.AppendA("Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\");
+    sourcePath.AppendA(source);
+
+    BeFileName targetPath(outPath);
+    targetPath.AppendA("Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\");
+    targetPath.AppendA(target);
+
+    return (BeFileNameStatus::Success == BeFileName::BeCopyFile(sourcePath, targetPath, false));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP bimFileName)
+bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP bimFileName, bool updateMode)
     {
     char* outPath = getenv("OutRoot");
     BeFileName testAppPath = m_host->GetTestAppProductDirectory();
@@ -171,10 +189,11 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP bi
     BeFileName outputPath = m_host->GetOutputDirectory();
     outputPath.AppendA(bimFileName);
 
-    Utf8PrintfString cmd("%s -i=\"%s\" -o=\"%s\"", 
+    Utf8PrintfString cmd("%s -i=\"%s\" -o=\"%s\" --no-assert-dialogs %s", 
         Utf8String(testAppPath.c_str()).c_str(), 
         Utf8String(inputPath.c_str()).c_str(), 
-        Utf8String(outputPath.c_str()).c_str());
+        Utf8String(outputPath.c_str()).c_str(),
+        (updateMode) ? "--update" : "");
 
     int errcode = system(cmd.c_str());
     bool retVal = (0 == errcode);
