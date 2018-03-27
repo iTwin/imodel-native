@@ -498,7 +498,7 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
 
-    //DataSourceManager::Shutdown();
+    DataSourceManager::Shutdown();
 
     }
 

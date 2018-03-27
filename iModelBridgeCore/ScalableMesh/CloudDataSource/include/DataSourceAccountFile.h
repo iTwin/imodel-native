@@ -10,9 +10,9 @@ public:
                                 DataSourceAccountFile       (const ServiceName &service, const AccountName &account);
                                 DataSourceAccountFile       (const ServiceName &service, const AccountName &account, const AccountIdentifier identifier, const AccountKey key);
 
-    DataSource             *    createDataSource            (void);
+    DataSource             *    createDataSource            (const SessionName &session);
     DataSourceStatus            destroyDataSource           (DataSource *dataSource);
 
-    unsigned int                getDefaultNumTransferTasks(void);
+    unsigned int                getDefaultNumTransferTasks  (void);
 
 };

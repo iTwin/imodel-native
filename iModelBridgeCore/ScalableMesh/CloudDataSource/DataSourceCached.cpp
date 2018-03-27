@@ -3,7 +3,7 @@
 #include "DataSourceAccount.h"
 
 
-DataSourceCached::DataSourceCached(DataSourceAccount * account) : Super(account)
+DataSourceCached::DataSourceCached(DataSourceAccount * account, const SessionName &session) : Super(account, session)
 {
                                                             // Initially caching is disabled by default
     setCachingEnabled(false);
@@ -30,22 +30,28 @@ bool DataSourceCached::isCached(void)
 
 DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
 {
-    DataSource                        *    dataSource;
-    DataSourceStatus                    statusNotFound(DataSourceStatus::Status_Not_Found);
+    DataSource           *  dataSource;
+    DataSourceStatus        statusNotFound(DataSourceStatus::Status_Not_Found);
+    DataSourceAccount   *   cacheAccount;
 
     (void) destSize;
 
     if ((dataSource = getCacheDataSource()) == nullptr && getAccount())
     {
-        if (getAccount()->getCacheAccount())
-        {
-            if ((dataSource = getAccount()->getCacheAccount()->createDataSource()) == nullptr)
+        if (cacheAccount = getAccount()->getCacheAccount())
             {
+            DataSourceName dataSourceName(getName());
+            dataSourceName += L"-Cache";
+
+            DataSource::SessionName   sessionName;
+
+            if ((dataSource = cacheAccount->createDataSource(dataSourceName, sessionName)) == nullptr)
+                {
                 return DataSourceStatus(DataSourceStatus::Status_Error);
-            }
+                }
 
             setCacheDataSource(dataSource);
-        }
+            }
     }
 
     if ((dataSource->open(getCacheURL(), DataSourceMode_Read)).isFailed())
@@ -61,6 +67,7 @@ DataSourceStatus DataSourceCached::readFromCache(DataSourceBuffer::BufferData *d
         return DataSourceStatus(DataSourceStatus::Status_Error_EOF);
 
     return DataSourceStatus();
+
 }
 
 DataSourceStatus DataSourceCached::writeToCache(DataSourceBuffer::BufferData *dest, DataSourceBuffer::BufferSize size)

@@ -2,7 +2,7 @@
 |
 |  $Source: CloudDataSource/include/DataSource.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -53,9 +53,8 @@ public:
     typedef DataSourceBuffer::TimeoutStatus         TimeoutStatus;
     typedef DataSourceBuffer::Timeout               Timeout;
 
-    typedef std::wstring                            Name;
-
 protected:
+
 
     Timeout                                         timeout;
 
@@ -64,9 +63,11 @@ protected:
     void                                            setStoreConfig      (DataSourceStoreConfig *newConfig);
     DataSourceStoreConfig                      *    getStoreConfig      (void);
 
+
+
 public:
 
-                                                    DataSource          (DataSourceAccount *sourceAccount);
+                                                    DataSource          (DataSourceAccount *sourceAccount, const SessionName &session);
     virtual                                        ~DataSource          (void);
 
     DataSourceService                           *   getService          (void);

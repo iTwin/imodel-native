@@ -9,7 +9,11 @@
 
 DataSourceTransferScheduler::Ptr  DataSourceAccount::getTransferScheduler(void)
     {
-    dataSourceTransferScheduler = DataSourceTransferScheduler::Get();
+    if (dataSourceTransferScheduler == nullptr)
+        {
+        dataSourceTransferScheduler = new DataSourceTransferScheduler;
+        }
+    
     return dataSourceTransferScheduler;
     }
 
@@ -19,22 +23,47 @@ unsigned int DataSourceAccount::getDefaultNumTransferTasks(void)
     return 0;
 }
 
+void DataSourceAccount::setPrefixPathType(PrefixPathType type)
+    {
+    prefixPathType = type;
+    }
+
+
+DataSourceAccount::PrefixPathType DataSourceAccount::getPrefixPathType(void) const
+    {
+    return prefixPathType;
+    }
+
 DataSourceAccount::DataSourceAccount(void) : dataSourceManager(nullptr)
     {
-
+    setReferenceCounter(0);
+                                                            // Default to using Account level prefix paths. Derived accounts should set this if necessary.
+    setPrefixPathType(PrefixPathAccount);
     }
 
 DataSourceAccount::~DataSourceAccount(void)
     {
                                                             // Note: Call destroyAll() before deletion
+    assert(getReferenceCounter() == 0);
     }
 
 bool DataSourceAccount::destroyAll(void)
     {
-        if (destroyDataSources().isOK())
-            return true;
+                                                            // Destroy all DataSources associated with this account (and cache DataSources)
+        if (destroyDataSources().isFailed())
+            return false;
 
-        return false;
+        if (getCacheAccount())
+            {
+                                                            // Get Cache Account's Service
+            DataSourceService *cacheService = getDataSourceManager().getService(getCacheAccount()->getServiceName());
+                                                            // Inform Service that Cache Account has been released
+            if (cacheService)
+                cacheService->releaseAccount(getCacheAccount()->getAccountName());
+
+            }
+
+        return true;
     }
 
 DataSourceStatus DataSourceAccount::destroyDataSources(void)
@@ -61,24 +90,34 @@ DataSourceManager & DataSourceAccount::getDataSourceManager(void)
     return *dataSourceManager;
     }
 
-DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account)
+DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account) : DataSourceAccount()
     {
     setServiceName(service);
 
     setAccountName(account);
+                                                            // Default to caching disabled
+    setCachingEnabled(false);
     }
 
-DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key)
+DataSourceAccount::DataSourceAccount(const ServiceName & service, const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key) : DataSourceAccount()
     {
     setAccount(service, account, identifier, key);
     }
 
 DataSourceStatus DataSourceAccount::setAccount(const ServiceName &service, const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key)
     {
-    if (service.length() == 0 || account.length() == 0)
+    if (service.length() == 0)
         return DataSourceStatus(DataSourceStatus::Status_Error);
 
     setServiceName(service);
+
+    return DataSourceAccount::setAccount(account, identifier, key);
+    }
+
+DataSourceStatus DataSourceAccount::setAccount(const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key)
+    {
+    if (account.length() == 0)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
 
     setAccountName(account);
 
@@ -145,34 +184,39 @@ void DataSourceAccount::setWSGTokenGetterCallback(const std::function<std::strin
     // Nothing to do
     }
 
-void DataSourceAccount::SetSASTokenGetterCallback(const std::function<std::string(const Utf8String& docGuid)>&)
+void DataSourceAccount::setCachingEnabled(bool enabled)
     {
-    // Nothing to do
+    cachingEnabled = enabled;
     }
 
-DataSource * DataSourceAccount::createDataSource(const DataSourceManager::DataSourceName &name)
+bool DataSourceAccount::getCachingEnabled(void)
     {
-    return getDataSourceManager().createDataSource(name, *this);
+    return cachingEnabled;
+    }
+
+DataSource * DataSourceAccount::createDataSource(const DataSourceName &name, const SessionName &session)
+    {
+    return getDataSourceManager().createDataSource(name, *this, session);
     }
 
 
-DataSource * DataSourceAccount::getOrCreateDataSource(const DataSourceManager::DataSourceName &name, bool *created)
+DataSource * DataSourceAccount::getOrCreateDataSource(const DataSourceName &name, const SessionName &session, bool *created)
     {
-    return getDataSourceManager().getOrCreateDataSource(name, *this, created);
+    return getDataSourceManager().getOrCreateDataSource(name, *this, session, created);
     }
 
 
-DataSource * DataSourceAccount::getOrCreateThreadDataSource(bool *created)
+DataSource * DataSourceAccount::getOrCreateThreadDataSource(const SessionName &session, bool *created)
 {
     std::wstringstream      name;
-    DataSource::Name        dataSourceName;
+    DataSourceName          dataSourceName;
                                                             // Get thread ID and use as DataSource name
     std::thread::id threadID = std::this_thread::get_id();
     name << threadID;
 
     dataSourceName = getAccountName() + L"_thread-" + name.str();
 
-    return getDataSourceManager().getOrCreateDataSource(dataSourceName, *this, created);
+    return getDataSourceManager().getOrCreateDataSource(dataSourceName, *this, session, created);
     }
 
 
@@ -234,7 +278,7 @@ DataSourceStatus DataSourceAccount::downloadBlobSync(DataSource &dataSource, Dat
     return DataSourceStatus(DataSourceStatus::Status_Error_Not_Supported);
     }
 
-DataSourceStatus DataSourceAccount::downloadBlobSync(DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size)
+DataSourceStatus DataSourceAccount::downloadBlobSync(DataSourceURL &segmentName, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size, const DataSource::SessionName &sessionName)
     {
     (void)segmentName;
     (void)dest;

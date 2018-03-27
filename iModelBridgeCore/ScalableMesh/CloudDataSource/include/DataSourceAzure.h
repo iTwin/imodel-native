@@ -31,7 +31,7 @@ protected:
 
 public:
 
-                                DataSourceAzure         (DataSourceAccount *sourceAccount);
+                                DataSourceAzure         (DataSourceAccount *sourceAccount, const SessionName &session);
                                ~DataSourceAzure         (void);
 
     DataSourceStatus            open                    (const DataSourceURL &sourceURL, DataSourceMode mode);
