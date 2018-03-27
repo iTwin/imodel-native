@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/BlockedVector.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -409,7 +409,7 @@ uint32_t BlockedVector<T>::ClearAndAppendByOneBasedIndices
 bvector<int> &zeroBasedIndices,
 bvector<bool> *positive,
 T const *source,
-size_t sourceCount,
+size_t sourceCount,            
 int const *oneBasedIndices,
 size_t oneBasedIndexCount,
 uint32_t i0,

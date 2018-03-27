@@ -663,6 +663,8 @@ $(OUT_DIR)PolyfaceLightWeightBuilder$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceLi
 
 $(OUT_DIR)PolyfaceFastNormalBuilder$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceFastNormalBuilder.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
+$(OUT_DIR)PolyfaceAuxData$(OUT_EXT)    : $(geomSrcPolyface)PolyfaceAuxData.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
+
 $(OUT_DIR)ClipPlaneSet$(OUT_EXT)      : $(geomSrcPolyface)ClipPlaneSet.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}
 
 $(OUT_DIR)ClipPlane$(OUT_EXT)      : $(geomSrcPolyface)ClipPlane.cpp         $(OTHER_DEPENDENCIES) ${MultiCompileDepends}

@@ -667,7 +667,7 @@ flatbuffers::Offset<BGFB::PolyfaceAuxChannelData> WriteAsFBPolyfaceAuxChannelDat
 
     BGFB::PolyfaceAuxChannelDataBuilder builder (m_fbb);
     builder.add_input (pData->GetInput());
-    builder.add_values(WriteOptionalVector<double, double, 1> (pData->GetValues()));
+    builder.add_values(WriteOptionalVector<float, float, 1> (pData->GetValues()));
 
     return builder.Finish();
     }
@@ -1012,10 +1012,10 @@ static CurveVectorPtr ReadCurveVectorDirect (const BGFB::CurveVector * fbCurveVe
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPolyfaceAuxData)
     {
-    auto                fbIndices = fbPolyfaceAuxData->indices();
-    auto                fbChannels = fbPolyfaceAuxData->channels();
-    bvector<PolyfaceAuxData::ChannelPtr> channels;
-    bvector<int32_t>    indices(fbIndices->Length());
+    auto                        fbIndices = fbPolyfaceAuxData->indices();
+    auto                        fbChannels = fbPolyfaceAuxData->channels();
+    PolyfaceAuxData::Channels   channels;
+    bvector<int32_t>            indices(fbIndices->Length());
 
     memcpy(indices.data(), fbIndices->GetStructFromOffset(0), fbIndices->Length()*sizeof(int32_t));
     
@@ -1029,7 +1029,7 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPol
             {
             auto            fbChannelData = fbChannelDataVector->Get(j);
             auto            fbChannelDataValues = fbChannelData->values();
-            bvector<double> values(fbChannelDataValues->Length());
+            bvector<float> values(fbChannelDataValues->Length());
 
             memcpy (values.data(), fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(double));
             channelDataVector.push_back(new PolyfaceAuxData::Data(fbChannelData->input(), std::move(values)));

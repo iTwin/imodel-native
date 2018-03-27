@@ -734,59 +734,6 @@ bool        reverseIndicesIfMirrored
     }
 
 
-/*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley      03/2019
-+--------------------------------------------------------------------------------------*/
-void PolyfaceAuxData::Transform(TransformCR transform)
-    {
-    RotMatrix   rMatrix = RotMatrix::From(transform);
-    double      determinant = rMatrix.Determinant ();    
-
-    for (auto& channel : m_channels)
-        {
-        switch (channel->GetTransformType())
-            {
-            case TransformType::Vector:
-                {
-                BeAssert(3 == channel->GetBlockSize());
-                for (auto& channelData :  channel->GetData())
-                    rMatrix.Multiply((DPoint3dP) channelData->GetValues().data(), (DPoint3dP) channelData->GetValues().data(), (int) channelData->GetValues().size() / 3);
-                break;
-                }
-
-            case TransformType::Convector:
-                {
-                BeAssert(3 == channel->GetBlockSize());
-
-                RotMatrix       inverseRMatrix;
-
-                if (inverseRMatrix.InverseOf(rMatrix))
-                    for (auto& channelData :  channel->GetData())
-                        inverseRMatrix.MultiplyTranspose((DPoint3dP) channelData->GetValues().data(), (DPoint3dP) channelData->GetValues().data(), (int) channelData->GetValues().size() / 3);
-
-                break;
-                }
-            case TransformType::Point:
-                {
-                BeAssert(3 == channel->GetBlockSize());
-                for (auto& channelData :  channel->GetData())
-                    transform.Multiply((DPoint3dP) channelData->GetValues().data(), (DPoint3dP) channelData->GetValues().data(), (int) channelData->GetValues().size() / 3);
-                break;
-                }
-
-            case TransformType::Distance:
-                {
-                double      transformScale = pow (fabs (determinant), 1.0 / 3.0) * (determinant >= 0.0 ? 1.0 : -1.0);
-
-                for (auto& channelData :  channel->GetData())
-                    for (auto& distance : channelData->m_values)
-                        distance *= transformScale;
-
-                break;
-                }
-            }
-        }
-    }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      03/2013
@@ -858,6 +805,8 @@ void PolyfaceHeader::CopyFrom (PolyfaceQueryCR source)
     m_paramIndex.SetStructsPerRow (numIndexPerRow);
     m_colorIndex.SetStructsPerRow (numIndexPerRow);
     m_faceIndex.SetStructsPerRow (numIndexPerRow);
+    if (source.GetAuxDataCP().IsValid())
+        m_auxData = new PolyfaceAuxData(*source.GetAuxDataCP());   // Do we need to do a deep copy here??
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -1697,5 +1646,6 @@ void  PolyfaceHeader::NormalizeParameters ()
         faceData.m_paramRange = DRange2d::From(0.0, 0.0, 1.0, 1.0);
     
     }
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE
