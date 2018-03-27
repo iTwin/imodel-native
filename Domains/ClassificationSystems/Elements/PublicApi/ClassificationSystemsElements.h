@@ -39,9 +39,12 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
     {
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition, ClassificationSystemClassDefinition);
     private:
+       BE_PROP_NAME(Name)
+       BE_PROP_NAME(Category)
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT CIBSEClassDefinition(CreateParams const& params) : T_Super(params) {}
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT CIBSEClassDefinition(CreateParams const& params, Utf8CP name, Utf8CP Category);
         friend struct CIBSEClassDefinitionHandler;
         friend struct ClassificationSystemsDomain;
 
@@ -56,6 +59,14 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static CIBSEClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category);
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(CIBSEClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+
+        //! Sets the name of this CIBSEClassDefinition
+        //! @param[in]  name   new name for this CIBSEClassDefinition
+        void SetName (Utf8CP name) { SetPropertyValue(prop_Name(), name); }
+
+        //! Sets the Category of this CIBSEClassDefinition
+        //! @param[in]  Category   new Category for this CIBSEClassDefinition
+        void SetCategory (Utf8CP Category) { SetPropertyValue(prop_Category(), Category); }   
         
     };
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
