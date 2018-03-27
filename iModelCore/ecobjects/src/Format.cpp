@@ -341,36 +341,39 @@ SchemaWriteStatus Format::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
         { 
         auto nfs = GetNumericSpec();
         if (nfs->HasRoundingFactor())
-            xmlWriter.WriteAttribute(FORMAT_ROUND_FACTOR_ATTRIBUTE, this->GetNumericSpec()->GetRoundingFactor());
-        xmlWriter.WriteAttribute(FORMAT_TYPE_ATTRIBUTE, Formatting::Utils::PresentationTypeName(this->GetNumericSpec()->GetPresentationType()).c_str());
+            xmlWriter.WriteAttribute(FORMAT_ROUND_FACTOR_ATTRIBUTE, nfs->GetRoundingFactor());
+        xmlWriter.WriteAttribute(FORMAT_TYPE_ATTRIBUTE, Formatting::Utils::PresentationTypeName(nfs->GetPresentationType()).c_str());
         if (nfs->HasSignOption())
-            xmlWriter.WriteAttribute(FORMAT_SIGN_OPTION_ATTRIBUTE, Formatting::Utils::SignOptionName(this->GetNumericSpec()->GetSignOption()).c_str());
+            xmlWriter.WriteAttribute(FORMAT_SIGN_OPTION_ATTRIBUTE, Formatting::Utils::SignOptionName(nfs->GetSignOption()).c_str());
         if (nfs->HasFormatTraits())
-            xmlWriter.WriteAttribute(FORMAT_TRAITS_ATTRIBUTE, GetNumericSpec()->GetFormatTraitsString().c_str());
+            xmlWriter.WriteAttribute(FORMAT_TRAITS_ATTRIBUTE, nfs->GetFormatTraitsString().c_str());
         if (nfs->HasPrecision())
             { 
             xmlWriter.WriteAttribute(FORMAT_PRECISION_ATTRIBUTE, GetPresentationType() == Formatting::PresentationType::Fractional ? 
-                static_cast<uint32_t>(pow(2u, static_cast<uint32_t>(GetNumericSpec()->GetFractionalPrecision()))) : 
-                static_cast<uint32_t>(GetNumericSpec()->GetDecimalPrecision()));
+                static_cast<uint32_t>(pow(2u, static_cast<uint32_t>(nfs->GetFractionalPrecision()))) : 
+                static_cast<uint32_t>(nfs->GetDecimalPrecision()));
             }
-        xmlWriter.WriteAttribute(FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, Formatting::Utils::ScientificTypeName(GetNumericSpec()->GetScientificType()).c_str());
+        if (Formatting::PresentationType::Scientific == GetPresentationType())
+            xmlWriter.WriteAttribute(FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, Formatting::Utils::ScientificTypeName(nfs->GetScientificType()).c_str());
         if (nfs->HasDecimalSeparator())
-            xmlWriter.WriteAttribute(FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE, Utf8String(1, GetNumericSpec()->GetDecimalSeparator()).c_str());
+            xmlWriter.WriteAttribute(FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE, Utf8String(1, nfs->GetDecimalSeparator()).c_str());
         if (nfs->HasThousandsSeparator())
-            xmlWriter.WriteAttribute(FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, Utf8String(1,GetNumericSpec()->GetThousandSeparator()).c_str());
+            xmlWriter.WriteAttribute(FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, Utf8String(1,nfs->GetThousandSeparator()).c_str());
         if (nfs->HasUomSeparator())
-            xmlWriter.WriteAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE, GetNumericSpec()->GetUomSeparator());
+            xmlWriter.WriteAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE, nfs->GetUomSeparator());
         if (nfs->HasStatSeparator())
-            xmlWriter.WriteAttribute(FORMAT_STAT_SEPARATOR_ATTRIBUTE, Utf8String(1, GetNumericSpec()->GetStatSeparator()).c_str());
+            xmlWriter.WriteAttribute(FORMAT_STAT_SEPARATOR_ATTRIBUTE, Utf8String(1, nfs->GetStatSeparator()).c_str());
+        if (Formatting::PresentationType::Station == GetPresentationType())
+            xmlWriter.WriteAttribute(FORMAT_STATION_SIZE_ATTRIBUTE, nfs->GetStationSize());
         }
     if (HasComposite())
         {
         auto comp = GetCompositeSpec();
         xmlWriter.WriteElementStart(FORMAT_COMPOSITE_ELEMENT);
         if (comp->HasSpacer())
-            xmlWriter.WriteAttribute(COMPOSITE_SPACER_ATTRIBUTE, GetCompositeSpec()->GetSpacer().c_str());
+            xmlWriter.WriteAttribute(COMPOSITE_SPACER_ATTRIBUTE, comp->GetSpacer().c_str());
         if (comp->HasInputUnit())
-            xmlWriter.WriteAttribute(COMPOSITE_INPUT_UNIT_ATTRIBUTE, ((ECUnitCP)GetCompositeSpec()->GetInputUnit())->GetQualifiedName(GetSchema()).c_str());
+            xmlWriter.WriteAttribute(COMPOSITE_INPUT_UNIT_ATTRIBUTE, ((ECUnitCP)comp->GetInputUnit())->GetQualifiedName(GetSchema()).c_str());
         auto writeUnit = [&](Nullable<Utf8String> label, Units::UnitCP unit)
             {
             xmlWriter.WriteElementStart(FORMAT_COMPOSITE_UNIT_ELEMENT);
@@ -379,15 +382,14 @@ SchemaWriteStatus Format::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
             xmlWriter.WriteText(((ECUnitCP)unit)->GetQualifiedName(GetSchema()).c_str());
             xmlWriter.WriteElementEnd();
             };
-        auto spec = GetCompositeSpec();
         if (HasCompositeMajorUnit())
-            writeUnit(spec->HasMajorLabel() ? spec->GetMajorLabel() : nullptr, spec->GetMajorUnit());
+            writeUnit(comp->HasMajorLabel() ? comp->GetMajorLabel() : nullptr, comp->GetMajorUnit());
         if (HasCompositeMiddleUnit())
-            writeUnit(spec->HasMiddleLabel() ? spec->GetMiddleLabel() : nullptr, spec->GetMiddleUnit());
+            writeUnit(comp->HasMiddleLabel() ? comp->GetMiddleLabel() : nullptr, comp->GetMiddleUnit());
         if (HasCompositeMinorUnit())
-            writeUnit(spec->HasMinorLabel() ? spec->GetMinorLabel() : nullptr, spec->GetMinorUnit());
+            writeUnit(comp->HasMinorLabel() ? comp->GetMinorLabel() : nullptr, comp->GetMinorUnit());
         if (HasCompositeSubUnit())
-            writeUnit(spec->HasSubLabel() ? spec->GetSubLabel() : nullptr, spec->GetSubUnit());
+            writeUnit(comp->HasSubLabel() ? comp->GetSubLabel() : nullptr, comp->GetSubUnit());
         xmlWriter.WriteElementEnd();
         }
     xmlWriter.WriteElementEnd();
@@ -414,19 +416,63 @@ SchemaWriteStatus Format::WriteJson(Json::Value & outValue, bool standalone, boo
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
     if (!Utf8String::IsNullOrEmpty(GetInvariantDescription().c_str()))
         outValue[DESCRIPTION_ATTRIBUTE] = GetInvariantDescription();
-    outValue[FORMAT_ROUND_FACTOR_ATTRIBUTE] = GetNumericSpec()->GetRoundingFactor();
-    outValue[FORMAT_TYPE_ATTRIBUTE] = Formatting::Utils::PresentationTypeName(GetNumericSpec()->GetPresentationType());
-    outValue[FORMAT_SIGN_OPTION_ATTRIBUTE] = Formatting::Utils::SignOptionName(GetNumericSpec()->GetSignOption());
-    outValue[FORMAT_TRAITS_ATTRIBUTE] = GetNumericSpec()->GetFormatTraitsString();
-    outValue[FORMAT_PRECISION_ATTRIBUTE] = GetPresentationType() == Formatting::PresentationType::Fractional ? 
-        static_cast<uint32_t>(GetNumericSpec()->GetFractionalPrecision()) : 
-        static_cast<uint32_t>(GetNumericSpec()->GetDecimalPrecision());
-    outValue[FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE] = Formatting::Utils::ScientificTypeName(GetNumericSpec()->GetScientificType());
-    outValue[FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE] = GetNumericSpec()->GetDecimalSeparator();
-    outValue[FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE] = GetNumericSpec()->GetThousandSeparator();
-    outValue[FORMAT_UOM_SEPARATOR_ATTRIBUTE] = GetNumericSpec()->GetUomSeparator();
-    outValue[FORMAT_STAT_SEPARATOR_ATTRIBUTE] = GetNumericSpec()->GetStatSeparator();
-
+    if (HasNumeric())
+        {
+        auto nfs = GetNumericSpec();
+        if (nfs->HasRoundingFactor())
+            outValue[FORMAT_ROUND_FACTOR_ATTRIBUTE] = nfs->GetRoundingFactor();
+        outValue[FORMAT_TYPE_ATTRIBUTE] = Formatting::Utils::PresentationTypeName(nfs->GetPresentationType());
+        if (nfs->HasSignOption())
+            outValue[FORMAT_SIGN_OPTION_ATTRIBUTE] = Formatting::Utils::SignOptionName(nfs->GetSignOption());
+        if (nfs->HasFormatTraits())
+            outValue[FORMAT_TRAITS_ATTRIBUTE] = nfs->GetFormatTraitsString();
+        if (nfs->HasPrecision())
+            { 
+            outValue[FORMAT_PRECISION_ATTRIBUTE] = GetPresentationType() == Formatting::PresentationType::Fractional ? 
+                        static_cast<uint32_t>(pow(2u, static_cast<uint32_t>(nfs->GetFractionalPrecision()))) : 
+                        static_cast<uint32_t>(nfs->GetDecimalPrecision());
+            }
+        if (Formatting::PresentationType::Scientific == GetPresentationType())
+            outValue[FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE] = Formatting::Utils::ScientificTypeName(nfs->GetScientificType());
+        if (nfs->HasDecimalSeparator())
+            outValue[FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE] = Utf8String(1, nfs->GetDecimalSeparator()).c_str();
+        if (nfs->HasThousandsSeparator())
+            outValue[FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE] = Utf8String(1,nfs->GetThousandSeparator()).c_str();
+        if (nfs->HasUomSeparator())
+            outValue[FORMAT_UOM_SEPARATOR_ATTRIBUTE] = nfs->GetUomSeparator();
+        if (nfs->HasStatSeparator())
+            outValue[FORMAT_STAT_SEPARATOR_ATTRIBUTE] = Utf8String(1, nfs->GetStatSeparator()).c_str();
+        if (Formatting::PresentationType::Station == GetPresentationType())
+            outValue[FORMAT_STATION_SIZE_ATTRIBUTE] = nfs->GetStationSize();
+        }
+    
+    if (HasComposite())
+        {
+        auto comp = GetCompositeSpec();
+        outValue[FORMAT_JSON_COMPOSITE_ELEMENT] = Json::Value(Json::objectValue);
+        auto& compElement = outValue[FORMAT_JSON_COMPOSITE_ELEMENT];
+        if (comp->HasSpacer())
+            compElement[COMPOSITE_SPACER_ATTRIBUTE] = comp->GetSpacer().c_str();
+        if (comp->HasInputUnit())
+            compElement[COMPOSITE_INPUT_UNIT_ATTRIBUTE] = ((ECUnitCP)comp->GetInputUnit())->GetQualifiedName(GetSchema()).c_str();
+        auto writeUnit = [&](Nullable<Utf8String> label, Units::UnitCP unit, Json::Value& unitsArray)
+            {
+            auto& unitElement = unitsArray.append(Json::Value(Json::objectValue));
+            if(label.IsValid())
+               unitElement[COMPOSITE_UNIT_LABEL_ATTRIBUTE] = label.Value().c_str();
+            unitElement[NAME_ATTRIBUTE] = ((ECUnitCP)unit)->GetQualifiedName(GetSchema()).c_str();
+            };
+        compElement[FORMAT_COMPOSITE_UNITS_ELEMENT] = Json::Value(Json::arrayValue);
+        auto& unitArray = compElement[FORMAT_COMPOSITE_UNITS_ELEMENT];
+        if (HasCompositeMajorUnit())
+            writeUnit(comp->HasMajorLabel() ? comp->GetMajorLabel() : nullptr, comp->GetMajorUnit(), unitArray);
+        if (HasCompositeMiddleUnit())
+            writeUnit(comp->HasMiddleLabel() ? comp->GetMiddleLabel() : nullptr, comp->GetMiddleUnit(), unitArray);
+        if (HasCompositeMinorUnit())
+            writeUnit(comp->HasMinorLabel() ? comp->GetMinorLabel() : nullptr, comp->GetMinorUnit(), unitArray);
+        if (HasCompositeSubUnit())
+            writeUnit(comp->HasSubLabel() ? comp->GetSubLabel() : nullptr, comp->GetSubUnit(), unitArray);
+        }
     return SchemaWriteStatus::Success;
     }
 

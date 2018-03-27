@@ -44,7 +44,9 @@
 #define CONSTANT_ELEMENT                    "Constant"
 #define FORMAT_ELEMENT                      "Format"
 #define FORMAT_COMPOSITE_ELEMENT            "Composite"
+#define FORMAT_JSON_COMPOSITE_ELEMENT       "composite"
 #define FORMAT_COMPOSITE_UNIT_ELEMENT       "Unit"
+#define FORMAT_COMPOSITE_UNITS_ELEMENT      "units"
 
 #define ECXML_SCHEMAREFERENCE_ELEMENT       "ECSchemaReference"
 #define ECJSON_REFERENCES_ATTRIBUTE         "references"

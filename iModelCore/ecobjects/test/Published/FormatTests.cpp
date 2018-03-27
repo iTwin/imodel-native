@@ -25,7 +25,7 @@ TEST_F(FormatTest, BasicUnitFormatCreation)
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
     FormatP ufmt;
-    Formatting::NumericFormatSpec format;
+    Formatting::NumericFormatSpec format = Formatting::NumericFormatSpec();
     format.SetApplyRounding(true);
     format.SetPresentationType(Formatting::PresentationType::Fractional);
     format.SetFractionalPrecision(Formatting::FractionalPrecision::Over_128);
@@ -115,7 +115,6 @@ TEST_F(FormatTest, BasicRoundTripTest)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, serializedSchemaXml.c_str(), *context));
     verify(schema);
     }
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -124,11 +123,32 @@ TEST_F(FormatTest, BasicRoundTripTest)
 TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     {
     ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ECSchema::CreateSchema(schema, "ExampleSchema", "es", 3, 2, 0);
+    schema->AddReferencedSchema(*GetUnitsSchema(true));
 
     FormatP ufmt;
-    EC_ASSERT_SUCCESS(schema->CreateFormat(ufmt, "TestFormat", "TestDisplayLabel", "a test unit format"));
+    EC_ASSERT_SUCCESS(schema->CreateFormat(ufmt, "AmerMYFI4", "myfi4", ""));
     ASSERT_NE(nullptr, ufmt);
+    using namespace Formatting;
+    NumericFormatSpec numeric = NumericFormatSpec();
+    numeric.SetPresentationType(PresentationType::Fractional);
+    numeric.SetRoundingFactor(0.0);
+    numeric.SetSignOption(ShowSignOption::OnlyNegative);
+    numeric.SetUseLeadingZeroes(true);
+    numeric.SetKeepTrailingZeroes(true);
+    numeric.SetFractionalPrecision(FractionalPrecision::Quarter);
+    numeric.SetDecimalSeparator('.');
+    numeric.SetThousandSeparator(',');
+    numeric.SetUomSeparator(" ");
+    ufmt->SetNumericSpec(numeric);
+    CompositeValueSpec comp = CompositeValueSpec(*schema->GetUnitsContext().LookupUnit("u:MILE"), *schema->GetUnitsContext().LookupUnit("u:YRD"), *schema->GetUnitsContext().LookupUnit("u:FT"), *schema->GetUnitsContext().LookupUnit("u:IN"));
+    comp.SetSpacer("-");
+    comp.SetInputUnit(schema->GetUnitsContext().LookupUnit("u:M"));
+    comp.SetMajorLabel("mile(s)");
+    comp.SetMiddleLabel("yrd(s)");
+    comp.SetMinorLabel("'");
+    comp.SetSubLabel("\"");
+    ufmt->SetCompositeSpec(comp);
 
     Json::Value schemaJson;
     ASSERT_EQ(SchemaWriteStatus::Success, ufmt->WriteJson(schemaJson, true));
