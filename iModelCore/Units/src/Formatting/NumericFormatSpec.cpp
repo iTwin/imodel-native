@@ -516,17 +516,23 @@ int NumericFormatSpec::FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NumericFormatSpec::NumericFormatSpec()
-    : m_roundFactor(0.0)
+    : m_explicitlyDefinedDecimalSeparator(false)
+    , m_explicitlyDefinedPrecision(false)
+    , m_explicitlyDefinedRoundFactor(false)
+    , m_explicitlyDefinedShowSign(false)
+    , m_explicitlyDefinedStatSeparator(false)
+    , m_explicitlyDefinedThousandsSeparator(false)
+    , m_explicitlyDefinedUOMSeparator(false)
+    , m_roundFactor(0.0)
     , m_presentationType(FormatConstant::DefaultPresentaitonType())
     , m_signOption(FormatConstant::DefaultSignOption())
     , m_formatTraits(FormatConstant::DefaultFormatTraits())
     , m_decPrecision(FormatConstant::DefaultDecimalPrecision())
     , m_fractPrecision(FormatConstant::DefaultFractionalPrecision())
-    , m_barType(FractionBarType::Diagonal)
     , m_decimalSeparator(FormatConstant::FPV_DecimalSeparator())
     , m_thousandsSeparator(FormatConstant::FPV_ThousandSeparator())
     , m_uomSeparator(FormatConstant::BlankString())
-    , m_statSeparator(FormatConstant::DefaultStopSeparator())
+    , m_statSeparator(FormatConstant::DefaultStationSeparator())
     , m_minWidth(0)
     , m_stationSize(0)
     , m_scientificType(ScientificType::Standard)
@@ -558,8 +564,6 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval) : NumericFormatSpec()
             Utils::FractionalPrecisionByDenominator(val.asInt64(), m_fractPrecision);
         else if (BeStringUtilities::StricmpAscii(paramName, json_signOpt()) == 0)
             Utils::NameToSignOption(val.asCString(), m_signOption);
-        else if (BeStringUtilities::StricmpAscii(paramName, json_barType()) == 0)
-            Utils::NameToFractionBarType(val.asCString(), m_barType);
         else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
             m_decimalSeparator = val.asString().c_str()[0];
         else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
@@ -586,7 +590,6 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
     if (m_formatTraits != other.m_formatTraits) return false;
     if (m_decPrecision != other.m_decPrecision) return false;
     if (m_fractPrecision != other.m_fractPrecision) return false;
-    if (m_barType != other.m_barType) return false;
     if (m_decimalSeparator != other.m_decimalSeparator) return false;
     if (m_thousandsSeparator != other.m_thousandsSeparator) return false;
     if (!m_uomSeparator.Equals(other.m_uomSeparator)) return false;
@@ -829,8 +832,6 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         jNFC[json_fractPrec()] = Utils::FractionalPrecisionDenominator(m_fractPrecision);
     if (verbose || m_formatTraits != defSpec.m_formatTraits)
         jNFC[json_formatTraits()] = FormatTraitsToJson(verbose);
-    if (verbose || m_barType != defSpec.m_barType)
-        jNFC[json_barType()] = Utils::FractionBarName(m_barType);
     if (verbose || m_decimalSeparator != defSpec.m_decimalSeparator)
         jNFC[json_decimalSeparator()] = m_decimalSeparator;
     if (verbose || m_thousandsSeparator != defSpec.m_thousandsSeparator)

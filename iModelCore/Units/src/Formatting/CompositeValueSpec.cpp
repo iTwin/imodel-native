@@ -83,19 +83,17 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middle
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-CompositeValueSpec::CompositeValueSpec(bvector<std::pair<BEU::UnitCP, Utf8String>> const& units, BEU::UnitCP input)
+CompositeValueSpec::CompositeValueSpec(bvector<BEU::UnitCP> const& units)
     : m_includeZero(true)
     , m_spacer("")
     , m_ratio {0}
-    , m_inputUnit(input)
     {
     m_proxys.resize(units.size());
 
     int i = 0;
     for(auto const& unit : units)
         {
-        m_proxys[i] = unit.first;
-        SetUnitLabel(i, unit.second.c_str());
+        m_proxys[i] = unit;
         i++;
         }
 

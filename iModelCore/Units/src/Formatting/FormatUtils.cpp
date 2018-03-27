@@ -529,37 +529,6 @@ Utf8String Utils::SignOptionName(ShowSignOption opt)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-Utf8String Utils::FractionBarName(FractionBarType bar)
-    {
-    switch (bar)
-        {
-        case FractionBarType::Diagonal: return FormatConstant::FPN_FractBarDiagonal();
-        case FractionBarType::Oblique: return FormatConstant::FPN_FractBarOblique();
-        case FractionBarType::Horizontal: return FormatConstant::FPN_FractBarHoriz();
-        case FractionBarType::None:
-        default:  return "";
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-// static
-bool Utils::NameToFractionBarType(Utf8CP name, FractionBarType& type)
-    {
-    if (BeStringUtilities::StricmpAscii(name, "none") == 0) type = FractionBarType::None;
-    else if (BeStringUtilities::StricmpAscii(name, "diagonal") == 0) type = FractionBarType::Diagonal;
-    else if (BeStringUtilities::StricmpAscii(name, "oblique") == 0) type = FractionBarType::Oblique;
-    else if (BeStringUtilities::StricmpAscii(name, "horizontal") == 0) type = FractionBarType::Horizontal;
-    else
-        return false;
-    return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-// static
 bool Utils::FractionalPrecisionByDenominator(const size_t prec, FractionalPrecision& out)
     {
     switch (prec)

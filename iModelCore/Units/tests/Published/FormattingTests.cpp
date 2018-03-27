@@ -128,11 +128,10 @@ TEST_F(NumericFormatSpecTest, Constructors)
     EXPECT_EQ(FormatConstant::DefaultFormatTraits(), nfs.GetFormatTraits());
     EXPECT_EQ(FormatConstant::DefaultDecimalPrecision(), nfs.GetDecimalPrecision());
     EXPECT_EQ(FormatConstant::DefaultFractionalPrecision(), nfs.GetFractionalPrecision());
-    EXPECT_EQ(FormatConstant::DefaultFractionBarType(), nfs.GetFractionalBarType());
     EXPECT_EQ(FormatConstant::DefaultDecimalSeparator(), nfs.GetDecimalSeparator());
     EXPECT_EQ(FormatConstant::DefaultThousandSeparator(), nfs.GetThousandSeparator());
     EXPECT_EQ(FormatConstant::DefaultUomSeparator(), nfs.GetUomSeparator());
-    EXPECT_EQ(FormatConstant::DefaultStopSeparator(), nfs.GetStatSeparator());
+    EXPECT_EQ(FormatConstant::DefaultStationSeparator(), nfs.GetStatSeparator());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     }

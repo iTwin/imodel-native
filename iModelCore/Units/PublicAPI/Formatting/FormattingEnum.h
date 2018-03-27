@@ -20,17 +20,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatProblemDetail)
 //=======================================================================================
 // @bsienum
 //=======================================================================================
-enum class FractionBarType
-    {
-    None = 0,
-    Oblique = 1,
-    Horizontal = 2,
-    Diagonal = 3
-    };
-
-//=======================================================================================
-// @bsienum
-//=======================================================================================
 enum class ShowSignOption
     { 
     NoSign = 0,              // indicates that sign should not be used at all (like absolute value)
@@ -300,8 +289,6 @@ struct Utils
     UNITS_EXPORT static Utf8String PresentationTypeName(PresentationType type);
     UNITS_EXPORT static bool NameToPresentationType(Utf8CP name, PresentationType& type);
     UNITS_EXPORT static Utf8String SignOptionName(ShowSignOption opt);
-    UNITS_EXPORT static Utf8String FractionBarName(FractionBarType bar);
-    UNITS_EXPORT static bool NameToFractionBarType(Utf8CP name, FractionBarType& type);
     UNITS_EXPORT static bool FractionalPrecisionByDenominator(const size_t prec, FractionalPrecision& out);
     static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
     UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
@@ -335,11 +322,10 @@ public:
     static FormatTraits const DefaultFormatTraits() { return FormatTraits::None; }
     static DecimalPrecision const DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
     static FractionalPrecision const DefaultFractionalPrecision() { return  FractionalPrecision::Over_64; }
-    static FractionBarType const DefaultFractionBarType() { return FractionBarType::Diagonal; }
     static Utf8Char const DefaultDecimalSeparator() { return FormatConstant::FPV_DecimalSeparator(); }
     static Utf8Char const DefaultThousandSeparator() { return FormatConstant::FPV_ThousandSeparator(); }
     static Utf8String const DefaultUomSeparator() { return FormatConstant::BlankString(); };
-    static Utf8Char const DefaultStopSeparator() { return '+'; }
+    static Utf8Char const DefaultStationSeparator() {return '+';}
     static int const DefaultMinWidth() { return 0; }
 
     static const size_t MinDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision0); }

@@ -185,6 +185,13 @@ public:
 struct NumericFormatSpec
 {
 private:
+    bool                m_explicitlyDefinedRoundFactor;
+    bool                m_explicitlyDefinedShowSign;
+    bool                m_explicitlyDefinedPrecision;
+    bool                m_explicitlyDefinedDecimalSeparator;
+    bool                m_explicitlyDefinedThousandsSeparator;
+    bool                m_explicitlyDefinedUOMSeparator;
+    bool                m_explicitlyDefinedStatSeparator;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
     ScientificType      m_scientificType;
@@ -192,9 +199,7 @@ private:
     FormatTraits        m_formatTraits;          // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
     FractionalPrecision m_fractPrecision;
-    FractionBarType     m_barType;               // Oblique, Horizontal, Diagonal
     uint32_t            m_stationSize;           // 10*stationSize = distance between stations
-
     Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
     Utf8String          m_uomSeparator;          // Default separator between the number and UOM.
@@ -250,17 +255,19 @@ public:
     //======================================
     // Data Member Setters/Getters
     //======================================
-    void SetRoundingFactor(double roundingFactor) { m_roundFactor = roundingFactor; }
-    double GetRoundingFactor() const { return m_roundFactor; }
+    void SetRoundingFactor(double roundingFactor) {m_explicitlyDefinedRoundFactor = true; m_roundFactor = roundingFactor;}
+    double GetRoundingFactor() const {return m_roundFactor;}
+    bool HasRoundingFactor() const {return m_explicitlyDefinedRoundFactor;}
 
-    void SetPresentationType(PresentationType type) { m_presentationType = type; }
+    void SetPresentationType(PresentationType type) {m_presentationType = type;}
     PresentationType GetPresentationType() const { return m_presentationType; }
     bool IsDecimal() const { return PresentationType::Decimal == m_presentationType; }
     bool IsFractional() const { return PresentationType::Fractional == m_presentationType; }
     bool IsScientific() const {return PresentationType::Scientific == m_presentationType;}
 
-    void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
-    ShowSignOption GetSignOption() const { return m_signOption; }
+    void SetSignOption(ShowSignOption opt) {m_explicitlyDefinedShowSign = true; m_signOption = opt;}
+    ShowSignOption GetSignOption() const {return m_signOption;}
+    bool HasSignOption() const {return m_explicitlyDefinedShowSign;}
     bool IsNoSign() const { return ShowSignOption::NoSign == m_signOption; }
     bool IsOnlyNegative() const { return ShowSignOption::OnlyNegative == m_signOption; }
     bool IsSignAlways() const { return ShowSignOption::SignAlways == m_signOption; }
@@ -270,6 +277,7 @@ public:
     void SetFormatTraits(FormatTraits traits) { m_formatTraits = traits; }
     UNITS_EXPORT bool SetFormatTraitsFromString(Utf8StringCR input);
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
+    bool HasFormatTraits() const {return m_formatTraits != FormatTraits::None;}
 
     void SetStationSize(uint32_t size) {m_stationSize = size;}
     uint32_t GetStationSize() const {return m_stationSize;}
@@ -277,30 +285,32 @@ public:
     void SetScientificType(ScientificType type) {m_scientificType = type;}
     ScientificType GetScientificType() const {return m_scientificType;}
 
-    void SetDecimalPrecision(DecimalPrecision precision) { m_decPrecision = precision; }
+    void SetDecimalPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}
     DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
     bool IsPrecisionZero() const { return m_decPrecision == DecimalPrecision::Precision0; }
 
-    void SetFractionalPrecision(FractionalPrecision precision) { m_fractPrecision = precision; }
+    void SetFractionalPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision;}
     FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
+    bool HasPrecision() const {return m_explicitlyDefinedPrecision;}
 
-    void SetFractionalBarType(FractionBarType barType) { m_barType = barType; }
-    FractionBarType GetFractionalBarType() const { return m_barType; }
-
-    void SetDecimalSeparator(Utf8Char sep) { m_decimalSeparator = sep; }
+    void SetDecimalSeparator(Utf8Char sep) {m_explicitlyDefinedDecimalSeparator = true; m_decimalSeparator = sep;}
     Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
+    bool HasDecimalSeparator() const {return m_explicitlyDefinedDecimalSeparator;}
 
-    void SetThousandSeparator(char sep) { m_thousandsSeparator = sep; }
+    void SetThousandSeparator(char sep) {m_explicitlyDefinedThousandsSeparator = true; m_thousandsSeparator = sep;}
     Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
+    bool HasThousandsSeparator() const {return m_explicitlyDefinedThousandsSeparator;}
 
-    void SetUomSeparator(Utf8CP sep) { m_uomSeparator = Utf8String(sep); }
+    void SetUomSeparator(Utf8CP sep) {m_explicitlyDefinedUOMSeparator = true; m_uomSeparator = Utf8String(sep);}
     Utf8CP GetUomSeparator(Utf8CP def = nullptr) const { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
+    bool HasUomSeparator() const {return m_explicitlyDefinedUOMSeparator;}
 
     void SetMinWidth(int wid) { m_minWidth = wid; }
     int GetMinWidth() { return m_minWidth; }
 
-    void SetStatSeparator(Utf8Char sep) { m_statSeparator = sep; }
+    void SetStatSeparator(Utf8Char sep) {m_explicitlyDefinedStatSeparator = true; m_statSeparator = sep;}
     Utf8Char GetStatSeparator() const { return m_statSeparator; }
+    bool HasStatSeparator() const {return m_explicitlyDefinedStatSeparator;}
 
     //======================================
     // Format Traits Bit Setters/Getters
@@ -313,7 +323,6 @@ public:
     
     UNITS_EXPORT void SetFormatTraitsFromJson(JsonValueCR jval);
     UNITS_EXPORT Json::Value FormatTraitsToJson(bool verbose) const;
-    UNITS_EXPORT bool HasFormatTraits() const {return m_formatTraits != FormatTraits::None;}
     
     void SetExponentZero(bool setTo) {SetTraitsBit(FormatTraits::ExponentZero, setTo);}
     bool IsExponentZero() const {return GetTraitsBit(FormatTraits::ExponentZero);}
@@ -445,6 +454,12 @@ private:
 
     size_t m_ratio[indxSub];
     bool m_includeZero; // Not currently used in the formatting code.
+    bool m_explicitlyDefinedInputUnit;
+    bool m_explicitlyDefinedSpacer;
+    bool m_explicitlyDefinedMajorLabel;
+    bool m_explicitlyDefinedMiddleLabel;
+    bool m_explicitlyDefinedMinorLabel;
+    bool m_explicitlyDefinedSubLabel;
     Utf8String m_spacer;
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
@@ -477,6 +492,7 @@ private:
     bool IsIndexValid(size_t indx) const { return indx < m_proxys.size(); }
 
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
+    UNITS_EXPORT void SetUnitLabel(size_t index, Utf8CP label);
 public:
     // TODO: Attempt to remove these methods from the public API================
     UNITS_EXPORT void LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP context);
@@ -487,7 +503,7 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
-    UNITS_EXPORT CompositeValueSpec(bvector<std::pair<BEU::UnitCP, Utf8String>> const& units, BEU::UnitCP input = nullptr);
+    UNITS_EXPORT CompositeValueSpec(bvector<BEU::UnitCP> const& units);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
 
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
@@ -499,13 +515,24 @@ public:
     BEU::UnitCP GetMinorUnit()  const {return GetUnit(indxMinor);}
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
     BEU::UnitCP GetInputUnit()  const {return m_inputUnit;}
-    void SetInputUnit(BEU::UnitCP unit) {m_inputUnit = unit;}
-    UNITS_EXPORT void SetUnitLabel(size_t index, Utf8CP label);
+    void SetInputUnit(BEU::UnitCP unit) {m_explicitlyDefinedInputUnit = true; m_inputUnit = unit;}
+    bool HasInputUnit() const {return m_explicitlyDefinedInputUnit;}
+
     UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
     Utf8String GetMajorLabel()  const {return GetEffectiveLabel(indxMajor);}
     Utf8String GetMiddleLabel() const {return GetEffectiveLabel(indxMiddle);}
     Utf8String GetMinorLabel()  const {return GetEffectiveLabel(indxMinor);}
     Utf8String GetSubLabel()    const {return GetEffectiveLabel(indxSub);}
+
+    void SetMajorLabel(Utf8StringCR label) {m_explicitlyDefinedMajorLabel = true; SetUnitLabel(indxMajor, label.c_str());}
+    void SetMiddleLabel(Utf8StringCR label) {m_explicitlyDefinedMiddleLabel = true; SetUnitLabel(indxMiddle, label.c_str());}
+    void SetMinorLabel(Utf8StringCR label) {m_explicitlyDefinedMinorLabel = true; SetUnitLabel(indxMinor, label.c_str());}
+    void SetSubLabel(Utf8StringCR label) {m_explicitlyDefinedSubLabel = true; SetUnitLabel(indxSub, label.c_str());}
+
+    bool HasMajorLabel()    const {return m_explicitlyDefinedMajorLabel;}
+    bool HasMiddleLabel()   const {return m_explicitlyDefinedMiddleLabel;}
+    bool HasMinorLabel()    const {return m_explicitlyDefinedMinorLabel;}
+    bool HasSubLabel()      const {return m_explicitlyDefinedSubLabel;}
 
     size_t GetMajorToMiddleRatio() const {return m_ratio[indxMajor];}
     size_t GetMiddleToMinorRatio() const {return m_ratio[indxMiddle];}
@@ -514,8 +541,9 @@ public:
     bool IsProblem() const {return m_problem.IsProblem();}
     Utf8CP GetProblemDescription() const {return m_problem.GetProblemDescription().c_str();}
 
-    Utf8String SetSpacer(Utf8CP spacer) {return m_spacer = spacer;}
+    Utf8String SetSpacer(Utf8CP spacer) {m_explicitlyDefinedSpacer = true; return m_spacer = spacer;}
     Utf8String GetSpacer() const {return m_spacer;}
+    bool HasSpacer() const {return m_explicitlyDefinedSpacer;}
 
     bool SetIncludeZero(bool incl) {return m_includeZero = incl;}
     bool IsIncludeZero() const {return m_includeZero;}
@@ -643,6 +671,10 @@ public:
     //! Returns a const pointer to the sub unit of this NamedFormatSpec's CompositeValueSpec.
     //! Returns nullptr if no CompositeValueSpec is defined.
     BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
+    bool HasCompositeMajorUnit() const {return nullptr != GetCompositeMajorUnit();}
+    bool HasCompositeMiddleUnit() const {return nullptr != GetCompositeMiddleUnit();}
+    bool HasCompositeMinorUnit() const {return nullptr != GetCompositeMinorUnit();}
+    bool HasCompositeSubUnit() const {return nullptr != GetCompositeSubUnit();}
 
     void SetSuppressUnitLabel() { m_numericSpec.SetShowUnitLabel(false); }
 

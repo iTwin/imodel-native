@@ -124,7 +124,6 @@ NumericFormatSpec CreateNewNumericFormatSpec(PresentationType presentationType, 
     nfs.SetPresentationType(presentationType);
     nfs.SetSignOption(signOption);
     nfs.SetFormatTraits(formatTraits);
-    nfs.SetFractionalBarType(FractionBarType::Diagonal);
     if (PresentationType::Fractional == presentationType)
         {
         nfs.SetDecimalPrecision(FormatConstant::DefaultDecimalPrecision());
