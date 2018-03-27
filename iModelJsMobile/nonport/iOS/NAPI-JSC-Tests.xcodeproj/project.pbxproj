@@ -342,7 +342,7 @@
 				TargetAttributes = {
 					262B4E60206044D400BAAB20 = {
 						CreatedOnToolsVersion = 9.2;
-						ProvisioningStyle = Automatic;
+						ProvisioningStyle = Manual;
 					};
 				};
 			};
@@ -381,7 +381,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		26C3E65A206138CE002A6E96 /* Assets */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
+			buildActionMask = 8;
 			files = (
 			);
 			inputPaths = (
@@ -389,7 +389,7 @@
 			name = Assets;
 			outputPaths = (
 			);
-			runOnlyForDeploymentPostprocessing = 0;
+			runOnlyForDeploymentPostprocessing = 1;
 			shellPath = /bin/sh;
 			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\n";
 		};
@@ -558,8 +558,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = N2P4TGF347;
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/PublicAPI/",
@@ -570,10 +570,10 @@
 				INFOPLIST_FILE = "NAPI-JSC-Tests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.bentley.NAPI-JSC-Tests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.napitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				PROVISIONING_PROFILE = "91f0c1f6-3d25-4d70-a56a-124b8fde8dc9";
+				PROVISIONING_PROFILE_SPECIFIER = "Field BU Enterprise Team Profile";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -584,8 +584,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = N2P4TGF347;
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = WLDT6Q3PUY;
 				ENABLE_BITCODE = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/PublicAPI/",
@@ -596,10 +596,10 @@
 				INFOPLIST_FILE = "NAPI-JSC-Tests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.bentley.NAPI-JSC-Tests";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.napitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "";
-				PROVISIONING_PROFILE_SPECIFIER = "";
+				PROVISIONING_PROFILE = "91f0c1f6-3d25-4d70-a56a-124b8fde8dc9";
+				PROVISIONING_PROFILE_SPECIFIER = "Field BU Enterprise Team Profile";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;

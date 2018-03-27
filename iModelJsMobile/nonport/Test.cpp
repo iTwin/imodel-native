@@ -44,13 +44,16 @@ struct TestObject : Napi::ObjectWrap<TestObject>
     }
 };
 
-void Test () {
+extern void imodeljs_addon_setMobileResourcesDir(Utf8CP d);
+void Test (const char* resourcePath) {
     std::cout << "NAPI - JavaScriptCore Tests\n";
     BentleyApi::iModelJs::Js::Runtime runtime;
     
+    imodeljs_addon_setMobileResourcesDir(resourcePath);
+    
     Napi::Env& env = runtime.Env();
-//    BentleyApi::iModelJs::ServicesTier::UvHost host;
-//    while (!host.IsReady()) { ; }
+    BentleyApi::iModelJs::ServicesTier::UvHost host;
+    while (!host.IsReady()) { ; }
 
     auto result = runtime.EvaluateScript ("1 + 1");
     assert (result.status == BentleyB0200::iModelJs::Js::EvaluateStatus::Success);

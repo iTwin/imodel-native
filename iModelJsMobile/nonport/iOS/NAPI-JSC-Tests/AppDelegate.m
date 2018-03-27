@@ -18,7 +18,8 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
-    Test();
+    NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
+    Test(appFolderPath.UTF8String);
     return YES;
 }
 

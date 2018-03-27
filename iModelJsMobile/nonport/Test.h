@@ -10,5 +10,5 @@
 #define Test_hpp
 
 #include <stdio.h>
-void Test ();
+void Test (const char* resourcePath);
 #endif /* Test_hpp */
