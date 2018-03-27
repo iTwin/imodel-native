@@ -28,7 +28,7 @@ TEST_F(FormatTest, BasicUnitFormatCreation)
     Formatting::NumericFormatSpec format;
     format.SetApplyRounding(true);
     format.SetPresentationType(Formatting::PresentationType::Fractional);
-    format.SetFractionaPrecision(Formatting::FractionalPrecision::Over_128);
+    format.SetFractionalPrecision(Formatting::FractionalPrecision::Over_128);
     EC_ASSERT_SUCCESS(schema->CreateFormat(ufmt, "TestFormat", "TestDisplayLabel", "a test format", &format));
 
     ASSERT_NE(nullptr, ufmt);

@@ -179,7 +179,7 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
             LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        spec.SetFractionaPrecision(unitsFractionalPrecision);
+        spec.SetFractionalPrecision(unitsFractionalPrecision);
         }
     else
         {
