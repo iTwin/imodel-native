@@ -247,13 +247,13 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
     EXPECT_STRCASEEQ("Units:M(DefaultRealU)", pers.GetOld().Value().c_str());
     EXPECT_STRCASEEQ("Ref:M(DefaultRealU)", pers.GetNew().Value().c_str());
 
-    ASSERT_EQ(2, pres.Count());
+    ASSERT_EQ(1, pres.Count());
 
-    EXPECT_TRUE(pres.At(0).GetOld().IsNull());
+    EXPECT_FALSE(pres.At(0).GetOld().IsNull());
+    EXPECT_STRCASEEQ("Units:FT(DefaultRealU)", pres.At(0).GetOld().Value().c_str());
+
+    EXPECT_FALSE(pres.At(0).GetNew().IsNull());
     EXPECT_STRCASEEQ("Ref:FT(DefaultRealU)", pres.At(0).GetNew().Value().c_str());
-
-    EXPECT_STRCASEEQ("Units:FT(DefaultRealU)", pres.At(1).GetOld().Value().c_str());
-    EXPECT_TRUE(pres.At(1).GetNew().IsNull());
     }
 
 //----------------------------------------------------------------------------------------
@@ -266,14 +266,16 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     KindOfQuantityP koq;
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
-    m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
-    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
-    koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    ASSERT_TRUE(koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
+    EC_ASSERT_SUCCESS(koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM")));
+    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
-    m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
-    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"));
+    EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    ASSERT_TRUE(koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+    EC_ASSERT_SUCCESS(koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT")));
+    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
 
     SchemaComparer comparer;
     SchemaChanges changes;
@@ -284,27 +286,22 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     comparer.Compare(changes, first, second);
 
     ASSERT_EQ(1, changes.Count());
-
-    auto& firstChanges = changes.At(0);
-
-    ASSERT_EQ(1, firstChanges.ChangesCount());
-
-    auto& koqChanges = firstChanges.KindOfQuantities();
+    ASSERT_EQ(1, changes.At(0).ChangesCount());
+    auto& koqChanges = changes.At(0).KindOfQuantities();
 
     ASSERT_EQ(1, koqChanges.Count());
-    
+
     EXPECT_STRCASEEQ("Units:CM(DefaultRealU)", koqChanges.At(0).GetPersistenceUnit().GetOld().Value().c_str());
     EXPECT_STRCASEEQ("Units:M(DefaultRealU)", koqChanges.At(0).GetPersistenceUnit().GetNew().Value().c_str());
 
     auto& pres = koqChanges.At(0).GetPresentationUnitList();
+    ASSERT_EQ(1, pres.Count());
 
-    ASSERT_EQ(2, pres.Count());
+    ASSERT_FALSE(pres.At(0).GetOld().IsNull());
+    EXPECT_STRCASEEQ("Units:MM(DefaultRealU)", pres.At(0).GetOld().Value().c_str());
 
-    EXPECT_TRUE(pres.At(0).GetOld().IsNull());
+    ASSERT_FALSE(pres.At(0).GetNew().IsNull());
     EXPECT_STRCASEEQ("Units:FT(DefaultRealU)", pres.At(0).GetNew().Value().c_str());
-
-    EXPECT_STRCASEEQ("Units:MM(DefaultRealU)", pres.At(1).GetOld().Value().c_str());
-    EXPECT_TRUE(pres.At(1).GetNew().IsNull());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

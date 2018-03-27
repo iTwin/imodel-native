@@ -27,7 +27,7 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
 
     // check compatibility of Quantity and KOQ
     if (ECUnit::AreCompatible(qty.GetUnit(), &presentationUnit))
-        str = BEF::NumericFormatSpec::StdFormatQuantity(formatSpec, qty.ConvertTo(&presentationUnit));
+        str = BEF::NamedFormatSpec::StdFormatQuantity(formatSpec, qty.ConvertTo(&presentationUnit));
     else
         *formatStatus = ECQuantityFormattingStatus::IncompatibleKOQ;
 

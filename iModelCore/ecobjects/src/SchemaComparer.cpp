@@ -1351,27 +1351,29 @@ BentleyStatus SchemaComparer::CompareECEnumerators(ECEnumeratorChanges& changes,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR oldValue, KindOfQuantityCR newValue)
+BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change, KindOfQuantityCR oldVal, KindOfQuantityCR newVal)
     {
-    if (oldValue.GetName() != newValue.GetName())
-        change.GetName().SetValue(oldValue.GetName(), newValue.GetName());
+    if (!oldVal.GetName().EqualsIAscii(newVal.GetName()))
+        change.GetName().SetValue(oldVal.GetName(), newVal.GetName());
 
-    const bool displayLabelDefinedInOld = oldValue.GetIsDisplayLabelDefined();
-    const bool displayLabelDefinedInNew = newValue.GetIsDisplayLabelDefined();
-    if (displayLabelDefinedInOld && !displayLabelDefinedInNew)
-        change.GetDisplayLabel().SetValue(ValueId::Deleted, oldValue.GetInvariantDisplayLabel());
-    else if (!displayLabelDefinedInOld && displayLabelDefinedInNew)
-        change.GetDisplayLabel().SetValue(ValueId::New, newValue.GetInvariantDisplayLabel());
-    else if (displayLabelDefinedInOld && displayLabelDefinedInNew)
+    if (oldVal.GetIsDisplayLabelDefined() && !newVal.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::Deleted, oldVal.GetInvariantDisplayLabel());
+    else if (!oldVal.GetIsDisplayLabelDefined() && newVal.GetIsDisplayLabelDefined())
+        change.GetDisplayLabel().SetValue(ValueId::New, newVal.GetInvariantDisplayLabel());
+    else if (oldVal.GetIsDisplayLabelDefined() && newVal.GetIsDisplayLabelDefined())
         {
-        if (!oldValue.GetInvariantDisplayLabel().EqualsIAscii(newValue.GetInvariantDisplayLabel()))
-            change.GetDisplayLabel().SetValue(oldValue.GetInvariantDisplayLabel(), newValue.GetInvariantDisplayLabel());
+        if (!oldVal.GetInvariantDisplayLabel().EqualsIAscii(newVal.GetInvariantDisplayLabel()))
+            change.GetDisplayLabel().SetValue(oldVal.GetInvariantDisplayLabel(), newVal.GetInvariantDisplayLabel());
         }
 
-    if (oldValue.GetDescription() != newValue.GetDescription())
-        change.GetDescription().SetValue(oldValue.GetDescription(), newValue.GetDescription());
+    if (!oldVal.GetInvariantDescription().EqualsIAscii(newVal.GetInvariantDescription()))
+        change.GetDescription().SetValue(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
 
-    auto qualifiedToText = [](ECUnitCR unit, Formatting::NamedFormatSpecCR format) -> Utf8String 
+    if (oldVal.GetRelativeError() != newVal.GetRelativeError())
+        change.GetRelativeError().SetValue(oldVal.GetRelativeError(), newVal.GetRelativeError());
+
+
+    auto qualifiedToText = [](ECUnitCR unit, Formatting::NamedFormatSpecCR format) -> Utf8String
         {
         Utf8String ret;
         ret += unit.GetFullName();
@@ -1381,42 +1383,49 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
         return ret;
         };
 
-    Utf8String oldPersUnitStr = qualifiedToText(*(ECUnitCP)oldValue.GetPersistenceUnit().GetUnit(), *oldValue.GetPersistenceUnit().GetNamedFormatSpec());
+    Utf8String oldPersUnitStr = qualifiedToText(*(ECUnitCP)oldVal.GetPersistenceUnit().GetUnit(), *oldVal.GetPersistenceUnit().GetNamedFormatSpec());
 
-    Utf8String newPersUnitStr = qualifiedToText(*(ECUnitCP)newValue.GetPersistenceUnit().GetUnit(), *newValue.GetPersistenceUnit().GetNamedFormatSpec());
+    Utf8String newPersUnitStr = qualifiedToText(*(ECUnitCP)newVal.GetPersistenceUnit().GetUnit(), *newVal.GetPersistenceUnit().GetNamedFormatSpec());
     
-    if (!oldPersUnitStr.Equals(newPersUnitStr))
+    if (!oldPersUnitStr.EqualsIAscii(newPersUnitStr))
         change.GetPersistenceUnit().SetValue(oldPersUnitStr, newPersUnitStr);
 
-    if (oldValue.GetRelativeError() != newValue.GetRelativeError())
-        change.GetRelativeError().SetValue(oldValue.GetRelativeError(), newValue.GetRelativeError());
-
-    bset<Utf8String> oldPresUnits, newPresUnits, allPresUnits;
-    for (Formatting::FormatUnitSet const& fus : oldValue.GetPresentationUnitList())
+    std::vector<Utf8String> oldPresUnits, newPresUnits;
+    for (Formatting::FormatUnitSet const& fus : oldVal.GetPresentationUnitList())
         {
-        oldPresUnits.insert(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetNamedFormatSpec()));
+        oldPresUnits.push_back(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetNamedFormatSpec()));
         }
 
-    for (Formatting::FormatUnitSet const& fus : newValue.GetPresentationUnitList())
+    for (Formatting::FormatUnitSet const& fus : newVal.GetPresentationUnitList())
         {
-        newPresUnits.insert(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetNamedFormatSpec()));
+        newPresUnits.push_back(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetNamedFormatSpec()));
         }
 
-    allPresUnits.insert(oldPresUnits.begin(), oldPresUnits.end());
-    allPresUnits.insert(newPresUnits.begin(), newPresUnits.end());
+    const size_t oldPresUnitCount = oldPresUnits.size();
+    const size_t newPresUnitCount = newPresUnits.size();
+    const size_t maxPresUnitCount = std::max(oldPresUnitCount, newPresUnitCount);
+    StringChanges& presUnitListChange = change.GetPresentationUnitList();
 
-    for (Utf8StringCR presUnit : allPresUnits)
+    for (size_t i = 0; i < maxPresUnitCount; i++)
         {
-        auto oldIt = oldPresUnits.find(presUnit);
-        auto newIt = newPresUnits.find(presUnit);
+        if (i < oldPresUnitCount && i < newPresUnitCount)
+            {
+            if (!oldPresUnits[i].EqualsIAscii(newPresUnits[i]))
+                presUnitListChange.Add(ChangeState::Modified).SetValue(oldPresUnits[i], newPresUnits[i]);
 
-        bool existsInOld = oldIt != oldPresUnits.end();
-        bool existsInNew = newIt != newPresUnits.end();
-        if (existsInOld && !existsInNew)
-            change.GetPresentationUnitList().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, *oldIt);
-        else if (!existsInOld && existsInNew)
-            change.GetPresentationUnitList().Add(ChangeState::New).SetValue(ValueId::New, *newIt);
+            continue;
+            }
+
+        if (i >= oldPresUnitCount)
+            {
+            presUnitListChange.Add(ChangeState::New).SetValue(ValueId::New, newPresUnits[i]);
+            continue;
+            }
+
+        if (i >= newPresUnitCount)
+            presUnitListChange.Add(ChangeState::Deleted).SetValue(ValueId::Deleted, oldPresUnits[i]);
         }
+
     return SUCCESS;
     }
 
@@ -1548,17 +1557,19 @@ BentleyStatus SchemaComparer::CompareUnit(UnitChange& change, ECUnitCR oldVal, E
     else if (oldVal.HasOffset() && !newVal.HasOffset())
         change.GetOffset().SetValue(ValueId::Deleted, oldVal.GetOffset());
 
-    BeAssert(dynamic_cast<PhenomenonCP> (oldVal.GetPhenomenon()) != nullptr && dynamic_cast<PhenomenonCP> (newVal.GetPhenomenon()));
-    PhenomenonCP oldPhen = static_cast<PhenomenonCP> (oldVal.GetPhenomenon());
-    PhenomenonCP newPhen = static_cast<PhenomenonCP> (newVal.GetPhenomenon());
+    PhenomenonCP oldPhen = oldVal.GetPhenomenon();
+    PhenomenonCP newPhen = newVal.GetPhenomenon();
     if (!oldPhen->GetFullName().EqualsIAscii(newPhen->GetFullName()))
         change.GetPhenomenon().SetValue(oldPhen->GetFullName(), newPhen->GetFullName());
 
-    BeAssert(dynamic_cast<UnitSystemCP> (oldVal.GetUnitSystem()) != nullptr && dynamic_cast<UnitSystemCP> (newVal.GetUnitSystem()));
-    UnitSystemCP oldSystem = static_cast<UnitSystemCP> (oldVal.GetUnitSystem());
-    UnitSystemCP newSystem = static_cast<UnitSystemCP> (newVal.GetUnitSystem());
-    if (!oldSystem->GetFullName().EqualsIAscii(newSystem->GetFullName()))
+    UnitSystemCP oldSystem = oldVal.GetUnitSystem();
+    UnitSystemCP newSystem = newVal.GetUnitSystem();
+    if (oldVal.HasUnitSystem() && newVal.HasUnitSystem() && !oldSystem->GetFullName().EqualsIAscii(newSystem->GetFullName()))
         change.GetUnitSystem().SetValue(oldSystem->GetFullName(), newSystem->GetFullName());
+    else if (!oldVal.HasUnitSystem() && newVal.HasUnitSystem())
+        change.GetUnitSystem().SetValue(ValueId::New, newSystem->GetFullName());
+    else if (oldVal.HasUnitSystem() && !newVal.HasUnitSystem())
+        change.GetUnitSystem().SetValue(ValueId::Deleted, oldSystem->GetFullName());
 
     if (oldVal.IsConstant() != newVal.IsConstant())
         change.GetIsConstant().SetValue(oldVal.IsConstant(), newVal.IsConstant());
@@ -1878,17 +1889,21 @@ BentleyStatus SchemaComparer::AppendUnit(UnitChanges& changes, ECUnitCR unit, Va
 
     change.GetDescription().SetValue(appendType, unit.GetInvariantDescription());
     change.GetDefinition().SetValue(appendType, unit.GetDefinition());
-    change.GetNumerator().SetValue(appendType, unit.GetNumerator());
-    change.GetDenominator().SetValue(appendType, unit.GetDenominator());
-    change.GetOffset().SetValue(appendType, unit.GetOffset());
+    if (unit.HasNumerator())
+        change.GetNumerator().SetValue(appendType, unit.GetNumerator());
 
-    BeAssert(dynamic_cast<PhenomenonCP> (unit.GetPhenomenon()) != nullptr);
-    PhenomenonCP phen = static_cast<PhenomenonCP> (unit.GetPhenomenon());
-    change.GetPhenomenon().SetValue(appendType, phen->GetFullName());
+    if (unit.HasDenominator())
+        change.GetDenominator().SetValue(appendType, unit.GetDenominator());
 
-    BeAssert(dynamic_cast<UnitSystemCP> (unit.GetUnitSystem()) != nullptr);
-    UnitSystemCP system = static_cast<UnitSystemCP> (unit.GetUnitSystem());
-    change.GetUnitSystem().SetValue(appendType, system->GetFullName());
+    if (unit.HasOffset())
+        change.GetOffset().SetValue(appendType, unit.GetOffset());
+
+    PhenomenonCP phen = unit.GetPhenomenon();
+    if (phen != nullptr)
+        change.GetPhenomenon().SetValue(appendType, phen->GetFullName());
+
+    if (unit.HasUnitSystem())
+        change.GetUnitSystem().SetValue(appendType, unit.GetUnitSystem()->GetFullName());
 
     change.GetIsConstant().SetValue(appendType, unit.IsConstant());
 
