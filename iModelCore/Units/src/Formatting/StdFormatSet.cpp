@@ -126,19 +126,18 @@ NumericFormatSpec CreateNewNumericFormatSpec(PresentationType presentationType, 
     nfs.SetFormatTraits(formatTraits);
     nfs.SetFractionalBarType(FractionBarType::Diagonal);
     if (PresentationType::Fractional == presentationType)
-    {
+        {
         nfs.SetDecimalPrecision(FormatConstant::DefaultDecimalPrecision());
         FractionalPrecision prec;
         Utils::FractionalPrecisionByDenominator(precision, prec);
-        nfs.SetFractionaPrecision(prec);
-    }
+        nfs.SetFractionalPrecision(prec);
+        }
     else
-    {
+        {
         DecimalPrecision prec;
         Utils::DecimalPrecisionByIndex(precision, prec);
         nfs.SetDecimalPrecision(prec);
-        nfs.SetFractionaPrecision(FormatConstant::DefaultFractionalPrecision());
-    }
+        }
     nfs.SetDecimalSeparator(FormatConstant::FPV_DecimalSeparator());
     nfs.SetThousandSeparator(FormatConstant::FPV_ThousandSeparator());
     nfs.SetUomSeparator(FormatConstant::BlankString());
@@ -309,15 +308,15 @@ BentleyStatus StdFormatSet::AddCompositeSpecs(BEU::IUnitsContextCR unitContext)
     AddFormat("StationM4", stop, *cvs);
 
     // Adds trailZeroes to "Stop100-2u"
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2uz\", \"SpecName\" : \"Stop100-2uz\", \"SpecType\" : \"numeric\"}",
+    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"station100-2uz\", \"SpecName\" : \"Station100-2uz\", \"SpecType\" : \"numeric\"}",
         unitContext);
     
     // Adds trailZeroes to "Stop100-2"
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-2z\", \"SpecName\" : \"Stop100-2-2z\", \"SpecType\" : \"numeric\"}",
+    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"station100-2-2z\", \"SpecName\" : \"Station100-2-2z\", \"SpecType\" : \"numeric\"}",
         unitContext);
 
     // "Stop1000-2-3z"
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 3, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-3z\", \"SpecName\" : \"Stop1000-2-3z\", \"SpecType\" : \"numeric\"}",
+    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 3, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"station1000-2-3z\", \"SpecName\" : \"Station1000-2-3z\", \"SpecType\" : \"numeric\"}",
         unitContext);
 
     // "hms"
@@ -457,18 +456,18 @@ void AliasMappings::AddMappings()
     AddMapping("stationFt2", "StationFt2");
     AddMapping("stationM4", "StationM4");
 
-    AddMapping("stop100-2-2z", "Stop100-2-2z");
-    AddMapping("stop100-2-4", "Stop100-2-4");
-    AddMapping("stop100-2-4u", "Stop100-2-4u");
-    AddMapping("stop100-2", "Stop100-2");
-    AddMapping("stop100-2u", "Stop100-2u");
-    AddMapping("stop100-2uz", "Stop100-2uz");
+    AddMapping("station100-2-2z", "Station100-2-2z");
+    AddMapping("station100-2-4", "Station100-2-4");
+    AddMapping("station100-2-4u", "Station100-2-4u");
+    AddMapping("station100-2", "Station100-2");
+    AddMapping("station100-2u", "Station100-2u");
+    AddMapping("station100-2uz", "Station100-2uz");
 
-    AddMapping("stop1000-2-3z", "Stop1000-2-3z");
-    AddMapping("stop1000-2-4", "Stop1000-2-4");
-    AddMapping("stop1000-2-4u", "Stop1000-2-4u");
-    AddMapping("stop1000-2", "Stop1000-2");
-    AddMapping("stop1000-2u", "Stop1000-2u");
+    AddMapping("station1000-2-3z", "Station1000-2-3z");
+    AddMapping("station1000-2-4", "Station1000-2-4");
+    AddMapping("station1000-2-4u", "Station1000-2-4u");
+    AddMapping("station1000-2", "Station1000-2");
+    AddMapping("station1000-2u", "Station1000-2u");
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

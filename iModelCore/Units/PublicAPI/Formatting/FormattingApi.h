@@ -232,7 +232,6 @@ public:
 
     UNITS_EXPORT NumericFormatSpec();
     NumericFormatSpec(NumericFormatSpecCR other) = default;
-    UNITS_EXPORT NumericFormatSpec(DecimalPrecision decimalPrecision);
     UNITS_EXPORT NumericFormatSpec(Json::Value jval);
     ~NumericFormatSpec() = default;
 
@@ -245,6 +244,8 @@ public:
     UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
 
     UNITS_EXPORT static NumericFormatSpecCR DefaultFormat();
+
+    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
 
     //======================================
     // Data Member Setters/Getters
@@ -280,7 +281,7 @@ public:
     DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
     bool IsPrecisionZero() const { return m_decPrecision == DecimalPrecision::Precision0; }
 
-    void SetFractionaPrecision(FractionalPrecision precision) { m_fractPrecision = precision; }
+    void SetFractionalPrecision(FractionalPrecision precision) { m_fractPrecision = precision; }
     FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
 
     void SetFractionalBarType(FractionBarType barType) { m_barType = barType; }
@@ -313,6 +314,9 @@ public:
     UNITS_EXPORT void SetFormatTraitsFromJson(JsonValueCR jval);
     UNITS_EXPORT Json::Value FormatTraitsToJson(bool verbose) const;
     UNITS_EXPORT bool HasFormatTraits() const {return m_formatTraits != FormatTraits::None;}
+    
+    void SetExponentZero(bool setTo) {SetTraitsBit(FormatTraits::ExponentZero, setTo);}
+    bool IsExponentZero() const {return GetTraitsBit(FormatTraits::ExponentZero);}
 
     void SetUseLeadingZeroes(bool setTo) {SetTraitsBit(FormatTraits::LeadingZeroes, setTo);}
     bool IsUseLeadingZeroes() const {return GetTraitsBit(FormatTraits::LeadingZeroes);}
@@ -357,12 +361,11 @@ public:
     //! @param[in] dval Double to format.
     //! @return dval as a formatted string.
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
-
-    UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);
-    UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
-    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
-
-    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+    //! Format a double using the format settings of numericFormatSpec.
+    //! @param[in] nfs  NumericFormatSpec used for formatting.
+    //! @param[in] dval Double to format.
+    //! @return dval as a formatted string.
+    UNITS_EXPORT static Utf8String FormatDouble(NumericFormatSpecCR nfs, double dval, int prec = -1, double round = -1.0);
 };
 
 //=======================================================================================
@@ -598,6 +601,9 @@ public:
     //! and other are identical.
     UNITS_EXPORT bool IsIdentical(NamedFormatSpecCR other) const;
 
+    //! Creates a Json::Value representing this.
+    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+
     Utf8StringCR GetName() const { return m_name; };
 
     void SetDescription(Utf8CP descr) { m_description = descr; };
@@ -644,8 +650,32 @@ public:
     Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
 
-    //! Creates a Json::Value representing this.
-    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
+
+    //! Parse a NamedFormatSpec from the provided format string. A format string takes the form
+    //! <code>
+    //! FORMAT_NAME<PRECISION_OVERRIDE>
+    //! </code>
+    //! where FORMAT_NAME is a defined named format that will be located using the defaultNamedFormatSpecMapper parameter and PRECISION_OVERRIDE is
+    //! a decimal/fractional precision override for the NamedFormatSpec.
+    //! Examples:
+    //! <code>
+    //! "Real<2>"
+    //! "Fractional<64>"
+    //! "Scientific<12>"
+    //! </code>
+    //! @param[out] nfs                          NamedFormatSpec to be populated with the settings parsed from the format string.
+    //! @param[in]  formatString                 String to be parsed.
+    //! @param[in]  defaultNamedFormatSpecMapper Functor that maps a format name to a NumericformatSpec containing default settings for the parsed,
+    //!                                          NumericFormatSpec, overrides specified within the format string will override these defaults.
+    //!                                          defaultNamedFormatSpecMapper should return a pointer to some NamedFormatSpec if any such mapping
+    //!                                          exists or nullptr if no such mapping exists. For example the mapping "Real" --> <default real spec>
+    //!                                          is a supported within EC, so an EC mapping function should map "Real" to the DefaultReal format
+    //!                                          spec. However the mapping "BlaBlaBla" does not exist within EC by default, so the mapping function
+    //!                                          would return nullptr for a format string with name "BlaBlaBla".
+    //! @returns BentleyStatus::SUCCESS if the string was successfully parsed.
+    UNITS_EXPORT static BentleyStatus ParseFormatString(NamedFormatSpecR nfs, Utf8StringCR formatString, std::function<NamedFormatSpecCP(Utf8StringCR)> defaultNamedFormatSpecMapper);
 };
 
 //=======================================================================================

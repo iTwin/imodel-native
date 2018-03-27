@@ -55,14 +55,6 @@ void FormattingTestFixture::TearDown()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-void FormattingTestUtils::StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue)
-    {
-    EXPECT_STREQ (expectedValue, NumericFormatSpec::StdFormatDouble(formatName, dval).c_str());
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
 void FormattingTestUtils::SignaturePattrenCollapsing(Utf8CP txt, int tstN)
     {
     LOG.infov("Signature Test%02d  >%s<================", tstN, txt);
@@ -500,17 +492,16 @@ bvector<TraitJsonKeyMap> TraitJsonKeyMap::TraitJsonKeySet()
     static bvector<TraitJsonKeyMap> vec;
     if (vec.size() == 0)
         {
-        vec.push_back(TraitJsonKeyMap(FormatTraits::TrailingZeroes, json_TrailZeroes()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::LeadingZeroes, json_LeadZeroes()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::KeepDecimalPoint, json_KeepDecPnt()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::KeepSingleZero, json_KeepSingleZero()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::ExponentZero, json_ExponentZero()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::ZeroEmpty, json_ZeroEmpty()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::Use1000Separator, json_Use1000Separator()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::ApplyRounding, json_ApplyRounding()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::AppendUnitName, json_AppendUnitName()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::UseFractSymbol, json_UseFractSymbol()));
-        vec.push_back(TraitJsonKeyMap(FormatTraits::FractionDash, json_FractionDash()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::TrailingZeroes, json_trailZeroes()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::LeadingZeroes, json_leadZeroes()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::KeepDecimalPoint, json_keepDecimalPrecision()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::KeepSingleZero, json_keepSingleZero()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::ZeroEmpty, json_zeroEmpty()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::Use1000Separator, json_use1000Separator()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::ApplyRounding, json_applyRounding()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::ShowUnitLabel, json_showUnitLabel()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::FractionDash, json_fractionDash()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::PrependUnitLabel, json_prependUnitLabel()));
         }
     return vec;
     }
@@ -527,18 +518,6 @@ void FormattingTestUtils::NumericFormatSpecJsonTest(NumericFormatSpecCR nfs)
     jval = nfs.ToJson(false);
     nfs1 = NumericFormatSpec(jval);
     EXPECT_TRUE(nfs.IsIdentical(nfs1));
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 08/17
-//----------------------------------------------------------------------------------------
-void FormattingTestUtils::FormatDoubleTest(double dval, Utf8CP fmtName, int prec, double round, Utf8CP expect)
-    {
-    Utf8String txt = NumericFormatSpec::StdFormatDouble(fmtName, dval, prec, round);
-    if(Utf8String::IsNullOrEmpty(expect))
-        LOG.infov("%f formatted: %s (%d)", dval, txt.c_str(), txt.size());
-    else
-        EXPECT_STREQ(expect, txt.c_str());
     }
 
 //----------------------------------------------------------------------------------------

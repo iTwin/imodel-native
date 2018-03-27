@@ -77,6 +77,7 @@ enum class FormatTraits : int32_t
     Use1000Separator = 0x100, // Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
     ExponenentOnlyNegative   = 0x200, // Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
     LeadingZeroes    = 0x400,
+    ExponentZero     = 0x800,
     };
 
 //=======================================================================================

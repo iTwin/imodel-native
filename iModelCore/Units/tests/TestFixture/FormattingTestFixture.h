@@ -57,9 +57,7 @@ struct FormattingTestUtils
         static void DecomposeString(Utf8CP str, bool revers);
         static void TestScanPointVector(Utf8CP str);
         static void TestScanTriplets(Utf8CP str);
-        static void StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue);
         static void NumericFormatSpecJsonTest(NumericFormatSpecCR nfs);
-        static void FormatDoubleTest(double dval, Utf8CP formatName, int prec=-1.0, double round=-1.0, Utf8CP expect=nullptr);
         static void ShowPhenomenon(BEU::PhenomenonCP phenP, bvector<BEU::PhenomenonCP>& undefPhenomena);
         static Utf8String SetLocale(Utf8CP name);
     };

@@ -132,25 +132,7 @@ TEST_F(NumericFormatSpecTest, Constructors)
     EXPECT_EQ(FormatConstant::DefaultDecimalSeparator(), nfs.GetDecimalSeparator());
     EXPECT_EQ(FormatConstant::DefaultThousandSeparator(), nfs.GetThousandSeparator());
     EXPECT_EQ(FormatConstant::DefaultUomSeparator(), nfs.GetUomSeparator());
-    EXPECT_EQ(FormatConstant::DefaultStopSeparator(), nfs.GetStopSeparator());
-    EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
-    EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
-    }
-
-    // Constructed with provided precision.
-    {
-    NumericFormatSpec nfs(DecimalPrecision::Precision9);
-    EXPECT_DOUBLE_EQ(FormatConstant::DefaultRoundingFactor(), nfs.GetRoundingFactor());
-    EXPECT_EQ(FormatConstant::DefaultPresentaitonType(), nfs.GetPresentationType());
-    EXPECT_EQ(FormatConstant::DefaultSignOption(), nfs.GetSignOption());
-    EXPECT_EQ(FormatConstant::DefaultFormatTraits(), nfs.GetFormatTraits());
-    EXPECT_EQ(DecimalPrecision::Precision9, nfs.GetDecimalPrecision());
-    EXPECT_EQ(FormatConstant::DefaultFractionalPrecision(), nfs.GetFractionalPrecision());
-    EXPECT_EQ(FormatConstant::DefaultFractionBarType(), nfs.GetFractionalBarType());
-    EXPECT_EQ(FormatConstant::DefaultDecimalSeparator(), nfs.GetDecimalSeparator());
-    EXPECT_EQ(FormatConstant::DefaultThousandSeparator(), nfs.GetThousandSeparator());
-    EXPECT_EQ(FormatConstant::DefaultUomSeparator(), nfs.GetUomSeparator());
-    EXPECT_EQ(FormatConstant::DefaultStopSeparator(), nfs.GetStopSeparator());
+    EXPECT_EQ(FormatConstant::DefaultStopSeparator(), nfs.GetStatSeparator());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     }
@@ -162,7 +144,8 @@ TEST_F(NumericFormatSpecTest, Constructors)
 TEST_F(NumericFormatSpecTest, IsIdentical)
     {
     NumericFormatSpec nfsA;
-    NumericFormatSpec nfsB(DecimalPrecision::Max);
+    NumericFormatSpec nfsB;
+    nfsB.SetDecimalPrecision(DecimalPrecision::Max);
 
     EXPECT_TRUE(nfsA.IsIdentical(nfsA)) << "NumericFormatSpec is not identical to itself.";
     EXPECT_FALSE(nfsA.IsIdentical(nfsB));
@@ -264,7 +247,8 @@ TEST_F(FormatIntegerTest, FormatIntegerPresentationTypeTests)
     // ScientificNorm
     {
     NumericFormatSpec nfs;
-    nfs.SetPresentationType(PresentationType::ScientificNorm);
+    nfs.SetPresentationType(PresentationType::Scientific);
+    nfs.SetScientificType(ScientificType::Normal);
     nfs.SetDecimalPrecision(DecimalPrecision::Max);
     EXPECT_STREQ("0.100501e+6", nfs.FormatInteger(testValPos).c_str());
     EXPECT_STREQ("-0.100501e+6", nfs.FormatInteger(testValNeg).c_str());
@@ -347,13 +331,13 @@ TEST_F(FormatIntegerTest, FormatIntegerIndividualFormatTraitsTests)
     EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
 
     // Should only affect doubles.
-    nfs.SetFormatTraits(FormatTraits::UseFractSymbol);
-    EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
-    EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
-    EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
+    //nfs.SetFormatTraits(FormatTraits::UseFractSymbol);
+    //EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
+    //EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
+    //EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
 
     // AppendUnitName should have no effect on the unitless NamedFormatSpec.
-    nfs.SetFormatTraits(FormatTraits::AppendUnitName);
+    nfs.SetFormatTraits(FormatTraits::ShowUnitLabel);
     EXPECT_STREQ("0", nfs.FormatInteger(0).c_str());
     EXPECT_STREQ("100501", nfs.FormatInteger(testValPos).c_str());
     EXPECT_STREQ("-100501", nfs.FormatInteger(testValNeg).c_str());
@@ -471,7 +455,8 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     // ScientificNorm
     {
     NumericFormatSpec nfs;
-    nfs.SetPresentationType(PresentationType::ScientificNorm);
+    nfs.SetPresentationType(PresentationType::Scientific);
+    nfs.SetScientificType(ScientificType::Normal);
     nfs.SetDecimalPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("0.100501125e+6", nfs.FormatDouble(testValPos).c_str());
@@ -505,7 +490,8 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests_IGNORED)
     // ScientificNorm
     {
     NumericFormatSpec nfs;
-    nfs.SetPresentationType(PresentationType::ScientificNorm);
+    nfs.SetPresentationType(PresentationType::Scientific);
+    nfs.SetScientificType(ScientificType::Normal);
     nfs.SetDecimalPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("0.125e-3", nfs.FormatDouble(testValMagnitudeLt1Pos).c_str());
@@ -543,12 +529,12 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests)
     {
     NumericFormatSpec nfs;
     nfs.SetFormatTraits(FormatConstant::DefaultFormatTraits());
-    EXPECT_STREQ("0.0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
     EXPECT_STREQ("100501.125", nfs.FormatDouble(testValPos).c_str());
     EXPECT_STREQ("-100501.125", nfs.FormatDouble(testValNeg).c_str());
-    EXPECT_STREQ("0.0", nfs.FormatDouble(0).c_str());
-    EXPECT_STREQ("100501.0", nfs.FormatDouble(testValPosZeroFracComp).c_str());
-    EXPECT_STREQ("-100501.0", nfs.FormatDouble(testValNegZeroFracComp).c_str());
+    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    EXPECT_STREQ("100501", nfs.FormatDouble(testValPosZeroFracComp).c_str());
+    EXPECT_STREQ("-100501", nfs.FormatDouble(testValNegZeroFracComp).c_str());
     }
 
     {
@@ -611,7 +597,7 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests)
     {
     NumericFormatSpec nfs;
     // AppendUnitName should have no effect on the unitless NamedFormatSpec.
-    nfs.SetFormatTraits(FormatTraits::AppendUnitName);
+    nfs.SetFormatTraits(FormatTraits::ShowUnitLabel);
     EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
     EXPECT_STREQ("100501.125", nfs.FormatDouble(testValPos).c_str());
     EXPECT_STREQ("-100501.125", nfs.FormatDouble(testValNeg).c_str());
@@ -685,34 +671,13 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests_IGNORED)
     nfs.SetPresentationType(PresentationType::Decimal);
     }
 
-    {
-    NumericFormatSpec nfs;
-    nfs.SetFormatTraits(FormatTraits::UseFractSymbol);
-    EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
-    EXPECT_STREQ(u8"100501 \x21\x5B", nfs.FormatDouble(testValPos).c_str());
-    EXPECT_STREQ(u8"-100501 \x21\x5B", nfs.FormatDouble(testValNeg).c_str());
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(NumericFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
-    {
-    NumericFormatSpec numericFormatSpec;
-    numericFormatSpec.SetThousandSeparator('\'');
-    numericFormatSpec.SetUse1000Separator(true);
-    numericFormatSpec.SetKeepSingleZero(true);
-
-    BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
-    BEU::UnitCP inch = s_unitsContext->LookupUnit("IN");
-    CompositeValueSpec compositeValueSpec(*mile, *inch);
-    ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
-    NamedFormatSpec namedFormatSpec("TestNamedFormatSpec", numericFormatSpec, compositeValueSpec);
-
-    // 1500.5 miles == 1,500 miles and 31,680 inches
-    BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
-    EXPECT_STREQ("1'500.0 31'680.0", NumericFormatSpec::StdFormatQuantity(namedFormatSpec, quantity).c_str());
+    //{
+    //NumericFormatSpec nfs;
+    //nfs.SetFormatTraits(FormatTraits::UseFractSymbol);
+    //EXPECT_STREQ("0", nfs.FormatDouble(0).c_str());
+    //EXPECT_STREQ(u8"100501 \x21\x5B", nfs.FormatDouble(testValPos).c_str());
+    //EXPECT_STREQ(u8"-100501 \x21\x5B", nfs.FormatDouble(testValNeg).c_str());
+    //}
     }
 
 //---------------------------------------------------------------------------------------
@@ -801,7 +766,7 @@ TEST_F(NamedFormatSpecTest, Constructors)
 
     // Constructed with name and NumericFormatSpec
     {
-    NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
+    NumericFormatSpec numFmtSpec;
     NamedFormatSpec namedFmtSpec("FooBar", numFmtSpec);
 
     EXPECT_STREQ("FooBar", namedFmtSpec.GetName().c_str());
@@ -816,7 +781,7 @@ TEST_F(NamedFormatSpecTest, Constructors)
 
     // Constructed with name, NumericFormatSpec, and CompositeValueSpec
     {
-    NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
+    NumericFormatSpec numFmtSpec;
     CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
     NamedFormatSpec namedFmtSpec("FooBar", numFmtSpec, compValSpec);
 
@@ -844,7 +809,7 @@ TEST_F(NamedFormatSpecTest, IsIdentical)
     // In these cases, only NumericFormatSpecs that are compared against themselves
     // should be concidered identical by the identity principal.
     {
-    NumericFormatSpec numFmtSpec(DecimalPrecision::Precision9);
+    NumericFormatSpec numFmtSpec;
     CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
 
     NamedFormatSpec namedFmtSpecUndefined;
@@ -894,8 +859,10 @@ TEST_F(NamedFormatSpecTest, IsIdentical)
 
     // NamedFormatSpecs with differing NumericFormatSpecs.
     {
-    NumericFormatSpec numFmtSpecA(DecimalPrecision::Precision8);
-    NumericFormatSpec numFmtSpecB(DecimalPrecision::Precision9);
+    NumericFormatSpec numFmtSpecA;
+    numFmtSpecA.SetDecimalPrecision(DecimalPrecision::Precision8);
+    NumericFormatSpec numFmtSpecB;
+    numFmtSpecB.SetDecimalPrecision(DecimalPrecision::Precision9);
 
     NamedFormatSpec namedFmtSpecA("FooBar", numFmtSpecA);
     NamedFormatSpec namedFmtSpecB("FooBar", numFmtSpecB);
@@ -915,6 +882,156 @@ TEST_F(NamedFormatSpecTest, IsIdentical)
     NamedFormatSpec namedFmtSpecB("FooBar", numFmtSpec, compValSpecB);
     EXPECT_FALSE(namedFmtSpecA.IsIdentical(namedFmtSpecB));
     EXPECT_FALSE(namedFmtSpecB.IsIdentical(namedFmtSpecA));
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NamedFormatSpecTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
+    {
+    NumericFormatSpec numericFormatSpec;
+    numericFormatSpec.SetThousandSeparator('\'');
+    numericFormatSpec.SetUse1000Separator(true);
+    numericFormatSpec.SetKeepSingleZero(true);
+
+    BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
+    BEU::UnitCP inch = s_unitsContext->LookupUnit("IN");
+    CompositeValueSpec compositeValueSpec(*mile, *inch);
+    ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
+    NamedFormatSpec namedFormatSpec("TestNamedFormatSpec", numericFormatSpec, compositeValueSpec);
+
+    // 1500.5 miles == 1,500 miles and 31,680 inches
+    BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
+    EXPECT_STREQ("1'500.0 31'680.0", NamedFormatSpec::StdFormatQuantity(namedFormatSpec, quantity).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(NamedFormatSpecTest, ParseFormatString)
+    {
+    // Valid format strings.
+    Utf8String const fmtStrBasic("ExampleFmt<9>");
+    Utf8String const fmtStrBasicTrailingComma("ExampleFmt<9,>");
+    Utf8String const fmtStrBasicNoOverrides("ExampleFmt");
+    Utf8String const fmtStrFutureAddition("ExampleFmt<9,banana>");
+    Utf8String const fmtStrFutureAdditionWhiteSpace("ExampleFmt \n < 9 \t , banana > ");
+    Utf8String const fmtStrFutureAdditionTrailingComma("ExampleFmt<9,banana,>");
+    Utf8String const fmtStrFutureAdditionNoFirstOverride("ExampleFmt<,banana>");
+
+    // Invalid format strings.
+    Utf8String const fmtStrBasicNoOverridesButStillHasBrackets("ExampleFmt<>");
+    Utf8String const fmtStrBasicNoOverridesButStillHasBracketsWithCommas("ExampleFmt<,,,,>");
+
+    // Mapping function that returns nullptr should always fail.
+    {
+    static auto const nullMapper = [](Utf8StringCR name) -> NamedFormatSpecCP {return nullptr;};
+    NamedFormatSpec parsedNfs;
+
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasic, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicTrailingComma, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverrides, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAddition, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, nullMapper));
+
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBrackets, nullMapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBracketsWithCommas, nullMapper));
+    }
+
+    // Parsing with a defined mapping function.
+    {
+    NumericFormatSpec exampleNumericFmtSpec;
+    exampleNumericFmtSpec.SetPresentationType(PresentationType::Decimal);
+    exampleNumericFmtSpec.SetDecimalPrecision(DecimalPrecision::Precision9);
+    NamedFormatSpec const exampleNamedFmtSpec("ExampleFmt", exampleNumericFmtSpec);
+    auto const mapper = [exampleNamedFmtSpec](Utf8StringCR name) -> NamedFormatSpecCP
+        {
+        return name == "ExampleFmt" ? &exampleNamedFmtSpec : nullptr;
+        };
+    NamedFormatSpec parsedNfs;
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasic, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicTrailingComma, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverrides, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAddition, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBrackets, mapper));
+    EXPECT_NE(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBracketsWithCommas, mapper));
+    }
+
+    // Test using different expected format types.
+    {
+    NumericFormatSpec exampleNumericFmtSpecDec;
+    exampleNumericFmtSpecDec.SetPresentationType(PresentationType::Decimal);
+    exampleNumericFmtSpecDec.SetDecimalPrecision(DecimalPrecision::Precision5);
+    NamedFormatSpec const exampleNamedFmtSpecDec("ExDec", exampleNumericFmtSpecDec);
+
+    NumericFormatSpec exampleNumericFmtSpecFrac;
+    exampleNumericFmtSpecFrac.SetPresentationType(PresentationType::Fractional);
+    exampleNumericFmtSpecFrac.SetFractionalPrecision(FractionalPrecision::Over_128);
+    NamedFormatSpec const exampleNamedFmtSpecFrac("ExFrac", exampleNumericFmtSpecFrac);
+
+    NumericFormatSpec exampleNumericFmtSpecSci;
+    exampleNumericFmtSpecSci.SetDecimalPrecision(DecimalPrecision::Precision4);
+    exampleNumericFmtSpecSci.SetPresentationType(PresentationType::Scientific);
+    NamedFormatSpec const exampleNamedFmtSpecSci("ExSci", exampleNumericFmtSpecSci);
+
+    NumericFormatSpec exampleNumericFmtSpecSciNorm;
+    exampleNumericFmtSpecSciNorm.SetDecimalPrecision(DecimalPrecision::Precision7);
+    exampleNumericFmtSpecSciNorm.SetPresentationType(PresentationType::Scientific);
+    exampleNumericFmtSpecSciNorm.SetScientificType(ScientificType::Normal);
+    NamedFormatSpec const exampleNamedFmtSpecSciNorm("ExSciNorm", exampleNumericFmtSpecSciNorm);
+
+    NumericFormatSpec exampleNumericFmtSpecStation;
+    exampleNumericFmtSpecStation.SetPresentationType(PresentationType::Station);
+    exampleNumericFmtSpecStation.SetStationSize(2);
+    exampleNumericFmtSpecStation.SetDecimalPrecision(DecimalPrecision::Precision9);
+    NamedFormatSpec const exampleNamedFmtSpecStation("ExStation", exampleNumericFmtSpecStation);
+    auto const mapper = [&](Utf8StringCR name) -> NamedFormatSpecCP
+        {
+        if (name == "ExDec")
+            return &exampleNamedFmtSpecDec;
+        if (name == "ExFrac")
+            return &exampleNamedFmtSpecFrac;
+        if (name == "ExSci")
+            return &exampleNamedFmtSpecSci;
+        if (name == "ExSciNorm")
+            return &exampleNamedFmtSpecSciNorm;
+        if (name == "ExStation")
+            return &exampleNamedFmtSpecStation;
+        return nullptr;
+        };
+    NamedFormatSpec parsedNfs;
+
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExDec<5>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecDec));
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExFrac<128>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecFrac));
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExSci<4>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSci));
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExSciNorm<7>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSciNorm));
+    ASSERT_EQ(BentleyStatus::SUCCESS, NamedFormatSpec::ParseFormatString(parsedNfs, "ExStation<9>", mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecStation));
     }
     }
 

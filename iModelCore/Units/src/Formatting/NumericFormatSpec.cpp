@@ -215,7 +215,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         if (sci && expInt != 0)
             {
             char expBuf[32];
-            int expLen = FormatIntegerSimple ((int)expInt, expBuf, sizeof(expBuf), true, false);
+            int expLen = FormatIntegerSimple ((int)expInt, expBuf, sizeof(expBuf), true, (IsExponentZero() ? true : false));
             locBuf[ind++] = 'e';
             //if (IsExponentZero())
             //    locBuf[ind++] = '0';
@@ -516,19 +516,11 @@ int NumericFormatSpec::FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NumericFormatSpec::NumericFormatSpec()
-    : NumericFormatSpec(FormatConstant::DefaultDecimalPrecision())
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-NumericFormatSpec::NumericFormatSpec(DecimalPrecision decimalPrecision)
     : m_roundFactor(0.0)
     , m_presentationType(FormatConstant::DefaultPresentaitonType())
     , m_signOption(FormatConstant::DefaultSignOption())
     , m_formatTraits(FormatConstant::DefaultFormatTraits())
-    , m_decPrecision(decimalPrecision)
+    , m_decPrecision(FormatConstant::DefaultDecimalPrecision())
     , m_fractPrecision(FormatConstant::DefaultFractionalPrecision())
     , m_barType(FractionBarType::Diagonal)
     , m_decimalSeparator(FormatConstant::FPV_DecimalSeparator())
@@ -810,110 +802,12 @@ Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round) 
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::StdFormatDouble(Utf8CP stdName, double dval, int prec, double round)
-    {
-    static StdFormatSet std;
-    NumericFormatSpecCP fmtP = std.FindNamedFormatSpec(stdName)->GetNumericSpec();
-    NumericFormatSpec fmt;
-    if (nullptr != fmtP) // invalid name
-        fmt = *fmtP;
-    return fmt.FormatDouble(dval, prec, round);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    David Fox-Rabinovitz
+// @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
+// static
+Utf8String NumericFormatSpec::FormatDouble(NumericFormatSpecCR nfs, double dval, int prec, double round)
     {
-    // there are two major options here: the format is a pure Numeric or it has a composite specification
-    NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
-    bool composite = nfs.HasComposite();
-    BEU::Quantity temp = qty.ConvertTo(useUnit);
-    Utf8CP uomLabel = Utf8String::IsNullOrEmpty(useLabel) ? ((nullptr == useUnit) ? qty.GetUnitLabel() : useUnit->GetLabel().c_str()) : useLabel;
-    Utf8String majT, midT, minT, subT;
-
-    if (composite)  // procesing composite parts
-        {
-        CompositeValueSpecP compS = (CompositeValueSpecP)nfs.GetCompositeSpec();
-        CompositeValue dval = compS->DecomposeValue(temp.GetMagnitude(), temp.GetUnit());
-        Utf8String pref = dval.GetSignPrefix();
-        Utf8String suff = dval.GetSignSuffix();
-        Utf8CP spacer = Utf8String::IsNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
-        // for all parts but the last one we need to format an integer 
-        NumericFormatSpec fmtI = NumericFormatSpec(DecimalPrecision::Precision0);
-        fmtI.SetKeepSingleZero(false);
-
-        switch (compS->GetUnitCount())
-            {
-            case 1: // there is only one value to report
-                majT = pref + fmtP->FormatDouble(dval.GetMajor(), prec, round);
-                // if this composite only defines a single component then use format traits to determine if unit label is shown. This allows
-                // support for SuppressUnitLable options in DgnClientFx. Also in this single component situation use the define UomSeparator.
-                if (fmtP->IsShowUnitLabel())
-                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), Utils::SubstituteNull(space, fmtP->GetUomSeparator())) + suff;
-                break;
-
-            case 2:
-                majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
-                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), spacer);
-                midT = fmtP->FormatDouble(dval.GetMiddle(), prec, round);
-                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel().c_str(), spacer);
-                majT += " " + midT + suff;
-                break;
-
-            case 3:
-                majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
-                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), spacer);
-                midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
-                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel().c_str(), spacer);
-                minT = fmtP->FormatDouble(dval.GetMinor(), prec, round);
-                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel().c_str(), spacer);
-                majT += " " + midT + " " + minT + suff;
-                break;
-
-            case 4:
-                majT = pref + fmtI.FormatDouble(dval.GetMajor(), prec, round);
-                majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), spacer);
-                midT = fmtI.FormatDouble(dval.GetMiddle(), prec, round);
-                midT = Utils::AppendUnitName(midT.c_str(), compS->GetMiddleLabel().c_str(), spacer);
-                minT = fmtI.FormatDouble(dval.GetMinor(), prec, round);
-                minT = Utils::AppendUnitName(minT.c_str(), compS->GetMinorLabel().c_str(), spacer);
-                subT = fmtP->FormatDouble(dval.GetSub(), prec, round);
-                subT = Utils::AppendUnitName(subT.c_str(), compS->GetSubLabel().c_str(), spacer);
-                majT += midT + " " + minT + " " + subT + suff;
-                break;
-            }
-        }
-    else
-        {
-        if (nullptr == fmtP)  // invalid name
-            fmtP = &NumericFormatSpec::DefaultFormat();
-        if (nullptr == fmtP)
-            return "";
-        majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
-        if(fmtP->IsShowUnitLabel())
-           majT = Utils::AppendUnitName(majT.c_str(), uomLabel, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
-        }
-    return majT;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 01/17
-//---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, int prec, double round)
-    {
-    if (!qty.IsNullQuantity())
-        return Utf8String();
-    BEU::UnitCP unitQ = qty.GetUnit();
-    BEU::Quantity temp = qty.ConvertTo(unitQ);
-    char buf[64];
-    FormatDoubleBuf(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
-    if(nullptr == useUnit || !IsShowUnitLabel())
-        return Utf8String(buf);
-    Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetLabel().c_str(), space);
-    return txt;
+    return nfs.FormatDouble(dval, prec, round);
     }
 
 //---------------------------------------------------------------------------------------
