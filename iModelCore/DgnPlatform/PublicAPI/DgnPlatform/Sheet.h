@@ -326,8 +326,6 @@ namespace Attachment
         void _OnProjectExtentsChanged(AxisAlignedBox3dCR) override { }
 
         ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
-    public:
-        static RootPtr Create(Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context);
     };
 }
 
@@ -354,7 +352,7 @@ struct ViewController : Dgn::ViewController2d
         DgnElementId GetId() const { return m_id; }
 
         virtual bool _Load(DgnDbR db, ViewController& sheetController, SceneContextR context) = 0;
-        virtual TileTree::RootP _GetTree() const = 0;
+        virtual Sheet::Attachment::RootP _GetTree() const = 0;
 
         void CancelAllTileLoads()
             {

@@ -983,6 +983,43 @@ template<typename T> static TileTree::RootPtr getRoot(T& viewController, SceneCo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootP ViewController2d::GetRoot(SceneContextR context)
+    {
+    if (m_root.IsNull())
+        m_root = getRoot(*this, context);
+
+    return m_root.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus createScene(TileTree::DrawArgsR args)
+    {
+    auto const& plan = args.m_context.GetUpdatePlan();
+    if (plan.WantWait())
+        {
+        BeDuration timeLimit = plan.HasQuitTime() && plan.GetQuitTime().IsInFuture() ? plan.GetQuitTime() - BeTimePoint::Now() : BeDuration();
+        args.m_root.SelectTiles(args);
+        args.m_context.m_requests.RequestMissing(timeLimit);
+        if (plan.HasQuitTime())
+            {
+            args.m_root.WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count());
+            args.m_root.CancelAllTileLoads();
+            }
+        else
+            {
+            args.m_root.WaitForAllLoads();
+            }
+        }
+
+    args.m_root.DrawInView(args);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> static BentleyStatus createScene(TileTree::RootPtr& root, T& viewController, SceneContextR context)
     {
     if (root.IsNull())
@@ -995,25 +1032,8 @@ template<typename T> static BentleyStatus createScene(TileTree::RootPtr& root, T
             return ERROR;
         }
 
-    auto const& plan = context.GetUpdatePlan();
-    if (plan.WantWait())
-        {
-        BeDuration timeLimit = plan.HasQuitTime() && plan.GetQuitTime().IsInFuture() ? plan.GetQuitTime() - BeTimePoint::Now() : BeDuration();
-        root->SelectTiles(context);
-        context.m_requests.RequestMissing(timeLimit);
-        if (plan.HasQuitTime())
-            {
-            root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count());
-            root->CancelAllTileLoads();
-            }
-        else
-            {
-            root->WaitForAllLoads();
-            }
-        }
-
-    root->DrawInView(context);
-    return SUCCESS;
+    auto args = root->CreateDrawArgs(context);
+    return createScene(args);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1022,6 +1042,14 @@ template<typename T> static BentleyStatus createScene(TileTree::RootPtr& root, T
 BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
     {
     return createScene(m_root, *this, context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ViewController2d::CreateScene(TileTree::DrawArgsR args)
+    {
+    return createScene(args);
     }
 
 /*---------------------------------------------------------------------------------**//**
