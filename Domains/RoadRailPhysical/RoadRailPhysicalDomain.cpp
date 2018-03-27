@@ -320,15 +320,17 @@ DgnElementIdSet RoadRailPhysicalDomain::QueryElementIdsBoundingContentForSheets(
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId RoadRailPhysicalDomain::QuerySheetIdBoundedBy(GeometricElementCR boundingElm)
+DgnElementIdSet RoadRailPhysicalDomain::QuerySheetIdsBoundedBy(GeometricElementCR boundingElm)
     {
     auto stmtPtr = boundingElm.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM "
         BRRP_SCHEMA(BRRP_REL_GeometricElementBoundsContentForSheet) " WHERE SourceECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, boundingElm.GetElementId());
-    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-        return stmtPtr->GetValueId<DgnElementId>(0);
 
-    return DgnElementId();
+    DgnElementIdSet retVal;
+    while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        retVal.insert(stmtPtr->GetValueId<DgnElementId>(0));
+
+    return retVal;
     }

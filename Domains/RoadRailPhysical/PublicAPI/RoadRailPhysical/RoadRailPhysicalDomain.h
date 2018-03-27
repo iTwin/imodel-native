@@ -34,7 +34,7 @@ public:
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetGeometricElementAsBoundingContentForSheet(Dgn::GeometricElementCR boundingElm, Dgn::Sheet::ElementCR sheet);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementIdSet QueryElementIdsBoundingContentForSheets(Dgn::DgnDbCR dgnDb);
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementId QuerySheetIdBoundedBy(Dgn::GeometricElementCR boundingElm);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementIdSet QuerySheetIdsBoundedBy(Dgn::GeometricElementCR boundingElm);
 
 private:
     WCharCP _GetSchemaRelativePath() const override { return BRRP_SCHEMA_PATH; }
