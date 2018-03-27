@@ -42,6 +42,9 @@
 #define UNIT_ELEMENT                        "Unit"
 #define INVERTED_UNIT_ELEMENT               "InvertedUnit"
 #define CONSTANT_ELEMENT                    "Constant"
+#define FORMAT_ELEMENT                      "Format"
+#define FORMAT_COMPOSITE_ELEMENT            "Composite"
+#define FORMAT_COMPOSITE_UNIT_ELEMENT       "Unit"
 
 #define ECXML_SCHEMAREFERENCE_ELEMENT       "ECSchemaReference"
 #define ECJSON_REFERENCES_ATTRIBUTE         "references"
@@ -64,6 +67,23 @@
 #define EC_CONSTRAINTCLASS_ELEMENT          "Class"
 #define EC_CONSTRAINTKEY_ELEMENT            "Key"
 #define EC_KEYPROPERTY_ELEMENT              "Property"
+
+#define FORMAT_ROUND_FACTOR_ATTRIBUTE           "roundFactor"
+#define FORMAT_TYPE_ATTRIBUTE                   "type"
+#define FORMAT_SIGN_OPTION_ATTRIBUTE            "signOption"
+#define FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE        "scientificType"
+#define FORMAT_TRAITS_ATTRIBUTE                 "formatTraits"
+#define FORMAT_PRECISION_ATTRIBUTE              "precision"
+#define FORMAT_FRACTIONAL_BAR_TYPE_ATTRIBUTE    "fracBarType"
+#define FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE      "decSeparator"
+#define FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE    "thousandSeparator"
+#define FORMAT_UOM_SEPARATOR_ATTRIBUTE          "uomSeparator"
+#define FORMAT_STAT_SEPARATOR_ATTRIBUTE         "statSeparator"
+#define FORMAT_STATION_SIZE_ATTRIBUTE           "stationSize"
+
+#define COMPOSITE_SPACER_ATTRIBUTE          "spacer"
+#define COMPOSITE_INPUT_UNIT_ATTRIBUTE      "inputUnit"
+#define COMPOSITE_UNIT_LABEL_ATTRIBUTE      "label"
 
 #define ECXML_DISPLAY_LABEL_ATTRIBUTE       "displayLabel"
 #define ECJSON_DISPLAY_LABEL_ATTRIBUTE      "label"

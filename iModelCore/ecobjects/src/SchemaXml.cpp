@@ -632,6 +632,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             return 0 == strcmp(INVERTED_UNIT_ELEMENT, nodeName);
         case ECSchemaElementType::Constant:
             return 0 == strcmp(CONSTANT_ELEMENT, nodeName);
+        case ECSchemaElementType::Format:
+            return 0 == strcmp(FORMAT_ELEMENT, nodeName);
         }
 
     return false;
@@ -668,6 +670,8 @@ bool SchemaXmlReaderImpl::_IsSchemaChildElementNode(BeXmlNodeR schemaNode, ECSch
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::InvertedUnit);
         else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Constant))
             elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Constant);
+        else if (IsSchemaChildElementNode(*candidateNode, ECSchemaElementType::Format))
+            elementOrder.AddElement(typeName.c_str(), ECSchemaElementType::Format);
         }
     }
 
@@ -925,6 +929,19 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     readConstants.Stop();
     LOG.tracev("Reading Constant elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readConstants.GetElapsedSeconds());
+
+    // Format
+    StopWatch readingUnitFormats("Reading Formats", true);
+    status = reader->ReadUnitTypeFromXml<Format>(schemaOut, *schemaNode, ECSchemaElementType::Format);
+
+    if (SchemaReadStatus::Success != status)
+        {
+        delete reader; reader = nullptr;
+        return status;
+        }
+
+    readingUnitFormats.Stop();
+    LOG.tracev("Reading Formats for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingUnitFormats.GetElapsedSeconds());
 
     // KindOfQuantity
     StopWatch readingKindOfQuantities("Reading kind of quantity", true);
@@ -1224,6 +1241,12 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
                     return SchemaWriteStatus::Success;
                 unit->WriteConstantXml(m_xmlWriter, m_ecXmlVersion);
                 }
+            }
+        else if (ECSchemaElementType::Format == elementType)
+            {
+            FormatCP format = m_ecSchema.GetFormatCP(elementName);
+            if(nullptr != format)
+                WriteSchemaChild<Format>(*format);
             }
         }
 

@@ -1258,6 +1258,44 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
     return status;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Victor.Cushman                  02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CreateFormat(FormatP& unitFormat, Utf8CP name, Utf8CP label, Utf8CP description, Formatting::NumericFormatSpecCP nfs, Formatting::CompositeValueSpecCP composite)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    unitFormat = new Format(*this, name);
+    ECObjectsStatus status;
+
+    if (ECObjectsStatus::Success != (status = unitFormat->SetDisplayLabel(label)))
+        {
+        delete unitFormat;
+        unitFormat = nullptr;
+        return status;
+        }
+
+    if (ECObjectsStatus::Success != (status = unitFormat->SetDescription(description)))
+        {
+        delete unitFormat;
+        unitFormat = nullptr;
+        return status;
+        }
+
+    if (nullptr != nfs)
+        unitFormat->SetNumericSpec(*nfs);
+    if (nullptr != composite)
+        unitFormat->SetCompositeSpec(*composite);
+
+    if (ECObjectsStatus::Success != (status = AddSchemaChildToMap<Format, FormatMap>(unitFormat, &m_formatMap, ECSchemaElementType::Format)))
+        {
+        delete unitFormat;
+        unitFormat = nullptr;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
@@ -1319,7 +1357,7 @@ template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuanti
 template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) {return AddUnitType<UnitSystem>(child, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP child, ECSchemaElementType childType) {return AddUnitType<Phenomenon>(child, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<ECUnit>(ECUnitP child, ECSchemaElementType childType) {return AddUnitType<ECUnit>(child, childType);}
-
+template<> ECObjectsStatus ECSchema::AddSchemaChild<Format>(FormatP child, ECSchemaElementType childType) {return AddSchemaChildToMap<Format, FormatMap>(child, &m_formatMap, childType);}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
@@ -3237,6 +3275,7 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     AddElements<PropertyCategory, PropertyCategoryContainer>(ecSchema.GetPropertyCategories(), ECSchemaElementType::PropertyCategory);
     AddElements<UnitSystem, UnitSystemContainer>(ecSchema.GetUnitSystems(), ECSchemaElementType::UnitSystem);
     AddElements<Phenomenon, PhenomenonContainer>(ecSchema.GetPhenomena(), ECSchemaElementType::Phenomenon);
+    AddElements<Format, FormatContainer>(ecSchema.GetFormats(), ECSchemaElementType::Format);
     for (const auto u: ecSchema.GetUnits())
         {
         if (nullptr == u)

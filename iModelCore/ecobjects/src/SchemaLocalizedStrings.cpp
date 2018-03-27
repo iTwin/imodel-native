@@ -241,6 +241,30 @@ Utf8StringCR SchemaLocalizedStrings::GetUnitSystemDescription(UnitSystemCR unitS
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetFormatDisplayLabel(FormatCR format, Utf8StringCR invariantDisplayLabel) const
+    {
+    if (m_empty)
+        return invariantDisplayLabel;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(format);
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2018
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetFormatDescription(FormatCR format, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(format);
+    return GetLocalizedString(key.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                      04/2015
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetPropertyDisplayLabel(ECPropertyCP ecProperty, Utf8StringCR invariantDisplayLabel) const

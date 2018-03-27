@@ -70,6 +70,7 @@
     <ClCompile Include="ECSchemaDownConverter.cpp" />
     <ClCompile Include="ECSchemaUnitsContext.cpp" />
     <ClCompile Include="ECSchemaValidator.cpp" />
+    <ClCompile Include="Format.cpp" />
     <ClCompile Include="KindOfQuantity.cpp" />
     <ClCompile Include="ECSchemaConverter.cpp" />
     <ClCompile Include="ECType.cpp" />

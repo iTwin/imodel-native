@@ -10,6 +10,7 @@
 
 #include <ECObjects/ECObjects.h>
 #include <Units/Units.h>
+#include <Formatting/FormattingApi.h>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -227,4 +228,63 @@ public:
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
+
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
+struct Format : Formatting::NamedFormatSpec, NonCopyableClass
+{
+DEFINE_T_SUPER(Formatting::NamedFormatSpec)
+friend struct ECSchema;
+friend struct SchemaXmlWriter;
+friend struct SchemaXmlReaderImpl;
+friend struct SchemaJsonWriter;
+
+private:
+    ECSchemaCP m_schema;
+    bool m_isDisplayLabelExplicitlyDefined;
+    Utf8String m_name;
+
+    ECObjectsStatus SetSchema(ECSchemaCR schema);
+
+    ECObjectsStatus SetDisplayLabel(Utf8StringCR displayLabel);
+
+    ECObjectsStatus SetDescription(Utf8StringCR description);
+
+    SchemaReadStatus ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR context);
+    SchemaReadStatus _ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context);
+    SchemaReadStatus _ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Utf8String>& labels);
+
+    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+    SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
+
+    Format(ECSchemaCR schema, Utf8StringCR name);
+
+public:
+    ECOBJECTS_EXPORT ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this UnitFormat is defined in.
+
+    Utf8StringCR GetName() const {return m_name;} //!< The name of this Format
+    //! The fully qualified name of this Format in the format {SchemaName}:{FormatName}.
+    Utf8StringCR GetFullName() const {return T_Super::GetName();}
+    //! Gets a qualified name of the Format, prefixed by the schema alias if it does not match the primary schema.
+    ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
+
+    //! Returns the localized display label of this UnitFormat. Returns the localized display label if one exists.
+    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
+    //! Returns true if the display label is explicitly defined.
+    bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;}
+    //! Returns the invariant display label for this Format. Returns the name of the Format if no display label has been explicitly defined.
+    Utf8StringCR GetInvariantDisplayLabel() const {return GetIsDisplayLabelDefined() ? T_Super::GetDisplayLabel() : GetName();}
+
+    //! Returns the description of this Format. Returns the localized description if one exists.
+    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
+    //! Returns the invariant description of this UnitFormat.
+    Utf8StringCR GetInvariantDescription() const {return T_Super::GetDescription();}
+
+    //! Write the Format as a standalone schema child in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
+    ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+};
+
 END_BENTLEY_ECOBJECT_NAMESPACE

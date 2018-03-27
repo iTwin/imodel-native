@@ -152,7 +152,9 @@ $(o)Phenomenon$(oext)                                      : $(baseDir)Phenomeno
 
 $(o)ECUnit$(oext)                                          : $(baseDir)ECUnit.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)StandardUnitsHelper$(oext)                             : $(baseDir)StandardUnitsHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)StandardUnitsHelper$(oext)                             : $(baseDir)StandardUnitsHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)Format$(oext)                                           : $(baseDir)Format.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECUnits
 

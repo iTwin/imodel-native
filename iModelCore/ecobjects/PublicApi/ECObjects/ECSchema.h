@@ -57,6 +57,7 @@ using PropertyCategoryMap = bmap<Utf8CP, PropertyCategoryP, less_str>;
 using UnitSystemMap = bmap<Utf8CP, UnitSystemP, less_str>;
 using PhenomenonMap = bmap<Utf8CP, PhenomenonP, less_str>;
 using UnitMap = bmap<Utf8CP, ECUnitP, less_str>;
+using FormatMap = bmap<Utf8CP, FormatP, less_str>;
 
 using ECCustomAttributeCollection = bvector<IECInstancePtr>;
 struct ECCustomAttributeInstanceIterable;
@@ -2988,6 +2989,15 @@ using SchemaItemContainer<KindOfQuantityMap, KindOfQuantityP>::SchemaItemContain
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
+struct FormatContainer : SchemaItemContainer<FormatMap, FormatP>
+{
+friend struct ECSchema;
+using SchemaItemContainer<FormatMap, FormatP>::SchemaItemContainer;
+};
+
+//=======================================================================================
+// @bsistruct
+//=======================================================================================
 struct UnitSystemContainer : SchemaItemContainer<UnitSystemMap, UnitSystemP>
 {
 friend struct SchemaUnitContext;
@@ -3165,7 +3175,8 @@ enum class ECSchemaElementType
     Phenomenon,
     Unit,
     InvertedUnit,
-    Constant
+    Constant,
+    Format
 };
 
 //=======================================================================================
@@ -3328,6 +3339,7 @@ private:
     ECEnumerationContainer  m_enumerationContainer;
     KindOfQuantityContainer m_kindOfQuantityContainer;
     PropertyCategoryContainer m_propertyCategoryContainer;
+    FormatContainer         m_formatContainer;
     SchemaUnitContext       m_unitsContext;
 
     ECVersion               m_ecVersion;
@@ -3340,6 +3352,7 @@ private:
     EnumerationMap              m_enumerationMap;
     KindOfQuantityMap           m_kindOfQuantityMap;
     PropertyCategoryMap         m_propertyCategoryMap;
+    FormatMap                   m_formatMap;
     ECSchemaReferenceList       m_refSchemaList;
     bool                        m_isSupplemented;
     bool                        m_hasExplicitDisplayLabel;
@@ -3352,7 +3365,7 @@ private:
 
     ECSchema() : m_classContainer(m_classMap), m_enumerationContainer(m_enumerationMap), m_isSupplemented(false),
         m_hasExplicitDisplayLabel(false), m_immutable(false), m_kindOfQuantityContainer(m_kindOfQuantityMap),
-        m_propertyCategoryContainer(m_propertyCategoryMap), m_unitsContext(*this)
+        m_propertyCategoryContainer(m_propertyCategoryMap), m_formatContainer(m_formatMap), m_unitsContext(*this)
         { }
     virtual ~ECSchema();
 
@@ -3489,6 +3502,10 @@ public:
     ECEnumerationContainerCR GetEnumerations() const {return m_enumerationContainer;} //!< Returns an iterable container of ECEnumerations sorted by name.
     uint32_t GetEnumerationCount() const {return (uint32_t) m_enumerationMap.size();}//!< Gets the number of enumerations in the schema
     ECObjectsStatus DeleteEnumeration(ECEnumerationR ecEnumeration) {return DeleteSchemaChild<ECEnumeration, EnumerationMap>(ecEnumeration, &m_enumerationMap);} //!< Removes an enumeration from this schema.
+
+    FormatContainerCR GetFormats() const {return m_formatContainer;} //!< Returns an iterable container of Formats sorted by name.
+    uint32_t GetFormatCount() const {return (uint32_t)m_formatMap.size(); } //!< Gets the number of formats in the schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteFormat(FormatR format); //!< Removes a format from this schema
 
     KindOfQuantityContainerCR GetKindOfQuantities() const {return m_kindOfQuantityContainer;} //!< Returns an iterable container of ECClasses sorted by name.
     uint32_t GetKindOfQuantityCount() const {return (uint32_t) m_kindOfQuantityMap.size();} //!< Gets the number of kind of quantity in the schema
@@ -3648,6 +3665,16 @@ public:
     //! @return A status code indicating whether or not the Phenomenon was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus CreatePhenomenon(PhenomenonP& phenomenon, Utf8CP name, Utf8CP defintion, Utf8CP label = nullptr, Utf8CP description = nullptr);
 
+
+    //! Creates a new Format and adds it to the schema.
+    //! @param[out] format      If successful, will contain a new Format object
+    //! @param[in] name         Name of the format to create
+    //! @param[in] label        Display label of the format
+    //! @param[in] description  Description of the format
+    //! @param[in] nfs          A NumericFormatSpec to use to create.
+    //! @param[in] composite    A CompositeValueSpec to create this use to create. 
+    ECOBJECTS_EXPORT ECObjectsStatus CreateFormat(FormatP& unitFormat, Utf8CP name, Utf8CP label = nullptr, Utf8CP description = nullptr, Formatting::NumericFormatSpecCP nfs = nullptr, Formatting::CompositeValueSpecCP composite = nullptr);
+
     //! Creates a new ECUnit and adds it to the schema.
     //! @param[out] unit        If successful, will contain a new ECUnit object
     //! @param[in] name         Name of the unit to create
@@ -3793,6 +3820,16 @@ public:
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::ECUnit if the named unit exists in within the current schema; otherwise, nullptr
     ECUnitCP GetUnitCP(Utf8CP name) const {return GetUnitP(name);}
+
+    //! Get a Format by name within the context of this schema.
+    //! @param[in]  name     The name of the format to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
+    FormatCP GetFormatCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetFormatP(name);}
+
+    //! Get a Format by name within the context of this schema.
+    //! @param[in]  name     The name of the format to lookup.  This must be an unqualified (short) name.
+    //! @return   A pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
+    FormatP GetFormatP(Utf8CP name) {return GetSchemaChild<Format, FormatMap>(name, &m_formatMap);}
 
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.

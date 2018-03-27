@@ -162,6 +162,9 @@
     <ClCompile Include="Published\SchemaDeserializationConversionTests.cpp">
       <Filter>Source Files\Schema\Deserialization</Filter>
     </ClCompile>
+    <ClCompile Include="Published\FormatTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">

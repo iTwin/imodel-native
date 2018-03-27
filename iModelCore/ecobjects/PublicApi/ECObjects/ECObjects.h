@@ -68,6 +68,8 @@ EC_TYPEDEFS(ECUnit);
 EC_TYPEDEFS(UnitContainer);
 EC_TYPEDEFS(UnitSystem);
 EC_TYPEDEFS(UnitSystemContainer);
+EC_TYPEDEFS(Format);
+EC_TYPEDEFS(FormatContainer);
 
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECInstanceInterface);
