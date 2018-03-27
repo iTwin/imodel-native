@@ -20,7 +20,7 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinition : Dgn::DefinitionElement
     {
-    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinition, Dgn::DefinitionElement);
+    DEFINE_T_SUPER(Dgn::DefinitionElement);
     private:
 
     protected:
@@ -58,4 +58,5 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(CIBSEClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
         
     };
+
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
