@@ -13,6 +13,7 @@
 
 
 #include <ImagePP/all/h/HFCPtr.h>
+#include <TilePublisher\TilePublisher.h>
 #include "Threading\LightThreadPool.h"
 #include "SMSQLiteFile.h"
 #include "Stores/SMStoreUtils.h"
@@ -1162,9 +1163,10 @@ void SMCesium3DTileStrategy<EXTENT>::_AddGroup(SMNodeGroup* pi_pNodeGroup)
 template<class EXTENT>
 size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT> pi_NodeHeader, SMNodeGroupPtr pi_Group)
     {
+    Json::Value nodeTile;
     if (m_sourceGCS != nullptr && m_sourceGCS != m_destinationGCS)
         {
-        auto reprojectExtentHelper = [this](DRange3d& range)
+        auto reprojectExtentHelper = [this](DRange3d& range, Json::Value& tile)
             {
             auto reprojectPointHelper = [this](DPoint3d& point)
                 {
@@ -1176,18 +1178,38 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
                 if (m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
                     assert(false); // Error in reprojection
                 };
-            bvector<DPoint3d> corners(8);
-            range.get8Corners(corners.data());
-            for (auto& point : corners) reprojectPointHelper(point);
-            range = DRange3d::From(corners);
+            //bvector<DPoint3d> corners(8);
+            //range.get8Corners(corners.data());
+            //for (auto& point : corners) reprojectPointHelper(point);
+            //range = DRange3d::From(corners);
+            DPoint3d    center = DPoint3d::FromInterpolate(range.low, .5, range.high);
+            DPoint3d lx = DPoint3d::From(range.high.x, center.y, center.z);
+            DPoint3d ly = DPoint3d::From(center.x, range.high.y, center.z);
+            DPoint3d lz = DPoint3d::From(center.x, center.y, range.high.z);
+            reprojectPointHelper(center);
+            reprojectPointHelper(lx);
+            reprojectPointHelper(ly);
+            reprojectPointHelper(lz);
+            DPoint3d halfAxesX, halfAxesY, halfAxesZ;
+            halfAxesX.DifferenceOf(lx, center);
+            halfAxesY.DifferenceOf(ly, center);
+            halfAxesZ.DifferenceOf(lz, center);
+            DMatrix3d halfAxes;
+            halfAxes.initFromRowValues(halfAxesX.x, halfAxesX.y, halfAxesX.z,
+                                       halfAxesY.x, halfAxesY.y, halfAxesY.z,
+                                       halfAxesZ.x, halfAxesZ.y, halfAxesZ.z);
+            TilePublisher::WriteBoundingVolume(tile, center, halfAxes);
+            //DPoint3d delta = DPoint3d::From(center.x - lx.x, center.y - ly.y, center.z - lz.z);
+            //range.low = DPoint3d::From(lx.x, ly.y, lz.z);
+            //range.high = DPoint3d::From(center.x + delta.x, center.y + delta.y, center.z + delta.z);
             };
-        reprojectExtentHelper(pi_NodeHeader.m_nodeExtent);
+        reprojectExtentHelper(pi_NodeHeader.m_nodeExtent, nodeTile);
         if (pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
             {
-            reprojectExtentHelper(pi_NodeHeader.m_contentExtent);
+            reprojectExtentHelper(pi_NodeHeader.m_contentExtent, nodeTile["content"]);
             }
         }
-    Json::Value nodeTile;
+
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
     pi_Group->Append3DTile(pi_NodeHeader.m_id.m_integerID, pi_NodeHeader.m_parentNodeID.m_integerID, nodeTile);
     m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, 0);

@@ -566,6 +566,51 @@ TEST_P(ScalableMeshTestWithParams, GetQueryInterface)
     EXPECT_TRUE(myScalableMesh->GetQueryInterface(ScalableMeshQueryType::SCM_QUERY_FIX_RESOLUTION_VIEW).IsValid());
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre 03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(ScalableMeshTestWithParams, GetMeshQueryInterface)
+    {
+    auto myScalableMesh = ScalableMeshTest::OpenMesh(m_filename);
+    ASSERT_EQ(myScalableMesh.IsValid(), true);    
+
+    EXPECT_TRUE(myScalableMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION).IsValid());
+    EXPECT_TRUE(myScalableMesh->GetMeshQueryInterface(MESH_QUERY_VIEW_DEPENDENT).IsValid());
+    EXPECT_TRUE(myScalableMesh->GetMeshQueryInterface(MESH_QUERY_PLANE_INTERSECT).IsValid());
+    EXPECT_TRUE(myScalableMesh->GetMeshQueryInterface(MESH_QUERY_CONTEXT).IsValid());
+
+    
+    
+    const GeoCoords::GCS smGcs(myScalableMesh->GetGCS());
+
+    BaseGCSCPtr baseGcs(smGcs.GetGeoRef().GetBasePtr());
+
+    if (baseGcs.IsValid())
+        {
+        BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr targetBaseGCSPtr(BaseGCS::CreateGCS(L"EPSG:900913"));
+        ASSERT_EQ(targetBaseGCSPtr.IsValid(), true);
+
+        DRange3d range;
+        myScalableMesh->GetRange(range);
+
+        GeoPoint latLong[2];                
+
+        baseGcs->LatLongFromCartesian(latLong[0], range.low);
+        baseGcs->LatLongFromCartesian(latLong[1], range.high);
+
+        DRange3d rangeInTargetGcs;
+
+        targetBaseGCSPtr->CartesianFromLatLong(rangeInTargetGcs.low, latLong[0]);
+        targetBaseGCSPtr->CartesianFromLatLong(rangeInTargetGcs.high, latLong[1]);
+
+        EXPECT_TRUE(myScalableMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION, targetBaseGCSPtr, rangeInTargetGcs).IsValid());
+        EXPECT_TRUE(myScalableMesh->GetMeshQueryInterface(MESH_QUERY_VIEW_DEPENDENT, targetBaseGCSPtr, rangeInTargetGcs).IsValid());
+        EXPECT_TRUE(myScalableMesh->GetMeshQueryInterface(MESH_QUERY_PLANE_INTERSECT, targetBaseGCSPtr, rangeInTargetGcs).IsValid());
+        EXPECT_TRUE(myScalableMesh->GetMeshQueryInterface(MESH_QUERY_CONTEXT, targetBaseGCSPtr, rangeInTargetGcs).IsValid());
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois      02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
