@@ -2649,6 +2649,12 @@ void IModelJsNative::JsInterop::ThrowJsException(Utf8CP msg)
     Napi::Error::New(*IModelJsNative::s_env, msg).ThrowAsJavaScriptException();
     }
 
+static Utf8String s_mobileResourcesDir;
+/*---------------------------------------------------------------------------------**//**
+// @bsimethod                                    Satyakam.Khadilkar    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void imodeljs_addon_setMobileResourcesDir(Utf8CP d) {s_mobileResourcesDir = d;}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2658,7 +2664,11 @@ static Napi::Object iModelJsNativeRegisterModule(Napi::Env env, Napi::Object exp
 
     Napi::HandleScope scope(env);
 
+#if (defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)) || defined(BENTLEYCONFIG_OS_LINUX) || defined(BENTLEYCONFIG_OS_APPLE_MACOS)
     BeFileName addondir = Desktop::FileSystem::GetLibraryDir();
+#else
+    BeFileName addondir(s_mobileResourcesDir);
+#endif
 
     IModelJsNative::s_mainThreadId = BeThreadUtilities::GetCurrentThreadId();
 
