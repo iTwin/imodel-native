@@ -131,8 +131,9 @@ BENTLEY_TRANSLATABLE_STRINGS_START(UnitsL10N,units_msg)
     L10N_STRING(PresentationType_Fractional)                             // =="Fractional"==
     L10N_STRING(PresentationType_Scientific)                             // =="Scientific"==
     L10N_STRING(PresentationType_ScientificNorm)                         // =="Normalized Scientific"==
-    L10N_STRING(PresentationType_Stop100)                                // =="Stationing (Imperial)"==
-    L10N_STRING(PresentationType_Stop1000)                               // =="Stationing (Metric)"==
+    L10N_STRING(PresentationType_Station)                                   // =="Stationing"==
+    L10N_STRING(PresentationType_Station100)                                // =="Stationing (Imperial)"==
+    L10N_STRING(PresentationType_Station1000)                               // =="Stationing (Metric)"==
     
     L10N_STRING(DecimalSeparator_Comma)                                 // =="Comma"==
     L10N_STRING(DecimalSeparator_Point)                                 // =="Point"==
@@ -144,8 +145,8 @@ BENTLEY_TRANSLATABLE_STRINGS_START(UnitsL10N,units_msg)
     L10N_STRING(UnitLabelSeparator_Space)                               // =="Space"==
 
     L10N_STRING(FormatTraits_Use1000Separator)                          // =="Use Thousands Separator"==
-    L10N_STRING(FormatTraits_AppendUnitName)                            // =="Append Unit Label"==
-    L10N_STRING(FormatTraits_LeadingZeroes)                            // =="Show Leading Zeroes"==
+    L10N_STRING(FormatTraits_ShowUnitLabel)                              // =="Append Unit Label"==
+    L10N_STRING(FormatTraits_LeadingZeroes)                             // =="Show Leading Zeroes"==
     L10N_STRING(FormatTraits_TrailingZeroes)                            // =="Show Trailing Zeroes"==
     L10N_STRING(FormatTraits_KeepDecimalPoint)                          // =="Keep Decimal Point"==
 BENTLEY_TRANSLATABLE_STRINGS_END

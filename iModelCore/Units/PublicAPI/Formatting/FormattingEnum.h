@@ -47,9 +47,17 @@ enum class PresentationType
     Decimal = 1,
     Fractional = 2,
     Scientific = 3,      // scientific with 1 digit presenting the integer part
-    ScientificNorm = 4,  // normalized scientific when Mantissa is < 1
-    Stop100 = 5,         // special format for stations 100 feet
-    Stop1000 = 6         // special format for stations 1000 meters
+    Station = 4,
+    };
+
+//=======================================================================================
+// @bsienum
+//=======================================================================================
+enum class ScientificType
+    {
+    Standard        = 1,
+    Normal          = 2,
+    Engineering     = 3,
     };
 
 //=======================================================================================
@@ -57,18 +65,18 @@ enum class PresentationType
 //=======================================================================================
 enum class FormatTraits : int32_t
     {
-    LeadingZeroes    = 0x001, // Indicates that one or more insignificant zeroes are to be added in front of digital expression.
-    TrailingZeroes   = 0x002, // Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
-    KeepDecimalPoint = 0x004, // Indicates that the decimal point is required when the fraction is zero.
-    KeepSingleZero   = 0x008, // Indicates that the fractional part of the number is required when the fraction is zero.
-    ExponentZero     = 0x010, // Indicates that the exponent value must be prepended by zero.
-    ZeroEmpty        = 0x020, // Indicates that zero value should be presented by an empty string.
-    Use1000Separator = 0x040, // Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
-    ApplyRounding    = 0x080, // Indicates that the rounding factor should be used.
-    FractionDash     = 0x100, // Some people prefer to insert dash between integer and fraction: 3-1/4 rather than 3 1/4.
-    UseFractSymbol   = 0x200, // Indicates that a limited set of fractional values can be presented by a single glyph (1/2, 3/4... etc).
-    AppendUnitName   = 0x400  // Indicates that the numeric expression can be followed by the unit name.
-    //UseLocale        = 0x800  // Indicates that separator char's should be obtained from the current locale.
+    None             = 0x000,
+    TrailingZeroes   = 0x001, // Indicates that one or more insignificant zeroes are to be added after the last digit of the fraction.
+    KeepSingleZero   = 0x002, // Indicates that the fractional part of the number is required when the fraction is zero.
+    ZeroEmpty        = 0x004, // Indicates that zero value should be presented by an empty string.
+    KeepDecimalPoint = 0x008, // Indicates that the decimal point is should be presented when the fraction is zero.
+    ApplyRounding    = 0x010, // Use the rounding factor.
+    FractionDash     = 0x020, // Use a dash between integer and fraction instead of a space: 3-1/4 rather than 3 1/4.
+    ShowUnitLabel    = 0x040, // Indicates that the numeric expression should be followed by the unit name.
+    PrependUnitLabel = 0x080, // Indicates the position of the Unit name shifts from the right side of the value to the left.
+    Use1000Separator = 0x100, // Indicates that thousands in the integer part of the number should be separated by a special char (. or,).
+    ExponenentOnlyNegative   = 0x200, // Indicates that if an exponent value is positive to not include a +. By default a sign, + or -, is always shown.
+    LeadingZeroes    = 0x400,
     };
 
 //=======================================================================================
@@ -282,16 +290,18 @@ public:
 //=======================================================================================
 struct Utils
 {
-    UNITS_EXPORT static ShowSignOption NameToSignOption(Utf8CP name);
+    UNITS_EXPORT static Utf8String ScientificTypeName(ScientificType type);
+    UNITS_EXPORT static bool NameToScientificType(Utf8StringCR name, ScientificType& out);
+    UNITS_EXPORT static bool NameToSignOption(Utf8CP name, ShowSignOption& out);
     static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
-    UNITS_EXPORT static DecimalPrecision DecimalPrecisionByIndex(size_t num);
+    UNITS_EXPORT static bool DecimalPrecisionByIndex(const size_t num, DecimalPrecision& out);
     UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP, int index);
     UNITS_EXPORT static Utf8String PresentationTypeName(PresentationType type);
-    UNITS_EXPORT static PresentationType NameToPresentationType(Utf8CP name);
+    UNITS_EXPORT static bool NameToPresentationType(Utf8CP name, PresentationType& type);
     UNITS_EXPORT static Utf8String SignOptionName(ShowSignOption opt);
     UNITS_EXPORT static Utf8String FractionBarName(FractionBarType bar);
-    UNITS_EXPORT static FractionBarType NameToFractionBarType(Utf8CP name);
-    UNITS_EXPORT static FractionalPrecision FractionalPrecisionByDenominator(size_t prec);
+    UNITS_EXPORT static bool NameToFractionBarType(Utf8CP name, FractionBarType& type);
+    UNITS_EXPORT static bool FractionalPrecisionByDenominator(const size_t prec, FractionalPrecision& out);
     static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
     UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
@@ -321,7 +331,7 @@ public:
     static const double DefaultRoundingFactor() { return 0.0; }
     static PresentationType const DefaultPresentaitonType() { return PresentationType::Decimal; }
     static ShowSignOption const DefaultSignOption() { return ShowSignOption::OnlyNegative; }
-    static FormatTraits const DefaultFormatTraits() { return FormatTraits::KeepSingleZero; }
+    static FormatTraits const DefaultFormatTraits() { return FormatTraits::None; }
     static DecimalPrecision const DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
     static FractionalPrecision const DefaultFractionalPrecision() { return  FractionalPrecision::Over_64; }
     static FractionBarType const DefaultFractionBarType() { return FractionBarType::Diagonal; }
@@ -340,15 +350,31 @@ public:
     static Utf8String FPN_SignAlways() { return "SignAlways"; }
     static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
 
+    static Utf8String FPN_ScientificStandard() {return "standard";}
+    static Utf8String FPN_ScientificNormal() {return "normal";}
+    static Utf8String FPN_ScientificEngineering() {return "engineering";}
+
     static Utf8String FPN_Decimal() { return "Decimal"; }
     static Utf8String FPN_Fractional() { return "Fractional"; }
     static Utf8String FPN_Scientific() { return "Scientific"; }
     static Utf8String FPN_ScientificNorm() { return "ScientificNorm"; }
-    static Utf8String FPN_Stop100() { return "Stop100"; }
-    static Utf8String FPN_Stop1000() { return "Stop1000"; }
+    static Utf8String FPN_Station() {return "Station";}
+    static Utf8String FPN_Station100() { return "Station100"; }
+    static Utf8String FPN_Station1000() { return "Station1000"; }
     static Utf8String FPN_FractBarHoriz() { return "Horizontal"; }
     static Utf8String FPN_FractBarOblique() { return "Oblique"; }
     static Utf8String FPN_FractBarDiagonal() { return "Diagonal"; }
+
+    static Utf8String FPN_TrailZeroes() {return "trailZeroes";}
+    static Utf8String FPN_KeepSingleZero() {return "keepSingleZero";}
+    static Utf8String FPN_ZeroEmpty() {return "zeroEmpty";}
+    static Utf8String FPN_KeepDecimalPoint() {return "keepDecimalPoint";}
+    static Utf8String FPN_ApplyRounding() {return "applyRounding";}
+    static Utf8String FPN_FractionDash() {return "fractionDash";}
+    static Utf8String FPN_ShowUnitName() {return "showUnitName";}
+    static Utf8String FPN_PrependUnitName() {return "prependUnitName";}
+    static Utf8String FPN_Use1000Separator() {return "use1000Separator";}
+    static Utf8String FPN_ExponentOnlyNegative() {return "exponentOnlyNegative";}
     static const double FPV_MinTreshold() { return 1.0e-14; }  // format parameter default values
     static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
     static const Utf8Char FPV_DecimalSeparator() { return '.'; }
@@ -364,7 +390,7 @@ public:
     static const Utf8Char FractionSymbol() { return 'r'; }
     static const size_t DefaultDecimalPrecisionIndex() { return static_cast<int>(DefaultDecimalPrecision()); }
     static const size_t DefaultFractionalDenominator() { return Utils::FractionalPrecisionDenominator(DefaultFractionalPrecision()); }
-    static const FormatTraits UnitizedFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero) | static_cast<int>(FormatTraits::AppendUnitName)); }
+    static const FormatTraits UnitizedFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero) | static_cast<int>(FormatTraits::ShowUnitLabel)); }
     static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
     static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
     static const unsigned char UTF_3ByteMask() { return  0xF0; }    // 11110000  - complement will select 4 upper bits

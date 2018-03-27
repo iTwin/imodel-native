@@ -83,11 +83,37 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middle
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
+CompositeValueSpec::CompositeValueSpec(bvector<std::pair<BEU::UnitCP, Utf8String>> const& units, BEU::UnitCP input)
+    : m_includeZero(true)
+    , m_spacer("")
+    , m_ratio {0}
+    , m_inputUnit(input)
+    {
+    m_proxys.resize(units.size());
+
+    int i = 0;
+    for(auto const& unit : units)
+        {
+        m_proxys[i] = unit.first;
+        SetUnitLabel(i, unit.second.c_str());
+        i++;
+        }
+
+    if (units.size() > 0)
+        CalculateUnitRatios();
+    else
+        m_problem.UpdateProblemCode(FormatProblemCode::NotInitialized);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
 CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     : m_includeZero(other.m_includeZero)
     , m_spacer(other.m_spacer)
     , m_problem(other.m_problem)
     , m_proxys(other.m_proxys)
+    , m_inputUnit(other.m_inputUnit)
     {
     memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
     }

@@ -86,9 +86,7 @@ UIList UIUtils::GetAvailablePresentationTypes()
     presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Decimal, UNITSL10N_GETSTRING(PresentationType_Decimal).c_str(), Utils::PresentationTypeName(PresentationType::Decimal).c_str()));
     presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Fractional, UNITSL10N_GETSTRING(PresentationType_Fractional).c_str(), Utils::PresentationTypeName(PresentationType::Fractional).c_str()));
     presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Scientific, UNITSL10N_GETSTRING(PresentationType_Scientific).c_str(), Utils::PresentationTypeName(PresentationType::Scientific).c_str()));
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::ScientificNorm, UNITSL10N_GETSTRING(PresentationType_ScientificNorm).c_str(), Utils::PresentationTypeName(PresentationType::ScientificNorm).c_str()));
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Stop100, UNITSL10N_GETSTRING(PresentationType_Stop100).c_str(), Utils::PresentationTypeName(PresentationType::Stop100).c_str()));
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Stop1000, UNITSL10N_GETSTRING(PresentationType_Stop1000).c_str(), Utils::PresentationTypeName(PresentationType::Stop1000).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Station, UNITSL10N_GETSTRING(PresentationType_Station).c_str(), Utils::PresentationTypeName(PresentationType::Station).c_str()));
 
     return presentationTypes;
     }
@@ -139,9 +137,9 @@ UIList UIUtils::GetAvailableTraits()
     {
     UIList traits;
 
-    traits.AddListEntry(UIListEntry((int) FormatTraits::AppendUnitName, UNITSL10N_GETSTRING(FormatTraits_AppendUnitName).c_str(), json_AppendUnitName()));
-    traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_Use1000Separator()));
-    traits.AddListEntry(UIListEntry((int) FormatTraits::TrailingZeroes, UNITSL10N_GETSTRING(FormatTraits_TrailingZeroes).c_str(), json_TrailZeroes()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::ShowUnitLabel, UNITSL10N_GETSTRING(FormatTraits_ShowUnitLabel).c_str(), json_showUnitLabel()));
+    traits.AddListEntry(UIListEntry((int)FormatTraits::Use1000Separator, UNITSL10N_GETSTRING(FormatTraits_Use1000Separator).c_str(), json_use1000Separator()));
+    traits.AddListEntry(UIListEntry((int) FormatTraits::TrailingZeroes, UNITSL10N_GETSTRING(FormatTraits_TrailingZeroes).c_str(), json_trailZeroes()));
     // only used when width is set, so let's ignore for now since users won't likely be setting width.
     //traits.AddListEntry(UIListEntry((int)FormatTraits::LeadingZeroes, UNITSL10N_GETSTRING(FormatTraits_LeadingZeroes).c_str(), json_LeadZeroes()));
 
@@ -266,6 +264,7 @@ const size_t* FormatConstant::FractionCodes()
     return cod;
     }
 
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
@@ -308,15 +307,48 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
 //===================================================
 
 //----------------------------------------------------------------------------------------
+// @bsimethod                                                    Kyle.Abramowitz     12/17
+//----------------------------------------------------------------------------------------
+// static
+Utf8String Utils::ScientificTypeName(ScientificType type)
+    {
+    switch(type)
+        {
+        case ScientificType::Engineering:
+            return FormatConstant::FPN_ScientificEngineering();
+        case ScientificType::Normal:
+            return FormatConstant::FPN_ScientificNormal();
+        case ScientificType::Standard:
+            return FormatConstant::FPN_ScientificStandard();
+        }
+    return "";
+    }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                    Kyle.Abramowitz     12/17
+//----------------------------------------------------------------------------------------
+// static
+bool Utils::NameToScientificType(Utf8StringCR name, ScientificType& out)
+    {
+    if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificStandard().c_str()) == 0) out = ScientificType::Standard;
+    else if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificNormal().c_str()) == 0) out = ScientificType::Normal;
+    else if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificEngineering().c_str()) == 0) out = ScientificType::Engineering;
+    else
+        return false;
+    return true;
+    }
+//----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
 // static
-ShowSignOption Utils::NameToSignOption(Utf8CP name)
+bool Utils::NameToSignOption(Utf8CP name, ShowSignOption& out)
     {
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_OnlyNegative().c_str()) == 0) return ShowSignOption::OnlyNegative;
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_SignAlways().c_str()) == 0) return ShowSignOption::SignAlways;
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_NegativeParenths().c_str()) == 0) return ShowSignOption::NegativeParentheses;
-    return ShowSignOption::NoSign;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_NoSign().c_str()) == 0) out = ShowSignOption::NoSign;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_OnlyNegative().c_str()) == 0) out = ShowSignOption::OnlyNegative;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_SignAlways().c_str()) == 0) out = ShowSignOption::SignAlways;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_NegativeParenths().c_str()) == 0) out = ShowSignOption::NegativeParentheses;
+    else
+        return false;
+    return true;
     }
 
 //----------------------------------------------------------------------------------------
@@ -419,27 +451,14 @@ Utf8String Utils::GetCurrentThousandSeparator()
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-DecimalPrecision Utils::DecimalPrecisionByIndex(size_t num)
+bool Utils::DecimalPrecisionByIndex(const size_t num, DecimalPrecision& out)
     {
-    if (num > FormatConstant::MaxDecimalPrecisionIndex())
-        return FormatConstant::DefaultDecimalPrecision();
-    switch (num)
-        {
-        case 0:  return DecimalPrecision::Precision0;
-        case 1:  return DecimalPrecision::Precision1;
-        case 2:  return DecimalPrecision::Precision2;
-        case 3:  return DecimalPrecision::Precision3;
-        case 4:  return DecimalPrecision::Precision4;
-        case 5:  return DecimalPrecision::Precision5;
-        case 6:  return DecimalPrecision::Precision6;
-        case 7:  return DecimalPrecision::Precision7;
-        case 8:  return DecimalPrecision::Precision8;
-        case 9:  return DecimalPrecision::Precision9;
-        case 10: return DecimalPrecision::Precision10;
-        case 11: return DecimalPrecision::Precision11;
-        case 12: return DecimalPrecision::Precision12;
-        default: return DecimalPrecision::Precision0;
+    if (num < static_cast<uint32_t>(DecimalPrecision::Max))
+        { 
+        out = static_cast<DecimalPrecision>(num);
+        return true;
         }
+    return false;
     }
 
 //----------------------------------------------------------------------------------------
@@ -464,9 +483,7 @@ Utf8String  Utils::PresentationTypeName(PresentationType type)
         {
         case PresentationType::Fractional: return FormatConstant::FPN_Fractional();
         case PresentationType::Scientific: return FormatConstant::FPN_Scientific();
-        case PresentationType::ScientificNorm: return FormatConstant::FPN_ScientificNorm();
-        case PresentationType::Stop100: return FormatConstant::FPN_Stop100();
-        case PresentationType::Stop1000: return FormatConstant::FPN_Stop1000();
+        case PresentationType::Station: return FormatConstant::FPN_Station();
         default:
         case PresentationType::Decimal: return FormatConstant::FPN_Decimal();
         }
@@ -476,14 +493,20 @@ Utf8String  Utils::PresentationTypeName(PresentationType type)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-PresentationType Utils::NameToPresentationType(Utf8CP name)
+bool Utils::NameToPresentationType(Utf8CP name, PresentationType& type)
     {
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Fractional().c_str()) == 0) return PresentationType::Fractional;
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Scientific().c_str()) == 0) return PresentationType::Scientific;
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_ScientificNorm().c_str()) == 0) return PresentationType::ScientificNorm;
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Stop100().c_str()) == 0) return PresentationType::Stop100;
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Stop1000().c_str()) == 0) return PresentationType::Stop1000;
-    return PresentationType::Decimal;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Decimal().c_str()) == 0) 
+        type = PresentationType::Decimal;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Fractional().c_str()) == 0) 
+        type = PresentationType::Fractional;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Scientific().c_str()) == 0) 
+        type = PresentationType::Scientific;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Station().c_str()) == 0) 
+        type = PresentationType::Station;
+    else
+        return false;
+
+    return true;
     }
 
 //----------------------------------------------------------------------------------------
@@ -522,33 +545,37 @@ Utf8String Utils::FractionBarName(FractionBarType bar)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-FractionBarType Utils::NameToFractionBarType(Utf8CP name)
+bool Utils::NameToFractionBarType(Utf8CP name, FractionBarType& type)
     {
-    if (BeStringUtilities::StricmpAscii(name, "diagonal") == 0) return FractionBarType::Diagonal;
-    if (BeStringUtilities::StricmpAscii(name, "oblique") == 0) return FractionBarType::Oblique;
-    if (BeStringUtilities::StricmpAscii(name, "horizontal") == 0) return FractionBarType::Horizontal;
-    return FractionBarType::None;
+    if (BeStringUtilities::StricmpAscii(name, "none") == 0) type = FractionBarType::None;
+    else if (BeStringUtilities::StricmpAscii(name, "diagonal") == 0) type = FractionBarType::Diagonal;
+    else if (BeStringUtilities::StricmpAscii(name, "oblique") == 0) type = FractionBarType::Oblique;
+    else if (BeStringUtilities::StricmpAscii(name, "horizontal") == 0) type = FractionBarType::Horizontal;
+    else
+        return false;
+    return true;
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-FractionalPrecision Utils::FractionalPrecisionByDenominator(size_t prec)
+bool Utils::FractionalPrecisionByDenominator(const size_t prec, FractionalPrecision& out)
     {
     switch (prec)
         {
-        case 2: return FractionalPrecision::Half;
-        case 4: return FractionalPrecision::Quarter;
-        case 8: return FractionalPrecision::Eighth;
-        case 16: return FractionalPrecision::Sixteenth;
-        case 32: return FractionalPrecision::Over_32;
-        case 64: return FractionalPrecision::Over_64;
-        case 128: return FractionalPrecision::Over_128;
-        case 256: return FractionalPrecision::Over_256;
-        case 1:
-        default:return FractionalPrecision::Whole;
+        case 1: out = FractionalPrecision::Whole; break;
+        case 2: out = FractionalPrecision::Half; break;
+        case 4: out = FractionalPrecision::Quarter; break;
+        case 8: out = FractionalPrecision::Eighth; break;
+        case 16: out = FractionalPrecision::Sixteenth; break;
+        case 32: out = FractionalPrecision::Over_32; break;
+        case 64: out = FractionalPrecision::Over_64; break;
+        case 128: out = FractionalPrecision::Over_128; break;
+        case 256: out = FractionalPrecision::Over_256; break;
+        default: return false;
         }
+    return true;
     }
 
  //----------------------------------------------------------------------------------------

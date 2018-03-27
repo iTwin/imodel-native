@@ -128,17 +128,21 @@ NumericFormatSpec CreateNewNumericFormatSpec(PresentationType presentationType, 
     if (PresentationType::Fractional == presentationType)
     {
         nfs.SetDecimalPrecision(FormatConstant::DefaultDecimalPrecision());
-        nfs.SetFractionaPrecision(Utils::FractionalPrecisionByDenominator(precision));
+        FractionalPrecision prec;
+        Utils::FractionalPrecisionByDenominator(precision, prec);
+        nfs.SetFractionaPrecision(prec);
     }
     else
     {
-        nfs.SetDecimalPrecision(Utils::DecimalPrecisionByIndex(precision));
+        DecimalPrecision prec;
+        Utils::DecimalPrecisionByIndex(precision, prec);
+        nfs.SetDecimalPrecision(prec);
         nfs.SetFractionaPrecision(FormatConstant::DefaultFractionalPrecision());
     }
     nfs.SetDecimalSeparator(FormatConstant::FPV_DecimalSeparator());
     nfs.SetThousandSeparator(FormatConstant::FPV_ThousandSeparator());
     nfs.SetUomSeparator(FormatConstant::BlankString());
-    nfs.SetStopSeparator('+');
+    nfs.SetStatSeparator('+');
     nfs.SetMinWidth(0);
 
     if (uomSeparator)
@@ -171,32 +175,38 @@ void StdFormatSet::StdInit()
     AddFormat("Real4UNS", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4, FormatConstant::EmptyString()));
     AddFormat("Real6UNS", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 6, FormatConstant::EmptyString()));
 
-    NumericFormatSpec stop = CreateNewNumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2);
-    AddFormat("Stop100-2u", stop);
-    stop = CreateNewNumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2);
+    NumericFormatSpec stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
+    stop.SetStationSize(2);
+    AddFormat("Station100-2u", stop);
+    stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
     stop.SetMinWidth(4);
-    AddFormat("Stop100-2-4u", stop);
+    AddFormat("Station100-2-4u", stop);
 
-    stop = CreateNewNumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traitsU, 2);
+    stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
     stop.SetMinWidth(4);
-    AddFormat("Stop1000-2-4u", stop);
+    stop.SetStationSize(3);
+    AddFormat("Station1000-2-4u", stop);
 
-    stop = CreateNewNumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traitsU, 2);
-    AddFormat("Stop1000-2u", stop);
+    stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
+    AddFormat("Station1000-2u", stop);
 
     //=========================== Stoppers w/o units
-    stop = CreateNewNumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, 2);
-    AddFormat("Stop100-2", stop);
-    stop = CreateNewNumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, 2);
+    stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetStationSize(2);
+    AddFormat("Station100-2", stop);
+    stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetStationSize(3);
     stop.SetMinWidth(4);
-    AddFormat("Stop100-2-4", stop);
+    AddFormat("Station100-2-4", stop);
 
-    stop = CreateNewNumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, 2);
+    stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetStationSize(3);
     stop.SetMinWidth(4);
-    AddFormat("Stop1000-2-4", stop);
+    AddFormat("Station1000-2-4", stop);
 
-    stop = CreateNewNumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, 2);
-    AddFormat("Stop1000-2", stop);
+    stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetStationSize(3);
+    AddFormat("Station1000-2", stop);
 
     AddFormat("SignedReal", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
     AddFormat("ParenthsReal", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
@@ -205,7 +215,9 @@ void StdFormatSet::StdInit()
     AddFormat("SignedFractional", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::SignAlways, traits, FormatConstant::DefaultFractionalDenominator()));
     AddFormat("DefaultExp", CreateNewNumericFormatSpec(PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
     AddFormat("SignedExp", CreateNewNumericFormatSpec(PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
-    AddFormat("NormalizedExp", CreateNewNumericFormatSpec(PresentationType::ScientificNorm, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
+    auto format = CreateNewNumericFormatSpec(PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+    format.SetScientificType(ScientificType::Normal);
+    AddFormat("NormalizedExp", format);
     AddFormat("DefaultInt", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
     AddFormat("Fractional4", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 4));
     AddFormat("Fractional8", CreateNewNumericFormatSpec(PresentationType::Fractional, ShowSignOption::OnlyNegative, traits, 8));
@@ -284,13 +296,15 @@ BentleyStatus StdFormatSet::AddCompositeSpecs(BEU::IUnitsContextCR unitContext)
     cvs = new CompositeValueSpec(*ft);
 
     cvs->SetUnitLabels("'");
-    NumericFormatSpec stop = CreateNewNumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2, FormatConstant::EmptyString());
+    NumericFormatSpec stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2, FormatConstant::EmptyString());
+    stop.SetStationSize(2);
     stop.SetMinWidth(2);
     AddFormat("StationFt2", stop, *cvs);
 
     cvs = new CompositeValueSpec(*meter);
     cvs->SetUnitLabels("m");
-    stop = CreateNewNumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traitsU, 2);
+    stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
+    stop.SetStationSize(3);
     stop.SetMinWidth(4);
     AddFormat("StationM4", stop, *cvs);
 

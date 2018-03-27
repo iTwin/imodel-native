@@ -134,10 +134,10 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         dval = -dval;
         sign = (m_signOption == ShowSignOption::NegativeParentheses) ? '(' : '-';
         }
-    bool sci = ((dval > 1.0e12) ||m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm);
+    bool sci = ((dval > 1.0e12) ||m_presentationType == PresentationType::Scientific);
     bool decimal = (sci || m_presentationType == PresentationType::Decimal);
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
-    bool stops = (m_presentationType == PresentationType::Stop100 || m_presentationType == PresentationType::Stop1000);
+    bool stops = m_presentationType == PresentationType::Station;
 
     if (IsApplyRounding() || !FormatConstant::IsIgnored(round))
         dval = RoundDouble(dval, EffectiveRoundFactor(round));
@@ -153,7 +153,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
             }
 
         expInt = floor(exp);
-        if (m_presentationType == PresentationType::ScientificNorm)
+        if (m_presentationType == PresentationType::Scientific && m_scientificType == ScientificType::Normal)
             expInt += 1.0;
         if (negativeExp)
             expInt = -expInt;
@@ -215,7 +215,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         if (sci && expInt != 0)
             {
             char expBuf[32];
-            int expLen = FormatIntegerSimple ((int)expInt, expBuf, sizeof(expBuf), true, (IsExponentZero()?true:false));
+            int expLen = FormatIntegerSimple ((int)expInt, expBuf, sizeof(expBuf), true, false);
             locBuf[ind++] = 'e';
             //if (IsExponentZero())
             //    locBuf[ind++] = '0';
@@ -263,7 +263,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         } // end fractional
     else if (stops) // we assume that stopping value is always positive 
         {
-        int denom = (m_presentationType == PresentationType::Stop100) ? 100 : 1000;
+        int denom = 10*m_stationSize;
         int tval = static_cast<int>(dval); // this is the integer part only
         int hiPart = tval / denom;
         int loPart = tval - hiPart * denom;
@@ -279,7 +279,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         else
             locBuf[k++] = '0';
         
-        locBuf[k++] = GetStopSeparator();
+        locBuf[k++] = GetStatSeparator();
         Utf8String loS = FormatIntegerToString(loPart, m_minWidth);
         memcpy(&locBuf[k], loS.c_str(), loS.length());
         k += loS.length();
@@ -516,7 +516,7 @@ int NumericFormatSpec::FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NumericFormatSpec::NumericFormatSpec()
-    : NumericFormatSpec(Utils::DecimalPrecisionByIndex(FormatConstant::DefaultDecimalPrecisionIndex()))
+    : NumericFormatSpec(FormatConstant::DefaultDecimalPrecision())
     {
     }
 
@@ -536,6 +536,8 @@ NumericFormatSpec::NumericFormatSpec(DecimalPrecision decimalPrecision)
     , m_uomSeparator(FormatConstant::BlankString())
     , m_statSeparator(FormatConstant::DefaultStopSeparator())
     , m_minWidth(0)
+    , m_stationSize(0)
+    , m_scientificType(ScientificType::Standard)
     {
     }
 
@@ -555,17 +557,17 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval) : NumericFormatSpec()
         paramName = iter.memberName();
         JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_presentType()) == 0)
-            m_presentationType = Utils::NameToPresentationType(val.asCString());
+            Utils::NameToPresentationType(val.asCString(), m_presentationType);
         else if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
             m_roundFactor = val.asDouble();
         else if (BeStringUtilities::StricmpAscii(paramName, json_decPrec()) == 0)
-            m_decPrecision = Utils::DecimalPrecisionByIndex(val.asInt64());
+            Utils::DecimalPrecisionByIndex(val.asInt64(), m_decPrecision);
         else if (BeStringUtilities::StricmpAscii(paramName, json_fractPrec()) == 0)
-            m_fractPrecision = Utils::FractionalPrecisionByDenominator(val.asInt64());
+            Utils::FractionalPrecisionByDenominator(val.asInt64(), m_fractPrecision);
         else if (BeStringUtilities::StricmpAscii(paramName, json_signOpt()) == 0)
-            m_signOption = Utils::NameToSignOption(val.asCString());
+            Utils::NameToSignOption(val.asCString(), m_signOption);
         else if (BeStringUtilities::StricmpAscii(paramName, json_barType()) == 0)
-            m_barType = Utils::NameToFractionBarType(val.asCString());
+            Utils::NameToFractionBarType(val.asCString(), m_barType);
         else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
             m_decimalSeparator = val.asString().c_str()[0];
         else if (BeStringUtilities::StricmpAscii(paramName, json_thousandSeparator()) == 0)
@@ -612,6 +614,87 @@ NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
     return nfs;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                    03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String NumericFormatSpec::GetFormatTraitsString() const
+    {
+    Utf8String ret;
+    bvector<Utf8String> strings;
+    if (GetTraitsBit(FormatTraits::ApplyRounding))
+        strings.push_back(FormatConstant::FPN_ApplyRounding());
+    if (GetTraitsBit(FormatTraits::ExponenentOnlyNegative))
+        strings.push_back(FormatConstant::FPN_ExponentOnlyNegative());
+    if (GetTraitsBit(FormatTraits::FractionDash))
+        strings.push_back(FormatConstant::FPN_FractionDash());
+    if (GetTraitsBit(FormatTraits::KeepDecimalPoint))
+        strings.push_back(FormatConstant::FPN_KeepDecimalPoint());
+    if (GetTraitsBit(FormatTraits::KeepSingleZero))
+        strings.push_back(FormatConstant::FPN_KeepSingleZero());
+    if (GetTraitsBit(FormatTraits::PrependUnitLabel))
+        strings.push_back(FormatConstant::FPN_PrependUnitName());
+    if (GetTraitsBit(FormatTraits::ShowUnitLabel))
+        strings.push_back(FormatConstant::FPN_ShowUnitName());
+    if (GetTraitsBit(FormatTraits::TrailingZeroes))
+        strings.push_back(FormatConstant::FPN_TrailZeroes());
+    if (GetTraitsBit(FormatTraits::Use1000Separator))
+        strings.push_back(FormatConstant::FPN_Use1000Separator());
+    if (GetTraitsBit(FormatTraits::ZeroEmpty))
+        strings.push_back(FormatConstant::FPN_ZeroEmpty());
+
+    int i = 0;
+    for (auto const& s : strings)
+        {
+        ret += s;
+        if (i < strings.size() - 1)
+            { 
+            ret += "|";
+            ++i;
+            }
+        }
+    return ret;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                    03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+bool NumericFormatSpec::SetFormatTraitsFromString(Utf8StringCR input)
+    {
+    bvector<Utf8String> splitStrings;
+    BeStringUtilities::Split(input.c_str(),",;|", splitStrings);
+    this->m_formatTraits = FormatTraits::None;
+    int numProcessed = 0;
+    for (auto const& s : splitStrings)
+        {
+        if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_TrailZeroes().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::TrailingZeroes, true);
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_KeepSingleZero().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::KeepSingleZero, true);
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_ZeroEmpty().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::ZeroEmpty, true);
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_KeepDecimalPoint().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::KeepDecimalPoint, true);
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_ApplyRounding().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::ApplyRounding, true);
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_FractionDash().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::FractionDash, true);
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_ShowUnitName().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::ShowUnitLabel, true);
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_PrependUnitName().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::PrependUnitLabel, true);
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_Use1000Separator().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::Use1000Separator, true);
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_ExponentOnlyNegative().c_str()) == 0)
+            this->SetTraitsBit(FormatTraits::ExponenentOnlyNegative, true);
+        else 
+            continue;
+        ++numProcessed;
+        }
+
+    if (numProcessed != splitStrings.size())
+        return false;
+    return true;
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    David Fox-Rabinovitz
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -661,28 +744,26 @@ void NumericFormatSpec::SetFormatTraitsFromJson(JsonValueCR jval)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_LeadZeroes()) == 0)
+        if (BeStringUtilities::StricmpAscii(paramName, json_leadZeroes()) == 0)
             SetUseLeadingZeroes(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_TrailZeroes()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_trailZeroes()) == 0)
             SetKeepTrailingZeroes(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_KeepDecPnt()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_keepDecimalPrecision()) == 0)
             SetKeepDecimalPoint(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_KeepSingleZero()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_keepSingleZero()) == 0)
             SetKeepSingleZero(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_ExponentZero()) == 0)
-            SetExponentZero(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_ZeroEmpty()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_zeroEmpty()) == 0)
             SetZeroEmpty(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_Use1000Separator()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_use1000Separator()) == 0)
             SetUse1000Separator(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_ApplyRounding()) ==0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_applyRounding()) ==0)
             SetApplyRounding(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_FractionDash()) == 0)
+        else if (BeStringUtilities::StricmpAscii(paramName, json_fractionDash()) == 0)
             SetFractionDash(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_UseFractSymbol()) == 0)
-            SetUseFractSymbol(val.asBool());
-        else if (BeStringUtilities::StricmpAscii(paramName, json_AppendUnitName()) == 0)
-            SetAppendUnit(val.asBool());
+        else if (BeStringUtilities::StricmpAscii(paramName, json_prependUnitLabel()) == 0)
+            SetPrependUnitLabel(val.asBool());
+        else if (BeStringUtilities::StricmpAscii(paramName, json_showUnitLabel()) == 0)
+            SetShowUnitLabel(val.asBool());
         }
     }
 
@@ -694,17 +775,17 @@ Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
     Json::Value jTraits;
     FormatTraits ref = FormatConstant::DefaultFormatTraits();
 
-    TraitsBitToJson(jTraits, json_TrailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
-    TraitsBitToJson(jTraits, json_LeadZeroes(),  FormatTraits::LeadingZeroes, &ref, verbose);
-    TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, &ref, verbose);
-    TraitsBitToJson(jTraits, json_KeepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
-    TraitsBitToJson(jTraits, json_ExponentZero(), FormatTraits::ExponentZero, &ref, verbose);
-    TraitsBitToJson(jTraits, json_ZeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
-    TraitsBitToJson(jTraits, json_Use1000Separator(), FormatTraits::Use1000Separator, &ref, verbose);
-    TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
-    TraitsBitToJson(jTraits, json_AppendUnitName(), FormatTraits::AppendUnitName, &ref, verbose);
-    TraitsBitToJson(jTraits, json_UseFractSymbol(), FormatTraits::UseFractSymbol, &ref, verbose);
-    TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, &ref, verbose);
+    TraitsBitToJson(jTraits, json_trailZeroes(), FormatTraits::TrailingZeroes, &ref, verbose);
+    TraitsBitToJson(jTraits, json_leadZeroes(),  FormatTraits::LeadingZeroes, &ref, verbose);
+    TraitsBitToJson(jTraits, json_keepDecimalPrecision(), FormatTraits::KeepDecimalPoint, &ref, verbose);
+    TraitsBitToJson(jTraits, json_keepSingleZero(), FormatTraits::KeepSingleZero, &ref, verbose);
+    TraitsBitToJson(jTraits, json_zeroEmpty(), FormatTraits::ZeroEmpty, &ref, verbose);
+    TraitsBitToJson(jTraits, json_use1000Separator(), FormatTraits::Use1000Separator, &ref, verbose);
+    TraitsBitToJson(jTraits, json_applyRounding(), FormatTraits::ApplyRounding, &ref, verbose);
+    TraitsBitToJson(jTraits, json_prependUnitLabel(), FormatTraits::PrependUnitLabel, &ref, verbose);
+    TraitsBitToJson(jTraits, json_exponentOnlyNegative(), FormatTraits::ExponenentOnlyNegative, &ref, verbose);
+    TraitsBitToJson(jTraits, json_fractionDash(), FormatTraits::FractionDash, &ref, verbose);
+    TraitsBitToJson(jTraits, json_showUnitLabel(), FormatTraits::ShowUnitLabel, &ref, verbose);
     return jTraits;
     }
 
@@ -770,7 +851,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
                 majT = pref + fmtP->FormatDouble(dval.GetMajor(), prec, round);
                 // if this composite only defines a single component then use format traits to determine if unit label is shown. This allows
                 // support for SuppressUnitLable options in DgnClientFx. Also in this single component situation use the define UomSeparator.
-                if (fmtP->IsAppendUnit())
+                if (fmtP->IsShowUnitLabel())
                     majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), Utils::SubstituteNull(space, fmtP->GetUomSeparator())) + suff;
                 break;
 
@@ -812,7 +893,7 @@ Utf8String NumericFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quan
         if (nullptr == fmtP)
             return "";
         majT = fmtP->FormatDouble(temp.GetMagnitude(), prec, round);
-        if(fmtP->IsAppendUnit())
+        if(fmtP->IsShowUnitLabel())
            majT = Utils::AppendUnitName(majT.c_str(), uomLabel, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
         }
     return majT;
@@ -829,7 +910,7 @@ Utf8String NumericFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP us
     BEU::Quantity temp = qty.ConvertTo(unitQ);
     char buf[64];
     FormatDoubleBuf(temp.GetMagnitude(), buf, sizeof(buf), prec, round);
-    if(nullptr == useUnit || !IsAppendUnit())
+    if(nullptr == useUnit || !IsShowUnitLabel())
         return Utf8String(buf);
     Utf8String txt = Utils::AppendUnitName(buf, useUnit->GetLabel().c_str(), space);
     return txt;

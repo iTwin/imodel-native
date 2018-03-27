@@ -29,17 +29,17 @@ BE_JSON_NAME(roundFactor)
 BE_JSON_NAME(presentType)
 BE_JSON_NAME(signOpt)
 BE_JSON_NAME(formatTraits)
-BE_JSON_NAME(LeadZeroes)
-BE_JSON_NAME(TrailZeroes)
-BE_JSON_NAME(KeepDecPnt)
-BE_JSON_NAME(KeepSingleZero)
-BE_JSON_NAME(ExponentZero)
-BE_JSON_NAME(ZeroEmpty)
-BE_JSON_NAME(Use1000Separator)
-BE_JSON_NAME(ApplyRounding)
-BE_JSON_NAME(FractionDash)
-BE_JSON_NAME(UseFractSymbol)
-BE_JSON_NAME(AppendUnitName)
+BE_JSON_NAME(trailZeroes)
+BE_JSON_NAME(leadZeroes)
+BE_JSON_NAME(keepSingleZero)
+BE_JSON_NAME(zeroEmpty)
+BE_JSON_NAME(keepDecimalPrecision)
+BE_JSON_NAME(applyRounding)
+BE_JSON_NAME(fractionDash)
+BE_JSON_NAME(showUnitLabel)
+BE_JSON_NAME(prependUnitLabel)
+BE_JSON_NAME(use1000Separator)
+BE_JSON_NAME(exponentOnlyNegative)
 //BE_JSON_NAME(UseLocale)
 BE_JSON_NAME(decPrec)
 BE_JSON_NAME(fractPrec)
@@ -186,12 +186,14 @@ struct NumericFormatSpec
 {
 private:
     double              m_roundFactor;
-    PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, ScientificNorm
+    PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
+    ScientificType      m_scientificType;
     ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
     FractionalPrecision m_fractPrecision;
     FractionBarType     m_barType;               // Oblique, Horizontal, Diagonal
+    uint32_t            m_stationSize;           // 10*stationSize = distance between stations
 
     Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
@@ -254,7 +256,7 @@ public:
     PresentationType GetPresentationType() const { return m_presentationType; }
     bool IsDecimal() const { return PresentationType::Decimal == m_presentationType; }
     bool IsFractional() const { return PresentationType::Fractional == m_presentationType; }
-    bool IsScientific() const { return PresentationType::Scientific == m_presentationType || PresentationType::ScientificNorm == m_presentationType; }
+    bool IsScientific() const {return PresentationType::Scientific == m_presentationType;}
 
     void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
     ShowSignOption GetSignOption() const { return m_signOption; }
@@ -263,8 +265,16 @@ public:
     bool IsSignAlways() const { return ShowSignOption::SignAlways == m_signOption; }
     bool IsNegativeParentheses() const { return ShowSignOption::NegativeParentheses == m_signOption; }
 
+    UNITS_EXPORT Utf8String GetFormatTraitsString() const;
     void SetFormatTraits(FormatTraits traits) { m_formatTraits = traits; }
+    UNITS_EXPORT bool SetFormatTraitsFromString(Utf8StringCR input);
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
+
+    void SetStationSize(uint32_t size) {m_stationSize = size;}
+    uint32_t GetStationSize() const {return m_stationSize;}
+
+    void SetScientificType(ScientificType type) {m_scientificType = type;}
+    ScientificType GetScientificType() const {return m_scientificType;}
 
     void SetDecimalPrecision(DecimalPrecision precision) { m_decPrecision = precision; }
     DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
@@ -288,8 +298,8 @@ public:
     void SetMinWidth(int wid) { m_minWidth = wid; }
     int GetMinWidth() { return m_minWidth; }
 
-    void SetStopSeparator(Utf8Char sep) { m_statSeparator = sep; }
-    Utf8Char GetStopSeparator() const { return m_statSeparator; }
+    void SetStatSeparator(Utf8Char sep) { m_statSeparator = sep; }
+    Utf8Char GetStatSeparator() const { return m_statSeparator; }
 
     //======================================
     // Format Traits Bit Setters/Getters
@@ -302,9 +312,10 @@ public:
     
     UNITS_EXPORT void SetFormatTraitsFromJson(JsonValueCR jval);
     UNITS_EXPORT Json::Value FormatTraitsToJson(bool verbose) const;
+    UNITS_EXPORT bool HasFormatTraits() const {return m_formatTraits != FormatTraits::None;}
 
-    void SetUseLeadingZeroes(bool setTo) { SetTraitsBit(FormatTraits::LeadingZeroes, setTo); }
-    bool IsUseLeadingZeroes() const { return GetTraitsBit(FormatTraits::LeadingZeroes); }
+    void SetUseLeadingZeroes(bool setTo) {SetTraitsBit(FormatTraits::LeadingZeroes, setTo);}
+    bool IsUseLeadingZeroes() const {return GetTraitsBit(FormatTraits::LeadingZeroes);}
 
     void SetKeepTrailingZeroes(bool setTo) {SetTraitsBit(FormatTraits::TrailingZeroes, setTo);}
     bool IsKeepTrailingZeroes() const { return GetTraitsBit(FormatTraits::TrailingZeroes);}
@@ -315,8 +326,8 @@ public:
     void SetKeepSingleZero(bool setTo) { SetTraitsBit(FormatTraits::KeepSingleZero, setTo);}
     bool IsKeepSingleZero() const { return GetTraitsBit(FormatTraits::KeepSingleZero); }
 
-    void SetExponentZero(bool setTo) { SetTraitsBit(FormatTraits::ExponentZero, setTo); }
-    bool IsExponentZero() const { return GetTraitsBit(FormatTraits::ExponentZero); }
+    void SetExponentOnlyNegative(bool setTo) { SetTraitsBit(FormatTraits::ExponenentOnlyNegative, setTo); }
+    bool IsExponenentOnlyNegative() const { return GetTraitsBit(FormatTraits::ExponenentOnlyNegative); }
 
     void SetZeroEmpty(bool setTo) { SetTraitsBit(FormatTraits::ZeroEmpty, setTo); }
     bool IsZeroEmpty() const { return GetTraitsBit(FormatTraits::ZeroEmpty); }
@@ -330,12 +341,11 @@ public:
     void SetFractionDash(bool setTo) { SetTraitsBit(FormatTraits::FractionDash, setTo); }
     bool IsFractionDash() const { return GetTraitsBit(FormatTraits::FractionDash); }
 
-    void SetUseFractSymbol(bool setTo) { SetTraitsBit(FormatTraits::UseFractSymbol, setTo); }
-    bool IsUseFractSymbol() const { return GetTraitsBit(FormatTraits::UseFractSymbol); }
+    void SetShowUnitLabel(bool setTo) { SetTraitsBit(FormatTraits::ShowUnitLabel, setTo); }
+    bool IsShowUnitLabel() const { return GetTraitsBit(FormatTraits::ShowUnitLabel); }
 
-    void SetAppendUnit(bool setTo) { SetTraitsBit(FormatTraits::AppendUnitName, setTo); }
-    bool IsAppendUnit() const { return GetTraitsBit(FormatTraits::AppendUnitName); }
-
+    void SetPrependUnitLabel(bool setTo) { SetTraitsBit(FormatTraits::ShowUnitLabel, setTo); }
+    bool IsPrependUnitLabel() const { return GetTraitsBit(FormatTraits::ShowUnitLabel); }
     //======================================
     // Formatting Methods
     //======================================
@@ -435,6 +445,7 @@ private:
     Utf8String m_spacer;
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
+    BEU::UnitCP m_inputUnit;
 
     //! Returns the unit ratio of upper/lower.
     //! Lower may be set to nullptr, indicating the lower unit is not set on the CVS.
@@ -447,7 +458,6 @@ private:
     void CalculateUnitRatios();
 
     Utf8CP GetUnitName(size_t indx, Utf8CP substitute = nullptr) const;
-    void SetUnitLabel(size_t index, Utf8CP label);
     Utf8CP GetUnitLabel(size_t index, Utf8CP substitute = nullptr) const;
     UNITS_EXPORT Utf8String GetEffectiveLabel(size_t indx) const;
     BEU::UnitCP GetSmallestUnit() const;
@@ -474,6 +484,7 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
+    UNITS_EXPORT CompositeValueSpec(bvector<std::pair<BEU::UnitCP, Utf8String>> const& units, BEU::UnitCP input = nullptr);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
 
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
@@ -484,7 +495,9 @@ public:
     BEU::UnitCP GetMiddleUnit() const {return GetUnit(indxMiddle);}
     BEU::UnitCP GetMinorUnit()  const {return GetUnit(indxMinor);}
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
-
+    BEU::UnitCP GetInputUnit()  const {return m_inputUnit;}
+    void SetInputUnit(BEU::UnitCP unit) {m_inputUnit = unit;}
+    UNITS_EXPORT void SetUnitLabel(size_t index, Utf8CP label);
     UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
     Utf8String GetMajorLabel()  const {return GetEffectiveLabel(indxMajor);}
     Utf8String GetMiddleLabel() const {return GetEffectiveLabel(indxMiddle);}
@@ -574,6 +587,7 @@ public:
     // !TODO====================================================================
 
     UNITS_EXPORT NamedFormatSpec();
+    NamedFormatSpec(Utf8String name) : m_name(name), m_problem(FormatProblemCode::NoProblems) {};
     UNITS_EXPORT NamedFormatSpec(NamedFormatSpecCR other);
     UNITS_EXPORT NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec);
     UNITS_EXPORT NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
@@ -592,13 +606,15 @@ public:
     void SetDisplayLabel(Utf8CP label) { m_displayLabel = label;};
     Utf8StringCR GetDisplayLabel() const { return m_displayLabel; };
 
-    FormatSpecType GetSpecType() { return m_specType; }
+    FormatSpecType GetSpecType() const { return m_specType; }
+
     //! Returns true if this NamedFormatSpec contains a NumericFormatSpec.
     bool HasNumeric() const {return !IsProblem() || (m_problem.GetProblemCode() != FormatProblemCode::NotInitialized);}
     //! Returns true if this NamedFormatSpec containst a CompositeFormatSpec.
     //! A NamedFormatSpec that contains a CompositeValueSpec will also contain a NumericFormatSpec.
     bool HasComposite() const {return static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;}
-
+    void SetCompositeSpec(CompositeValueSpec spec) {m_compositeSpec = spec; m_specType = static_cast<FormatSpecType>(m_compositeSpec.GetUnitCount()); /*TODO error checking !*/}
+    void SetNumericSpec(NumericFormatSpec spec) {m_numericSpec = spec;}
     //! Returns a const pointer to this NamedFormatSpec's NumericFormatSpec if it exists.
     //! Returns nullptr if no NumericFormatSpec is defined.
     NumericFormatSpecCP GetNumericSpec() const { return HasNumeric() ? &m_numericSpec : nullptr; }
@@ -622,7 +638,7 @@ public:
     //! Returns nullptr if no CompositeValueSpec is defined.
     BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
 
-    void SetSuppressUnitLabel() { m_numericSpec.SetAppendUnit(false); }
+    void SetSuppressUnitLabel() { m_numericSpec.SetShowUnitLabel(false); }
 
     bool IsProblem() const { return m_problem.IsProblem(); }
     Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
@@ -691,7 +707,7 @@ private:
 
 public:
     UNITS_EXPORT void Init();
-    FormatUnitSet() : m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemCode::NotInitialized) {}
+    UNITS_EXPORT FormatUnitSet() : m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemCode::NotInitialized) {}
     FormatUnitSet(BEU::UnitCP unit) : FormatUnitSet(nullptr, unit) {}
     FormatUnitSet(NamedFormatSpecCP format, BEU::UnitCP unit) : FormatUnitSet(format, unit, false) {}
     UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
