@@ -353,6 +353,7 @@ public:
     static Utf8String FPN_FractBarDiagonal() { return "Diagonal"; }
 
     static Utf8String FPN_TrailZeroes() {return "trailZeroes";}
+    static Utf8String FPN_LeadZeroes() {return "leadZeroes";}
     static Utf8String FPN_KeepSingleZero() {return "keepSingleZero";}
     static Utf8String FPN_ZeroEmpty() {return "zeroEmpty";}
     static Utf8String FPN_KeepDecimalPoint() {return "keepDecimalPoint";}

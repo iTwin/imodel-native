@@ -21,7 +21,7 @@ NamedFormatSpec::NamedFormatSpec() : m_specType(FormatSpecType::None), m_problem
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NamedFormatSpec::NamedFormatSpec(NamedFormatSpecCR other)
-    : m_name(other.m_name), m_description(other.m_description), 
+    : m_name(other.m_name), m_description(other.m_description),
     m_displayLabel(other.m_displayLabel), m_specType(other.m_specType), m_problem(other.m_problem)
     {
     if (other.HasNumeric())

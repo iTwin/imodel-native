@@ -618,7 +618,7 @@ public:
     // !TODO====================================================================
 
     UNITS_EXPORT NamedFormatSpec();
-    NamedFormatSpec(Utf8String name) : m_name(name), m_problem(FormatProblemCode::NoProblems) {};
+    NamedFormatSpec(Utf8String name) : m_name(name), m_specType(FormatSpecType::None), m_problem(FormatProblemCode::NoProblems) {};
     UNITS_EXPORT NamedFormatSpec(NamedFormatSpecCR other);
     UNITS_EXPORT NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec);
     UNITS_EXPORT NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);

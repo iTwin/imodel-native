@@ -636,6 +636,8 @@ Utf8String NumericFormatSpec::GetFormatTraitsString() const
         strings.push_back(FormatConstant::FPN_Use1000Separator());
     if (GetTraitsBit(FormatTraits::ZeroEmpty))
         strings.push_back(FormatConstant::FPN_ZeroEmpty());
+    if (GetTraitsBit(FormatTraits::LeadingZeroes))
+        strings.push_back(FormatConstant::FPN_LeadZeroes());
 
     int i = 0;
     for (auto const& s : strings)
