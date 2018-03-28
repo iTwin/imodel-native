@@ -59,7 +59,10 @@ static Json::Value FromAngle(Angle angle)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Angle ToAngle(JsonValueCR val)
     {
-    if (val.isObject() && !val.isNull())
+    if (val.isNull())
+        return Angle::FromDegrees(0.0);
+
+    if (val.isObject())
         {
         if (val.isMember(json_degrees())) 
             return Angle::FromDegrees(val[json_degrees()].asDouble());
@@ -75,9 +78,9 @@ static Angle ToAngle(JsonValueCR val)
 static Json::Value YawPitchRollToJson(YawPitchRollAngles angles)
     {
     Json::Value val;
-    val[json_yaw()] = AngleInDegreesToJson(angles.GetYaw());
-    val[json_pitch()] = AngleInDegreesToJson(angles.GetPitch());
-    val[json_roll()] = AngleInDegreesToJson(angles.GetRoll());
+    if (angles.GetYaw().Degrees() != 0.0) val[json_yaw()] = AngleInDegreesToJson(angles.GetYaw());
+    if (angles.GetPitch().Degrees() != 0.0) val[json_pitch()] = AngleInDegreesToJson(angles.GetPitch());
+    if (angles.GetRoll().Degrees() != 0.0) val[json_roll()] = AngleInDegreesToJson(angles.GetRoll());
     return val;
     }
 

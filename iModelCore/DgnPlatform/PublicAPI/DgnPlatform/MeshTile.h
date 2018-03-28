@@ -141,6 +141,7 @@ public:
     static TileDisplayParamsCPtr Create(uint32_t color, GeometryParamsCR geomParams) { return new TileDisplayParams(color, geomParams); }
     static TileDisplayParamsCPtr Create(uint32_t color, TileTextureImageP texture, bool ignoreLighting) { return new TileDisplayParams(color, texture, ignoreLighting); }
     static TileDisplayParamsCPtr Create() { return new TileDisplayParams(); }
+    static TileDisplayParamsCPtr CreateForAttachment(GraphicParamsCR gfParams, GeometryParamsCR geomParams, TileTextureImageR texture);
 
     // These comparisons ignore category, subcategory, and class.
     bool operator<(TileDisplayParamsCR rhs) const { return IsLessThan(rhs, true); }
@@ -697,6 +698,8 @@ public:
     static TileGeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, DgnDbR db);
     //! Create a TileGeometry for a part instance.
     static TileGeometryPtr Create(TileGeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, DgnDbR db);
+    //! Create a TileGeometry for a view attachment
+    static TileGeometryPtr Create(Sheet::ViewAttachmentCR, TransformCR, DRange3dCR, TileDisplayParamsCR);
 
 };
 //=======================================================================================

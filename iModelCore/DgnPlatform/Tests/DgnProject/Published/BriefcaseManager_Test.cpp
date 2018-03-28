@@ -2985,6 +2985,24 @@ struct CodesManagerTest : RepositoryManagerTest
         request.Locks().Insert(*model, LockLevel::Shared);
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().Acquire(request).Result());
         }
+
+    DgnElementCPtr CreateGeometryPart(DefinitionModelR model, Utf8String name)
+        {
+        DgnDbR db = model.GetDgnDb();
+        DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(db, DgnGeometryPart::CreateCode(model, name.c_str()));
+        // Need to append some geometry or else the part is invalid
+        GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(db, true);
+        DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,/**/  0, 0, 2, /**/ 0, 3, 0, /**/ 0.0, Angle::TwoPi());
+        ICurvePrimitivePtr curvePrimitive = ICurvePrimitive::CreateArc(ellipseData);
+        GeometricPrimitivePtr elmGeom = GeometricPrimitive::Create(*curvePrimitive);
+        builder->Append(*elmGeom);
+        EXPECT_EQ(SUCCESS, builder->Finish(*geomPart));
+        IBriefcaseManager::Request req;
+        auto persistentElem = db.Elements().Insert<DgnGeometryPart>(*geomPart);
+        EXPECT_TRUE(persistentElem.IsValid());
+        return persistentElem;
+        }
+
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -3049,6 +3067,36 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     // Relinquish all
     EXPECT_STATUS(Success, mgr.RelinquishCodes());
     ExpectState(MakeAvailable(code2), db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* We treat certain codes as internal only and filter them out of requests when in
+* bulk mode (e.g. Geometry Parts)
+* Necessary for bridges workflow to avoid creating huge code request of internal
+* geometry parts
+* @bsimethod                                                    Diego.Pinate    03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, FilteredCodes)
+    {
+    DgnDbPtr pDb = SetupDb(L"FilteredCodesTest.bim", BeBriefcaseId(2));
+    DgnDbR db = *pDb;
+    DictionaryModelR dictionary = db.GetDictionaryModel();
+
+    // Start bulk operation
+    db.BriefcaseManager().StartBulkOperation();
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(db, "FilteredCodesTestPhysicalModel");
+    DgnElementCPtr geomPart = CreateGeometryPart(db.GetDictionaryModel(), "FC_GeometryPart1");
+    // Both should be available before ending the bulk operation
+    ExpectState(MakeAvailable(geomPart->GetCode()), db);
+    ExpectState(MakeAvailable(physicalModel->GetModeledElement()->GetCode()), db);
+    // End bulk operation
+    db.BriefcaseManager().EndBulkOperation();
+    // Filtered out since we filter geometry part codes
+    ExpectState(MakeAvailable(geomPart->GetCode()), db);
+    // A regular modeled element should still be reserved
+    ExpectState(MakeReserved(physicalModel->GetModeledElement()->GetCode(), db), db);
+
+    db.SaveChanges();
     }
 
 /*---------------------------------------------------------------------------------**//**

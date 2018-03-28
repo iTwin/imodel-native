@@ -61,7 +61,7 @@ public:
     BE_PROP_NAME(BBoxHigh)
     BE_PROP_NAME(GeometryStream)
     BE_JSON_NAME(bbox)
-    BE_JSON_NAME(geometryStream)
+    BE_JSON_NAME(geom)
 
     //! Create a DgnGeometryPart
     //! @param[in] model Create the DgnGeometryPart in this model
