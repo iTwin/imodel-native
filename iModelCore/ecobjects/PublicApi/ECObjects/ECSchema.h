@@ -1998,7 +1998,7 @@ public:
 
     ECOBJECTS_EXPORT bool Validate() const;
 
-    //! @param[out] outValue                    Json object containing the schema child Json if successfully written.
+    //! @param[out] outValue                    Json object containing the schema item Json if successfully written.
     //! @param[in]  includeSchemaVersion        If true the schema version will be included in the Json object.
     //! @param[in]  includeInheritedProperties  If true inherited properties will be serialized along with noninherited properties.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false, bool includeInheritedProperties = false) {return _WriteJson(outValue, true, includeSchemaVersion, includeInheritedProperties);}

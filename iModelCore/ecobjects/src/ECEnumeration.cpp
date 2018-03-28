@@ -170,17 +170,17 @@ SchemaWriteStatus ECEnumeration::WriteXml (BeXmlWriterR xmlWriter, ECVersion ecX
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus ECEnumeration::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
-    // Common properties to all Schema children
+    // Common properties to all Schema items
     if (standalone)
         {
-        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
         outValue[NAME_ATTRIBUTE] = GetName();
         }
 
-    outValue[ECJSON_SCHEMA_CHILD_TYPE] = ECJSON_ENUMERATION_ELEMENT;
+    outValue[ECJSON_SCHEMA_ITEM_TYPE] = ECJSON_ENUMERATION_ELEMENT;
 
     if (this->GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();

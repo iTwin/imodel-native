@@ -14,15 +14,16 @@
 
 #define ECXML_URI                           "http://www.bentley.com/schemas/Bentley.ECXML"
 #define ECJSON_URI                          "https://dev.bentley.com/json_schemas/ec/32/draft-01/ecschema"
-#define ECJSON_SCHEMA_CHILD_URI             "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemachild"
+#define ECJSON_SCHEMA_ITEM_URI              "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemaitem"
 
 #define ECJSON_URI_SPEC_ATTRIBUTE           "$schema"
 #define ECXML_SCHEMA_NAME_ATTRIBUTE         "schemaName"
 
-#define ECJSON_SCHEMA_CHILDREN_ATTRIBUTE    "children"
+#define ECJSON_SCHEMA_ITEMS_ATTRIBUTE       "items"
 #define ECJSON_PARENT_VERSION_ATTRIBUTE     "schemaVersion"
 #define ECJSON_PARENT_SCHEMA_ATTRIBUTE      "schema"
-#define ECJSON_SCHEMA_CHILD_TYPE            "schemaChildType"
+#define ECJSON_SCHEMA_ITEM_NAME_ATTRIBUTE   "name"
+#define ECJSON_SCHEMA_ITEM_TYPE             "schemaItemType"
 
 #define ECXML_ENTITYCLASS_ELEMENT           "ECEntityClass"
 #define ECJSON_ENTITYCLASS_ELEMENT          "EntityClass"
@@ -135,7 +136,7 @@
 #define ECJSON_MAXIMUM_LENGTH_ATTRIBUTE     "maxLength"
 #define MIN_OCCURS_ATTRIBUTE                "minOccurs"
 #define MAX_OCCURS_ATTRIBUTE                "maxOccurs"
-#define ECJSON_SCHEMA_CHILD_PROPERTIES_ATTRIBUTE    "properties"
+#define ECJSON_SCHEMA_ITEM_PROPERTIES_ATTRIBUTE     "properties"
 #define ECJSON_INHERITED_ATTRIBUTE          "inherited"
 #define ECJSON_MIXIN_REFERENCES_ATTRIBUTE   "mixins"
 #define ECXML_ENUMERATOR_ELEMENT            "ECEnumerator"

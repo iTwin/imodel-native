@@ -123,17 +123,17 @@ SchemaWriteStatus PropertyCategory::WriteXml(BeXmlWriterR xmlWriter, ECVersion e
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus PropertyCategory::WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const
     {
-    // Common properties to all Schema children
+    // Common properties to all Schema items
     if (standalone)
         {
-        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
         outValue[NAME_ATTRIBUTE] = GetName();
         }
 
-    outValue[ECJSON_SCHEMA_CHILD_TYPE] = PROPERTY_CATEGORY_ELEMENT;
+    outValue[ECJSON_SCHEMA_ITEM_TYPE] = PROPERTY_CATEGORY_ELEMENT;
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();

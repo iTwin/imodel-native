@@ -1,5 +1,5 @@
 ﻿{
-  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/ecschema",
+  "$schema": "https://dev.bentley.com/json_schemas/ec/31/draft-01/ecschema",
   "name": "ExampleSchema",
   "version": "03.01.00",
   "alias": "ex",
@@ -9,10 +9,6 @@
     {
       "name" : "CoreCustomAttributes",
       "version" : "01.00.00"
-    },
-    {
-      "name": "Units",
-      "version": "01.00.00"
     },
     {
       "name": "refSchemaA",
@@ -31,12 +27,12 @@
     "className": "refSchemaB.AnotherCustomAttributeClass"
     }
   ],
-  "children": {
+  "items": {
     "ExampleBaseEntity": {
-      "schemaChildType": "EntityClass"
+      "schemaItemType": "EntityClass"
     },
     "ExampleEntity": {
-      "schemaChildType": "EntityClass",
+      "schemaItemType": "EntityClass",
       "modifier": "sealed",
       "label": "ExampleEntity",
       "description": "An example entity class.",
@@ -47,15 +43,15 @@
       ]
     },
     "ExampleMixinA": {
-      "schemaChildType": "Mixin",
+      "schemaItemType": "Mixin",
       "appliesTo": "ExampleSchema.ExampleEntity"
     },
     "ExampleMixinB": {
-      "schemaChildType": "Mixin",
+      "schemaItemType": "Mixin",
       "appliesTo": "ExampleSchema.ExampleEntity"
     },
     "ExampleStruct": {
-      "schemaChildType": "StructClass",
+      "schemaItemType": "StructClass",
       "modifier": "sealed",
       "properties": [
         {
@@ -72,13 +68,13 @@
       ]
     },
     "ExampleSource": {
-      "schemaChildType": "EntityClass"
+      "schemaItemType": "EntityClass"
     },
     "ExampleTarget": {
-      "schemaChildType": "EntityClass"
+      "schemaItemType": "EntityClass"
     },
     "ExampleRelationship": {
-      "schemaChildType": "RelationshipClass",
+      "schemaItemType": "RelationshipClass",
       "modifier": "sealed",
       "strength": "embedding",
       "strengthDirection": "forward",
@@ -100,78 +96,53 @@
       }
     },
     "ExampleCustomAttribute": {
-        "schemaChildType": "CustomAttributeClass",
+        "schemaItemType": "CustomAttributeClass",
         "modifier": "sealed",
         "appliesTo": "Schema, AnyProperty"
     },
     "ExampleKoQ": {
-      "schemaChildType": "KindOfQuantity",
+      "schemaItemType": "KindOfQuantity",
       "persistenceUnit": {
-        "unit": "u:MM",
-        "format": "DefaultRealU"
+        "unit": "MM",
+        "format": "DefaultReal"
       },
       "precision": 3.0,
       "presentationUnits": [
         {
-          "unit": "u:IN",
-          "format": "DefaultRealU"
+          "unit": "IN",
+          "format": "DefaultReal"
         },
         {
-          "unit": "u:MM",
-          "format": "DefaultRealU"
+          "unit": "MM",
+          "format": "DefaultReal"
         },
         {
-          "unit": "u:CM",
-          "format": "DefaultRealU"
+          "unit": "CM",
+          "format": "DefaultReal"
         }
       ]
     },
-    "ExampleUnitSystem": {
-      "schemaChildType": "UnitSystem",
-      "label": "ExampleUnitSystemLabel",
-      "description": "ExampleUnitSystemDescription"
-    },
-    "ExamplePhenomenon": {
-      "schemaChildType": "Phenomenon",
-      "definition": "LENGTH",
-      "label": "ExamplePhenomenonLabel",
-      "description": "ExamplePhenomenonDescription"
-    },
-    "ExampleUnit": {
-      "schemaChildType": "Unit",
-      "definition": "[MILLI]M",
-      "phenomenon": "ExampleSchema.ExamplePhenomenon",
-      "unitSystem": "ExampleSchema.ExampleUnitSystem",
-      "label": "ExampleUnitLabel",
-      "description": "ExampleUnitDescription",
-      "numerator": 10.0,
-      "denominator": 1.0,
-      "offset": 1.0
-    },
     "ExampleEnumeration": {
-      "schemaChildType": "Enumeration",
+      "schemaItemType": "Enumeration",
       "backingTypeName": "int",
       "isStrict": true,
       "enumerators": [
         {
-          "name" : "EnumeratorA",
           "value": 1,
           "label": "None"
         },
         {
-          "name" : "EnumeratorB",
-          "value": 2,
-          "label": "SomeVal"
+           "value": 2,
+           "label": "SomeVal"
         },
         {
-          "name" : "EnumeratorC",
           "value": 3,
           "label": "AnotherVal"
         }
       ]
     },
     "ExamplePropertyCategory": {
-      "schemaChildType": "PropertyCategory",
+      "schemaItemType": "PropertyCategory",
       "priority": 5
     }
   }

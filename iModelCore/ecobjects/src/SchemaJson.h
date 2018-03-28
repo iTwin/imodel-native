@@ -29,7 +29,6 @@ struct SchemaJsonWriter
         SchemaWriteStatus WriteUnit(ECUnitCR unit);
         SchemaWriteStatus WriteInvertedUnit(ECUnitCR invertedUnit);
         SchemaWriteStatus WriteConstant(ECUnitCR constant);
-        SchemaWriteStatus WriteSchemaChildren();
 
     public:
         SchemaJsonWriter(Json::Value& jsonRoot, ECSchemaCR ecSchema);
