@@ -575,7 +575,8 @@ struct PolyfaceAuxData : RefCountedBase
         private:
 
         uint32_t            m_blockSize;        // Block size. 
-        uint32_t            m_transformType;    // 0 = none, 1 = vector, 2 = convector, 3 = point. 4 = distance.
+        uint32_t            m_transformType;    // 0 = none, 1 = vector, 2 = convector, 3 = point. 4 = distance.
+
         Utf8String          m_name;             // Channel name (stress, temperature etc...)
         Utf8String          m_inputName;        // Input that may vary, time, force etc...
         bvector<DataPtr>    m_data;

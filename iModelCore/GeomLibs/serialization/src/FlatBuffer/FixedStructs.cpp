@@ -1018,7 +1018,7 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPol
     bvector<int32_t>            indices(fbIndices->Length());
 
     memcpy(indices.data(), fbIndices->GetStructFromOffset(0), fbIndices->Length()*sizeof(int32_t));
-    
+                                                                                      
     for (unsigned int i=0; i<fbChannels->Length(); i++)
         {
         auto    fbChannel = fbChannels->Get(i);
