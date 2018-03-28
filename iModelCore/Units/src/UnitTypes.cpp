@@ -262,7 +262,7 @@ bool Unit::GenerateConversion(UnitCR toUnit, Conversion& conversion) const
                 double unitOffset = toUnitExp.GetSymbol()->GetOffset() * toUnitExp.GetSymbol()->GetFactor();
                 LOG.infov("Subtracting %.17g from existing offset %.17g.", unitOffset, conversion.Offset);
                 conversion.Offset -= unitOffset;
-                LOG.infov("New offset %l.17g", conversion.Offset);
+                LOG.infov("New offset %.17g", conversion.Offset);
                 }
 
             LOG.infov("Dividing offset %.17g by units conversion factor %.17g", conversion.Offset, unitFactor);
