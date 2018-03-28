@@ -317,7 +317,8 @@ public:
     BE_SQLITE_EXPORT Rebaser();
     BE_SQLITE_EXPORT ~Rebaser();
     
-    BE_SQLITE_EXPORT void AddRebase(Rebase& rebase);
+    BE_SQLITE_EXPORT void AddRebase(Rebase const& rebase);
+    BE_SQLITE_EXPORT void AddRebase(void const* data, int count);
     BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeSet const&in, struct ChangeSet& out);
     BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeStream const& in, struct ChangeStream& out);
 

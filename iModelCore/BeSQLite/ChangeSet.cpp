@@ -933,7 +933,8 @@ DbResult ChangeStream::FromConcatenatedChangeStreams(ChangeStream& inStream1, Ch
 +---------------+---------------+---------------+---------------+---------------+------*/
 Rebaser::Rebaser() {sqlite3rebaser_create(&m_rebaser);}
 Rebaser::~Rebaser() {sqlite3rebaser_delete(m_rebaser);}
-void Rebaser::AddRebase(Rebase& rebase) {sqlite3rebaser_configure(m_rebaser, rebase.GetSize(), rebase.GetData());}
+void Rebaser::AddRebase(Rebase const& rebase) {sqlite3rebaser_configure(m_rebaser, rebase.GetSize(), rebase.GetData());}
+void Rebaser::AddRebase(void const* data, int count) {sqlite3rebaser_configure(m_rebaser, count, data);}
 DbResult Rebaser::DoRebase(ChangeSet const&in, ChangeSet& out) {return (DbResult) sqlite3rebaser_rebase(m_rebaser, in.m_size, in.m_changeset, &out.m_size, &out.m_changeset);}
 DbResult Rebaser::DoRebase(ChangeStream const& in, ChangeStream& out) {return (DbResult) sqlite3rebaser_rebase_strm(m_rebaser, in.InputCallback, (void*) &in, out.OutputCallback, &out);}
 Rebase::~Rebase() {if (m_data) BeSQLiteLib::FreeMem(m_data);}
