@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: Tests/TerrainModelNetTests/BuildTerrainModelTests.mke $
-#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # to run test:
@@ -75,7 +75,6 @@ ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
 
 
 ASSEMBLY_DLL            = 1
-ASSEMBLY_STRONGNAME     = 1
 ASSEMBLY_TITLE          = BentleyTerrainModelNet Tests
 ASSEMBLY_DESCRIPTION    = BentleyTerrainModelNet Tests
 ASSEMBLY_VERSION        = 1.0.0.0

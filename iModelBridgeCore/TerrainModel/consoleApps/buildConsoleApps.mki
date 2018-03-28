@@ -2,13 +2,12 @@
 #
 #     $Source: consoleApps/buildConsoleApps.mki $
 #
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 baseDir = $(_MakeFilePath)
 
 DLM_OBJECT_DEST       = $(terrainModelConsoleAppsObj)
-ASSEMBLY_STRONGNAME   = 1
 
 terrainModelConsoleAppsObj = $(terrainModelBuildDir_)ConsoleApps/
 

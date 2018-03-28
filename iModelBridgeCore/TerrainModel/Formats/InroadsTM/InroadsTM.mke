@@ -6,7 +6,7 @@
 #       $Date: 2012/11/15 20:19:18 $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -18,7 +18,6 @@ SolutionPolicyMki=$(baseDir)inroadsTM.mki
 
 DLM_OBJECT_DEST       = $(terrainModelFormatsObj)
 DLM_NAME              = InroadsTM
-ASSEMBLY_STRONGNAME   = 1
 
 InroadsDTMSource = $(baseDir)
 

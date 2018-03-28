@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: ElementHandler/handlerNET/handlerNET.mke $
-#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 # 
@@ -110,7 +110,6 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.DgnPlatformNET.lib
 
 %include $(SharedMki)stdversion.mki
 ASSEMBLY_NAME               = $(DLM_NAME)
-ASSEMBLY_STRONGNAME         = 1
 ASSEMBLY_TITLE              = $(DLM_NAME)
 ASSEMBLY_PRODUCT_NAME       = Bentley TerrainModel Core NET
 ASSEMBLY_DESCRIPTION        = Managed API for Bentley TerrainModel

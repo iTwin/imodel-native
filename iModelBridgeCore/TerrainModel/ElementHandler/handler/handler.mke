@@ -2,7 +2,7 @@
 #
 #     $Source: ElementHandler/handler/handler.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
@@ -17,7 +17,6 @@ CCompOpts +  -wd4456 -wd4457 -wd4459
 
 DLM_OBJECT_DEST       = $(terrainModelElementHandlerObj)
 DLM_NAME              = TerrainModelElementHandler
-ASSEMBLY_STRONGNAME   = 1
 
 DependsOnHeaders = \
 $(DependsOnAssemblies) \

@@ -2,7 +2,7 @@
 #
 #     $Source: Core/core.mke $
 #
-#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -16,7 +16,6 @@ CCompOpts + -wd4456 -wd4458  -wd4459 -wd4457
 
 DLM_OBJECT_DEST       = $(terrainModelCoreObj)
 DLM_NAME              = TerrainModelCore
-ASSEMBLY_STRONGNAME   = 1
 
 DependsOnHeadersCPP =\
 $(TerrainModelCoreAPISrc)IDTM.h \

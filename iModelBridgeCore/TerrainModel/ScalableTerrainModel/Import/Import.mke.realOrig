@@ -2,7 +2,7 @@
 #
 #  $Source: ScalableTerrainModel/Import/Import.mke.realOrig $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -14,7 +14,6 @@ PolicyFile              = $(SrcRoot)ScalableTerrainModel/privmki/AssertScalableT
 
 DLM_NAME                = Import
 DLM_OBJECT_DEST         = $(OutScalableTerrainModelRoot)$(DLM_NAME)/
-ASSEMBLY_STRONGNAME     = 1
 
 APINamespace            = $(DLM_NAME)
 PublicAPISrc            = $(PublicAPIRoot)$(APINamespace)/

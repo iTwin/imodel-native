@@ -2,7 +2,7 @@
 #
 #     $Source: ElementHandler/app/app.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 baseDir         = $(_MakeFilePath)
@@ -132,7 +132,6 @@ DLM_NAME                = $(appName)
 DLM_DEST                = $(o)
 DLM_OBJECT_DEST         = $(o)
 DLM_NAME                = TerrainModelHandlerApp
-ASSEMBLY_STRONGNAME     = 1
 DLM_OBJECT_FILES        = $(appObjects)
 DLM_EXPORT_DEST         = $(o)
 DLM_NOINITFUNC          = 1
@@ -157,7 +156,6 @@ ASSEMBLY_KEYFILE        =% $(ASSEMBLY_KEYFILE_DEFAULT)
 ASSEMBLY_TESTKEYFILE       =% $(ASSEMBLY_TESTKEYFILE_DEFAULT)
 
 ASSEMBLY_NAME               = $(DLM_NAME)
-ASSEMBLY_STRONGNAME         = 1
 ASSEMBLY_TITLE              = $(DLM_NAME)
 ASSEMBLY_PRODUCT_NAME       = Bentley TerrainModel Core NET
 ASSEMBLY_DESCRIPTION        = Managed API for Bentley TerrainModel

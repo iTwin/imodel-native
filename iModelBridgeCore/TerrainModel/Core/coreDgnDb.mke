@@ -2,7 +2,7 @@
 #
 #     $Source: Core/coreDgnDb.mke $
 #
-#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -22,7 +22,6 @@ o =% $(terrainModelCoreObj)
 always:
     !~@mkdir $(o)
 
-ASSEMBLY_STRONGNAME   = 1
 
 DependsOnHeadersCPP =\
 $(TerrainModelCoreAPISrc)IDTM.h \
