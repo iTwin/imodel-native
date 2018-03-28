@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCategory.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -30,6 +30,20 @@ void DgnCategory::_ToJson(JsonValueR val, JsonValueCR opts) const
     T_Super::_ToJson(val, opts);
     val[json_rank()] = (int) m_rank;
     val[json_description()] = m_descr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCategory::_FromJson(JsonValueR props)
+    {
+    T_Super::_FromJson(props);
+
+    if (props.isMember(json_description()))
+        m_descr = props[json_description()].asString();
+
+    if (props.isMember(json_rank()))
+        m_rank = static_cast<Rank>(props[json_rank()].asInt());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -204,6 +218,20 @@ void DgnSubCategory::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     val[json_appearance()] = m_data.m_appearance.ToJson();
     val[json_description()] = m_data.m_descr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnSubCategory::_FromJson(JsonValueR props)
+    {
+    T_Super::_FromJson(props);
+
+    if (props.isMember(json_description()))
+        m_data.m_descr = props[json_description()].asString();
+
+    if (props.isMember(json_appearance()))
+        m_data.m_appearance.FromJson(props[json_appearance()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
