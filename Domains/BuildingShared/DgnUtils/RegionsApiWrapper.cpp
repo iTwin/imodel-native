@@ -159,31 +159,29 @@ bool RegionsApiWrapper::GetEndPoints
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                    Nerijus.Jakeliunas                 09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<DPoint3d>* RegionsApiWrapper::GetFacePoints
-( // <= NEEDS delete
- MTGNodeId faceId
+BentleyStatus RegionsApiWrapper::GetFacePoints
+(
+    bvector<DPoint3d>& points,
+    MTGNodeId faceId
 )
     {
-    bvector<DPoint3d>* pEnds = NULL;
-    MTGGraph*          pGraph = jmdlRG_getGraph(m_pRG);
+    points.clear();
+    MTGGraph* pGraph = jmdlRG_getGraph(m_pRG);
     MTGARRAY_FACE_LOOP(currId, pGraph, faceId)
         {
         DPoint3d end[2];
         GetEndPoints(currId, &end[0], &end[1]);
-        end[0].z = 0.0;
-        end[1].z = 0.0;
-
-        if (!pEnds)
+        
+        if (points.empty())
             {
-            pEnds = new bvector<DPoint3d>();
-            pEnds->push_back(end[0]);
+            points.push_back(end[0]);
             }
 
-        pEnds->push_back(end[1]);
+        points.push_back(end[1]);
         }
     MTGARRAY_END_FACE_LOOP(currId, pGraph, faceId)
 
-    return pEnds;
+    return points.empty() ? BentleyStatus::ERROR : BentleyStatus::SUCCESS;
     }
 
 //--------------------------------------------------------------------------------------
