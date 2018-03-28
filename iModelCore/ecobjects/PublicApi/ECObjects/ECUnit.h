@@ -107,7 +107,7 @@ private:
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this Phenomenon is defined in.
 
-    //! The fully qualified name of this UnitFormat in the format {SchemaName}:{PhenomenonName}.
+    //! The fully qualified name of this Phenomenon in the format {SchemaName}:{PhenomenonName}.
     ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
     //! Gets a qualified name of the Phenomenon, prefixed by the schema alias if it does not match the primary schema.
     ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
@@ -244,7 +244,7 @@ friend struct SchemaJsonWriter;
 private:
     ECSchemaCP m_schema;
     bool m_isDisplayLabelExplicitlyDefined;
-    Utf8String m_name;
+    mutable Utf8String m_fullName;
 
     ECObjectsStatus SetSchema(ECSchemaCR schema);
 
@@ -253,8 +253,8 @@ private:
     ECObjectsStatus SetDescription(Utf8StringCR description);
 
     SchemaReadStatus ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR context);
-    SchemaReadStatus _ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context);
-    SchemaReadStatus _ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels);
+    SchemaReadStatus ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context);
+    SchemaReadStatus ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels);
 
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
@@ -262,15 +262,14 @@ private:
     Format(ECSchemaCR schema, Utf8StringCR name);
 
 public:
-    ECOBJECTS_EXPORT ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this UnitFormat is defined in.
+    ECOBJECTS_EXPORT ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Format is defined in.
 
-    Utf8StringCR GetName() const {return m_name;} //!< The name of this Format
     //! The fully qualified name of this Format in the format {SchemaName}:{FormatName}.
-    Utf8StringCR GetFullName() const {return T_Super::GetName();}
+    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
     //! Gets a qualified name of the Format, prefixed by the schema alias if it does not match the primary schema.
     ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
-    //! Returns the localized display label of this UnitFormat. Returns the localized display label if one exists.
+    //! Returns the localized display label of this Format. Returns the localized display label if one exists.
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
     //! Returns true if the display label is explicitly defined.
     bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;}
@@ -279,7 +278,7 @@ public:
 
     //! Returns the description of this Format. Returns the localized description if one exists.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
-    //! Returns the invariant description of this UnitFormat.
+    //! Returns the invariant description of this Format.
     Utf8StringCR GetInvariantDescription() const {return T_Super::GetDescription();}
 
     //! Write the Format as a standalone schema child in the ECSchemaJSON format.

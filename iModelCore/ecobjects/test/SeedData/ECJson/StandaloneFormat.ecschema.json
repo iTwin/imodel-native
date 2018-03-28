@@ -1,0 +1,38 @@
+﻿{
+  "$schema": "https://dev.bentley.com/json_schemas/ec/32/draft-01/schemachild",
+  "schema": "ExampleSchema",
+  "schemaVersion": "03.02.00",
+  "schemaChildType": "Format",
+  "name": "AmerMYFI4",
+  "label": "myfi4",
+  "roundFactor": 0.0,
+  "type": "Fractional",
+  "signOption": "OnlyNegative",
+  "formatTraits": "LeadZeroes|TrailZeroes",
+  "precision": 4,
+  "decSeparator": ".",
+  "thousandSeparator": ",",
+  "uomSeparator": " ",
+  "composite": {
+    "spacer": "-",
+    "inputUnit": "u:M",
+    "units": [
+      {
+        "name": "u:MILE",
+        "label": "mile(s)"
+      },
+      {
+        "name": "u:YRD",
+        "label": "yrd(s)"
+      },
+      {
+        "name": "u:FT",
+        "label": "'"
+      },
+      {
+        "name": "u:IN",
+        "label": "\""
+      }
+    ]
+  }
+}

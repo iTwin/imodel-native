@@ -12,9 +12,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-
 struct FormatTest : ECTestFixture {};
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
@@ -46,7 +44,7 @@ TEST_F(FormatTest, BasicUnitFormatCreation)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman                  02/2018
+// @bsimethod                                 Kyle.Abramowitz                   02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatTest, BasicRoundTripTest)
     {
@@ -118,7 +116,7 @@ TEST_F(FormatTest, BasicRoundTripTest)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman                  02/2018
+// @bsimethod                               Kyle.Abramowitz                     02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     {
@@ -160,4 +158,88 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatTest, MissingOrInvalidType)
+    {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <Format  typeName="AmerMYFI4" displayLabel="myfi4" description="" roundFactor="0.0" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitName" precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                <Composite spacer="-" inputUnit="u:M">
+                  <Unit label="mile(s)">u:MILE</Unit>
+                  <Unit label="yrd(s)">u:YRD</Unit>
+                  <Unit label="'">u:FT</Unit>
+                  <Unit label="&quot;">u:IN</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing presentation type");
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <Format  typeName="AmerMYFI4" displayLabel="myfi4" description="" roundFactor="0.0" type="" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitName" precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                <Composite spacer="-" inputUnit="u:M">
+                  <Unit label="mile(s)">u:MILE</Unit>
+                  <Unit label="yrd(s)">u:YRD</Unit>
+                  <Unit label="'">u:FT</Unit>
+                  <Unit label="&quot;">u:IN</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with empty presentation type");
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <Format typeName="AmerMYFI4" displayLabel="myfi4" description="" roundFactor="0.0" type="bananas" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitName" precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                <Composite spacer="-" inputUnit="u:M">
+                  <Unit label="mile(s)">u:MILE</Unit>
+                  <Unit label="yrd(s)">u:YRD</Unit>
+                  <Unit label="'">u:FT</Unit>
+                  <Unit label="&quot;">u:IN</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid presentation type");
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     02/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatTest, MissingOrInvalidName)
+    {
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <Format displayLabel="myfi4" description="" roundFactor="0.0" type="fractional" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitName" precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                <Composite spacer="-" inputUnit="u:M">
+                  <Unit label="mile(s)">u:MILE</Unit>
+                  <Unit label="yrd(s)">u:YRD</Unit>
+                  <Unit label="'">u:FT</Unit>
+                  <Unit label="&quot;">u:IN</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with missing typeName");
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <Format typeName="" displayLabel="myfi4" description="" roundFactor="0.0" type="fractional" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitName" precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                <Composite spacer="-" inputUnit="u:M">
+                  <Unit label="mile(s)">u:MILE</Unit>
+                  <Unit label="yrd(s)">u:YRD</Unit>
+                  <Unit label="'">u:FT</Unit>
+                  <Unit label="&quot;">u:IN</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with empty typeName");
+    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+            <ECSchemaReference name="Units" version="01.00" alias="u"/>
+            <Format typeName="...." displayLabel="myfi4" description="" roundFactor="0.0" type="fractional" signOption="onlyNegative" formatTraits="trailZeroes|prependUnitName" precision="4" decSeparator="." thousandSeparator="," uomSeparator=" ">
+                <Composite spacer="-" inputUnit="u:M">
+                  <Unit label="mile(s)">u:MILE</Unit>
+                  <Unit label="yrd(s)">u:YRD</Unit>
+                  <Unit label="'">u:FT</Unit>
+                  <Unit label="&quot;">u:IN</Unit>
+                </Composite>
+            </Format>
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid typeName");
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE

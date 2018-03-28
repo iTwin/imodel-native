@@ -22,8 +22,18 @@ ECObjectsStatus Format::SetSchema(ECSchemaCR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-Format::Format(ECSchemaCR schema, Utf8StringCR name) : NamedFormatSpec((schema.GetName() + ":" + name).c_str()), m_schema(&schema), m_name(name) {}
+Format::Format(ECSchemaCR schema, Utf8StringCR name) : NamedFormatSpec(name), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8StringCR Format::GetFullName() const
+    {
+    if (m_fullName.size() == 0)
+        m_fullName = GetSchema().GetName() + ":" + GetName();
+
+    return m_fullName;
+    }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
@@ -81,35 +91,36 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
         spec.SetRoundingFactor(roundFactor);
     else if (BeXmlStatus::BEXML_AttributeNotFound != status)
         {
-        LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_ROUND_FACTOR_ATTRIBUTE);
+        LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_ROUND_FACTOR_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
     Utf8String specType;
     if (BeXmlStatus::BEXML_Success != unitFormatNode.GetAttributeStringValue(specType, FORMAT_TYPE_ATTRIBUTE))
         {
-        LOG.errorv("%s node doesn't contain a valid %s attribute which is required", FORMAT_ELEMENT, FORMAT_TYPE_ATTRIBUTE);
+        LOG.errorv("%s node '%s' doesn't contain a valid %s attribute which is required", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_TYPE_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     Formatting::PresentationType type;
-    if (!Formatting::Utils::NameToPresentationType(specType.c_str(), type))
+    if (!Formatting::Utils::NameToPresentationType(type, specType.c_str()))
         {
-        LOG.errorv("%s node contains an invalid %s %s", FORMAT_ELEMENT, FORMAT_TYPE_ATTRIBUTE, specType.c_str());
+        LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_TYPE_ATTRIBUTE, specType.c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
+    spec.SetPresentationType(type);
 
     if (Formatting::PresentationType::Scientific == type)
         {
         Utf8String scientificType;
         if (BEXML_Success != unitFormatNode.GetAttributeStringValue(scientificType, FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE))
             {
-            LOG.errorv("%s node doesn't contain a valid %s attribute which is required", FORMAT_ELEMENT, FORMAT_TYPE_ATTRIBUTE);
+            LOG.errorv("%s node '%s' doesn't contain a valid %s attribute which is required", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_TYPE_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         Formatting::ScientificType unitsScientificType;
-        if (!Formatting::Utils::NameToScientificType(scientificType, unitsScientificType))
+        if (!Formatting::Utils::NameToScientificType(unitsScientificType, scientificType))
             {
-            LOG.errorv("%s node contains an invalid %s %s", FORMAT_ELEMENT, FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, scientificType.c_str());
+            LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, scientificType.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         spec.SetScientificType(unitsScientificType);
@@ -120,26 +131,24 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
         uint32_t stationSize;
         if (BEXML_Success != unitFormatNode.GetAttributeUInt32Value(stationSize, FORMAT_STATION_SIZE_ATTRIBUTE))
             {
-            LOG.errorv("%s node doesn't contain a valid %s attribute which is required", FORMAT_ELEMENT, FORMAT_STATION_SIZE_ATTRIBUTE);
+            LOG.errorv("%s node '%s' doesn't contain a valid %s attribute which is required", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_STATION_SIZE_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         if (stationSize < 1)
             {
-            LOG.errorv("%s node contains an invalid %s %s", FORMAT_ELEMENT, FORMAT_STATION_SIZE_ATTRIBUTE);
+            LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_STATION_SIZE_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        spec.SetStationSize(stationSize);
+        spec.SetStationOffsetSize(stationSize);
         }
-
-    spec.SetPresentationType(type);
 
     Utf8String showSignName;
     if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(showSignName, FORMAT_SIGN_OPTION_ATTRIBUTE))
         {        
         Formatting::ShowSignOption showSign;
-        if (!Formatting::Utils::NameToSignOption(showSignName.c_str(), showSign))
+        if (!Formatting::Utils::NameToSignOption(showSign, showSignName.c_str()))
             {
-            LOG.errorv("%s node contains an invalid %s %s", FORMAT_ELEMENT, FORMAT_SIGN_OPTION_ATTRIBUTE, specType.c_str());
+            LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_SIGN_OPTION_ATTRIBUTE, specType.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         spec.SetSignOption(showSign);
@@ -150,7 +159,7 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
         { 
         if (!spec.SetFormatTraitsFromString(formatTraits))
             {
-            LOG.errorv("%s node contains an invalid %s %s", FORMAT_ELEMENT, FORMAT_TRAITS_ATTRIBUTE, specType.c_str());
+            LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_TRAITS_ATTRIBUTE, specType.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
@@ -159,31 +168,29 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
     status = unitFormatNode.GetAttributeUInt32Value(precision, FORMAT_PRECISION_ATTRIBUTE);
     if (BeXmlStatus::BEXML_Success != status && BeXmlStatus::BEXML_AttributeNotFound != status)
         { 
-        LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
+        LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-    else 
+ 
+    if(type == Formatting::PresentationType::Fractional)
         {
-        if(type == Formatting::PresentationType::Fractional)
+        Formatting::FractionalPrecision unitsFractionalPrecision;
+        if (!Formatting::Utils::FractionalPrecisionByDenominator(unitsFractionalPrecision, precision))
             {
-            Formatting::FractionalPrecision unitsFractionalPrecision;
-            if (!Formatting::Utils::FractionalPrecisionByDenominator(precision, unitsFractionalPrecision))
-                {
-                LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
-                return SchemaReadStatus::InvalidECSchemaXml;
-                }
-            spec.SetFractionalPrecision(unitsFractionalPrecision);
+            LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
+            return SchemaReadStatus::InvalidECSchemaXml;
             }
-        else
+        spec.SetFractionalPrecision(unitsFractionalPrecision);
+        }
+    else
+        {
+        Formatting::DecimalPrecision unitsDecimalPrecision;
+        if (!Formatting::Utils::DecimalPrecisionByIndex(unitsDecimalPrecision, precision))
             {
-            Formatting::DecimalPrecision unitsDecimalPrecision;
-            if (!Formatting::Utils::DecimalPrecisionByIndex(precision, unitsDecimalPrecision))
-                {
-                LOG.errorv("%s node contains an invalid %s value", FORMAT_ELEMENT, FORMAT_PRECISION_ATTRIBUTE);
-                return SchemaReadStatus::InvalidECSchemaXml;
-                }
-            spec.SetDecimalPrecision(unitsDecimalPrecision);
+            LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
+            return SchemaReadStatus::InvalidECSchemaXml;
             }
+        spec.SetDecimalPrecision(unitsDecimalPrecision);
         }
 
     Utf8String decimalSeparator;
@@ -191,7 +198,7 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
         { 
         if (decimalSeparator.length() > 1 || decimalSeparator.length() == 0)
             {
-            LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE, decimalSeparator.c_str());
+            LOG.errorv("%s node '%s' contains an invalid %s value %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE, decimalSeparator.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         spec.SetDecimalSeparator(decimalSeparator.at(0));
@@ -202,7 +209,7 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
         {
         if (thousandSeparator.length() > 1 || thousandSeparator.length() == 0)
             {
-            LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, thousandSeparator.c_str());
+            LOG.errorv("%s node '%s' contains an invalid %s value %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, thousandSeparator.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         spec.SetThousandSeparator(thousandSeparator.at(0));
@@ -217,22 +224,24 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
         {
         if (statSeparator.length() > 1 || statSeparator.length() == 0)
             {
-            LOG.errorv("%s node contains an invalid %s value %s", FORMAT_ELEMENT, FORMAT_STAT_SEPARATOR_ATTRIBUTE, statSeparator.c_str());
+            LOG.errorv("%s node '%s' contains an invalid %s value %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_STAT_SEPARATOR_ATTRIBUTE, statSeparator.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        spec.SetStatSeparator(statSeparator.at(0));
+        spec.SetStationSeparator(statSeparator.at(0));
         }   
 
     SetNumericSpec(spec);
     auto child = unitFormatNode.GetFirstChild();
-    if (NULL != unitFormatNode.GetFirstChild())
+    if (nullptr != unitFormatNode.GetFirstChild())
         {
         if(0 != BeStringUtilities::StricmpAscii("Composite", child->GetName()))
             {
-            LOG.errorv("%s node contains an invalid child %", FORMAT_ELEMENT, child->GetName());
+            LOG.errorv("%s node '%s' contains an invalid child %", FORMAT_ELEMENT, GetFullName().c_str(), child->GetName());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        _ReadCompositeSpecXml(*child, context);
+        SchemaReadStatus compStatus = ReadCompositeSpecXml(*child, context);
+        if (SchemaReadStatus::Success != compStatus)
+            return compStatus;
         }
 
     return SchemaReadStatus::Success;
@@ -240,21 +249,19 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                   02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus Format::_ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context)
+SchemaReadStatus Format::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context)
     {
-    Utf8String spacer;
-    if (BEXML_Success != compositeNode.GetAttributeStringValue(spacer, COMPOSITE_SPACER_ATTRIBUTE))
-        spacer = " ";
+
     Utf8String inputUnit;
     if (BEXML_Success != compositeNode.GetAttributeStringValue(inputUnit, COMPOSITE_INPUT_UNIT_ATTRIBUTE))
         {
-        LOG.errorv("%s node doesn't contain a valid %s attribute which is required", FORMAT_COMPOSITE_ELEMENT, COMPOSITE_INPUT_UNIT_ATTRIBUTE);
+        LOG.errorv("%s node on %s doesn't contain a valid %s attribute which is required", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), COMPOSITE_INPUT_UNIT_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     ECUnitCP unit = GetSchema().GetUnitsContext().LookupUnit(inputUnit.c_str());
     if (nullptr == unit)
         {
-        LOG.errorv("%s node's %s could not be found", FORMAT_COMPOSITE_ELEMENT, COMPOSITE_INPUT_UNIT_ATTRIBUTE);
+        LOG.errorv("%s node's %s on %s could not be found", FORMAT_COMPOSITE_ELEMENT, COMPOSITE_INPUT_UNIT_ATTRIBUTE, GetFullName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
@@ -263,20 +270,21 @@ SchemaReadStatus Format::_ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchem
     bvector<Nullable<Utf8String>> labels;
     for (BeXmlNodeP childNode = compositeNode.GetFirstChild(); childNode != nullptr; childNode = childNode->GetNextSibling())
         {
-        if (SchemaReadStatus::Success != _ReadCompositeUnitXml(*childNode, context, units, labels))
+        if (SchemaReadStatus::Success != ReadCompositeUnitXml(*childNode, context, units, labels))
             return SchemaReadStatus::InvalidECSchemaXml;
         if (++numChildren > 4)
             {
-            LOG.errorv("%s node has too many children units", FORMAT_COMPOSITE_ELEMENT);
+            LOG.errorv("%s node on %s has too many children units", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
     BeAssert(units.size() == labels.size());
     if (units.size() == 0)
         {
-        LOG.errorv("%s node has no children units", FORMAT_COMPOSITE_ELEMENT);
+        LOG.errorv("%s node on %s has no children units", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
+
     bvector<Units::UnitCP> unitsVector(units.begin(), units.end());
     auto comp = Formatting::CompositeValueSpec(unitsVector);
     if (labels[0].IsValid())
@@ -288,7 +296,11 @@ SchemaReadStatus Format::_ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchem
     if (labels.size() > 3 && labels[3].IsValid())
         comp.SetSubLabel(labels[3].Value());
     comp.SetInputUnit(unit);
-    comp.SetSpacer(spacer.c_str());
+
+    Utf8String spacer;
+    if (BEXML_Success == compositeNode.GetAttributeStringValue(spacer, COMPOSITE_SPACER_ATTRIBUTE))
+        comp.SetSpacer(spacer.c_str());
+
     SetCompositeSpec(comp);
 
     return SchemaReadStatus::Success;
@@ -297,19 +309,19 @@ SchemaReadStatus Format::_ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus Format::_ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels)
+SchemaReadStatus Format::ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels)
     {
     Utf8String unitName;
     if (BEXML_Success != unitNode.GetContent(unitName))
         {
-        LOG.errorv("%s node is missing a unit value", FORMAT_COMPOSITE_UNIT_ELEMENT);
+        LOG.errorv("%s node on %s is missing a unit value", FORMAT_COMPOSITE_UNIT_ELEMENT, GetFullName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
     ECUnitCP unit = GetSchema().GetUnitsContext().LookupUnit(unitName.c_str());
     if (nullptr == unit)
         {
-        LOG.errorv("%s node has invalid unit %s", FORMAT_COMPOSITE_UNIT_ELEMENT, unitName.c_str());
+        LOG.errorv("%s node on %s has invalid unit %s", FORMAT_COMPOSITE_UNIT_ELEMENT, GetFullName().c_str(), unitName.c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     units.push_back(unit);
@@ -361,10 +373,10 @@ SchemaWriteStatus Format::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
             xmlWriter.WriteAttribute(FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, Utf8String(1,nfs->GetThousandSeparator()).c_str());
         if (nfs->HasUomSeparator())
             xmlWriter.WriteAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE, nfs->GetUomSeparator());
-        if (nfs->HasStatSeparator())
-            xmlWriter.WriteAttribute(FORMAT_STAT_SEPARATOR_ATTRIBUTE, Utf8String(1, nfs->GetStatSeparator()).c_str());
+        if (nfs->HasStationSeparator())
+            xmlWriter.WriteAttribute(FORMAT_STAT_SEPARATOR_ATTRIBUTE, Utf8String(1, nfs->GetStationSeparator()).c_str());
         if (Formatting::PresentationType::Station == GetPresentationType())
-            xmlWriter.WriteAttribute(FORMAT_STATION_SIZE_ATTRIBUTE, nfs->GetStationSize());
+            xmlWriter.WriteAttribute(FORMAT_STATION_SIZE_ATTRIBUTE, nfs->GetStationOffsetSize());
         }
     if (HasComposite())
         {
@@ -440,16 +452,15 @@ SchemaWriteStatus Format::WriteJson(Json::Value & outValue, bool standalone, boo
             outValue[FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE] = Utf8String(1,nfs->GetThousandSeparator()).c_str();
         if (nfs->HasUomSeparator())
             outValue[FORMAT_UOM_SEPARATOR_ATTRIBUTE] = nfs->GetUomSeparator();
-        if (nfs->HasStatSeparator())
-            outValue[FORMAT_STAT_SEPARATOR_ATTRIBUTE] = Utf8String(1, nfs->GetStatSeparator()).c_str();
+        if (nfs->HasStationSeparator())
+            outValue[FORMAT_STAT_SEPARATOR_ATTRIBUTE] = Utf8String(1, nfs->GetStationSeparator()).c_str();
         if (Formatting::PresentationType::Station == GetPresentationType())
-            outValue[FORMAT_STATION_SIZE_ATTRIBUTE] = nfs->GetStationSize();
+            outValue[FORMAT_STATION_SIZE_ATTRIBUTE] = nfs->GetStationOffsetSize();
         }
     
     if (HasComposite())
         {
         auto comp = GetCompositeSpec();
-        outValue[FORMAT_JSON_COMPOSITE_ELEMENT] = Json::Value(Json::objectValue);
         auto& compElement = outValue[FORMAT_JSON_COMPOSITE_ELEMENT];
         if (comp->HasSpacer())
             compElement[COMPOSITE_SPACER_ATTRIBUTE] = comp->GetSpacer().c_str();
