@@ -253,6 +253,9 @@ public:
         }
 
     ~RevisionChangesFileWriter() { _Reset(); }
+
+    DbResult CallOutputPage(const void* pData, int nData) {return _OutputPage(pData, nData);}
+
 };
 
 //---------------------------------------------------------------------------------------
@@ -1348,8 +1351,24 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
     DbResult result = writer.Initialize();
     if (BE_SQLITE_OK != result)
         return RevisionStatus::FileWriteError;
+	
+    BlockingQueue pageQueue(5);
 
-    result = writer.FromChangeGroup(dataChangeGroup);
+    DbResult transferResult = BE_SQLITE_OK;
+    ChangeStreamQueueConsumer readFromQueue(pageQueue);
+    std::thread writerThread([&] {transferResult = ChangeStream::TransferBytesBetweenStreams(readFromQueue, writer);});
+    
+    ChangeStreamQueueProducer writeToQueue(pageQueue);
+    result = writeToQueue.FromChangeGroup(dataChangeGroup);
+
+    pageQueue.SetFinished();    // done writing pages to the queue
+	
+    writerThread.join();
+
+    if (BE_SQLITE_OK == result)
+        result = transferResult;
+
+    // result = writer.FromChangeGroup(dataChangeGroup);
     if (BE_SQLITE_OK != result)
         {
         BeAssert(false && "Could not write data changes to the revision file");
