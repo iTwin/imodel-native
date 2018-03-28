@@ -76,8 +76,8 @@ private:
 
     static void Copy(ExpressionR source, ExpressionR target);
 
-    static BentleyStatus ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName);
-    static BentleyStatus HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName);
+    static BentleyStatus ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8CP definition, ExpressionR expression, int startingExponent, std::function<UnitsSymbolCP(Utf8CP, IUnitsContextCP)> getSymbolByName);
+    static BentleyStatus HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression, Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP, IUnitsContextCP)> getSymbolByName);
     static void MergeSymbol(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, UnitsSymbolCP symbol, int symbolExponent, std::function<bool(UnitsSymbolCR, UnitsSymbolCR)> areEqual);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression, Utf8CP sourceDefinition, ExpressionR sourceExpression, int startingExponent);
     static void MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExpression,

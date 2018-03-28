@@ -185,6 +185,8 @@ public:
 struct NumericFormatSpec
 {
 private:
+    bool                m_explicitlyDefinedMinWidth;
+    bool                m_explicitlyDefinedPrefixPadChar;
     bool                m_explicitlyDefinedRoundFactor;
     bool                m_explicitlyDefinedShowSign;
     bool                m_explicitlyDefinedPrecision;
@@ -204,6 +206,7 @@ private:
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
     Utf8String          m_uomSeparator;          // Default separator between the number and UOM.
     Utf8Char            m_statSeparator;         // Default separator between parts of the stopping format.
+    Utf8Char            m_prefixPadChar;         // Character to pad with to reach minimum width
     int                 m_minWidth;              // The minimum width of the field. It will be taken into account
                                                  // only if the overall length (width) of the text representing integer
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
@@ -305,12 +308,17 @@ public:
     Utf8CP GetUomSeparator(Utf8CP def = nullptr) const { return (nullptr == def)?  m_uomSeparator.c_str() : def; }
     bool HasUomSeparator() const {return m_explicitlyDefinedUOMSeparator;}
 
-    void SetMinWidth(int wid) { m_minWidth = wid; }
-    int GetMinWidth() { return m_minWidth; }
+    void SetMinWidth(int wid) {m_explicitlyDefinedMinWidth = true; m_minWidth = wid;}
+    int GetMinWidth() const {return m_minWidth;}
+    bool HasMinWidth() const {return m_explicitlyDefinedMinWidth;}
 
     void SetStationSeparator(Utf8Char sep) {m_explicitlyDefinedStatSeparator = true; m_statSeparator = sep;}
-    Utf8Char GetStationSeparator() const { return m_statSeparator; }
+    Utf8Char GetStationSeparator() const {return m_statSeparator;}
     bool HasStationSeparator() const {return m_explicitlyDefinedStatSeparator;}
+
+    void SetPrefixPadChar(Utf8Char pad) {m_explicitlyDefinedPrefixPadChar = true; m_prefixPadChar = pad;}
+    Utf8Char GetPrefixPadChar() const {return m_prefixPadChar;}
+    bool HasPrefixPadChar() const {return m_explicitlyDefinedPrefixPadChar;}
 
     //======================================
     // Format Traits Bit Setters/Getters
@@ -515,7 +523,7 @@ public:
     BEU::UnitCP GetMinorUnit()  const {return GetUnit(indxMinor);}
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
     BEU::UnitCP GetInputUnit()  const {return m_inputUnit;}
-    void SetInputUnit(BEU::UnitCP unit) {m_explicitlyDefinedInputUnit = true; m_inputUnit = unit;}
+    UNITS_EXPORT void SetInputUnit(BEU::UnitCP unit);
     bool HasInputUnit() const {return m_explicitlyDefinedInputUnit;}
 
     UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);

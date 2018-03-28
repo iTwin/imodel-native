@@ -68,7 +68,7 @@ TEST_F(CompositeValueSpecTest, DefaultConstructor)
     EXPECT_EQ(0, cvs.GetMiddleToMinorRatio());
     EXPECT_EQ(0, cvs.GetMinorToSubRatio());
 
-    EXPECT_STREQ("", cvs.GetSpacer().c_str());
+    EXPECT_STREQ(" ", cvs.GetSpacer().c_str());
     EXPECT_TRUE(cvs.IsIncludeZero());
     }
 

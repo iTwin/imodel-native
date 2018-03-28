@@ -142,7 +142,7 @@ protected:
     UNITS_EXPORT UnitsSymbol(Utf8CP name, Utf8CP definition);
     UNITS_EXPORT virtual ~UnitsSymbol();
 
-    ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const;
+    ExpressionCR Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP, IUnitsContextCP)> getSymbolByName) const;
 
     //! Sets the definition of this UnitSymbol if a definition is not already defined.
     UNITS_EXPORT BentleyStatus SetDefinition(Utf8CP definition);

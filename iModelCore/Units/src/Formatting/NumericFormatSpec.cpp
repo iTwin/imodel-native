@@ -516,14 +516,16 @@ int NumericFormatSpec::FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NumericFormatSpec::NumericFormatSpec()
-    : m_explicitlyDefinedDecimalSeparator(false)
+    : m_explicitlyDefinedPrefixPadChar(false)
+    , m_explicitlyDefinedMinWidth(false)
+    , m_explicitlyDefinedDecimalSeparator(false)
     , m_explicitlyDefinedPrecision(false)
     , m_explicitlyDefinedRoundFactor(false)
     , m_explicitlyDefinedShowSign(false)
     , m_explicitlyDefinedStatSeparator(false)
     , m_explicitlyDefinedThousandsSeparator(false)
     , m_explicitlyDefinedUOMSeparator(false)
-    , m_roundFactor(0.0)
+    , m_roundFactor(FormatConstant::DefaultRoundingFactor())
     , m_presentationType(FormatConstant::DefaultPresentaitonType())
     , m_signOption(FormatConstant::DefaultSignOption())
     , m_formatTraits(FormatConstant::DefaultFormatTraits())
@@ -533,9 +535,10 @@ NumericFormatSpec::NumericFormatSpec()
     , m_thousandsSeparator(FormatConstant::FPV_ThousandSeparator())
     , m_uomSeparator(FormatConstant::BlankString())
     , m_statSeparator(FormatConstant::DefaultStationSeparator())
-    , m_minWidth(0)
+    , m_minWidth(FormatConstant::DefaultMinWidth())
     , m_stationSize(0)
     , m_scientificType(ScientificType::Standard)
+    , m_prefixPadChar(FormatConstant::DefaultPrefixPadChar())
     {
     }
 
@@ -631,9 +634,9 @@ Utf8String NumericFormatSpec::GetFormatTraitsString() const
     if (GetTraitsBit(FormatTraits::FractionDash))
         ret += FormatConstant::FPN_FractionDash() + "|";
     if (GetTraitsBit(FormatTraits::ShowUnitLabel))
-        ret += FormatConstant::FPN_ShowUnitName() + "|";
+        ret += FormatConstant::FPN_ShowUnitLabel() + "|";
     if (GetTraitsBit(FormatTraits::PrependUnitLabel))
-        ret += FormatConstant::FPN_PrependUnitName() + "|";
+        ret += FormatConstant::FPN_PrependUnitLabel() + "|";
     if (GetTraitsBit(FormatTraits::Use1000Separator))
         ret += FormatConstant::FPN_Use1000Separator() + "|";
     if (GetTraitsBit(FormatTraits::ExponenentOnlyNegative))
@@ -659,7 +662,7 @@ bool NumericFormatSpec::SetFormatTraitsFromString(Utf8StringCR input)
         {
         if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_LeadZeroes().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::LeadingZeroes, true);
-        if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_TrailZeroes().c_str()) == 0)
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_TrailZeroes().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::TrailingZeroes, true);
         else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_KeepSingleZero().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::KeepSingleZero, true);
@@ -671,9 +674,9 @@ bool NumericFormatSpec::SetFormatTraitsFromString(Utf8StringCR input)
             this->SetTraitsBit(FormatTraits::ApplyRounding, true);
         else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_FractionDash().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::FractionDash, true);
-        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_ShowUnitName().c_str()) == 0)
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_ShowUnitLabel().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::ShowUnitLabel, true);
-        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_PrependUnitName().c_str()) == 0)
+        else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_PrependUnitLabel().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::PrependUnitLabel, true);
         else if (BeStringUtilities::StricmpAscii(s.c_str(), FormatConstant::FPN_Use1000Separator().c_str()) == 0)
             this->SetTraitsBit(FormatTraits::Use1000Separator, true);

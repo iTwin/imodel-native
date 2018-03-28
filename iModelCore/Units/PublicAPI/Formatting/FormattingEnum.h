@@ -327,6 +327,8 @@ public:
     static Utf8String const DefaultUomSeparator() { return FormatConstant::BlankString(); };
     static Utf8Char const DefaultStationSeparator() {return '+';}
     static int const DefaultMinWidth() { return 0; }
+    static Utf8Char const DefaultPrefixPadChar() {return '\0';}
+    static Utf8String const DefaultSpacer() {return " ";}
 
     static const size_t MinDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision0); }
     static const size_t MaxDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision12); }
@@ -335,7 +337,7 @@ public:
     static Utf8String FPN_NoSign() { return "NoSign"; }
     static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
     static Utf8String FPN_SignAlways() { return "SignAlways"; }
-    static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
+    static Utf8String FPN_NegativeParenths() { return "negativeParentheses"; }
 
     static Utf8String FPN_ScientificStandard() {return "Standard";}
     static Utf8String FPN_ScientificNormal() {return "Normal";}
@@ -359,8 +361,8 @@ public:
     static Utf8String FPN_KeepDecimalPoint() {return "KeepDecimalPoint";}
     static Utf8String FPN_ApplyRounding() {return "ApplyRounding";}
     static Utf8String FPN_FractionDash() {return "FractionDash";}
-    static Utf8String FPN_ShowUnitName() {return "ShowUnitName";}
-    static Utf8String FPN_PrependUnitName() {return "PrependUnitName";}
+    static Utf8String FPN_ShowUnitLabel() {return "ShowUnitLabel";}
+    static Utf8String FPN_PrependUnitLabel() {return "PrependUnitLabel";}
     static Utf8String FPN_Use1000Separator() {return "Use1000Separator";}
     static Utf8String FPN_ExponentOnlyNegative() {return "ExponentOnlyNegative";}
     static const double FPV_MinTreshold() { return 1.0e-14; }  // format parameter default values

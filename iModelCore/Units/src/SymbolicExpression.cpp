@@ -229,12 +229,12 @@ void Expression::MergeExpressions(Utf8CP targetDefinition, ExpressionR targetExp
 //--------------------------------------------------------------------------------------
 // static
 BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, ExpressionR expression, 
-    Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName)
+    Utf8CP definition, TokenCR token, int startingExponent, std::function<UnitsSymbolCP(Utf8CP, IUnitsContextCP)> getSymbolByName)
     {
     LOG.debugv("%s - Handle Token: %s  TokenExp: %d  StartExp: %d", definition, token.GetName(), token.GetExponent(), startingExponent);
     int mergedExponent = token.GetExponent() * startingExponent;
 
-    UnitsSymbolCP symbol = getSymbolByName(token.GetName());
+    UnitsSymbolCP symbol = getSymbolByName(token.GetName(), owner.m_unitsContext);
     if (nullptr == symbol)
         {
         LOG.errorv("Failed to parse %s because the unit %s could not be found", definition, token.GetName());
@@ -269,7 +269,7 @@ BentleyStatus Expression::HandleToken(UnitsSymbolCR owner, int& depth, Expressio
 +---------------+---------------+---------------+---------------+---------------+------*/
 // static
 BentleyStatus Expression::ParseDefinition(UnitsSymbolCR owner, int& depth, Utf8CP definition,
-    ExpressionR expression, int startingExponent, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName)
+    ExpressionR expression, int startingExponent, std::function<UnitsSymbolCP(Utf8CP, IUnitsContextCP)> getSymbolByName)
     {
     ++depth;
     if (Utf8String::IsNullOrEmpty(definition))

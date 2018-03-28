@@ -97,7 +97,7 @@ BentleyStatus UnitsSymbol::SetOffset(double offset)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                      03/2016
 //--------------------------------------------------------------------------------------
-ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP)> getSymbolByName) const
+ExpressionCR UnitsSymbol::Evaluate(int depth, std::function<UnitsSymbolCP(Utf8CP, IUnitsContextCP)> getSymbolByName) const
     {
     if (!m_evaluated)
         {
@@ -187,9 +187,9 @@ ExpressionCR Unit::Evaluate() const
     if (IsInvertedUnit())
         return m_parent->Evaluate();
 
-    return T_Super::Evaluate(0, [=](Utf8CP unitName) 
+    return T_Super::Evaluate(0, [=](Utf8CP unitName, IUnitsContextCP context) 
         {
-        return m_unitsContext->LookupUnit(unitName);
+        return context->LookupUnit(unitName);
         });
     }
 
@@ -517,8 +517,7 @@ Utf8String Phenomenon::GetPhenomenonSignature() const
 //--------------------------------------------------------------------------------------
 ExpressionCR Phenomenon::Evaluate() const
     {
-    IUnitsContextCP context = m_unitsContext;
-    return T_Super::Evaluate(0, [&context](Utf8CP unitName) {return context->LookupPhenomenon(unitName);});
+    return T_Super::Evaluate(0, [](Utf8CP unitName, IUnitsContextCP context) {return context->LookupPhenomenon(unitName);});
     }
 
 //--------------------------------------------------------------------------------------

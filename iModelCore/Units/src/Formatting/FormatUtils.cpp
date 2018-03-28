@@ -453,7 +453,7 @@ Utf8String Utils::GetCurrentThousandSeparator()
 // static
 bool Utils::DecimalPrecisionByIndex(DecimalPrecision& out, const size_t num)
     {
-    if (num < static_cast<uint32_t>(DecimalPrecision::Max))
+    if (num <= static_cast<uint32_t>(DecimalPrecision::Max))
         { 
         out = static_cast<DecimalPrecision>(num);
         return true;
@@ -533,7 +533,7 @@ bool Utils::FractionalPrecisionByDenominator(FractionalPrecision& out, const siz
     {
     switch (prec)
         {
-        case 1: out = FractionalPrecision::Whole; break;
+        case 0: out = FractionalPrecision::Whole; break;
         case 2: out = FractionalPrecision::Half; break;
         case 4: out = FractionalPrecision::Quarter; break;
         case 8: out = FractionalPrecision::Eighth; break;
