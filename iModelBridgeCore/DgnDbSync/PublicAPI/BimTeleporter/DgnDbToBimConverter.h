@@ -17,9 +17,9 @@
 BEGIN_DGNDB_TO_BIM_NAMESPACE
 
 #ifdef __BIM_TELEPORTER_BUILD__
-#define DGNDB_TO_BIM_CONVERTER_EXPORT __declspec(dllexport)
+#define DGNDB_TO_BIM_CONVERTER_EXPORT EXPORT_ATTRIBUTE
 #else
-#define DGNDB_TO_BIM_CONVERTER_EXPORT __declspec(dllimport)
+#define DGNDB_TO_BIM_CONVERTER_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 struct DgnDbToBimConverter
@@ -28,7 +28,7 @@ struct DgnDbToBimConverter
         //! Converts a 1.6 dgndb/imodel to 2.0.  Calling application must have already initialized the host
         //! @param[in] inputPath    Full filename of the input 1.6 file
         //! @param[in] outputPath   Path to the directory where the 2.0 bim will be created
-        __declspec(dllexport) static bool Convert(WCharCP inputPath, WCharCP outputPath);
+        DGNDB_TO_BIM_CONVERTER_EXPORT static bool Convert(WCharCP inputPath, WCharCP outputPath);
     };
 
 END_DGNDB_TO_BIM_NAMESPACE
