@@ -8,6 +8,7 @@
 #define ZLIB_INTERNAL
 
 #define SQLITE_AMALGAMATION 1
+#define SQLITE_HAS_CODEC 1
 
 #include <BeSQLite/ChangeSet.h>
 #include <BeSQLite/BeLzma.h>
@@ -100,7 +101,7 @@ struct CachedPropertyValue
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/12
 //=======================================================================================
-struct CachedProperyMap : bmap<CachedPropertyKey, CachedPropertyValue>
+struct CachedPropertyMap : bmap<CachedPropertyKey, CachedPropertyValue>
     {
     bool Delete(PropertySpecCR spec, uint64_t id, uint64_t subId) {return 0 != erase(CachedPropertyKey(spec, id, subId));}
     CachedPropertyValue* Find(PropertySpecCR spec, uint64_t id, uint64_t subId)
@@ -923,12 +924,12 @@ DbResult DbFile::CreatePropertyTable(Utf8CP tablename, Utf8CP ddl, bool temp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-CachedProperyMap& DbFile::GetCachedPropMap() const
+CachedPropertyMap& DbFile::GetCachedPropMap() const
     {
     if (nullptr == m_cachedProps)
-        m_cachedProps = new CachedProperyMap();
+        m_cachedProps = new CachedPropertyMap();
 
-    CachedProperyMap& map =*((CachedProperyMap*) m_cachedProps);
+    CachedPropertyMap& map =*((CachedPropertyMap*) m_cachedProps);
     return  map;
     }
 
@@ -971,8 +972,8 @@ void DbFile::SaveCachedProperties(bool isCommit)
         return;
         }
 
-    CachedProperyMap& map = GetCachedPropMap();
-    for (CachedProperyMap::iterator it=map.begin(); it!=map.end(); ++it)
+    CachedPropertyMap& map = GetCachedPropMap();
+    for (CachedPropertyMap::iterator it=map.begin(); it!=map.end(); ++it)
         {
         CachedPropertyKey const& key = it->first;
         CachedPropertyValue& val = it->second;
@@ -2272,7 +2273,7 @@ void DbFile::DeleteCachedPropertyMap()
     if (nullptr == m_cachedProps)
         return;
 
-    delete (CachedProperyMap*) m_cachedProps;
+    delete (CachedPropertyMap*) m_cachedProps;
     m_cachedProps = nullptr;
     }
 

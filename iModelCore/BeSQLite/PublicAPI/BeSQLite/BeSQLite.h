@@ -2078,7 +2078,7 @@ protected:
     DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
     DbResult CreatePropertyTable(Utf8CP tablename, Utf8CP ddl, bool temp);
     DbResult SaveCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId, Utf8CP stringData, void const* value, uint32_t size) const;
-    struct CachedProperyMap& GetCachedPropMap() const;
+    struct CachedPropertyMap& GetCachedPropMap() const;
     struct CachedPropertyValue& GetCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId) const;
     struct CachedPropertyValue* FindCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId) const;
     DbResult QueryCachedProperty(Utf8String*, void** value, uint32_t size, PropertySpecCR spec, uint64_t id, uint64_t subId) const;
