@@ -192,5 +192,7 @@
             <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(shlibext)</Assemblies>
         </Bindings>
     </Part>
+	
+    <Part Name="CodeGenerators" BentleyBuildMakeFile="CodeGenerators/CodeGenerators.mke"/>
     
 </BuildContext>

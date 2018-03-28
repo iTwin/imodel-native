@@ -40,7 +40,7 @@ struct RegionsApiWrapper : NonCopyableClass
         BUILDINGSHAREDDGNUTILS_EXPORT bool ImprintCurveVector(CurveVectorCR cv, int32_t userInt32, int64_t userInt64, void* pUserData);
         BUILDINGSHAREDDGNUTILS_EXPORT bool InferTopology(void* pAbortFunc, double vertexVertexTolerance, double vertexEdgeTolerance);
         bool GetEndPoints(MTGNodeId edgeNode, DPoint3d* pStartPoint, DPoint3d* pEndPoint);
-        BUILDINGSHAREDDGNUTILS_EXPORT bvector<DPoint3d>* GetFacePoints(MTGNodeId faceId);
+        BUILDINGSHAREDDGNUTILS_EXPORT BentleyStatus GetFacePoints(bvector<DPoint3d>& points, MTGNodeId faceId);
         BUILDINGSHAREDDGNUTILS_EXPORT bool DoesFaceHaveHole(MTGNodeId faceId);
         BUILDINGSHAREDDGNUTILS_EXPORT void SearchFaceHoleArray(EmbeddedIntArray* pHoleNodeIdArray, MTGNodeId outerFaceNodeId);
         MTGNodeId GetLowestFaceNodeId(MTGNodeId thisNode);

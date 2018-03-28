@@ -15,7 +15,7 @@ USING_NAMESPACE_BUILDING_SHARED
 #define AREA_TOLERANCE 0.004645 //0.05ft.
 #define DISTANCE_TOLERANCE 0.1 // 10cm
 
-struct ConflictSolverTestFixture : public BuildingSharedTestFixtureBase
+struct ConflictSolverTestFixture : public ::testing::Test
     {
     };
 
@@ -367,4 +367,53 @@ TEST_F(ConflictSolverTestFixture, InnerBoundaryOverlapsOtherInnerBoundaryThatHas
 
     ASSERT_TRUE(actualConflict->end() != actualConflictOuter);
     ASSERT_TRUE(actualConflict->end() != actualConflictInner);
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConflictSolverTestFixture, 2OverlappingInnerBoundariesAboveXYPlane)
+    {
+    Transform localToWorld = Transform::From(DPoint3d::From(0,0,3));
+    Transform worldToLocal = localToWorld.ValidatedInverse();
+
+    ConflictSolver sut(localToWorld);
+    sut.AddInnerBoundary(*CurveVector::CreateRectangle(0, 0, 10, 10, 3), BeInt64Id(1));
+    sut.AddInnerBoundary(*CurveVector::CreateRectangle(5, 0, 15, 10, 3), BeInt64Id(2));
+
+    bvector<Conflict> conflicts = sut.Solve();
+    ASSERT_EQ(1, conflicts.size());
+    bset<BeInt64Id> conflictingBoundaries = conflicts.front().m_conflictingBoundaries;
+    ASSERT_EQ(2, conflictingBoundaries.size());
+    ASSERT_TRUE(conflictingBoundaries.end() != std::find(conflictingBoundaries.begin(), conflictingBoundaries.end(), BeInt64Id(1)));
+    ASSERT_TRUE(conflictingBoundaries.end() != std::find(conflictingBoundaries.begin(), conflictingBoundaries.end(), BeInt64Id(2)));
+
+    CurveVectorPtr expectedConflict = CurveVector::CreateRectangle(5, 0, 10, 10, 3);
+    CurveVectorPtr actualConflict = conflicts.front().m_geometry;
+    ASSERT_TRUE(actualConflict.IsValid());
+    ASSERT_TRUE(GeometryUtils::IsSameSingleLoopGeometry(*actualConflict, *expectedConflict));
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConflictSolverTestFixture, InnerBoundaryWithNoArea)
+    {
+    ConflictSolver sut;
+    sut.AddContainerBoundary(*CurveVector::CreateRectangle(0, 0, 10, 10, 0), BeInt64Id(1));
+    sut.AddInnerBoundary(*CurveVector::CreateLinear({{1,1,0},{3,1,0}}, CurveVector::BOUNDARY_TYPE_Outer), BeInt64Id(2));
+
+    ASSERT_TRUE(sut.Solve().empty());
+    }
+
+//--------------------------------------------------------------------------------------
+// @betest                                       Mindaugas Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ConflictSolverTestFixture, InnerBoundaryWithNoArea_OverlapsOtherInnerBoundaryThatHasArea)
+    {
+    ConflictSolver sut;
+    sut.AddInnerBoundary(*CurveVector::CreateRectangle(0, 0, 10, 10, 0), BeInt64Id(1));
+    sut.AddInnerBoundary(*CurveVector::CreateLinear({{-1,1,0},{3,1,0}}, CurveVector::BOUNDARY_TYPE_Outer), BeInt64Id(2));
+
+    ASSERT_TRUE(sut.Solve().empty());
     }
