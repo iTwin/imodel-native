@@ -93,6 +93,7 @@ public:
     DWGDB_EXPORT size_t             GetISOLINES () const;
     DWGDB_EXPORT double             GetTEXTSIZE () const;
     DWGDB_EXPORT DwgDbObjectId      GetTEXTSTYLE () const;
+    DWGDB_EXPORT bool               GetVISRETAIN () const;
     DWGDB_EXPORT bool               GetLineweightDisplay () const;
     DWGDB_EXPORT DwgDbObjectId      GetActiveUserViewportId ();         // active viewport entity in active layout
     DWGDB_EXPORT DwgDbObjectId      GetActiveModelspaceViewportId ();   // active viewport table record in modelspace

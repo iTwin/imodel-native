@@ -60,5 +60,7 @@
     <category name="RenderThread">
         <priority value="error"/>
     </category>
-
+    <category name="DwgImporter">
+        <priority value="warn"/>
+    </category>
 </log4j:configuration>

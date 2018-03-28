@@ -1068,7 +1068,8 @@ protected:
     //! @{
     // The layer section contains all layers of a DWG file
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportLayerSection ();
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportLayer (DwgDbLayerTableRecordCR layer);
+    DGNDBSYNC_EXPORT virtual size_t         _ImportLayersByFile (DwgDbDatabaseP dwg);
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportLayer (DwgDbLayerTableRecordCR layer, DwgStringP overrideName = nullptr);
     DGNDBSYNC_EXPORT virtual BentleyStatus  _OnUpdateLayer (DgnCategoryId&, DwgDbLayerTableRecordCR);
     BentleyStatus                           GetLayerAppearance (DgnSubCategory::Appearance& appearance, DwgDbLayerTableRecordCR layer, DwgDbObjectIdCP viewportId = nullptr);
 

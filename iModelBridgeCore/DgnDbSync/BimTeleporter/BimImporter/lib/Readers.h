@@ -347,6 +347,7 @@ struct SchemaReader : Reader
     {
     private:
         BentleyStatus ImportSchema(ECN::ECSchemaP schema);
+        BentleyStatus ProcessRelationshipClasses(ECN::ECSchemaP schema);
 
     protected:
         BentleyStatus _Read(Json::Value& object) override;

@@ -1462,6 +1462,45 @@ BentleyStatus TextureReader::_Read(Json::Value& texture)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SchemaReader::ProcessRelationshipClasses(ECN::ECSchemaP schema)
+    {
+    ECN::ECClassCP elementClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    ECN::ECClassCP aspectClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
+    ECN::ECRelationshipClassCP elementToMulti = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects)->GetRelationshipClassCP();
+    ECN::ECRelationshipClassCP elementToElement = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements)->GetRelationshipClassCP();
+    // need to confirm that all relationship classes have a base class.  In 0601 we were able to get away with not having a base class.  That doesn't work here
+    for (ECN::ECClassCP ecClass : schema->GetClasses())
+        {
+        ECN::ECRelationshipClassP relClass = const_cast<ECN::ECRelationshipClassP>(ecClass->GetRelationshipClassCP());
+        if (nullptr == relClass)
+            continue;
+        if (relClass->GetBaseClasses().size() != 0)
+            continue;
+        ECN::ECClassCP source = relClass->GetSource().GetConstraintClasses()[0];
+        ECN::ECClassCP target = relClass->GetTarget().GetConstraintClasses()[0];
+        ECN::ECRelationshipClassCP base = nullptr;
+        if (source->Is(elementClass))
+            {
+            if (target->Is(aspectClass))
+                base = elementToMulti;
+            else if (target->Is(elementClass))
+                base = elementToElement;
+            }
+        if (nullptr == base)
+            {
+            return ERROR;
+            }
+        relClass->GetSource().SetMultiplicity(base->GetSource().GetMultiplicity());
+        relClass->SetStrength(base->GetStrength());
+        relClass->SetStrengthDirection(base->GetStrengthDirection());
+        relClass->AddBaseClass(*base);
+        }
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
@@ -1479,6 +1518,30 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             continue;
 
         Utf8CP schemaName = iter.memberName();
+        BeFileName bimFileName = GetDgnDb()->GetFileName();
+#define EXPORT_0601JSON 1
+#ifdef EXPORT_0601JSON
+        BeFileName jsonFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_json").c_str());
+        if (!jsonFolder.DoesPathExist())
+            BeFileName::CreateNewDirectory(jsonFolder.GetName());
+
+        WString jsonFile;
+        jsonFile.AssignUtf8(schemaName);
+        jsonFile.append(L".json");
+
+        BeFileName jsonPath(jsonFolder);
+        jsonPath.AppendToPath(jsonFile.c_str());
+
+        if (jsonPath.DoesPathExist())
+            jsonPath.BeDeleteFile();
+
+        BeFile file;
+        if (file.Create(jsonPath, true) == BeFileStatus::Success)
+            {
+            file.Write(nullptr, schema.asString().c_str(), (uint32_t) strlen(schema.asString().c_str()));
+            file.Close();
+            }
+#endif
 
         BimImportSchemaLocater locater;
         SchemaKey key;
@@ -1490,6 +1553,26 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             GetLogger().fatalv("Failed to deserialize schema %s.  Unable to continue.", schemaName);
             return ERROR;
             }
+
+#define EXPORT_0601ECSCHEMAS 1
+#ifdef EXPORT_0601ECSCHEMAS
+        BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_0601").c_str());
+        if (!outFolder.DoesPathExist())
+            BeFileName::CreateNewDirectory(outFolder.GetName());
+
+        WString fileName;
+        fileName.AssignUtf8(ecSchema->GetFullSchemaName().c_str());
+        fileName.append(L".ecschema.xml");
+
+        BeFileName outPath(outFolder);
+        outPath.AppendToPath(fileName.c_str());
+
+        if (outPath.DoesPathExist())
+            outPath.BeDeleteFile();
+
+        ecSchema->WriteToXmlFile(outPath.GetName());
+#endif
+
         // We need to deserialize the known schemas so that they can be used as references, but we don't want to convert or import them.
         bvector<Utf8String> knownSchemas = {"Bentley_Standard_CustomAttributes", "ECDbMap", "ECDbFileInfo", "ECDbSystem", "ECDbMeta", "ECDb_FileInfo", "ECDb_System", "EditorCustomAttributes", "Generic", "MetaSchema", "dgn", "Unit_Attributes"};
         if (knownSchemas.end() != std::find(knownSchemas.begin(), knownSchemas.end(), ecSchema->GetName()))
@@ -1520,25 +1603,29 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
                 flattener.ProcessSP3DSchema(ecSchema.get(), baseInterface, baseObject);
                 }
             }
+        else
+            {
+            ProcessRelationshipClasses(ecSchema.get());
+            }
+
         ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest);
 #define EXPORT_FLATTENEDECSCHEMAS 1
 #ifdef EXPORT_FLATTENEDECSCHEMAS
-        BeFileName bimFileName = GetDgnDb()->GetFileName();
-        BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_flat").c_str());
-        if (!outFolder.DoesPathExist())
-            BeFileName::CreateNewDirectory(outFolder.GetName());
+        BeFileName flatFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_flat").c_str());
+        if (!flatFolder.DoesPathExist())
+            BeFileName::CreateNewDirectory(flatFolder.GetName());
 
-        WString fileName;
-        fileName.AssignUtf8(toImport->GetFullSchemaName().c_str());
-        fileName.append(L".ecschema.xml");
+        WString flatFileName;
+        flatFileName.AssignUtf8(toImport->GetFullSchemaName().c_str());
+        flatFileName.append(L".ecschema.xml");
 
-        BeFileName outPath(outFolder);
-        outPath.AppendToPath(fileName.c_str());
+        BeFileName flatPath(flatFolder);
+        flatPath.AppendToPath(flatFileName.c_str());
 
-        if (outPath.DoesPathExist())
-            outPath.BeDeleteFile();
+        if (flatPath.DoesPathExist())
+            flatPath.BeDeleteFile();
 
-        toImport->WriteToXmlFile(outPath.GetName());
+        toImport->WriteToXmlFile(flatPath.GetName());
 #endif
 
         if (SUCCESS != ImportSchema(toImport))
