@@ -408,8 +408,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
-        virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
-        virtual int                    _SynchWithSources() override;           
+        virtual bool                   _LastSynchronizationCheck(time_t& last) const override;                
 
 /*__PUBLISH_SECTION_START__*/
 
@@ -580,8 +579,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) override;
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override; 
-        virtual bool                   _LastSynchronizationCheck(time_t& last) const override;        
-        virtual int                    _SynchWithSources() override;
+        virtual bool                   _LastSynchronizationCheck(time_t& last) const override;                
 
         virtual void                               _GetExtraFileNames(bvector<BeFileName>& extraFileNames) const override { assert(!"Should not be called"); }
         

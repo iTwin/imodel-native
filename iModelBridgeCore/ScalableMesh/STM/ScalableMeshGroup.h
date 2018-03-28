@@ -261,8 +261,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override { return false; }
-        virtual bool                   _LastSynchronizationCheck(time_t& last) const override { return false; }
-        virtual int                    _SynchWithSources() override { return ERROR; }
+        virtual bool                   _LastSynchronizationCheck(time_t& last) const override { return false; }        
 
         virtual  IScalableMeshPtr             _GetGroup() override { return nullptr; }
 

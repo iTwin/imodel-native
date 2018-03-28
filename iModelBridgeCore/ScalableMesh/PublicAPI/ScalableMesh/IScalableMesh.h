@@ -210,9 +210,7 @@ struct IScalableMesh abstract:  IRefCounted
         //Synchonization with data sources functions
         virtual bool                                _InSynchWithSources() const = 0; 
 
-        virtual bool                                _LastSynchronizationCheck(time_t& last) const = 0;        
-
-        virtual int                                 _SynchWithSources() = 0;  
+        virtual bool                                _LastSynchronizationCheck(time_t& last) const = 0;                
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
@@ -420,9 +418,7 @@ struct IScalableMesh abstract:  IRefCounted
         // Deprecated. Remove.
         bool                                     InSynchWithDataSources() const { return InSynchWithSources(); }
 
-        BENTLEY_SM_EXPORT bool                   LastSynchronizationCheck(time_t& last) const;        
-
-        BENTLEY_SM_EXPORT int                    SynchWithSources(); 
+        BENTLEY_SM_EXPORT bool                   LastSynchronizationCheck(time_t& last) const;                
 
         BENTLEY_SM_EXPORT IScalableMeshNodePtr  GetRootNode();
 

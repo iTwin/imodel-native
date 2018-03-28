@@ -323,11 +323,6 @@ bool IScalableMesh::LastSynchronizationCheck(time_t& lastCheckTime) const
     return _LastSynchronizationCheck(lastCheckTime);
     }
 
-int IScalableMesh::SynchWithSources()
-    {
-    return _SynchWithSources();
-    } 
-
 int IScalableMesh::GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const
     {
     return _GetRangeInSpecificGCS(lowPt, highPt, targetGCS);
@@ -3095,15 +3090,6 @@ template <class POINT> bool ScalableMesh<POINT>::_LastSynchronizationCheck(time_
     }
 
 /*----------------------------------------------------------------------------+
-|ScalableMesh::_SynchWithSources
-+----------------------------------------------------------------------------*/
-template <class POINT> int ScalableMesh<POINT>::_SynchWithSources()
-    {
-    assert(!"Not done yet");
-    return false;
-    }
-
-/*----------------------------------------------------------------------------+
 |ScalableMesh::_IsProgressive
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_IsProgressive() const
@@ -4001,12 +3987,6 @@ template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_
     {
     assert(!"Should not be called");
     return false;       
-    }
-
-template <class POINT> int ScalableMeshSingleResolutionPointIndexView<POINT>::_SynchWithSources()
-    {
-    assert(!"Should not be called");
-    return -1;       
     }
 
 template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_IsInsertingClips()

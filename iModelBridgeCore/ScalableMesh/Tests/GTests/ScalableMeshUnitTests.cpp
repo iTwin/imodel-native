@@ -1278,8 +1278,7 @@ TEST_P(ScalableMeshGenerationTestWithParams, FromSourceCreation)
     IScalableMeshPtr smPtr(IScalableMesh::GetFor(newSmFileName.c_str(), false, true, status));    
 
     EXPECT_EQ(status == SUCCESS && smPtr.IsValid(), true);
-
-    //smPtr->SynchWithSources();
+    
     //EXPECT_EQ(smPtr->InSynchWithSources(), true);
     //EXPECT_EQ(smPtr->InSynchWithDataSources(), true);
 
