@@ -49,7 +49,7 @@
 
     <Part Name="BuildingDgnUtils" BentleyBuildMakeFile="DgnUtils/BuildingDgnUtils.mke">
         <SubPart PartName="BuildingSharedApi" />
-        <SubPart PartName="PublishedApi" Repository="DgnClientFx" PartFile="DgnClientFx" />
+        <SubPart PartName="DgnClientFxPublicApi" Repository="DgnClientFx" PartFile="DgnClientFx" />
         <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx" />
         <SubPart PartName="RoadRailPhysical"   PartFile="RoadRailPhysical"  Repository="DgnDomains-RoadRailPhysical" />
         <SubPart PartName="BuildingUnits" />
@@ -192,5 +192,7 @@
             <Assemblies>Delivery/$(shlibprefix)GeometryManipulationStrategies$(shlibext)</Assemblies>
         </Bindings>
     </Part>
+	
+    <Part Name="CodeGenerators" BentleyBuildMakeFile="CodeGenerators/CodeGenerators.mke"/>
     
 </BuildContext>
