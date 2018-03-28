@@ -2,7 +2,7 @@
 #
 #     $Source: iModelBridge/Fwk/bas/Bootstrapper/iModelBridgeFwkICSPluginConfigBootStrapper.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 appName=$(_MakeFileName)
@@ -47,7 +47,6 @@ ASSEMBLY_DEFAULT_NAMESPACE = BentleyB0200.Dgn.DgnV8Mirror.ICS.BootStrapper
 ASSEMBLY_NAME                   = $(appName)
 ASSEMBLY_TITLE                  = $(appName)
 ASSEMBLY_DESCRIPTION            = DgnV8 to iModelHub Plugin
-ASSEMBLY_STRONGNAME             = 1
 ASSEMBLY_VERSION                = $(REL_V).$(MAJ_V).$(MIN_V).$(SUBMIN_V)
 ASSEMBLY_FILE_VERSION           = $(ASSEMBLY_VERSION)
 ASSEMBLY_PRODUCT_NAME           = $(productName)
