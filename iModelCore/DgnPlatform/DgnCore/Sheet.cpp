@@ -1522,17 +1522,22 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
     Transform location = Transform::From(worldToAttachment);
     SetLocation(location);
 
-    DPoint3d viewOrg = view.GetViewDefinition().GetOrigin();
-    viewOrg.z = 0.0;
-    DPoint3d viewOrgToAttachOrg;
-    viewOrgToAttachOrg.DifferenceOf(worldToAttachment, viewOrg);
-    m_drawingToAttachment = viewRoot.GetLocation();
-    DPoint3d translation;
-    m_drawingToAttachment.GetTranslation(translation);
-    translation.SumOf(translation, viewOrgToAttachOrg);
-    m_drawingToAttachment.SetTranslation(translation);
+    m_drawingToAttachment = Transform::FromIdentity();
     m_drawingToAttachment.ScaleMatrixColumns(scaleOnSheet, scaleOnSheet, 1.0);
-
+    DPoint3d viewOrg = view.GetViewDefinition().GetOrigin(),
+             viewExt = view.GetViewDefinition().GetExtents();
+    viewExt.SumOf(viewOrg, viewExt);
+    DPoint3d viewCenter = DPoint3d::FromInterpolate(viewOrg, 0.5, viewExt);
+    DPoint3d translation;
+    viewRoot.GetLocation().GetTranslation(translation);
+    viewCenter.DifferenceOf(viewCenter, translation);
+    m_drawingToAttachment.Multiply(viewCenter);
+    DRange3d attachRange = attach.GetPlacement().CalculateRange();
+    DPoint3d attachCenter = DPoint3d::FromInterpolate(attachRange.low, 0.5, attachRange.high);
+    translation.SumOf(translation, viewCenter);
+    translation.SumOf(viewCenter, attachCenter);
+    m_drawingToAttachment.SetTranslation(translation);
+    
     SetExpirationTime(BeDuration::Seconds(15));
 
     m_clip = attach.GetOrCreateClip();
