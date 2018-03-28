@@ -688,8 +688,8 @@ public:
     void SetId(PropertyCategoryId id) {BeAssert(!m_propertyCategoryId.IsValid()); m_propertyCategoryId = id;}
     bool HasId() const {return m_propertyCategoryId.IsValid();}
 
-    //! Write the PropertyCategory as a standalone schema child in the ECSchemaJSON format.
-    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! Write the PropertyCategory as a standalone schema item in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema item Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const {return WriteJson(outValue, true, includeSchemaVersion);}
 };
@@ -1712,7 +1712,7 @@ public:
 
     ECOBJECTS_EXPORT bool Validate() const;
 
-    //! @param[out] outValue                    Json object containing the schema child Json if successfully written.
+    //! @param[out] outValue                    Json object containing the schema item Json if successfully written.
     //! @param[in]  includeSchemaVersion        If true the schema version will be included in the Json object.
     //! @param[in]  includeInheritedProperties  If true inherited properties will be serialized along with noninherited properties.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false, bool includeInheritedProperties = false) {return _WriteJson(outValue, true, includeSchemaVersion, includeInheritedProperties);}
@@ -1870,8 +1870,8 @@ public:
     void SetId(ECEnumerationId id) {BeAssert(!m_ecEnumerationId.IsValid()); m_ecEnumerationId = id;}
     bool HasId() const {return m_ecEnumerationId.IsValid();}
 
-    //! Write the Enumeration as a standalone schema child in the ECSchemaJSON format.
-    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! Write the Enumeration as a standalone schema item in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema item Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const {return WriteJson(outValue, true, includeSchemaVersion);};
 };
@@ -2067,8 +2067,8 @@ public:
     ECOBJECTS_EXPORT  BEU::T_UnitSynonymVector* GetSynonymVector() const;
     ECOBJECTS_EXPORT  size_t GetSynonymCount() const;
     ECOBJECTS_EXPORT  BEU::PhenomenonCP GetPhenomenon() const;
-    //! Write the KindOfQuantity as a standalone schema child in the ECSchemaJSON format.
-    //! @param[out] outValue                Json object containing the schema child Json if successfully written.
+    //! Write the KindOfQuantity as a standalone schema item in the ECSchemaJSON format.
+    //! @param[out] outValue                Json object containing the schema item Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
 
