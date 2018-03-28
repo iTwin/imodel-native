@@ -310,8 +310,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
 
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override;        
-        virtual ScalableMeshState             _GetState() const override;     
-        virtual bool                   _IsProgressive() const override;    
+        virtual ScalableMeshState             _GetState() const override;             
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
@@ -524,8 +523,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
 
         const GeoCoords::GCS&          _GetGCS() const override;
         StatusInt                      _SetGCS(const GeoCoords::GCS& sourceGCS) override;
-        virtual ScalableMeshState             _GetState() const override;   
-        virtual bool                   _IsProgressive() const override;       
+        virtual ScalableMeshState             _GetState() const override;           
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
 

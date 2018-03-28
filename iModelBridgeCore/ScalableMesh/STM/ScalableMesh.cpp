@@ -298,11 +298,6 @@ ScalableMeshState IScalableMesh::GetState() const
     return _GetState();
     }
 
-bool IScalableMesh::IsProgressive() const
-    {
-    return _IsProgressive();
-    }
-
 bool IScalableMesh::IsReadOnly() const
     {
     return _IsReadOnly();
@@ -3090,15 +3085,6 @@ template <class POINT> bool ScalableMesh<POINT>::_LastSynchronizationCheck(time_
     }
 
 /*----------------------------------------------------------------------------+
-|ScalableMesh::_IsProgressive
-+----------------------------------------------------------------------------*/
-template <class POINT> bool ScalableMesh<POINT>::_IsProgressive() const
-    {
-    assert(!"Not done yet");
-    return true;
-    } 
-
-/*----------------------------------------------------------------------------+
 |ScalableMesh::_IsReadOnly
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_IsReadOnly() const
@@ -3894,14 +3880,6 @@ template <class POINT> StatusInt ScalableMeshSingleResolutionPointIndexView<POIN
 
     return -1;   
     }
-
-template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_IsProgressive() const
-    {
-    assert(0);
-    return false;
-    }
-
-
 
 template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain)
     {

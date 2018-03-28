@@ -200,9 +200,7 @@ struct IScalableMesh abstract:  IRefCounted
         virtual StatusInt                           _SetGCS(const GeoCoords::GCS& sourceGCS) = 0;
 
         virtual ScalableMeshState                          _GetState() const = 0;
-                       
-        virtual bool                                _IsProgressive() const = 0;
-
+                               
         virtual bool                                _IsReadOnly() const = 0;
 
         virtual bool                                _IsShareable() const = 0;
@@ -405,9 +403,7 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   GetExtraFileNames(bvector<BeFileName>& extraFileNames) const;
 
         BENTLEY_SM_EXPORT ScalableMeshState      GetState() const;
-
-        BENTLEY_SM_EXPORT bool                   IsProgressive() const;
-
+        
         BENTLEY_SM_EXPORT bool                   IsReadOnly() const;
 
         BENTLEY_SM_EXPORT bool                   IsShareable() const;                        

@@ -175,8 +175,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override { return ERROR; }
-        virtual ScalableMeshState             _GetState() const override;
-        virtual bool                   _IsProgressive() const override { return false; }
+        virtual ScalableMeshState             _GetState() const override;        
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
