@@ -462,7 +462,6 @@ private:
 
     size_t m_ratio[indxSub];
     bool m_includeZero; // Not currently used in the formatting code.
-    bool m_explicitlyDefinedInputUnit;
     bool m_explicitlyDefinedSpacer;
     bool m_explicitlyDefinedMajorLabel;
     bool m_explicitlyDefinedMiddleLabel;
@@ -524,7 +523,7 @@ public:
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
     BEU::UnitCP GetInputUnit()  const {return m_inputUnit;}
     UNITS_EXPORT void SetInputUnit(BEU::UnitCP unit);
-    bool HasInputUnit() const {return m_explicitlyDefinedInputUnit;}
+    bool HasInputUnit() const {return nullptr != m_inputUnit;}
 
     UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
     Utf8String GetMajorLabel()  const {return GetEffectiveLabel(indxMajor);}

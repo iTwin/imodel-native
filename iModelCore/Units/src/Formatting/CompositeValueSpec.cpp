@@ -21,7 +21,6 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //---------------------------------------------------------------------------------------
 CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit)
     : m_includeZero(true)
-    , m_explicitlyDefinedInputUnit(false)
     , m_explicitlyDefinedMajorLabel(false)
     , m_explicitlyDefinedMiddleLabel(false)
     , m_explicitlyDefinedMinorLabel(false)
@@ -29,6 +28,7 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middle
     , m_explicitlyDefinedSubLabel(false)
     , m_spacer(FormatConstant::DefaultSpacer())
     , m_ratio {0}
+    , m_inputUnit(nullptr)
     {
     size_t unitCount = (nullptr != majorUnit)
         + (nullptr != middleUnit)
@@ -91,7 +91,6 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middle
 //---------------+---------------+---------------+---------------+---------------+-------
 CompositeValueSpec::CompositeValueSpec(bvector<BEU::UnitCP> const& units)
     : m_includeZero(true)
-    , m_explicitlyDefinedInputUnit(false)
     , m_explicitlyDefinedMajorLabel(false)
     , m_explicitlyDefinedMiddleLabel(false)
     , m_explicitlyDefinedMinorLabel(false)
@@ -99,6 +98,7 @@ CompositeValueSpec::CompositeValueSpec(bvector<BEU::UnitCP> const& units)
     , m_explicitlyDefinedSubLabel(false)
     , m_spacer(FormatConstant::DefaultSpacer())
     , m_ratio {0}
+    , m_inputUnit(nullptr)
     {
     m_proxys.resize(units.size());
 
@@ -120,7 +120,6 @@ CompositeValueSpec::CompositeValueSpec(bvector<BEU::UnitCP> const& units)
 //---------------+---------------+---------------+---------------+---------------+-------
 CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     : m_includeZero(other.m_includeZero)
-    , m_explicitlyDefinedInputUnit(other.m_explicitlyDefinedInputUnit)
     , m_explicitlyDefinedMajorLabel(other.m_explicitlyDefinedMajorLabel)
     , m_explicitlyDefinedMiddleLabel(other.m_explicitlyDefinedMiddleLabel)
     , m_explicitlyDefinedMinorLabel(other.m_explicitlyDefinedMinorLabel)
@@ -192,11 +191,9 @@ void CompositeValueSpec::CalculateUnitRatios()
 //---------------------------------------------------------------------------------------
 void CompositeValueSpec::SetInputUnit(BEU::UnitCP unit)
     {
-
     if(!BEU::Unit::AreCompatible(unit, GetMajorUnit()))
         m_problem.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
-    
-    m_explicitlyDefinedInputUnit = true; 
+
     m_inputUnit = unit;
     }
 //---------------------------------------------------------------------------------------
