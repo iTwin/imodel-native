@@ -8,9 +8,12 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
+
 #include "RoadRailAlignment.h"
 #include "AlignmentCategory.h"
 #include "AlignmentModel.h"
+
+/** @cond BENTLEY_SDK_RoadRailAlignment */
 
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
@@ -200,3 +203,5 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_VerticalAlignment, VerticalAlignment, 
 }; // VerticalAlignmentHandler
 
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
+
+/** @endcond */
