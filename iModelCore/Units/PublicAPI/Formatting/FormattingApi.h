@@ -61,6 +61,7 @@ BE_JSON_NAME(fractPrec)
 BE_JSON_NAME(barType)
 BE_JSON_NAME(decimalSeparator)
 BE_JSON_NAME(thousandSeparator)
+BE_JSON_NAME(dateOrder)
 BE_JSON_NAME(uomSeparator)
 BE_JSON_NAME(statSeparator)
 BE_JSON_NAME(minWidth)
@@ -261,12 +262,25 @@ public:
 struct LocaleProperties
 {
 private:
-	Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
-	Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+
+	Utf8Char              m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
+	Utf8Char              m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+	FormatLocaleDateOrder m_dateOrder;
+	Utf8Char              m_timeSeparator;
+	Utf8Char              m_dateSeparator;
+	Utf8String m_shortDay[FormatDayIndex::indxMaxDay];
+	Utf8String m_fullDay[FormatDayIndex::indxMaxDay];
+	Utf8String m_shortMonth[FormatMonthIndex::indxMaxMonth];
+	Utf8String m_fullMonth[FormatMonthIndex::indxMaxMonth];
+
+	UNITS_EXPORT void Init(Utf8Char decimal, Utf8Char thousand, FormatLocaleDateOrder ord = FormatLocaleDateOrder::mdy);
+
 public:
 
+	//static_cast<Test>(i)
+
 	UNITS_EXPORT LocaleProperties(Json::Value jval);
-	UNITS_EXPORT LocaleProperties(Utf8Char decimal, Utf8Char thousand) : m_decimalSeparator(decimal), m_thousandsSeparator(thousand) {}
+	UNITS_EXPORT LocaleProperties(Utf8Char decimal, Utf8Char thousand, FormatLocaleDateOrder ord = FormatLocaleDateOrder::mdy) { Init(decimal, thousand, ord); }
 	UNITS_EXPORT LocaleProperties(Utf8CP localeName = nullptr);
 	UNITS_EXPORT static LocaleProperties DefaultAmerican();
 	UNITS_EXPORT static LocaleProperties DefaultEuropean(bool useBlank = false);
@@ -275,6 +289,10 @@ public:
 	Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
 	Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
 	Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
+	UNITS_EXPORT void SetDayShort(FormatDayIndex indx, Utf8CP name);
+	UNITS_EXPORT void SetDayFull(FormatDayIndex indx, Utf8CP name);
+	UNITS_EXPORT void SetMonthShort(FormatDayIndex indx, Utf8CP name);
+	UNITS_EXPORT void SetMonthFull(FormatDayIndex indx, Utf8CP name);
 	UNITS_EXPORT Json::Value ToJson();
 	UNITS_EXPORT Utf8String ToText();
 };

@@ -1353,15 +1353,21 @@ Utf8String FormattingTestFixture::SetLocale(Utf8CP name)
 	Utf8String locName;
 	//const std::locale& loc = *(locale::global); // (name);
 	std::locale currLoc("");
-
 	std::locale loc(name);
 	const std::numpunct<char>& myfacet = std::use_facet < numpunct<char> >(loc);
+
+	//const std::time_get<char>&timfacet = std::use_facet < time_get<char> >(loc);
+
+	std::time_get<char>::dateorder ord;
+	ord = std::use_facet<std::time_get<char> >(loc).date_order();
+
 	Utf8Char buf[3];
 	buf[0] = myfacet.decimal_point();
 	buf[1] = myfacet.thousands_sep();
 	buf[2] = 0;
+	int ordN = (int)ord;
 	locName.assign(buf);
-	LOG.infov("Current system locale decpnt= %s name %s   switched from %s", locName.c_str(), loc.name().c_str(), currLoc.name().c_str());
+	LOG.infov("Current system locale decpnt= %s name %s  ord %d  switched from %s", locName.c_str(), loc.name().c_str(), ordN, currLoc.name().c_str());
 
 	//locName.assign(setlocale(LC_ALL, ""));
 	//setlocale(LC_ALL, name);
@@ -1370,6 +1376,38 @@ Utf8String FormattingTestFixture::SetLocale(Utf8CP name)
 	                                  Utils::GetCurrentGrouping().c_str());*/
 	return locName;
 }
+void FormattingTestFixture::TestTimeFormat(int year, int month, int day, int hour, int min, int sec)
+{
+	struct tm  myT;
+	memset(&myT, 0, sizeof(myT));
+
+	myT.tm_sec = sec;
+	myT.tm_min = min;
+	myT.tm_hour = hour;
+	myT.tm_mday = day;
+	myT.tm_mon = month-1;
+	myT.tm_year = year-1900;
+	//	int tm_wday;    /* days since Sunday - [0,6] */
+	//	int tm_yday;    /* days since January 1 - [0,365] */
+	myT.tm_isdst = 1;
+	//};
+	time_t tim = mktime(&myT);
+time_t time = (time_t)(BeTimeUtilities::GetCurrentTimeAsUnixMillis() / 1000.0); time;  // Convert in second   
+Utf8String ts = ctime(&time);
+Utf8String ts1 = ctime(&tim);
+ts.Trim();
+LOG.infov("Current time %s", ts.c_str());
+LOG.infov("induced time %d/%d/%d %d:%d:%d  =>  %s", month, day, year, hour, min, sec, ts1.c_str());
+Utf8Char buf[128];
+strftime(buf, 126, "%c   %Ec", &myT);
+LOG.infov("Locale Induced C-time %s", buf);
+strftime(buf, 126, "%x   %Ex", &myT);
+LOG.infov("Locale Induced X-time %s", buf);
+strftime(buf, 126, "%D   %F", &myT);
+LOG.infov("Locale Induced D,F-time %s", buf);
+
+}
+
 
 //void FormattingTestFixture::TestTime(Utf8CP localeName, Utf8CP label, Utf8CP pattern)
 //{

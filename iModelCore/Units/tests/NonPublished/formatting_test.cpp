@@ -66,6 +66,8 @@ TEST(FormattingTest, Preliminary)
     FormattingTestFixture::SetUpL10N();
     LOG.infov("================  Formatting Log ===========================");
 
+	FormattingTestFixture::TestTimeFormat(2018, 3, 21, 7, 23, 35);
+
     // Empirical evidence suggests that Windows wants hyphens, and Unix'ish system want underscores. It's not clear there's an industry standard...
     FormattingTestFixture::SetLocale("en-US");
     FormattingTestFixture::SetLocale("de-DE");

@@ -385,6 +385,29 @@ FormatSpecType Utils::NameToFormatSpecType(Utf8CP name)
     return FormatSpecType::Undefined;
     }
 
+FormatLocaleDateOrder Utils::NameToFormatLocaleDateOrder(Utf8CP name)
+{
+	if (BeStringUtilities::StricmpAscii(name, "undefined") == 0) return FormatLocaleDateOrder::undefined;
+	if (BeStringUtilities::StricmpAscii(name, "dmy") == 0) return FormatLocaleDateOrder::dmy;
+	if (BeStringUtilities::StricmpAscii(name, "mdy") == 0) return FormatLocaleDateOrder::mdy;
+	if (BeStringUtilities::StricmpAscii(name, "ymd") == 0) return FormatLocaleDateOrder::ymd;
+	if (BeStringUtilities::StricmpAscii(name, "ydm") == 0) return FormatLocaleDateOrder::ydm;
+	return FormatLocaleDateOrder::undefined;
+}
+
+Utf8CP Utils::FormatLocaleDateOrderToName(FormatLocaleDateOrder ord)
+{
+	switch (ord)
+	{
+	case FormatLocaleDateOrder::dmy: return "dmy";
+	case FormatLocaleDateOrder::mdy: return "mdy";
+	case FormatLocaleDateOrder::ymd: return "ymd";
+	case FormatLocaleDateOrder::ydm: return "ydm";
+	case FormatLocaleDateOrder::undefined: return "undefined";
+	}
+	return "undefined";
+}
+
 Utf8CP Utils::SkipBlanks(Utf8CP str)
     {
     while (isspace(*str))

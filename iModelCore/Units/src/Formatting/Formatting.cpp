@@ -59,8 +59,40 @@ LocaleProperties::LocaleProperties(Utf8CP localeName)
 	std::locale loc = std::locale(localeName);
 	const std::numpunct<char>& myfacet(std::use_facet < std::numpunct<char> >(loc));
 
+	std::time_get<char>::dateorder ord;
+	ord = std::use_facet<std::time_get<char> >(loc).date_order();
+	switch (ord)
+	{
+	case std::time_get<char>::dateorder::dmy: 
+		m_dateOrder = FormatLocaleDateOrder::dmy;
+		break;
+
+	case std::time_get<char>::dateorder::mdy:
+		m_dateOrder = FormatLocaleDateOrder::mdy;
+		break;
+
+	case std::time_get<char>::dateorder::ymd:
+		m_dateOrder = FormatLocaleDateOrder::ymd;
+		break;
+
+	case std::time_get<char>::dateorder::ydm:
+		m_dateOrder = FormatLocaleDateOrder::ydm;
+		break;
+	case std::time_get<char>::dateorder::no_order:
+	default: m_dateOrder = FormatLocaleDateOrder::undefined;
+		break;
+	}
 	m_decimalSeparator = myfacet.decimal_point();
 	m_thousandsSeparator = myfacet.thousands_sep();
+}
+
+void LocaleProperties::Init(Utf8Char decimal, Utf8Char thousand, FormatLocaleDateOrder ord)
+{
+	m_decimalSeparator = decimal;      // DecimalComma, DecimalPoint, DecimalSeparator
+    m_thousandsSeparator = thousand;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+	m_dateOrder = ord;
+	m_timeSeparator = ':';
+	m_dateSeparator = '-';
 }
 
 //----------------------------------------------------------------------------------------
@@ -68,7 +100,7 @@ LocaleProperties::LocaleProperties(Utf8CP localeName)
 //----------------------------------------------------------------------------------------
 LocaleProperties LocaleProperties::DefaultAmerican()
 {
-	return LocaleProperties('.',',');
+	return LocaleProperties('.',',', FormatLocaleDateOrder::mdy);
 }
 
 //----------------------------------------------------------------------------------------
@@ -76,7 +108,7 @@ LocaleProperties LocaleProperties::DefaultAmerican()
 //----------------------------------------------------------------------------------------
 LocaleProperties LocaleProperties::DefaultEuropean(bool useBlank)
 {
-	return LocaleProperties(',', (useBlank? ' ' : '.'));
+	return LocaleProperties(',', (useBlank? ' ' : '.'), FormatLocaleDateOrder::dmy);
 }
 
 LocaleProperties::LocaleProperties(Json::Value jval)
@@ -100,6 +132,11 @@ LocaleProperties::LocaleProperties(Json::Value jval)
 				str = val.asString();
 				m_thousandsSeparator = str.c_str()[0];
 			}
+			else if (BeStringUtilities::StricmpAscii(paramName, json_dateOrder()) == 0)
+			{
+				str = val.asString();
+				m_dateOrder = Utils::NameToFormatLocaleDateOrder(str.c_str());
+			}
 		}
 	}
 	else
@@ -107,6 +144,16 @@ LocaleProperties::LocaleProperties(Json::Value jval)
 		m_decimalSeparator = '.';
 		m_thousandsSeparator = '\0';
 	}
+}
+
+void LocaleProperties::SetDayShort(FormatDayIndex indx, Utf8CP name) 
+{
+	int i = static_cast<int>(indx); 
+	int m = static_cast<int>(FormatDayIndex::indxMaxDay);
+	if (i < m)
+	{
+		m_shortDay[i].assign(name);
+	} 
 }
 
 //----------------------------------------------------------------------------------------

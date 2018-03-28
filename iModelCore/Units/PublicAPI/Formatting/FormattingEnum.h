@@ -375,6 +375,43 @@ enum class FormatSpecialCodes
     SignatureInvalid = 100
     };
 
+enum class FormatLocaleDateOrder
+{
+   undefined = 0,
+   dmy = 1,
+   mdy = 2,
+   ymd = 3,
+   ydm = 4
+};
+
+enum class FormatDayIndex
+{
+  indxMonday  = 0,
+  indxTuesday = 1,
+  indxWednesday = 2,
+  indxThursday = 3,
+  indxFriday = 4,
+  indxSaturday = 5,
+  indxSunday = 6,
+  indxMaxDay = 7
+};
+
+enum class FormatMonthIndex
+{
+	indxJanuary = 0,
+	indxFebruary = 1,
+	indxMarch = 2,
+	indxApril = 3,
+	indxMay = 4,
+	indxJune = 5,
+	indxJuly = 6,
+	indxAugusy = 7,
+	indxSeptember = 8,
+	indxOctober = 9,
+	indxNovember = 10,
+	indxDecember = 11,
+	indxMaxMonth = 12
+};
 
 struct FormatProblemDetail
     {
@@ -450,6 +487,8 @@ struct Utils
 	UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
 	UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
 	UNITS_EXPORT static Utf8String GetCurrentGrouping();
+	UNITS_EXPORT static FormatLocaleDateOrder NameToFormatLocaleDateOrder(Utf8CP str);
+	UNITS_EXPORT static Utf8CP FormatLocaleDateOrderToName(FormatLocaleDateOrder);
     //#endif
     };
 
