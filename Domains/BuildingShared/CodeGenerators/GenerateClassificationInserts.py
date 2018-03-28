@@ -1,3 +1,6 @@
+#-----------------------------------------------------------
+# Generate script by Martynas.Saulius              03/2018
+#-----------------------------------------------------------
 import sys
 import xml.etree.ElementTree as ET
 import os.path
@@ -11,7 +14,18 @@ insert methods located at OutputFilePath\
 tree = ET.parse(sys.argv[1])
 root = tree.getroot()
 f = open(sys.argv[2], 'w')
-f.write('void InsertDefinitionSystems(Dgn::DgnDbR db)\n')
+f.write('''/*--------------------------------------------------------------------------------------+
+|
+|  $Source: CodeGenerators/GenerateClassificationInserts.py $
+|
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+//===========================================================================================
+// WARNING: This is an automatically generated code for building classification inserts 
+// WARNING: To generate, call "bb -r BuildingShared -f BuildingShared -p CodeGenerators b -c"
+//===========================================================================================\n''')
+f.write('void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const\n')
 f.write('    {\n')
 
 
