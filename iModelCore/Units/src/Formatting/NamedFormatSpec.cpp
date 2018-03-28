@@ -300,12 +300,12 @@ BentleyStatus NamedFormatSpec::ParseFormatString(NamedFormatSpecR nfs, Utf8Strin
             case PresentationType::Scientific:     /* intentional fallthrough */
             case PresentationType::Station: /* intentional fallthrough */
                 DecimalPrecision prec;
-                Utils::DecimalPrecisionByIndex(precision, prec);
+                Utils::DecimalPrecisionByIndex(prec, precision);
                 nfs.m_numericSpec.SetDecimalPrecision(prec);
                 break;
             case PresentationType::Fractional:
                 FractionalPrecision frac;
-                Utils::FractionalPrecisionByDenominator(precision, frac);
+                Utils::FractionalPrecisionByDenominator(frac, precision);
                 nfs.m_numericSpec.SetFractionalPrecision(frac);
                 break;
             default:

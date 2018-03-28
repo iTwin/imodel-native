@@ -281,15 +281,15 @@ public:
 struct Utils
 {
     UNITS_EXPORT static Utf8String ScientificTypeName(ScientificType type);
-    UNITS_EXPORT static bool NameToScientificType(Utf8StringCR name, ScientificType& out);
-    UNITS_EXPORT static bool NameToSignOption(Utf8CP name, ShowSignOption& out);
+    UNITS_EXPORT static bool NameToScientificType(ScientificType& out, Utf8StringCR name);
+    UNITS_EXPORT static bool NameToSignOption(ShowSignOption& out, Utf8CP name);
     static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
-    UNITS_EXPORT static bool DecimalPrecisionByIndex(const size_t num, DecimalPrecision& out);
+    UNITS_EXPORT static bool DecimalPrecisionByIndex( DecimalPrecision& out, const size_t num);
     UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP, int index);
     UNITS_EXPORT static Utf8String PresentationTypeName(PresentationType type);
-    UNITS_EXPORT static bool NameToPresentationType(Utf8CP name, PresentationType& type);
+    UNITS_EXPORT static bool NameToPresentationType(PresentationType& type, Utf8CP name);
     UNITS_EXPORT static Utf8String SignOptionName(ShowSignOption opt);
-    UNITS_EXPORT static bool FractionalPrecisionByDenominator(const size_t prec, FractionalPrecision& out);
+    UNITS_EXPORT static bool FractionalPrecisionByDenominator(FractionalPrecision& out, const size_t prec);
     static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
     UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
@@ -337,9 +337,9 @@ public:
     static Utf8String FPN_SignAlways() { return "SignAlways"; }
     static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
 
-    static Utf8String FPN_ScientificStandard() {return "standard";}
-    static Utf8String FPN_ScientificNormal() {return "normal";}
-    static Utf8String FPN_ScientificEngineering() {return "engineering";}
+    static Utf8String FPN_ScientificStandard() {return "Standard";}
+    static Utf8String FPN_ScientificNormal() {return "Normal";}
+    static Utf8String FPN_ScientificEngineering() {return "Engineering";}
 
     static Utf8String FPN_Decimal() { return "Decimal"; }
     static Utf8String FPN_Fractional() { return "Fractional"; }
@@ -352,17 +352,17 @@ public:
     static Utf8String FPN_FractBarOblique() { return "Oblique"; }
     static Utf8String FPN_FractBarDiagonal() { return "Diagonal"; }
 
-    static Utf8String FPN_TrailZeroes() {return "trailZeroes";}
-    static Utf8String FPN_LeadZeroes() {return "leadZeroes";}
-    static Utf8String FPN_KeepSingleZero() {return "keepSingleZero";}
-    static Utf8String FPN_ZeroEmpty() {return "zeroEmpty";}
-    static Utf8String FPN_KeepDecimalPoint() {return "keepDecimalPoint";}
-    static Utf8String FPN_ApplyRounding() {return "applyRounding";}
-    static Utf8String FPN_FractionDash() {return "fractionDash";}
-    static Utf8String FPN_ShowUnitName() {return "showUnitName";}
-    static Utf8String FPN_PrependUnitName() {return "prependUnitName";}
-    static Utf8String FPN_Use1000Separator() {return "use1000Separator";}
-    static Utf8String FPN_ExponentOnlyNegative() {return "exponentOnlyNegative";}
+    static Utf8String FPN_TrailZeroes() {return "TrailZeroes";}
+    static Utf8String FPN_LeadZeroes() {return "LeadZeroes";}
+    static Utf8String FPN_KeepSingleZero() {return "KeepSingleZero";}
+    static Utf8String FPN_ZeroEmpty() {return "ZeroEmpty";}
+    static Utf8String FPN_KeepDecimalPoint() {return "KeepDecimalPoint";}
+    static Utf8String FPN_ApplyRounding() {return "ApplyRounding";}
+    static Utf8String FPN_FractionDash() {return "FractionDash";}
+    static Utf8String FPN_ShowUnitName() {return "ShowUnitName";}
+    static Utf8String FPN_PrependUnitName() {return "PrependUnitName";}
+    static Utf8String FPN_Use1000Separator() {return "Use1000Separator";}
+    static Utf8String FPN_ExponentOnlyNegative() {return "ExponentOnlyNegative";}
     static const double FPV_MinTreshold() { return 1.0e-14; }  // format parameter default values
     static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
     static const Utf8Char FPV_DecimalSeparator() { return '.'; }

@@ -279,8 +279,8 @@ public:
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
     bool HasFormatTraits() const {return m_formatTraits != FormatTraits::None;}
 
-    void SetStationSize(uint32_t size) {m_stationSize = size;}
-    uint32_t GetStationSize() const {return m_stationSize;}
+    void SetStationOffsetSize(uint32_t size) {m_stationSize = size;}
+    uint32_t GetStationOffsetSize() const {return m_stationSize;}
 
     void SetScientificType(ScientificType type) {m_scientificType = type;}
     ScientificType GetScientificType() const {return m_scientificType;}
@@ -308,9 +308,9 @@ public:
     void SetMinWidth(int wid) { m_minWidth = wid; }
     int GetMinWidth() { return m_minWidth; }
 
-    void SetStatSeparator(Utf8Char sep) {m_explicitlyDefinedStatSeparator = true; m_statSeparator = sep;}
-    Utf8Char GetStatSeparator() const { return m_statSeparator; }
-    bool HasStatSeparator() const {return m_explicitlyDefinedStatSeparator;}
+    void SetStationSeparator(Utf8Char sep) {m_explicitlyDefinedStatSeparator = true; m_statSeparator = sep;}
+    Utf8Char GetStationSeparator() const { return m_statSeparator; }
+    bool HasStationSeparator() const {return m_explicitlyDefinedStatSeparator;}
 
     //======================================
     // Format Traits Bit Setters/Getters

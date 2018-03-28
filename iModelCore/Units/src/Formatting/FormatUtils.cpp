@@ -307,7 +307,7 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
 //===================================================
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                    Kyle.Abramowitz     12/17
+// @bsimethod                                               Kyle.Abramowitz      03/2018
 //----------------------------------------------------------------------------------------
 // static
 Utf8String Utils::ScientificTypeName(ScientificType type)
@@ -324,10 +324,10 @@ Utf8String Utils::ScientificTypeName(ScientificType type)
     return "";
     }
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                    Kyle.Abramowitz     12/17
+// @bsimethod                                              Kyle.Abramowitz       03/2018
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::NameToScientificType(Utf8StringCR name, ScientificType& out)
+bool Utils::NameToScientificType(ScientificType& out, Utf8StringCR name)
     {
     if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificStandard().c_str()) == 0) out = ScientificType::Standard;
     else if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificNormal().c_str()) == 0) out = ScientificType::Normal;
@@ -340,7 +340,7 @@ bool Utils::NameToScientificType(Utf8StringCR name, ScientificType& out)
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::NameToSignOption(Utf8CP name, ShowSignOption& out)
+bool Utils::NameToSignOption(ShowSignOption& out, Utf8CP name)
     {
     if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_NoSign().c_str()) == 0) out = ShowSignOption::NoSign;
     else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_OnlyNegative().c_str()) == 0) out = ShowSignOption::OnlyNegative;
@@ -451,7 +451,7 @@ Utf8String Utils::GetCurrentThousandSeparator()
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::DecimalPrecisionByIndex(const size_t num, DecimalPrecision& out)
+bool Utils::DecimalPrecisionByIndex(DecimalPrecision& out, const size_t num)
     {
     if (num < static_cast<uint32_t>(DecimalPrecision::Max))
         { 
@@ -493,7 +493,7 @@ Utf8String  Utils::PresentationTypeName(PresentationType type)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::NameToPresentationType(Utf8CP name, PresentationType& type)
+bool Utils::NameToPresentationType(PresentationType& type, Utf8CP name)
     {
     if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Decimal().c_str()) == 0) 
         type = PresentationType::Decimal;
@@ -529,7 +529,7 @@ Utf8String Utils::SignOptionName(ShowSignOption opt)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::FractionalPrecisionByDenominator(const size_t prec, FractionalPrecision& out)
+bool Utils::FractionalPrecisionByDenominator(FractionalPrecision& out, const size_t prec)
     {
     switch (prec)
         {

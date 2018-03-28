@@ -131,7 +131,7 @@ TEST_F(NumericFormatSpecTest, Constructors)
     EXPECT_EQ(FormatConstant::DefaultDecimalSeparator(), nfs.GetDecimalSeparator());
     EXPECT_EQ(FormatConstant::DefaultThousandSeparator(), nfs.GetThousandSeparator());
     EXPECT_EQ(FormatConstant::DefaultUomSeparator(), nfs.GetUomSeparator());
-    EXPECT_EQ(FormatConstant::DefaultStationSeparator(), nfs.GetStatSeparator());
+    EXPECT_EQ(FormatConstant::DefaultStationSeparator(), nfs.GetStationSeparator());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
     }
@@ -1002,7 +1002,7 @@ TEST_F(NamedFormatSpecTest, ParseFormatString)
 
     NumericFormatSpec exampleNumericFmtSpecStation;
     exampleNumericFmtSpecStation.SetPresentationType(PresentationType::Station);
-    exampleNumericFmtSpecStation.SetStationSize(2);
+    exampleNumericFmtSpecStation.SetStationOffsetSize(2);
     exampleNumericFmtSpecStation.SetDecimalPrecision(DecimalPrecision::Precision9);
     NamedFormatSpec const exampleNamedFmtSpecStation("ExStation", exampleNumericFmtSpecStation);
     auto const mapper = [&](Utf8StringCR name) -> NamedFormatSpecCP

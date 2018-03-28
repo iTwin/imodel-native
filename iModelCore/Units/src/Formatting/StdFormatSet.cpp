@@ -128,19 +128,19 @@ NumericFormatSpec CreateNewNumericFormatSpec(PresentationType presentationType, 
         {
         nfs.SetDecimalPrecision(FormatConstant::DefaultDecimalPrecision());
         FractionalPrecision prec;
-        Utils::FractionalPrecisionByDenominator(precision, prec);
+        Utils::FractionalPrecisionByDenominator(prec, precision);
         nfs.SetFractionalPrecision(prec);
         }
     else
         {
         DecimalPrecision prec;
-        Utils::DecimalPrecisionByIndex(precision, prec);
+        Utils::DecimalPrecisionByIndex(prec, precision );
         nfs.SetDecimalPrecision(prec);
         }
     nfs.SetDecimalSeparator(FormatConstant::FPV_DecimalSeparator());
     nfs.SetThousandSeparator(FormatConstant::FPV_ThousandSeparator());
     nfs.SetUomSeparator(FormatConstant::BlankString());
-    nfs.SetStatSeparator('+');
+    nfs.SetStationSeparator('+');
     nfs.SetMinWidth(0);
 
     if (uomSeparator)
@@ -174,37 +174,37 @@ void StdFormatSet::StdInit()
     AddFormat("Real6UNS", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 6, FormatConstant::EmptyString()));
 
     NumericFormatSpec stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
-    stop.SetStationSize(2);
-    AddFormat("Station100-2u", stop);
+    stop.SetStationOffsetSize(2);
+    AddFormat("Stop100-2u", stop);
     stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
     stop.SetMinWidth(4);
-    AddFormat("Station100-2-4u", stop);
+    AddFormat("Stop100-2-4u", stop);
 
     stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
     stop.SetMinWidth(4);
-    stop.SetStationSize(3);
-    AddFormat("Station1000-2-4u", stop);
+    stop.SetStationOffsetSize(3);
+    AddFormat("Stop1000-2-4u", stop);
 
     stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
-    AddFormat("Station1000-2u", stop);
+    AddFormat("Stop1000-2u", stop);
 
     //=========================== Stoppers w/o units
     stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traits, 2);
-    stop.SetStationSize(2);
-    AddFormat("Station100-2", stop);
+    stop.SetStationOffsetSize(2);
+    AddFormat("Stop100-2", stop);
     stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traits, 2);
-    stop.SetStationSize(3);
+    stop.SetStationOffsetSize(3);
     stop.SetMinWidth(4);
-    AddFormat("Station100-2-4", stop);
+    AddFormat("Stop100-2-4", stop);
 
     stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traits, 2);
-    stop.SetStationSize(3);
+    stop.SetStationOffsetSize(3);
     stop.SetMinWidth(4);
-    AddFormat("Station1000-2-4", stop);
+    AddFormat("Stop1000-2-4", stop);
 
     stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traits, 2);
-    stop.SetStationSize(3);
-    AddFormat("Station1000-2", stop);
+    stop.SetStationOffsetSize(3);
+    AddFormat("Stop1000-2", stop);
 
     AddFormat("SignedReal", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
     AddFormat("ParenthsReal", CreateNewNumericFormatSpec(PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()));
@@ -295,27 +295,27 @@ BentleyStatus StdFormatSet::AddCompositeSpecs(BEU::IUnitsContextCR unitContext)
 
     cvs->SetUnitLabels("'");
     NumericFormatSpec stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2, FormatConstant::EmptyString());
-    stop.SetStationSize(2);
+    stop.SetStationOffsetSize(2);
     stop.SetMinWidth(2);
     AddFormat("StationFt2", stop, *cvs);
 
     cvs = new CompositeValueSpec(*meter);
     cvs->SetUnitLabels("m");
     stop = CreateNewNumericFormatSpec(PresentationType::Station, ShowSignOption::OnlyNegative, traitsU, 2);
-    stop.SetStationSize(3);
+    stop.SetStationOffsetSize(3);
     stop.SetMinWidth(4);
     AddFormat("StationM4", stop, *cvs);
 
     // Adds trailZeroes to "Stop100-2u"
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"station100-2uz\", \"SpecName\" : \"Station100-2uz\", \"SpecType\" : \"numeric\"}",
+    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"AppendUnitName\":\"true\",\"TrailZeroes\":\"true\"}, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2uz\", \"SpecName\" : \"Stop100-2uz\", \"SpecType\" : \"numeric\"}",
         unitContext);
     
     // Adds trailZeroes to "Stop100-2"
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"station100-2-2z\", \"SpecName\" : \"Station100-2-2z\", \"SpecType\" : \"numeric\"}",
+    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 2, \"presentType\" : \"Stop100\"}, \"SpecAlias\" : \"stop100-2-2z\", \"SpecName\" : \"Stop100-2-2z\", \"SpecType\" : \"numeric\"}",
         unitContext);
 
     // "Stop1000-2-3z"
-    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 3, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"station1000-2-3z\", \"SpecName\" : \"Station1000-2-3z\", \"SpecType\" : \"numeric\"}",
+    AddFormat("{\"NumericFormat\":{\"decPrec\":2, \"formatTraits\" : {\"TrailZeroes\":\"true\"}, \"minWidth\" : 3, \"presentType\" : \"Stop1000\"}, \"SpecAlias\" : \"stop1000-2-3z\", \"SpecName\" : \"stop1000-2-3z\", \"SpecType\" : \"numeric\"}",
         unitContext);
 
     // "hms"
@@ -455,18 +455,18 @@ void AliasMappings::AddMappings()
     AddMapping("stationFt2", "StationFt2");
     AddMapping("stationM4", "StationM4");
 
-    AddMapping("station100-2-2z", "Station100-2-2z");
-    AddMapping("station100-2-4", "Station100-2-4");
-    AddMapping("station100-2-4u", "Station100-2-4u");
-    AddMapping("station100-2", "Station100-2");
-    AddMapping("station100-2u", "Station100-2u");
-    AddMapping("station100-2uz", "Station100-2uz");
+    AddMapping("stop100-2-2z", "Stop100-2-2z");
+    AddMapping("stop100-2-4", "Stop100-2-4");
+    AddMapping("stop100-2-4u", "Stop100-2-4u");
+    AddMapping("stop100-2", "Stop100-2");
+    AddMapping("stop100-2u", "Stop100-2u");
+    AddMapping("stop100-2uz", "Stop100-2uz");
 
-    AddMapping("station1000-2-3z", "Station1000-2-3z");
-    AddMapping("station1000-2-4", "Station1000-2-4");
-    AddMapping("station1000-2-4u", "Station1000-2-4u");
-    AddMapping("station1000-2", "Station1000-2");
-    AddMapping("station1000-2u", "Station1000-2u");
+    AddMapping("stop1000-2-3z", "Stop1000-2-3z");
+    AddMapping("stop1000-2-4", "Stop1000-2-4");
+    AddMapping("stop1000-2-4u", "Stop1000-2-4u");
+    AddMapping("stop1000-2", "Stop1000-2");
+    AddMapping("stop1000-2u", "Stop1000-2u");
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE
