@@ -2,7 +2,7 @@
 #
 #     $Source: folly.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
@@ -71,6 +71,5 @@ DLM_EXPORT_DEST     = $(o)
 DLM_NOINITFUNC      = 1
 DLM_NOENTRY         = 1
 DLM_OBJECT_DEST     = $(o)
-ASSEMBLY_STRONGNAME = 1
 
 %include $(sharedMki)linkLibrary.mki
