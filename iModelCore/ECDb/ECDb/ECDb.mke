@@ -438,7 +438,6 @@ cppObjects + $(nonportObjs)
 # Link objects
 #----------------------------------------------------------------------
 DLM_NAME                    = $(appName)
-ASSEMBLY_STRONGNAME         = 1
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
