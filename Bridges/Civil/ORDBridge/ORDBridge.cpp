@@ -304,7 +304,10 @@ void ORDBridge::_OnCloseBim(BentleyStatus)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDBridge::_DetectDeletedDocuments()
     {
+    m_converter->SetIsDetectingDeletedDocs(true);
     m_converter->_DetectDeletedDocuments();
+    m_converter->SetIsDetectingDeletedDocs(false);
+
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
     }
 

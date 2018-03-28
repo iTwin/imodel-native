@@ -48,15 +48,17 @@ private:
 
     bvector<CifAlignmentV8RefPair> m_cifAlignments;
     bvector<CifCorridorV8RefPair> m_cifCorridors;
+    bool m_isDetectingDeletedDocs;
 
     void CreateRoadRailElements();
 
 public:
     ORDConverter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
-        Dgn::DgnDbSync::DgnV8::RootModelConverter(params)
+        Dgn::DgnDbSync::DgnV8::RootModelConverter(params), m_isDetectingDeletedDocs(false)
         {}
 
     void SetORDParams(Params* ordParams) { m_ordParams = ordParams; }
+    void SetIsDetectingDeletedDocs(bool newVal) { m_isDetectingDeletedDocs = newVal; }
 
     void SetUpModelFormatters(Dgn::SubjectCR jobSubject);
 }; // ORDConverter
