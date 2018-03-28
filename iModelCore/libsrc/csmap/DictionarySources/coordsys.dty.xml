@@ -6197,9 +6197,6 @@
                 <Name>Czechoslovakia</Name>
                 <Members>
                   <Member>
-                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>CzechJTSK/05.Krovak</KeyName>
                   </Member>
                   <Member>
@@ -8723,10 +8720,13 @@
                     <KeyName>BritishNatGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:27700</KeyName>
+                    <KeyName>OSGB-7P-2.BritishNatGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>OrdnanceSurvey</KeyName>
+                    <KeyName>OSTN02.BritishNatGrid</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OSTN15.BritishNatGrid</KeyName>
                   </Member>
                   <Member>
                     <KeyName>LondonGrid</KeyName>
@@ -29535,6 +29535,14 @@
                 <KeyName>EPSG:3399-1</KeyName>
               </Member>	      
             </Members>
+            <Group>
+              <Name>Czechoslovakia</Name>
+              <Members>
+                <Member>
+                  <KeyName>CzechJTSK/5b.Krovak</KeyName>
+                </Member>
+              </Members>
+            </Group>
             <Groups>
               <Group>
                 <Name>South Africa</Name>
@@ -30510,10 +30518,21 @@
                   </Member>
                 </Members>
               </Group>
-			  <Group>
-			    <Name>United States of America</Name>
-                <Groups>
-				  <Group>
+              <Group>
+                <Name>UK</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:27700</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OrdnanceSurvey</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
+                <Name>United States of America</Name>
+               <Groups>
+                  <Group>
                      <Name>Alabama</Name>
                      <Members>
                        <Member>
@@ -33251,9 +33270,6 @@
                     <KeyName>CzechJTSK/05.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>CzechJTSK/5b.LL</KeyName>
-                  </Member>
-                  <Member>
                     <KeyName>Czech/JTSK.LL</KeyName>
                   </Member>
                 </Members>
@@ -35830,6 +35846,9 @@
               </Member>
               <Member>
                 <KeyName>DHDN/BeTA2010.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>CzechJTSK/5b.LL</KeyName>
               </Member>
             </Members>
           </Group>

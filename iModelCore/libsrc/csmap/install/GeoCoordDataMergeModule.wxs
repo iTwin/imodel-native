@@ -240,6 +240,9 @@
                 <Directory Id="_B94E56C394B14B70A2907B7D6717F77B" Name="UK">
                     <Component Id="_48C30407E4BE4010BC40931E0309E9F8" Guid="$(var.UK_GUID)" Win64="$(var.COMPONENT_WIN64)">
                         <File Id="_9C6494789F1E4EE8803AAE560813C93D" Name="ostn02.gsb" KeyPath="yes" Source="$(env.GeoCoordData)UK\ostn02.gsb" />
+                        <File Id="_411858BB318042799EDE45779497BE30" Name="OSTN15_NTv2_OSGBtoETRS.gsb" Source="$(env.GeoCoordData)UK\OSTN15_NTv2_OSGBtoETRS.gsb" />
+                        <File Id="_946996A9C0D84F179D10AE205A13202B" Name="CopyrightOSTN15.txt" Source="$(env.GeoCoordData)UK\CopyrightOSTN15.txt" />
+                        <File Id="_32E5D766C2BA478181635C1400DDD78C" Name="CopyrightOSTN02.txt" Source="$(env.GeoCoordData)UK\CopyrightOSTN02.txt" />
                     </Component>
                 </Directory>
 
