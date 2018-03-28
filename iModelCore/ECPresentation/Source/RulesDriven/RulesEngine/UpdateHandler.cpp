@@ -727,7 +727,6 @@ void HierarchyUpdater::SynchronizeLists(NavNodesDataSource const& oldDs, size_t&
             {
             JsonNavNodeCPtr oldNode = oldDs.GetNode(oldIndex);
             JsonNavNodePtr newNode = newDs.GetNode(newIndex);
-            CustomizeNode(oldNode.get(), *newNode, *newDs.GetProvider());
             if (oldNode->GetKey()->IsSimilar(*newNode->GetKey()))
                 {
                 found = true;
