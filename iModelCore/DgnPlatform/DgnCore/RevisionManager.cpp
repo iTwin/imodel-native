@@ -1230,7 +1230,7 @@ DgnRevisionPtr RevisionManager::GetCreatingRevision()
     if (!endTxnId.IsValid())
         return nullptr;
 
-    m_currentRevision = CreateRevision(nullptr, endTxnId);
+    m_currentRevision = CreateRevision(nullptr, endTxnId, QueryLastRebaseId());
     
     return m_currentRevision;
     }
@@ -1351,8 +1351,7 @@ struct ChangeStreamQueueProducer : ChangeStream
     ChangeStreamQueueProducer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
     DbResult _OutputPage(const void *pData, int nData) override
         {
-        bvector<uint8_t> vec((uint8_t*)pData, (uint8_t*)pData + nData);
-        while (!m_q.write(vec))
+        while (!m_q.write((uint8_t*)pData, (uint8_t*)pData + nData))
             ;   // spin until the queue has room
         return BE_SQLITE_OK;
         }
@@ -1366,18 +1365,44 @@ struct ChangeStreamQueueProducer : ChangeStream
 struct ChangeStreamQueueConsumer : ChangeStream
     {
     folly::ProducerConsumerQueue<bvector<uint8_t>>& m_q;
+    bvector<uint8_t> m_remaining;
+
     ChangeStreamQueueConsumer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
+    
     DbResult _InputPage(void *pData, int *pnData) override
         {
+        if (!m_remaining.empty())
+            {
+            // If the queued buffer was bigger than the caller's buffer, then we return
+            // the remaining portion in the amounts that the caller can deal with.
+            size_t retcount = std::min((size_t)*pnData, m_remaining.size());
+            memcpy(pData, m_remaining.data(), retcount);
+            *pnData = (int)retcount;
+            m_remaining.erase(m_remaining.begin(), m_remaining.begin() + retcount);
+            return BE_SQLITE_OK;
+            }
+
         bvector<uint8_t>* pval;
         do  {
             pval = m_q.frontPtr();
             }
         while (!pval); // spin until we get a value;
 
-        if (!pval->empty())
-            memcpy(pData, pval->data(), pval->size());
-        *pnData = (int)pval->size();
+        if (pval->empty())
+            {
+            *pnData = 0;
+            }
+        else
+            {
+            // return as much of the queued buffer as the caller's buffer can hold.
+            size_t retcount = std::min((size_t)*pnData, pval->size());
+            memcpy(pData, pval->data(), retcount);
+            *pnData = (int)retcount;
+
+            // if the queued buffer has more, save it for the next call
+            if (retcount < pval->size())
+                m_remaining.assign(pval->data() + retcount, pval->data() + pval->size());
+            }
 
         m_q.popFront();
         return BE_SQLITE_OK;
@@ -1388,7 +1413,7 @@ struct ChangeStreamQueueConsumer : ChangeStream
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSchemaChangeSetCR dbSchemaChangeSet, ChangeGroupCR dataChangeGroup)
+RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSchemaChangeSetCR dbSchemaChangeSet, ChangeGroupCR dataChangeGroup, Rebaser* rebaser)
     {
     bool containsSchemaChanges = QueryContainsSchemaChanges() || (dbSchemaChangeSet.GetSize() > 0); // Note: Our workflows really disallow DbSchemaChanges without corresponding ECSchema changes, but we allow this here to for testing cases. 
     RevisionChangesFileWriter writer(pathname, containsSchemaChanges, dbSchemaChangeSet, m_dgndb);
@@ -1397,23 +1422,30 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
     if (BE_SQLITE_OK != result)
         return RevisionStatus::FileWriteError;
 	
-    folly::ProducerConsumerQueue<bvector<uint8_t>> pageQueue{5};
+    if (nullptr == rebaser)
+        {
+        result = writer.FromChangeGroup(dataChangeGroup);
+        }
+    else
+        {
+        DbResult rebaseResult = BE_SQLITE_OK;
 
-    DbResult transferResult = BE_SQLITE_OK;
-    ChangeStreamQueueConsumer readFromQueue(pageQueue);
-    std::thread writerThread([&] {transferResult = ChangeStream::TransferBytesBetweenStreams(readFromQueue, writer);});
+        folly::ProducerConsumerQueue<bvector<uint8_t>> pageQueue{5};
+
+        ChangeStreamQueueConsumer readFromQueue(pageQueue);
+        std::thread writerThread([&] {rebaseResult = rebaser->DoRebase(readFromQueue, writer);});
     
-    ChangeStreamQueueProducer writeToQueue(pageQueue);
-    result = writeToQueue.FromChangeGroup(dataChangeGroup);
+        ChangeStreamQueueProducer writeToQueue(pageQueue);
+        result = writeToQueue.FromChangeGroup(dataChangeGroup);
 
-    while (!pageQueue.write(bvector<uint8_t>()))    // write an empty page to tell the consumer that we are done.
-	    ;
-    writerThread.join();
+        while (!pageQueue.write(bvector<uint8_t>()))    // write an empty page to tell the consumer that we are done.
+	        ;
+        writerThread.join();
 
-    if (BE_SQLITE_OK == result)
-        result = transferResult;
+        if (BE_SQLITE_OK == result)
+            result = rebaseResult;
+        }
 
-    // result = writer.FromChangeGroup(dataChangeGroup);
     if (BE_SQLITE_OK != result)
         {
         BeAssert(false && "Could not write data changes to the revision file");
@@ -1440,7 +1472,7 @@ BeFileName RevisionManager::BuildTempRevisionPathname()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId)
+DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId, int64_t lastRebaseId)
     {
     RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
 
@@ -1450,7 +1482,11 @@ DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnMan
     if (RevisionStatus::Success != status)
         return nullptr;
 
-    status = WriteChangesToFile(m_tempRevisionPathname, dbSchemaChangeSet, dataChangeGroup);
+    Rebaser rebaser;
+    if (lastRebaseId != 0)
+        m_dgndb.Txns().LoadRebases(rebaser, lastRebaseId);
+
+    status = WriteChangesToFile(m_tempRevisionPathname, dbSchemaChangeSet, dataChangeGroup, (lastRebaseId != 0)? &rebaser: nullptr);
     if (RevisionStatus::Success != status)
         return nullptr;
 
@@ -1494,12 +1530,11 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
         }
 
     TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
+    int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
 
-    DgnRevisionPtr currentRevision = CreateRevision(outStatus, endTxnId);
+    DgnRevisionPtr currentRevision = CreateRevision(outStatus, endTxnId, lastRebaseId);
     if (!currentRevision.IsValid())
         return nullptr;
-
-    int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
 
     status = SaveCurrentRevisionEndTxnId(endTxnId, lastRebaseId);
     if (RevisionStatus::Success != status)

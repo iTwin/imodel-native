@@ -433,8 +433,11 @@ public:
     //! @see   ReverseTo CancelTo
     TxnId GetCurrentTxnId() const {return m_curr;}
 
-    //! @private
+    //! @private - query the ID of the last rebase blob stored by MergeRevision. Called by unit tests.
     DGNPLATFORM_EXPORT int64_t QueryLastRebaseId();
+
+    //! @private - adds to `rebaser` all stored rebases up to and including `thruId`.
+    BeSQLite::DbResult LoadRebases(BeSQLite::Rebaser& rebaser, int64_t thruId);
 
     //! Get the current SessionId.
     SessionId GetCurrentSessionId() const {return m_curr.GetSession();}

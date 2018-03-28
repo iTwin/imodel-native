@@ -160,6 +160,22 @@ DbResult TxnManager::SaveRebase(int64_t& id, Rebase const& rebase)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::LoadRebases(Rebaser& rebaser, int64_t thruId)
+    {
+    CachedStatementPtr stmt = GetTxnStatement("SELECT Rebase FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
+
+    stmt->BindInt64(1, thruId);
+
+    DbResult rc;
+    while (BE_SQLITE_ROW == (rc = stmt->Step()))
+        rebaser.AddRebase(stmt->GetValueBlob(0), stmt->GetColumnBytes(0));
+
+    return (BE_SQLITE_DONE == rc)? BE_SQLITE_OK: rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::DeleteRebases(int64_t id)
     {
     if (id == 0)

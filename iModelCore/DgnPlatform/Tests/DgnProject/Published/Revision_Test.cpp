@@ -2155,9 +2155,9 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
     policy.updateVsUpdate = OptimisticConcurrencyControl::OnConflict::RejectIncomingChange;
     policy.updateVsDelete = OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange;
     policy.deleteVsUpdate = OptimisticConcurrencyControl::OnConflict::RejectIncomingChange;
-    OptimisticConcurrencyControl control(policy);
-    first->SetConcurrencyControl(&control);
-    second->SetConcurrencyControl(&control);
+    auto control = new OptimisticConcurrencyControl(policy);
+    first->SetConcurrencyControl(control);  // adds ref
+    second->SetConcurrencyControl(control); // adds ref
 
     // The change "history" is a vector of DgnRevisions that we will be creating.
     bvector<DgnRevisionPtr> history;
@@ -2210,9 +2210,9 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
         // merge first's changeset and reject his change
         ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
 
-        ASSERT_EQ(0, control.GetConflictingElementsAccepted().size());
-        ASSERT_EQ(1, control.GetConflictingElementsRejected().size());
-        control.ConflictsProcessed();
+        ASSERT_EQ(0, control->GetConflictingElementsAccepted().size());
+        ASSERT_EQ(1, control->GetConflictingElementsRejected().size());
+        control->ConflictsProcessed();
 
         verifyIntegerProperty(*second, eid, expectedIntegerPropertyValue);    // My policy for updateVsUpdate is: I win
 
@@ -2227,9 +2227,9 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
         auto lastRebaseId = first->Txns().QueryLastRebaseId();
         ASSERT_EQ( RevisionStatus::Success, first->Revisions().MergeRevision(*history[++firstParent]) );
         verifyIntegerProperty(*first, eid, expectedIntegerPropertyValue);
-        ASSERT_EQ(0, control.GetConflictingElementsAccepted().size());  // We don't expect the control to be called at all, since there are no local changes 
-        ASSERT_EQ(0, control.GetConflictingElementsRejected().size());
-        control.ConflictsProcessed();
+        ASSERT_EQ(0, control->GetConflictingElementsAccepted().size());  // We don't expect the control to be called at all, since there are no local changes 
+        ASSERT_EQ(0, control->GetConflictingElementsRejected().size());
+        control->ConflictsProcessed();
         ASSERT_EQ(lastRebaseId, first->Txns().QueryLastRebaseId()) << "No conflicts expected";
         }
 
@@ -2282,4 +2282,9 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
 #endif
 
     // --- Test 3: Non-overlapping changes ---
+
+    first->SaveChanges();
+    first = nullptr;
+    second->SaveChanges();
+    second = nullptr;
     }
