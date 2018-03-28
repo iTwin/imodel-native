@@ -1205,8 +1205,24 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
     myRoot.m_view->CreateScene(args);
 
-    for (auto& graphic : args.m_graphics.m_entries)
-        myArgs.m_graphics.Add(*graphic);
+    static bool s_drawRangeBoxes = false;
+    if (!s_drawRangeBoxes)
+        return;
+
+    GraphicParams params;
+    params.SetWidth(0);
+    ColorDef color = myRoot.m_boundingBoxColor;
+    params.SetLineColor(color);
+    params.SetFillColor(color);
+
+    auto range = GetRange();
+    range.low.z = range.high.z = 1.0;
+
+    auto gf = myArgs.m_context.CreateSceneGraphic();
+    gf->ActivateGraphicParams(params);
+    gf->AddRangeBox(range);
+
+    myArgs.m_graphics.Add(*gf->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1308,7 +1324,7 @@ Attachment::Root2dPtr Attachment::Root2d::Create(Sheet::ViewController& sheetCon
 
     auto& view2d = static_cast<ViewController2dR>(*view);
     TileTree::RootP viewRoot = view2d.GetRoot(context);
-    if (nullptr == viewRoot)
+    if (nullptr == viewRoot || viewRoot->GetRootTile().IsNull())
         return nullptr;
 
     return new Sheet::Attachment::Root2d(sheetController, *attach, context, view2d, *viewRoot);
@@ -1504,10 +1520,18 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
     scaleOnSheet = 0.0 != scaleOnSheet ? 1.0 / scaleOnSheet : 1.0;
 
     Transform location = Transform::From(worldToAttachment);
-    location.ScaleMatrixColumns(scaleOnSheet, scaleOnSheet, 1.0);
     SetLocation(location);
 
-    m_drawingToAttachment.InitProduct(viewRoot.GetLocation(), location);
+    DPoint3d viewOrg = view.GetViewDefinition().GetOrigin();
+    viewOrg.z = 0.0;
+    DPoint3d viewOrgToAttachOrg;
+    viewOrgToAttachOrg.DifferenceOf(worldToAttachment, viewOrg);
+    m_drawingToAttachment = viewRoot.GetLocation();
+    DPoint3d translation;
+    m_drawingToAttachment.GetTranslation(translation);
+    translation.SumOf(translation, viewOrgToAttachOrg);
+    m_drawingToAttachment.SetTranslation(translation);
+    m_drawingToAttachment.ScaleMatrixColumns(scaleOnSheet, scaleOnSheet, 1.0);
 
     SetExpirationTime(BeDuration::Seconds(15));
 
