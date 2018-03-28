@@ -1352,7 +1352,7 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
     if (BE_SQLITE_OK != result)
         return RevisionStatus::FileWriteError;
 	
-    BlockingQueue pageQueue(5);
+    concurrent_queue<bvector<uint8_t>> pageQueue;
 
     DbResult transferResult = BE_SQLITE_OK;
     ChangeStreamQueueConsumer readFromQueue(pageQueue);
@@ -1361,7 +1361,7 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
     ChangeStreamQueueProducer writeToQueue(pageQueue);
     result = writeToQueue.FromChangeGroup(dataChangeGroup);
 
-    pageQueue.SetFinished();    // done writing pages to the queue
+    pageQueue.push(bvector<uint8_t>());    // write an empty page to tell the consumer that we are done.
 	
     writerThread.join();
 

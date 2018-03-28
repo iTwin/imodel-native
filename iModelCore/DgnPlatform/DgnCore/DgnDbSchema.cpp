@@ -468,6 +468,7 @@ struct ProjectSchemaUpgrader
     virtual DbResult _Upgrade(DgnDbR project, DgnDbProfileVersion version) = 0;
     };
 
+#if defined (WIP_RebaseSupportUpgrader)
 struct RebaseSupportUpgrader : ProjectSchemaUpgrader
     {
     DgnDbProfileVersion _GetVersion() override {return DgnDbProfileVersion(2, 1);}
@@ -492,6 +493,16 @@ static ProjectSchemaUpgrader* s_upgraders[] =
     // Add a new version here
     &s_rebaseSupportUpgrader
     };
+#endif
+
+#if defined (WHEN_FIRST_UPGRADER)
+static ProjectSchemaUpgrader* s_upgraders[] =
+    {
+    // NOTE: entries in this list *must* be sorted in ascending version order.
+    // Add a new version here
+
+    };
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * Each call to _DoUpgradeProfile will upgrade the profile from its stored version to the immediately succeeding version.
@@ -499,6 +510,7 @@ static ProjectSchemaUpgrader* s_upgraders[] =
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::OpenParams::_DoUpgradeProfile(DgnDbR project, DgnDbProfileVersion& version) const
     {
+#if defined (WHEN_FIRST_UPGRADER)
     for (auto upgrader : s_upgraders)
         {
         if (version < upgrader->_GetVersion())
@@ -510,7 +522,7 @@ DbResult DgnDb::OpenParams::_DoUpgradeProfile(DgnDbR project, DgnDbProfileVersio
             return stat;
             }
         }
-
+#endif
     version = DgnDbProfileVersion::GetCurrent();
     return  BE_SQLITE_OK;
     }
