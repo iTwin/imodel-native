@@ -129,6 +129,7 @@ public:
 
     DWGDB_EXPORT void       Assign (WCharCP chars);
     DWGDB_EXPORT void       Append (WChar oneChar);
+    DWGDB_EXPORT int        Insert (int index, WCharCP chars);
     DWGDB_EXPORT int        GetLength () const;
     DWGDB_EXPORT bool       IsEmpty () const;
     DWGDB_EXPORT bool       EqualsI (WCharCP other) const;

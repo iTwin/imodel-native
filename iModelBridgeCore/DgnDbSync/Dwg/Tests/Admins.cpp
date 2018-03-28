@@ -19,7 +19,7 @@ private:
 protected:
     virtual Display::SystemContext* _GetSystemContext() override
         {
-#if defined(_WIN32)
+#if defined(_WIN32) && defined(USE_WINDOWS_FOR_EGL)
         if (nullptr == m_systemContext)
             {
             static ATOM classAtom = 0;
@@ -54,8 +54,8 @@ protected:
                                 0
                                 );
             }
-#endif
         BeAssert (nullptr != m_systemContext && "Thumbnail generation requires Display::SystemContext!");
+#endif
         return m_systemContext;
         }
     virtual bool _DoesHostHaveFocus() override {return true;}

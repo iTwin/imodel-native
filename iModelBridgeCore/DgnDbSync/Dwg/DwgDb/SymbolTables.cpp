@@ -380,6 +380,39 @@ bool            DwgDbBlockTableRecord::HasAttributeDefinitions () const { return
 DPoint3d        DwgDbBlockTableRecord::GetBase () const         { return Util::DPoint3dFrom(T_Super::origin()); }
 DwgDbDatabaseP  DwgDbBlockTableRecord::GetXrefDatabase (bool unresolve) const { return static_cast<DwgDbDatabaseP>(T_Super::xrefDatabase(unresolve)); }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus     DwgDbLayerTable::GetUnreconciledLayers (DwgDbObjectIdArrayR layers) const
+    {
+    DwgDbStatus status = DwgDbStatus::NotSupported;
+#ifdef DWGTOOLKIT_OpenDwg
+    BeAssert (false && "Teigha does not support getUnreconciledLayers!");
+#elif DWGTOOLKIT_RealDwg
+    AcDbObjectIdArray   ids;
+    Acad::ErrorStatus   es = T_Super::getUnreconciledLayers (ids);
+    if (Acad::eOk == es)
+        {
+        for (int i = 0; i < ids.length(); i++)
+            layers.push_back (ids.at(i));
+        }
+    status = ToDwgDbStatus(es);
+#endif
+    return  ToDwgDbStatus(status);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            DwgDbLayerTable::HasUnreconciledLayers () const
+    {
+    bool unreconciled = false;
+#ifdef DWGTOOLKIT_OpenDwg
+    BeAssert (false && "Teigha does not support hasUnreconciledLayers!");
+#elif DWGTOOLKIT_RealDwg
+    unreconciled = T_Super::hasUnreconciledLayers ();
+#endif
+    return  unreconciled;
+    }
 DwgString       DwgDbLayerTableRecord::GetDescription () const  { return T_Super::description(); }
 bool            DwgDbLayerTableRecord::IsOff () const           { return T_Super::isOff(); }
 bool            DwgDbLayerTableRecord::IsFrozen () const        { return T_Super::isFrozen(); }
