@@ -72,7 +72,7 @@
 
 #define FORMAT_ROUND_FACTOR_ATTRIBUTE           "roundFactor"
 #define FORMAT_TYPE_ATTRIBUTE                   "type"
-#define FORMAT_SIGN_OPTION_ATTRIBUTE            "signOption"
+#define FORMAT_SIGN_OPTION_ATTRIBUTE            "showSignOption"
 #define FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE        "scientificType"
 #define FORMAT_TRAITS_ATTRIBUTE                 "formatTraits"
 #define FORMAT_PRECISION_ATTRIBUTE              "precision"
@@ -80,7 +80,9 @@
 #define FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE    "thousandSeparator"
 #define FORMAT_UOM_SEPARATOR_ATTRIBUTE          "uomSeparator"
 #define FORMAT_STAT_SEPARATOR_ATTRIBUTE         "statSeparator"
-#define FORMAT_STATION_SIZE_ATTRIBUTE           "stationSize"
+#define FORMAT_STATION_SIZE_ATTRIBUTE           "stationOffsetSize"
+#define FORMAT_PREFIX_PAD_CHAR_ATTRIBUTE        "prefixPadChar"
+#define FORMAT_MIN_WIDTH_ATTRIBUTE              "minWidth"
 
 #define COMPOSITE_SPACER_ATTRIBUTE          "spacer"
 #define COMPOSITE_INPUT_UNIT_ATTRIBUTE      "inputUnit"

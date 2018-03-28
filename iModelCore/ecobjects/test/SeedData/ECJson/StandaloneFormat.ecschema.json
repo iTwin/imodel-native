@@ -7,7 +7,7 @@
   "label": "myfi4",
   "roundFactor": 0.0,
   "type": "Fractional",
-  "signOption": "OnlyNegative",
+  "showSignOption": "OnlyNegative",
   "formatTraits": "LeadZeroes|TrailZeroes",
   "precision": 4,
   "decSeparator": ".",

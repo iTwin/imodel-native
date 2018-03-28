@@ -275,7 +275,7 @@ public:
     bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;}
     //! Returns the invariant display label for this Format. Returns the name of the Format if no display label has been explicitly defined.
     Utf8StringCR GetInvariantDisplayLabel() const {return GetIsDisplayLabelDefined() ? T_Super::GetDisplayLabel() : GetName();}
-
+    bool GetIsDescriptionDefined() const {return T_Super::GetDescription().length() > 0;} //!< Returns true if description length is 0
     //! Returns the description of this Format. Returns the localized description if one exists.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
     //! Returns the invariant description of this Format.

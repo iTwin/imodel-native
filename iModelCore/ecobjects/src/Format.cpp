@@ -22,7 +22,7 @@ ECObjectsStatus Format::SetSchema(ECSchemaCR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-Format::Format(ECSchemaCR schema, Utf8StringCR name) : NamedFormatSpec(name), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
+Format::Format(ECSchemaCR schema, Utf8StringCR name) : NamedFormatSpec(name), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
@@ -134,9 +134,9 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
             LOG.errorv("%s node '%s' doesn't contain a valid %s attribute which is required", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_STATION_SIZE_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        if (stationSize < 1)
+        if (stationSize < 1 || stationSize > INT32_MAX) //If negative values are passed they underflow but GetAttributeUint32 still returns success. Underflow is undefined behaviour according to the standard TODO
             {
-            LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_STATION_SIZE_ATTRIBUTE);
+            LOG.errorv("%s node '%s' contains an invalid %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_STATION_SIZE_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         spec.SetStationOffsetSize(stationSize);
@@ -159,7 +159,7 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
         { 
         if (!spec.SetFormatTraitsFromString(formatTraits))
             {
-            LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_TRAITS_ATTRIBUTE, specType.c_str());
+            LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_TRAITS_ATTRIBUTE, formatTraits.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         }
@@ -171,26 +171,38 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
         LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
- 
-    if(type == Formatting::PresentationType::Fractional)
+    else if (BeXmlStatus::BEXML_AttributeNotFound != status) 
         {
-        Formatting::FractionalPrecision unitsFractionalPrecision;
-        if (!Formatting::Utils::FractionalPrecisionByDenominator(unitsFractionalPrecision, precision))
+        if(type == Formatting::PresentationType::Fractional)
             {
-            LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
-            return SchemaReadStatus::InvalidECSchemaXml;
+            Formatting::FractionalPrecision unitsFractionalPrecision;
+            if (!Formatting::Utils::FractionalPrecisionByDenominator(unitsFractionalPrecision, precision))
+                {
+                LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+            spec.SetFractionalPrecision(unitsFractionalPrecision);
             }
-        spec.SetFractionalPrecision(unitsFractionalPrecision);
+        else
+            {
+            Formatting::DecimalPrecision unitsDecimalPrecision;
+            if (!Formatting::Utils::DecimalPrecisionByIndex(unitsDecimalPrecision, precision))
+                {
+                LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
+                return SchemaReadStatus::InvalidECSchemaXml;
+                }
+            spec.SetDecimalPrecision(unitsDecimalPrecision);
+            }
         }
-    else
+
+    uint32_t minWidth;
+    status = unitFormatNode.GetAttributeUInt32Value(minWidth, FORMAT_MIN_WIDTH_ATTRIBUTE);
+    if (BeXmlStatus::BEXML_Success == status)
+        spec.SetMinWidth(minWidth);
+    else if (BeXmlStatus::BEXML_AttributeNotFound != status)
         {
-        Formatting::DecimalPrecision unitsDecimalPrecision;
-        if (!Formatting::Utils::DecimalPrecisionByIndex(unitsDecimalPrecision, precision))
-            {
-            LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-        spec.SetDecimalPrecision(unitsDecimalPrecision);
+        LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_MIN_WIDTH_ATTRIBUTE);
+        return SchemaReadStatus::InvalidECSchemaXml;
         }
 
     Utf8String decimalSeparator;
@@ -228,7 +240,18 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         spec.SetStationSeparator(statSeparator.at(0));
-        }   
+        }
+
+    Utf8String prefixPadChar;
+    if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(prefixPadChar, FORMAT_PREFIX_PAD_CHAR_ATTRIBUTE))
+        {
+        if (prefixPadChar.length() > 1 || prefixPadChar.length() == 0)
+            {
+            LOG.errorv("%s node '%s' contains an invalid %s value %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PREFIX_PAD_CHAR_ATTRIBUTE, prefixPadChar.c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        spec.SetPrefixPadChar(prefixPadChar.at(0));
+        }
 
     SetNumericSpec(spec);
     auto child = unitFormatNode.GetFirstChild();
@@ -244,6 +267,12 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
             return compStatus;
         }
 
+    if (IsProblem())
+        {
+        LOG.errorv("%s node '%s' has problem '%s'", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), GetProblemDescription());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
+
     return SchemaReadStatus::Success;
     }
 //---------------------------------------------------------------------------------------
@@ -251,20 +280,6 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaReadStatus Format::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context)
     {
-
-    Utf8String inputUnit;
-    if (BEXML_Success != compositeNode.GetAttributeStringValue(inputUnit, COMPOSITE_INPUT_UNIT_ATTRIBUTE))
-        {
-        LOG.errorv("%s node on %s doesn't contain a valid %s attribute which is required", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), COMPOSITE_INPUT_UNIT_ATTRIBUTE);
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-    ECUnitCP unit = GetSchema().GetUnitsContext().LookupUnit(inputUnit.c_str());
-    if (nullptr == unit)
-        {
-        LOG.errorv("%s node's %s on %s could not be found", FORMAT_COMPOSITE_ELEMENT, COMPOSITE_INPUT_UNIT_ATTRIBUTE, GetFullName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
     uint32_t numChildren = 0;
     bvector<ECUnitCP> units;
     bvector<Nullable<Utf8String>> labels;
@@ -295,11 +310,28 @@ SchemaReadStatus Format::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchema
         comp.SetMinorLabel(labels[2].Value());
     if (labels.size() > 3 && labels[3].IsValid())
         comp.SetSubLabel(labels[3].Value());
-    comp.SetInputUnit(unit);
+
+    Utf8String inputUnit;
+    if (BEXML_Success == compositeNode.GetAttributeStringValue(inputUnit, COMPOSITE_INPUT_UNIT_ATTRIBUTE))
+        {
+        ECUnitCP unit = GetSchema().GetUnitsContext().LookupUnit(inputUnit.c_str());
+        if (nullptr == unit)
+            {
+            LOG.errorv("%s node's %s on %s could not be found", FORMAT_COMPOSITE_ELEMENT, COMPOSITE_INPUT_UNIT_ATTRIBUTE, GetFullName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        comp.SetInputUnit(unit);
+        }
 
     Utf8String spacer;
     if (BEXML_Success == compositeNode.GetAttributeStringValue(spacer, COMPOSITE_SPACER_ATTRIBUTE))
         comp.SetSpacer(spacer.c_str());
+
+    if (comp.IsProblem())
+        {
+        LOG.errorv("%s node on %s has problem '%s'", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), comp.GetProblemDescription());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
 
     SetCompositeSpec(comp);
 
@@ -365,6 +397,8 @@ SchemaWriteStatus Format::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
                 static_cast<uint32_t>(pow(2u, static_cast<uint32_t>(nfs->GetFractionalPrecision()))) : 
                 static_cast<uint32_t>(nfs->GetDecimalPrecision()));
             }
+        if (nfs->HasMinWidth())
+            xmlWriter.WriteAttribute(FORMAT_MIN_WIDTH_ATTRIBUTE, nfs->GetMinWidth());
         if (Formatting::PresentationType::Scientific == GetPresentationType())
             xmlWriter.WriteAttribute(FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, Formatting::Utils::ScientificTypeName(nfs->GetScientificType()).c_str());
         if (nfs->HasDecimalSeparator())
@@ -373,6 +407,8 @@ SchemaWriteStatus Format::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
             xmlWriter.WriteAttribute(FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, Utf8String(1,nfs->GetThousandSeparator()).c_str());
         if (nfs->HasUomSeparator())
             xmlWriter.WriteAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE, nfs->GetUomSeparator());
+        if (nfs->HasPrefixPadChar())
+            xmlWriter.WriteAttribute(FORMAT_PREFIX_PAD_CHAR_ATTRIBUTE, Utf8String(1, nfs->GetPrefixPadChar()).c_str());
         if (nfs->HasStationSeparator())
             xmlWriter.WriteAttribute(FORMAT_STAT_SEPARATOR_ATTRIBUTE, Utf8String(1, nfs->GetStationSeparator()).c_str());
         if (Formatting::PresentationType::Station == GetPresentationType())
