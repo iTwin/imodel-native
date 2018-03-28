@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include "BeSQLite.h"
-#include <Bentley/BeThread.h>
 
 BESQLITE_TYPEDEFS(IByteArray);
 BESQLITE_TYPEDEFS(ChangeGroup);
@@ -543,48 +542,5 @@ public:
     //! Dump the contents of this stream for debugging
     BE_SQLITE_EXPORT void Dump(Utf8CP label, DbCR db, bool isPatchSet = false, int detailLevel = 0);
 };
-
-//=======================================================================================
-//! Handles a request to stream output by writing to a BlockingQueue. Can be used as the producer side of a concurrent pipeline.
-// @bsiclass                                                 Sam.Wilson     03/2018
-//=======================================================================================
-struct ChangeStreamQueueProducer : ChangeStream
-    {
-    concurrent_queue<bvector<uint8_t>>& m_q;
-    ChangeStreamQueueProducer(concurrent_queue<bvector<uint8_t>>& q) : m_q(q) {}
-    DbResult _OutputPage(const void *pData, int nData) override
-        {
-        m_q.push(bvector<uint8_t>((uint8_t*)pData, (uint8_t*)pData + nData));
-        return BE_SQLITE_OK;
-        }
-    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) {BeAssert(false); return ConflictResolution::Abort;}
-    };
-
-//=======================================================================================
-//! Satisfies a request for input by reading from a BlockingQueue. Can be used as the consumer side of a concurrent pipeline.
-// @bsiclass                                                 Sam.Wilson     03/2018
-//=======================================================================================
-struct ChangeStreamQueueConsumer : ChangeStream
-    {
-    concurrent_queue<bvector<uint8_t>>& m_q;
-    ChangeStreamQueueConsumer(concurrent_queue<bvector<uint8_t>>& q) : m_q(q) {}
-    DbResult _InputPage(void *pData, int *pnData) override
-        {
-        bvector<uint8_t> data;
-        try {
-            m_q.wait_and_pop(data);
-            }
-        catch (concurrent_queue<bvector<uint8_t>>::Canceled)
-            {
-            *pnData = 0;
-            return BE_SQLITE_OK;
-            }
-        if (!data.empty())
-            memcpy(pData, data.data(), data.size());
-        *pnData = (int)data.size();
-        return BE_SQLITE_OK;
-        }
-    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) {BeAssert(false); return ConflictResolution::Abort;}
-    };
 
 END_BENTLEY_SQLITE_NAMESPACE
