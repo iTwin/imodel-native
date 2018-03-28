@@ -526,11 +526,8 @@ declare class NativeECSqlStatement implements IDisposable {
 }
 
 /* The NativeECSqlBinder class that is projected by IModelJsNative. */
-declare class NativeECSqlBinder implements IDisposable {
+declare class NativeECSqlBinder{
     constructor();
-
-    /** Dispose of the NativeECSqlBinder object */
-    dispose(): void;
 
     /** Binds null to the parameter represented by this binder
      * @return non-zero error status in case of failure.
@@ -658,10 +655,8 @@ declare class NativeECSqlColumnInfo {
 }
 
 /* The NativeECSqlValue class that is projected by IModelJsNative. */
-declare class NativeECSqlValue implements IDisposable {
+declare class NativeECSqlValue {
     constructor();
-
-    dispose(): void;
 
     /** Get information about the ECSQL SELECT clause column this value refers to. */
     getColumnInfo(): NativeECSqlColumnInfo;
@@ -703,9 +698,8 @@ declare class NativeECSqlValue implements IDisposable {
 }
 
 /* The NativeECSqlValueIterator class that is projected by IModelJsNative. */
-declare class NativeECSqlValueIterator implements IDisposable {
+declare class NativeECSqlValueIterator {
     constructor();
-    dispose(): void;
     /**
      * Move the iterator to the next ECSqlValue.
      * @returns Returns true if the iterator now points to the next element. Returns false if the iterator reached the end.

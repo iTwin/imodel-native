@@ -1411,7 +1411,6 @@ public:
             InstanceMethod("bindPoint2d", &NativeECSqlBinder::BindPoint2d),
             InstanceMethod("bindPoint3d", &NativeECSqlBinder::BindPoint3d),
             InstanceMethod("bindString", &NativeECSqlBinder::BindString),
-            InstanceMethod("dispose", &NativeECSqlBinder::Dispose),
         });
 
         exports.Set("NativeECSqlBinder", t);
@@ -1426,15 +1425,6 @@ public:
     static Napi::Object New(Napi::Env const& env, IECSqlBinder& binder, ECDbCR ecdb)
         {
         return s_constructor.New({Napi::External<IECSqlBinder>::New(env, &binder), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
-        }
-
-    void Dispose(Napi::CallbackInfo const& info)
-        {
-        if (m_binder != nullptr)
-            m_binder = nullptr;
-
-        if (m_ecdb != nullptr)
-            m_ecdb = nullptr;
         }
 
     Napi::Value BindNull(Napi::CallbackInfo const& info)
@@ -1912,7 +1902,6 @@ public:
         // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NativeECSqlValue", {
-            InstanceMethod("dispose", &NativeECSqlValue::Dispose),
             InstanceMethod("getArrayIterator", &NativeECSqlValue::GetArrayIterator),
             InstanceMethod("getBlob", &NativeECSqlValue::GetBlob),
             InstanceMethod("getBoolean", &NativeECSqlValue::GetBoolean),
@@ -1945,15 +1934,6 @@ public:
     static Napi::Object New(Napi::Env const& env, IECSqlValue const& val, ECDbCR ecdb)
         {
         return s_constructor.New({Napi::External<IECSqlValue>::New(env, const_cast<IECSqlValue*>(&val)), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
-        }
-
-    void Dispose(Napi::CallbackInfo const& info)
-        {
-        if (m_ecsqlValue != nullptr)
-            m_ecsqlValue = nullptr;
-
-        if (m_ecdb != nullptr)
-            m_ecdb = nullptr;
         }
 
     Napi::Value GetColumnInfo(Napi::CallbackInfo const& info)
@@ -2141,7 +2121,6 @@ struct NativeECSqlValueIterator : Napi::ObjectWrap<NativeECSqlValueIterator>
             // ***
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "NativeECSqlValueIterator", {
-            InstanceMethod("dispose", &NativeECSqlValueIterator::Dispose),
             InstanceMethod("moveNext", &NativeECSqlValueIterator::MoveNext),
             InstanceMethod("getCurrent", &NativeECSqlValueIterator::GetCurrent)});
 
@@ -2157,15 +2136,6 @@ struct NativeECSqlValueIterator : Napi::ObjectWrap<NativeECSqlValueIterator>
         static Napi::Object New(Napi::Env const& env, IECSqlValueIterable const& iterable, ECDb const& ecdb)
             {
             return s_constructor.New({Napi::External<IECSqlValueIterable>::New(env, const_cast<IECSqlValueIterable*>(&iterable)), Napi::External<ECDb>::New(env, const_cast<ECDb*>(&ecdb))});
-            }
-
-        void Dispose(Napi::CallbackInfo const& info)
-            {
-            if (m_ecdb != nullptr)
-                m_ecdb = nullptr;
-
-            if (m_iterable != nullptr)
-                m_iterable = nullptr;
             }
 
         // A JS iterator expects the initial state of an iterator to be before the first element.
