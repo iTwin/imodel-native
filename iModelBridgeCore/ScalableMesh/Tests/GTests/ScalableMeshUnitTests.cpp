@@ -1279,8 +1279,8 @@ TEST_P(ScalableMeshGenerationTestWithParams, FromSourceCreation)
 
     EXPECT_EQ(status == SUCCESS && smPtr.IsValid(), true);
     
-    //EXPECT_EQ(smPtr->InSynchWithSources(), true);
-    //EXPECT_EQ(smPtr->InSynchWithDataSources(), true);
+    EXPECT_EQ(smPtr->InSynchWithSources(), true);
+    EXPECT_EQ(smPtr->InSynchWithDataSources(), true);
 
     time_t lastSynchTime;
 

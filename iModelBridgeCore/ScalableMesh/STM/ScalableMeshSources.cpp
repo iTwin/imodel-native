@@ -391,9 +391,19 @@ IDTMSource::Impl::Impl(DTMSourceDataType       sourceDataType,
     {
     m_path = WString(fullPath);
     m_sourceDataType = sourceDataType;
+    
+    struct _stat64i32 attrib;
+
+    if (_wstat(fullPath, &attrib) == 0)
+        {        
+        ScalableMeshData data = m_config.GetReplacementSMData();
+    
+        time_t time = attrib.st_mtime;    
+        data.SetTimeFile(time);
+        m_config.SetReplacementSMData(data);
+        }       
 
     m_config.RegisterEditListener(*this);
-
     }
  
 IDTMSource::Impl::Impl (const Impl& rhs)
