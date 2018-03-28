@@ -1,4 +1,4 @@
 
 
 always:
-	python $(_MakeFilePath)GenerateClassificationInserts.py $(_MakeFilePath)StandardRooms.xml $(SrcRoot)DgnDomains\ClassificationSystems\Domain\ClassificationInserts.cpp
+	python $(_MakeFilePath)GenerateClassificationInserts.py $(_MakeFilePath)StandardRooms.xml $(SrcRoot)DgnDomains\ClassificationSystems\Domain\GeneratedClassificationInserts.cpp
