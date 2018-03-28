@@ -1031,7 +1031,7 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPol
             auto            fbChannelDataValues = fbChannelData->values();
             bvector<float> values(fbChannelDataValues->Length());
 
-            memcpy (values.data(), fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(double));
+            memcpy (values.data(), fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(float));
             channelDataVector.push_back(new PolyfaceAuxData::Data(fbChannelData->input(), std::move(values)));
             }
         channels.push_back(new PolyfaceAuxData::Channel(fbChannel->blockSize(), PolyfaceAuxData::TransformType(fbChannel->transformType()), fbChannel->name()->c_str(), fbChannel->inputName()->c_str(), std::move(channelDataVector)));
