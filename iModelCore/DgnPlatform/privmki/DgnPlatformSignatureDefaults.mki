@@ -2,16 +2,9 @@
 #|
 #|     $Source: privmki/DgnPlatformSignatureDefaults.mki $
 #|
-#| $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#| $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #|
 #+--------------------------------------------------------------------------------------*/
-#
-#  The default for sharedmki/linkMixedAssembly.mki is to NOT strongly name.  We choose
-#  to enforce an opposite default for MicroStation here.
-#
-%if !defined (ASSEMBLY_NO_STRONGNAME) && !defined (ASSEMBLY_STRONGNAME) && !defined (ASSEMBLY_MODULE)
-    %error You should seriously consider setting ASSEMBLY_STRONGNAME, but if you are sure you do not want a strongly named assembly then set ASSEMBLY_NO_STRONGNAME instead.
-%endif
 
 %if !defined (DLM_NO_SIGN) && !defined (DLM_NO_RCSIGN) && !defined (ASSEMBLY_NO_RIGHTS_COMPLIANCE_CHECK)
     %include $(SrcRoot)bsicommon/sharedmki/isrightscompliant.mki
