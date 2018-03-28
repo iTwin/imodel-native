@@ -13,7 +13,7 @@
 
 #include "SQLite/sqlite3.h"
 
-#define STREAM_PAGE_BYTE_SIZE 1024
+#define STREAM_PAGE_BYTE_SIZE 2048
 #define LOG (*NativeLogging::LoggingManager::GetLogger(L"BeSQLite"))
 
 USING_NAMESPACE_BENTLEY
@@ -412,7 +412,7 @@ Utf8String DbValue::Format(int detailLevel) const
             return Utf8PrintfString("%" PRId64, GetValueInt64());
 
         case DbValueType::FloatVal:
-            return Utf8PrintfString("%lg", GetValueDouble());
+            return Utf8PrintfString("%0.17lf", GetValueDouble());
 
         case DbValueType::TextVal:
             return Utf8PrintfString("\"%s\"", GetValueText());
@@ -597,29 +597,6 @@ Utf8CP ChangeSet::InterpretConflictCause(ChangeSet::ConflictCause cause, int det
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String formatOldValue(Statement& stmt)
-    {
-    switch (stmt.GetColumnType(0))
-        {
-        case DbValueType::IntegerVal:
-            return Utf8PrintfString("%" PRId64, stmt.GetValueInt64(0));
-
-        case DbValueType::FloatVal:
-            return Utf8PrintfString("%lg", stmt.GetValueDouble(0));
-
-        case DbValueType::TextVal:
-            return Utf8PrintfString("\"%s\"", stmt.GetValueText(0));
-
-        case DbValueType::NullVal:
-            return "null";
-        }
-
-    return "?";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
 void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
     {
     Utf8CP tableName = nullptr;
@@ -667,7 +644,7 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
         if (BE_SQLITE_ROW != stmt.Step())
             return; // The row is not found. This must be a NOT_FOUND conflict, i.e., there is no current row with this Id.
             
-        Utf8String oldVal = formatOldValue(stmt);
+        Utf8String oldVal = stmt.GetDbValue(0).Format(1);
 
         LOG.infov(Utf8PrintfString("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str()).c_str());
         }

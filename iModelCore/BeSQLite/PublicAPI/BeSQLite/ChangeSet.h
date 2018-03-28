@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "BeSQLite.h"
+#include <Bentley/BeThread.h>
 
 BESQLITE_TYPEDEFS(IByteArray);
 BESQLITE_TYPEDEFS(ChangeGroup);
@@ -304,7 +305,7 @@ public:
 
 //=======================================================================================
 //! Tool to "rebase" a ChangeSet to become based on the state of the database "as of" a new state, different than the beginning
-//! of the session in which the changes were recoreded. This is only necessary remote changes are applied and conflicts are resolved. 
+//! of the session in which the changes were recoreded. This is only necessary when remote changes are applied and conflicts are resolved. 
 //! See SQlite documentation on "Rebasing changesets" for complete explanation.
 // @bsiclass                                                    Keith.Bentley   06/15
 //=======================================================================================
@@ -320,6 +321,7 @@ public:
     BE_SQLITE_EXPORT void AddRebase(Rebase& rebase);
     BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeSet const&in, struct ChangeSet& out);
     BE_SQLITE_EXPORT DbResult DoRebase(struct ChangeStream const& in, struct ChangeStream& out);
+
 };
 
 //=======================================================================================
@@ -470,7 +472,6 @@ private:
     // Resets the change stream, and is internally called at the 
     // end of various change stream operations
     void Reset() {_Reset();}
-    static DbResult TransferBytesBetweenStreams(ChangeStream& inStream, ChangeStream& outStream);
 
     BE_SQLITE_EXPORT DbResult _FromChangeTrack(ChangeTracker& tracker, SetType setType) override final;
     BE_SQLITE_EXPORT DbResult _FromChangeGroup(ChangeGroupCR changeGroup) override final;
@@ -500,6 +501,7 @@ protected:
     ~ChangeStream() = default;
 
 public:
+    BE_SQLITE_EXPORT static DbResult TransferBytesBetweenStreams(ChangeStream& inStream, ChangeStream& outStream);
     
     //! Stream changes to a ChangeGroup. 
     //! @param[out] changeGroup ChangeGroup to stream to stream the contents to
@@ -541,5 +543,48 @@ public:
     //! Dump the contents of this stream for debugging
     BE_SQLITE_EXPORT void Dump(Utf8CP label, DbCR db, bool isPatchSet = false, int detailLevel = 0);
 };
+
+//=======================================================================================
+//! Handles a request to stream output by writing to a BlockingQueue. Can be used as the producer side of a concurrent pipeline.
+// @bsiclass                                                 Sam.Wilson     03/2018
+//=======================================================================================
+struct ChangeStreamQueueProducer : ChangeStream
+    {
+    concurrent_queue<bvector<uint8_t>>& m_q;
+    ChangeStreamQueueProducer(concurrent_queue<bvector<uint8_t>>& q) : m_q(q) {}
+    DbResult _OutputPage(const void *pData, int nData) override
+        {
+        m_q.push(bvector<uint8_t>((uint8_t*)pData, (uint8_t*)pData + nData));
+        return BE_SQLITE_OK;
+        }
+    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) {BeAssert(false); return ConflictResolution::Abort;}
+    };
+
+//=======================================================================================
+//! Satisfies a request for input by reading from a BlockingQueue. Can be used as the consumer side of a concurrent pipeline.
+// @bsiclass                                                 Sam.Wilson     03/2018
+//=======================================================================================
+struct ChangeStreamQueueConsumer : ChangeStream
+    {
+    concurrent_queue<bvector<uint8_t>>& m_q;
+    ChangeStreamQueueConsumer(concurrent_queue<bvector<uint8_t>>& q) : m_q(q) {}
+    DbResult _InputPage(void *pData, int *pnData) override
+        {
+        bvector<uint8_t> data;
+        try {
+            m_q.wait_and_pop(data);
+            }
+        catch (concurrent_queue<bvector<uint8_t>>::Canceled)
+            {
+            *pnData = 0;
+            return BE_SQLITE_OK;
+            }
+        if (!data.empty())
+            memcpy(pData, data.data(), data.size());
+        *pnData = (int)data.size();
+        return BE_SQLITE_OK;
+        }
+    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) {BeAssert(false); return ConflictResolution::Abort;}
+    };
 
 END_BENTLEY_SQLITE_NAMESPACE
