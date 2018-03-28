@@ -10,6 +10,7 @@
 #include <BeSQLite/BeLzma.h>
 #include <DgnPlatform/DgnChangeSummary.h>
 #include <ECDb/ChangeIterator.h>
+#include <folly/ProducerConsumerQueue.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -1340,6 +1341,50 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
     return revision;
     }
 
+//=======================================================================================
+//! Handles a request to stream output by writing to a ProducerConsumerQueue. Can be used as the producer side of a concurrent pipeline.
+// @bsiclass                                                 Sam.Wilson     03/2018
+//=======================================================================================
+struct ChangeStreamQueueProducer : ChangeStream
+    {
+    folly::ProducerConsumerQueue<bvector<uint8_t>>& m_q;
+    ChangeStreamQueueProducer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
+    DbResult _OutputPage(const void *pData, int nData) override
+        {
+        bvector<uint8_t> vec((uint8_t*)pData, (uint8_t*)pData + nData);
+        while (!m_q.write(vec))
+            ;   // spin until the queue has room
+        return BE_SQLITE_OK;
+        }
+    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) {BeAssert(false); return ConflictResolution::Abort;}
+    };
+
+//=======================================================================================
+//! Satisfies a request for input by reading from a ProducerConsumerQueue. Can be used as the consumer side of a concurrent pipeline.
+// @bsiclass                                                 Sam.Wilson     03/2018
+//=======================================================================================
+struct ChangeStreamQueueConsumer : ChangeStream
+    {
+    folly::ProducerConsumerQueue<bvector<uint8_t>>& m_q;
+    ChangeStreamQueueConsumer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
+    DbResult _InputPage(void *pData, int *pnData) override
+        {
+        bvector<uint8_t>* pval;
+        do  {
+            pval = m_q.frontPtr();
+            }
+        while (!pval); // spin until we get a value;
+
+        if (!pval->empty())
+            memcpy(pData, pval->data(), pval->size());
+        *pnData = (int)pval->size();
+
+        m_q.popFront();
+        return BE_SQLITE_OK;
+        }
+    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) {BeAssert(false); return ConflictResolution::Abort;}
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
@@ -1352,7 +1397,7 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
     if (BE_SQLITE_OK != result)
         return RevisionStatus::FileWriteError;
 	
-    concurrent_queue<bvector<uint8_t>> pageQueue;
+    folly::ProducerConsumerQueue<bvector<uint8_t>> pageQueue{5};
 
     DbResult transferResult = BE_SQLITE_OK;
     ChangeStreamQueueConsumer readFromQueue(pageQueue);
@@ -1361,8 +1406,8 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
     ChangeStreamQueueProducer writeToQueue(pageQueue);
     result = writeToQueue.FromChangeGroup(dataChangeGroup);
 
-    pageQueue.push(bvector<uint8_t>());    // write an empty page to tell the consumer that we are done.
-	
+    while (!pageQueue.write(bvector<uint8_t>()))    // write an empty page to tell the consumer that we are done.
+	    ;
     writerThread.join();
 
     if (BE_SQLITE_OK == result)
