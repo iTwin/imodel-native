@@ -170,7 +170,7 @@ TEST_F(SqlFunctionsTest, placement_areaxy)
     //  Compute the sum of the areas using SUM -- should get the same result
     if (true)
         {
-        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_bbox_areaxy_sum.sampleCode
+        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_iModel_bbox_areaxy_sum.sampleCode
         // This is an example of using DGN_placement_eabb to sum up element areas. Note that we must to use 
         // element-aligned bounding boxes in this query, rather than axis-aligned bounding boxes.
         Statement stmt;
@@ -230,7 +230,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
         {
         //  Do the same by checking the yaw angle directly
         Statement stmt2;
-        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_value.sampleCode
+        //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_iModel_angles_value.sampleCode
         // This query uses DGN_angles_value to extract the Yaw angle of an element's placement, in order to compare it with 90.
         stmt2.Prepare(*m_db, "SELECT g.ElementId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g WHERE ABS(g.Yaw - 90) < 1.0");
         //__PUBLISH_EXTRACT_END__
@@ -268,7 +268,7 @@ TEST_F(SqlFunctionsTest, placement_angles)
     ASSERT_EQ( BE_SQLITE_DONE, stmt.Step() );
 
     //  Now add an additional where clause, so that we find only elem2At90
-    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles_maxdiff.sampleCode
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_iModel_angles_maxdiff.sampleCode
     // This query looks for "Obstacles" that are oriented at 90 degrees in the X-Y plane.
     // It is an example of using DGN_angles_maxdiff to look for elements with a specific placement angle. 
     // This example also shows how to combine tests on geometry and business properties in a single query. 
@@ -690,7 +690,7 @@ TEST_F(SqlFunctionsTest, spatialQuery)
         o2a = obstacle2a->GetElementId();
         }
 
-    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_spatial_overlap_aabb.sampleCode
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_iModel_spatial_overlap_aabb.sampleCode
     // This query uses DGN_spatial_overlap_aabb to find elements whose range overlaps the argument :bbox and are of class :ecClass and have
     // item property = :propertyValue.
     Statement stmt;
@@ -880,7 +880,7 @@ TEST_F(SqlFunctionsTest, bbox_union) // FIXME: Hard-coded DgnModelId
 
     stmt.Finalize();
 #ifdef NEEDSWORK_PLACEMENT_STRUCT
-    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_DGN_angles.sampleCode
+    //__PUBLISH_EXTRACT_START__ DgnSchemaDomain_SqlFuncs_iModel_angles.sampleCode
     // An example of constructing a DGN_Angles object in order to test the placement angles of elements in the Db.
     Utf8CP anglesSql = "SELECT count(*) FROM (SELECT Placement FROM "
         BIS_TABLE(BIS_CLASS_GeometricElement3d)
