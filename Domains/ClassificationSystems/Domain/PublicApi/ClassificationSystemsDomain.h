@@ -26,6 +26,11 @@ private:
     WCharCP _GetSchemaRelativePath () const override { return CLASSIFICATIONSYSTEMS_SCHEMA_PATH; }
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
 
+    void InsertDefinitionSystems(Dgn::DgnDbR db) const;
+    void InsertCIBSE(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category) const;
+    void InsertASHRAE2004(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category) const;
+    void InsertASHRAE2007(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category) const;
+    void InsertASHRAE2010(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category) const;
 //__PUBLISH_SECTION_END__
 
 //__PUBLISH_SECTION_START__

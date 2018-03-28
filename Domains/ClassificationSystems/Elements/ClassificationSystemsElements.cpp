@@ -46,22 +46,4 @@ CIBSEClassDefinitionPtr CIBSEClassDefinition::Create
         CIBSEClassDefinitionPtr gridSurface = new CIBSEClassDefinition(params, name, Category);
         return gridSurface;
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Martynas.Saulius               03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-/*
-void InsertCIBSE
-(
-    Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP Category
-) 
-    {
-        CIBSEClassDefinitionPtr classDefinition = CIBSEClassDefinition::Create(db, name,Category);
-        if (Dgn::RepositoryStatus::Success != BuildingLocks_LockElementForOperation(CIBSEClassDefinitionPtr.Get(), BeSQLite::DbOpcode::Insert, "CIBSEClassDefinition : Insertion"))
-        {
-            classDefinition->Insert();
-        }
-    }
-*/
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

@@ -7,7 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #include <ClassificationSystems/ClassificationSystemsApi.h>
 #include <DgnClientFx/DgnClientApp.h>
+#include <BuildingShared\BuildingSharedApi.h>
 
+
+namespace BS = BENTLEY_BUILDING_SHARED_NAMESPACE_NAME;
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
@@ -18,7 +21,7 @@ BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 DOMAIN_DEFINE_MEMBERS(ClassificationSystemsDomain)
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Jonas.Valiunas                 03/2017
+// @bsimethod                                    Jonas.Valiunas                 03/2018
 //---------------------------------------------------------------------------------------
 ClassificationSystemsDomain::ClassificationSystemsDomain () : Dgn::DgnDomain(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, "ClassificationSystems Domain", 1)
     {
@@ -26,7 +29,7 @@ ClassificationSystemsDomain::ClassificationSystemsDomain () : Dgn::DgnDomain(CLA
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Jonas.Valiunas                 03/2017
+// @bsimethod                                    Jonas.Valiunas                 03/2018
 //---------------------------------------------------------------------------------------
 ClassificationSystemsDomain::~ClassificationSystemsDomain ()
     {
@@ -34,14 +37,64 @@ ClassificationSystemsDomain::~ClassificationSystemsDomain ()
 
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Jonas.Valiunas                 03/2017
+// @bsimethod                                    Jonas.Valiunas                 03/2018
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsDomain::_OnSchemaImported(Dgn::DgnDbR db) const
     {
-
-
-
+    ClassificationSystemsDomain::InsertDefinitionSystems(db);
+        //TODO call my Generated Method
+        //TODO all methods
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              03/2018
+//---------------------------------------------------------------------------------------
+void ClassificationSystemsDomain::InsertCIBSE 
+(
+    Dgn::DgnDbR db,
+    Utf8CP name,
+    Utf8CP Category
+) const
+    {
+    CIBSEClassDefinitionPtr classDefinition = CIBSEClassDefinition::Create(db, name, Category);
+    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinition.get(), BeSQLite::DbOpcode::Insert, "CIBSEClassDefinition : Insertion"))
+        {
+        classDefinition->Insert();
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              03/2018
+//---------------------------------------------------------------------------------------
+void ClassificationSystemsDomain::InsertASHRAE2004 
+(
+    Dgn::DgnDbR db,
+    Utf8CP name,
+    Utf8CP Category
+) const
+    {
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              03/2018
+//---------------------------------------------------------------------------------------
+void ClassificationSystemsDomain::InsertASHRAE2007 
+(
+    Dgn::DgnDbR db,
+    Utf8CP name,
+    Utf8CP Category
+) const
+    {
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              03/2018
+//---------------------------------------------------------------------------------------
+void ClassificationSystemsDomain::InsertASHRAE2010 
+(
+    Dgn::DgnDbR db,
+    Utf8CP name,
+    Utf8CP Category
+) const
+    {
     }
 
+#include "GeneratedClassificationInserts.cpp"
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
