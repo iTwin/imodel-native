@@ -15,14 +15,14 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct UnitsPerformanceTest : PerformanceTestFixture {};
 
-//void GetUnitsByName(SchemaUnitContextR context, bvector<Utf8String>& unitNames)
-//    {
-//    for (auto const& unitName : unitNames)
-//        {
-//        auto unit = context.LookupUnit(unitName.c_str());
-//        ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
-//        }
-//    }
+void GetUnitsByName(SchemaUnitContextCR context, bvector<Utf8String>& unitNames)
+    {
+    for (auto const& unitName : unitNames)
+        {
+        auto unit = context.LookupUnit(unitName.c_str());
+        ASSERT_TRUE(unit != nullptr) << "Failed to get unit: " << unitName;
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                                07/2017
@@ -51,7 +51,7 @@ TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
         overallTime += timer.GetElapsedSeconds();
         }
 
-    PERFORMANCELOG.errorv("Time to load the Standard Units Schema 10000 times with %lu units: %.17g", unitsSchema->GetUnitCount(), overallTime);
+    PERFORMANCELOG.infov("Time to load the Standard Units Schema 10000 times with %lu units: %.17g", unitsSchema->GetUnitCount(), overallTime);
 
     LOGTODB(TEST_DETAILS, overallTime, 10000, "Loading the Units Schema");
 
@@ -63,33 +63,31 @@ TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                               07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-//TEST_F(UnitsPerformanceTest, GetEveryUnitByName)
-//    {
-//    StopWatch timer("Get every unit by name", false);
-//    bvector<Utf8String> allUnitNames;
-//
-//    timer.Start();
-//    GetUnitsSchema()->GetUnitsContext().AllUnitNames(allUnitNames, false);
-//    timer.Stop();
-//    PERFORMANCELOG.errorv("Time to get all %lu primary unit names: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
-//    
-//    timer.Start();
-//    GetUnitsByName(*hub, allUnitNames);
-//    timer.Stop();
-//    PERFORMANCELOG.errorv("Time to get %lu units by name: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
-//
-//    hub = new UnitRegistry();
-//    allUnitNames.clear();
-//    timer.Start();
-//    hub->AllUnitNames(allUnitNames, true);
-//    timer.Stop();
-//    PERFORMANCELOG.errorv("Time to get all %lu primary unit names and synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
-//
-//    timer.Start();
-//    GetUnitsByName(*hub, allUnitNames);
-//    timer.Stop();
-//    PERFORMANCELOG.errorv("Time to get %lu units by name including using synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
-//    }
+TEST_F(UnitsPerformanceTest, GetEveryUnitByName)
+    {
+    StopWatch timer("Get every unit by name", false);
+
+    SchemaUnitContextCR context = GetUnitsSchema()->GetUnitsContext();
+
+    bvector<Units::UnitCP> allUnits;
+    timer.Start();
+    context.AllUnits(allUnits);
+    timer.Stop();
+    PERFORMANCELOG.infov("Time to get all %lu units from the Standard Units Schema: %.17g", allUnits.size(), timer.GetElapsedSeconds());
+
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Load all Units from the Standard Units Schema");
+
+    bvector<Utf8String> allUnitNames;
+    for (auto unit : allUnits)
+        allUnitNames.push_back(unit->GetName().c_str());
+
+    timer.Start();
+    GetUnitsByName(context, allUnitNames);
+    timer.Stop();
+    PERFORMANCELOG.infov("Time to get %lu units by name: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
+
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Get all Unit names from the Standard Units Schema");
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                               07/2017
@@ -117,25 +115,31 @@ TEST_F(UnitsPerformanceTest, GenerateEveryConversionValue)
             }
         }
     timer.Stop();
-    PERFORMANCELOG.errorv("Time to Generate %d conversion factors: %.17g", numConversions, timer.GetElapsedSeconds());
+    PERFORMANCELOG.infov("Time to Generate %d conversion factors: %.17g", numConversions, timer.GetElapsedSeconds());
+
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Generate conversion factors for all Units within the Phenomena");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            Colin.Kerr                               07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-//TEST_F(UnitsPerformanceTests, ConvertManyValues)
-//    {
-//    StopWatch timer("Do Many Conversions", false);
-//    UnitRegistry::Clear();
-//    UnitCP unitA = UnitRegistry::Get().LookupUnit("CUB.M/(SQ.M*DAY)");
-//    UnitCP unitB = UnitRegistry::Get().LookupUnit("CUB.FT/(ACRE*SEC)");
-//
-//    int numTimes = 1000000;
-//    timer.Start();
-//    for (int i = 0; i < numTimes; ++i)
-//        unitA->Convert(42.42, unitB);
-//    timer.Stop();
-//    PERFORMANCELOG.errorv("Time to covert between %s and %s %d times: %.15g", unitA->GetName(), unitB->GetName(), numTimes, timer.GetElapsedSeconds());
-//    }
+TEST_F(UnitsPerformanceTest, ConvertManyValues)
+    {
+    StopWatch timer("Do Many Conversions", false);
+    SchemaUnitContextCR context = GetUnitsSchema()->GetUnitsContext();
+    ECUnitCP unitA = context.LookupUnit("CUB_M_PER_SQ_M_DAY");
+    ECUnitCP unitB = context.LookupUnit("CUB_FT_PER_ACRE_SEC");
+
+    double converted;
+
+    int numTimes = 1000000;
+    timer.Start();
+    for (int i = 0; i < numTimes; ++i)
+        unitA->Convert(converted, 42.42, unitB);
+    timer.Stop();
+    PERFORMANCELOG.infov("Time to convert between %s and %s %d times: %.15g", unitA->GetName(), unitB->GetName(), numTimes, timer.GetElapsedSeconds());
+
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), numTimes, "Convert between two units. (Conversion is not cached)");
+    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
