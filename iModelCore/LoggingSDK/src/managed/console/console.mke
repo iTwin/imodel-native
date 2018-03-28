@@ -2,7 +2,7 @@
 #
 #     $Source: src/managed/console/console.mke $
 #
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 HAVE_PERMISSION_TO_COMPILE_AT_W3=1
@@ -30,7 +30,6 @@ ASSEMBLY_DESCRIPTION = Console Logging Provider
 ASSEMBLY_PRODUCT_NAME = Console Logging Provider
 %include $(SharedMki)VersionedPartSignatureDefaults.mki
 ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
-ASSEMBLY_STRONGNAME = 1
 
 
 ASSEMBLY_SOURCE_LIST = $(prodSrc)console.cs

@@ -2,7 +2,7 @@
 #
 #     $Source: src/managed/log4net/log4net.mke $
 #
-#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 ASSEMBLY_WARN_AS_ERROR=2
@@ -40,7 +40,6 @@ ASSEMBLY_PRODUCT_NAME = Log4Net Logging Provider
 ASSEMBLY_VERSION = 2.0.0.0
 %include $(SharedMki)VersionedPartSignatureDefaults.mki
 ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
-ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = $(prodSrc)log4net.cs 
 

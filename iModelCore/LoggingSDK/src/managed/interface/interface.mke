@@ -2,7 +2,7 @@
 #
 #     $Source: src/managed/interface/interface.mke $
 #
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -24,7 +24,6 @@ ASSEMBLY_PRODUCT_NAME = Logging
 ASSEMBLY_VERSION = 2.0.0.0
 %include $(SharedMki)VersionedPartSignatureDefaults.mki
 ASSEMBLY_KEYFILE = $(ASSEMBLY_KEYFILE_DEFAULT)
-ASSEMBLY_STRONGNAME = 1
 ASSEMBLY_SOURCE_LIST = $(prodSrc)bsilog.cs \
 $(prodSrc)EmptyLogger.cs \
 $(prodSrc)LoggerRegistry.cs \
