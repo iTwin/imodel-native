@@ -8720,7 +8720,7 @@
                     <KeyName>BritishNatGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>OSGB-7P-2.BritishNatGrid</KeyName>
+                    <KeyName>OSGB-7P.BritishNatGrid</KeyName>
                   </Member>
                   <Member>
                     <KeyName>OSTN02.BritishNatGrid</KeyName>
@@ -29535,15 +29535,15 @@
                 <KeyName>EPSG:3399-1</KeyName>
               </Member>	      
             </Members>
-            <Group>
-              <Name>Czechoslovakia</Name>
-              <Members>
-                <Member>
-                  <KeyName>CzechJTSK/5b.Krovak</KeyName>
-                </Member>
-              </Members>
-            </Group>
             <Groups>
+              <Group>
+                <Name>Czechoslovakia</Name>
+                <Members>
+                  <Member>
+                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
+                  </Member>
+                </Members>
+              </Group>
               <Group>
                 <Name>South Africa</Name>
                 <Members>
@@ -33778,6 +33778,15 @@
                 <Name>UK</Name>
                 <Members>
                   <Member>
+                    <KeyName>OSGB-7P.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OSGB/OSTN02.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OSGB/OSTN15.LL</KeyName>
+                  </Member>
+                  <Member>
                     <KeyName>LLOSGB-7P</KeyName>
                   </Member>
                   <Member>
@@ -33797,9 +33806,6 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:4173</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4277</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4278</KeyName>
@@ -35849,6 +35855,9 @@
               </Member>
               <Member>
                 <KeyName>CzechJTSK/5b.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4277</KeyName>
               </Member>
             </Members>
           </Group>
