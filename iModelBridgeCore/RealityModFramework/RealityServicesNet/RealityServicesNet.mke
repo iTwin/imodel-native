@@ -2,7 +2,7 @@
 #
 #     $Source: RealityServicesNet/RealityServicesNet.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -62,7 +62,6 @@ BuildContextSubPartsLibraries = $(BuildContextSubPartsLibDir)Bentley$(libext) \
 #----------------------------------------------------------------------
 ASSEMBLY_TITLE          = $(assemblyName)
 ASSEMBLY_DESCRIPTION    = RealityServicesNet
-ASSEMBLY_STRONGNAME     = 1
 ASSEMBLY_VERSION        = 1.0.0.0
 
 DLM_OBJECT_DEST         = $(o)
