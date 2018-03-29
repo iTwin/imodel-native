@@ -329,7 +329,7 @@ SchemaReadStatus Format::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchema
 
     if (comp.IsProblem())
         {
-        // LOG.errorv("%s node on %s has problem %s", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), comp.GetProblemDescription());
+        LOG.errorv("%s node on %s has problem %s", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), comp.GetProblemDescription());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
@@ -346,14 +346,14 @@ SchemaReadStatus Format::ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadC
     Utf8String unitName;
     if (BEXML_Success != unitNode.GetContent(unitName))
         {
-        // LOG.errorv("%s node on %s is missing a unit value", FORMAT_COMPOSITE_UNIT_ELEMENT, GetFullName().c_str());
+        LOG.errorv("%s node on %s is missing a unit value", FORMAT_COMPOSITE_UNIT_ELEMENT, GetFullName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
     ECUnitCP unit = GetSchema().GetUnitsContext().LookupUnit(unitName.c_str());
     if (nullptr == unit)
         {
-        // LOG.errorv("%s node on %s has invalid unit %s", FORMAT_COMPOSITE_UNIT_ELEMENT, GetFullName().c_str(), unitName.c_str());
+        LOG.errorv("%s node on %s has invalid unit %s", FORMAT_COMPOSITE_UNIT_ELEMENT, GetFullName().c_str(), unitName.c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     units.push_back(unit);
