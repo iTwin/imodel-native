@@ -546,7 +546,7 @@ public:
     size_t GetMinorToSubRatio()    const {return m_ratio[indxMinor];}
 
     bool IsProblem() const {return m_problem.IsProblem();}
-    Utf8CP GetProblemDescription() const {return m_problem.GetProblemDescription().c_str();}
+    Utf8String GetProblemDescription() const {return m_problem.GetProblemDescription();}
 
     Utf8String SetSpacer(Utf8CP spacer) {m_explicitlyDefinedSpacer = true; return m_spacer = spacer;}
     Utf8String GetSpacer() const {return m_spacer;}
