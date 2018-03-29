@@ -1796,8 +1796,9 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         }
     else
         {
-        dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
-        assert(scale.x == 1 && scale.y == 1 && scale.z == 1);
+        if (projGCS != nullptr)
+            dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
+
         m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
         }
 
