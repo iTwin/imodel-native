@@ -11,6 +11,8 @@
 #include <DgnPlatform/DgnDb.h>
 #include <ECDb/ECDbApi.h>
 #include <DgnPlatform/ECUtils.h>
+#include <node-addon-api/napi.h>
+
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -24,12 +26,15 @@ namespace IModelJsNative {
 
 struct JsInterop
 {
-    BE_JSON_NAME(rootSubject)
-    BE_JSON_NAME(name)
+    BE_JSON_NAME(client)
     BE_JSON_NAME(description)
-    BE_JSON_NAME(projectExtents)
-    BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(ecefTrans)
+    BE_JSON_NAME(fileName)
+    BE_JSON_NAME(globalOrigin)
+    BE_JSON_NAME(guid)
+    BE_JSON_NAME(name)
+    BE_JSON_NAME(projectExtents)
+    BE_JSON_NAME(rootSubject)
 
 private:
     static BeSQLite::DbResult ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);
@@ -47,7 +52,7 @@ public:
     typedef std::function<void(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType)> T_AssertHandler;
 
     static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
-    static BeSQLite::DbResult CreateDgnDb(DgnDbPtr& db, BeFileNameCR pathname, Utf8StringCR rootSubjectName, Utf8StringCR rootSubjectDescription);
+    static DgnDbPtr CreateIModel(DbResult& db, Utf8StringCR name, JsonValueCR);
     static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
     static BeSQLite::DbResult SetupBriefcase(DgnDbPtr &db, JsonValueCR briefcaseToken);
     static void CloseDgnDb(DgnDbR dgndb);
@@ -64,7 +69,7 @@ public:
     static DgnDbStatus UpdateModel(DgnDbR db, Json::Value &props);
     static DgnDbStatus DeleteModel(DgnDbR db, Utf8StringCR idStr);
     static DgnDbStatus GetModel(JsonValueR results, DgnDbR db, Json::Value const &inOpts);
-	static DgnDbStatus UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents);
+    static DgnDbStatus UpdateProjectExtents(DgnDbR dgndb, JsonValueCR newExtents);
 
     static BeSQLite::DbResult CreateECDb(ECDbR, BeFileNameCR pathname);
     static BeSQLite::DbResult OpenECDb(ECDbR, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);

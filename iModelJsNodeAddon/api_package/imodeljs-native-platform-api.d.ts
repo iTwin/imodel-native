@@ -2,8 +2,9 @@
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  *--------------------------------------------------------------------------------------------*/
 import {
-    IModelStatus, StatusCodeWithMessage, RepositoryStatus, BentleyStatus, ChangeSetProcessOption, DbResult, DbOpcode, OpenMode, IDisposable,
+    IModelStatus, StatusCodeWithMessage, RepositoryStatus, BentleyStatus, ChangeSetProcessOption, DbResult, DbOpcode, OpenMode, IDisposable, GuidProps
 } from "@bentley/bentleyjs-core";
+import { XYZProps, LowAndHighXYZ } from "@bentley/geometry-core";
 
 /* The primary key for the DGN_TABLE_Txns table. */
 interface NativeTxnId {
@@ -78,6 +79,21 @@ export interface NativeBriefcaseManagerOnConflictPolicy {
     deleteVsUpdate: /*NativeBriefcaseManagerOnConflict*/number;
 }
 
+export interface CreateIModelProps {
+    /** the root subject  */
+    rootSubject: string;
+    /** the rootSubjectDescription  */
+    description?: string;
+    /** client name for new iModel */
+    client?: string;
+    /** the GUID for the new iModel. If not present, a GUID will be generated. */
+    guid?: GuidProps;
+    /** the global origin */
+    globalOrigin?: XYZProps;
+    /** the project extents. */
+    projectExtents?: LowAndHighXYZ;
+}
+
 /**
  * The NativeDgnDb class that is projected by IModelJsNative. 
  */
@@ -94,11 +110,9 @@ declare class NativeDgnDb {
 
     /** 
      * Create a local iModel. 
-     * @param dbName The full path to the iModel in the local file system
-     * @param rootSubjectName Name of the root subject
-     * param rootSubjectDescription Description of the root subject
+     * @param props The properties of the new iModel
      */
-    createDgnDb(dbName: string, rootSubjectName: string, rootSubjectDescription?: string): DbResult;
+    createIModel(fileName: string, props: string): DbResult;
 
     /**
      * Open a local iModel.
@@ -106,10 +120,10 @@ declare class NativeDgnDb {
      * @param mode The open mode
      * @return non-zero error status if operation failed.
      */
-    openDgnDb(dbName: string, mode: OpenMode): DbResult;
+    openIModel(dbName: string, mode: OpenMode): DbResult;
 
     /** Close this iModel. */
-    closeDgnDb(): void;
+    closeIModel(): void;
 
     /**
      * Process change sets

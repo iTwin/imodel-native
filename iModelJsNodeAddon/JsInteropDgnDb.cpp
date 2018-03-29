@@ -208,7 +208,7 @@ DgnDbStatus JsInterop::GetElement(JsonValueR elementJson, DgnDbR dgndb, JsonValu
         if (inOpts.isMember(json_federationGuid()))
             {
             BeGuid federationGuid;
-            federationGuid.FromString(inOpts[json_federationGuid()].asString().c_str());
+            federationGuid.FromString(inOpts[json_federationGuid()].asCString());
             elem = dgndb.Elements().QueryElementByFederationGuid(federationGuid);
             }
         else
@@ -332,7 +332,7 @@ ECN::ECRelationshipClassCP parseRelClass(DgnDbR dgndb, JsonValueCR inJson)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::ECInstanceKey parseECReationshipInstanceKeyKey(DgnDbR dgndb, JsonValueCR inJson)
+BeSQLite::EC::ECInstanceKey parseECRelationshipInstanceKeyKey(DgnDbR dgndb, JsonValueCR inJson)
     {
     auto relClass = parseRelClass(dgndb, inJson);
     if (nullptr == relClass)
@@ -374,7 +374,7 @@ DbResult JsInterop::InsertLinkTableRelationship(JsonValueR outJson, DgnDbR dgndb
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson)
     {
-    BeSQLite::EC::ECInstanceKey relKey = parseECReationshipInstanceKeyKey(dgndb, inJson);
+    BeSQLite::EC::ECInstanceKey relKey = parseECRelationshipInstanceKeyKey(dgndb, inJson);
     auto relClass = parseRelClass(dgndb, inJson);
     if (nullptr == relClass)
         return BE_SQLITE_NOTFOUND;
@@ -399,7 +399,7 @@ DbResult JsInterop::UpdateLinkTableRelationship(DgnDbR dgndb, JsonValueR inJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult JsInterop::DeleteLinkTableRelationship(DgnDbR dgndb, Json::Value& inJson)
     {
-    BeSQLite::EC::ECInstanceKey relKey = parseECReationshipInstanceKeyKey(dgndb, inJson);
+    BeSQLite::EC::ECInstanceKey relKey = parseECRelationshipInstanceKeyKey(dgndb, inJson);
     return dgndb.DeleteLinkTableRelationship(relKey);
     }
 
@@ -461,9 +461,7 @@ DgnDbStatus JsInterop::InsertModel(JsonValueR outJson, DgnDbR dgndb, JsonValueR 
     model->FromJson(inJson);
 
     DgnDbStatus status = model->Insert();
-    
     outJson[json_id()] = model->GetModelId().ToHexStr();
-
     return status;
     }
 
@@ -485,7 +483,6 @@ DgnDbStatus JsInterop::UpdateModel(DgnDbR dgndb, JsonValueR inJson)
         return DgnDbStatus::MissingId;
 
     model->FromJson(inJson);
-
     return model->Update();
     }
 
@@ -508,7 +505,7 @@ DgnDbStatus JsInterop::DeleteModel(DgnDbR dgndb, Utf8StringCR midStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus JsInterop::GetModel(JsonValueR modelJson, DgnDbR dgndb, Json::Value const& inOpts)
+DgnDbStatus JsInterop::GetModel(JsonValueR modelJson, DgnDbR dgndb, JsonValueCR inOpts)
     {
     DgnModelId modelId(inOpts[json_id()].asUInt64());
     if (!modelId.IsValid())
@@ -522,19 +519,11 @@ DgnDbStatus JsInterop::GetModel(JsonValueR modelJson, DgnDbR dgndb, Json::Value 
 
     //  Look up the model
     auto model = dgndb.Models().GetModel(modelId);
-
     if (!model.IsValid())
         return DgnDbStatus::NotFound;
 
     modelJson = model->ToJson(inOpts);
-
-    auto stmt = dgndb.Models().GetSelectStmt(*model);
-    if (!stmt.IsValid())
-        return DgnDbStatus::WrongClass;
-
-    if (BE_SQLITE_ROW == stmt->Step())
-        GetRowAsJson(modelJson, *stmt);
-
+    // Note: there are no auto-handled properties on DgnModels. Any such data goes on the modeled element.
     return DgnDbStatus::Success;
     }
 

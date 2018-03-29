@@ -13,7 +13,6 @@
 #include "suppress_warnings.h"
 #include <imodeljs-nodeaddonapi.package.version.h>
 #include <node-addon-api/napi.h>
-
 #include <json/value.h>
 #include "IModelJsNative.h"
 #include <ECDb/ECDb.h>
@@ -284,9 +283,6 @@ struct NativeECDb : Napi::ObjectWrap<NativeECDb>
 
         static void Init(Napi::Env env, Napi::Object exports)
             {
-            // ***
-            // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-            // ***
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "NativeECDb", {
             InstanceMethod("createDb", &NativeECDb::CreateDb),
@@ -366,9 +362,6 @@ struct NativeECSchemaXmlContext : Napi::ObjectWrap<NativeECSchemaXmlContext>
 
         static void Init(Napi::Env env, Napi::Object exports)
             {
-            // ***
-            // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-            // ***
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "NativeECSchemaXmlContext", {
                 InstanceMethod("addSchemaPath", &NativeECSchemaXmlContext::AddSchemaPath),
@@ -442,9 +435,6 @@ struct NativeBriefcaseManagerResourcesRequest : Napi::ObjectWrap<NativeBriefcase
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
         {
-        // ***
-        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-        // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NativeBriefcaseManagerResourcesRequest", {
           InstanceMethod("reset", &NativeBriefcaseManagerResourcesRequest::Reset),
@@ -549,8 +539,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             CloseDgnDb();
 
         m_dgndb = dgndb;
-        if (!m_dgndb.IsValid())
-            return;
 
         SetupPresentationManager();
         NativeAppData::Add(*this);
@@ -563,7 +551,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         auto appdata = NativeAppData::Find(db);
         return appdata? &appdata->m_addonDb: nullptr;
         }
-
 
     //  Check if val is really a NativeDgnDb peer object
     static bool InstanceOf(Napi::Value val)
@@ -626,15 +613,14 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::Number::New(Env(), (int)status);
         }
 
-    Napi::Value CreateDgnDb(Napi::CallbackInfo const& info)
+    Napi::Value CreateIModel(Napi::CallbackInfo const& info)
         {
-        REQUIRE_ARGUMENT_STRING(0, dbName, Env().Undefined());
-        REQUIRE_ARGUMENT_STRING(1, rootSubjectName, Env().Undefined());
-        OPTIONAL_ARGUMENT_STRING(2, rootSubjectDescription, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(0, fileName, Env().Undefined());
+        REQUIRE_ARGUMENT_STRING(1, args, Env().Undefined());
 
-        DgnDbPtr db;
-        DbResult status = JsInterop::CreateDgnDb(db, BeFileName(dbName.c_str(), true), rootSubjectName, rootSubjectDescription);
-        if (BE_SQLITE_OK == status)
+        DbResult status;
+        DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args));
+        if (db.IsValid())
             OnDgnDbOpened(db.get());
 
         return Napi::Number::New(Env(), (int)status);
@@ -1258,9 +1244,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
         {
-        // ***
-        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-        // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NativeDgnDb", {
             InstanceMethod("abandonChanges", &NativeDgnDb::AbandonChanges),
@@ -1271,9 +1254,9 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("briefcaseManagerStartBulkOperation", &NativeDgnDb::BriefcaseManagerStartBulkOperation),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForElement", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForElement),
             InstanceMethod("buildBriefcaseManagerResourcesRequestForModel", &NativeDgnDb::BuildBriefcaseManagerResourcesRequestForModel),
-            InstanceMethod("closeDgnDb", &NativeDgnDb::CloseDgnDb),
+            InstanceMethod("closeIModel", &NativeDgnDb::CloseDgnDb),
             InstanceMethod("createChangeCache", &NativeDgnDb::CreateChangeCache),
-            InstanceMethod("createDgnDb", &NativeDgnDb::CreateDgnDb),
+            InstanceMethod("createIModel", &NativeDgnDb::CreateIModel),
             InstanceMethod("deleteElement", &NativeDgnDb::DeleteElement),
             InstanceMethod("deleteLinkTableRelationship", &NativeDgnDb::DeleteLinkTableRelationship),
             InstanceMethod("deleteModel", &NativeDgnDb::DeleteModel),
@@ -1301,7 +1284,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("insertLinkTableRelationship", &NativeDgnDb::InsertLinkTableRelationship),
             InstanceMethod("insertModel", &NativeDgnDb::InsertModel),
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
-            InstanceMethod("openDgnDb", &NativeDgnDb::OpenDgnDb),
+            InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
             InstanceMethod("processChangeSets", &NativeDgnDb::ProcessChangeSets),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
@@ -1392,9 +1375,6 @@ public:
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
         {
-        // ***
-        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-        // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NativeECSqlBinder", {
             InstanceMethod("addArrayElement", &NativeECSqlBinder::AddArrayElement),
@@ -1679,9 +1659,6 @@ struct NativeECSqlColumnInfo : Napi::ObjectWrap<NativeECSqlColumnInfo>
         //  Create projections
         static void Init(Napi::Env& env, Napi::Object exports)
             {
-            // ***
-            // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-            // ***
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "NativeECSqlColumnInfo", {
             InstanceMethod("getType", &NativeECSqlColumnInfo::GetType),
@@ -1897,9 +1874,6 @@ public:
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
         {
-        // ***
-        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-        // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NativeECSqlValue", {
             InstanceMethod("getArrayIterator", &NativeECSqlValue::GetArrayIterator),
@@ -2116,9 +2090,6 @@ struct NativeECSqlValueIterator : Napi::ObjectWrap<NativeECSqlValueIterator>
         //  Create projections
         static void Init(Napi::Env& env, Napi::Object exports)
             {
-            // ***
-            // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-            // ***
             Napi::HandleScope scope(env);
             Napi::Function t = DefineClass(env, "NativeECSqlValueIterator", {
             InstanceMethod("moveNext", &NativeECSqlValueIterator::MoveNext),
@@ -2197,9 +2168,6 @@ public:
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
         {
-        // ***
-        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-        // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NativeECSqlStatement", {
           InstanceMethod("prepare", &NativeECSqlStatement::Prepare),
@@ -2375,9 +2343,6 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
         {
-        // ***
-        // *** WARNING: If you modify this API or fix a bug, increment the appropriate digit in package_version.txt
-        // ***
         Napi::HandleScope scope(env);
         Napi::Function t = DefineClass(env, "NativeECPresentationManager", {
           InstanceMethod("handleRequest", &NativeECPresentationManager::HandleRequest),
@@ -2403,8 +2368,7 @@ struct NativeECPresentationManager : Napi::ObjectWrap<NativeECPresentationManage
 
         m_connections.NotifyConnectionOpened(db->GetDgnDb());
 
-        Json::Value request;
-        Json::Reader().parse(serializedRequest, request);
+        Json::Value request = Json::Value::From(serializedRequest);
         if (request.isNull())
             return NapiUtils::CreateErrorObject0(ERROR, nullptr, Env());
 

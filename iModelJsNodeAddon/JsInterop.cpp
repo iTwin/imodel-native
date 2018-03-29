@@ -179,19 +179,35 @@ Utf8StringCR JsInterop::GetLastECDbIssue()
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 02/18
 //---------------------------------------------------------------------------------------
-DbResult JsInterop::CreateDgnDb(DgnDbPtr& db, BeFileNameCR pathname, Utf8StringCR rootSubjectName, Utf8StringCR rootSubjectDescription)
+DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueCR in)
     {
-    BeFileName path = pathname.GetDirectoryName();
-    if (!path.DoesPathExist())
-        return BE_SQLITE_NOTFOUND;
+    result = BE_SQLITE_NOTFOUND;
+    if (!in.isMember(json_rootSubject()))
+        return nullptr;
 
-    DbResult result;
-    CreateDgnDbParams createParams(rootSubjectName.c_str(), rootSubjectDescription.empty() ? nullptr : rootSubjectDescription.c_str());
-    db = DgnDb::CreateDgnDb(&result, pathname, createParams);
+    BeFileName fileName(name);
+    BeFileName path = fileName.GetDirectoryName();
+    if (!path.DoesPathExist())
+        return nullptr;
+
+    CreateDgnDbParams params(in[json_rootSubject()].asCString());
+    if (in.isMember(json_description()))
+        params.SetRootSubjectDescription(in[json_description()].asCString());
+    if (in.isMember(json_globalOrigin()))
+        params.m_globalOrigin = JsonUtils::ToDPoint3d(in[json_globalOrigin()]);
+    if (in.isMember(json_guid()))
+        params.m_guid.FromString(in[json_guid()].asCString());
+    if (in.isMember(json_projectExtents()))
+        params.m_projectExtents.FromJson(in[json_projectExtents()]);
+    if (in.isMember(json_client()))
+        params.m_client = in[json_client()].asCString();
+        
+    DgnDbPtr db = DgnDb::CreateDgnDb(&result, fileName, params);
     if (db.IsValid())
         db->AddIssueListener(s_listener);
 
-    return result;
+    result = BE_SQLITE_OK;
+    return db;
     }
 
 //---------------------------------------------------------------------------------------
