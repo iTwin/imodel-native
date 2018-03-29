@@ -70,7 +70,6 @@ CompileOptionsMki               = $(baseDir)DgnPlatform.mki
 %include $(CompileOptionsMki)
 
 DLM_OBJECT_DEST                 = $(DgnPlatformObj)
-ASSEMBLY_STRONGNAME             = 1
 
 contextDepends                  = $(DgnPlatformAPISrc)ViewContext.h $(DgnPlatformAPISrc)Render.h $(DgnPlatformAPISrc)DgnViewport.h
 
