@@ -526,6 +526,8 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
+
+
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

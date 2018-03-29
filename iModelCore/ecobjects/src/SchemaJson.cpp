@@ -99,7 +99,7 @@ SchemaWriteStatus SchemaJsonWriter::WriteUnitSystem(UnitSystemCR unitSystem)
     if (&(unitSystem.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][unitSystem.GetName()];
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][unitSystem.GetName()];
     return unitSystem.WriteJson(childObj, false, false);
     }
 
@@ -112,7 +112,7 @@ SchemaWriteStatus SchemaJsonWriter::WritePhenomenon(PhenomenonCR phenomenon)
     if (&(phenomenon.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][phenomenon.GetName()];
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][phenomenon.GetName()];
     return phenomenon.WriteJson(childObj, false, false);
     }
 
@@ -125,7 +125,7 @@ SchemaWriteStatus SchemaJsonWriter::WriteUnit(ECUnitCR unit)
     if (&(unit.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][unit.GetName()];
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][unit.GetName()];
     return unit.WriteJson(childObj, false, false);
     }
 
@@ -138,7 +138,7 @@ SchemaWriteStatus SchemaJsonWriter::WriteInvertedUnit(ECUnitCR invertedUnit)
     if (&(invertedUnit.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][invertedUnit.GetName()];
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][invertedUnit.GetName()];
     return invertedUnit.WriteInvertedUnitJson(childObj, false, false);
     }
 
@@ -151,7 +151,7 @@ SchemaWriteStatus SchemaJsonWriter::WriteConstant(ECUnitCR constant)
     if (&(constant.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][constant.GetName()];
+    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][constant.GetName()];
     return constant.WriteConstantJson(childObj, false, false);
     }
 
@@ -211,6 +211,8 @@ SchemaWriteStatus SchemaJsonWriter::WriteSchemaItems()
             return status;
         }
 
+    if (0 == m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE].size())
+        m_jsonRoot.removeMember(ECJSON_SCHEMA_ITEMS_ATTRIBUTE);
 
     return SchemaWriteStatus::Success;
     }

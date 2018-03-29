@@ -116,14 +116,14 @@ SchemaWriteStatus UnitSystem::WriteJson(Json::Value& outValue, bool standalone, 
     // Common properties to all Schema children
     if (standalone)
         {
-        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
         outValue[NAME_ATTRIBUTE] = GetName();
         }
 
-    outValue[ECJSON_SCHEMA_CHILD_TYPE] = UNIT_SYSTEM_ELEMENT;
+    outValue[ECJSON_SCHEMA_ITEM_TYPE] = UNIT_SYSTEM_ELEMENT;
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();

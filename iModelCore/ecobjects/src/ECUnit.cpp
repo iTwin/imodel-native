@@ -524,14 +524,14 @@ SchemaWriteStatus ECUnit::WriteJson(Json::Value& outValue, bool standalone, bool
     // Common properties to all Schema children
     if (standalone)
         {
-        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
         outValue[NAME_ATTRIBUTE] = GetName();
         }
 
-    outValue[ECJSON_SCHEMA_CHILD_TYPE] = UNIT_ELEMENT;
+    outValue[ECJSON_SCHEMA_ITEM_TYPE] = UNIT_ELEMENT;
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
 
     outValue[PHENOMENON_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::PhenomenonCP)GetPhenomenon());
@@ -560,14 +560,14 @@ SchemaWriteStatus ECUnit::WriteInvertedUnitJson(Json::Value& outValue, bool stan
     // Common properties to all Schema children
     if (standalone)
         {
-        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
         outValue[NAME_ATTRIBUTE] = GetName();
         }
 
-    outValue[ECJSON_SCHEMA_CHILD_TYPE] = INVERTED_UNIT_ELEMENT;
+    outValue[ECJSON_SCHEMA_ITEM_TYPE] = INVERTED_UNIT_ELEMENT;
     outValue[INVERTS_UNIT_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::ECUnitCP)GetParent());
     outValue[UNIT_SYSTEM_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::UnitSystemCP)GetUnitSystem());
 
@@ -587,14 +587,14 @@ SchemaWriteStatus ECUnit::WriteConstantJson(Json::Value& outValue, bool standalo
     // Common properties to all Schema children
     if (standalone)
         {
-        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
         outValue[NAME_ATTRIBUTE] = GetName();
         }
 
-    outValue[ECJSON_SCHEMA_CHILD_TYPE] = CONSTANT_ELEMENT;
+    outValue[ECJSON_SCHEMA_ITEM_TYPE] = CONSTANT_ELEMENT;
     outValue[PHENOMENON_NAME_ATTRIBUTE] = ECJsonUtilities::ECNameToJsonName(*(ECN::PhenomenonCP)GetPhenomenon());
     outValue[DEFINITION_ATTRIBUTE] = GetDefinition();
     outValue[NUMERATOR_ATTRIBUTE] = GetNumerator();
