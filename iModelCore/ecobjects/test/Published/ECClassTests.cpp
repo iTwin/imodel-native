@@ -1037,15 +1037,15 @@ TEST_F(ClassTest, SerializeStandaloneEntityClass)
     entityClass->AddBaseClass(*mixinB);
     entityClass->SetCustomAttribute(*customAttr);
 
-    Json::Value schemaChildJson;
-    EXPECT_EQ(SchemaWriteStatus::Success, entityClass->WriteJson(schemaChildJson, true));
+    Json::Value schemaItemJson;
+    EXPECT_EQ(SchemaWriteStatus::Success, entityClass->WriteJson(schemaItemJson, true));
 
     Json::Value testDataJson;
     BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/StandaloneECEntityClass.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
-    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaChildJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaChildJson, testDataJson);
+    EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaItemJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaItemJson, testDataJson);
     }
 
 //---------------------------------------------------------------------------------------

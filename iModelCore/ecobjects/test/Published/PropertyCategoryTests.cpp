@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/PropertyCategoryTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -118,7 +118,7 @@ TEST_F(PropertyCategoryTest, PropertyCategoryContainer)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PropertyCategoryTest, StandaloneSchemaChildPropertyCategory)
+TEST_F(PropertyCategoryTest, StandaloneSchemaItemPropertyCategory)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);

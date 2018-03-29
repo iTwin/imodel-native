@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaJson.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -47,8 +47,8 @@ SchemaWriteStatus SchemaJsonWriter::WriteClass(ECClassCR ecClass)
     if (&(ecClass.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][ecClass.GetName()];
-    return ecClass._WriteJson(childObj, false, false, false);
+    Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][ecClass.GetName()];
+    return ecClass._WriteJson(itemObj, false, false, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -60,8 +60,8 @@ SchemaWriteStatus SchemaJsonWriter::WriteEnumeration(ECEnumerationCR ecEnumerati
     if (&(ecEnumeration.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][ecEnumeration.GetName()];
-    return ecEnumeration.WriteJson(childObj, false, false);
+    Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][ecEnumeration.GetName()];
+    return ecEnumeration.WriteJson(itemObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -73,8 +73,8 @@ SchemaWriteStatus SchemaJsonWriter::WriteKindOfQuantity(KindOfQuantityCR kindOfQ
     if (&(kindOfQuantity.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][kindOfQuantity.GetName()];
-    return kindOfQuantity.WriteJson(childObj, false, false);
+    Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][kindOfQuantity.GetName()];
+    return kindOfQuantity.WriteJson(itemObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
@@ -86,16 +86,16 @@ SchemaWriteStatus SchemaJsonWriter::WritePropertyCategory(PropertyCategoryCR pro
     if (&(propertyCategory.GetSchema()) != &m_ecSchema)
         return SchemaWriteStatus::Success;
 
-    Json::Value& childObj = m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE][propertyCategory.GetName()];
-    return propertyCategory.WriteJson(childObj, false, false);
+    Json::Value& itemObj = m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE][propertyCategory.GetName()];
+    return propertyCategory.WriteJson(itemObj, false, false);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              11/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus SchemaJsonWriter::WriteSchemaChildren()
+SchemaWriteStatus SchemaJsonWriter::WriteSchemaItems()
     {
-    m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE] = Json::Value(Json::ValueType::objectValue);
+    m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE] = Json::Value(Json::ValueType::objectValue);
     SchemaWriteStatus status;
 
     for (auto const ecClass : m_ecSchema.GetClasses())
@@ -122,8 +122,8 @@ SchemaWriteStatus SchemaJsonWriter::WriteSchemaChildren()
             return status;
         }
 
-    if (0 == m_jsonRoot[ECJSON_SCHEMA_CHILDREN_ATTRIBUTE].size())
-        m_jsonRoot.removeMember(ECJSON_SCHEMA_CHILDREN_ATTRIBUTE);
+    if (0 == m_jsonRoot[ECJSON_SCHEMA_ITEMS_ATTRIBUTE].size())
+        m_jsonRoot.removeMember(ECJSON_SCHEMA_ITEMS_ATTRIBUTE);
 
     return SchemaWriteStatus::Success;
     }
@@ -161,7 +161,7 @@ SchemaWriteStatus SchemaJsonWriter::Serialize()
     if (!customAttributesArr.empty())
         m_jsonRoot[ECJSON_CUSTOM_ATTRIBUTES_ELEMENT] = customAttributesArr;
 
-    if (SchemaWriteStatus::Success != (status = WriteSchemaChildren()))
+    if (SchemaWriteStatus::Success != (status = WriteSchemaItems()))
         return status;
 
     return SchemaWriteStatus::Success;

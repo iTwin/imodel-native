@@ -27,12 +27,12 @@
     "className": "refSchemaB.AnotherCustomAttributeClass"
     }
   ],
-  "children": {
+  "items": {
     "ExampleBaseEntity": {
-      "schemaChildType": "EntityClass"
+      "schemaItemType": "EntityClass"
     },
     "ExampleEntity": {
-      "schemaChildType": "EntityClass",
+      "schemaItemType": "EntityClass",
       "modifier": "sealed",
       "label": "ExampleEntity",
       "description": "An example entity class.",
@@ -43,15 +43,15 @@
       ]
     },
     "ExampleMixinA": {
-      "schemaChildType": "Mixin",
+      "schemaItemType": "Mixin",
       "appliesTo": "ExampleSchema.ExampleEntity"
     },
     "ExampleMixinB": {
-      "schemaChildType": "Mixin",
+      "schemaItemType": "Mixin",
       "appliesTo": "ExampleSchema.ExampleEntity"
     },
     "ExampleStruct": {
-      "schemaChildType": "StructClass",
+      "schemaItemType": "StructClass",
       "modifier": "sealed",
       "properties": [
         {
@@ -68,13 +68,13 @@
       ]
     },
     "ExampleSource": {
-      "schemaChildType": "EntityClass"
+      "schemaItemType": "EntityClass"
     },
     "ExampleTarget": {
-      "schemaChildType": "EntityClass"
+      "schemaItemType": "EntityClass"
     },
     "ExampleRelationship": {
-      "schemaChildType": "RelationshipClass",
+      "schemaItemType": "RelationshipClass",
       "modifier": "sealed",
       "strength": "embedding",
       "strengthDirection": "forward",
@@ -96,12 +96,12 @@
       }
     },
     "ExampleCustomAttribute": {
-        "schemaChildType": "CustomAttributeClass",
+        "schemaItemType": "CustomAttributeClass",
         "modifier": "sealed",
         "appliesTo": "Schema, AnyProperty"
     },
     "ExampleKoQ": {
-      "schemaChildType": "KindOfQuantity",
+      "schemaItemType": "KindOfQuantity",
       "persistenceUnit": {
         "unit": "MM",
         "format": "DefaultReal"
@@ -123,7 +123,7 @@
       ]
     },
     "ExampleEnumeration": {
-      "schemaChildType": "Enumeration",
+      "schemaItemType": "Enumeration",
       "backingTypeName": "int",
       "isStrict": true,
       "enumerators": [
@@ -142,7 +142,7 @@
       ]
     },
     "ExamplePropertyCategory": {
-      "schemaChildType": "PropertyCategory",
+      "schemaItemType": "PropertyCategory",
       "priority": 5
     }
   }

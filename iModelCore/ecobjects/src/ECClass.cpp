@@ -2401,37 +2401,37 @@ SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bo
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion, bool includeInheritedProperties, bvector<bpair<Utf8String, Json::Value>> additionalAttributes) const
     {
-    // Common properties to all Schema children
+    // Common properties to all Schema items
     if (standalone)
         {
-        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_CHILD_URI;
+        outValue[ECJSON_URI_SPEC_ATTRIBUTE] = ECJSON_SCHEMA_ITEM_URI;
         outValue[ECJSON_PARENT_SCHEMA_ATTRIBUTE] = GetSchema().GetName();
         if (includeSchemaVersion)
             outValue[ECJSON_PARENT_VERSION_ATTRIBUTE] = GetSchema().GetSchemaKey().GetVersionString();
-        outValue[ECJSON_SCHEMA_CHILD_NAME_ATTRIBUTE] = GetName();
+        outValue[ECJSON_SCHEMA_ITEM_NAME_ATTRIBUTE] = GetName();
         }
 
     bool isMixin = false;
-    Utf8String childType;
+    Utf8String itemType;
     if (IsEntityClass())
         {
         if (GetEntityClassCP()->IsMixin())
             {
             isMixin = true;
-            childType = ECJSON_MIXIN_ELEMENT;
+            itemType = ECJSON_MIXIN_ELEMENT;
             }
         else
-            childType = ECJSON_ENTITYCLASS_ELEMENT;
+            itemType = ECJSON_ENTITYCLASS_ELEMENT;
         }
     else if (IsRelationshipClass())
-        childType = ECJSON_RELATIONSHIP_CLASS_ELEMENT;
+        itemType = ECJSON_RELATIONSHIP_CLASS_ELEMENT;
     else if (IsStructClass())
-        childType = ECJSON_STRUCTCLASS_ELEMENT;
+        itemType = ECJSON_STRUCTCLASS_ELEMENT;
     else if (IsCustomAttributeClass())
-        childType = ECJSON_CUSTOMATTRIBUTECLASS_ELEMENT;
+        itemType = ECJSON_CUSTOMATTRIBUTECLASS_ELEMENT;
     else
         return SchemaWriteStatus::FailedToCreateJson;
-    outValue[ECJSON_SCHEMA_CHILD_TYPE] = childType;
+    outValue[ECJSON_SCHEMA_ITEM_TYPE] = itemType;
 
     if (GetIsDisplayLabelDefined())
         outValue[ECJSON_DISPLAY_LABEL_ATTRIBUTE] = GetInvariantDisplayLabel();
@@ -2455,7 +2455,7 @@ SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bo
     SchemaWriteStatus status;
     if (GetPropertyCount(includeInheritedProperties))
         {
-        auto& propertiesArr = outValue[ECJSON_SCHEMA_CHILD_PROPERTIES_ATTRIBUTE] = Json::Value(Json::ValueType::arrayValue);
+        auto& propertiesArr = outValue[ECJSON_SCHEMA_ITEM_PROPERTIES_ATTRIBUTE] = Json::Value(Json::ValueType::arrayValue);
         for (const auto& prop : GetProperties(includeInheritedProperties))
             {
             Json::Value propJson(Json::ValueType::objectValue);
@@ -2466,7 +2466,7 @@ SchemaWriteStatus ECClass::_WriteJson(Json::Value& outValue, bool standalone, bo
         }
 
     // Mixin attributes are treated different from other custom attributes in that the mixin already specifies that
-    // it's a mixin with its schema child type, so there is no reason to duplicate the custom attribute. Rather than
+    // it's a mixin with its schema item type, so there is no reason to duplicate the custom attribute. Rather than
     // handle the logic somewhere up the inheritance hierarchy and overcomplicate everything it's easiest to just
     // handle the specific case here.
     Json::Value customAttributesArr;
