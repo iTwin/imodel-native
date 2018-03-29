@@ -135,11 +135,14 @@ void RequestHandler::CheckDb()
         if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
             return;
         if(!m_db.TableExists("Instances"))
-            CreateTable("Instances", m_db, "iModelId STRING, ClassName STRING, SchemaName STRING, Description STRING, Name STRING, Initialized STRING");
+            CreateTable("Instances", m_db, "Id STRING, Name STRING, Description STRING, UserCreated String, CreatedDate STRING, Initialized STRING");
         if(!m_db.TableExists("Users"))
             CreateTable("Users", m_db, "UserCreated STRING, CreatedDate STRING");
         if(!m_db.TableExists("ChangeSets"))
-            CreateTable("ChangeSets", m_db, "Id STRING, SeedFileId STRING, ParentId STRING, UserCreated ChangeSetId, CreatedDate STRING");
+            CreateTable("ChangeSets", m_db, "Id STRING, SeedFileId STRING, ParentId STRING, UserCreated STRING, ChangeSetId STRING, CreatedDate STRING");
+        if(!m_db.TableExists("SeedFile"))
+            CreateTable("SeedFile", m_db, "Id STRING, FileName STRING, FileDescription STRING, FileSize INTEGER, iModelId STRING, UserUploaded STRING, UploadedDate STRING");
+
         }
     m_db.CloseDb();
     }
@@ -154,18 +157,13 @@ void RequestHandler::Insert(bvector<Utf8String> insertStr)
         return;
     
     Statement insertSt;
-    insertSt.Prepare(m_db, "INSERT INTO Instances(iModelId, ClassName, SchemaName, Description, Name) VALUES (?,?,?,?,?)");
+    insertSt.Prepare(m_db, "INSERT INTO Instances(Id, Name, Description) VALUES (?,?,?)");
     insertSt.BindText(1, insertStr[0], Statement::MakeCopy::No);
     insertSt.BindText(2, insertStr[1], Statement::MakeCopy::No);
     insertSt.BindText(3, insertStr[2], Statement::MakeCopy::No);
-    insertSt.BindText(4, insertStr[3], Statement::MakeCopy::No);
-    insertSt.BindText(5, insertStr[4], Statement::MakeCopy::No);
     if (BE_SQLITE_DONE != insertSt.Step())
         return;
     insertSt.Finalize();
-    /*
-    ASSERT_EQ(BE_SQLITE_OK, m_db.DropTable("instances"));
-    ASSERT_EQ(BE_SQLITE_OK, m_db.DropTable("users"));*/
     m_db.CloseDb();
     }
 
@@ -183,7 +181,7 @@ Http::Response StubJsonHttpResponse(HttpStatus httpStatus, Utf8CP url, Utf8Strin
     return Http::Response(content, url, status, httpStatus);
     }
 
-Response RequestHandler::CreateiModel(Request req)
+Response RequestHandler::CreateiModelInstance(Request req)
     {
 
     HttpBodyPtr reqBody = req.GetRequestBody();
@@ -198,40 +196,147 @@ Response RequestHandler::CreateiModel(Request req)
     BeGuid projGuid(true);
 
     bvector<Utf8String> input = {   projGuid.ToString(),  
-        settings["instance"]["className"].asString(),
-        settings["instance"]["schemaName"].asString(),
-        settings["instance"]["properties"]["Description"].asString(),
-        settings["instance"]["properties"]["Name"].asString()};
+        settings["instance"]["properties"]["Name"].asString(),
+        settings["instance"]["properties"]["Description"].asString()};
 
     Utf8String fileName(settings["instance"]["properties"]["Name"].asString());
     BeFileName fileToCreate(fileName);
     BeFileName servPath(serverPath);
     servPath.AppendToPath(BeFileName(projGuid.ToString()));
-    if (BeFileNameStatus::Success == FakeServer::CreateiModel(servPath, fileToCreate.GetWCharCP()))
+
+    CheckDb();
+    Insert(input);
+
+    Json::Value iModelCreation(Json::objectValue);
+    JsonValueR changedInstance = iModelCreation[ServerSchema::ChangedInstance] = Json::objectValue;
+    changedInstance["change"] = "Created";
+    JsonValueR InstanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
+    InstanceAfterChange[ServerSchema::InstanceId] = projGuid.ToString();
+    InstanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
+    InstanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
+    JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
+    properties[ServerSchema::Property::Description] = settings["instance"]["properties"]["Description"].asString();
+    properties[ServerSchema::Property::Name] = settings["instance"]["properties"]["Name"].asString();
+    properties[ServerSchema::Property::UserCreated] = "";
+    Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
+
+    return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
+    }
+
+Response RequestHandler::CreateSeedFileInstance(Request req) 
+    {
+    HttpBodyPtr reqBody = req.GetRequestBody();
+    char readBuff[1000] ;
+    size_t buffSize = 100000;
+    reqBody->Read(readBuff, buffSize);
+    Utf8String reqBodyRead(readBuff);
+
+    Json::Reader reader;
+    Json::Value settings;
+    reader.Parse(reqBodyRead, settings);
+    bvector<Utf8String> args = ParseUrl(req);
+    Utf8String iModelid = GetInstanceid(args[4]);
+    bvector<Utf8String> input = {
+        settings["instance"]["properties"]["FileId"].asString(),
+        settings["instance"]["properties"]["FileName"].asString(),
+        settings["instance"]["properties"]["FileDescription"].asString(),
+        iModelid};
+    Utf8String FileDescription(settings["instance"]["properties"]["FileDescription"].asString());
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+    BentleyB0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
-        CheckDb();
-        Insert(input);
+        Statement insertSt;
+        insertSt.Prepare(m_db, "INSERT INTO SeedFile (Id, FileName, FileDescription, FileSize, iModelId) VALUES (?,?,?,?,?)");
+        insertSt.BindText(1, input[0], Statement::MakeCopy::No);
+        insertSt.BindText(2, input[1], Statement::MakeCopy::No);
+        insertSt.BindText(3, input[2], Statement::MakeCopy::No);
+        insertSt.BindInt(4, settings["instance"]["properties"]["FileSize"].asInt());
+        insertSt.BindText(5, input[3], Statement::MakeCopy::No);
+        if (BE_SQLITE_DONE != insertSt.Step())
+            return Response();
 
-        Json::Value iModelCreation(Json::objectValue);
-        JsonValueR changedInstance = iModelCreation[ServerSchema::ChangedInstance] = Json::objectValue;
+        Json::Value instancesinfo(Json::objectValue);
+        JsonValueR changedInstance = instancesinfo[ServerSchema::ChangedInstance] = Json::objectValue;
         changedInstance["change"] = "Created";
-        JsonValueR InstanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
-        InstanceAfterChange[ServerSchema::InstanceId] = projGuid.ToString();
-        InstanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
-        InstanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
-        JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
-        properties[ServerSchema::Property::Description] = settings["instance"]["properties"]["Description"].asString();
-        properties[ServerSchema::Property::Name] = settings["instance"]["properties"]["Name"].asString();
-        properties[ServerSchema::Property::UserCreated] = "";
+        JsonValueR instance = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
+        instance[ServerSchema::InstanceId] = input[0].c_str();
+        instance[ServerSchema::SchemaName] = "iModelScope";
+        instance[ServerSchema::ClassName] = "SeedFile";
+        JsonValueR properties = instance[ServerSchema::Properties] = Json::objectValue;
+        properties[ServerSchema::Property::FileDescription] = input[2].c_str();
+        properties[ServerSchema::Property::FileId] = input[0].c_str();
+        properties[ServerSchema::Property::FileName] = input[1].c_str();
+        properties[ServerSchema::Property::FileSize] = settings["instance"]["properties"]["FileSize"].ToString().c_str();
+        properties[ServerSchema::Property::MergedChangeSetId] = "";
+        properties[ServerSchema::Property::IsUploaded] = false;
+        properties[ServerSchema::Property::Index] = 0;
+        JsonValueR relationshipInstances =  instance[ServerSchema::RelationshipInstances] = Json::arrayValue;
+        JsonValueR relationsArray =  relationshipInstances[0] = Json::objectValue;
+        relationsArray[ServerSchema::InstanceId] = "";
+        relationsArray[ServerSchema::SchemaName] = "iModelScope";
+        relationsArray[ServerSchema::ClassName] = "FileAccesKey";
+        relationsArray["direction"] = "forward";
+        JsonValueR propertiesl1 = relationsArray[ServerSchema::Properties] = Json::objectValue;
+        JsonValueR relatedInstance = relationsArray[ServerSchema::RelatedInstance] = Json::objectValue;;
+        relatedInstance[ServerSchema::InstanceId] = "";
+        relatedInstance[ServerSchema::SchemaName] = "iModelScope";
+        relatedInstance[ServerSchema::ClassName] = "AccessKey";
+        JsonValueR propertiesl2 = relatedInstance[ServerSchema::Properties] = Json::objectValue;
+        Utf8String UploadUrl("https://imodelhubqasa01.blob.core.windows.net/imodelhub-");
+        UploadUrl += iModelid + "/BriefcaseTestsu-" + input[0];
+        propertiesl2[ServerSchema::Property::UploadUrl] = UploadUrl.c_str();
+        propertiesl2[ServerSchema::Property::DownloadUrl] = NULL;
+        Utf8String contentToWrite(Json::FastWriter().write(instancesinfo));
 
+        insertSt.Finalize();
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Created);
 
-        Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
-
-        return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
         }
     return Response();
     }
+Response RequestHandler::UploadSeedFile(Request req)
+    {
+    bvector<Utf8String> args = ParseUrl(req);
+    Utf8String instanceid = GetInstanceid(args[2]);
+    
+    HttpBodyPtr body = req.GetRequestBody();
+    Utf8String requestBody = body->AsString();
+    if (requestBody.Contains("<?xml"))
+        {
+        Utf8String contentEmp("");
+        auto content = HttpResponseContent::Create(HttpStringBody::Create(contentEmp));
+        return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Created);
+        }
+    auto ptr1 = body.get();
+    HttpRangeBody* rangeBody = dynamic_cast<HttpRangeBody*>(ptr1);
+    HttpBodyPtr bodyOfRange = rangeBody->GetBody();
+    auto ptr2 = bodyOfRange.get();
+    HttpFileBody* fileBody = dynamic_cast<HttpFileBody*>(ptr2);
+    BeFileName filePath(fileBody->GetFilePath());
 
+    BeFileName dbName("ServerRepo.db");
+    BeFileName dbPath(serverPath);
+    dbPath.AppendToPath(dbName);
+    BentleyB0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
+        {
+        BeFileName serverFilePath(serverPath);
+        serverFilePath.AppendToPath(BeFileName(instanceid).GetWCharCP());
+
+
+        if (BeFileNameStatus::Success == FakeServer::CreateiModelFromSeed(filePath.GetWCharCP(), serverFilePath.GetWCharCP()))
+            {
+            Utf8String contentEmp("");
+            auto content = HttpResponseContent::Create(HttpStringBody::Create(contentEmp));
+            return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::Created);
+            }
+        }
+    return Response();
+    }
 Response RequestHandler::UploadNewSeedFile(Request req) 
     {
     bvector<Utf8String> args = ParseUrl(req);
@@ -303,7 +408,7 @@ Response RequestHandler::DownloadiModel(Request req)
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
-        st.Prepare(m_db, "Select Name from Instances where iModelId = ?");
+        st.Prepare(m_db, "Select Name from Instances where Id = ?");
         st.BindText(1, instanceid, Statement::MakeCopy::No);
 
         st.Step();
@@ -370,7 +475,7 @@ Response RequestHandler::GetBriefcaseId(Request req)
         JsonValueR properties = instanceAfterChange[ServerSchema::Properties] = Json::objectValue;
         properties[ServerSchema::Property::FileName] = Utf8String(filetoDownload).append(".bim").c_str();
         properties[ServerSchema::Property::FileDescription] = Utf8String(description).c_str();
-        properties[ServerSchema::Property::FileSize] = "1118208";
+        properties[ServerSchema::Property::FileSize] = 1118208;
         properties[ServerSchema::Property::FileId] = "";
         properties[ServerSchema::Property::BriefcaseId] = 2;
         properties[ServerSchema::Property::MergedChangeSetId] = "6d608f12ab040c0e02bffb0320421077957bbd76";
@@ -459,7 +564,7 @@ Response RequestHandler::DeleteiModels(Request req)
     if (BeFileNameStatus::Success == FakeServer::DeleteiModel(serverPath, iModelId))
         {
         Statement stDelete;
-        stDelete.Prepare(m_db, "Delete from Instances where iModelId = ?");
+        stDelete.Prepare(m_db, "Delete from Instances where Id = ?");
         stDelete.BindText(1, iModelId, Statement::MakeCopy::No);
         stDelete.Step();
         stDelete.Finalize();
@@ -500,7 +605,7 @@ Response RequestHandler::Pull(Request req)
     BeFileName dbPath(serverPath);
     dbPath.AppendToPath(dbName);
     BentleyB0200::BeSQLite::Db m_db;
-    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Read, DefaultTxn::Yes)))
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::Readonly, DefaultTxn::Yes)))
         {
         Statement st;
 
@@ -535,10 +640,6 @@ Response RequestHandler::Pull(Request req)
     return Response();
     }
 
-Response RequestHandler::CreateFileInstance(Request req) 
-    {
-    return Response();
-    }
 Response RequestHandler::PerformGetRequest(Request req)
     {
     Utf8String urlExpected("https://qa-imodelhubapi.bentley.com/v2.0/Plugins");
@@ -561,6 +662,7 @@ Response RequestHandler::PerformOtherRequest(Request req)
     Utf8String urlExpected("https://buddi.bentley.com/discovery.asmx");
     Utf8String urlExpected2("https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx");
     Utf8String urlExpected3("https://qa-ims.bentley.com/rest/DelegationSTSService/json/IssueEx");
+    
     if (!req.GetUrl().CompareTo(urlExpected))
         return RequestHandler::BuddiRequest(req);
     if (!req.GetUrl().CompareTo(urlExpected2))
@@ -572,12 +674,15 @@ Response RequestHandler::PerformOtherRequest(Request req)
         {
         if (req.GetMethod().Equals("DELETE"))
             return RequestHandler::DeleteiModels(req);
-        return RequestHandler::CreateiModel(req);
+        return RequestHandler::CreateiModelInstance(req);
         }
     if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/SeedFile"))
-        return RequestHandler::CreateFileInstance(req);
+        return RequestHandler::CreateSeedFileInstance(req);
+    if (req.GetUrl().Contains("https://imodelhubqasa01.blob.core.windows.net"))
+        return RequestHandler::UploadSeedFile(req);
     if (req.GetUrl().Contains("Repositories/iModel") && req.GetUrl().Contains("iModelScope/Briefcase"))
         return RequestHandler::GetBriefcaseId(req);
+
     if (req.GetMethod().Equals("PUT"))
         return RequestHandler::UploadNewSeedFile(req);
     return Response();

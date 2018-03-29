@@ -28,13 +28,15 @@ class RequestHandler
         Response PerformOtherRequest(Request req);
         
         //////
-        Response CreateiModel(Request req);
+        Response CreateiModelInstance(Request req);
+        Response CreateSeedFileInstance(Request req);
+        Response UploadSeedFile(Request req);
         Response GetBriefcaseId(Request req);
         Response DownloadiModel(Request req);
         Response UploadNewSeedFile(Request req);
-        Response CreateFileInstance(Request req);
         Response GetiModels(Request req);
         Response DeleteiModels(Request req);
+        
         Response Push(Request req);
         Response Pull(Request req);
         Response GetChangeSetInfo(Request req);
