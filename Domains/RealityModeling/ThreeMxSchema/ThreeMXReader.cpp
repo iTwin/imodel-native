@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMXReader.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
@@ -118,6 +118,9 @@ bool Node::ReadHeader(JsonValueCR pt, Utf8String& name, bvector<Utf8String>& nod
 
     if (1 == children.size())
         m_childPath = children[0];
+    else
+        m_loadStatus.store(LoadStatus::Ready); // if there are no children, this node is complete
+        
 
     if (m_parent)
         m_parent->ExtendRange(m_range);
