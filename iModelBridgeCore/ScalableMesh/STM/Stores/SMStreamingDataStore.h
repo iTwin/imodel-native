@@ -223,6 +223,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
 
         virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
 
+        virtual bool SetUseTempPath(bool useTempPath) override;
+
         virtual void SaveProjectFiles() override;
 
 		virtual void CompactProjectFiles() override;

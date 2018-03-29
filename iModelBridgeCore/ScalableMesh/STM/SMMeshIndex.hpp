@@ -1629,8 +1629,11 @@ template<class EXTENT> void ClipFeatureDefinition(ISMStore::FeatureType type, EX
             bool isPointInRange = nodeRange.IsContained(origPoints[pt]);
             if (!withinExtent && isPointInRange && pt > 0)
                 {
-                points.push_back(origPoints[pt - 1]);
+                if (points.size() == 0) extent = DRange3d::From(origPoints[pt]);
+
+                points.push_back(origPoints[pt - 1]);                
                 }
+
             if (isPointInRange)
                 {
                 if (points.size() == 0) extent = DRange3d::From(origPoints[pt]);
