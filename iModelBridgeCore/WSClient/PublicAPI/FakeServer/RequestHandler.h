@@ -28,6 +28,9 @@ class RequestHandler
         FAKESERVER_EXPORT Response PerformOtherRequest(Request req);
         
         //////
+        FAKESERVER_EXPORT Response CreateiModelInstance(Request req);
+        FAKESERVER_EXPORT Response CreateSeedFileInstance(Request req);
+        FAKESERVER_EXPORT Response UploadSeedFile(Request req);
         FAKESERVER_EXPORT Response CreateiModel(Request req);
         FAKESERVER_EXPORT Response GetBriefcaseId(Request req);
         FAKESERVER_EXPORT Response DownloadiModel(Request req);
