@@ -329,7 +329,7 @@ SchemaReadStatus Format::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchema
 
     if (comp.IsProblem())
         {
-        LOG.errorv("%s node on %s has problem %s", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), comp.GetProblemDescription());
+        LOG.errorv("%s node on %s has problem %s", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), comp.GetProblemDescription().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
