@@ -1239,32 +1239,41 @@ void Sheet::Attachment::Root2d::DrawClipPolys(TileTree::DrawArgsR args) const
     {
     DRange3d range = m_clip->m_boundingRange;
 
-    DPoint2d pts[5];
+    double zDepth = Render::Target::DepthFromDisplayPriority(0.5 * Render::Target::GetMaxDisplayPriority());
 
-    pts[0] = DPoint2d::From(range.low.x, range.low.y);
-    pts[1] = DPoint2d::From(range.high.x, range.low.y);
-    pts[2] = DPoint2d::From(range.high.x, range.high.y);
-    pts[3] = DPoint2d::From(range.low.x, range.high.y);
-    pts[4] = pts[0];
+    DPoint3d tmpPts[4];
+    tmpPts[0] = DPoint3d::From(range.low.x, range.low.y, zDepth);
+    tmpPts[1] = DPoint3d::From(range.high.x, range.low.y, zDepth);
+    tmpPts[2] = DPoint3d::From(range.high.x, range.high.y, zDepth);
+    tmpPts[3] = DPoint3d::From(range.low.x, range.high.y, zDepth);
 
-    double zDepth = 0.5 * Render::Target::GetMaxDisplayPriority();
+    bvector<DPoint3d> pts(std::begin(tmpPts), std::end(tmpPts));
+
+    IFacetOptionsPtr facetOptions = IFacetOptions::Create();
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOptions);
+    builder->AddTriangulation(pts);
+
+    auto polyface = builder->GetClientMeshPtr();
+    Render::Primitives::GeometryClipper::PolyfaceClipper clipper;
+    clipper.ClipPolyface(*polyface, m_clip.get(), true);
+    if (!clipper.HasOutput())
+        return;
 
     GraphicParams params;
-    ColorDef lineColor = ColorDef::DarkMagenta(),
-             fillColor = ColorDef::DarkGreen();
+    ColorDef fillColor = m_boundingBoxColor;
     fillColor.SetAlpha(0x7f);
-    params.SetLineColor(lineColor);
     params.SetFillColor(fillColor);
 
     auto gf = args.m_context.CreateSceneGraphic();
     gf->ActivateGraphicParams(params);
-    gf->AddShape2d(5, pts, true, zDepth);
+
+    for (auto& mesh : clipper.GetOutput())
+        gf->AddPolyface(*mesh, true);
 
     Transform tf;
     tf.InverseOf(GetLocation());
     GraphicBranch branch;
     branch.Add(*gf->Finish());
-
     args.m_graphics.Add(*args.m_context.CreateBranch(branch, GetDgnDb(), tf));
     }
 
