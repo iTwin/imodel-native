@@ -1281,6 +1281,9 @@ DRange3d Sheet::Attachment::Root3d::GetRootRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Attachment::Root3dPtr Attachment::Root3d::Create(Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context)
     {
+#if defined(NO_3D_ATTACHMENTS)
+    return nullptr;
+#else
     auto& db = sheetController.GetDgnDb();
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -1299,6 +1302,7 @@ Attachment::Root3dPtr Attachment::Root3d::Create(Sheet::ViewController& sheetCon
         return nullptr;
 
     return new Sheet::Attachment::Root3d(sheetController, *attach, context, *viewport, *view);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1518,12 +1522,17 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
     worldToAttachment.z = Render::Target::DepthFromDisplayPriority(attach.GetDisplayPriority());
     double scaleOnSheet = attach.GetScale();
     scaleOnSheet = 0.0 != scaleOnSheet ? 1.0 / scaleOnSheet : 1.0;
+    double skew = view.GetViewDefinition().GetAspectRatioSkew();
+    if (0.0 == skew)
+        { BeAssert(false); skew = 1.0; }
+
+    DPoint2d scale = DPoint2d::From(scaleOnSheet, scaleOnSheet * skew);
 
     Transform location = Transform::From(worldToAttachment);
     SetLocation(location);
     
-    m_drawingToAttachment = Transform::FromIdentity();
-    m_drawingToAttachment.ScaleMatrixColumns(scaleOnSheet, scaleOnSheet, 1.0);
+    m_drawingToAttachment = Transform::From(view.GetViewDefinition().GetRotation());
+    m_drawingToAttachment.ScaleMatrixColumns(scale.x, scale.y, 1.0);
     DPoint3d viewOrg = view.GetViewDefinition().GetOrigin();
     DPoint3d translation = viewRoot.GetLocation().Translation();
     viewOrg.DifferenceOf(viewOrg, translation);
