@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaJson.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ struct SchemaJsonWriter
         SchemaWriteStatus WriteEnumeration(ECEnumerationCR ecEnumeration);
         SchemaWriteStatus WriteKindOfQuantity(KindOfQuantityCR kindOfQuantity);
         SchemaWriteStatus WritePropertyCategory(PropertyCategoryCR propertyCategory);
-        SchemaWriteStatus WriteSchemaChildren();
+        SchemaWriteStatus WriteSchemaItems();
 
     public:
         SchemaJsonWriter(Json::Value& jsonRoot, ECSchemaCR ecSchema);

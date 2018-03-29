@@ -165,7 +165,7 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationUnits)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(KindOfQuantityTest, SerializeStandaloneChildKindOfQuantity)
+TEST_F(KindOfQuantityTest, SerializeStandaloneItemKindOfQuantity)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);

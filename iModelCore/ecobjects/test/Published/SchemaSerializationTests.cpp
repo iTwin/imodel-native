@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaSerializationTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -20,7 +20,7 @@ struct SchemaXmlSerializationTest : ECTestFixture
 struct SchemaJsonSerializationTest : ECTestFixture
     {
     protected:
-        static ECSchemaPtr CreateSchemaWithNoChildren()
+        static ECSchemaPtr CreateSchemaWithNoItems()
             {
             ECSchemaPtr schema;
             Utf8String schemaName = "ExampleSchema";
@@ -397,15 +397,15 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaJsonSerializationTest, SchemaWithNoChildren)
+TEST_F(SchemaJsonSerializationTest, SchemaWithNoItems)
     {
-    ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoChildren();
+    ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoItems();
 
     Json::Value schemaJson;
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToJsonValue(schemaJson));
 
     Json::Value testDataJson;
-    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithNoChildren.ecschema.json").c_str());
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithNoItems.ecschema.json").c_str());
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
@@ -415,9 +415,9 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithNoChildren)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaJsonSerializationTest, SchemaWithChildren)
+TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     {
-    ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoChildren();
+    ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoItems();
 
     // Entity Class / Mixin Classes
     ECEntityClassP baseEntityClass;
@@ -509,7 +509,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithChildren)
     EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToJsonValue(schemaJson));
 
     Json::Value testDataJson;
-    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithChildren.ecschema.json"));
+    BeFileName testDataFile(ECTestFixture::GetTestDataPath(L"ECJson/SchemaWithItems.ecschema.json"));
     auto readJsonStatus = ECTestUtility::ReadJsonInputFromFile(testDataJson, testDataFile);
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
