@@ -155,7 +155,7 @@ Utf8StringCR KindOfQuantity::GetDescription() const
 bool KindOfQuantity::SetPersistenceUnit(Utf8StringCR fusDescriptor)
     {
     ECUnitCP unit;
-    Formatting::NamedFormatSpecCP nfs;
+    Formatting::FormatCP nfs;
     auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
     if (ECObjectsStatus::Success != status)
         return false;
@@ -173,7 +173,7 @@ bool KindOfQuantity::SetPersistenceUnit(Utf8StringCR fusDescriptor)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format)
+bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Formatting::FormatCP format)
     {
     if (unit.IsConstant())
         return false;
@@ -192,7 +192,7 @@ bool KindOfQuantity::SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSp
 bool KindOfQuantity::SetDefaultPresentationUnit(Utf8StringCR fusDescriptor)
     {
     ECUnitCP unit;
-    Formatting::NamedFormatSpecCP nfs;
+    Formatting::FormatCP nfs;
     auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
     if (ECObjectsStatus::Success != status)
         return false;
@@ -209,7 +209,7 @@ bool KindOfQuantity::SetDefaultPresentationUnit(Utf8StringCR fusDescriptor)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::SetDefaultPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format)
+ECObjectsStatus KindOfQuantity::SetDefaultPresentationUnit(ECUnitCR unit, Formatting::FormatCP format)
     {
     if (unit.IsConstant())
         return ECObjectsStatus::InvalidConstantUnit;
@@ -229,7 +229,7 @@ ECObjectsStatus KindOfQuantity::SetDefaultPresentationUnit(ECUnitCR unit, Format
 ECObjectsStatus KindOfQuantity::AddPresentationUnit(Utf8StringCR fusDescriptor)
     {
     ECUnitCP unit;
-    Formatting::NamedFormatSpecCP nfs;
+    Formatting::FormatCP nfs;
     auto status = ParseFUSDescriptor(unit, nfs, fusDescriptor.c_str(), *this);
     if (ECObjectsStatus::Success != status)
         return status;
@@ -249,7 +249,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationUnit(Utf8StringCR fusDescriptor)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Kyle.Abramowitz                    03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus KindOfQuantity::AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format)
+ECObjectsStatus KindOfQuantity::AddPresentationUnit(ECUnitCR unit, Formatting::FormatCP format)
     {
     if (unit.IsConstant())
         return ECObjectsStatus::Error;
@@ -376,7 +376,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                 presentationUnitString += ";";
             presentationUnitString += presUnit;
             presentationUnitString += "(";
-            presentationUnitString += fus.GetNamedFormatSpec()->GetName();
+            presentationUnitString += fus.GetFormat()->GetName();
             presentationUnitString += ")";
             first = false;
             }
@@ -469,7 +469,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         }
 
     ECUnitCP persUnit;
-    Formatting::NamedFormatSpecCP persNFS;
+    Formatting::FormatCP persNFS;
     ECObjectsStatus status = ParseFUSDescriptor(persUnit, persNFS, value.c_str(), *this, &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
     if (ECObjectsStatus::Success != status)
         return SchemaReadStatus::InvalidECSchemaXml; // log messages are in the ParseFUSDescriptor
@@ -494,7 +494,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         for(auto const& presValue : presentationUnits)
             {
             ECUnitCP presUnit;
-            Formatting::NamedFormatSpecCP presNFS;
+            Formatting::FormatCP presNFS;
             status = ParseFUSDescriptor(presUnit, presNFS, presValue.c_str(), *this, &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
             
             if (ECObjectsStatus::Success != status)
@@ -528,8 +528,8 @@ Utf8String KindOfQuantity::GetFUSDescriptor(Formatting::FormatUnitSetCR fus, ECS
     if (nullptr != fus.GetUnit())
         descriptor = static_cast<ECUnitCP>(fus.GetUnit())->GetQualifiedName(koqSchema).c_str();
 
-    if (nullptr != fus.GetNamedFormatSpec())
-        descriptor.append("(").append(fus.GetNamedFormatSpec()->GetName()).append(")");
+    if (nullptr != fus.GetFormat())
+        descriptor.append("(").append(fus.GetFormat()->GetName()).append(")");
 
     return descriptor;
     }
@@ -538,7 +538,7 @@ Utf8String KindOfQuantity::GetFUSDescriptor(Formatting::FormatUnitSetCR fus, ECS
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::NamedFormatSpecCP& nfs, Utf8CP descriptor, KindOfQuantityR koq, ECSchemaReadContextP context, Nullable<uint32_t> ecXmlMajorVersion, Nullable<uint32_t> ecXmlMinorVersion)
+ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::FormatCP& nfs, Utf8CP descriptor, KindOfQuantityR koq, ECSchemaReadContextP context, Nullable<uint32_t> ecXmlMajorVersion, Nullable<uint32_t> ecXmlMinorVersion)
     {
     if (ecXmlMajorVersion.IsNull())
         ecXmlMajorVersion = 3;
@@ -556,10 +556,10 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::N
     nfs = nullptr;
     if (Utf8String::IsNullOrEmpty(format.c_str()))
         // Need to keep the default without a Unit for backwards compatibility.
-        nfs = s_stdFmtSet.FindNamedFormatSpec("DefaultRealU");
+        nfs = s_stdFmtSet.FindFormat("DefaultRealU");
     else
         {
-        nfs = s_stdFmtSet.FindNamedFormatSpec(format.c_str());
+        nfs = s_stdFmtSet.FindFormat(format.c_str());
         if (nullptr == nfs)
             {
             if (xmlLessThanOrEqual32)
@@ -570,7 +570,7 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::N
                 }
             
             // Assuming since there was previously a format that it should contain the Unit with it.
-            nfs = s_stdFmtSet.FindNamedFormatSpec("DefaultRealU");
+            nfs = s_stdFmtSet.FindFormat("DefaultRealU");
             LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.",
                 descriptor, koq.GetFullName().c_str());
             }

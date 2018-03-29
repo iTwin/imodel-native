@@ -16,7 +16,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
 // static
-Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::NamedFormatSpecCR formatSpec, ECQuantityFormattingStatus* formatStatus, BEF::NumericFormatSpecCP defFormat)
+Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::FormatCR formatSpec, ECQuantityFormattingStatus* formatStatus, BEF::NumericFormatSpecCP defFormat)
     {
     Utf8String str;
     ECQuantityFormattingStatus locStat = ECQuantityFormattingStatus::Success;
@@ -27,7 +27,7 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
 
     // check compatibility of Quantity and KOQ
     if (ECUnit::AreCompatible(qty.GetUnit(), &presentationUnit))
-        str = BEF::NamedFormatSpec::StdFormatQuantity(formatSpec, qty.ConvertTo(&presentationUnit));
+        str = BEF::Format::StdFormatQuantity(formatSpec, qty.ConvertTo(&presentationUnit));
     else
         *formatStatus = ECQuantityFormattingStatus::IncompatibleKOQ;
 
@@ -65,7 +65,7 @@ Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantit
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  11/2017
 //---------------------------------------------------------------------------------------
-Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::NamedFormatSpecCR formatSpec, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat)
+Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::FormatCR formatSpec, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat)
     {
     return FormatQuantity(BEU::Quantity(dval, *koq->GetPersistenceUnit().GetUnit()), koq, presentationUnit, formatSpec, status, defFormat);
     }

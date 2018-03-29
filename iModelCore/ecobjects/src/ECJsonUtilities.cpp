@@ -48,7 +48,7 @@ Json::Value ECJsonUtilities::FormatUnitSetToUnitFormatJson(Formatting::FormatUni
     {
     Json::Value val(Json::objectValue);
     val[ECJSON_UNIT_FORMAT_UNIT] = ((ECUnitCP)fus.GetUnit())->GetQualifiedName(koq.GetSchema());
-    val[ECJSON_UNIT_FORMAT_FORMAT] = fus.GetNamedFormatSpec()->GetName();
+    val[ECJSON_UNIT_FORMAT_FORMAT] = fus.GetFormat()->GetName();
     return val;
     }
 

@@ -22,7 +22,7 @@ ECObjectsStatus Format::SetSchema(ECSchemaCR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-Format::Format(ECSchemaCR schema, Utf8StringCR name) : NamedFormatSpec(name), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
+Format::Format(ECSchemaCR schema, Utf8StringCR name) : Formatting::Format(name.c_str()), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
@@ -33,24 +33,6 @@ Utf8StringCR Format::GetFullName() const
         m_fullName = GetSchema().GetName() + ":" + GetName();
 
     return m_fullName;
-    }
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus Format::SetDisplayLabel(Utf8StringCR displayLabel)
-    {
-    T_Super::SetDisplayLabel(displayLabel.c_str());
-    m_isDisplayLabelExplicitlyDefined = true;
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus Format::SetDescription(Utf8StringCR description)
-    {
-    T_Super::SetDescription(description.c_str());
-    return ECObjectsStatus::Success;
     }
 
 //--------------------------------------------------------------------------------------

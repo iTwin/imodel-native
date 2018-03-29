@@ -1618,7 +1618,7 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
         else
             persistUnit = GetUnitCP(persistUnit->GetName().c_str());
 
-        targetKOQ->SetPersistenceUnit(*persistUnit, sourceKOQ.GetPersistenceUnit().GetNamedFormatSpec());
+        targetKOQ->SetPersistenceUnit(*persistUnit, sourceKOQ.GetPersistenceUnit().GetFormat());
         }
 
     if (sourceKOQ.HasPresentationUnits())
@@ -1637,7 +1637,7 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
             else
                 presUnit = GetUnitCP(presUnit->GetName().c_str());
 
-            targetKOQ->AddPresentationUnit(*presUnit, fus.GetNamedFormatSpec());
+            targetKOQ->AddPresentationUnit(*presUnit, fus.GetFormat());
             }
         }
     

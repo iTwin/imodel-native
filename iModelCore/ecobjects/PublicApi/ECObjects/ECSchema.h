@@ -1499,7 +1499,7 @@ public:
     //! @param[in]  fusDescriptor  The new value to apply
     //! @returns true if the persistence FormatUnitSet is valid, false if not
     ECOBJECTS_EXPORT bool SetPersistenceUnit(Utf8StringCR fusDescriptor);
-    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
+    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::FormatCP format = nullptr);
     //! Gets the Unit of measurement used for persisting the information
     Formatting::FormatUnitSetCR GetPersistenceUnit() const {return m_persistenceFUS;}
     Utf8String GetPersistenceUnitDescriptor() const { return GetFUSDescriptor(m_persistenceFUS, GetSchema()); }
@@ -1508,7 +1508,7 @@ public:
     //! @param[in]  value  The new value to apply
     //! @return true if the presentation FormatUnitSet is valid, false if not.
     ECOBJECTS_EXPORT bool SetDefaultPresentationUnit(Utf8StringCR fusDescriptor);
-    ECOBJECTS_EXPORT ECObjectsStatus SetDefaultPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus SetDefaultPresentationUnit(ECUnitCR unit, Formatting::FormatCP format = nullptr);
     //! Gets the default presentation FormatUnitSet of this KindOfQuantity.
     Formatting::FormatUnitSetCR GetDefaultPresentationUnit() const {return 0 < m_presentationUnits.size() ? *(&m_presentationUnits[0]) : GetPersistenceUnit();}
 
@@ -1523,7 +1523,7 @@ public:
     //! @param[in] unit  The Unit to use in the newly created FUS.
     //! @param[in] format  The format to use in the newly created FUS.
     //! @return ECObjectsStatus::Succcess if FUS is successfully created and added as a presentation FUS; otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationUnit(ECUnitCR unit, Formatting::NamedFormatSpecCP format = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationUnit(ECUnitCR unit, Formatting::FormatCP format = nullptr);
 
     //! Removes the specified FUS as a presentation FUS of this.
     ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSetCR fus);
@@ -1566,14 +1566,14 @@ public:
     //! - greater than EC3.2, will be set to the default, "DefaultRealU".
     //! 
     //! @param[out] unit The Unit found from the given descriptor.
-    //! @param[out] format The NamedFormatSpec found from the given descriptor.
+    //! @param[out] format The Format found from the given descriptor.
     //! @param[in] descriptor String describing the FUS. @see Formatting::FormatUnitSet for more information.
     //! @param[in] koq The KoQ to use as context for locating the unit and format.
     //! @param[in] context The Context used to locate the units schema
     //! @param[in] ecXmlMajorVersion The major version of ECXml to parse the descriptor in the context of.
     //! @param[in] ecXmlMinorVersion The minor version of ECXml to parse the descriptor in the context of.
     //! @return ECObjectsStatus::Success if the FUS is successfully created; otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseFUSDescriptor(ECUnitCP& unit, Formatting::NamedFormatSpecCP& format, Utf8CP descriptor, KindOfQuantityR koq, ECSchemaReadContextP context = nullptr, Nullable<uint32_t> ecXmlMajorVersion = nullptr, Nullable<uint32_t> ecXmlMinorVersion = nullptr);
+    ECOBJECTS_EXPORT static ECObjectsStatus ParseFUSDescriptor(ECUnitCP& unit, Formatting::FormatCP& format, Utf8CP descriptor, KindOfQuantityR koq, ECSchemaReadContextP context = nullptr, Nullable<uint32_t> ecXmlMajorVersion = nullptr, Nullable<uint32_t> ecXmlMinorVersion = nullptr);
    
     //! Given an old EC3.1 FUS descriptor, {unitName}({formatName}), it will convert it into the new format.
     //! @param[out] updatedDescriptor  The updated descriptor if it is able to be updated. If not it will be an empty string.

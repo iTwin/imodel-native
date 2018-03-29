@@ -1373,7 +1373,7 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
         change.GetRelativeError().SetValue(oldVal.GetRelativeError(), newVal.GetRelativeError());
 
 
-    auto qualifiedToText = [](ECUnitCR unit, Formatting::NamedFormatSpecCR format) -> Utf8String
+    auto qualifiedToText = [](ECUnitCR unit, Formatting::FormatCR format) -> Utf8String
         {
         Utf8String ret;
         ret += unit.GetFullName();
@@ -1383,9 +1383,9 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
         return ret;
         };
 
-    Utf8String oldPersUnitStr = qualifiedToText(*(ECUnitCP)oldVal.GetPersistenceUnit().GetUnit(), *oldVal.GetPersistenceUnit().GetNamedFormatSpec());
+    Utf8String oldPersUnitStr = qualifiedToText(*(ECUnitCP)oldVal.GetPersistenceUnit().GetUnit(), *oldVal.GetPersistenceUnit().GetFormat());
 
-    Utf8String newPersUnitStr = qualifiedToText(*(ECUnitCP)newVal.GetPersistenceUnit().GetUnit(), *newVal.GetPersistenceUnit().GetNamedFormatSpec());
+    Utf8String newPersUnitStr = qualifiedToText(*(ECUnitCP)newVal.GetPersistenceUnit().GetUnit(), *newVal.GetPersistenceUnit().GetFormat());
     
     if (!oldPersUnitStr.EqualsIAscii(newPersUnitStr))
         change.GetPersistenceUnit().SetValue(oldPersUnitStr, newPersUnitStr);
@@ -1393,12 +1393,12 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     std::vector<Utf8String> oldPresUnits, newPresUnits;
     for (Formatting::FormatUnitSet const& fus : oldVal.GetPresentationUnitList())
         {
-        oldPresUnits.push_back(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetNamedFormatSpec()));
+        oldPresUnits.push_back(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetFormat()));
         }
 
     for (Formatting::FormatUnitSet const& fus : newVal.GetPresentationUnitList())
         {
-        newPresUnits.push_back(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetNamedFormatSpec()));
+        newPresUnits.push_back(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetFormat()));
         }
 
     const size_t oldPresUnitCount = oldPresUnits.size();

@@ -25,14 +25,14 @@ static Formatting::StdFormatSet const stdFmtSet;
 static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit, Utf8CP spacer=nullptr)
     {
     ECUnitCP unit = ECTestFixture::GetUnitsSchema()->GetUnitCP(fusUnit);
-    BEF::NamedFormatSpecCP format = stdFmtSet.FindNamedFormatSpec(formatName);
+    BEF::FormatCP format = stdFmtSet.FindFormat(formatName);
 
     BEF::FormatUnitSet fus = BEF::FormatUnitSet(format, unit);
     EXPECT_FALSE(fus.HasProblem()) << "FUS-Problem: %s" << fus.GetProblemDescription().c_str();
     if (fus.HasProblem())
         return;
 
-    BEF::NamedFormatSpecCP real4u = stdFmtSet.FindNamedFormatSpec("real4u");
+    BEF::FormatCP real4u = stdFmtSet.FindFormat("real4u");
 
     Formatting::FormatProblemCode code;
     BEF::FormatUnitSet fus0 = BEF::FormatUnitSet(real4u, unit);
@@ -80,7 +80,7 @@ TEST_F(ECQuantityFormattingTest, TestWithOnlyInputUnit)
     schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
 
     ECUnitCP meter = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
-    Formatting::NamedFormatSpecCP fi = stdFmtSet.FindNamedFormatSpec("fi8");
+    Formatting::FormatCP fi = stdFmtSet.FindFormat("fi8");
 
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "Test");

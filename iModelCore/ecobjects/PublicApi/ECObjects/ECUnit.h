@@ -233,9 +233,9 @@ public:
 //=======================================================================================
 //! @bsistruct
 //=======================================================================================
-struct Format : Formatting::NamedFormatSpec, NonCopyableClass
+struct Format : Formatting::Format, NonCopyableClass
 {
-DEFINE_T_SUPER(Formatting::NamedFormatSpec)
+DEFINE_T_SUPER(Formatting::Format)
 friend struct ECSchema;
 friend struct SchemaXmlWriter;
 friend struct SchemaXmlReaderImpl;
@@ -245,12 +245,14 @@ private:
     ECSchemaCP m_schema;
     bool m_isDisplayLabelExplicitlyDefined;
     mutable Utf8String m_fullName;
+    Utf8String m_displayLabel;
+    Utf8String m_description;
 
     ECObjectsStatus SetSchema(ECSchemaCR schema);
 
-    ECObjectsStatus SetDisplayLabel(Utf8StringCR displayLabel);
+    ECObjectsStatus SetDisplayLabel(Utf8StringCR displayLabel) {m_displayLabel = displayLabel; m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
 
-    ECObjectsStatus SetDescription(Utf8StringCR description);
+    ECObjectsStatus Format::SetDescription(Utf8StringCR description) {m_description = description; return ECObjectsStatus::Success;}
 
     SchemaReadStatus ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR context);
     SchemaReadStatus ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context);
@@ -274,12 +276,12 @@ public:
     //! Returns true if the display label is explicitly defined.
     bool GetIsDisplayLabelDefined() const {return m_isDisplayLabelExplicitlyDefined;}
     //! Returns the invariant display label for this Format. Returns the name of the Format if no display label has been explicitly defined.
-    Utf8StringCR GetInvariantDisplayLabel() const {return GetIsDisplayLabelDefined() ? T_Super::GetDisplayLabel() : GetName();}
-    bool GetIsDescriptionDefined() const {return T_Super::GetDescription().length() > 0;} //!< Returns true if description length is 0
+    Utf8StringCR GetInvariantDisplayLabel() const {return GetIsDisplayLabelDefined() ? m_displayLabel : GetName();}
+    bool GetIsDescriptionDefined() const {return m_displayLabel.length() > 0;} //!< Returns true if description length is 0
     //! Returns the description of this Format. Returns the localized description if one exists.
     ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
     //! Returns the invariant description of this Format.
-    Utf8StringCR GetInvariantDescription() const {return T_Super::GetDescription();}
+    Utf8StringCR GetInvariantDescription() const {return m_description;}
 
     //! Write the Format as a standalone schema child in the ECSchemaJSON format.
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
