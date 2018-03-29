@@ -222,6 +222,13 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     BE_JSON_NAME(isTemplate)
     BE_JSON_NAME(name)
 
+    BE_PROP_NAME(ECInstanceId)
+    BE_PROP_NAME(ParentModel)
+    BE_PROP_NAME(ModeledElement)
+    BE_PROP_NAME(IsPrivate)
+    BE_PROP_NAME(JsonProperties)
+    BE_PROP_NAME(IsTemplate)
+
 private:
     template<class T> void CallAppData(T const& caller) const;
 

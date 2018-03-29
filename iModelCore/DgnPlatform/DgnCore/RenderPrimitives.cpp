@@ -952,6 +952,18 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void    Mesh::AddAuxChannels(PolyfaceAuxData::ChannelsCR channels, size_t index)
+    {
+    if (m_auxChannels.empty())
+        m_auxChannels.Init(channels);
+
+    m_auxChannels.AppendDataByIndex(channels, index);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Mesh::Features::Add(FeatureCR feat, size_t numVerts)
@@ -1209,9 +1221,20 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
         for (size_t i = 0; i < 3; i++)
             {
             size_t      index = (0 == i) ? 0 : iTriangle + i; 
+
             VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
 
-            newTriangle[i] = AddVertex(vertex);
+            if (visitor.GetAuxDataCP().IsValid())
+                {
+                // No deduplication with auxData (for now...)
+                newTriangle[i] =  static_cast<uint32_t>(m_mesh->Verts().size());
+                m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
+                m_mesh->AddAuxChannels(visitor.GetAuxDataCP()->GetChannels(), index);
+                }
+            else
+                {
+                newTriangle[i] = AddVertex(vertex);
+                }
             if (m_currentPolyface.IsValid())
                 m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[index]);
             }
