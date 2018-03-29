@@ -760,6 +760,9 @@ BentleyStatus DgnTrueTypeFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGl
         penPosition.x += (widths[iGlyph] * context.m_drawSize.x);
         }
 
+    // Fail-safe in case nothing accumulated above. Callers will expect a zero'ed range more than an inverted range.
+    result.ZeroNullRanges();
+    
     return SUCCESS;
     }
 

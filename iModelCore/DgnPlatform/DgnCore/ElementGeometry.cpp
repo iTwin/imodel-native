@@ -5796,6 +5796,10 @@ static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input,
                     LineStyleInfoPtr lsInfo = LineStyleInfo::Create(styleId, nullptr);
                     params.SetLineStyle(lsInfo.get());
                     }
+                else
+                    {
+                    params.SetLineStyle(nullptr);
+                    }
                 }
 
             if (!appearance["transparency"].isNull())
