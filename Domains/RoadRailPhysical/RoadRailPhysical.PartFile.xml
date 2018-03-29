@@ -28,6 +28,13 @@
         </Bindings>
     </Part>
 
+    <Part Name="RoadRailPhysicalExtractions" DeferType="BuildDocs" BentleyBuildMakeFile="docs/RoadRailPhysicalExtractions.mke">
+        <SubPart PartName="RoadRailPhysicalPublishedApi" />
+        <Bindings>
+            <Directory SourceName="Dox/Extractions/RoadRailPhysical" SubPartDirectory="Dox/Extractions/RoadRailPhysical" />
+        </Bindings>
+    </Part>
+
     <!-- ********************************************************************************************** -->
     <!-- Unit tests -->
     <!-- ********************************************************************************************** -->

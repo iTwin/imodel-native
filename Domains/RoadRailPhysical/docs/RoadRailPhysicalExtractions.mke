@@ -1,0 +1,46 @@
+#----------------------------------------------------------------------------------------
+#
+#     $Source: docs/RoadRailPhysicalExtractions.mke $
+#
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+%include mdl.mki
+
+PublishExtractInput = $(OutputRootDir)build/RoadRailPhysical/PublishExtract/Input/
+PublishExtractOutput = $(OutputRootDir)build/RoadRailPhysical/PublishExtract/Output/
+PublishExtractStamp = $(PublishExtractOutput)PublishExtract.stamp
+
+always:
+    !~@mkdir ${PublishExtractInput}
+    !~@mkdir ${PublishExtractOutput}
+
+#----------------------------------------------------------------------------------------
+#   Gather files that contain code samples into PublishExtractInput
+#----------------------------------------------------------------------------------------
+$(PublishExtractInput)RoadClass.cpp : $(_MakeFilePath)../RoadClass.cpp
+    $(LinkFirstDepToFirstTarget)
+
+#----------------------------------------------------------------------------------------
+#   Extract the code samples into PublishExtractOutput
+#----------------------------------------------------------------------------------------
+%if defined (BMAKE_DELETE_ALL_TARGETS)
+    cleanopt = --clean
+%else
+    cleanopt =
+%endif
+
+%if defined (VERBOSE)
+    PUBLISH_VERBOSE = -v6
+%else
+    PUBLISH_VERBOSE = -v6   # INFO_LEVEL_VeryInteresting
+%endif
+
+always:
+    PublishExtract.py -d${PublishExtractInput} $(PUBLISH_VERBOSE) $(cleanopt) -o${PublishExtractOutput} -s$(PublishExtractStamp) --noProvenance
+
+#----------------------------------------------------------------------------------------
+#   Link in code sample extractions for input into PublishApi by consuming SDKs
+#----------------------------------------------------------------------------------------
+$(BuildContext)Dox/Extractions/RoadRailPhysical : ${PublishExtractOutput}
+    $(LinkFirstDepToFirstTargetAsDirectory)
