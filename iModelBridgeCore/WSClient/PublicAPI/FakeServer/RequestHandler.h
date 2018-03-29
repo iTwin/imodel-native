@@ -37,7 +37,6 @@ class RequestHandler
         FAKESERVER_EXPORT Response UploadNewSeedFile(Request req);
         FAKESERVER_EXPORT Response CreateFileInstance(Request req);
         FAKESERVER_EXPORT Response GetiModels(Request req);
-        FAKESERVER_EXPORT Response DownloadiModel(Request req);
         FAKESERVER_EXPORT Response DeleteiModels(Request req);
         FAKESERVER_EXPORT Response Push(Request req);
         FAKESERVER_EXPORT Response Pull(Request req);
