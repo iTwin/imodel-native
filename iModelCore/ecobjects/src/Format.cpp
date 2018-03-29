@@ -269,7 +269,7 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
 
     if (IsProblem())
         {
-        LOG.errorv("%s node '%s' has problem '%s'", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), GetProblemDescription());
+        LOG.errorv("%s node '%s' has problem '%s'", FORMAT_COMPOSITE_ELEMENT, GetFullName().c_str(), GetProblemDescription().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
