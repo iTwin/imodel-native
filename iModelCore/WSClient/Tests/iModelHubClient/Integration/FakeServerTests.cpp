@@ -4,7 +4,7 @@
 #include <BeHttp/ProxyHttpHandler.h>
 #include "IntegrationTestsBase.h"
 #include <FakeServer/MockIMHubHttpHandler.h>
-#include <WebServices\iModelHub\Utils.h>
+#include <WebServices/iModelHub/Utils.h>
 #include <BeXml/BeXml.h>
 
 
