@@ -127,6 +127,8 @@ public:
     virtual ~Root2d() { ClearAllTiles(); }
 
     Utf8CP _GetName() const override { return "SheetTil2d"; }
+
+    void DrawClipPolys(TileTree::DrawArgsR args) const;
 };
 
 //=======================================================================================
@@ -1205,6 +1207,10 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
     myRoot.m_view->CreateScene(args);
 
+    static bool s_drawClipPolys = false;
+    if (s_drawClipPolys)
+        myRoot.DrawClipPolys(myArgs);
+
     static bool s_drawRangeBoxes = false;
     if (!s_drawRangeBoxes)
         return;
@@ -1223,6 +1229,43 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     gf->AddRangeBox(range);
 
     myArgs.m_graphics.Add(*gf->Finish());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* For debugging purposes, create polys from ClipVector and output as graphics.
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::Attachment::Root2d::DrawClipPolys(TileTree::DrawArgsR args) const
+    {
+    DRange3d range = m_clip->m_boundingRange;
+
+    DPoint2d pts[5];
+
+    pts[0] = DPoint2d::From(range.low.x, range.low.y);
+    pts[1] = DPoint2d::From(range.high.x, range.low.y);
+    pts[2] = DPoint2d::From(range.high.x, range.high.y);
+    pts[3] = DPoint2d::From(range.low.x, range.high.y);
+    pts[4] = pts[0];
+
+    double zDepth = 0.5 * Render::Target::GetMaxDisplayPriority();
+
+    GraphicParams params;
+    ColorDef lineColor = ColorDef::DarkMagenta(),
+             fillColor = ColorDef::DarkGreen();
+    fillColor.SetAlpha(0x7f);
+    params.SetLineColor(lineColor);
+    params.SetFillColor(fillColor);
+
+    auto gf = args.m_context.CreateSceneGraphic();
+    gf->ActivateGraphicParams(params);
+    gf->AddShape2d(5, pts, true, zDepth);
+
+    Transform tf;
+    tf.InverseOf(GetLocation());
+    GraphicBranch branch;
+    branch.Add(*gf->Finish());
+
+    args.m_graphics.Add(*args.m_context.CreateBranch(branch, GetDgnDb(), tf));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1390,14 +1433,20 @@ Render::ViewFlagsOverrides Sheet::Attachment::Root3d::_GetViewFlagsOverrides() c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorPtr ViewAttachment::CreateBoundaryClip() const
+    {
+    RectanglePoints box(GetPlacement().CalculateRange());
+    return new ClipVector(ClipPrimitive::CreateFromShape(box, 5, false, nullptr, nullptr, nullptr).get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
 ClipVectorPtr ViewAttachment::GetOrCreateClip(TransformCP tf) const
     {
     auto clip = GetClip();
     if (clip.IsNull())
-        {
-        RectanglePoints box(GetPlacement().CalculateRange());
-        clip = new ClipVector(ClipPrimitive::CreateFromShape(box, 5, false, nullptr, nullptr, nullptr).get());
-        }
+        clip = CreateBoundaryClip();
 
     if (nullptr != tf)
         clip = clip->Clone(tf);
@@ -1546,7 +1595,10 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
 
     SetExpirationTime(BeDuration::Seconds(15));
 
+    // The renderer needs the unclipped range of the attachment in order to produce polys to be rendered as clip mask...
+    // (Containment tests can also be more efficiently performed if boundary range is specified).
     m_clip = attach.GetOrCreateClip();
+    m_clip->m_boundingRange = attach.GetPlacement().CalculateRange();
 
     m_rootTile = new Tile2d(*this, attach.GetPlacement().GetElementBox());
     }

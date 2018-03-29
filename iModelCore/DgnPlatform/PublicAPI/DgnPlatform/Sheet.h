@@ -242,6 +242,9 @@ public:
     //! @see GetClip
     ClipVectorPtr GetOrCreateClip(TransformCP transform=nullptr) const;
 
+    //! Get a rectangular clip based on the range of the ViewAttachment.
+    ClipVectorPtr CreateBoundaryClip() const;
+
     //! Set the clip to be applied to this attachment.
     //! @see ClearClip
     DGNPLATFORM_EXPORT void SetClip(ClipVectorCR);
