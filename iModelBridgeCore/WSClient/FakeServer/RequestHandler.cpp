@@ -279,7 +279,7 @@ Response RequestHandler::CreateSeedFileInstance(Request req)
         relationsArray[ServerSchema::SchemaName] = "iModelScope";
         relationsArray[ServerSchema::ClassName] = "FileAccesKey";
         relationsArray["direction"] = "forward";
-        JsonValueR propertiesl1 = relationsArray[ServerSchema::Properties] = Json::objectValue;
+        // - unused JsonValueR propertiesl1 = relationsArray[ServerSchema::Properties] = Json::objectValue;
         JsonValueR relatedInstance = relationsArray[ServerSchema::RelatedInstance] = Json::objectValue;;
         relatedInstance[ServerSchema::InstanceId] = "";
         relatedInstance[ServerSchema::SchemaName] = "iModelScope";
@@ -622,7 +622,7 @@ Response RequestHandler::Pull(Request req)
         relationshipInstances[ServerSchema::SchemaName] = "";
         relationshipInstances[ServerSchema::ClassName] = "";
         relationshipInstances["direction"] = "forward";
-        JsonValueR propertiesl1 = relationshipInstances[ServerSchema::Properties] = Json::objectValue;
+        // - unused JsonValueR propertiesl1 = relationshipInstances[ServerSchema::Properties] = Json::objectValue;
         JsonValueR relatedInstance = relationshipInstances[ServerSchema::RelatedInstance] = Json::objectValue;;
         relatedInstance[ServerSchema::InstanceId] = "";
         relatedInstance[ServerSchema::SchemaName] = "";
