@@ -1205,7 +1205,7 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
     myRoot.m_view->CreateScene(args);
 
-    static bool s_drawRangeBoxes = true;
+    static bool s_drawRangeBoxes = false;
     if (!s_drawRangeBoxes)
         return;
 
