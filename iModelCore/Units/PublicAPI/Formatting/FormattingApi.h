@@ -268,10 +268,10 @@ private:
 	FormatLocaleDateOrder m_dateOrder;
 	Utf8Char              m_timeSeparator;
 	Utf8Char              m_dateSeparator;
-	Utf8String m_shortDay[FormatDayIndex::indxMaxDay];
-	Utf8String m_fullDay[FormatDayIndex::indxMaxDay];
-	Utf8String m_shortMonth[FormatMonthIndex::indxMaxMonth];
-	Utf8String m_fullMonth[FormatMonthIndex::indxMaxMonth];
+	Utf8String m_shortDay[static_cast<int>(FormatDayIndex::indxMaxDay)];
+	Utf8String m_fullDay[static_cast<int>(FormatDayIndex::indxMaxDay)];
+	Utf8String m_shortMonth[static_cast<int>(FormatMonthIndex::indxMaxMonth)];
+	Utf8String m_fullMonth[static_cast<int>(FormatMonthIndex::indxMaxMonth)];
 
 	UNITS_EXPORT void Init(Utf8Char decimal, Utf8Char thousand, FormatLocaleDateOrder ord = FormatLocaleDateOrder::mdy);
 
