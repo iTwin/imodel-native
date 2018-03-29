@@ -64,7 +64,7 @@ $(o)FormatParsing$(oext)  : $(formatSrcDir)FormatParsing.cpp $(formatHeaderDir)F
 
 $(o)FormatUtils$(oext)    : $(formatSrcDir)FormatUtils.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
-$(o)NamedFormatSpec$(oext)     : $(formatSrcDir)NamedFormatSpec.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+$(o)Format$(oext)     : $(formatSrcDir)Format.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 $(o)NumericFormatSpec$(oext)  : $(formatSrcDir)NumericFormatSpec.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 

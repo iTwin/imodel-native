@@ -29,7 +29,7 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
         return nullptr;
         }
-    NamedFormatSpecCP nfs = new NamedFormatSpec(name, fmtP, compS);
+    FormatCP nfs = new Format(name, fmtP, compS);
     if (nullptr == nfs || nfs->IsProblem())
         {
         if (nullptr != nfs)
@@ -49,7 +49,7 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
         return nullptr;
         }
-    NamedFormatSpecP nfs = new NamedFormatSpec(name, fmtP);
+    FormatP nfs = new Format(name, fmtP);
     if (nullptr == nfs || nfs->IsProblem())
         {
         if (nullptr != nfs)
@@ -65,7 +65,7 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
 //--------------------------------------------------------------------------------------
 NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context)
     {
-    NamedFormatSpecCP nfs = AddNamedFormat(jsonString, context);
+    FormatCP nfs = AddNamedFormat(jsonString, context);
     if (nullptr == nfs)
         return nullptr;
     return nfs->GetNumericSpec();
@@ -74,11 +74,11 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP jsonString, BEU::IUnitsContex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context)
+FormatCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context)
     {
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
-    NamedFormatSpecP nfs = new NamedFormatSpec();
+    FormatP nfs = new Format();
     nfs->FromJson(jval, &context);
 
     if (nfs->IsProblem())
@@ -97,13 +97,13 @@ NamedFormatSpecCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsCon
 bool StdFormatSet::IsFormatDefined(Utf8CP name)
     {
     return m_formatSet.end() != std::find_if(m_formatSet.begin(), m_formatSet.end(),
-        [name](NamedFormatSpecCR pNamedFmtSpec) -> bool {return pNamedFmtSpec.GetName() == name;});
+        [name](FormatCR pNamedFmtSpec) -> bool {return pNamedFmtSpec.GetName() == name;});
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-NamedFormatSpecCP StdFormatSet::FindNamedFormatSpec(Utf8StringCR name) const
+FormatCP StdFormatSet::FindFormat(Utf8StringCR name) const
     {
     for (auto const& fmt : m_formatSet)
         {

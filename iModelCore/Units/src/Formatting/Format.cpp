@@ -1,6 +1,6 @@
 ﻿/*--------------------------------------------------------------------------------------+
 |
-|     $Source: src/Formatting/NamedFormatSpec.cpp $
+|     $Source: src/Formatting/Format.cpp $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,15 +14,14 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-NamedFormatSpec::NamedFormatSpec() : m_specType(FormatSpecType::None), m_problem(FormatProblemCode::NotInitialized) 
+Format::Format() : m_specType(FormatSpecType::None), m_problem(FormatProblemCode::NotInitialized) 
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-NamedFormatSpec::NamedFormatSpec(NamedFormatSpecCR other)
-    : m_name(other.m_name), m_description(other.m_description),
-    m_displayLabel(other.m_displayLabel), m_specType(other.m_specType), m_problem(other.m_problem)
+Format::Format(FormatCR other)
+    : m_name(other.m_name), m_specType(other.m_specType), m_problem(other.m_problem)
     {
     if (other.HasNumeric())
         m_numericSpec = other.m_numericSpec;
@@ -33,7 +32,7 @@ NamedFormatSpec::NamedFormatSpec(NamedFormatSpecCR other)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-NamedFormatSpec::NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec)
+Format::Format(Utf8StringCR name, NumericFormatSpecCR numSpec)
     : m_name(name), m_specType(FormatSpecType::None), m_numericSpec(numSpec), m_problem(FormatProblemCode::NoProblems)
     {
     if (name.empty())
@@ -43,8 +42,8 @@ NamedFormatSpec::NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-NamedFormatSpec::NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
-    : NamedFormatSpec(name, numSpec)
+Format::Format(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
+    : Format(name, numSpec)
     {
     m_compositeSpec = compSpec;
     if (m_compositeSpec.IsProblem())
@@ -76,7 +75,7 @@ NamedFormatSpec::NamedFormatSpec(Utf8StringCR name, NumericFormatSpecCR numSpec,
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
-void NamedFormatSpec::FromJson(Utf8CP jsonString, BEU::IUnitsContextCP context)
+void Format::FromJson(Utf8CP jsonString, BEU::IUnitsContextCP context)
     {
     Json::Value jval (Json::objectValue);
     Json::Reader::Parse(jsonString, jval);
@@ -86,9 +85,9 @@ void NamedFormatSpec::FromJson(Utf8CP jsonString, BEU::IUnitsContextCP context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
-void NamedFormatSpec::FromJson(Json::Value jval, BEU::IUnitsContextCP context)
+void Format::FromJson(Json::Value jval, BEU::IUnitsContextCP context)
     {
-    *this = NamedFormatSpec();
+    *this = Format();
     m_problem = FormatProblemCode::NoProblems;
     if (jval.empty())
         {
@@ -103,10 +102,6 @@ void NamedFormatSpec::FromJson(Json::Value jval, BEU::IUnitsContextCP context)
         JsonValueCR val = *iter;
         if (BeStringUtilities::StricmpAscii(paramName, json_SpecName()) == 0)
             m_name = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_SpecDescript()) == 0)
-            m_description = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_SpecLabel()) == 0)
-            m_displayLabel = val.asString();
         else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
             m_numericSpec = NumericFormatSpec(val);
         else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
@@ -117,7 +112,7 @@ void NamedFormatSpec::FromJson(Json::Value jval, BEU::IUnitsContextCP context)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-bool NamedFormatSpec::IsIdentical(NamedFormatSpecCR other) const
+bool Format::IsIdentical(FormatCR other) const
     {
     if (m_name != other.m_name)
         return false;
@@ -135,7 +130,7 @@ bool NamedFormatSpec::IsIdentical(NamedFormatSpecCR other) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String NamedFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, int prec, double round)
+Utf8String Format::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, int prec, double round)
     {
     if (!qty.IsNullQuantity())
         return Utf8String();
@@ -151,7 +146,7 @@ Utf8String NamedFormatSpec::FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useU
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8String NamedFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
+Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space, Utf8CP useLabel, int prec, double round)
     {
     // there are two major options here: the format is a pure Numeric or it has a composite specification
     NumericFormatSpecCP fmtP = nfs.GetNumericSpec();
@@ -229,7 +224,7 @@ Utf8String NamedFormatSpec::StdFormatQuantity(NamedFormatSpecCR nfs, BEU::Quanti
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus NamedFormatSpec::ParseFormatString(NamedFormatSpecR nfs, Utf8StringCR formatString, std::function<NamedFormatSpecCP(Utf8StringCR)> defaultNamedFormatSpecMapper)
+BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper)
     {
     static size_t const precisionOverrideIndx = 0;
     static std::regex const rgx(R"REGEX((\w+)(<([^,<>]*,?)+>)?)REGEX", std::regex::optimize);
@@ -256,13 +251,13 @@ BentleyStatus NamedFormatSpec::ParseFormatString(NamedFormatSpecR nfs, Utf8Strin
         return tokens;
         }(overrideStr);
 
-    NamedFormatSpecCP defaultNamedFormatSpec = defaultNamedFormatSpecMapper(namedFormat);
-    if (nullptr == defaultNamedFormatSpec)
+    FormatCP defaultFormat = defaultFormatMapper(namedFormat);
+    if (nullptr == defaultFormat)
         {
-        LOG.errorv("failed to map a format name to a NamedFormatSpec");
+        LOG.errorv("failed to map a format name to a Format");
         return BentleyStatus::ERROR;
         }
-    nfs = *defaultNamedFormatSpec;
+    nfs = *defaultFormat;
 
     // It is considered an error to pass in a format string with empty
     // override brackets. If no overrides are needed, the user should instead
@@ -320,15 +315,10 @@ BentleyStatus NamedFormatSpec::ParseFormatString(NamedFormatSpecR nfs, Utf8Strin
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
 //----------------------------------------------------------------------------------------
-Json::Value NamedFormatSpec::ToJson(bool verbose) const
+Json::Value Format::ToJson(bool verbose) const
     {
     Json::Value jNFS;
     jNFS[json_SpecName()] = m_name;
-    if (!m_description.empty())
-        jNFS[json_SpecDescript()] = m_description;
-    if (!m_displayLabel.empty())
-        jNFS[json_SpecLabel()] = m_displayLabel;
-
     jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
     Json::Value jcs = m_compositeSpec.ToJson();
     if (!jcs.empty())
