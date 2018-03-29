@@ -1205,7 +1205,7 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
     myRoot.m_view->CreateScene(args);
 
-    static bool s_drawRangeBoxes = false;
+    static bool s_drawRangeBoxes = true;
     if (!s_drawRangeBoxes)
         return;
 
@@ -1521,23 +1521,20 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
 
     Transform location = Transform::From(worldToAttachment);
     SetLocation(location);
-
+    
     m_drawingToAttachment = Transform::FromIdentity();
     m_drawingToAttachment.ScaleMatrixColumns(scaleOnSheet, scaleOnSheet, 1.0);
-    DPoint3d viewOrg = view.GetViewDefinition().GetOrigin(),
-             viewExt = view.GetViewDefinition().GetExtents();
-    viewExt.SumOf(viewOrg, viewExt);
-    DPoint3d viewCenter = DPoint3d::FromInterpolate(viewOrg, 0.5, viewExt);
-    DPoint3d translation;
-    viewRoot.GetLocation().GetTranslation(translation);
-    viewCenter.DifferenceOf(viewCenter, translation);
-    m_drawingToAttachment.Multiply(viewCenter);
-    DRange3d attachRange = attach.GetPlacement().CalculateRange();
-    DPoint3d attachCenter = DPoint3d::FromInterpolate(attachRange.low, 0.5, attachRange.high);
-    translation.SumOf(translation, viewCenter);
-    translation.SumOf(viewCenter, attachCenter);
+    DPoint3d viewOrg = view.GetViewDefinition().GetOrigin();
+    DPoint3d translation = viewRoot.GetLocation().Translation();
+    viewOrg.DifferenceOf(viewOrg, translation);
+    m_drawingToAttachment.Multiply(viewOrg);
+    viewOrg.SumOf(translation, viewOrg);
+    viewOrg.z = 0.0;
+    DPoint3d viewOrgToAttachment;
+    viewOrgToAttachment.DifferenceOf(worldToAttachment, viewOrg);
+    translation.SumOf(translation, viewOrgToAttachment);
     m_drawingToAttachment.SetTranslation(translation);
-    
+
     SetExpirationTime(BeDuration::Seconds(15));
 
     m_clip = attach.GetOrCreateClip();
