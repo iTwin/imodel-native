@@ -19,15 +19,16 @@ struct GridDrivesGridSurfaceHandler : Dgn::DgnElementDependencyHandler
 private: 
     DOMAINHANDLER_DECLARE_MEMBERS (GRIDS_REL_GridDrivesGridSurface, GridDrivesGridSurfaceHandler, Dgn::DgnDomain::Handler, GRIDELEMENTS_EXPORT)
 
+private:
+    //! Returns relationship class
+    //! @return a reference to GridDrivesGridSurface relationship class
+    static ECN::ECRelationshipClassCR GetECClass(Dgn::DgnDbR db);
+
 protected:
     void _OnRootChanged (Dgn::DgnDbR db, BeSQLite::EC::ECInstanceId relationshipId, Dgn::DgnElementId source, Dgn::DgnElementId target) override;
     void _ProcessDeletedDependency (Dgn::DgnDbR db, Dgn::dgn_TxnTable::ElementDep::DepRelData const& relData) override;
 
 public:
-    //! Returns relationship class
-    //! @return a reference to GridDrivesGridSurface relationship class
-    GRIDELEMENTS_EXPORT static ECN::ECClassCR GetECClass (Dgn::DgnDbR db) { return *db.Schemas ().GetClass (GRIDS_SCHEMA_NAME, GRIDS_REL_GridDrivesGridSurface); }
-    
     //! Inserts relationship between grid surfaces and created grid curve
     //! @param[in]  db              db to create relationship in
     //! @param[in]  thisSurface     first surface creating grid intersection curve

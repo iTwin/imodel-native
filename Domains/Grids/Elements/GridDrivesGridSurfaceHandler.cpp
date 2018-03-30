@@ -62,16 +62,16 @@ GridCR        thisGrid,
 GridSurfaceCR surface
 )
     {
-    //if elements are not valid or not in the db, then can't do anything about it.
-    if (!thisGrid.GetElementId ().IsValid () || !surface.GetElementId ().IsValid ())
-        return BeSQLite::EC::ECInstanceKey ();
+    return RelationshipUtils::InsertRelationship(db, GetECClass(db), thisGrid.GetElementId(), surface.GetElementId());
+    }
 
-    BeSQLite::EC::ECInstanceKey relKey;
-    auto relClass = (ECN::ECRelationshipClassCP)(db.Schemas().GetClass(GetECClass(db).GetId()));
-    auto relInst = ECN::StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClass)->CreateRelationshipInstance();
-
-    BeSQLite::DbResult result = db.InsertLinkTableRelationship(relKey, *relClass, BeSQLite::EC::ECInstanceId(thisGrid.GetElementId()), BeSQLite::EC::ECInstanceId(surface.GetElementId()), relInst.get());
-    BeAssert(result == BeSQLite::DbResult::BE_SQLITE_OK);
-
-    return relKey;
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                03/2018
+//---------------+---------------+---------------+---------------+---------------+------
+ECN::ECRelationshipClassCR GridDrivesGridSurfaceHandler::GetECClass
+(
+    Dgn::DgnDbR db
+) 
+    { 
+    return static_cast<ECN::ECRelationshipClassCR>(*db.Schemas().GetClass(GRIDS_SCHEMA_NAME, GRIDS_REL_GridDrivesGridSurface)); 
     }
