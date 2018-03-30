@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/IdentityTokenProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,8 +46,8 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
         //! Set new token lifetime and refresh rate in minutes
         void Configure(uint32_t tokenLifetime, uint32_t tokenRefreshRate);
 
-        AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
-        SamlTokenPtr GetToken() override;
+        AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override;
+        ISecurityTokenPtr GetToken() override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE
