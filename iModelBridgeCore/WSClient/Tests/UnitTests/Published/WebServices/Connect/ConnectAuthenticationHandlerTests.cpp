@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectAuthenticationHandlerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectAuthenticationHandlerTests.h"
@@ -131,7 +131,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NoCachedTokenAn
     ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
 
     EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
-    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenPtr())));
+    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(SamlTokenPtr())));
 
     auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
 
@@ -149,7 +149,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_TokenIsNotPersi
     SamlTokenPtr newToken = StubSamlToken(100);
 
     EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
-    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask(newToken)));
+    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(newToken)));
 
     auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
 
@@ -164,7 +164,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NonLegacyModeAt
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
     ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
-    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask(StubSamlToken())));
+    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
 
     bool legacyMode = false;
     ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), false, legacyMode);
@@ -186,7 +186,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttem
     SamlTokenPtr newToken = StubSamlToken(100);
 
     EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
-    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask(newToken)));
+    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(newToken)));
 
     AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
     auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
@@ -202,7 +202,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttem
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
     ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
-    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask(StubSamlToken())));
+    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
 
     ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), false); // default parameter legacyMode = true
 
@@ -219,7 +219,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NonLegacyModeAt
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
     ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
-    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask(StubSamlToken())));
+    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
 
     bool legacyMode = false;
     ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), true, legacyMode);
@@ -241,7 +241,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttem
     SamlTokenPtr newToken = StubSamlToken(100);
 
     EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
-    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask(newToken)));
+    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(newToken)));
 
     AuthenticationHandler::Attempt attempt("http://test.com", "SAML SomeTestToken", DateTime(), 1);
     auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
@@ -257,7 +257,7 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttem
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
     ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
-    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask(StubSamlToken())));
+    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
 
     ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), true); // default parameter legacyMode = true
 
