@@ -393,6 +393,7 @@ private:
     mutable MeshEdgesPtr            m_edges;
     bool                            m_is2d;
     bool                            m_isPlanar;
+    PolyfaceAuxData::Channels       m_auxChannels;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
         : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar) { }
@@ -440,6 +441,8 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline);
     uint32_t AddVertex(QPoint3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
+    void AddAuxChannels(PolyfaceAuxData::ChannelsCR channels, size_t index);
+
     GraphicPtr GetGraphics (MeshGraphicArgs& args, Dgn::Render::SystemCR system, DgnDbR db) const;
 };
 
@@ -466,12 +469,13 @@ struct MeshBuilderMap
         Mesh::PrimitiveType m_type;
         bool                m_hasNormals;
         bool                m_isPlanar;
+        PolyfaceAuxDataCPtr m_auxData;
 
-        Key(DisplayParamsCP params, Mesh::PrimitiveType type, bool hasNormals, bool isPlanar) : m_params(params), m_type(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar) { }
+        Key(DisplayParamsCP params, Mesh::PrimitiveType type, bool hasNormals, bool isPlanar, PolyfaceAuxDataCP auxData = nullptr) : m_params(params), m_type(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar), m_auxData(auxData) { }
     public:
         Key() : Key(nullptr, Mesh::PrimitiveType::Mesh,false, false) { }
         explicit Key(MeshCR mesh) : Key(mesh.GetDisplayParams(), !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
-        Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar) : Key(&params, type, hasNormals, isPlanar) { }
+        Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar, PolyfaceAuxDataCP auxData = nullptr) : Key(&params, type, hasNormals, isPlanar, auxData) { }
 
         void SetOrder(uint16_t order) { m_order = order; }
 
@@ -489,6 +493,9 @@ struct MeshBuilderMap
 
             if (m_hasNormals != rhs.m_hasNormals)
                 return !m_hasNormals;
+
+            if (m_auxData.get() != rhs.m_auxData.get())                 // No sharing between polyfaces with auxilliary data.
+                return m_auxData.get() < rhs.m_auxData.get();
 
             BeAssert(m_params.IsValid() && rhs.m_params.IsValid());
             return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);

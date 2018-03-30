@@ -237,6 +237,11 @@ public:
     //! @see SetClip
     DGNPLATFORM_EXPORT ClipVectorPtr GetClip() const;
 
+    //! Get the clip to be applied to this attachment, or if none is defined,
+    //! create one based on the attachment's range.
+    //! @see GetClip
+    ClipVectorPtr GetOrCreateClip(TransformCP transform=nullptr) const;
+
     //! Set the clip to be applied to this attachment.
     //! @see ClearClip
     DGNPLATFORM_EXPORT void SetClip(ClipVectorCR);
@@ -274,11 +279,11 @@ namespace Attachment
     //=======================================================================================
     struct Viewport : OffscreenViewport
     {
-        Render::SystemP m_renderSys;
         Render::TexturePtr m_texture;
-        DgnDb* m_db;
         uint32_t m_texSize;
         uint32_t m_sceneDepth = 0xffffffff;
+        Render::GraphicListPtr m_scene;
+        bool m_rendering = false;
 
         Transform m_toParent = Transform::FromIdentity(); // attachment NPC to sheet world
         double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
@@ -286,6 +291,8 @@ namespace Attachment
         ClipVectorCPtr m_clips;
 
         DGNVIEW_EXPORT virtual State _CreateScene(UpdatePlan const& updatePlan, State currentState);
+        DGNVIEW_EXPORT virtual Render::Image _RenderImage();
+        DGNVIEW_EXPORT virtual void _RenderTexture();
         void QueueScene(SceneContextR);
         virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
         void _AdjustAspectRatio(DPoint3dR, DVec3dR) override {}
@@ -298,7 +305,7 @@ namespace Attachment
 
         DGNVIEW_EXPORT Viewport();
         ClipVectorCP GetAttachClips() const {return m_clips.get();}
-        void SetSceneDepth(uint32_t depth);
+        void SetSceneDepth(uint32_t depth, Root& tree);
     };
 
     //=======================================================================================
@@ -310,15 +317,12 @@ namespace Attachment
         DEFINE_T_SUPER(TileTree::Root);
 
         ColorDef m_tileColor = ColorDef::White();
+        ColorDef m_boundingBoxColor = ColorDef::DarkOrange();
         DgnElementId m_attachmentId;
         RefCountedPtr<Viewport> m_viewport;
         double m_biasDistance;
         ClipVectorPtr m_clip;      //! clip volume applied to tiles, in root coordinates
         ClipVectorPtr m_graphicsClip;
-        Render::GraphicBuilder::TileCorners m_corners; 
-        bvector<PolyfaceHeaderPtr> m_tilePolys;
-        DRange3d m_polysRangeUnclipped;
-        DRange3d m_polysRange;
         Sheet::ViewController& m_sheetController;
     private:
         Root(DgnDbR db, Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Viewport& viewport, Dgn::ViewControllerR view);
@@ -336,7 +340,7 @@ namespace Attachment
         Utf8CP _GetName() const override {return "SheetTile";}
         ClipVectorCP _GetClipVector() const override { return m_clip.get(); } // clip vector used by DrawArgs when rendering
 
-        void CreatePolys(SceneContextR context);
+        DRange3d GetRootRange() const;
         void Draw(SceneContextR);
         TileR GetRootAttachmentTile();
         State GetState(uint32_t depth) const;
@@ -350,8 +354,24 @@ namespace Attachment
     {
         DEFINE_T_SUPER(TileTree::Tile);
 
+        //=======================================================================================
+        // Describes the location of a tile within the range of a quad subdivided in four parts.
+        // @bsistruct                                                   Mark.Schlosser  03/2018
+        //=======================================================================================
+        enum class Placement 
+        {
+            UpperLeft,
+            UpperRight,
+            LowerLeft,
+            LowerRight,
+            Root, // root placement is for root tile of a tree: a single placement representing entire image (not subdivided)
+        };
+
+        bvector<PolyfaceHeaderPtr> m_tilePolys;
+        DRange3d m_polysRange; // this is clipped range.  m_range is this with aspect ratio scale factor applied.
         uint32_t m_maxPixelSize;
         bvector<Render::GraphicPtr> m_graphics;
+        Placement m_placement;
 
         void _Invalidate() override { }
         bool _IsInvalidated(TileTree::DirtyRangesCR) const override { return false; }
@@ -363,17 +383,19 @@ namespace Attachment
         ChildTiles const* _GetChildren(bool) const override;
         void _ValidateChildren() const override { }
         Utf8String _GetTileCacheKey() const override { return "NotCacheable!"; }
+        SelectParent Select(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args);
         SelectParent _SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args) const override;
         TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
         double _GetMaximumSize() const override {return m_maxPixelSize;}
 
-        void SetupRange();
+        void ChangeRange(DRange3d newRange);
+        void CreatePolys(SceneContextR context);
         void CreateGraphics(SceneContextR context);
         RootR GetTree() const {return static_cast<RootR>(m_root);}
         State GetState() const { return GetTree().GetState(GetDepth()); }
         void SetState(State state) { GetTree().SetState(GetDepth(), state); }
 
-        Tile(RootR root, TileCP parent);
+        Tile(RootR root, TileCP parent, Placement placement);
     };
 }
 
@@ -447,6 +469,7 @@ protected:
 
         void Add(Attachment&& src);
         bool LoadTree(size_t index, DgnDbR db, ViewController& sheetController, SceneContextR context);
+        void InitBoundingBoxColors();
     };
 
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);

@@ -357,7 +357,6 @@ DbResult DgnDb::CreateCodeSpecs()
     {
     if (// CodeSpecs with Repository scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_NullCodeSpec, CodeScopeSpec::CreateRepositoryScope(), CodeSpec::GetNullCodeSpecId())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SavedSelection, CodeScopeSpec::CreateRepositoryScope())) ||
         // CodeSpecs with Model scope
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AnnotationFrameStyle, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_AnnotationLeaderStyle, CodeScopeSpec::CreateModelScope())) ||

@@ -528,8 +528,8 @@ ViewportStatus DgnViewport::SetupFromViewController()
                 double frontDist = eyeOrg.z - delta.z; // front distance is backDist - delta.z
                 BeAssert(frontDist >= 0.0);
 
-                // allow viewcontroller to specify a minimum front dist, but in no case less than 6 inches
-                double minFrontDist = std::max(15.2 * DgnUnits::OneCentimeter(), m_viewController->_ToSpatialView()->_ForceMinFrontDist());
+                // allow viewcontroller to specify a minimum front dist, but in no case less than minimum front distance.
+                double minFrontDist = std::max(cameraView->MinimumFrontDistance(_GetCameraFrustumNearScaleLimit()), m_viewController->_ToSpatialView()->_ForceMinFrontDist());
                 if (frontDist < minFrontDist)
                     {
                     // camera is too close to front plane, move origin away from eye to maintain a minimum front distance.
@@ -670,19 +670,6 @@ Frustum DgnViewport::GetFrustum(DgnCoordSystem sys, bool adjustedBox) const
         }
 
     return box;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d DgnViewport::DetermineDefaultRotatePoint()
-    {
-    double low, high;
-
-    if (SUCCESS != DetermineVisibleDepthNpc(low, high) && IsCameraOn())
-        return m_viewController->GetViewDefinition().GetTargetPoint(); // if there are no elements in the view and the camera is on, use the camera target point
-
-    return DPoint3d::FromInterpolate(NpcToWorld(DPoint3d::From(0.5,0.5,low)), 0.5, NpcToWorld(DPoint3d::From(0.5,0.5,high)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1267,4 +1254,190 @@ void DecorationAnimator::_OnInterrupted(DgnViewportR vp)
     vp.InvalidateDecorations();
     _AnimateDecorations(vp, 1.0);
     }
+
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct ReadPixelsTask : Render::SceneTask
+{
+    BSIRect m_rect;
+    Render::PixelData::Selector m_selector;
+    Render::IPixelDataBufferCPtr m_buffer;
+
+    ReadPixelsTask(Render::Target& target, Priority priority, BSIRectCR rect, Render::PixelData::Selector selector)
+        : SceneTask(&target, Operation::ReadPixels, priority), m_rect(rect), m_selector(selector) { }
+
+    Utf8CP _GetName() const override { return "Read Pixels"; }
+    Outcome _Process(StopWatch&) override { m_buffer = m_target->_ReadPixels(m_rect, m_selector); return Outcome::Finished; }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::IPixelDataBufferCPtr DgnViewport::ReadPixels(BSIRectCR rect, Render::PixelData::Selector selector)
+    {
+    if (!IsActive())
+        return nullptr;
+
+    BSIRect viewRect = GetViewRect();
+    BeAssert(rect.IsContained(&viewRect));
+    if (!rect.IsContained(&viewRect))
+        return nullptr;
+
+    RefCountedPtr<ReadPixelsTask> task = new ReadPixelsTask(*m_renderTarget, Task::Priority::Highest(), rect, selector);
+    RenderQueue().AddTask(*task);
+    RenderQueue().WaitForIdle();
+
+    return task->m_buffer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnViewport::GetPixelDataNpcPoint(DPoint3dR npc, IPixelDataBufferCR pixelData, int32_t x, int32_t y)
+    {
+    if (0.0 == (npc.z = pixelData.GetPixel(x, y).GetDistanceFraction()))
+        return false;
+
+    BSIRectCR       viewRect = GetViewRect();
+
+    npc.x = ((double) x + .5 - (double) viewRect.Left()) / viewRect.Width();
+    npc.y = 1.0 - ((double) y + .5 - (double) viewRect.Top()) / viewRect.Height();
+    if (m_frustFraction < 1.0)
+        npc.z = npc.z * m_frustFraction / (1.0 + npc.z * (m_frustFraction - 1.0));  // Correct to NPC if camera on.
+
+    return true;
+    } 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnViewport::GetPixelDataWorldPoint(DPoint3dR world, IPixelDataBufferCR pixelData, int32_t x, int32_t y)
+    {
+    DPoint3d        npc;
+
+    if (!GetPixelDataNpcPoint(npc, pixelData, x, y))
+        return false;
+            
+    world = NpcToWorld(npc);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt DgnViewport::DetermineVisibleDepthNpcRange(double& lowNpc, double& highNpc, BSIRectCP inViewRect)
+    {
+    BSIRect                 viewRect = GetViewRect();
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
+
+    lowNpc  = 1.0;
+    highNpc = 0.0;
+
+    if (nullptr != inViewRect && !viewRect.Overlap (&viewRect, inViewRect))
+        return ERROR;
+
+    Point2d     testPoint;
+    for (testPoint.x = viewRect.Left(); testPoint.x <= viewRect.Right(); testPoint.x++)
+        {
+        for (testPoint.y = viewRect.Top(); testPoint.y <= viewRect.Bottom(); testPoint.y++)
+            {
+            DPoint3d    npc;
+            
+            if (viewRect.PointInside(testPoint) &&
+                GetPixelDataNpcPoint (npc, *pixels, testPoint.x, testPoint.y))
+                {
+                lowNpc = std::min(lowNpc, npc.z);
+                highNpc = std::max(highNpc, npc.z);
+                }
+            }
+        }
+    
+    return highNpc > 0.0 ? SUCCESS : ERROR;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt DgnViewport::DetermineVisibleDepthNpcAverage(double& aveNpc, BSIRectCP inViewRect)
+    {
+    BSIRect                 viewRect = GetViewRect();
+    IPixelDataBufferCPtr    pixels = ReadPixels(viewRect, PixelData::Selector::Distance);
+    size_t                  pixelCount = 0;
+
+    if (nullptr != inViewRect && !viewRect.Overlap (&viewRect, inViewRect))
+        return ERROR;
+
+    aveNpc = 0.0;
+
+    Point2d     testPoint;
+    for (testPoint.x = viewRect.Left(); testPoint.x <= viewRect.Right(); testPoint.x++)
+        {
+        for (testPoint.y = viewRect.Top(); testPoint.y <= viewRect.Bottom(); testPoint.y++)
+            {
+            DPoint3d    npc;
+            
+            if (viewRect.PointInside(testPoint) &&
+                GetPixelDataNpcPoint (npc, *pixels, testPoint.x, testPoint.y))
+                {
+                pixelCount++;
+                aveNpc += npc.z;
+                }
+            }
+        }
+    if (0 == pixelCount)
+        return ERROR;
+
+    aveNpc /= (double) pixelCount;
+    
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt DgnViewport::DetermineNearestVisibleGeometryPoint(DPoint3dR outPoint, DPoint3dCR pickPoint, int radiusPixels)
+    {
+    DPoint3d        inView = WorldToView(pickPoint);
+    Point2d         viewCenter = { (int32_t) (inView.x + .5), (int32_t) (inView.y + .5) };
+    BSIRect         viewRect = GetViewRect(), overlapRect;
+    BSIRect         pickRect = BSIRect::From(viewCenter.x - radiusPixels, viewCenter.y - radiusPixels, viewCenter.x + radiusPixels + 1, viewCenter.y + radiusPixels + 1);
+
+    if (!pickRect.Overlap(&overlapRect, &viewRect))
+        return ERROR;
+    
+    IPixelDataBufferCPtr    pixels = ReadPixels(overlapRect, PixelData::Selector::Distance);
+
+    for (int testRadius=0; testRadius<radiusPixels; testRadius++)
+        {
+        Point2d     testPoint;
+
+        for (testPoint.x = viewCenter.x - testRadius; testPoint.x <= viewCenter.x  + testRadius; testPoint.x++)
+            {
+            for (testPoint.y = viewCenter.y - testRadius; testPoint.y <= viewCenter.y + testRadius; testPoint.y++)
+                {
+                if (overlapRect.PointInside(testPoint) &&
+                    GetPixelDataWorldPoint(outPoint, *pixels, testPoint.x, testPoint.y))
+                    return true;
+                }
+            }
+        }
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    RayBentley      03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d DgnViewport::DetermineDefaultRotatePoint()
+    {
+#ifdef DEPTH_TEST
+    double npcDepthLow, npcDepthHigh;
+    if (IsActive()  && SUCCESS == DetermineVisibleDepthNpcRange (npcDepthLow, npcDepthHigh))
+        return NpcToWorld(DPoint3d::From(0.5, 0.5, (npcDepthLow + npcDepthHigh) / 2.0));
+#endif
+
+    return IsCameraOn() ? m_viewController->GetViewDefinition().GetTargetPoint() : NpcToWorld(DPoint3d::From(.5, .5, .5));
+    }
+
 

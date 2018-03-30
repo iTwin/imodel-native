@@ -3460,7 +3460,7 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels)
     {
-    bvector<DgnElementId> attachmentIds = sheet.GetSheetAttachmentIds();
+    bvector<DgnElementId> attachmentIds; // = sheet.GetSheetAttachmentIds();
     Json::Value attachmentsJson(Json::arrayValue);
     for (DgnElementId attachmentId : attachmentIds)
         {
@@ -3475,6 +3475,9 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnMo
         BeAssert(1 == viewedModels.size() || view->IsSpatialView());
         if (viewedModels.empty())
             continue;
+
+        if (view->IsSpatialView())
+            continue; // WIP - we will publish these differently - for now just skip.
 
         // ###TODO: Spatial view attachments with multiple models unhandled...
         DgnModelId baseModelId = *viewedModels.begin();
@@ -3752,7 +3755,11 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
                 auto attachId = stmt->GetValueId<DgnElementId>(0);
                 auto attach = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
                 if (attach.IsValid())
-                    GetViewedModelsFromView(viewedModels, attach->GetAttachedViewId(), false); // view attachments don't nest...
+                    {
+                    // Exclude spatial views...publish as raster tiles directly into sheet tileset.
+                    if (GetDgnDb().Elements().Get<ViewDefinition2d>(attach->GetAttachedViewId()).IsValid())
+                        GetViewedModelsFromView(viewedModels, attach->GetAttachedViewId(), false); // view attachments don't nest...
+                    }
                 }
             }
         }
@@ -3770,14 +3777,8 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels;
 
-#if defined(WIP_PUBLISH_VIEW_ATTACHMENTS)
-    bool includeAttachments = true;
-#else
-    bool includeAttachments = false;
-#endif
-
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId, includeAttachments);
+        GetViewedModelsFromView (viewedModels, viewId, /*includeAttachments=*/ /*true*/ false);
 
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)

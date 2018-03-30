@@ -205,6 +205,7 @@ protected:
     virtual bool _IsBulkOperation() const = 0;
     virtual Response _EndBulkOperation() = 0;
     virtual void _ExtractRequestFromBulkOperation(Request&, bool locks, bool codes) {;}
+    virtual bset<CodeSpecId> _GetFilteredCodeSpecIds() { return bset<CodeSpecId>(); }
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
@@ -399,6 +400,10 @@ public:
     //! @return True if all codes have been previously reserved by this briefcase
     //! @remarks The DgnCodeSet may be modified.
     bool AreCodesReserved(DgnCodeSet& codes, RepositoryStatus* status=nullptr) { DgnLockSet locks; return AreResourcesHeld(locks, codes, status); }
+
+    //! Returns a set of the filtered CodeSpecIds that we don't want to include in bulk requests
+    //! @return set of CodeSpecId
+    bset<CodeSpecId> GetFilteredCodeSpecIds() { return _GetFilteredCodeSpecIds(); }
 
     //! Attempts to reserve a set of codes for this briefcase's use
     //! In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.

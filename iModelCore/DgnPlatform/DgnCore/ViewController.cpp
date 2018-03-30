@@ -384,10 +384,10 @@ ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     if (nullptr == m_vp)
         return ViewportStatus::NotAttached;
 
-    // We need to figure out a new camera target. To do that, we need to know where the geometry is in the view.
+    // We need to figure out a new camera    target. To do that, we need to know where the geometry is in the view.
     // We use the depth of the center of the view for that.
     double low, high;
-    m_vp->DetermineVisibleDepthNpc(low, high);
+    m_vp->DetermineVisibleDepthNpcRange(low, high);
     double middle = low + ((high - low) / 2.0);
 
     DPoint3d corners[4];
@@ -400,7 +400,7 @@ ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     DPoint3d eye = DPoint3d::FromInterpolate(corners[2], 0.5, corners[3]); // middle of closest plane
     DPoint3d target = DPoint3d::FromInterpolate(corners[0], 0.5, corners[1]); // middle of halfway plane
     double backDist  = eye.Distance(target) * 2.0;
-    double frontDist = ViewDefinition3d::MinimumFrontDistance();
+    double frontDist = cameraDef.MinimumFrontDistance();
     return cameraDef.LookAtUsingLensAngle(eye, target, cameraDef.GetYVector(), lensAngle, &frontDist, &backDist);
     }
 

@@ -940,7 +940,7 @@ public:
     BE_JSON_NAME(angles)
     BE_JSON_NAME(camera)
 
-    static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} 
+    double MinimumFrontDistance(double nearScaleLimit = 5.0E-5 /* between resolution of 24 and 32bit */) const;
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
     void VerifyFocusPlane();//!< private
     bool IsEyePointAbove(double elevation) const {return !IsCameraOn() ? (GetZVector().z > 0) : (GetEyePoint().z > elevation);}//!< private

@@ -41,7 +41,6 @@
 #include <DgnPlatform/RangeIndex.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/ColorBook.h>
-#include <DgnPlatform/SavedSelection.h>
 #include <DgnPlatform/ViewDefinition.h>
 #include <DgnPlatform/DisplayMetrics.h>
 #include <DgnPlatform/ECUtils.h>

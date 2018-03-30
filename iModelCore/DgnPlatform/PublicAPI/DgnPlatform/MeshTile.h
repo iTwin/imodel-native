@@ -141,6 +141,7 @@ public:
     static TileDisplayParamsCPtr Create(uint32_t color, GeometryParamsCR geomParams) { return new TileDisplayParams(color, geomParams); }
     static TileDisplayParamsCPtr Create(uint32_t color, TileTextureImageP texture, bool ignoreLighting) { return new TileDisplayParams(color, texture, ignoreLighting); }
     static TileDisplayParamsCPtr Create() { return new TileDisplayParams(); }
+    static TileDisplayParamsCPtr CreateForAttachment(GraphicParamsCR gfParams, GeometryParamsCR geomParams, TileTextureImageR texture);
 
     // These comparisons ignore category, subcategory, and class.
     bool operator<(TileDisplayParamsCR rhs) const { return IsLessThan(rhs, true); }
@@ -697,6 +698,8 @@ public:
     static TileGeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, DgnDbR db);
     //! Create a TileGeometry for a part instance.
     static TileGeometryPtr Create(TileGeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, DgnDbR db);
+    //! Create a TileGeometry for a view attachment
+    static TileGeometryPtr Create(Sheet::ViewAttachmentCR, TransformCR, DRange3dCR, TileDisplayParamsCR);
 
 };
 //=======================================================================================
@@ -898,7 +901,7 @@ public:
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
     void SetDgnRange(DRange3dCR range) { m_dgnRange = range; }
     void SetTileRange(DRange3dCR range) { Transform tf; DRange3d dgnRange = range; tf.InverseOf(m_transformFromDgn); tf.Multiply(dgnRange, dgnRange); SetDgnRange(dgnRange); }
-    void SetPublishedRange(DRange3dCR publishedRange) const { m_publishedRange = publishedRange; }
+    DGNPLATFORM_EXPORT void SetPublishedRange(DRange3dCR publishedRange) const;
     DRange3dCR GetPublishedRange() const { return m_publishedRange; }
 
     DGNPLATFORM_EXPORT size_t GetNodeCount() const;

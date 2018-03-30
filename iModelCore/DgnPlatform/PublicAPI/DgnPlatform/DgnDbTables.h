@@ -88,7 +88,6 @@
 #define BIS_CLASS_RepositoryModel           "RepositoryModel"
 #define BIS_CLASS_RoleElement               "RoleElement"
 #define BIS_CLASS_RoleModel                 "RoleModel"
-#define BIS_CLASS_SavedSelection            "SavedSelection"
 #define BIS_CLASS_SectionDrawing            "SectionDrawing"
 #define BIS_CLASS_SectionDrawingModel       "SectionDrawingModel"
 #define BIS_CLASS_Sheet                     "Sheet"

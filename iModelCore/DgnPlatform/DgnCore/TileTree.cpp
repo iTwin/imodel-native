@@ -908,7 +908,8 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
 
     // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
     Frustum box(range);
-    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation()));
+    box = box.TransformBy(args.GetLocation());
+    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box);
     bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
     return isOutside || clipped;
     }
@@ -1923,6 +1924,29 @@ PolyfaceHeaderPtr TriMeshTree::TriMesh::GetPolyface() const
     return trimesh.ToPolyface();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Marc.Neely   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr CreateTileGraphic(Render::GraphicR graphic, RootR root, TriMeshTree::TriMesh::CreateParams const& args)
+    {
+    Dgn::Render::SystemP renderSystem = root.GetRenderSystemP();
+    if (nullptr == renderSystem || !root.GetModelId().IsValid())
+        return &graphic;
+
+    Feature feature(DgnElementId(root.GetModelId().GetValue()), DgnSubCategoryId(), DgnGeometryClass::Primary);
+    FeatureTable features(root.GetModelId(), renderSystem->_GetMaxFeaturesPerBatch());
+    features.GetIndex(feature);
+
+    ElementAlignedBox3d range;
+    range.InitFrom(args.m_points[0].x, args.m_points[0].y, args.m_points[0].z);
+    for (size_t i = 1; i < args.m_numPoints; ++i)
+        {
+        range.Extend(args.m_points[i]);
+        }
+
+    return renderSystem->_CreateBatch(graphic, std::move(features), range);
+    }
+
 /*-----------------------------------------------------------------------------------**//**
 * Construct a Geometry from a CreateParams and a Scene. The scene is necessary to get the Render::System, and this
 * Geometry is only valid for that Render::System
@@ -1952,7 +1976,9 @@ TriMeshTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render:
 
     auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
 
-    m_graphics.push_back(renderSys->_CreateTriMesh(trimesh, root.GetDgnDb()));
+    GraphicPtr graphic = renderSys->_CreateTriMesh(trimesh, root.GetDgnDb());
+
+    m_graphics.push_back(CreateTileGraphic(*graphic, root, args));
     }
 
 /*---------------------------------------------------------------------------------**//**
