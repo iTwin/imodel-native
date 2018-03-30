@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchemaValidator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -131,7 +131,7 @@ struct RelationshipValidator : IECClassValidator
 struct KindOfQuantityValidator : IKindOfQuantityValidator
     {
     // KindOfQuantities should only use SI units for persistence units
-    ECObjectsStatus Validate(KindOfQuantityCP koq) const;
+    ECOBJECTS_EXPORT ECObjectsStatus Validate(KindOfQuantityCP koq) const;
     };
 END_BENTLEY_ECOBJECT_NAMESPACE
 
