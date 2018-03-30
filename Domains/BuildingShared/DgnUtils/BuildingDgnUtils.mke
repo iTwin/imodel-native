@@ -52,6 +52,8 @@ $(o)RegionsApiWrapper$(oext) : $(_MakeFilePath)RegionsApiWrapper.cpp ${MultiComp
 
 $(o)ConflictSolver$(oext) : $(_MakeFilePath)ConflictSolver.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ConflictSolver.h
 
+$(o)RelationshipUtils$(oext) : $(_MakeFilePath)RelationshipUtils.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RelationshipUtils.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)
