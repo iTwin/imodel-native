@@ -79,21 +79,6 @@ export interface NativeBriefcaseManagerOnConflictPolicy {
     deleteVsUpdate: /*NativeBriefcaseManagerOnConflict*/number;
 }
 
-export interface CreateIModelProps {
-    /** the root subject  */
-    rootSubject: string;
-    /** the rootSubjectDescription  */
-    description?: string;
-    /** client name for new iModel */
-    client?: string;
-    /** the GUID for the new iModel. If not present, a GUID will be generated. */
-    guid?: GuidProps;
-    /** the global origin */
-    globalOrigin?: XYZProps;
-    /** the project extents. */
-    projectExtents?: LowAndHighXYZ;
-}
-
 /**
  * The NativeDgnDb class that is projected by IModelJsNative. 
  */
@@ -110,7 +95,9 @@ declare class NativeDgnDb {
 
     /** 
      * Create a local iModel. 
-     * @param props The properties of the new iModel
+     * @param fileName The file name for the new iModel
+     * @param props The properties of the new iModel. See CreateIModelProps in IModel.ts
+     * @return non-zero error status if operation failed.
      */
     createIModel(fileName: string, props: string): DbResult;
 

@@ -10,6 +10,7 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
+
 static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
 static IModelJsNative::JsInterop::T_AssertHandler s_assertHandler;
@@ -179,20 +180,23 @@ Utf8StringCR JsInterop::GetLastECDbIssue()
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 02/18
 //---------------------------------------------------------------------------------------
-DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueCR in)
+DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueCR in, Napi::Env env)
     {
     result = BE_SQLITE_NOTFOUND;
-    if (!in.isMember(json_rootSubject()))
+    auto rootSubject = in[json_rootSubject()];
+    if (rootSubject.isNull() || !rootSubject.isMember(json_name())){
+        Napi::TypeError::New(env, "Root subject name is missing").ThrowAsJavaScriptException();
         return nullptr;
+    }
 
     BeFileName fileName(name);
     BeFileName path = fileName.GetDirectoryName();
     if (!path.DoesPathExist())
         return nullptr;
 
-    CreateDgnDbParams params(in[json_rootSubject()].asCString());
-    if (in.isMember(json_description()))
-        params.SetRootSubjectDescription(in[json_description()].asCString());
+    CreateDgnDbParams params(rootSubject[json_name()].asCString());
+    if (rootSubject.isMember(json_description()))
+        params.SetRootSubjectDescription(rootSubject[json_description()].asCString());
     if (in.isMember(json_globalOrigin()))
         params.m_globalOrigin = JsonUtils::ToDPoint3d(in[json_globalOrigin()]);
     if (in.isMember(json_guid()))
@@ -201,6 +205,9 @@ DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueC
         params.m_projectExtents.FromJson(in[json_projectExtents()]);
     if (in.isMember(json_client()))
         params.m_client = in[json_client()].asCString();
+
+    // NEEDS_WORK - create GCS from ecef location
+    // NEEDS_WORK - save thumbnail.
         
     DgnDbPtr db = DgnDb::CreateDgnDb(&result, fileName, params);
     if (db.IsValid())

@@ -619,9 +619,9 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_ARGUMENT_STRING(1, args, Env().Undefined());
 
         DbResult status;
-        DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args));
+        DgnDbPtr db = JsInterop::CreateIModel(status, fileName, Json::Value::From(args), Env());
         if (db.IsValid())
-            OnDgnDbOpened(db.get());
+            OnDgnDbOpened(db.get());    
 
         return Napi::Number::New(Env(), (int)status);
         }

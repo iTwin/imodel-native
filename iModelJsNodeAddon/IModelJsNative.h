@@ -13,7 +13,6 @@
 #include <DgnPlatform/ECUtils.h>
 #include <node-addon-api/napi.h>
 
-
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -28,13 +27,15 @@ struct JsInterop
 {
     BE_JSON_NAME(client)
     BE_JSON_NAME(description)
-    BE_JSON_NAME(ecefTrans)
     BE_JSON_NAME(fileName)
     BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(guid)
     BE_JSON_NAME(name)
     BE_JSON_NAME(projectExtents)
     BE_JSON_NAME(rootSubject)
+    BE_JSON_NAME(ecefLocation)
+    BE_JSON_NAME(origin)
+    BE_JSON_NAME(orientation)
 
 private:
     static BeSQLite::DbResult ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);
@@ -52,7 +53,7 @@ public:
     typedef std::function<void(WCharCP msg, WCharCP file, unsigned line, BeAssertFunctions::AssertType)> T_AssertHandler;
 
     static void Initialize(BeFileNameCR, T_AssertHandler assertHandler);
-    static DgnDbPtr CreateIModel(DbResult& db, Utf8StringCR name, JsonValueCR);
+    static DgnDbPtr CreateIModel(DbResult& db, Utf8StringCR name, JsonValueCR, Napi::Env);
     static BeSQLite::DbResult OpenDgnDb(DgnDbPtr &, BeFileNameCR dbname, DgnDb::OpenMode mode);
     static BeSQLite::DbResult SetupBriefcase(DgnDbPtr &db, JsonValueCR briefcaseToken);
     static void CloseDgnDb(DgnDbR dgndb);

@@ -662,7 +662,7 @@ void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb)
     extents.ToJson(val[json_projectExtents()]);
     
     // add global origin
-    JsonUtils::DPoint3dToJson(val[json_globalOrigin()], geolocation.GetGlobalOrigin());
+    val[json_globalOrigin()] = JsonUtils::DPoint3dToJson(geolocation.GetGlobalOrigin());
 
     // if the project is geolocated, add the world to ecef transform
     auto* dgnGCS = geolocation.GetDgnGCS();
@@ -670,23 +670,28 @@ void JsInterop::GetIModelProps(JsonValueR val, DgnDbCR dgndb)
         return;
 
     DPoint3d origin = extents.GetCenter();
-    DPoint3d ecfOrigin, ecfNorth;
+    DPoint3d ecefOrigin, ecefNorth;
     DPoint3d north = origin;
     north.y += 100.0;
 
     GeoPoint originLatLong, northLatLong;
     dgnGCS->LatLongFromUors(originLatLong, origin);
-    dgnGCS->XYZFromLatLong(ecfOrigin, originLatLong);
+    dgnGCS->XYZFromLatLong(ecefOrigin, originLatLong);
     dgnGCS->LatLongFromUors(northLatLong, north);
-    dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
+    dgnGCS->XYZFromLatLong(ecefNorth, northLatLong);
 
     DVec3d zVector, yVector;
-    zVector.Normalize((DVec3dCR) ecfOrigin);
-    yVector.NormalizedDifference(ecfNorth, ecfOrigin);
+    zVector.Normalize((DVec3dCR) ecefOrigin);
+    yVector.NormalizedDifference(ecefNorth, ecefOrigin);
+
+    auto ecefJson = val[json_ecefLocation()];
+    ecefJson[json_origin()] = JsonUtils::DPoint3dToJson(ecefOrigin);
 
     RotMatrix rMatrix = RotMatrix::FromIdentity();
     rMatrix.SetColumn(yVector, 1);
     rMatrix.SetColumn(zVector, 2);
     rMatrix.SquareAndNormalizeColumns(rMatrix, 1, 2);
-    JsonUtils::TransformToJson(val[json_ecefTrans()], Transform::From(rMatrix, ecfOrigin));
+    YawPitchRollAngles angles;
+    YawPitchRollAngles::TryFromRotMatrix(angles, rMatrix);
+    ecefJson[json_orientation()] = JsonUtils::YawPitchRollToJson(angles);
     }
