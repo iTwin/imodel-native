@@ -1085,7 +1085,7 @@ static void AppendPrimitiveStartEnd (ICurvePrimitiveCR curve, bvector<CurveLocat
         crossings.push_back (CurveLocationDetailPair (&curve, 1.0, xyz1));
         }
     }
-bool CurveLocationDetailPair::cb_compareCurveFraction (CurveLocationDetailPair dataA, CurveLocationDetailPair dataB)
+bool CurveLocationDetailPair::cb_compareCurveFraction (CurveLocationDetailPairCR dataA, CurveLocationDetailPairCR dataB)
     {
     ptrdiff_t a = dataA.detailA.curve - dataB.detailB.curve;
     if (a != 0)

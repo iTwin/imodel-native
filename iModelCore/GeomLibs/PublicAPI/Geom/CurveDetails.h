@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/CurveDetails.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -216,7 +216,7 @@ static GEOMDLLIMPEXP void SplitByDeltaZ (bvector<CurveLocationDetailPair> const 
     bvector<CurveLocationDetailPair> *pairA, bvector<CurveLocationDetailPair> *pairB);
 
 //!! Lexical compare:  curve first, then fration from detailA, then fraction from detailB.
-static bool cb_compareCurveFraction (CurveLocationDetailPair dataA, CurveLocationDetailPair dataB);
+static bool cb_compareCurveFraction (CurveLocationDetailPairCR dataA, CurveLocationDetailPairCR dataB);
 };
 
 #ifndef SmallGeomLib
