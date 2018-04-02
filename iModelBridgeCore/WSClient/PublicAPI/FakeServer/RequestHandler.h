@@ -28,18 +28,22 @@ class RequestHandler
         FAKESERVER_EXPORT Response PerformOtherRequest(Request req);
         
         //////
-        FAKESERVER_EXPORT Response CreateiModel(Request req);
+        FAKESERVER_EXPORT Response CreateiModelInstance(Request req);
+        FAKESERVER_EXPORT Response CreateSeedFileInstance(Request req);
+        FAKESERVER_EXPORT Response UploadSeedFile(Request req);
+        FAKESERVER_EXPORT Response FileCreationConfirmation(Request req);
+        FAKESERVER_EXPORT Response GetInitializationState(Request req);
         FAKESERVER_EXPORT Response GetBriefcaseId(Request req);
         FAKESERVER_EXPORT Response DownloadiModel(Request req);
         FAKESERVER_EXPORT Response UploadNewSeedFile(Request req);
         FAKESERVER_EXPORT Response CreateFileInstance(Request req);
         FAKESERVER_EXPORT Response GetiModels(Request req);
         FAKESERVER_EXPORT Response DeleteiModels(Request req);
-        FAKESERVER_EXPORT Response Push(Request req);
+        FAKESERVER_EXPORT Response PushChangeSetMetadata(Request req);
         FAKESERVER_EXPORT Response Pull(Request req);
         FAKESERVER_EXPORT Response GetChangeSetInfo(Request req);
 
-        FAKESERVER_EXPORT static DbResult Initialize(BeFileName temporaryDir, BeSQLiteLib::LogErrors logSqliteErrors = BeSQLiteLib::LogErrors::No);
+        FAKESERVER_EXPORT BeFileName GetDbPath();
         FAKESERVER_EXPORT void CheckDb();
         FAKESERVER_EXPORT void Insert(bvector<Utf8String> insertStr);
 

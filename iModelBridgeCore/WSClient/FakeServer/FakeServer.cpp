@@ -5,10 +5,14 @@ BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP 
     {
     //here place the seed file on mockserver and return a mock response
     BeFileName seedPathFile(seedFilePath);
-    WCharCP fileName = BeFileName::GetFileNameAndExtension(seedFilePath).c_str();
+    
+    BeFileName fileName = seedPathFile.GetBaseName();
     BeFileName servPathFile(serverPath);
+    BeFileNameStatus stat = BeFileName::CreateNewDirectory(servPathFile);
+    if (BeFileNameStatus::Success != stat)
+        return BeFileNameStatus::UnknownError;
     servPathFile.AppendToPath(fileName);
-    BeFileNameStatus stat = BeFileName::BeCopyFile(seedPathFile, servPathFile);
+    stat = BeFileName::BeCopyFile(seedPathFile, servPathFile);
     if (BeFileNameStatus::Success != stat)
         return BeFileNameStatus::UnknownError;
     return BeFileNameStatus::Success;
