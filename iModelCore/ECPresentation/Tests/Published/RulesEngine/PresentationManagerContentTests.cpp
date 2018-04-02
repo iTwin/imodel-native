@@ -5896,12 +5896,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -6003,12 +6003,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsO
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -6225,12 +6225,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
@@ -6299,12 +6299,12 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -7140,13 +7140,13 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropert
     // set up data set
     ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("StructProperty.IntProperty", 2);
         instance.SetValue("StructProperty.IntProperty", ECValue(1), 0);
         instance.SetValue("StructProperty.IntProperty", ECValue(2), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("StructProperty.IntProperty", 3);
         instance.SetValue("StructProperty.IntProperty", ECValue(4), 0);
