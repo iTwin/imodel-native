@@ -610,7 +610,6 @@ public:
 struct Format
 {
 private:
-    Utf8String          m_name;             // Name or ID of the format.
     FormatSpecType      m_specType;
     NumericFormatSpec   m_numericSpec;
     CompositeValueSpec  m_compositeSpec;
@@ -622,11 +621,10 @@ public:
     UNITS_EXPORT void FromJson(Json::Value jval, BEU::IUnitsContextCP context = nullptr);
     // !TODO====================================================================
 
-    UNITS_EXPORT Format();
-    Format(Utf8String name) : m_name(name), m_specType(FormatSpecType::None), m_problem(FormatProblemCode::NoProblems) {};
+    Format() : m_specType(FormatSpecType::None), m_problem(FormatProblemCode::NotInitialized) {};
     UNITS_EXPORT Format(FormatCR other);
-    UNITS_EXPORT Format(Utf8StringCR name, NumericFormatSpecCR numSpec);
-    UNITS_EXPORT Format(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
+    UNITS_EXPORT Format(NumericFormatSpecCR numSpec);
+    UNITS_EXPORT Format( NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
 
     FormatR operator=(const Format& other) = default;
 
@@ -637,8 +635,6 @@ public:
     //! Creates a Json::Value representing this.
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
 
-    Utf8StringCR GetName() const { return m_name; };
-
     FormatSpecType GetSpecType() const { return m_specType; }
 
     //! Returns true if this Format contains a NumericFormatSpec.
@@ -647,7 +643,7 @@ public:
     //! A Format that contains a CompositeValueSpec will also contain a NumericFormatSpec.
     bool HasComposite() const {return static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;}
     void SetCompositeSpec(CompositeValueSpec spec) {m_compositeSpec = spec; m_specType = static_cast<FormatSpecType>(m_compositeSpec.GetUnitCount()); /*TODO error checking !*/}
-    void SetNumericSpec(NumericFormatSpec spec) {m_numericSpec = spec;}
+    void SetNumericSpec(NumericFormatSpec spec) {m_problem = FormatProblemCode::NoProblems; m_numericSpec = spec;}
     //! Returns a const pointer to this Format's NumericFormatSpec if it exists.
     //! Returns nullptr if no NumericFormatSpec is defined.
     NumericFormatSpecCP GetNumericSpec() const { return HasNumeric() ? &m_numericSpec : nullptr; }

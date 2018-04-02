@@ -14,14 +14,8 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-Format::Format() : m_specType(FormatSpecType::None), m_problem(FormatProblemCode::NotInitialized) 
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
 Format::Format(FormatCR other)
-    : m_name(other.m_name), m_specType(other.m_specType), m_problem(other.m_problem)
+    : m_specType(other.m_specType), m_problem(other.m_problem)
     {
     if (other.HasNumeric())
         m_numericSpec = other.m_numericSpec;
@@ -32,18 +26,17 @@ Format::Format(FormatCR other)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-Format::Format(Utf8StringCR name, NumericFormatSpecCR numSpec)
-    : m_name(name), m_specType(FormatSpecType::None), m_numericSpec(numSpec), m_problem(FormatProblemCode::NoProblems)
+Format::Format(NumericFormatSpecCR numSpec)
+    : m_specType(FormatSpecType::None), m_numericSpec(numSpec), m_problem(FormatProblemCode::NoProblems)
     {
-    if (name.empty())
-        m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
+
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //----------------------------------------------------------------------------------------
-Format::Format(Utf8StringCR name, NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
-    : Format(name, numSpec)
+Format::Format( NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec)
+    : Format(numSpec)
     {
     m_compositeSpec = compSpec;
     if (m_compositeSpec.IsProblem())
@@ -100,9 +93,7 @@ void Format::FromJson(Json::Value jval, BEU::IUnitsContextCP context)
         {
         paramName = iter.memberName();
         JsonValueCR val = *iter;
-        if (BeStringUtilities::StricmpAscii(paramName, json_SpecName()) == 0)
-            m_name = val.asString();
-        else if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
+        if (BeStringUtilities::StricmpAscii(paramName, json_NumericFormat()) == 0)
             m_numericSpec = NumericFormatSpec(val);
         else if (BeStringUtilities::StricmpAscii(paramName, json_CompositeFormat()) == 0)
             m_compositeSpec.LoadJsonData(val, context);
@@ -114,8 +105,6 @@ void Format::FromJson(Json::Value jval, BEU::IUnitsContextCP context)
 //----------------------------------------------------------------------------------------
 bool Format::IsIdentical(FormatCR other) const
     {
-    if (m_name != other.m_name)
-        return false;
     if (m_specType != other.m_specType)
         return false;
     if (HasNumeric() && !m_numericSpec.IsIdentical(other.m_numericSpec))
@@ -318,7 +307,6 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
 Json::Value Format::ToJson(bool verbose) const
     {
     Json::Value jNFS;
-    jNFS[json_SpecName()] = m_name;
     jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
     Json::Value jcs = m_compositeSpec.ToJson();
     if (!jcs.empty())

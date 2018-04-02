@@ -29,7 +29,7 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
         return nullptr;
         }
-    FormatCP nfs = new Format(name, fmtP, compS);
+    FormatCP nfs = new Format(fmtP, compS);
     if (nullptr == nfs || nfs->IsProblem())
         {
         if (nullptr != nfs)
@@ -49,7 +49,7 @@ NumericFormatSpecCP StdFormatSet::AddFormat(Utf8CP name, NumericFormatSpecCR fmt
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_DuplicateSpecNameOrAlias);
         return nullptr;
         }
-    FormatP nfs = new Format(name, fmtP);
+    FormatP nfs = new Format(fmtP);
     if (nullptr == nfs || nfs->IsProblem())
         {
         if (nullptr != nfs)
@@ -84,8 +84,8 @@ FormatCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR co
     if (nfs->IsProblem())
         return nullptr;
 
-    if (IsFormatDefined(nfs->GetName().c_str()))
-        return nullptr;
+    //if (IsFormatDefined(nfs->GetName().c_str()))
+    //    return nullptr;
 
     m_formatSet.push_back(*nfs);
     return nfs;
@@ -97,7 +97,7 @@ FormatCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR co
 bool StdFormatSet::IsFormatDefined(Utf8CP name)
     {
     return m_formatSet.end() != std::find_if(m_formatSet.begin(), m_formatSet.end(),
-        [name](FormatCR pNamedFmtSpec) -> bool {return pNamedFmtSpec.GetName() == name;});
+        [name](FormatCR pNamedFmtSpec) -> bool {return false;});//pNamedFmtSpec.GetName() == name;});
     }
 
 //---------------------------------------------------------------------------------------
@@ -105,11 +105,11 @@ bool StdFormatSet::IsFormatDefined(Utf8CP name)
 //---------------------------------------------------------------------------------------
 FormatCP StdFormatSet::FindFormat(Utf8StringCR name) const
     {
-    for (auto const& fmt : m_formatSet)
-        {
-        if (fmt.GetName() == name)
-            return &fmt;
-        }
+    //for (auto const& fmt : m_formatSet)
+    //    {
+    //    if (fmt.GetName() == name)
+    //        return &fmt;
+    //    }
 
     return nullptr;
     }

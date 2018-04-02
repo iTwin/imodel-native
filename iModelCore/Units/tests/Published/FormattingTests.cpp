@@ -754,19 +754,17 @@ TEST_F(FormatTest, Constructors)
     {
     Format namedFmtSpec;
 
-    EXPECT_STREQ("", namedFmtSpec.GetName().c_str());
     EXPECT_EQ(FormatSpecType::None, namedFmtSpec.GetSpecType());
     EXPECT_TRUE(namedFmtSpec.IsProblem());
     EXPECT_EQ(nullptr, namedFmtSpec.GetNumericSpec());
     EXPECT_EQ(nullptr, namedFmtSpec.GetCompositeSpec());
     }
 
-    // Constructed with name and NumericFormatSpec
+    // Constructed with NumericFormatSpec
     {
     NumericFormatSpec numFmtSpec;
-    Format namedFmtSpec("FooBar", numFmtSpec);
+    Format namedFmtSpec(numFmtSpec);
 
-    EXPECT_STREQ("FooBar", namedFmtSpec.GetName().c_str());
     EXPECT_EQ(FormatSpecType::None, namedFmtSpec.GetSpecType());
     EXPECT_FALSE(namedFmtSpec.IsProblem());
     ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
@@ -778,9 +776,8 @@ TEST_F(FormatTest, Constructors)
     {
     NumericFormatSpec numFmtSpec;
     CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
-    Format namedFmtSpec("FooBar", numFmtSpec, compValSpec);
+    Format namedFmtSpec(numFmtSpec, compValSpec);
 
-    EXPECT_STREQ("FooBar", namedFmtSpec.GetName().c_str());
     EXPECT_EQ(FormatSpecType::Single, namedFmtSpec.GetSpecType());
     EXPECT_FALSE(namedFmtSpec.IsProblem()) << namedFmtSpec.GetProblemDescription();
     ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
@@ -806,8 +803,8 @@ TEST_F(FormatTest, IsIdentical)
     CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
 
     Format namedFmtSpecUndefined;
-    Format namedFmtSpecNumeric("FooBar", numFmtSpec);
-    Format namedFmtSpecComposite("FooBar", numFmtSpec, compValSpec);
+    Format namedFmtSpecNumeric(numFmtSpec);
+    Format namedFmtSpecComposite(numFmtSpec, compValSpec);
 
     // Identity checks.
     EXPECT_TRUE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecUndefined))  << "Format is not identical to itself.";
@@ -830,24 +827,6 @@ TEST_F(FormatTest, IsIdentical)
     //EXPECT_FALSE(namedFmtSpecComposite.IsIdentical(namedFmtSpecNumeric));
     }
 
-    // Formats with differing names/displayLabels/descriptions.
-    {
-    NumericFormatSpec numFmtSpec;
-
-    Format namedFmtSpecFoo("Foo", numFmtSpec);
-    Format namedFmtSpecBaz("Baz", numFmtSpec);
-    EXPECT_FALSE(namedFmtSpecFoo.IsIdentical(namedFmtSpecBaz));
-    EXPECT_FALSE(namedFmtSpecBaz.IsIdentical(namedFmtSpecFoo));
-
-    Format namedFmtSpecFooDiffDispLabel("Foo", numFmtSpec);
-    EXPECT_TRUE(namedFmtSpecFoo.IsIdentical(namedFmtSpecFooDiffDispLabel));
-    EXPECT_TRUE(namedFmtSpecFooDiffDispLabel.IsIdentical(namedFmtSpecFoo));
-
-    Format namedFmtSpecFooDiffDesc("Foo", numFmtSpec);
-    EXPECT_TRUE(namedFmtSpecFoo.IsIdentical(namedFmtSpecFooDiffDesc));
-    EXPECT_TRUE(namedFmtSpecFooDiffDesc.IsIdentical(namedFmtSpecFoo));
-    }
-
     // Formats with differing NumericFormatSpecs.
     {
     NumericFormatSpec numFmtSpecA;
@@ -855,8 +834,8 @@ TEST_F(FormatTest, IsIdentical)
     NumericFormatSpec numFmtSpecB;
     numFmtSpecB.SetDecimalPrecision(DecimalPrecision::Precision9);
 
-    Format namedFmtSpecA("FooBar", numFmtSpecA);
-    Format namedFmtSpecB("FooBar", numFmtSpecB);
+    Format namedFmtSpecA(numFmtSpecA);
+    Format namedFmtSpecB(numFmtSpecB);
     EXPECT_FALSE(namedFmtSpecA.IsIdentical(namedFmtSpecB));
     EXPECT_FALSE(namedFmtSpecB.IsIdentical(namedFmtSpecA));
     }
@@ -869,8 +848,8 @@ TEST_F(FormatTest, IsIdentical)
     CompositeValueSpec compValSpecB;
     compValSpecB.SetSpacer(" # ");
 
-    Format namedFmtSpecA("FooBar", numFmtSpec, compValSpecA);
-    Format namedFmtSpecB("FooBar", numFmtSpec, compValSpecB);
+    Format namedFmtSpecA(numFmtSpec, compValSpecA);
+    Format namedFmtSpecB(numFmtSpec, compValSpecB);
     EXPECT_FALSE(namedFmtSpecA.IsIdentical(namedFmtSpecB));
     EXPECT_FALSE(namedFmtSpecB.IsIdentical(namedFmtSpecA));
     }
@@ -890,7 +869,7 @@ TEST_F(FormatTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
     BEU::UnitCP inch = s_unitsContext->LookupUnit("IN");
     CompositeValueSpec compositeValueSpec(*mile, *inch);
     ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
-    Format Format("TestFormat", numericFormatSpec, compositeValueSpec);
+    Format Format(numericFormatSpec, compositeValueSpec);
 
     // 1500.5 miles == 1,500 miles and 31,680 inches
     BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
@@ -937,7 +916,7 @@ TEST_F(FormatTest, ParseFormatString)
     NumericFormatSpec exampleNumericFmtSpec;
     exampleNumericFmtSpec.SetPresentationType(PresentationType::Decimal);
     exampleNumericFmtSpec.SetDecimalPrecision(DecimalPrecision::Precision9);
-    Format const exampleNamedFmtSpec("ExampleFmt", exampleNumericFmtSpec);
+    Format const exampleNamedFmtSpec(exampleNumericFmtSpec);
     auto const mapper = [exampleNamedFmtSpec](Utf8StringCR name) -> FormatCP
         {
         return name == "ExampleFmt" ? &exampleNamedFmtSpec : nullptr;
@@ -974,29 +953,29 @@ TEST_F(FormatTest, ParseFormatString)
     NumericFormatSpec exampleNumericFmtSpecDec;
     exampleNumericFmtSpecDec.SetPresentationType(PresentationType::Decimal);
     exampleNumericFmtSpecDec.SetDecimalPrecision(DecimalPrecision::Precision5);
-    Format const exampleNamedFmtSpecDec("ExDec", exampleNumericFmtSpecDec);
+    Format const exampleNamedFmtSpecDec(exampleNumericFmtSpecDec);
 
     NumericFormatSpec exampleNumericFmtSpecFrac;
     exampleNumericFmtSpecFrac.SetPresentationType(PresentationType::Fractional);
     exampleNumericFmtSpecFrac.SetFractionalPrecision(FractionalPrecision::Over_128);
-    Format const exampleNamedFmtSpecFrac("ExFrac", exampleNumericFmtSpecFrac);
+    Format const exampleNamedFmtSpecFrac(exampleNumericFmtSpecFrac);
 
     NumericFormatSpec exampleNumericFmtSpecSci;
     exampleNumericFmtSpecSci.SetDecimalPrecision(DecimalPrecision::Precision4);
     exampleNumericFmtSpecSci.SetPresentationType(PresentationType::Scientific);
-    Format const exampleNamedFmtSpecSci("ExSci", exampleNumericFmtSpecSci);
+    Format const exampleNamedFmtSpecSci(exampleNumericFmtSpecSci);
 
     NumericFormatSpec exampleNumericFmtSpecSciNorm;
     exampleNumericFmtSpecSciNorm.SetDecimalPrecision(DecimalPrecision::Precision7);
     exampleNumericFmtSpecSciNorm.SetPresentationType(PresentationType::Scientific);
     exampleNumericFmtSpecSciNorm.SetScientificType(ScientificType::Normal);
-    Format const exampleNamedFmtSpecSciNorm("ExSciNorm", exampleNumericFmtSpecSciNorm);
+    Format const exampleNamedFmtSpecSciNorm(exampleNumericFmtSpecSciNorm);
 
     NumericFormatSpec exampleNumericFmtSpecStation;
     exampleNumericFmtSpecStation.SetPresentationType(PresentationType::Station);
     exampleNumericFmtSpecStation.SetStationOffsetSize(2);
     exampleNumericFmtSpecStation.SetDecimalPrecision(DecimalPrecision::Precision9);
-    Format const exampleNamedFmtSpecStation("ExStation", exampleNumericFmtSpecStation);
+    Format const exampleNamedFmtSpecStation(exampleNumericFmtSpecStation);
     auto const mapper = [&](Utf8StringCR name) -> FormatCP
         {
         if (name == "ExDec")

@@ -932,7 +932,7 @@ Utf8String FormatUnitSet::ToText() const
     if (HasProblem())
         return "";
     char buf[256];
-    sprintf(buf, "%s(%s)", m_unit->GetName().c_str(), m_formatSpec->GetName().c_str());
+    //sprintf(buf, "%s(%s)", m_unit->GetName().c_str(), m_formatSpec->GetName().c_str());
     return buf;
     }
 
@@ -979,8 +979,8 @@ Json::Value FormatUnitSet::ToJson(bool verbose) const
     jval[json_unitName()] = m_unit->GetName();
     if(verbose)
         jval[json_formatSpec()] = m_formatSpec->ToJson(true);
-    else
-        jval[json_formatName()] = m_formatSpec->GetName();
+    //else
+    //    jval[json_formatName()] = m_formatSpec->GetName();
     return jval;
     }
 
