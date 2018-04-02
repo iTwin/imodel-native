@@ -683,6 +683,9 @@ public:
     //!       The supplied GeometrySource is soley used to query information, it does not need to be the same GeometrySource that is modified by Finish.
     DGNPLATFORM_EXPORT static GeometryBuilderPtr Create(GeometrySourceCR);
 
+    //! @private Append GeometryStream entries supplied as json values.
+    bool FromJson(JsonValueCR input, JsonValueCR opts);
+
     //! Updates DgnGeometryPart's GeometryStream from json value.
     //! @param[in] part DgnGeometryPart to update.
     //! @param[in] value GeometryStream json value.

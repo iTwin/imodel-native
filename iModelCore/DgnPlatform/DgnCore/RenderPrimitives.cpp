@@ -1195,7 +1195,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     for (size_t iTriangle =0; iTriangle < nTriangles; iTriangle++)
         {
         Triangle            newTriangle(!visitor.GetTwoSided());
-        bvector<DPoint2d>&  params = visitor.Param();
+        bvector<DPoint2d>   params = visitor.Param();
         bool                visibility[3];
 
         visibility[0] = (0 == iTriangle) ? visitorVisibility[0] : false;
