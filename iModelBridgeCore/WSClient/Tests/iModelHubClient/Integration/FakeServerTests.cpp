@@ -155,14 +155,14 @@ TEST_F(FakeServerFixture, CreateiModel)
 
 TEST_F(FakeServerFixture, UpdateSeedFileWithDummy)
     {
-    Utf8String url("https://imodelhubqasa01.blob.core.windows.net/imodelhub-fb2a6ddb-8afb-4621-9e0d-0c39fba7ea12/BriefcaseTestsu-c5a160ed-0128-46e5-9d64-0820eb95621d.bim?sv=2016-05-31&sr=b&sig=Az%2BQDguDzcGvlWLCpfs13XEu0AiVixJTFvaZnuPPNyo%3D&st=2018-03-24T22%3A53%3A58Z&se=2018-03-24T23%3A04%3A58Z&sp=w");
-    Utf8String method("POST");
+    Utf8String url("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/iModel--78ce9e3d-29b9-43f8-931f-6b73bccc21e7/iModelScope/SeedFile?$filter=FileId+eq+'dcf8f343-6a5a-4b1f-a583-4c977696afc9'");
+    Utf8String method("GET");
     IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
-    Utf8String reqBody("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<note>\n<to>Tove</to>\n<from>Jani</from>\n<heading>Reminder</heading>\n<body>Don't forget me this weekend!</body>\n</note>");
-    
     Request request(url, method, handlePtr);
-    request.SetRequestBody(HttpStringBody::Create(reqBody));
     Response resp = request.PerformAsync()->GetResult();
+    HttpBodyPtr body = resp.GetContent()->GetBody();
+    
+    printf("%s\n", body->AsString().c_str());
     }
 TEST_F(FakeServerFixture, PulliModelChangeSets)
     {
