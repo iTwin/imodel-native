@@ -81,6 +81,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_REL_PathwayRefersToLeftThruTravelComposite             "PathwayRefersToLeftThruTravelComposite"
 #define BRRP_REL_PathwayRefersToRightThruTravelComposite            "PathwayRefersToRightThruTravelComposite"
 #define BRRP_REL_PathwayRefersToSingleThruTravelComposite           "PathwayRefersToSingleThruTravelComposite"
+#define BRRP_REL_PathwayRefersToThruTravelComposite                 "PathwayRefersToThruTravelComposite"
 
 
 // Properties

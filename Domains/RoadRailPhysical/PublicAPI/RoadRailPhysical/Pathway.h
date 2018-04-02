@@ -42,10 +42,17 @@ protected:
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
 
 public:
+    enum class ThruTravelSide { Single = 0, Left = 1, Right = 2 };
+
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(PathwayElementCR pathway, Dgn::DgnElementCR representedBy);
+
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnElementIdSet QueryPortionIds() const;
+    ROADRAILPHYSICAL_EXPORT bset<bpair<Dgn::DgnElementId, ThruTravelSide>> QueryThruTravelCompositeIds() const;    
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryThruTravelCompositeId(ThruTravelSide side) const;
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryThruTravelSeparationId() const;
 }; // PathwayElement
 
 //=======================================================================================
@@ -102,9 +109,15 @@ protected:
     //! @private
     explicit PathwayPortionElement(CreateParams const& params) : T_Super(params) {}
 
+    virtual ThruTravelCompositeCP _ToThruTravelComposite() const { return nullptr; }
+    virtual ThruTravelSeparationCompositeCP _ToThruTravelSeparationComposite() const { return nullptr; }
+
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayPortionElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayPortionElement)
+
+    ThruTravelCompositeCP ToThruTravelComposite() const { return _ToThruTravelComposite(); }
+    ThruTravelSeparationCompositeCP ToThruTravelSeparationComposite() const { return _ToThruTravelSeparationComposite(); }
 }; // PathwayPortionElement
 
 //=======================================================================================
@@ -120,11 +133,13 @@ protected:
     //! @private
     explicit ThruTravelComposite(CreateParams const& params) : T_Super(params) {}
 
-public:
-    enum class SideOnPathway { SingleComposite = 0, Left = 1, Right = 2 };
+    virtual ThruTravelCompositeCP _ToThruTravelComposite() const override { return this; }
 
+public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruTravelComposite)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(ThruTravelComposite)
+
+    ROADRAILPHYSICAL_EXPORT PathwayElement::ThruTravelSide QueryThruTravelSide() const;
 }; // ThruTravelComposite
 
 //=======================================================================================
@@ -139,6 +154,8 @@ struct ThruTravelSeparationComposite : PathwayPortionElement
 protected:
     //! @private
     explicit ThruTravelSeparationComposite(CreateParams const& params) : T_Super(params) {}
+
+    virtual ThruTravelSeparationCompositeCP _ToThruTravelSeparationComposite() const override { return this; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruTravelSeparationComposite)
@@ -166,7 +183,7 @@ public:
 
     ROADRAILPHYSICAL_EXPORT static ThruwayCompositePtr Create(PathwayElementCR pathway);
 
-    ROADRAILPHYSICAL_EXPORT ThruwayCompositeCPtr Insert(SideOnPathway side, Dgn::DgnDbStatus* status = nullptr);
+    ROADRAILPHYSICAL_EXPORT ThruwayCompositeCPtr Insert(PathwayElement::ThruTravelSide side, Dgn::DgnDbStatus* status = nullptr);
 }; // ThruwayComposite
 
 //=======================================================================================

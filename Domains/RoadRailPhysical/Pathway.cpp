@@ -54,6 +54,116 @@ DgnDbStatus PathwayElement::AddRepresentedBy(PathwayElementCR pathway, DgnElemen
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementIdSet PathwayElement::QueryPortionIds() const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM "
+        BRRP_SCHEMA(BRRP_CLASS_PathwayPortionElement) " WHERE Parent.Id = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+
+    DgnElementIdSet retVal;
+    while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        retVal.insert(stmtPtr->GetValueId<DgnElementId>(0));
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PathwayElement::ThruTravelSide getSideForRelClassId(DgnDbCR dgnDb, DgnClassId relClassId)
+    {
+    auto leftSideClassId = dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToLeftThruTravelComposite);
+    auto rightSideClassId = dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToRightThruTravelComposite);
+    auto singleSideClassId = dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToSingleThruTravelComposite);
+
+    if (relClassId == leftSideClassId)
+        return PathwayElement::ThruTravelSide::Left;
+    else if (relClassId == rightSideClassId)
+        return PathwayElement::ThruTravelSide::Right;
+    else if (relClassId == singleSideClassId)
+        return PathwayElement::ThruTravelSide::Single;
+    else
+        {
+        BeAssert(false); // Unknown side-type
+        return PathwayElement::ThruTravelSide::Single;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnClassId getRelClassIdForSide(DgnDbCR dgnDb, PathwayElement::ThruTravelSide side)
+    {
+    if (side == PathwayElement::ThruTravelSide::Left)
+        return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToLeftThruTravelComposite);
+    else if (side == PathwayElement::ThruTravelSide::Right)
+        return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToRightThruTravelComposite);
+    else if (side == PathwayElement::ThruTravelSide::Single)
+        return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToSingleThruTravelComposite);
+    else
+        {
+        BeAssert(false); // Unknown side-type
+        return DgnClassId();
+        }
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bset<bpair<DgnElementId, PathwayElement::ThruTravelSide>> PathwayElement::QueryThruTravelCompositeIds() const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId, ECClassId FROM "
+        BRRP_SCHEMA(BRRP_REL_PathwayRefersToThruTravelComposite) " WHERE SourceECInstanceId = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+
+    bset<bpair<DgnElementId, PathwayElement::ThruTravelSide>> retVal;
+    while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        retVal.insert({ stmtPtr->GetValueId<DgnElementId>(0), getSideForRelClassId(GetDgnDb(), stmtPtr->GetValueId<DgnClassId>(1)) });
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId PathwayElement::QueryThruTravelCompositeId(ThruTravelSide side) const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM "
+        BRRP_SCHEMA(BRRP_REL_PathwayRefersToThruTravelComposite) " WHERE SourceECInstanceId = ? AND ECClassId = ?;");
+
+    stmtPtr->BindId(1, GetElementId());
+    stmtPtr->BindId(2, getRelClassIdForSide(GetDgnDb(), side));
+
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        return stmtPtr->GetValueId<DgnElementId>(0);
+
+    return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElementId PathwayElement::QueryThruTravelSeparationId() const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM "
+        BRRP_SCHEMA(BRRP_CLASS_ThruTravelSeparationComposite) " WHERE Parent.Id = ?;");
+
+    stmtPtr->BindId(1, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        return stmtPtr->GetValueId<DgnElementId>(0);
+
+    return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 RoadwayPtr Roadway::Create(PhysicalModelR model)
@@ -80,6 +190,24 @@ RailwayPtr Railway::Create(PhysicalModelR model)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PathwayElement::ThruTravelSide ThruTravelComposite::QueryThruTravelSide() const
+    {
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId FROM "
+        BRRP_SCHEMA(BRRP_REL_PathwayRefersToThruTravelComposite) " WHERE TargetECInstanceId = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        return getSideForRelClassId(GetDgnDb(), stmtPtr->GetValueId<DgnClassId>(0));
+
+    BeAssert(false);
+    return PathwayElement::ThruTravelSide::Single;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThruwayCompositePtr ThruwayComposite::Create(PathwayElementCR pathway)
@@ -97,14 +225,14 @@ ThruwayCompositePtr ThruwayComposite::Create(PathwayElementCR pathway)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThruwayCompositeCPtr ThruwayComposite::Insert(SideOnPathway side, Dgn::DgnDbStatus* status)
+ThruwayCompositeCPtr ThruwayComposite::Insert(PathwayElement::ThruTravelSide side, Dgn::DgnDbStatus* status)
     {
     Utf8String relClassName;
-    if (side == SideOnPathway::SingleComposite)
+    if (side == PathwayElement::ThruTravelSide::Single)
         relClassName = BRRP_REL_PathwayRefersToSingleThruTravelComposite;
-    else if (side == SideOnPathway::Left)
+    else if (side == PathwayElement::ThruTravelSide::Left)
         relClassName = BRRP_REL_PathwayRefersToLeftThruTravelComposite;
-    else if (side == SideOnPathway::Right)
+    else if (side == PathwayElement::ThruTravelSide::Right)
         relClassName = BRRP_REL_PathwayRefersToRightThruTravelComposite;
     else
         {
