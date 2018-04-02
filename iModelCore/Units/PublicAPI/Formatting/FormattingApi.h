@@ -666,15 +666,19 @@ public:
     //! Returns a const pointer to the sub unit of this Format's CompositeValueSpec.
     //! Returns nullptr if no CompositeValueSpec is defined.
     BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
+    //! Returns a const pointer to the input unit of this Format's CompositeValueSpec.
+    //! Returns nullptr if no CompositeValueSpec is defined.
+    BEU::UnitCP GetCompositeInputUnit() const { return HasComposite() ? m_compositeSpec.GetInputUnit() : nullptr; }
     bool HasCompositeMajorUnit() const {return nullptr != GetCompositeMajorUnit();}
     bool HasCompositeMiddleUnit() const {return nullptr != GetCompositeMiddleUnit();}
     bool HasCompositeMinorUnit() const {return nullptr != GetCompositeMinorUnit();}
     bool HasCompositeSubUnit() const {return nullptr != GetCompositeSubUnit();}
+    bool HasCompositeInputUnit() const {return nullptr != GetCompositeInputUnit();}
 
     void SetSuppressUnitLabel() { m_numericSpec.SetShowUnitLabel(false); }
 
     bool IsProblem() const { return m_problem.IsProblem(); }
-    Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
+    Utf8String GetProblemDescription() const {return m_problem.GetProblemDescription();}
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
 
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
