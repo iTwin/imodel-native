@@ -1082,7 +1082,7 @@ void ORDConverter::CreateRoadRailElements()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::_OnConversionComplete()
     {
-    if (!m_isDetectingDeletedDocs)
+    if (m_isProcessing)
         CreateRoadRailElements();
 
     T_Super::_OnConversionComplete();

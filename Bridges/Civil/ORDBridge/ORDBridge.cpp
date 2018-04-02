@@ -222,7 +222,9 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     ConvertORDElementXDomain convertORDXDomain(*m_converter);
     Dgn::DgnDbSync::DgnV8::XDomain::Register(convertORDXDomain);
 
+    m_converter->SetIsProcessing(true);
     m_converter->Process();
+    m_converter->SetIsProcessing(false);
 
     Dgn::DgnDbSync::DgnV8::XDomain::UnRegister(convertORDXDomain);
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
@@ -304,9 +306,7 @@ void ORDBridge::_OnCloseBim(BentleyStatus)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ORDBridge::_DetectDeletedDocuments()
     {
-    m_converter->SetIsDetectingDeletedDocs(true);
     m_converter->_DetectDeletedDocuments();
-    m_converter->SetIsDetectingDeletedDocs(false);
 
     return m_converter->WasAborted() ? BSIERROR : BSISUCCESS;
     }
