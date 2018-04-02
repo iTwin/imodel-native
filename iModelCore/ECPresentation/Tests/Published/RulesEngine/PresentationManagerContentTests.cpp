@@ -5894,14 +5894,14 @@ DEFINE_SCHEMA(LoadsStructPropertyValue, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
     {
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -6000,15 +6000,15 @@ DEFINE_SCHEMA(MergesStructPropertyFieldsOfDifferentClasses, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsOfDifferentClasses)
     {
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classB, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -6223,14 +6223,14 @@ DEFINE_SCHEMA(MergesStructPropertyValuesWhenValuesAreEqual, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesWhenValuesAreEqual)
     {
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
@@ -6297,14 +6297,14 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
 
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(123));
         instance.SetValue("StructProperty.StringProperty", ECValue("abc"));
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.SetValue("StructProperty.IntProperty", ECValue(456));
         instance.SetValue("StructProperty.StringProperty", ECValue("def"));
@@ -7138,15 +7138,15 @@ DEFINE_SCHEMA(LoadsStructWithArrayPropertyValue, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropertyValue)
     {
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("StructProperty.IntProperty", 2);
         instance.SetValue("StructProperty.IntProperty", ECValue(1), 0);
         instance.SetValue("StructProperty.IntProperty", ECValue(2), 1);
         });
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [structClass](IECInstanceR instance)
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
         instance.AddArrayElements("StructProperty.IntProperty", 3);
         instance.SetValue("StructProperty.IntProperty", ECValue(4), 0);
