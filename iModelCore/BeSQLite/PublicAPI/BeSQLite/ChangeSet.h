@@ -415,7 +415,7 @@ private:
 public:
     //! construct a blank, empty ChangeSet
     ChangeSet() {m_size=0; m_changeset=nullptr;}
-    ~ChangeSet() {Free();}
+    virtual ~ChangeSet() {Free();}
 
     //! Free the data held by this ChangeSet.
     //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.
