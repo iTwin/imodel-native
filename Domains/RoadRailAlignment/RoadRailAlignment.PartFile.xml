@@ -29,6 +29,13 @@
         </Bindings>
     </Part>
 
+    <Part Name="RoadRailAlignmentExtractions" DeferType="BuildDocs" BentleyBuildMakeFile="docs/RoadRailAlignmentExtractions.mke">
+        <SubPart PartName="RoadRailAlignmentPublishedApi" />
+        <Bindings>
+            <Directory SourceName="Dox/Extractions/RoadRailAlignment" SubPartDirectory="Dox/Extractions/RoadRailAlignment" />
+        </Bindings>
+    </Part>
+
     <!-- ********************************************************************************************** -->
     <!-- Unit tests -->
     <!-- ********************************************************************************************** -->
