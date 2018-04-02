@@ -121,6 +121,8 @@ protected:
     explicit ThruTravelComposite(CreateParams const& params) : T_Super(params) {}
 
 public:
+    enum class SideOnPathway { SingleComposite = 0, Left = 1, Right = 2 };
+
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruTravelComposite)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(ThruTravelComposite)
 }; // ThruTravelComposite
@@ -160,9 +162,11 @@ protected:
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruwayComposite)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(ThruwayComposite)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(ThruwayComposite)
 
     ROADRAILPHYSICAL_EXPORT static ThruwayCompositePtr Create(PathwayElementCR pathway);
+
+    ROADRAILPHYSICAL_EXPORT ThruwayCompositeCPtr Insert(SideOnPathway side, Dgn::DgnDbStatus* status = nullptr);
 }; // ThruwayComposite
 
 //=======================================================================================

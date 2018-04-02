@@ -78,6 +78,9 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_REL_ILinearElementSourceRefersToGeneratedILinearElements "ILinearElementSourceRefersToGeneratedILinearElements"
 #define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
 #define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
+#define BRRP_REL_PathwayRefersToLeftThruTravelComposite             "PathwayRefersToLeftThruTravelComposite"
+#define BRRP_REL_PathwayRefersToRightThruTravelComposite            "PathwayRefersToRightThruTravelComposite"
+#define BRRP_REL_PathwayRefersToSingleThruTravelComposite           "PathwayRefersToSingleThruTravelComposite"
 
 
 // Properties

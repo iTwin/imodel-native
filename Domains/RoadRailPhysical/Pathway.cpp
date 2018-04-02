@@ -95,6 +95,34 @@ ThruwayCompositePtr ThruwayComposite::Create(PathwayElementCR pathway)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ThruwayCompositeCPtr ThruwayComposite::Insert(SideOnPathway side, Dgn::DgnDbStatus* status)
+    {
+    Utf8String relClassName;
+    if (side == SideOnPathway::SingleComposite)
+        relClassName = BRRP_REL_PathwayRefersToSingleThruTravelComposite;
+    else if (side == SideOnPathway::Left)
+        relClassName = BRRP_REL_PathwayRefersToLeftThruTravelComposite;
+    else if (side == SideOnPathway::Right)
+        relClassName = BRRP_REL_PathwayRefersToRightThruTravelComposite;
+    else
+        {
+        if (status) *status = DgnDbStatus::BadArg;
+        return nullptr;
+        }
+
+    auto retVal = GetDgnDb().Elements().Insert<ThruwayComposite>(*this, status);
+
+    ECInstanceKey key;
+    GetDgnDb().InsertLinkTableRelationship(key, 
+        *GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, relClassName)->GetRelationshipClassCP(),
+        retVal->GetParentId(), retVal->GetElementId());
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThruwaySeparationCompositePtr ThruwaySeparationComposite::Create(PathwayElementCR pathway)

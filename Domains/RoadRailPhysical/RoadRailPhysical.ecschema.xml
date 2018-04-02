@@ -94,6 +94,42 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECRelationshipClass typeName="PathwayRefersToThruTravelComposite" strength="referencing" modifier="Abstract">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
+            <Class class="PathwayElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="ThruTravelComposite"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PathwayRefersToSingleThruTravelComposite" strength="referencing" modifier="Sealed">
+        <BaseClass>PathwayRefersToThruTravelComposite</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
+            <Class class="PathwayElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="ThruTravelComposite"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PathwayRefersToRightThruTravelComposite" strength="referencing" modifier="Sealed">
+        <BaseClass>PathwayRefersToThruTravelComposite</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
+            <Class class="PathwayElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="ThruTravelComposite"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PathwayRefersToLeftThruTravelComposite" strength="referencing" modifier="Sealed">
+        <BaseClass>PathwayRefersToThruTravelComposite</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
+            <Class class="PathwayElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="ThruTravelComposite"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="ILinearElementSourceRefersToGeneratedILinearElements" strength="referencing" modifier="Sealed">
         <BaseClass>lr:ILinearElementSourceProvidesILinearElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
