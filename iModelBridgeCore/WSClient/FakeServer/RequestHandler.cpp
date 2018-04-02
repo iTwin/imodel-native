@@ -114,7 +114,7 @@ void RequestHandler::CheckDb()
         if(!m_db.TableExists("Users"))
             CreateTable("Users", m_db, "UserCreated STRING, CreatedDate STRING");
         if(!m_db.TableExists("ChangeSets"))
-            CreateTable("ChangeSets", m_db, "Id STRING, SeedFileId STRING, ParentId STRING, UserCreated STRING, ChangeSetId STRING, CreatedDate STRING");
+            CreateTable("ChangeSets", m_db, "Id STRING, Index INTEGER, iModelId STRING, ParentId STRING, UserCreated STRING, ChangeSetId STRING, CreatedDate STRING");
         if(!m_db.TableExists("SeedFile"))
             CreateTable("SeedFile", m_db, "Id STRING, FileName STRING, FileDescription STRING, FileSize INTEGER, iModelId STRING, IsUploaded BOOLEAN, UserUploaded STRING, UploadedDate STRING");
 
@@ -634,13 +634,43 @@ Response RequestHandler::DeleteiModels(Request req)
     return Response();
     }
 
-Response RequestHandler::Push(Request req)
+Response RequestHandler::PushChangeSetMetadata(Request req)
     {
-    bvector<Utf8String> args = ParseUrl(req);
-    Utf8String iModelId = GetInstanceid(args[4]);
+    BeGuid projGuid(true);
+    Json::Value settings = ParsedJson(req);
+
+    bvector<Utf8String> input = {   projGuid.ToString(),  
+        settings["instance"]["properties"]["Name"].asString(),
+        settings["instance"]["properties"]["Description"].asString()};
+
+    Utf8String fileName(settings["instance"]["properties"]["Name"].asString());
+    CheckDb();
     BeFileName dbPath = GetDbPath();
     BentleyB0200::BeSQLite::Db m_db;
-    CheckDb();
+    if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+        {
+
+        Json::Value iModelCreation(Json::objectValue);
+        JsonValueR changedInstance = iModelCreation[ServerSchema::ChangedInstance] = Json::objectValue;
+        changedInstance["change"] = "Created";
+        JsonValueR InstanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
+        InstanceAfterChange[ServerSchema::InstanceId] = "";
+        InstanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::iModel;
+        InstanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::ChangeSet;
+        JsonValueR properties = InstanceAfterChange[ServerSchema::Properties] = Json::objectValue;
+        properties[ServerSchema::Property::BriefcaseId] = 2;
+        properties[ServerSchema::Property::ContainingChanges] = 0;
+        properties[ServerSchema::Property::Description] = "";
+        properties[ServerSchema::Property::FileSize] = "";
+        properties[ServerSchema::Property::Id] = "";
+        properties[ServerSchema::Property::IsUploaded] = "";
+        properties[ServerSchema::Property::ParentId] = "";
+        properties[ServerSchema::Property::SeedFileId] = "";
+        properties[ServerSchema::Property::Index] = "";
+        Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
+
+        return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
+        }
     return Response();
     }
 Response RequestHandler::Pull(Request req)

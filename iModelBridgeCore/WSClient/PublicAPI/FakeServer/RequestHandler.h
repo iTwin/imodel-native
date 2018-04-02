@@ -39,7 +39,7 @@ class RequestHandler
         FAKESERVER_EXPORT Response CreateFileInstance(Request req);
         FAKESERVER_EXPORT Response GetiModels(Request req);
         FAKESERVER_EXPORT Response DeleteiModels(Request req);
-        FAKESERVER_EXPORT Response Push(Request req);
+        FAKESERVER_EXPORT Response PushChangeSetMetadata(Request req);
         FAKESERVER_EXPORT Response Pull(Request req);
         FAKESERVER_EXPORT Response GetChangeSetInfo(Request req);
 
