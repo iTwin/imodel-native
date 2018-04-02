@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnShxFont.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1282,6 +1282,9 @@ BentleyStatus DgnShxFont::_LayoutGlyphs(DgnGlyphLayoutResultR result, DgnGlyphLa
 
         penPosition.x += (glyphRange.XLength());
         }
+
+    // Fail-safe in case nothing accumulated above. Callers will expect a zero'ed range more than an inverted range.
+    result.ZeroNullRanges();
 
     // Missing glyphs are allocated temporarily by this function...
     // I don't think it's worth the overhead to ref-count every glyph just to accommodate this bad data behavior.

@@ -55,9 +55,7 @@ void DgnGeometryPart::_FromJson(JsonValueR val)
     {
     T_Super::_FromJson(val);
 
-    if (val.isMember(json_bbox()))
-        JsonUtils::DRange3dFromJson(m_bbox, val[json_bbox()]);
-
+    // NOTE: Bounding box should not be updated from json, the GeometryBuilder computes the correct range from the GeometryStream...
     if (val.isMember(json_geom()))
         GeometryBuilder::UpdateFromJson(*this, val[json_geom()]);
     }
