@@ -5894,7 +5894,7 @@ DEFINE_SCHEMA(LoadsStructPropertyValue, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructPropertyValue)
     {
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
@@ -6000,7 +6000,7 @@ DEFINE_SCHEMA(MergesStructPropertyFieldsOfDifferentClasses, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyFieldsOfDifferentClasses)
     {
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP classA = GetClass("MyClassA");
     ECClassCP classB = GetClass("MyClassB");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *classA, [](IECInstanceR instance)
@@ -6223,7 +6223,7 @@ DEFINE_SCHEMA(MergesStructPropertyValuesWhenValuesAreEqual, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesWhenValuesAreEqual)
     {
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
@@ -6297,7 +6297,7 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, MergesStructPropertyValuesW
     Utf8PrintfString varies_string(CONTENTRECORD_MERGED_VALUE_FORMAT, RulesEngineL10N::GetString(RulesEngineL10N::LABEL_General_Varies()).c_str());
 
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
@@ -7138,7 +7138,7 @@ DEFINE_SCHEMA(LoadsStructWithArrayPropertyValue, R"*(
 TEST_F(RulesDrivenECPresentationManagerContentTests, LoadsStructWithArrayPropertyValue)
     {
     // set up data set
-    ECClassCP structClass = GetClass("MyStruct");
+    // unused - ECClassCP structClass = GetClass("MyStruct");
     ECClassCP ecClass = GetClass("MyClass");
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *ecClass, [](IECInstanceR instance)
         {
