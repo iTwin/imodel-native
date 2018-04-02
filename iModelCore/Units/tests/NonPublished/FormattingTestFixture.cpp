@@ -212,7 +212,7 @@ void FormattingTestFixture::TestFUG(Utf8CP name, Utf8CP fusText, Utf8CP norm, Ut
     //LOG.infov("FUS Group: %s JSON: >%s<", name, jval.ToString().c_str());
     EXPECT_STREQ (norm, fug.ToText(false).c_str());
     EXPECT_STREQ (aliased, fug.ToText(true).c_str());
-    FormatUnitGroup fug1 = FormatUnitGroup::FormatUnitGroup(jval);
+    FormatUnitGroup fug1 = FormatUnitGroup(jval);
     EXPECT_TRUE(fug.IsIdentical(fug1));
     //LOG.infov("restored FUS Group: %s identical: %s", fug1.ToText(true).c_str(), FormatConstant::BoolText(fug.IsIdentical(fug1)));
     }
