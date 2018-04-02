@@ -1300,7 +1300,7 @@ TEST(CurvePrimitive,TrivialPrimitives)
         ICurvePrimitivePtr bcurvePrimPtr = ICurvePrimitive::CreateBsplineCurve (bcurvePtr);
         CheckPrimitive (*bcurvePrimPtr, s_doPartials);
         }
-    DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d::DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(2, 0, 0), DVec3d::From(0, 2, 0));
+    DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(2, 0, 0), DVec3d::From(0, 2, 0));
 
     auto cp0 = ICurvePrimitive::CreateCatenary(10, dTri3d, 2, 20);
     CheckPrimitive(*cp0, false);
