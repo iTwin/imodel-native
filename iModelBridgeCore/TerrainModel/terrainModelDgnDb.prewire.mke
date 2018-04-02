@@ -2,7 +2,7 @@
 #
 #     $Source: terrainModelDgnDb.prewire.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 
@@ -14,7 +14,7 @@ always:
     !~@mkdir $(BuildPublicApi)TerrainModel/
 
 always:
-    @CreateSymLinks.py "$(BuildPublicApi)/TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
+    ~linkfile "$(BuildPublicApi)/TerrainModel/TerrainModel.h=$(TerrainModelAPISrc)TerrainModel.h"
 
 
 ##  Symlink all src PublicAPI folders into build output PublicAPI folder

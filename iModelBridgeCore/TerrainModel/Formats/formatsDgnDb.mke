@@ -1,22 +1,11 @@
 #------------------------------------------------------------------------------------
 #
 #     $Source: Formats/formatsDgnDb.mke $
-#    $RCSfile: cppwrappers.mke,v $
-#   $Revision: 1.123.2.1 $
-#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
-#     $Author: Daryl.Holmwood $
-#
 #   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #NEEDSWORK_VS2015: WIP, remove these warning suppress
 CCompOpts + -wd4456 -wd4458 -wd4838 -wd4459
-
-#---------------------------------------------------------
-# Bmake must be called before mdl.mki is included
-#---------------------------------------------------------
-always:
-  bmake -dCreate_Static_Libraries=1 $(_MakeFilePath)inroadstm/inroadstmDgnDb.mke 
 
 %include  mdl.mki
 %include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
