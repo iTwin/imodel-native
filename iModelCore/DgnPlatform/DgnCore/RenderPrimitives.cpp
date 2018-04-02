@@ -672,16 +672,26 @@ DisplayParamsCPtr DisplayParams::Clone() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureR texture) const
+DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureCR texture) const
     {
     BeAssert(Type::Text == GetType());
-    auto clone = new DisplayParams(*this);
 
     TextureMapping::Trans2x3 tf(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
     TextureMapping::Params params;
     params.SetWeight(0.0);
     params.SetTransform(&tf);
-    clone->m_textureMapping = TextureMapping(texture, params);
+
+    return CloneWithTextureOverride(TextureMapping(texture, params));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::CloneWithTextureOverride(TextureMappingCR textureMapping) const
+    {
+    auto clone = new DisplayParams(*this);
+    clone->m_textureMapping = textureMapping;
+
     return clone;
     }
 

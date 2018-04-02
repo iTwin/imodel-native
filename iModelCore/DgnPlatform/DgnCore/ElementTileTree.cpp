@@ -36,7 +36,7 @@ struct TileContext;
 // #define DISABLE_EDGE_GENERATION
 
 // For debugging tile generation code - disables use of cached tiles.
-// #define DISABLE_TILE_CACHE
+#define DISABLE_TILE_CACHE
 
 // We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
 // That can't work for BReps because they are associated with a specific thread's partition.
@@ -88,7 +88,7 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::ShowBoundingVolume;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -302,8 +302,8 @@ struct GeometrySelector2d
 struct TileBuilder : GeometryListBuilder
 {
 protected:
-    TileContext&        m_context;
-    double              m_rangeDiagonalSquared;
+    TileContext&                m_context;
+    double                      m_rangeDiagonalSquared;
 
     static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
     static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
@@ -330,6 +330,7 @@ public:
 
     void ReInitialize(DgnElementId elemId, double rangeDiagonalSquared, TransformCR localToWorld);
     double GetRangeDiagonalSquared() const { return m_rangeDiagonalSquared; }
+
 };
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileBuilder);
@@ -1959,15 +1960,16 @@ struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
 struct MeshGenerator : ViewContext
 {
 private:
-    TileCR              m_tile;
-    GeometryOptions     m_options;
-    double              m_tolerance;
-    LoadContext         m_loadContext;
-    size_t              m_geometryCount = 0;
-    FeatureTable        m_featureTable;
-    MeshBuilderMap      m_builderMap;
-    DRange3d            m_contentRange = DRange3d::NullRange();
-    bool                m_maxGeometryCountExceeded = false;
+    TileCR                  m_tile;
+    GeometryOptions         m_options;
+    double                  m_tolerance;
+    LoadContext             m_loadContext;
+    size_t                  m_geometryCount = 0;
+    FeatureTable            m_featureTable;
+    MeshBuilderMap          m_builderMap;
+    DRange3d                m_contentRange = DRange3d::NullRange();
+    bool                    m_maxGeometryCountExceeded = false;
+    ThematicMeshBuilderPtr  m_thematicMeshBuilder;
 
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
 
@@ -2017,7 +2019,6 @@ virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance
 
     return pointRange.IntersectsWith(m_tile.GetRange());
     }
-
 };
 
 
@@ -2032,6 +2033,15 @@ MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContext
     SetDgnDb(m_tile.GetElementRoot().GetDgnDb());
     m_is3dView = m_tile.GetElementRoot().Is3d();
     SetViewFlags(TileContext::GetDefaultViewFlags());
+
+
+#define TEST_THEMATIC_HEIGHT 
+#ifdef TEST_THEMATIC_HEIGHT
+    ThematicDisplaySettings     heightDisplaySettings;
+    heightDisplaySettings.SetSteppedDisplay(ThematicSteppedDisplay_FastWithIsolines);
+    auto                        projectExtents = m_tile.GetElementRoot().GetDgnDb().GeoLocation().ComputeProjectExtents();
+    m_thematicMeshBuilder  = new ThematicMeshBuilder("Height", *loadContext.GetRenderSystem(), m_tile.GetElementRoot().GetDgnDb(), heightDisplaySettings, ThematicCookedRange(projectExtents.low.z, projectExtents.high.z));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2141,6 +2151,7 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
     return Feature(elemId, params.GetSubCategoryId(), params.GetClass());
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2174,10 +2185,18 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     DgnElementId            elemId = GetElementId(geom);
     MeshEdgeCreationOptions edges(edgeOptions);
     bool                    isPlanar = tilePolyface.m_isPlanar;
+    TextureMapping          thematicTexture;
+    DisplayParamsCPtr       displayParams = &tilePolyface.GetDisplayParams(); 
+
+    if (m_thematicMeshBuilder.IsValid() &&
+        m_thematicMeshBuilder->DoThematicDisplay(*polyface, thematicTexture))
+        {
+        displayParams = displayParams->CloneWithTextureOverride(thematicTexture);
+        }
 
     if (isContained)
-        {
-        AddClippedPolyface(*polyface, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar);
+        {                                                                                                                                          
+        AddClippedPolyface(*polyface, elemId, *displayParams, edges, isPlanar);
         }
     else
         {
@@ -2186,7 +2205,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
 
         for (auto& clipped : clipOutput.m_output)
-            AddClippedPolyface(*clipped, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar);
+            AddClippedPolyface(*clipped, elemId, *displayParams, edges, isPlanar);
         }
     }
 
