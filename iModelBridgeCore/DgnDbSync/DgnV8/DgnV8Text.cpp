@@ -390,6 +390,48 @@ void Converter::ConvertTextStyleForRun(AnnotationRunBase& dbRun, DgnV8Api::DgnTe
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2018
+//---------------------------------------------------------------------------------------
+static AnnotationTextBlock::HorizontalJustification remapV8Justification(DgnV8Api::TextElementJustification v8Justification)
+    {
+    switch (v8Justification)
+        {
+        case DgnV8Api::TextElementJustification::CenterBaseline:
+        case DgnV8Api::TextElementJustification::CenterCap:
+        case DgnV8Api::TextElementJustification::CenterDescender:
+        case DgnV8Api::TextElementJustification::CenterMiddle:
+        case DgnV8Api::TextElementJustification::CenterTop:
+            return AnnotationTextBlock::HorizontalJustification::Center;
+
+        case DgnV8Api::TextElementJustification::LeftBaseline:
+        case DgnV8Api::TextElementJustification::LeftCap:
+        case DgnV8Api::TextElementJustification::LeftDescender:
+        case DgnV8Api::TextElementJustification::LeftMarginBaseline:
+        case DgnV8Api::TextElementJustification::LeftMarginCap:
+        case DgnV8Api::TextElementJustification::LeftMarginDescender:
+        case DgnV8Api::TextElementJustification::LeftMarginMiddle:
+        case DgnV8Api::TextElementJustification::LeftMarginTop:
+        case DgnV8Api::TextElementJustification::LeftMiddle:
+        case DgnV8Api::TextElementJustification::LeftTop:
+            return AnnotationTextBlock::HorizontalJustification::Left;
+
+        case DgnV8Api::TextElementJustification::RightBaseline:
+        case DgnV8Api::TextElementJustification::RightCap:
+        case DgnV8Api::TextElementJustification::RightDescender:
+        case DgnV8Api::TextElementJustification::RightMarginBaseline:
+        case DgnV8Api::TextElementJustification::RightMarginCap:
+        case DgnV8Api::TextElementJustification::RightMarginDescender:
+        case DgnV8Api::TextElementJustification::RightMarginMiddle:
+        case DgnV8Api::TextElementJustification::RightMarginTop:
+        case DgnV8Api::TextElementJustification::RightMiddle:
+        case DgnV8Api::TextElementJustification::RightTop:
+            return AnnotationTextBlock::HorizontalJustification::Right;
+        }
+
+    return AnnotationTextBlock::HorizontalJustification::Left;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2015
 //---------------------------------------------------------------------------------------
 AnnotationTextBlockPtr Converter::_ConvertV8TextBlock(DgnV8Api::TextBlock const& v8Text)
@@ -400,7 +442,11 @@ AnnotationTextBlockPtr Converter::_ConvertV8TextBlock(DgnV8Api::TextBlock const&
     // When Db subsumes at a higher level, just assume the first child's properties and homogenize.
     DgnV8Api::DgnTextStylePtr v8BlockStyle = v8Text.Begin().CreateEffectiveTextStyle();
     ConvertTextStyleForDocument(*dbText, *v8BlockStyle);
-    
+
+    // These are conveyed directly on the AnnotationTextBlock, not its style.
+    dbText->SetJustification(remapV8Justification(v8BlockStyle->GetJustification()));
+    dbText->SetDocumentWidth(v8Text.GetProperties().GetDocumentWidth() / v8Text.GetDgnModelR().GetModelInfo().GetUorPerMeter());
+
     DgnV8Api::ParagraphRange v8Paragraphs(v8Text);
     for (DgnV8Api::ParagraphIterator v8ParagraphIter = v8Paragraphs.begin(); v8ParagraphIter != v8Paragraphs.end(); ++v8ParagraphIter)
         {
@@ -520,6 +566,61 @@ void ConvertV8TextToDgnDbExtension::_DetermineElementParams(DgnClassId& dbClass,
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2018
+//---------------------------------------------------------------------------------------
+static TextAnnotation::AnchorPoint remapV8AnchorPoint(DgnV8Api::TextElementJustification v8Justification)
+    {
+    switch (v8Justification)
+        {
+        
+        case DgnV8Api::TextElementJustification::LeftCap:
+        case DgnV8Api::TextElementJustification::LeftMarginCap:
+        case DgnV8Api::TextElementJustification::LeftMarginTop:
+        case DgnV8Api::TextElementJustification::LeftTop:
+            return TextAnnotation::AnchorPoint::LeftTop;
+
+        case DgnV8Api::TextElementJustification::LeftMarginMiddle:
+        case DgnV8Api::TextElementJustification::LeftMiddle:
+            return TextAnnotation::AnchorPoint::LeftMiddle;
+
+        case DgnV8Api::TextElementJustification::LeftBaseline:
+        case DgnV8Api::TextElementJustification::LeftDescender:
+        case DgnV8Api::TextElementJustification::LeftMarginBaseline:
+        case DgnV8Api::TextElementJustification::LeftMarginDescender:
+            return TextAnnotation::AnchorPoint::LeftBottom;
+
+        case DgnV8Api::TextElementJustification::CenterCap:
+        case DgnV8Api::TextElementJustification::CenterTop:
+            return TextAnnotation::AnchorPoint::CenterTop;
+
+        case DgnV8Api::TextElementJustification::CenterMiddle:
+            return TextAnnotation::AnchorPoint::CenterMiddle;
+
+        case DgnV8Api::TextElementJustification::CenterBaseline:
+        case DgnV8Api::TextElementJustification::CenterDescender:
+            return TextAnnotation::AnchorPoint::CenterBottom;
+
+        case DgnV8Api::TextElementJustification::RightCap:
+        case DgnV8Api::TextElementJustification::RightMarginCap:
+        case DgnV8Api::TextElementJustification::RightMarginTop:
+        case DgnV8Api::TextElementJustification::RightTop:
+            return TextAnnotation::AnchorPoint::RightTop;
+
+        case DgnV8Api::TextElementJustification::RightMarginMiddle:
+        case DgnV8Api::TextElementJustification::RightMiddle:
+            return TextAnnotation::AnchorPoint::RightMiddle;
+
+        case DgnV8Api::TextElementJustification::RightBaseline:
+        case DgnV8Api::TextElementJustification::RightDescender:
+        case DgnV8Api::TextElementJustification::RightMarginBaseline:
+        case DgnV8Api::TextElementJustification::RightMarginDescender:
+            return TextAnnotation::AnchorPoint::RightBottom;
+        }
+
+    return TextAnnotation::AnchorPoint::LeftTop;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     08/2015
 //---------------------------------------------------------------------------------------
 void ConvertV8TextToDgnDbExtension::_ProcessResults(ElementConversionResults& results, DgnV8EhCR v8Eh, ResolvedModelMapping const& v8mm, Converter& converter)
@@ -577,6 +678,7 @@ void ConvertV8TextToDgnDbExtension::_ProcessResults(ElementConversionResults& re
 
     TextAnnotation annotation(db);
     annotation.SetText(dbText.get());
+    annotation.SetAnchorPoint(remapV8AnchorPoint(v8Text->Begin().CreateEffectiveTextStyle()->GetJustification()));
 
     //.............................................................................................
     // Add the text data to the element.
