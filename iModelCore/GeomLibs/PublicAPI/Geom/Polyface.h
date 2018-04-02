@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------m-------------------------+
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: PublicAPI/Geom/Polyface.h $
 |
@@ -546,13 +546,13 @@ struct PolyfaceAuxData : RefCountedBase
     DEFINE_POINTER_SUFFIX_TYPEDEFS(Channels);
     DEFINE_REF_COUNTED_PTR(Channel);
 
-    enum TransformType
+    enum DataType
         {
-        None        = 0,
-        Vector      = 1,
-        Convector   = 2,
-        Point       = 3, 
-        Distance    = 4,
+        Scalar      = 0,
+        Distance    = 1,
+        Vector      = 2,
+        Convector   = 3,
+        Point       = 4, 
         };
 
     struct Data : RefCountedBase
@@ -564,8 +564,11 @@ struct PolyfaceAuxData : RefCountedBase
         bvector<float>     m_values;
 
         public:
-        float  GetInput() const                        { return m_input; }
-        bvector<float> const& GetValues()              { return m_values; }
+        float  GetInput() const                     { return m_input; }
+        size_t GetValueCount() const                { return m_values.size(); }
+        bvector<float> const& GetValues() const     { return m_values; }
+        void   GetValueRange(float& min, float& max);
+        void   AddValue(float value)                { m_values.push_back(value); }
 
         Data(float input, bvector<float>&& values) : m_input(input), m_values(values) { }
         };
@@ -574,29 +577,29 @@ struct PolyfaceAuxData : RefCountedBase
         {
         private:
 
-        uint32_t            m_blockSize;        // Block size. 
-        uint32_t            m_transformType;    // 0 = none, 1 = vector, 2 = convector, 3 = point. 4 = distance.
-
+        DataType            m_dataType;         
         Utf8String          m_name;             // Channel name (stress, temperature etc...)
         Utf8String          m_inputName;        // Input that may vary, time, force etc...
         bvector<DataPtr>    m_data;
 
         public:
-        Channel(uint32_t blockSize, TransformType transformType, Utf8CP name, Utf8CP inputName, bvector<DataPtr> const&& data) : 
-                m_blockSize(blockSize), m_transformType(transformType), m_name(name), m_inputName(inputName), m_data(data) { }
+        Channel(DataType dataType, Utf8CP name, Utf8CP inputName, bvector<DataPtr> const&& data) : 
+                m_dataType(dataType), m_name(name), m_inputName(inputName), m_data(data) { }
 
-        uint32_t            GetBlockSize() const        { return m_blockSize; }
-        TransformType       GetTransformType() const    { return (TransformType) m_transformType; }
+        DataType            GetDataType() const         { return (DataType) m_dataType; }
         Utf8StringCR        GetName() const             { return m_name; }
         Utf8StringCR        GetInputName() const        { return m_inputName; }
         bvector<DataPtr> const& GetData() const         { return m_data; }     
+        bool                IsScalar() const            { return DataType::Scalar == m_dataType || DataType::Distance == m_dataType; } 
         GEOMDLLIMPEXP void  AppendDataByIndex(ChannelCR input, size_t index);
+        size_t              GetValueCount() const       { return m_data.empty() ? 0 : m_data.front()->GetValueCount(); }
         };
     
     struct Channels : bvector<ChannelPtr> 
         {
         GEOMDLLIMPEXP void    Init(ChannelsCR input);
         GEOMDLLIMPEXP void    AppendDataByIndex(ChannelsCR input, size_t index);
+        size_t                  GetValueCount() const  { return empty() ? 0 : front()->GetValueCount(); }
         };
 
     private:
@@ -605,7 +608,9 @@ struct PolyfaceAuxData : RefCountedBase
 
     public:
     bvector<int32_t> const& GetIndices() const          { return m_indices; }
-    ChannelsCR GetChannels() const      { return m_channels; }
+    ChannelsCR GetChannels() const                      { return m_channels; }
+    GEOMDLLIMPEXP ChannelCPtr GetChannel(Utf8CP name) const;
+
     
     PolyfaceAuxData(bvector<int32_t>&& indices, Channels&& channels) : m_indices(indices), m_channels(channels) { }
     PolyfaceAuxDataPtr CreateForVisitor() const;
@@ -2892,15 +2897,17 @@ GEOMDLLIMPEXP BlockedVectorIntR                 ClientColorIndex  ();
 GEOMDLLIMPEXP BlockedVectorIntR                 ClientFaceIndex  ();
 
 //! Get reference to the contiguous array of zero-based indices into client mesh points.
-GEOMDLLIMPEXP int32_t const*                      GetClientPointIndexCP () const;
+GEOMDLLIMPEXP int32_t const*                    GetClientPointIndexCP () const;
 //! Get reference to the contiguous array of zero-based indices into client mesh colors.
-GEOMDLLIMPEXP int32_t const*                      GetClientColorIndexCP() const;
+GEOMDLLIMPEXP int32_t const*                    GetClientColorIndexCP() const;
 //! Get reference to the contiguous array of zero-based indices into client mesh params.
-GEOMDLLIMPEXP int32_t const*                      GetClientParamIndexCP() const;
+GEOMDLLIMPEXP int32_t const*                    GetClientParamIndexCP() const;
 //! Get reference to the contiguous array of zero-based indices into client mesh normals.
-GEOMDLLIMPEXP int32_t const*                      GetClientNormalIndexCP() const;
+GEOMDLLIMPEXP int32_t const*                    GetClientNormalIndexCP() const;
 //! Get reference to the contiguous array of zero-based indices into client mesh faces.
-GEOMDLLIMPEXP int32_t const*                      GetClientFaceIndexCP() const;
+GEOMDLLIMPEXP int32_t const*                    GetClientFaceIndexCP() const;
+//! Get reference to the contiguous array of zero-based indices into auxilliaryData.
+GEOMDLLIMPEXP int32_t const*                    GetClientAuxIndexCP() const;
 
 //! access zero-based point index and visibility flag for an vertex within the current face.
 GEOMDLLIMPEXP bool TryGetClientZeroBasedPointIndex (int zeroBasedVisitorIndex, int &zeroBasedIndex, bool &visible);

@@ -316,8 +316,7 @@ table PolyfaceAuxChannelData
 	}
 table PolyfaceAuxChannel
     {
-    blockSize       :   int;
-	transformType   :   int;
+    dataType        :   int;
 	name            :   string;
 	inputName       :   string;
 	data            :  [PolyfaceAuxChannelData];

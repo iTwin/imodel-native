@@ -40,23 +40,33 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
     DPoint3dCP                      points = GetPointCP();
     DVec3dCP                        normals = GetNormalCP();
     DPoint2dCP                      params = GetParamCP();
+    PolyfaceAuxDataCPtr             auxData = GetAuxDataCP();
     size_t                          nextClusterIndex = 0;
-    bool                            doNormals = (nullptr != normals), doParams = (nullptr != params);
+    bool                            doNormals = (nullptr != normals), doParams = (nullptr != params), doAux = auxData.IsValid();
 
     struct Cluster : RefCountedBase
         {
         bvector<int32_t>    m_pointIndices;
         bvector<int32_t>    m_normalIndices;
         bvector<int32_t>    m_paramIndices;
+        bvector<int32_t>    m_auxIndices;
         size_t              m_outputPointIndex;
         size_t              m_outputParamIndex;
+        size_t              m_outputNormalIndex;
+        size_t              m_outputAuxIndex;
         DVec3d              m_outputNormal;
-
-        void Add (int32_t pointIndex, int32_t normalIndex, int32_t paramIndex)
+ 
+        void Add (int32_t pointIndex, int32_t normalIndex, int32_t paramIndex, int32_t auxIndex)
             {
             m_pointIndices.push_back(pointIndex);
-            m_normalIndices.push_back(normalIndex);                                                          
-            m_paramIndices.push_back(paramIndex);
+            if (normalIndex >= 0)
+                m_normalIndices.push_back(normalIndex);                                                          
+
+            if (paramIndex >= 0)
+                m_paramIndices.push_back(paramIndex);
+
+            if (auxIndex >= 0)
+                m_auxIndices.push_back(auxIndex);
             }
         };
     
@@ -73,6 +83,7 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
             int32_t     inputPointIndex  = visitor->GetClientPointIndexCP()[i];
             int32_t     inputNormalIndex = doNormals ? visitor->GetClientNormalIndexCP()[i] : -1;
             int32_t     inputParamIndex  = doParams  ? visitor->GetClientParamIndexCP()[i] : -1; 
+            int32_t     inputAuxIndex    = doAux     ? visitor->GetClientAuxIndexCP()[i] : -1;
             size_t      clusterIndex;
 
             auto        foundCluster = inputPointIndexToCluster.find(inputPointIndex);
@@ -94,29 +105,32 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
                 
                 auto        clusterInsert = clusters.Insert(clusterIndex, new Cluster());
 
-                clusterInsert.first->second->Add(inputPointIndex, inputNormalIndex, inputParamIndex);
+                clusterInsert.first->second->Add(inputPointIndex, inputNormalIndex, inputParamIndex, inputAuxIndex);
                 inputPointIndexToCluster.Insert(inputPointIndex, clusterInsert.first->second.get());
                 }
             else
                 {
-                foundCluster->second->Add(inputPointIndex, inputNormalIndex, inputParamIndex);
+                foundCluster->second->Add(inputPointIndex, inputNormalIndex, inputParamIndex, inputAuxIndex);
                 }
             }
         }
-
 
     if (clusters.size() == GetPointCount())
         return nullptr;     // No Clusters found.
 
     PolyfaceHeaderPtr                   decimatedPolyface = PolyfaceHeader::CreateVariableSizeIndexed();
     LightweightPolyfaceBuilderPtr       coordinateMap = LightweightPolyfaceBuilder::Create(*decimatedPolyface);
+    PolyfaceAuxData::ChannelsCP         inputAuxChannels = doAux ? &auxData->GetChannels() : nullptr;
+    PolyfaceAuxData::Channels           outputAuxChannels;
+
+    if (doAux)
+        outputAuxChannels.Init( GetAuxDataCP()->GetChannels());
 
     // Build clustered points.
     for (auto& pair : clusters)
         {
         auto const& cluster = pair.second;
         DPoint3d    point  = DPoint3d::FromZero();
-        DPoint2d    param  = DPoint2d::FromZero();
         double      scale = 1.0 / (double) cluster->m_pointIndices.size();
 
         for (auto& pointIndex : cluster->m_pointIndices)
@@ -136,13 +150,37 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
             }
         if (doParams)
             {
+            DPoint2d    param  = DPoint2d::FromZero();
+
             for (auto& paramIndex : cluster->m_paramIndices)
                 param.Add(params[paramIndex]);
         
             param.Scale(scale);
             cluster->m_outputParamIndex = coordinateMap->FindOrAddParam(param);
             }
+        if (doAux)
+            {
+            cluster->m_outputAuxIndex = outputAuxChannels.GetValueCount();
+            for (size_t iChannel = 0; iChannel < inputAuxChannels->size(); iChannel++)
+                {
+                PolyfaceAuxData::ChannelCR inputChannel  = *inputAuxChannels->at(iChannel);
+                PolyfaceAuxData::ChannelR  outputChannel = *outputAuxChannels.at(iChannel);
+
+                for (size_t iData = 0; iData < inputChannel.GetData().size(); iData++)
+                    {
+                    float           value = 0.0;
+                    float const*    inValues = inputChannel.GetData().at(iData)->GetValues().data();
+
+                    for (auto& auxIndex : cluster->m_auxIndices)
+                        value += inValues[auxIndex];
+                        
+                    value *= (float) scale;
+                    outputChannel.GetData().at(iData)->AddValue(value);
+                    }
+                }
+            }
         }
+    bvector<int32_t>            outputAuxIndices;
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach (*this); visitor->AdvanceToNextFace(); )
         {
@@ -171,8 +209,6 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
             for (auto& cluster : faceClusters)
                 {
                 coordinateMap->AddPointIndex(cluster->m_outputPointIndex, true /* Visiblity,,, TBD if necessary */ );
-                if (doParams)
-                    coordinateMap->AddParamIndex(cluster->m_outputParamIndex);
 
                 if (doNormals)
                     {
@@ -184,13 +220,29 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
                     DVec3dCR                normal = cluster->m_outputNormal.DotProduct (faceNormal) > s_minClusterNormalDot ? cluster->m_outputNormal : faceNormal;
                     coordinateMap->AddNormalIndex(coordinateMap->FindOrAddNormal(normal));
                     }
+                if (doParams)
+                    coordinateMap->AddParamIndex(cluster->m_outputParamIndex);
+
+                if (doAux)
+                    outputAuxIndices.push_back((int32_t) cluster->m_outputAuxIndex + 1);
                 }
             coordinateMap->AddPointIndexTerminator();
             if (doNormals)
                 coordinateMap->AddNormalIndexTerminator();
             if (doParams)
                 coordinateMap->AddParamIndexTerminator();
+            if (doAux)
+                outputAuxIndices.push_back(0);
+                
             }
+        }
+
+
+    if (doAux)
+        {
+        PolyfaceAuxDataPtr  decimatedAuxData = new PolyfaceAuxData(std::move(outputAuxIndices), std::move(outputAuxChannels));
+
+        decimatedPolyface->SetAuxData(decimatedAuxData);
         }
     return decimatedPolyface;
     }

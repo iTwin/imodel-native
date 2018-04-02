@@ -689,8 +689,7 @@ flatbuffers::Offset<BGFB::PolyfaceAuxChannel> WriteAsFBPolyfaceAuxChannel(Polyfa
     auto    fbData = m_fbb.CreateVector(fbDataVector);
 
     BGFB::PolyfaceAuxChannelBuilder builder (m_fbb);
-    builder.add_blockSize (pChannel->GetBlockSize());
-    builder.add_transformType (pChannel->GetTransformType());
+    builder.add_dataType(pChannel->GetDataType());
     builder.add_name (fbName);
     builder.add_inputName (fbInputName);
     builder.add_data(fbData);
@@ -1034,7 +1033,7 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPol
             memcpy (values.data(), fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(float));
             channelDataVector.push_back(new PolyfaceAuxData::Data(fbChannelData->input(), std::move(values)));
             }
-        channels.push_back(new PolyfaceAuxData::Channel(fbChannel->blockSize(), PolyfaceAuxData::TransformType(fbChannel->transformType()), fbChannel->name()->c_str(), fbChannel->inputName()->c_str(), std::move(channelDataVector)));
+        channels.push_back(new PolyfaceAuxData::Channel(PolyfaceAuxData::DataType(fbChannel->dataType()), fbChannel->name()->c_str(), fbChannel->inputName()->c_str(), std::move(channelDataVector)));
         }
 
     return new PolyfaceAuxData(std::move(indices), std::move(channels));
