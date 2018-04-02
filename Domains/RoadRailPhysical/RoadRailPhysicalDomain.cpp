@@ -30,6 +30,19 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
 
     RegisterHandler(PathwayElementHandler::GetHandler());
 
+    RegisterHandler(SignificantPointDefinitionHandler::GetHandler());
+    RegisterHandler(TravelwaySignificantPointDefHandler::GetHandler());
+    RegisterHandler(TravelwaySideSignificantPointDefHandler::GetHandler());
+    RegisterHandler(TravelwayStructureSignificantPointDefHandler::GetHandler());
+
+    RegisterHandler(PathwayPortionElementHandler::GetHandler());
+    RegisterHandler(ThruTravelCompositeHandler::GetHandler());
+    RegisterHandler(ThruTravelSeparationCompositeHandler::GetHandler());
+    RegisterHandler(ThruwayCompositeHandler::GetHandler());
+    RegisterHandler(ThruwaySeparationCompositeHandler::GetHandler());
+
+    RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
+
     RegisterHandler(RailwayHandler::GetHandler());
     RegisterHandler(RoadwayHandler::GetHandler());    
     }
@@ -72,9 +85,32 @@ PhysicalModelPtr RoadRailPhysicalDomain::QueryPhysicalModel(Dgn::SubjectCR paren
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus createRoadwayStandardsPartition(SubjectCR subject)
+    {
+    DgnDbStatus status;
+
+    auto roadwayStandardsPartitionPtr = DefinitionPartition::Create(subject, RoadRailPhysicalDomain::GetDefaultStandardsPartitionName());
+    if (roadwayStandardsPartitionPtr->Insert(&status).IsNull())
+        return status;
+
+    auto roadwayStandardsModelPtr = RoadwayStandardsModel::Create(
+        RoadwayStandardsModel::CreateParams(subject.GetDgnDb(), roadwayStandardsPartitionPtr->GetElementId()));
+
+    if (DgnDbStatus::Success != (status = roadwayStandardsModelPtr->Insert()))
+        return status;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject, Utf8CP physicalPartitionName)
     {
     DgnDbStatus status;
+
+    if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(subject)))
+        return status;
 
     if (DgnDbStatus::Success != (status = createPhysicalPartition(subject, physicalPartitionName)))
         return status;
@@ -88,6 +124,14 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject, 
 void createCodeSpecs(DgnDbR dgndb)
     {
     auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadTravelway, CodeScopeSpec::CreateModelScope());
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
+        {
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
+        }
+
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_SignificantPointDefinition, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {

@@ -31,6 +31,7 @@ public:
         bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
     ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryPhysicalModel(Dgn::SubjectCR parentSubject, Utf8CP modelName);
     static Utf8CP GetDefaultPhysicalPartitionName() { return "Roads/Rail Physical"; }
+    static Utf8CP GetDefaultStandardsPartitionName() { return "Roadway Standards"; }
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetGeometricElementAsBoundingContentForSheet(Dgn::GeometricElementCR boundingElm, Dgn::Sheet::ElementCR sheet);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementIdSet QueryElementIdsBoundingContentForSheets(Dgn::DgnDbCR dgnDb);

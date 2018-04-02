@@ -10,23 +10,37 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-
-    <ECEntityClass typeName="PathwayElement" modifier="Abstract" description="A long, narrow physical stretch specially constructed for a particular travel type." >
-        <BaseClass>bis:PhysicalElement</BaseClass>
-        <BaseClass>lr:ILinearElementSource</BaseClass>
+    <ECEntityClass typeName="RoadwayStandardsModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="MainLinearElement" relationshipName="PathwayRefersToMainLinearElement" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PathwayRefersToMainLinearElement" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+
+    <ECEntityClass typeName="IMainLinearElementSource" modifier="Abstract" description="An ILinearElementSource providing an ILinearElement considered as the main linear-referencing axis for Road/Rail purposes.">
+        <BaseClass>lr:ILinearElementSource</BaseClass>
+        <ECCustomAttributes>
+            <IsMixin xmlns='CoreCustomAttributes.01.00'>
+                <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
+            </IsMixin>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="MainLinearElement" relationshipName="ILinearElementSourceRefersToMainLinearElement" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ILinearElementSourceRefersToMainLinearElement" strength="referencing" strengthDirection="Forward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to main">
-            <Class class="PathwayElement"/>
+            <Class class="IMainLinearElementSource"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="main is referenced by">
             <Class class="lr:ILinearElement"/>
         </Target>
     </ECRelationshipClass>
+    <ECEntityClass typeName="PathwayElement" modifier="Abstract" description="A long, narrow physical stretch specially constructed for a particular travel type." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>IMainLinearElementSource</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="Roadway" modifier="Sealed" description="A Pathway with a smoothed or paved surface, made for traveling by motor vehicle, carriage, etc." >
         <BaseClass>PathwayElement</BaseClass>
         <ECCustomAttributes>
@@ -35,6 +49,97 @@
     </ECEntityClass>
     <ECEntityClass typeName="Railway" modifier="Sealed" description="A Pathway with a track or set of tracks along which passenger and freight trains run." >
         <BaseClass>PathwayElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PathwayAssemblesElements" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="assembles">
+            <Class class="PathwayElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is assembled by">
+            <Class class="bis:PhysicalElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PathwayPortionElement" modifier="Abstract" description="Physical Portion of a Pathway.">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ThruTravelComposite" modifier="Abstract" description="A PathwayPortion specially constructed for continuous travel of a particular type.">
+        <BaseClass>PathwayPortionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ThruTravelSeparationComposite" modifier="Abstract" description="A PathwayPortion specially constructed to separate two portions of continuous travel.">
+        <BaseClass>PathwayPortionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ThruwayComposite" modifier="Sealed" description="A ThruTravelComposite specified using linear-referencing methods.">
+        <BaseClass>ThruTravelComposite</BaseClass>
+        <BaseClass>IMainLinearElementSource</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ThruwaySeparationComposite" modifier="Sealed" description="A ThruTravelSeparationComposite specified using linear-referencing methods.">
+        <BaseClass>ThruTravelSeparationComposite</BaseClass>
+        <BaseClass>IMainLinearElementSource</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ILinearElementSourceRefersToGeneratedILinearElements" strength="referencing" modifier="Sealed">
+        <BaseClass>lr:ILinearElementSourceProvidesILinearElements</BaseClass>
+        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
+            <Class class="lr:ILinearElementSource"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="lr:ILinearElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEnumeration typeName="SignificantPointDefinition_ExpectedAtSurface" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Internal"/>
+        <ECEnumerator value="1" displayLabel="Top"/>
+        <ECEnumerator value="2" displayLabel="Bottom"/>
+        <ECEnumerator value="4" displayLabel="TopAndBottom"/>
+    </ECEnumeration>
+    <ECEntityClass typeName="SignificantPointDefinition" displayLabel="Significant Point Definition" modifier="Abstract" description="Base class for point constructs in a TypicalSection portion definition.">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="GenerateLinearElement" typeName="boolean" />
+        <ECProperty propertyName="ExpectedAtSurface" typeName="SignificantPointDefinition_ExpectedAtSurface" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ILinearElementAssociatedWithSignificantPointDefinition" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="is associated with" polymorphic="true">
+            <Class class="lr:ILinearElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="SignificantPointDefinition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TravelwaySignificantPointDef" displayLabel="Travelway Significant Point Definition" modifier="Sealed" description="Point constructs in a Travelway portion definition.">
+        <BaseClass>SignificantPointDefinition</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwaySideSignificantPointDef" displayLabel="TravelwaySide Significant Point Definition" modifier="Sealed" description="Point constructs in a TravelwaySide portion definition.">
+        <BaseClass>SignificantPointDefinition</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwayStructureSignificantPointDef" displayLabel="TravelwayStructure Significant Point Definition" modifier="Sealed" description="Point constructs in a TravelwayStructure portion definition.">
+        <BaseClass>SignificantPointDefinition</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>

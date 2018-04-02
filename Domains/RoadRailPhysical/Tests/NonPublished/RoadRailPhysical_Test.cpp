@@ -9,13 +9,20 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     DgnDbPtr projectPtr = CreateProject(L"BasicRoadwayTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
-    DgnModelId alignmentModelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
-    auto alignModelPtr = AlignmentModel::Get(*projectPtr, alignmentModelId);
+    RoadwayStandardsModelCPtr standardsModel = RoadwayStandardsModel::Query(*projectPtr->Elements().GetRootSubject());
+    ASSERT_TRUE(standardsModel.IsValid());
+
+    auto clPointDefPtr = TravelwaySignificantPointDef::CreateAndInsert(*standardsModel, "CL", "Center-line");
+    ASSERT_TRUE(clPointDefPtr.IsValid());
+
+    auto alignModelPtr = AlignmentModel::Query(*projectPtr->Elements().GetRootSubject());
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
+
+    ILinearElementUtilities::SetAssociatedSignificantPointDef(*alignmentPtr, clPointDefPtr.get());
 
     // Create Horizontal 
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
@@ -46,7 +53,8 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     ASSERT_TRUE(roadwayCPtr.IsValid());    
     ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->GetMainLinearElementId());
 
-    alignmentPtr->SetILinearElementSource(roadwayPtr.get());
+    alignmentPtr->SetILinearElementSource(roadwayPtr.get(), 
+        ILinearElementUtilities::QueryILinearElementSourceRefersToGeneratedILinearElementsRelClassId(*projectPtr));
     ASSERT_TRUE(alignmentPtr->Update().IsValid());
 
     auto linearElements = roadwayPtr->QueryLinearElements();
