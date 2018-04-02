@@ -650,8 +650,8 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
     if (DbResult::BE_SQLITE_OK == m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
         {
 
-        Json::Value iModelCreation(Json::objectValue);
-        JsonValueR changedInstance = iModelCreation[ServerSchema::ChangedInstance] = Json::objectValue;
+        Json::Value changesetMetadata(Json::objectValue);
+        JsonValueR changedInstance = changesetMetadata[ServerSchema::ChangedInstance] = Json::objectValue;
         changedInstance["change"] = "Created";
         JsonValueR InstanceAfterChange = changedInstance[ServerSchema::InstanceAfterChange] = Json::objectValue;
         InstanceAfterChange[ServerSchema::InstanceId] = "";
@@ -667,7 +667,20 @@ Response RequestHandler::PushChangeSetMetadata(Request req)
         properties[ServerSchema::Property::ParentId] = "";
         properties[ServerSchema::Property::SeedFileId] = "";
         properties[ServerSchema::Property::Index] = "";
-        Utf8String contentToWrite(Json::FastWriter().write(iModelCreation));
+        JsonValueR relationshipInstances = InstanceAfterChange[ServerSchema::RelationshipInstances] = Json::objectValue;
+        relationshipInstances[ServerSchema::InstanceId] = "";
+        relationshipInstances[ServerSchema::SchemaName] = "";
+        relationshipInstances[ServerSchema::ClassName] = "";
+        relationshipInstances["direction"] = "forward";
+        JsonValueR relatedInstance = relationshipInstances[ServerSchema::RelatedInstance] = Json::objectValue;
+        relatedInstance[ServerSchema::InstanceId] = "";
+        relatedInstance[ServerSchema::SchemaName] = "iModelScope";
+        relatedInstance[ServerSchema::ClassName] = "AccessKey";
+        JsonValueR propertiesl1 = relationshipInstances[ServerSchema::Properties] = Json::objectValue;
+        properties[ServerSchema::Property::UploadUrl] = 2;
+        properties[ServerSchema::Property::DownloadUrl] = NULL;
+
+        Utf8String contentToWrite(Json::FastWriter().write(changesetMetadata));
 
         return StubJsonHttpResponse(HttpStatus::Created, req.GetUrl().c_str(), contentToWrite);
         }
