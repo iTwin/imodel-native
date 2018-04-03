@@ -1684,6 +1684,13 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             }
 
         ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest);
+        if (!ECSchemaConverter::Convert(*toImport, false))
+            {
+            Utf8PrintfString error("Failed to run the schema converter on exported ECSchema '%s'", toImport->GetFullSchemaName().c_str());
+            GetLogger().error(error.c_str());
+            return BSIERROR;
+            }
+
 //#define EXPORT_FLATTENEDECSCHEMAS 1
 #ifdef EXPORT_FLATTENEDECSCHEMAS
         BeFileName flatFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_flat").c_str());
@@ -1705,7 +1712,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
 
         if (SUCCESS != ImportSchema(toImport))
             {
-            GetLogger().fatalv("Failed to import schema %s.  Unable to continue.", schemaName);
+            GetLogger().errorv("Failed to import schema %s.  Unable to continue.", schemaName);
             return ERROR;
             }
         bpair<Utf8String, SchemaKey> pair(ecSchema->GetName(), ecSchema->GetSchemaKey());
