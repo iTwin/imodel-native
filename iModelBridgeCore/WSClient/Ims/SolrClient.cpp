@@ -69,7 +69,7 @@ AsyncTaskPtr<SolrGetResult> SolrClient::SendGetRequest(SolrQueryCR query) const
 
     Http::Request request = m_httpClient->CreateGetJsonRequest(url);
 
-    return request.PerformAsync()->Then<SolrGetResult>([this] (Http::Response& httpResponse)
+    return request.PerformAsync()->Then<SolrGetResult>([] (Http::Response& httpResponse)
         {
         HttpStatus status = httpResponse.GetHttpStatus();
         if (HttpStatus::OK == status ||

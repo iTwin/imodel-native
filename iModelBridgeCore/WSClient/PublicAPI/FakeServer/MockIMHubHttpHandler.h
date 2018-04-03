@@ -7,6 +7,7 @@
  +--------------------------------------------------------------------------------------*/
 #pragma once
  //__PUBLISH_SECTION_START__
+#include "FakeServer.h"
 #include <Bentley/Tasks/LimitingTaskQueue.h>
 #include <Bentley/Tasks/WorkerThreadPool.h>
 #include <BeHttp/IHttpHandler.h>
@@ -23,8 +24,8 @@ struct MockIMSHttpHandler : public Http::IHttpHandler
 
     public:
        
-        MockIMSHttpHandler();
+        FAKESERVER_EXPORT MockIMSHttpHandler();
         virtual ~MockIMSHttpHandler() {}
-        virtual Tasks::AsyncTaskPtr<Http::Response> _PerformRequest(Http::RequestCR request) override;
+        FAKESERVER_EXPORT virtual Tasks::AsyncTaskPtr<Http::Response> _PerformRequest(Http::RequestCR request) override;
     };
 

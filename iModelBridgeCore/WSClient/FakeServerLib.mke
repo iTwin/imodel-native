@@ -71,9 +71,6 @@ LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)ECObjects$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)DgnPlatform$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)WebServicesClient$(stlibext) $(BuildContextLibsDirectory)$(libprefix)BentleyGeom$(stlibext)
 
-CREATE_STATIC_LIBRARIES = 1
-%include $(sharedMki)LinkLibrary.mki    
-
-%undef CREATE_STATIC_LIBRARIES
 %include $(sharedMki)LinkLibrary.mki
