@@ -549,9 +549,6 @@ DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const&
     {
     BeFileName projectFile(inFileName);
 
-    if (BeTest::IsInitialized())                                        // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
-        wprintf(L"!!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb %s\n", inFileName.c_str());     // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
-
     if (inFileName.IsEmpty())
         {
         projectFile.SetNameUtf8(BEDB_MemoryDb);

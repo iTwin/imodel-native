@@ -29,37 +29,17 @@ struct JsonUtils
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static Json::Value AngleInDegreesToJson(AngleInDegrees angle)
-    {
-    Json::Value val;
-    val[json_degrees()] = angle.Degrees();
-    return val;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static AngleInDegrees AngleInDegreesFromJson(JsonValueCR val)
-    {
-    return AngleInDegrees(ToAngle(val));
-    }
-
-/*---------------------------------------------------------------------------------**/ /**
-* @bsimethod                                    Keith.Bentley                   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Json::Value FromAngle(Angle angle)
-    {
-    Json::Value val;
-    val[json_degrees()] = angle.Degrees();
-    return val;
-    }
+static Json::Value AngleInDegreesToJson(AngleInDegrees angle) {return angle.Degrees();} // default for angles in json is degrees. 
+static AngleInDegrees AngleInDegreesFromJson(JsonValueCR val) {return AngleInDegrees(ToAngle(val));}
+static Json::Value FromAngle(Angle angle) {return angle.Degrees();}
 
 /*---------------------------------------------------------------------------------**/ /**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static Angle ToAngle(JsonValueCR val)
     {
-    if (val.isObject() && !val.isNull())
+    if (val.isNull()) return Angle::FromDegrees(0.0);
+    if (val.isObject())
         {
         if (val.isMember(json_degrees())) 
             return Angle::FromDegrees(val[json_degrees()].asDouble());
@@ -75,9 +55,10 @@ static Angle ToAngle(JsonValueCR val)
 static Json::Value YawPitchRollToJson(YawPitchRollAngles angles)
     {
     Json::Value val;
-    val[json_yaw()] = AngleInDegreesToJson(angles.GetYaw());
-    val[json_pitch()] = AngleInDegreesToJson(angles.GetPitch());
-    val[json_roll()] = AngleInDegreesToJson(angles.GetRoll());
+    // omit any members that are zero
+    if (angles.GetYaw().Degrees() != 0.0) val[json_yaw()] = AngleInDegreesToJson(angles.GetYaw());
+    if (angles.GetPitch().Degrees() != 0.0) val[json_pitch()] = AngleInDegreesToJson(angles.GetPitch());
+    if (angles.GetRoll().Degrees() != 0.0) val[json_roll()] = AngleInDegreesToJson(angles.GetRoll());
     return val;
     }
 
@@ -115,15 +96,18 @@ static DPoint3d ToDPoint3d(JsonValueCR inValue)
 
 static void DPoint3dFromJson(DPoint3dR point, Json::Value const& inValue) {point = ToDPoint3d(inValue);}
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
-//---------------------------------------------------------------------------------------
-static void DPoint3dToJson(JsonValueR outValue, DPoint3dCR point)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value DPoint3dToJson(DPoint3dCR point)
     {
-    outValue[0] = point.x;
-    outValue[1] = point.y;
-    outValue[2] = point.z;
+    Json::Value val;
+    val[0] = point.x;
+    val[1] = point.y;
+    val[2] = point.z;
+    return val;
     }
+static void DPoint3dToJson(JsonValueR outValue, DPoint3dCR point) {outValue = DPoint3dToJson(point);}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
@@ -220,18 +204,24 @@ static void DVec3dToJson(JsonValueR outValue, DVec3dCR vec)
     DPoint3dToJson(outValue, (DPoint3dCR)vec);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   MattGooding     09/12
-//---------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------**/ /**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
 static DRange3d ToDRange3d(JsonValueCR inValue)
     {
-    DRange3d range;
-    DPoint3dFromJson(range.low, inValue[json_low()]);
-    DPoint3dFromJson(range.high, inValue[json_high()]);
+    DRange3d range = DRange3d::NullRange();
+    if (inValue.isArray()) // if it's an array, just extend range by all points.
+        {
+        for (Json::ArrayIndex i=0; i<inValue.size(); ++i)
+            range.Extend(ToDPoint3d(inValue[i]));
+        return range;
+        }
+
+    range.Extend(ToDPoint3d(inValue[json_low()]));
+    range.Extend(ToDPoint3d(inValue[json_high()]));
     return range;
     }
 static void DRange3dFromJson(DRange3dR range, JsonValueCR inValue) {range = ToDRange3d(inValue);}
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
@@ -291,7 +281,6 @@ static RotMatrix ToRotMatrix(JsonValueCR inValue)
     }
 
 static void RotMatrixFromJson(RotMatrixR rotation, JsonValueCR inValue) {rotation = ToRotMatrix(inValue);}
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12

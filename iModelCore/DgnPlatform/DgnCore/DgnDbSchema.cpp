@@ -452,10 +452,18 @@ DbResult DgnDb::InitializeDgnDb(CreateDgnDbParams const& params)
 
     SavePropertyString(DgnProjectProperty::LastEditor(), Utf8String(T_HOST.GetProductName()));
     SavePropertyString(DgnProjectProperty::Client(), params.m_client);
+    
+    AxisAlignedBox3d extents = params.m_projectExtents;
+    if (extents.IsNull())
+        { 
+        extents.Extend(-1000.0, -1000.0, -500.0); // default lower left  bottom corner
+        extents.Extend(1000.0, 1000.0, 500.0);   // default upper right top corner
+        }
+    m_geoLocation.SetProjectExtents(extents);
+    m_geoLocation.SetGlobalOrigin(params.m_globalOrigin);
     m_geoLocation.Save();
 
     Domains().OnDbOpened();
-
     return SaveChanges();
     }
 

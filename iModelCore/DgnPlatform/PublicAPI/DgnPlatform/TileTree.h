@@ -377,7 +377,6 @@ protected:
     void MarkDamaged(DRange3dCR range);
     void UpdateRange(DirtyRangesCR dirty);
     void InvalidateDamagedTiles();
-    bvector<TileCPtr> SelectTiles(DrawArgsR args);
 
     Root(DgnDbR, DgnModelId, bool is3d, TransformCR, Utf8CP rootResource, Dgn::Render::SystemP);
 public:
@@ -386,6 +385,7 @@ public:
 
     //! Select appropriate tiles from available set based on context. If any needed tiles are not available, add them to the context's set of tile requests.
     bvector<TileCPtr> SelectTiles(SceneContextR context);
+    bvector<TileCPtr> SelectTiles(DrawArgsR args);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
     void StartTileLoad(TileLoadStatePtr) const;
@@ -448,6 +448,12 @@ public:
     //! @note During the traversal, previously loaded but now unused tiles are purged if they are expired.
     //! @note This method must be called from the client thread
     void DrawInView(SceneContextR context);
+
+    //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
+    //! @note Tiles which should be drawn but which are not yet available will be scheduled for progressive display.
+    //! @note During the traversal, previously loaded but now unused tiles are purged if they are expired.
+    //! @note This method must be called from the client thread
+    void DrawInView(DrawArgsR args);
 
     //! Perform a pick operation on the contents of this tree
     DGNPLATFORM_EXPORT void Pick(PickContext& context, TransformCR location, ClipVectorCP);
@@ -684,6 +690,7 @@ struct DrawArgs : TileArgs
     MissingNodesR m_missing;
     BeTimePoint m_now;
     BeTimePoint m_purgeOlderThan;
+    Render::ViewFlagsOverrides m_viewFlagsOverrides;
 
     DGNPLATFORM_EXPORT DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip = nullptr);
 

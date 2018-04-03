@@ -1247,3 +1247,18 @@ CurveVectorPtr  DgnGlyph::GetCurveVector(bool& isFilled) const
         return curves;
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     03/2018
+//---------------------------------------------------------------------------------------
+void DgnGlyphLayoutResult::ZeroNullRanges()
+    {
+    if (m_range.IsNull())
+        m_range.InitFrom(0.0, 0.0);
+
+    if (m_exactRange.IsNull())
+        m_exactRange.InitFrom(0.0, 0.0);
+
+    if (m_justificationRange.IsNull())
+        m_justificationRange.InitFrom(0.0, 0.0);
+    }

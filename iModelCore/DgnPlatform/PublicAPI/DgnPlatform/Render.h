@@ -641,13 +641,15 @@ struct Texture : RefCounted<NonCopyableClass>
 protected:
     TextureKey m_key;
     bool m_isGlyph;
+    bool m_isTileSection;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
-    explicit Texture(CreateParams const& params) : m_key(params.m_key), m_isGlyph(params.m_isGlyph) { }
+    explicit Texture(CreateParams const& params) : m_key(params.m_key), m_isGlyph(params.m_isGlyph), m_isTileSection(params.m_isTileSection) { }
 public:
     TextureKeyCR GetKey() const { return m_key; }
     bool IsGlyph() const { return m_isGlyph; }
+    bool IsTileSection() const { return m_isTileSection; }
 
     // Named textures should preserve their image data so it can be obtained later.
     virtual ImageSource GetImageSource() const { BeAssert(false); return ImageSource(); }
@@ -2463,6 +2465,14 @@ struct MeshEdges : RefCountedBase
     OctEncodedNormalPairList    m_silhouetteNormals;
 
     MeshEdges() { }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     03/2018
+//=======================================================================================
+struct MeshVertexAuxData        
+{
+    
 };
 
 //=======================================================================================

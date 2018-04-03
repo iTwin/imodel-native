@@ -28,6 +28,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 #define CHANGESET_FILE_EXT L"cs"
 
 // #define DEBUG_REVISION_KEEP_FILES 1
+// #define DUMP_REVISION 1
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
@@ -449,13 +450,23 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("------------------------------------------------------------------");
-        LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
-        if (cause != ChangeSet::ConflictCause::ForeignKey)
+        LOG.infov("Conflict detected - Cause: %s", GetConflictCauseDescription(cause));
+        if (cause == ChangeSet::ConflictCause::ForeignKey)
             {
             // Note: No current or conflicting row information is provided if it's a FKey conflict
+            int nConflicts = 0;
+            result = iter.GetFKeyConflicts(&nConflicts);
+            BeAssert(result == BE_SQLITE_OK);
+            LOG.infov("Detected %d foreign key conflicts in ChangeSet", nConflicts);
+            }
+        else 
+            {
             iter.Dump(dgndb, false, 1);
             }
         }
+
+    if (cause == ChangeSet::ConflictCause::ForeignKey)
+        return ChangeSet::ConflictResolution::Skip;
 
     if (cause == ChangeSet::ConflictCause::NotFound)
         {
@@ -1276,6 +1287,10 @@ RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
 
     PRECONDITION(GetParentRevisionId() == revision.GetParentId() && "Parent of revision should match the parent revision id of the Db", RevisionStatus::ParentMismatch);
 
+#ifdef DUMP_REVISION
+    revision.Dump(m_dgndb);
+#endif
+
     return txnMgr.MergeRevision(revision);
     }
 
@@ -1652,6 +1667,10 @@ RevisionStatus RevisionManager::DoReverseRevision(DgnRevisionCR revision)
         return RevisionStatus::ParentMismatch;
         }
 
+#ifdef DUMP_REVISION
+    revision.Dump(m_dgndb);
+#endif
+
     return txnMgr.ApplyRevision(revision, true /*=invert*/);
     }
 
@@ -1692,6 +1711,10 @@ RevisionStatus RevisionManager::DoReinstateRevision(DgnRevisionCR revision)
         BeAssert(false && "Parent of revision should match the parent revision id of the Db");
         return RevisionStatus::ParentMismatch;
         }
+
+#ifdef DUMP_REVISION
+    revision.Dump(m_dgndb);
+#endif
 
     return txnMgr.ApplyRevision(revision, false /*=invert*/);
     }
