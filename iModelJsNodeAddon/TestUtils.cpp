@@ -122,7 +122,7 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	origCurveVect->Add(loop1);
 	origCurveVect->Add(loop2);
 
-	ISolidPrimitivePtr origSolid = ISolidPrimitive::CreateDgnCone(DgnConeDetail::DgnConeDetail(DPoint3d::From(0, 0.34, 0), DPoint3d::From(0, 0, 1030.0), DVec3d::From(-1, 0, 0), DVec3d::From(-0, -0.9999999455179609, -0.00033009706939427836), 1.5, 1.5, true));
+	ISolidPrimitivePtr origSolid = ISolidPrimitive::CreateDgnCone(DgnConeDetail(DPoint3d::From(0, 0.34, 0), DPoint3d::From(0, 0, 1030.0), DVec3d::From(-1, 0, 0), DVec3d::From(-0, -0.9999999455179609, -0.00033009706939427836), 1.5, 1.5, true));
 
 	bvector<DPoint3d> bSurfacePts;
 	int numSurfacePts = props["numSurfacePts"].asInt();
@@ -239,7 +239,7 @@ static Json::Value lookAtUsingLensAngle(DgnDbR db, Utf8String params)
 	CurveVectorPtr loop2 = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_Outer, ICurvePrimitive::CreateArc(DEllipse3d::FromScaledRotMatrix(DPoint3d::From(-5, 0, 0), RotMatrix::FromRowValues(1, 0, 0, 0, 1, 0, 0, 0, 1), 1, 1, 0, Angle::TwoPi())));
 	origCurveVect->Add(loop1);
 	origCurveVect->Add(loop2);
-	ISolidPrimitivePtr origSolid = ISolidPrimitive::CreateDgnCone(DgnConeDetail::DgnConeDetail(DPoint3d::From(0, 0.34, 0), DPoint3d::From(0, 0, 1030.0), DVec3d::From(-1, 0, 0), DVec3d::From(-0, -0.9999999455179609, -0.00033009706939427836), 1.5, 1.5, true));
+	ISolidPrimitivePtr origSolid = ISolidPrimitive::CreateDgnCone(DgnConeDetail(DPoint3d::From(0, 0.34, 0), DPoint3d::From(0, 0, 1030.0), DVec3d::From(-1, 0, 0), DVec3d::From(-0, -0.9999999455179609, -0.00033009706939427836), 1.5, 1.5, true));
 	bvector<DPoint3d> pointArr;
 	int numSurfacePts = props["numSurfacePts"].asInt();
 	Json::Value surfacePts = props["bsurfacePts"];
