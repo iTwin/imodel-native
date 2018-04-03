@@ -478,9 +478,19 @@ BentleyStatus iModelBridgeFwk::ParseDocProps()
         {
         _GetDocumentProperties(docProps, m_jobEnvArgs.m_inputFileName);
         }
+    catch (const std::exception& ex)
+        {
+        fprintf(stdout, "ERROR - %s\n", ex.what());
+        return BSIERROR;
+        }
+    catch (const std::string& exdesc)
+        {
+        fprintf(stdout, "ERROR - %s\n", exdesc.c_str());
+        return BSIERROR;
+        }
     catch (...)
         {
-        fwprintf(stdout, L"Exception thrown from iModelBridgeRegistry!");
+        fwprintf(stdout, L"Unknown exception thrown from iModelBridgeRegistry!");
         return BSIERROR;
         }
 
@@ -1726,16 +1736,23 @@ void iModelBridgeFwk::SetRegistryForTesting(IModelBridgeRegistry& reg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 IModelBridgeRegistry& iModelBridgeFwk::GetRegistry()
     {
+    if (m_registry.IsValid())
+        return *m_registry;
+    
+    if (nullptr != s_registryForTesting)
+        return *(m_registry = s_registryForTesting);
+     
+    BeSQLite::DbResult res;
+    m_registry = iModelBridgeRegistry::OpenForFwk(res, m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
+
     if (!m_registry.IsValid())
         {
-        if (s_registryForTesting)
-            m_registry = s_registryForTesting;
-        else
-            m_registry = iModelBridgeRegistry::OpenForFwk(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName);
-
-        if (!m_registry.IsValid())
-            throw "iModelBridgeRegistry statedb open error";
+        std::string str (Utf8String(iModelBridgeRegistry::MakeDbName(m_jobEnvArgs.m_stagingDir, m_serverArgs.m_repositoryName)).c_str());
+        str.append(": ");
+        str.append(BeSQLite::Db::InterpretDbResult(res));
+        throw str;
         }
+
     return *m_registry;
     }
 
