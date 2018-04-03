@@ -273,14 +273,14 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
-    ASSERT_TRUE(koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
+    ASSERT_EQ(ECObjectsStatus::Success,koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
     // TODO
     //EC_ASSERT_SUCCESS(koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM")));
     //ASSERT_EQ(1, koq->GetPresentationUnitList().size());
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
-    ASSERT_TRUE(koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+    ASSERT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
     // TODO
     //EC_ASSERT_SUCCESS(koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT")));
     //ASSERT_EQ(1, koq->GetPresentationUnitList().size());

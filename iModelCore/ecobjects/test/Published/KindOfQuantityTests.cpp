@@ -91,8 +91,8 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     EC_EXPECT_SUCCESS(kindOfQuantity->SetDescription("Kind of a Description here"));
     EC_EXPECT_SUCCESS(kindOfQuantity->SetDisplayLabel("best quantity of all times"));
-    EXPECT_TRUE(kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
-    EXPECT_FALSE(kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetConstantCP("PI"))); // constant
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
+    EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetConstantCP("PI"))); // constant
     kindOfQuantity->SetRelativeError(10e-3);
     EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDefaultPresentationFormat(NamedFormat("FT", Formatting::Format())));
     auto format = Formatting::Format();
@@ -149,7 +149,7 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationUnits)
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDescription("Kind of a Description here"));
     EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDisplayLabel("best quantity of all times"));
-    EXPECT_TRUE(kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
     kindOfQuantity->SetRelativeError(10e-3);
     
     EXPECT_EQ(0, kindOfQuantity->GetPresentationFormatList().size());
@@ -184,18 +184,18 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationUnits)
     // TODO
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
-    EXPECT_TRUE(koq->SetPersistenceUnit(*meterUnit));
+    EXPECT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*meterUnit));
     //EXPECT_NE(ECObjectsStatus::Success, koq->AddPresentationUnit(*milliGramUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the Persistence Unit.";
 
     KindOfQuantityP koq2;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq2, "MyKindOfQuantity2"));
     //EC_EXPECT_SUCCESS(koq2->AddPresentationUnit(*milliGramUnit));
-    EXPECT_FALSE(koq2->SetPersistenceUnit(*meterUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the Presentation Unit.";
+    EXPECT_NE(ECObjectsStatus::Success, koq2->SetPersistenceUnit(*meterUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the Presentation Unit.";
 
     KindOfQuantityP koq3;
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq3, "MyKindOfQuantity3"));
     //EC_EXPECT_SUCCESS(koq3->AddPresentationUnit(*meterUnit));
-    EXPECT_TRUE(koq3->SetPersistenceUnit(*centimeterUnit));
+    EXPECT_EQ(ECObjectsStatus::Success, koq3->SetPersistenceUnit(*centimeterUnit));
     //EXPECT_NE(ECObjectsStatus::Success, koq3->AddPresentationUnit(*milliGramUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the existing Presentation and Persistence Unit.";
 
     KindOfQuantityP koq4;
@@ -889,7 +889,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     EC_EXPECT_SUCCESS(origSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(origSchema->CreateKindOfQuantity(koq, "ExampleKoQ"));
-    ASSERT_TRUE(koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+    EXPECT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
 
     Utf8String xmlString;
     ASSERT_EQ(SchemaWriteStatus::Success, origSchema->WriteToXmlString(xmlString, ECVersion::Latest));
