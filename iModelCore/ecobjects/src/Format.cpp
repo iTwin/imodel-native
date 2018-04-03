@@ -148,33 +148,34 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
 
     uint32_t precision;
     status = unitFormatNode.GetAttributeUInt32Value(precision, FORMAT_PRECISION_ATTRIBUTE);
-    if (BeXmlStatus::BEXML_Success != status && BeXmlStatus::BEXML_AttributeNotFound != status)
-        { 
-        LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
+    if (BeXmlStatus::BEXML_Success != status)
+        {
+        if (BeXmlStatus::BEXML_AttributeNotFound == status)
+            LOG.errorv("%s node '%s' has a missing '%s' attribute ", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
+        else
+            LOG.errorv("%s node '%s' has an invalid '%s' attribute ", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
-    else if (BeXmlStatus::BEXML_AttributeNotFound != status) 
+
+    if(type == Formatting::PresentationType::Fractional)
         {
-        if(type == Formatting::PresentationType::Fractional)
+        Formatting::FractionalPrecision unitsFractionalPrecision;
+        if (!Formatting::Utils::FractionalPrecisionByDenominator(unitsFractionalPrecision, precision))
             {
-            Formatting::FractionalPrecision unitsFractionalPrecision;
-            if (!Formatting::Utils::FractionalPrecisionByDenominator(unitsFractionalPrecision, precision))
-                {
-                LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
-                return SchemaReadStatus::InvalidECSchemaXml;
-                }
-            spec.SetFractionalPrecision(unitsFractionalPrecision);
+            LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
+            return SchemaReadStatus::InvalidECSchemaXml;
             }
-        else
+        spec.SetFractionalPrecision(unitsFractionalPrecision);
+        }
+    else
+        {
+        Formatting::DecimalPrecision unitsDecimalPrecision;
+        if (!Formatting::Utils::DecimalPrecisionByIndex(unitsDecimalPrecision, precision))
             {
-            Formatting::DecimalPrecision unitsDecimalPrecision;
-            if (!Formatting::Utils::DecimalPrecisionByIndex(unitsDecimalPrecision, precision))
-                {
-                LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
-                return SchemaReadStatus::InvalidECSchemaXml;
-                }
-            spec.SetDecimalPrecision(unitsDecimalPrecision);
+            LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
+            return SchemaReadStatus::InvalidECSchemaXml;
             }
+        spec.SetDecimalPrecision(unitsDecimalPrecision);
         }
 
     uint32_t minWidth;
@@ -373,12 +374,9 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
             xmlWriter.WriteAttribute(FORMAT_SIGN_OPTION_ATTRIBUTE, Formatting::Utils::SignOptionName(nfs->GetSignOption()).c_str());
         if (nfs->HasFormatTraits())
             xmlWriter.WriteAttribute(FORMAT_TRAITS_ATTRIBUTE, nfs->GetFormatTraitsString().c_str());
-        if (nfs->HasPrecision())
-            { 
-            xmlWriter.WriteAttribute(FORMAT_PRECISION_ATTRIBUTE, GetPresentationType() == Formatting::PresentationType::Fractional ? 
-                static_cast<uint32_t>(pow(2u, static_cast<uint32_t>(nfs->GetFractionalPrecision()))) : 
-                static_cast<uint32_t>(nfs->GetDecimalPrecision()));
-            }
+        xmlWriter.WriteAttribute(FORMAT_PRECISION_ATTRIBUTE, GetPresentationType() == Formatting::PresentationType::Fractional ? 
+            static_cast<uint32_t>(pow(2u, static_cast<uint32_t>(nfs->GetFractionalPrecision()))) : 
+            static_cast<uint32_t>(nfs->GetDecimalPrecision()));
         if (nfs->HasMinWidth())
             xmlWriter.WriteAttribute(FORMAT_MIN_WIDTH_ATTRIBUTE, nfs->GetMinWidth());
         if (Formatting::PresentationType::Scientific == GetPresentationType())
