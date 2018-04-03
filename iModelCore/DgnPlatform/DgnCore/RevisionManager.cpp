@@ -465,6 +465,8 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
             }
         }
 
+    // Handle some special cases
+
     if (cause == ChangeSet::ConflictCause::ForeignKey)
         return ChangeSet::ConflictResolution::Skip;
 
@@ -496,8 +498,15 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
             }
         }
 
+    if (letControlHandleThis) 
+        {
+        // if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
+        // (We don't call the control in the case where there are no local changes. As explained below, we always want the incoming changes in that case.)
+        return control->_OnConflict(dgndb, cause, iter);
+        }
+
     /*
-     * We ALWAYS(*) accept the incoming revision in cases of conflicts:
+     * If we don't have a control, we always accept the incoming revision in cases of conflicts:
      *
      * + In a briefcase with no local changes, the state of a row in the Db (i.e., the final state of a previous revision) 
      *   may not exactly match the initial state of the incoming revision. This will cause a conflict.
@@ -518,18 +527,6 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
      *
      * + Also see comments in TxnManager::MergeDataChangesInRevision()
      */
-
-    if (letControlHandleThis) 
-        {
-        // (*) Actually, if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
-        // (We don't call the control in the case where there are no local changes. As explained above, we always want the incoming changes in that case.)
-        auto control = dgndb.GetOptimisticConcurrencyControl();
-        if (nullptr != control)
-            {
-            return control->_OnConflict(dgndb, cause, iter);
-            }
-        }
-
     LOG.infov("Conflicting resolved by replacing the existing entry with the change");
     return ChangeSet::ConflictResolution::Replace;
     }
@@ -1793,9 +1790,36 @@ void OptimisticConcurrencyControlBase::_OnQueriedHeld(DgnLockSet&, DgnCodeSet&, 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         03/2018
+//---------------------------------------------------------------------------------------
+static DgnElementId getElementId(DgnDbCR db, Utf8CP tableName, BeSQLite::Changes::Change change, BeSQLite::DbOpcode opcode)
+    {
+    if (0 != strncmp("bis_", tableName, 4))
+        return DgnElementId();
+
+    auto stage = (BeSQLite::DbOpcode::Insert == opcode)? BeSQLite::Changes::Change::Stage::New: BeSQLite::Changes::Change::Stage::Old;
+
+    if (0 == strcmp(BIS_TABLE(BIS_CLASS_Element), tableName))
+        return DgnElementId(change.GetValue(0, stage).GetValueUInt64());
+
+    if (0 == strcmp(BIS_TABLE(BIS_CLASS_ElementMultiAspect), tableName) || 0 == strcmp(BIS_TABLE(BIS_CLASS_ElementUniqueAspect), tableName))
+        {
+        auto stmt = db.GetCachedStatement(Utf8PrintfString("SELECT ElementId from %s WHERE (Id = ?)", tableName).c_str());
+        stmt->BindInt64(1, change.GetValue(0, stage).GetValueUInt64());
+        stmt->Step();
+        return stmt->GetValueId<DgnElementId>(0);
+        }
+
+    // This may be a non-element-related table. We don't report it.
+    // This may be a split table, in which case, we'll always see and get the ElementId from the triggered change to the corresponding
+    //  row in the bis_Element table.
+    return DgnElementId();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                         01/2018
 //---------------------------------------------------------------------------------------
-BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConflict(OnConflict onConflict,
+BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConflict(OnConflict onConflict, DgnDbCR db,
                                                                                      Utf8CP tableName, BeSQLite::Changes::Change change, 
                                                                                      BeSQLite::DbOpcode opcode, bool indirect)
     {
@@ -1818,9 +1842,7 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConf
 
     if (!indirect)
         {
-        // ***  NEEDS WORK: How to screen out tables that don't contain elements or models?
-        auto stage = (BeSQLite::DbOpcode::Insert == opcode)? BeSQLite::Changes::Change::Stage::New: BeSQLite::Changes::Change::Stage::Old;
-        DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueUInt64());
+        DgnElementId elementId = getElementId(db, tableName, change, opcode);
         if (elementId.IsValid())
             eset->insert(elementId);
         }
@@ -1905,7 +1927,7 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflic
             break;
         }
         
-    return HandleConflict(onConflict, tableName, change, opcode, indirect);
+    return HandleConflict(onConflict, db, tableName, change, opcode, indirect);
     }
 
 //---------------------------------------------------------------------------------------
