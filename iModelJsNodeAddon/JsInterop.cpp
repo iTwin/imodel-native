@@ -10,12 +10,19 @@
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
-
 static Utf8String s_lastECDbIssue;
 static BeFileName s_addonDllDir;
 static IModelJsNative::JsInterop::T_AssertHandler s_assertHandler;
 
 namespace IModelJsNative {
+
+BE_JSON_NAME(parentId)
+BE_JSON_NAME(pathname)
+BE_JSON_NAME(containsSchemaChanges)
+BE_JSON_NAME(codeSpecId)
+BE_JSON_NAME(codeScope)
+BE_JSON_NAME(value)
+BE_JSON_NAME(state)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
@@ -183,16 +190,19 @@ Utf8StringCR JsInterop::GetLastECDbIssue()
 DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueCR in, Napi::Env env)
     {
     result = BE_SQLITE_NOTFOUND;
-    auto rootSubject = in[json_rootSubject()];
-    if (rootSubject.isNull() || !rootSubject.isMember(json_name())){
+    JsonValueCR rootSubject = in[json_rootSubject()];
+    if (rootSubject.isNull() || !rootSubject.isMember(json_name())) {
         Napi::TypeError::New(env, "Root subject name is missing").ThrowAsJavaScriptException();
         return nullptr;
     }
 
     BeFileName fileName(name);
-    BeFileName path = fileName.GetDirectoryName();
-    if (!path.DoesPathExist())
+    BeFileName path =fileName.GetDirectoryName();
+    if (!path.DoesPathExist()) {
+        Utf8String err = Utf8String("Path [") + path.GetNameUtf8() + "] does not exist"; 
+        Napi::TypeError::New(env, err.c_str()).ThrowAsJavaScriptException();
         return nullptr;
+    }
 
     CreateDgnDbParams params(rootSubject[json_name()].asCString());
     if (rootSubject.isMember(json_description()))
@@ -206,14 +216,14 @@ DgnDbPtr JsInterop::CreateIModel(DbResult& result, Utf8StringCR name, JsonValueC
     if (in.isMember(json_client()))
         params.m_client = in[json_client()].asCString();
 
+    DgnDbPtr db = DgnDb::CreateDgnDb(&result, fileName, params);
+    if (!db.IsValid()) 
+        return nullptr;
+
     // NEEDS_WORK - create GCS from ecef location
     // NEEDS_WORK - save thumbnail.
-        
-    DgnDbPtr db = DgnDb::CreateDgnDb(&result, fileName, params);
-    if (db.IsValid())
-        db->AddIssueListener(s_listener);
 
-    result = BE_SQLITE_OK;
+    db->AddIssueListener(s_listener);
     return db;
     }
 
@@ -355,10 +365,10 @@ DbResult JsInterop::StartCreateChangeSet(JsonValueR changeSetInfo, DgnDbR dgndb)
         return BE_SQLITE_ERROR;
 
     changeSetInfo = Json::objectValue;
-    changeSetInfo["id"] = revision->GetId().c_str();
-    changeSetInfo["parentId"] = revision->GetParentId().c_str();
-    changeSetInfo["pathname"] = Utf8String(revision->GetRevisionChangesFile()).c_str();
-    changeSetInfo["containsSchemaChanges"] = revision->ContainsSchemaChanges(dgndb) ? 1 : 0;
+    changeSetInfo[json_id()] = revision->GetId().c_str();
+    changeSetInfo[json_parentId()] = revision->GetParentId().c_str();
+    changeSetInfo[json_pathname()] = Utf8String(revision->GetRevisionChangesFile()).c_str();
+    changeSetInfo[json_containsSchemaChanges()] = revision->ContainsSchemaChanges(dgndb) ? 1 : 0;
     return BE_SQLITE_OK;
     }
 
@@ -385,25 +395,23 @@ void JsInterop::AbandonCreateChangeSet(DgnDbR dgndb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Karolis.Dziedzelis              03/18
 //---------------------------------------------------------------------------------------
-void ConvertCodeToJson(JsonValueR json, DgnCodeCR code, int codeState)
+static void convertCodeToJson(JsonValueR json, DgnCodeCR code, int codeState)
     {
     json = Json::objectValue;
-    json["codeSpecId"] = code.GetCodeSpecId().ToString(BeInt64Id::UseHex::Yes);
-    json["codeScope"] = code.GetScopeString();
-    json["value"] = code.GetValueUtf8();
-    json["state"] = codeState;
+    json[json_codeSpecId()] = code.GetCodeSpecId().ToHexStr();
+    json[json_codeScope()] = code.GetScopeString();
+    json[json_value()] = code.GetValueUtf8();
+    json[json_state()] = codeState;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Karolis.Dziedzelis              03/18
 //---------------------------------------------------------------------------------------
-void ConvertCodeSetToJson(JsonValueR json, DgnCodeSet const& codes, int codeState)
+static void convertCodeSetToJson(JsonValueR json, DgnCodeSet const& codes, int codeState)
     {
     int i = json.size();
     for (DgnCodeCR code : codes)
-        {
-        ConvertCodeToJson(json[i++], code, codeState);
-        }
+        convertCodeToJson(json[i++], code, codeState);
     }
 
 //---------------------------------------------------------------------------------------
@@ -421,8 +429,8 @@ DbResult JsInterop::ExtractCodes(JsonValueR codes, DgnDbR dgndb)
     revisions.GetCreatingRevision()->ExtractCodes(usedCodes, discardedCodes, dgndb);
 
     codes = Json::arrayValue;
-    ConvertCodeSetToJson(codes, usedCodes, 2);
-    ConvertCodeSetToJson(codes, discardedCodes, 3);
+    convertCodeSetToJson(codes, usedCodes, 2);
+    convertCodeSetToJson(codes, discardedCodes, 3);
     return BE_SQLITE_OK;
     }
 
@@ -432,10 +440,10 @@ DbResult JsInterop::ExtractCodes(JsonValueR codes, DgnDbR dgndb)
 DbResult JsInterop::SetupBriefcase(DgnDbPtr& outDb, JsonValueCR briefcaseToken)
     {
     PRECONDITION(!briefcaseToken.isNull() && briefcaseToken.isObject(), BE_SQLITE_ERROR);
-    PRECONDITION(briefcaseToken.isMember("pathname") && briefcaseToken.isMember("briefcaseId") && briefcaseToken.isMember("openMode"), BE_SQLITE_ERROR);
+    PRECONDITION(briefcaseToken.isMember(json_pathname()) && briefcaseToken.isMember(json_briefcaseId()) && briefcaseToken.isMember(json_openMode()), BE_SQLITE_ERROR);
 
-    BeFileName briefcasePathname(briefcaseToken["pathname"].asCString(), true);
-    int briefcaseId = briefcaseToken["briefcaseId"].asInt();
+    BeFileName briefcasePathname(briefcaseToken[json_pathname()].asCString(), true);
+    int briefcaseId = briefcaseToken[json_briefcaseId()].asInt();
     //DgnDb::OpenMode mode = (DgnDb::OpenMode) briefcaseToken["openMode"].asInt();
 
     /** Open the first time to set the briefcase id and get the DbGuid (used for creating change sets) */
@@ -593,22 +601,12 @@ ECInstanceId JsInterop::GetInstanceIdFromInstance(ECDbCR ecdb, JsonValueCR jsonI
     return instanceId;
     }
 
-//************************************************************************************
-// HexStrSqlFunction
-//************************************************************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      02/18
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-HexStrSqlFunction* HexStrSqlFunction::s_singleton = nullptr;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                      02/18
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
 HexStrSqlFunction& HexStrSqlFunction::GetSingleton()
     {
+    static HexStrSqlFunction* s_singleton = nullptr;
     if (s_singleton == nullptr)
         s_singleton = new HexStrSqlFunction();
 
@@ -639,22 +637,12 @@ void HexStrSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     ctx.SetResultText(stringBuffer, (int) strlen(stringBuffer), Context::CopyData::Yes);
     }
 
-//************************************************************************************
-// StrSqlFunction
-//************************************************************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      02/18
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-StrSqlFunction* StrSqlFunction::s_singleton = nullptr;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                      02/18
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
 StrSqlFunction& StrSqlFunction::GetSingleton()
     {
+    static StrSqlFunction* s_singleton = nullptr;
     if (s_singleton == nullptr)
         s_singleton = new StrSqlFunction();
 

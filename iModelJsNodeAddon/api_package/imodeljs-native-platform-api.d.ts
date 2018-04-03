@@ -413,13 +413,27 @@ declare class NativeDgnDb {
 
     /** read the font map. */
     readFontMap(): string;
+    
+    /** query a file property.
+     * @param props the stringified version of the FilePropertyProps
+     * @param wantString true to query the string property, false for the blob property
+     * @returns requested value or undefined if property does not exist
+     */
+    queryFileProperty(props: string, wantString: boolean): string | ArrayBuffer | undefined;
+    
+    /** save or delete a file property.
+     * @param props the stringified version of the FilePropertyProps
+     * @param value the value to save. If undefined, the file property is deleted.
+     * @returns 0 if property was saved (or deleted), error status otherwise
+     */
+    saveFileProperty(props: string, value: string | ArrayBuffer | undefined): number;
 
     /**
      * Execute a test by name
      * @param testName The name of the test to execute
      * @param params A JSON string with the parameters for the test
      */
-    executeTest(testName: string, params: string): any;
+    executeTest(testName: string, params: string): string;
 }
 
 /* The NativeECDb class that is projected by IModelJsNative. */

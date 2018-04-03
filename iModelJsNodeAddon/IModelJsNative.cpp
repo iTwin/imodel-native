@@ -1212,9 +1212,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_ARGUMENT_STRING(0, newExtentsJson, Env().Undefined())
         return Napi::Number::New(Env(), (int)JsInterop::UpdateProjectExtents(GetDgnDb(), Json::Value::From(newExtentsJson)));
         }
+
     Napi::Value ReadFontMap(Napi::CallbackInfo const& info)
         {
-        auto fontMap = GetDgnDb().Fonts().FontMap();
+        auto const& fontMap = GetDgnDb().Fonts().FontMap();
         Json::Value fontList(Json::arrayValue);
         for (auto font : fontMap)
             {
@@ -1229,6 +1230,79 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::String::New(Env(), fonts.ToString().c_str());
         }
 
+    // query a property from the be_prop table.
+    Napi::Value QueryFileProperty(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, fileProps, Env().Undefined())
+        REQUIRE_ARGUMENT_BOOL(1, wantString, Env().Undefined()) // boolean indicating whether the desired property is a string or blob.
+        auto propsJson = Json::Value::From(fileProps);
+        if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name())) 
+            {
+            Napi::TypeError::New(Env(), "Invalid FilePropertyProps").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+        
+        PropertySpec spec(propsJson[JsInterop::json_name()].asCString(), propsJson[JsInterop::json_namespace()].asCString());
+        auto& db = GetDgnDb();
+        uint64_t id = propsJson[JsInterop::json_id()].asUInt64();
+        uint64_t subId = propsJson[JsInterop::json_subId()].asUInt64();
+
+        if (wantString)
+            {
+            Utf8String strVal;
+            auto stat = db.QueryProperty(strVal, spec, id, subId);
+            return (stat != BE_SQLITE_ROW) ?  Env().Undefined() :  Napi::String::New(Env(), strVal.c_str());
+            }
+
+        uint32_t size;
+        auto stat = db.QueryPropertySize(size, spec, id, subId);
+        if (stat != BE_SQLITE_ROW || size == 0)
+            return Env().Undefined();
+    
+        auto blob = Napi::ArrayBuffer::New(Env(), size);
+        db.QueryProperty(blob.Data(), size, spec, id, subId);
+        return blob;
+        }
+
+    // save a property to the be_prop table
+    Napi::Value SaveFileProperty(Napi::CallbackInfo const& info)
+        {
+        if (info.Length() < 2)
+            THROW_TYPE_EXCEPTION_AND_RETURN("saveFileProperty requires 2 arguments", Env().Undefined());
+
+        REQUIRE_ARGUMENT_STRING(0, fileProps, Env().Undefined())
+        auto propsJson = Json::Value::From(fileProps);
+        if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name())) 
+            {
+            Napi::TypeError::New(Env(), "Invalid FilePropertyProps").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+        PropertySpec spec(propsJson[JsInterop::json_name()].asCString(), propsJson[JsInterop::json_namespace()].asCString());
+        auto& db = GetDgnDb();
+        uint64_t id = propsJson[JsInterop::json_id()].asUInt64();
+        uint64_t subId = propsJson[JsInterop::json_subId()].asUInt64();
+
+        DbResult stat;
+        Napi::Value val = info[1];
+        if (val.IsUndefined())  // undefined means delete
+            {
+            stat = db.DeleteProperty(spec, id, subId);
+            if (stat == BE_SQLITE_DONE)
+                stat = BE_SQLITE_OK;
+            }
+        else if (val.IsArrayBuffer())
+            {
+            auto arrayBuf = val.As<Napi::ArrayBuffer>();
+            stat = db.SaveProperty(spec, arrayBuf.Data(), arrayBuf.ByteLength(), id, subId);
+            }
+        else
+            {
+            stat = db.SavePropertyString(spec, val.ToString().Utf8Value().c_str(), id, subId);
+            }
+
+        return Napi::Number::New(Env(), (int) stat);
+        }
+
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -1239,7 +1313,6 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         REQUIRE_ARGUMENT_STRING(1, params, Env().Undefined());
         return Napi::String::New(Env(), JsInterop::ExecuteTest(GetDgnDb(), testName, params).ToString().c_str());
         }
-
 
     //  Create projections
     static void Init(Napi::Env& env, Napi::Object exports)
@@ -1286,8 +1359,10 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("isChangeCacheAttached", &NativeDgnDb::IsChangeCacheAttached),
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
             InstanceMethod("processChangeSets", &NativeDgnDb::ProcessChangeSets),
+            InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
+            InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
             InstanceMethod("setBriefcaseId", &NativeDgnDb::SetBriefcaseId),
             InstanceMethod("setBriefcaseManagerOptimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerOptimisticConcurrencyControlPolicy),
             InstanceMethod("setBriefcaseManagerPessimisticConcurrencyControlPolicy", &NativeDgnDb::SetBriefcaseManagerPessimisticConcurrencyControlPolicy),

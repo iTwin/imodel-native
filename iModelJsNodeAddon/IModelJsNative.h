@@ -25,17 +25,23 @@ namespace IModelJsNative {
 
 struct JsInterop
 {
+    BE_JSON_NAME(briefcaseId)
+    BE_JSON_NAME(openMode)
     BE_JSON_NAME(client)
     BE_JSON_NAME(description)
+    BE_JSON_NAME(ecefLocation)
     BE_JSON_NAME(fileName)
     BE_JSON_NAME(globalOrigin)
     BE_JSON_NAME(guid)
+    BE_JSON_NAME(id)
     BE_JSON_NAME(name)
+    BE_JSON_NAME(namespace)
+    BE_JSON_NAME(orientation)
+    BE_JSON_NAME(origin)
     BE_JSON_NAME(projectExtents)
     BE_JSON_NAME(rootSubject)
-    BE_JSON_NAME(ecefLocation)
-    BE_JSON_NAME(origin)
-    BE_JSON_NAME(orientation)
+    BE_JSON_NAME(subId)
+    BE_JSON_NAME(value)
 
 private:
     static BeSQLite::DbResult ReadChangeSets(bvector<DgnRevisionPtr>& revisionPtrs, bool& containsSchemaChanges, Utf8StringCR dbGuid, JsonValueCR changeSetTokens);
@@ -113,8 +119,6 @@ public:
 struct HexStrSqlFunction final : ScalarFunction
     {
     private:
-        static HexStrSqlFunction* s_singleton;  //no need to release a static non-POD variable (Bentley C++ coding standards)
-
         HexStrSqlFunction() : ScalarFunction("HexStr", 1, DbValueType::TextVal) {}
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
@@ -131,8 +135,6 @@ struct HexStrSqlFunction final : ScalarFunction
 struct StrSqlFunction final : ScalarFunction
     {
     private:
-        static StrSqlFunction* s_singleton;  //no need to release a static non-POD variable (Bentley C++ coding standards)
-
         StrSqlFunction() : ScalarFunction("Str", 1, DbValueType::TextVal) {}
         void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
