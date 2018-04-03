@@ -907,7 +907,8 @@ RefCountedPtr<iModelBridgeRegistry> iModelBridgeRegistry::OpenForFwk(BeFileNameC
         {
         LOG.errorv(L"%ls - cannot find fwk registry db in this directory or any of its parents. Creating an empty db.", stagingDir.c_str());
         }
-
+    
+    dbname = MakeDbName(stagingDir, dbname);
     RefCountedPtr<iModelBridgeRegistry> reg = new iModelBridgeRegistry(stagingDir, dbname);
     if (BE_SQLITE_OK != reg->OpenOrCreateStateDb())
         return nullptr;
