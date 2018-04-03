@@ -412,7 +412,6 @@ struct ViewController : Dgn::ViewController2d
         void InitBoundingBoxColors();
     };
 
-    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachment);
     DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Attachments);
 protected:
     DPoint2d m_size;

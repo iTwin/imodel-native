@@ -653,6 +653,24 @@ bool Attachment2d::_Load(DgnDbR db, Sheet::ViewController& sheetController, Scen
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool acceptAttachment(DgnElementId id, DgnDbR db, uint32_t index)
+    {
+#if defined(FILTER_ATTACHMENTS)
+    // For debugging, define some criterion herein to filter out attachments not of interest...
+    auto view = db.Elements().Get<ViewDefinition>(id);
+    if (view.IsNull() || 1.0 == view->GetAspectRatioSkew())
+        return false;
+
+    DEBUG_PRINTF("Skew=%f", view->GetAspectRatioSkew());
+    return true;
+#else
+    return true;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_LoadState()
@@ -669,24 +687,19 @@ void Sheet::ViewController::_LoadState()
     if (!WantRenderAttachments())
         return;
 
+    DgnDbR db = GetDgnDb();
     Attachments attachments;
-    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+    auto stmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, model->GetModelId());
 
-// #define ATTACHMENT_ISOLATE_INDEX 10
-#if defined(ATTACHMENT_ISOLATE_INDEX)
-    uint32_t attachmentIndex = 0;
-#endif
-
     // If we're already loaded, look in existing list so we don't reload them
+    uint32_t attachmentIndex = 0;
     while (BE_SQLITE_ROW == stmt->Step())
         {
-#if defined(ATTACHMENT_ISOLATE_INDEX)
-        if (attachmentIndex++ != ATTACHMENT_ISOLATE_INDEX)
-            continue;
-#endif
-
         auto attachId = stmt->GetValueId<DgnElementId>(0);
+        if (!acceptAttachment(attachId, db, attachmentIndex++))
+            continue;
+
         AttachmentPtr tree = FindAttachment(attachId);
 
         if (tree.IsNull())
@@ -1215,6 +1228,7 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     TileTree::DrawArgs args = viewRoot.CreateDrawArgs(myArgs.m_context);
     args.m_location = myRoot.m_drawingToAttachment;
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
+    //// ###TODO: args.m_clip = GetRoot2d().m_clip.get();
     myRoot.m_view->CreateScene(args);
 
     static bool s_drawClipPolys = false;
