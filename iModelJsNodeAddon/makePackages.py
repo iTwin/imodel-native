@@ -68,7 +68,7 @@ def filterOutUnwantedFiles(dirname, files):
 # Copy a version-specific addon into place
 # @param outdirParent The path to the output package's parent directory
 # @param inputProductdir The path to the Product that contains the ingredients, e.g., D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows
-# @param versionsubdir The name of the subdirectory that contains the addon. The name of the subdir encodes the version of node that this addon is for.  E.g., N_8_2
+# @param versionsubdir The name of the subdirectory that contains the addon. The name of the subdir encodes the version of node that this addon is for.  E.g., N_8
 # @param nodeOS The target platform (using Node terminology)
 # @param nodeCPU The target CPU (using Node terminology)
 # @param packageVersion The semantic version number for the generated package
@@ -89,7 +89,7 @@ def generate_addon_for_platform(outdirParent, inputProductdir, versionsubdir, no
         shutil.rmtree(outputpackagedir)
 
     # The input product's directory structure should look like this:
-    # D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows\Addon\N_8_2\imodeljs.node
+    # D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows\Addon\N_8\imodeljs.node
     # D:\bim0200dev\out\Winx64\product\iModelJsNodeAddon-Windows\Support
 
     srcsupportdir = os.path.join(inputProductdir, "Support");
@@ -268,7 +268,7 @@ if __name__ == '__main__':
     # Generate a platform-specific package fo each platform that was built
     for versionsubdir in os.listdir(addonDir):    
         # We are looking for the version-specific addon subdirectories. They tell us the names of the addons
-        if (re.match(r'^([a-z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)_(\d+)$', versionsubdir) is None):
+        if (re.match(r'^([a-z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)$', versionsubdir) is None):
             print '*** ' + versionsubdir + ' is unexpected. Only version-specific subdirectories should appear under addon.';
             continue
         
