@@ -2169,6 +2169,20 @@ static uint64_t GetCacheFileSize(Utf8CP fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+static DbResult QueryOldestConnection(BeSQLite::Db& db, Utf8StringR connectionId)
+    {
+    Utf8CP query = "SELECT [ConnectionId] FROM [" NODESCACHE_TABLENAME_Connections "] ORDER BY [LastUsedTime] ASC";
+    Statement stmt(db, query);
+    BeAssert(stmt.IsPrepared());
+    DbResult result = stmt.Step();
+    if (BE_SQLITE_ROW == result)
+        connectionId = stmt.GetValueText(0);
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                12/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 void NodesCache::LimitCacheSize()
     {
     m_db.SaveChanges();
@@ -2179,28 +2193,18 @@ void NodesCache::LimitCacheSize()
     m_db.TryExecuteSql("PRAGMA synchronous=0");
     m_db.GetDefaultTransaction()->Begin();
 
-    Utf8CP connectionQuery = "SELECT [ConnectionId] FROM [" NODESCACHE_TABLENAME_Connections "] ORDER BY [LastUsedTime] ASC";
-    CachedStatementPtr connectionStmt;
-    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(connectionStmt, *m_db.GetDbFile(), connectionQuery))
+    Utf8String connectionId;
+    while (GetCacheFileSize(m_db.GetDbFileName()) > m_sizeLimit && BE_SQLITE_ROW == QueryOldestConnection(m_db, connectionId))
         {
-        BeAssert(false);
-        return;
-        }
-
-    Utf8CP deleteQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Connections "] WHERE [ConnectionId] = ?";
-    CachedStatementPtr deleteStmt;
-    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(deleteStmt, *m_db.GetDbFile(), deleteQuery))
-        {
-        BeAssert(false);
-        return;
-        }
-
-    while (GetCacheFileSize(m_db.GetDbFileName()) > m_sizeLimit && BE_SQLITE_ROW == connectionStmt->Step())
-        {
-        Utf8CP connectionId = connectionStmt->GetValueText(0);
-        deleteStmt->BindText(1, connectionId, Statement::MakeCopy::No);
-        deleteStmt->Step();
-        deleteStmt->Reset();
-        m_db.SaveChanges();
+        Utf8CP deleteQuery = "DELETE FROM [" NODESCACHE_TABLENAME_Connections "] WHERE [ConnectionId] = ?";
+        Statement deleteStmt(m_db, deleteQuery);
+        BeAssert(deleteStmt.IsPrepared());
+        deleteStmt.BindText(1, connectionId, Statement::MakeCopy::No);
+        deleteStmt.Step();
+        deleteStmt.Finalize();
+        m_db.GetDefaultTransaction()->Commit();
+        DbResult vacuumResult = m_db.TryExecuteSql("VACUUM");
+        BeAssert(BE_SQLITE_OK == vacuumResult);
+        m_db.GetDefaultTransaction()->Begin();
         }
     }
