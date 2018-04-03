@@ -2870,7 +2870,7 @@ StatusTaskPtr iModelConnection::UnlockiModel(ICancellationTokenPtr cancellationT
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     return ExecuteWithRetry<void>([=]()
         {
-        ObjectId id = ObjectId::ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::iModelLock, ServerSchema::Class::iModelLock);
+        ObjectId id = ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::iModelLock, ServerSchema::Class::iModelLock);
         return m_wsRepositoryClient->SendDeleteObjectRequest(id, cancellationToken)
             ->Then<StatusResult>([=](const WSDeleteObjectResult& result)
             {
