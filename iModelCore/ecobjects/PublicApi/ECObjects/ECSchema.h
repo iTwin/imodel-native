@@ -90,7 +90,7 @@ private:
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
     ECObjectsStatus                     SetPrimaryCustomAttribute(IECInstanceR customAttributeInstance);
 
-    //! LEGECY METHOD, use GetCustomAttributeInternal(Utf8StringCR schemaName, Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes)
+    //! LEGACY METHOD, use GetCustomAttributeInternal(Utf8StringCR schemaName, Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes)
     IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
 
 protected:
@@ -120,7 +120,7 @@ public:
     //! a supplemented attribute it will be copied and added to the supplemented list before it is returned.
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className);
 
-    //! LEGECY METHOD, use GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className)
+    //! LEGACY METHOD, use GetLocalAttributeAsSupplemented(Utf8StringCR schemaName, Utf8StringCR className)
     IECInstancePtr                      GetLocalAttributeAsSupplemented(Utf8StringCR className);
 
     //! Returns true if the container has a custom attribute of a class of the specified name in the current container or base containers
@@ -221,7 +221,7 @@ public:
     //! @param[in]  classDefinition ECClass of the custom attribute to remove
     ECOBJECTS_EXPORT bool               RemoveSupplementedCustomAttribute(ECClassCR classDefinition);
 
-    //! LEGECY METHODS
+    //! LEGACY METHODS
     ECOBJECTS_EXPORT bool               IsDefined(Utf8StringCR className) const;
     ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttribute(Utf8StringCR className) const;
     ECOBJECTS_EXPORT IECInstancePtr     GetCustomAttributeLocal(Utf8StringCR className) const;
@@ -806,7 +806,7 @@ public:
     ArrayECPropertyP            GetAsArrayPropertyP()               {return _GetAsArrayPropertyP();} //!< Returns the property as an ArrayECProperty*
     PrimitiveECPropertyCP       GetAsPrimitiveProperty() const      {return _GetAsPrimitivePropertyCP();} //!< Returns the property as a const PrimitiveECProperty*
     PrimitiveECPropertyP        GetAsPrimitivePropertyP()           {return _GetAsPrimitivePropertyP();} //!< Returns the property as a PrimitiveECProperty*
-    PrimitiveArrayECPropertyCP  GetAsPrimitiveArrayProperty() const {return _GetAsPrimitiveArrayPropertyCP();} //!< Returns the property as a const PrimtiveArrayECProperty*
+    PrimitiveArrayECPropertyCP  GetAsPrimitiveArrayProperty() const {return _GetAsPrimitiveArrayPropertyCP();} //!< Returns the property as a const PrimitiveArrayECProperty*
     PrimitiveArrayECPropertyP   GetAsPrimitiveArrayPropertyP()      {return _GetAsPrimitiveArrayPropertyP();} //!< Returns the property as a PrimitiveArrayECProperty*
     StructECPropertyCP          GetAsStructProperty() const         {return _GetAsStructPropertyCP();} //!< Returns the property as a const StructECProperty*
     StructECPropertyP           GetAsStructPropertyP()              {return _GetAsStructPropertyP();} //!< Returns the property as a StructECProperty*
@@ -1709,7 +1709,7 @@ private:
     static bool     SchemaAllowsOverridingArrays(ECSchemaCP schema);
 
     static bool     CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
-    static bool     AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
+    static bool     AddUniquePropertiesToList(ECClassCP curentBaseClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
 
     void            AddDerivedClass(ECClassCR derivedClass) const {m_derivedClasses.push_back((ECClassP) &derivedClass);}
