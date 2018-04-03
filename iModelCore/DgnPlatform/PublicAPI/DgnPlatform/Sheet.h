@@ -340,7 +340,7 @@ struct ViewController : Dgn::ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
     friend SheetViewDefinition;
-    friend Sheet::Attachment::Root;
+    friend struct Sheet::Attachment::Root;
 
     struct Attachments;
     struct Attachment : RefCountedBase
