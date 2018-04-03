@@ -673,9 +673,19 @@ void Sheet::ViewController::_LoadState()
     auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, model->GetModelId());
 
+// #define ATTACHMENT_ISOLATE_INDEX 10
+#if defined(ATTACHMENT_ISOLATE_INDEX)
+    uint32_t attachmentIndex = 0;
+#endif
+
     // If we're already loaded, look in existing list so we don't reload them
     while (BE_SQLITE_ROW == stmt->Step())
         {
+#if defined(ATTACHMENT_ISOLATE_INDEX)
+        if (attachmentIndex++ != ATTACHMENT_ISOLATE_INDEX)
+            continue;
+#endif
+
         auto attachId = stmt->GetValueId<DgnElementId>(0);
         AttachmentPtr tree = FindAttachment(attachId);
 
@@ -1579,10 +1589,8 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
     auto& viewDef = view.GetViewDefinitionR();
     DRange3d attachRange = attach.GetPlacement().CalculateRange();
     double attachWidth = attachRange.high.x - attachRange.low.x,
-           attachHeight = attachRange.high.y - attachRange.low.y,
-           aspectRatio = attachWidth / attachHeight;
+           attachHeight = attachRange.high.y - attachRange.low.y;
 
-    viewDef.AdjustAspectRatio(aspectRatio);
     DPoint3d viewExtents = viewDef.GetExtents();
     DPoint2d scale = DPoint2d::From(attachWidth / viewExtents.x, attachHeight / viewExtents.y);
 
@@ -1592,8 +1600,9 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
     Transform location = Transform::From(worldToAttachment);
     SetLocation(location);
     
+    double aspectRatioSkew = viewDef.GetAspectRatioSkew();
     m_drawingToAttachment = Transform::From(viewDef.GetRotation());
-    m_drawingToAttachment.ScaleMatrixColumns(scale.x, scale.y, 1.0);
+    m_drawingToAttachment.ScaleMatrixColumns(scale.x, aspectRatioSkew * scale.y, 1.0);
     DPoint3d viewOrg = viewDef.GetOrigin();
     DPoint3d translation = viewRoot.GetLocation().Translation();
     viewOrg.DifferenceOf(viewOrg, translation);
