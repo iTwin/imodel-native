@@ -1373,7 +1373,7 @@ struct ChangeStreamQueueProducer : ChangeStream
             ;   // spin until the queue has room
         return BE_SQLITE_OK;
         }
-    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) {BeAssert(false); return ConflictResolution::Abort;}
+    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) override {BeAssert(false); return ConflictResolution::Abort;}
     };
 
 //=======================================================================================
@@ -1425,7 +1425,7 @@ struct ChangeStreamQueueConsumer : ChangeStream
         m_q.popFront();
         return BE_SQLITE_OK;
         }
-    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) {BeAssert(false); return ConflictResolution::Abort;}
+    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) override {BeAssert(false); return ConflictResolution::Abort;}
     };
 
 //---------------------------------------------------------------------------------------
