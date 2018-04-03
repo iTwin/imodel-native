@@ -9,7 +9,7 @@
 
 The iModelJs native library for node contains native code that is projected into JavaScript and is loaded by nodejs or electron. The @bentley/imodeljs-native-platform-api package declares the classes, methods, and properties -- the API -- that the native platform implements.
 
-The native platform and its API declaration are in separate packages. In fact, there are many native platform packages, one for each combination of node version and target platform that is supported. For example, @bentley/imodeljs-n_8_9-win32-x64 is the version of the native platform that can be used on a Windows desktop machine running 64-bit node v8.9.x. In addition, some apps may build custom versions of the native platform. There is only one API package.
+The native platform and its API declaration are in separate packages. In fact, there are many native platform packages, one for each combination of node version and target platform that is supported. For example, @bentley/imodeljs-n_8-win32-x64 is the version of the native platform that can be used on a Windows desktop machine running 64-bit node v8.x.x. In addition, some apps may build custom versions of the native platform. There is only one API package.
 
 imodeljs-backend depends directly on imodeljs-native-platform-api, as it is built to expect a particular native platform API. The native platform that is loaded and used at runtime must implement the expected API. imodeljs-backend checks compatibility at run time.
 
@@ -81,7 +81,7 @@ That will print the location of the generated packages. For example:
 
 ``` bat
 %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64
-%OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
+%OutRoot%Winx64\packages\imodeljs-n_8-win32-x64
 %OutRoot%Winx64\packages\imodeljs-native-platform-api
 %OutRoot%Winx64\packages\imodeljs-native-platform-node
 %OutRoot%Winx64\packages\imodeljs-native-platform-electron
@@ -103,7 +103,7 @@ REM Installs local builds of the platform-specific native platform packages for 
 if .%ImodelJsRoot% == . goto :missingvar
 
 cd %OutRoot%Winx64\packages\imodeljs-native-platform-node
-call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-native-platform-api %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64
+call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-native-platform-api %OutRoot%Winx64\packages\imodeljs-n_8-win32-x64
 
 cd %OutRoot%Winx64\packages\imodeljs-native-platform-electron
 call npm install --no-save  %OutRoot%Winx64\packages\imodeljs-native-platform-api %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64
@@ -114,8 +114,8 @@ xcopy /Y /I %OutRoot%Winx64\packages\imodeljs-native-platform-node        %Imode
 xcopy /Y /I %OutRoot%Winx64\packages\imodeljs-native-platform-node        %ImodelJsRoot%imodeljs-core\nativePlatformForTests\node_modules\@bentley\imodeljs-native-platform-node
 xcopy /Y /I %OutRoot%Winx64\packages\imodeljs-native-platform-electron    %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-native-platform-electron
 xcopy /Y /I %OutRoot%Winx64\packages\imodeljs-native-platform-electron    %ImodelJsRoot%imodeljs-core\nativePlatformForTests\node_modules\@bentley\imodeljs-native-platform-electron
-xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64          %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-n_8_9-win32-x64
-xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-n_8_9-win32-x64          %ImodelJsRoot%imodeljs-core\nativePlatformForTests\node_modules\@bentley\imodeljs-n_8_9-win32-x64
+xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-n_8-win32-x64            %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-n_8-win32-x64
+xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-n_8-win32-x64            %ImodelJsRoot%imodeljs-core\nativePlatformForTests\node_modules\@bentley\imodeljs-n_8-win32-x64
 xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64       %ImodelJsRoot%imodeljs-core\common\temp\node_modules\@bentley\imodeljs-e_1_6_11-win32-x64
 xcopy /Y /I /S %OutRoot%Winx64\packages\imodeljs-e_1_6_11-win32-x64       %ImodelJsRoot%imodeljs-core\nativePlatformForTests\node_modules\@bentley\imodeljs-e_1_6_11-win32-x64
 
@@ -134,11 +134,11 @@ On Linux:
 ```
 export ImodelJsRoot=<The parent directory of imodeljs-core>
 cd $OutRoot/LinuxX64/packages/imodeljs-native-platform-node
-npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-native-platform-api $OutRoot/LinuxX64/packages/imodeljs-n_8_9-linux-x64
+npm install --no-save  $OutRoot/LinuxX64/packages/imodeljs-native-platform-api $OutRoot/LinuxX64/packages/imodeljs-n_8-linux-x64
 cd $ImodelJsRoot/imodeljs-core/source/backend
 cp $OutRoot/LinuxX64/packages/imodeljs-native-platform-api/*          $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley/imodeljs-native-platform-api
 cp $OutRoot/LinuxX64/packages/imodeljs-native-platform-node/*         $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley/imodeljs-native-platform-node
-cp -r $OutRoot/LinuxX64/packages/imodeljs-n_8_9-linux-x64             $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley
+cp -r $OutRoot/LinuxX64/packages/imodeljs-n_8-linux-x64               $ImodelJsRoot/imodeljs-core/common/temp/node_modules/@bentley
 cd $ImodelJsRoot/imodeljs-core
 
 ```
@@ -154,27 +154,6 @@ To test other platforms or other versions, use the names of the generated packag
 
 The native platform packages are published by PRG, not by developers.
 
-## Package Dependencies
-
-**Key point:** imodeljs-backend must depend on a specific minor version of the API.
-
-**Key point:** The minor version of imodeljs-backend must advance with the minor version of the API that it uses.
-
-**Key point:** Apps must depend on a specific minor version of imodeljs-backend.
-
-This scheme allows us to version the native platform API in steps, with all downstream consumers opting in when they are ready. In a nutshell, if you add new methods to the native platform and you want imodeljs-backend to consume them, the upgrade process is:
-1. Publish a new version of the native platform and API packages with a higher minor version.
-1. Once they have landed, imodeljs-backend can move up:
-  a. Change imodeljs-backend/package.json to depend on the higher minor version of the API. Change its "helper" dependencies to point to the corresponding versions of the -node and -electron packages.
-  b. rush install
-  c. Change the minor version of the imodeljs-backend package itself.
-  d. Publish imodeljs-backend.
-1. Once that has landed, apps can move up:
-  a. Change their package.json to depend on the newer minor version of imodeljs-backend.
-  b. NPM INSTALL
-
-Note: imodeljs-backend depends on imodeljs-native-platform-node and imodeljs-native-platform-api in two places: in backend/package.json, and testbed/package.json. Keep them consistent!
-
 ### How imodeljs-backend Checks Version Compatibility
 
 imodeljs-core/backend/AddonRegistry.registerAddon verifies that the loaded native platform implements the API that imodeljs-backend expects. There are three tests: 1) The native platform and the API must be the same generation (same major version). 2) The native platform must include all of the classes and methods that the backend expects and may include new classes that the backend is not yet using (same or greater minor version). And, 3) the native platform must include all required bug fixes and may include more recent bug fixes (same or higher patch version). 
@@ -183,9 +162,9 @@ imodeljs-core/backend/AddonRegistry.registerAddon verifies that the loaded nativ
 
 The native platform is still specific to a major.minor version of nodejs. (That will change after we move to node v9 next year.) If you need to support a newer version of node, do the following:
 
-### Get New node-gyp Package
+### Get new node-gyp package, if necessary
 
-Get the node header files and the .lib for the desired version.
+node-gyp contains the node header files and the .lib for the desired version. You do not always have to update node-gyp when you update node. 
 
 If you haven't already, install node-gyp:
 `npm install -g node-gyp`
@@ -193,19 +172,20 @@ If you haven't already, install node-gyp:
 Tell node-gyp to install the version of nodejs that you want.
 `node-gyp install <nodevernum>`
 
-That will install the headers and libs to the .node-gyp directory in your %homedrive%%homepath% directory. Copy the files from the relevant subdirectory to thirdparty\nodejs\node-gyp
+That will install the headers and libs to the .node-gyp directory in your %homedrive%%homepath% directory. Copy the files from the relevant subdirectory to thirdparty\node-addon-api\node-gyp
 
-### Update thirdparty/nodejs/node-gyp
+### Update thirdparty/nodejs/node-gyp, if necessary
 
-1. Copy that whole directory to `%SrcRoot%thirdparty\nodejs\node-gyp`, creating a new subdirectory with the same name as the origin.
+If you updated node-gyp from npm, then you must update our saved copy of it, as follows:
+
+1. Copy that whole directory to `%SrcRoot%thirdparty\node-addon-api\node-gyp`, creating a new subdirectory with the same name as the origin.
 2. Rename the new subdirectory by prefixing it with "N_" and replacing dots with underscores.
 
-For example, suppose you want to update to 8.9.2 for node addons. You would copy the `%homedrive%%homepath%.node-gyp\8.9.2` to `%SrcRoot%thirdparty\nodejs\node-gyp`. That would create a subdirectory called `8.9.2`. You would then rename the copy to `N_8_9_2`.
+For example, suppose you want to update to 8.9.2 for node addons. You would copy the `%homedrive%%homepath%.node-gyp\8.9.2` to `%SrcRoot%thirdparty\node-addon-api\node-gyp`. That would create a subdirectory called `8.9.2`. You would then rename the copy to `n_8_2`.
 
 ### Change Partfiles
 
 Finally, change the PartFiles that refer to the version of the node API that is used to build the native platform.
 
-1. Edit `%SrcRoot%thirdparty\nodejs\napi\node-native platform-api.mke` and change the value of the macros such as `nodeIncludes` that you see that refer to the version-specific node-gyp includes and libs.
-
-2. Edit `%SrcRoot%imodeljs-native-platform-api\imodeljs-native-platform-api.PartFile.xml` and change the node version that you see in the various `iModelJsNode_node_module` bindings. Note that we specify only major and minor version, not build number.
+thirdparty\node-addon-api\node-addon-api.PartFile.xml
+iModelJsNodeAddon\iModelJsNodeAddon.PartFile.xml
