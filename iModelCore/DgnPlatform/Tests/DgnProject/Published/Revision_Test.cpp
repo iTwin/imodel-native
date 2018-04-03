@@ -2233,6 +2233,59 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
         ASSERT_EQ(lastRebaseId, first->Txns().QueryLastRebaseId()) << "No conflicts expected";
         }
 
+    // --- Test 1.a: deleteVsUpdate conflict ---
+
+    // First: modify el
+    baseIntegerPropertyValue = expectedIntegerPropertyValue;
+    if (true)
+        {
+        verifyIntegerProperty(*first, eid, baseIntegerPropertyValue);
+        updateIntegerProperty(*first, eid, expectedIntegerPropertyValue = 111);
+        first->SaveChanges();
+        history.push_back(createRevision(*first));
+        ++firstParent;
+        }
+
+    // Second: delete el, then merge in first's change, and handle the conflict in my favor.
+    if (true)
+        {
+        verifyIntegerProperty(*second, eid, baseIntegerPropertyValue);
+        
+        auto el = second->Elements().GetElement(eid);
+        ASSERT_TRUE(el.IsValid());
+        el->Delete();
+        el = nullptr;
+        second->SaveChanges();
+        
+        // merge first's changeset and reject his change
+        ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
+
+        ASSERT_EQ(0, control->GetConflictingElementsAccepted().size());
+        ASSERT_EQ(1, control->GetConflictingElementsRejected().size());
+        control->ConflictsProcessed();
+
+        // My policy for deleteVsUpdate is: I win
+        auto elafter = second->Elements().GetElement(eid);
+        ASSERT_FALSE(elafter.IsValid());
+
+        history.push_back(createRevision(*second));
+        ++secondParent;
+        }
+
+    // first: merge and see that second overrode my change. Verify that there is no conflict reported.
+    if (true)
+        {
+        verifyIntegerProperty(*first, eid, expectedIntegerPropertyValue);    // element is in my briefcase
+        auto lastRebaseId = first->Txns().QueryLastRebaseId();
+        ASSERT_EQ( RevisionStatus::Success, first->Revisions().MergeRevision(*history[++firstParent]) );
+        auto elafter = first->Elements().GetElement(eid);
+        ASSERT_FALSE(elafter.IsValid());            // element is no longer in my briefcase
+        ASSERT_EQ(0, control->GetConflictingElementsAccepted().size());  // We don't expect the control to be called at all, since there are no local changes 
+        ASSERT_EQ(0, control->GetConflictingElementsRejected().size());
+        control->ConflictsProcessed();
+        ASSERT_EQ(lastRebaseId, first->Txns().QueryLastRebaseId()) << "No conflicts expected";
+        }
+
 #ifdef COMMENT_OUT  // There's no such thing as non-conflicting changes to the same element. That's because LastMod always conflicts.
     // --- Test 2: Changes to same element but different properties => no conflict ---
 

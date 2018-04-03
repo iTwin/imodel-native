@@ -1866,6 +1866,19 @@ void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelI
     m_stmt.ClearBindings();
     }
 
+#ifdef WIP_DONT_VALIDATE_REJECTIONS
+bool TxnManager::WasElementChangeRejected(DgnElementId eid)
+    {
+    auto control = GetDgnDb().GetConcurrencyControl();
+    if (nullptr == control)
+        return false;
+    auto optimistic = control->_AsIOptimisticConcurrencyControl();
+    if (nullptr == optimistic)
+        return false;
+    return optimistic->
+    }
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2015
 //---------------------------------------------------------------------------------------
@@ -1898,7 +1911,10 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         stmt->BindId(1, elementId);
         if (BE_SQLITE_ROW != stmt->Step())
             {
+#ifdef WIP_DONT_VALIDATE_REJECTIONS
             BeAssert(false);
+#endif
+            return; // This happens because we deleted the element locally and rejected an incoming update
             }
         else
             {

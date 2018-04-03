@@ -443,6 +443,9 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
 
     UNUSED_VARIABLE(result);
 
+    auto control = dgndb.GetOptimisticConcurrencyControl();
+    bool letControlHandleThis = (nullptr != control) && (const_cast<DgnDbR>(dgndb).Txns().HasLocalChanges());
+
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("------------------------------------------------------------------");
@@ -475,8 +478,11 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
             return ChangeSet::ConflictResolution::Skip;
             }
 
-        LOG.infov("Aborted conflict resolution");
-        return ChangeSet::ConflictResolution::Abort; 
+        if (!letControlHandleThis)
+            {
+            LOG.infov("Aborted conflict resolution");
+            return ChangeSet::ConflictResolution::Abort; 
+            }
         }
 
     /*
@@ -502,7 +508,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
      * + Also see comments in TxnManager::MergeDataChangesInRevision()
      */
 
-    if (const_cast<DgnDbR>(dgndb).Txns().HasLocalChanges())
+    if (letControlHandleThis) 
         {
         // (*) Actually, if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
         // (We don't call the control in the case where there are no local changes. As explained above, we always want the incoming changes in that case.)

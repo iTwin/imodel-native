@@ -438,6 +438,11 @@ public:
 
     //! @private - adds to `rebaser` all stored rebases up to and including `thruId`.
     BeSQLite::DbResult LoadRebases(BeSQLite::Rebaser& rebaser, int64_t thruId);
+    
+#ifdef WIP_DONT_VALIDATE_REJECTIONS
+    //! @private - query if an in-coming change to this element was rejected/skipped
+    DGNPLATFORM_EXPORT bool WasElementChangeRejected(DgnElementId);
+#endif
 
     //! Get the current SessionId.
     SessionId GetCurrentSessionId() const {return m_curr.GetSession();}
