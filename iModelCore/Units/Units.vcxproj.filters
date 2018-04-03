@@ -71,7 +71,7 @@
     <ClCompile Include="src\Formatting\NumericFormatSpec.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="src\Formatting\NamedFormatSpec.cpp">
+    <ClCompile Include="src\Formatting\Format.cpp">
       <Filter>Source Files\Formatting</Filter>
     </ClCompile>
   </ItemGroup>

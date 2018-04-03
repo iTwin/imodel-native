@@ -84,9 +84,6 @@
     <ClCompile Include="Published\CompositeValueTests.cpp">
       <Filter>Published\Formatting</Filter>
     </ClCompile>
-    <ClCompile Include="Published\StdFormatSetTests.cpp">
-      <Filter>Published\Formatting</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestFixture\UnitsTestFixture.h">

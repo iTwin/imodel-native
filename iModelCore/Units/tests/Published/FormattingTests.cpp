@@ -36,18 +36,6 @@ struct FormatDoubleTest : NumericFormatSpecTest
     };
 
 //===================================================
-// FormatUnitSet
-//===================================================
-struct FormatUnitSetTest : FormattingTestFixture
-    {
-    // Method for printing GTest FUS problem description error.
-    Utf8String GetTestFusProblemDescription(FormatUnitSetCR fus)
-        {
-        return Utf8String("Problem: ") + fus.GetProblemDescription();
-        }
-    };
-
-//===================================================
 // Format
 //===================================================
 struct FormatTest : FormattingTestFixture
@@ -84,22 +72,21 @@ public:
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
-        FormatUnitSet fus = FormatUnitSet(expectedUnit->GetName().c_str(), s_unitsContext);
-        BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
+        Format format = Format();
+        BEU::Quantity qty = fps.GetQuantity(&probCode, &format);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
         EXPECT_EQ(expectedUnit, qty.GetUnit()) << GetFmtStringErrMsg(fmtStr);
         EXPECT_DOUBLE_EQ(expectedMagnitude, qty.GetMagnitude()) << GetFmtStringErrMsg(fmtStr);
         }
 
-    void TestValidParseToQuantityUsingStdFmt(Utf8CP fmtStr, BEU::UnitCP expectedUnit, double const expectedMagnitude, Utf8CP stdFmtDescription)
+    void TestValidParseToQuantityUsingStdFmt(Utf8CP fmtStr, BEU::UnitCP expectedUnit, double const expectedMagnitude, FormatCP format)
         {
         FormatParsingSet fps(fmtStr, expectedUnit);
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
-        FormatUnitSet fus = FormatUnitSet(stdFmtDescription, s_unitsContext);
-        BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
+        BEU::Quantity qty = fps.GetQuantity(&probCode, format);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
         EXPECT_EQ(expectedUnit, qty.GetUnit()) << GetFmtStringErrMsg(fmtStr);
@@ -682,72 +669,6 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests_IGNORED)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
-    {
-    {
-    FormatUnitSet MMFusNoFormatName("MM", s_unitsContext);
-    EXPECT_FALSE(MMFusNoFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusNoFormatName);
-    EXPECT_STREQ("MM(DefaultReal)", MMFusNoFormatName.ToText().c_str());
-    EXPECT_STREQ("MM(Real)", MMFusNoFormatName.ToText().c_str());
-    }
-    {
-    FormatUnitSet MMFusParens("MM(Real2)", s_unitsContext);
-    EXPECT_FALSE(MMFusParens.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusParens);
-    EXPECT_STREQ("MM(Real2)", MMFusParens.ToText().c_str());
-    }
-    {
-    FormatUnitSet MMFusBarFormatName("MM|Real2", s_unitsContext);
-    EXPECT_FALSE(MMFusBarFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatName);
-    EXPECT_STREQ("MM(Real2)", MMFusBarFormatName.ToText().c_str());
-    }
-    {
-    FormatUnitSet MMFusBarFormatNameBar("MM|Real2|", s_unitsContext);
-    EXPECT_FALSE(MMFusBarFormatNameBar.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatNameBar);
-    EXPECT_STREQ("MM(Real2)", MMFusBarFormatNameBar.ToText().c_str());
-    }
-    {
-    FormatUnitSet MMFusJsonOnlyUnitName(R"json({
-        unitName: "MM"
-    })json", s_unitsContext);
-    EXPECT_FALSE(MMFusJsonOnlyUnitName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonOnlyUnitName);
-    EXPECT_STREQ("MM(Real2)", MMFusJsonOnlyUnitName.ToText().c_str());
-    EXPECT_STREQ("MM(real2)", MMFusJsonOnlyUnitName.ToText().c_str());
-    EXPECT_TRUE(MMFusJsonOnlyUnitName.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
-    }
-    // TODO: The below JSON methods aren't parsing the formatName attribute correctly. I tried
-    // "formatName": "Real2"
-    // as well as
-    // "formatName": "real2"
-    // Neither works and I'm not sure whether I'm doing something wrong or the library has a bug.
-    // In any case, the documentation doesn't explain how the json description constructor works,
-    // even if though its format is described.
-    {
-    FormatUnitSet MMFusJsonUnitNameFormatName(R"json({
-        "unitName": "MM",
-        "formatName": "real2"
-    })json", s_unitsContext);
-    EXPECT_FALSE(MMFusJsonUnitNameFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonUnitNameFormatName);
-    EXPECT_STREQ("MM(Real2)", MMFusJsonUnitNameFormatName.ToText().c_str());
-    EXPECT_STREQ("MM(real2)", MMFusJsonUnitNameFormatName.ToText().c_str());
-    EXPECT_TRUE(MMFusJsonUnitNameFormatName.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
-    }
-    {
-    FormatUnitSet MMFusJsonAllMembers(R"json({
-        "unitName": "MM",
-        "formatName": "real2",
-        "cloneData": false,
-        "formatSpec": { }
-    })json", s_unitsContext);
-    EXPECT_FALSE(MMFusJsonAllMembers.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonAllMembers);
-    EXPECT_STREQ("MM(Real2)", MMFusJsonAllMembers.ToText().c_str());
-    EXPECT_STREQ("MM(real2)", MMFusJsonAllMembers.ToText().c_str());
-    EXPECT_TRUE(MMFusJsonAllMembers.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatTest, Constructors)
     {
     // Default constructed.
@@ -1163,12 +1084,29 @@ TEST_F(FormatParsingSetTest, CompositeFormats_IGNORED)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatParsingSetTest, TestParseToStd)
     {
-    TestValidParseToQuantityUsingStdFmt("5:6", inch, 5.5, "fi8");
-    TestValidParseToQuantityUsingStdFmt("5:", inch, 5.0, "fi8");
-    TestValidParseToQuantityUsingStdFmt(":6", inch, 0.5, "fi8");
+    // Move to common spot to reuse within tests.
+    CompositeValueSpecP fi = new CompositeValueSpec(*foot, *inch);
+    fi->SetMajorLabel("'");
+    fi->SetMiddleLabel("\"");
 
-    TestValidParseToQuantityUsingStdFmt("135:23:11", arcDeg, 1, "dms8");
-    TestValidParseToQuantityUsingStdFmt("3  1/5 FT", inch, 3.2, "real");
+    NumericFormatSpecP numeric8 = new NumericFormatSpec();
+    numeric8->SetFormatTraits(FormatTraits::KeepSingleZero);
+    numeric8->SetFormatTraits(FormatTraits::KeepDecimalPoint);
+    numeric8->SetPresentationType(PresentationType::Fractional);
+    numeric8->SetFractionalPrecision(FractionalPrecision::Eighth);
+        
+    Format fi8 = Format(*numeric8, *fi);
+
+    // Format dms8 = Format();
+
+    // Format real = Format();
+
+    TestValidParseToQuantityUsingStdFmt("5:6", inch, 5.5, &fi8);
+    TestValidParseToQuantityUsingStdFmt("5:", inch, 5.0, &fi8);
+    TestValidParseToQuantityUsingStdFmt(":6", inch, 0.5, &fi8);
+
+    /*TestValidParseToQuantityUsingStdFmt("135:23:11", arcDeg, 1, &dms8);
+    TestValidParseToQuantityUsingStdFmt("3  1/5 FT", inch, 3.2, &real);*/
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

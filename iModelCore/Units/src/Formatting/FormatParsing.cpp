@@ -1765,15 +1765,15 @@ Utf8String FormatParsingSet::GetSignature(bool distinct) //, int* colonCount)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //----------------------------------------------------------------------------------------
-bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP)
+bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatCP format)
     {
     if (0 == reqUnitCount)
         return false;
-    if (nullptr == fusP)
+    if (nullptr == format)
         m_problem.UpdateProblemCode(FormatProblemCode::PS_MissingFUS);
-    if (!fusP->HasComposite())
+    if (!format->HasComposite())
         m_problem.UpdateProblemCode(FormatProblemCode::PS_MissingCompositeSpec);
-    if(reqUnitCount != fusP->GetCompositeUnitCount())
+    if(reqUnitCount != format->GetCompositeUnitCount())
         m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
     if (m_problem.IsProblem())
         return false;
@@ -1784,7 +1784,7 @@ bool FormatParsingSet::ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //----------------------------------------------------------------------------------------
-BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatUnitSetCP fusP)
+BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatCP format)
     {
     BEU::Quantity qty = BEU::Quantity();
     BEU::Quantity tmp = BEU::Quantity();
@@ -1794,6 +1794,14 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatU
     //   3 FT - NU
     //  1/3 FT  FU
     BEU::UnitCP majP, midP;
+
+    BEU::UnitCP inputUnit;
+    
+    if (nullptr != format && nullptr != format->GetCompositeInputUnit())
+        inputUnit = format->GetCompositeInputUnit();
+    else
+        inputUnit = m_unit;
+
     double sign = 1.0;
 
     m_problem.Reset();
@@ -1803,11 +1811,15 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatU
         {
         case Formatting::FormatSpecialCodes::SignatureN:
         case Formatting::FormatSpecialCodes::SignatureF:
-            qty = BEU::Quantity(m_segs[0].GetReal(), *GetUnit(fusP));
+            if (nullptr == inputUnit)
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
+            qty = BEU::Quantity(m_segs[0].GetReal(), *inputUnit);
             break;
         case Formatting::FormatSpecialCodes::SignatureNF:
+            if (nullptr == inputUnit)
+                m_problem.UpdateProblemCode(FormatProblemCode::UnknownUnitName);
             sign = m_segs[0].GetSign();
-            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *GetUnit(fusP));
+            qty = BEU::Quantity(m_segs[0].GetAbsReal() + m_segs[1].GetAbsReal(), *inputUnit);
             qty.Scale(sign);
             break;
         case Formatting::FormatSpecialCodes::SignatureNU:
@@ -1861,33 +1873,13 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatU
             qty = qty.Add(tmp);
             qty.Scale(sign);
             break;
-
-    /*    case Formatting::FormatSpecialCodes::SignatureNCNCN:
-            if(ValidateParsingFUS(3, fusP))
-                {
-                sign = m_segs[0].GetSign();
-                majP = fusP->GetCompositeMajorUnit();
-                if(nullptr == majP)
-                    m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
-                else
-                   qty = BEU::Quantity(m_segs[0].GetAbsReal(), *majP);
-                }*/
-        //case Formatting::FormatSpecialCodes::SignatureNCCN:
-        //case Formatting::FormatSpecialCodes::SignatureNCC:
-        //case Formatting::FormatSpecialCodes::SignatureCNCN:
-        //case Formatting::FormatSpecialCodes::SignatureCNC:
-        //case Formatting::FormatSpecialCodes::SignatureCCN:
-        //case Formatting::FormatSpecialCodes::SignatureNCNC:
-        //    break;
-
         default:
-            qty = FormatParsingSet::ComposeColonizedQuantity(cod, fusP);
-            //m_problem.UpdateProblemCode(FormatProblemCode::QT_InvalidSyntax);
+            qty = FormatParsingSet::ComposeColonizedQuantity(cod, format);
             break;
         }
 
-    if (!m_problem.IsProblem() && nullptr != GetUnit(fusP))
-        qty = qty.ConvertTo(GetUnit(fusP));
+    if (!m_problem.IsProblem() && nullptr != inputUnit)
+        qty = qty.ConvertTo(inputUnit);
     if (nullptr != probCode)
         *probCode = m_problem.GetProblemCode();
     return qty;
@@ -1896,24 +1888,25 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatU
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //----------------------------------------------------------------------------------------
-BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatUnitSetCP fusP)
+BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatCP format)
     {
     BEU::Quantity qty = BEU::Quantity();
-    BEU::Quantity tmp = BEU::Quantity();
     if (m_problem.IsProblem())
         return qty;
+
     BEU::UnitCP majP, midP, minP;
+    BEU::Quantity tmp = BEU::Quantity();
     double sign = 1.0;
 
     switch (cod)
         {
         case Formatting::FormatSpecialCodes::SignatureNCNCN:
-            if (ValidateParsingFUS(3, fusP))
+            if (ValidateParsingFUS(3, format))
                 {
                 sign = m_segs[0].GetSign();
-                majP = fusP->GetCompositeMajorUnit();
-                midP = fusP->GetCompositeMiddleUnit();
-                minP = fusP->GetCompositeMinorUnit();
+                majP = format->GetCompositeMajorUnit();
+                midP = format->GetCompositeMiddleUnit();
+                minP = format->GetCompositeMinorUnit();
                 if (nullptr == majP || nullptr == midP || nullptr == minP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else
@@ -1928,11 +1921,11 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
                 }
             break;
         case Formatting::FormatSpecialCodes::SignatureNCCN:
-            if (ValidateParsingFUS(3, fusP))
+            if (ValidateParsingFUS(3, format))
                 {
                 sign = m_segs[0].GetSign();
-                majP = fusP->GetCompositeMajorUnit();
-                minP = fusP->GetCompositeMinorUnit();
+                majP = format->GetCompositeMajorUnit();
+                minP = format->GetCompositeMinorUnit();
                 if (nullptr == majP || nullptr == minP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else
@@ -1945,10 +1938,10 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
                 }
             break;
         case Formatting::FormatSpecialCodes::SignatureNCC:
-            if (ValidateParsingFUS(3, fusP))
+            if (ValidateParsingFUS(3, format))
                 {
                 sign = m_segs[0].GetSign();
-                majP = fusP->GetCompositeMajorUnit();
+                majP = format->GetCompositeMajorUnit();
                 if (nullptr == majP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else
@@ -1962,10 +1955,10 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
         case Formatting::FormatSpecialCodes::SignatureMCNCN:
             sign = -1.0;
         case Formatting::FormatSpecialCodes::SignatureCNCN:
-            if (ValidateParsingFUS(3, fusP))
+            if (ValidateParsingFUS(3, format))
                 {
-                midP = fusP->GetCompositeMiddleUnit();
-                minP = fusP->GetCompositeMinorUnit();
+                midP = format->GetCompositeMiddleUnit();
+                minP = format->GetCompositeMinorUnit();
                 if (nullptr == midP || nullptr == minP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else
@@ -1980,9 +1973,9 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
         case Formatting::FormatSpecialCodes::SignatureMCNC:
             sign = -1.0;
         case Formatting::FormatSpecialCodes::SignatureCNC:
-            if (ValidateParsingFUS(3, fusP))
+            if (ValidateParsingFUS(3, format))
                 {
-                midP = fusP->GetCompositeMiddleUnit();
+                midP = format->GetCompositeMiddleUnit();
                 if (nullptr == midP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else
@@ -1995,9 +1988,9 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
         case Formatting::FormatSpecialCodes::SignatureMCCN:
             sign = -1.0;
         case Formatting::FormatSpecialCodes::SignatureCCN:
-            if (ValidateParsingFUS(3, fusP))
+            if (ValidateParsingFUS(3, format))
                 {
-                minP = fusP->GetCompositeMinorUnit();
+                minP = format->GetCompositeMinorUnit();
                 if (nullptr == minP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else
@@ -2008,11 +2001,11 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
                 }
             break;
         case Formatting::FormatSpecialCodes::SignatureNCNC:
-            if (ValidateParsingFUS(3, fusP))
+            if (ValidateParsingFUS(3, format))
                 {
                 sign = m_segs[0].GetSign();
-                majP = fusP->GetCompositeMajorUnit();
-                midP = fusP->GetCompositeMiddleUnit();
+                majP = format->GetCompositeMajorUnit();
+                midP = format->GetCompositeMiddleUnit();
                 if (nullptr == majP || nullptr == midP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else
@@ -2025,11 +2018,11 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
                 }
             break;
         case Formatting::FormatSpecialCodes::SignatureNCN:
-            if (ValidateParsingFUS(2, fusP))
+            if (ValidateParsingFUS(2, format))
                 {
                 sign = m_segs[0].GetSign();
-                majP = fusP->GetCompositeMajorUnit();
-                midP = fusP->GetCompositeMiddleUnit();
+                majP = format->GetCompositeMajorUnit();
+                midP = format->GetCompositeMiddleUnit();
                 if (nullptr == majP || nullptr == midP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else
@@ -2043,10 +2036,10 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
             break;
 
         case Formatting::FormatSpecialCodes::SignatureNC:
-            if (ValidateParsingFUS(2, fusP))
+            if (ValidateParsingFUS(2, format))
                 {
                 sign = m_segs[0].GetSign();
-                majP = fusP->GetCompositeMajorUnit();
+                majP = format->GetCompositeMajorUnit();
                 if (nullptr == majP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else
@@ -2060,9 +2053,9 @@ BEU::Quantity  FormatParsingSet::ComposeColonizedQuantity(Formatting::FormatSpec
         case Formatting::FormatSpecialCodes::SignatureMCN:
             sign = -1.0;
         case Formatting::FormatSpecialCodes::SignatureCN:
-            if (ValidateParsingFUS(2, fusP))
+            if (ValidateParsingFUS(2, format))
                 {
-                midP = fusP->GetCompositeMiddleUnit();
+                midP = format->GetCompositeMiddleUnit();
                 if (nullptr == midP)
                     m_problem.UpdateProblemCode(FormatProblemCode::PS_MismatchingFUS);
                 else

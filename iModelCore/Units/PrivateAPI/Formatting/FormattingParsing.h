@@ -156,7 +156,7 @@ public:
     double GetAbsReal() { return fabs(m_dval); }
     double GetSign() { return (m_dval < 0) ? -1.0 : 1.0; }
     int GetInteger() { return m_ival; }
-    BEU::UnitCP GetUnit(Formatting::FormatUnitSetCP fusP = nullptr) {return (nullptr == fusP) ? m_unit : fusP->GetUnit();}
+    BEU::UnitCP GetUnit() {return m_unit;}
     size_t GetNextindex() { return m_start + m_byteCount; }
     void SetBoundary(size_t s, size_t l) { m_start = s; m_byteCount = l; }
     bool IsNumber() { return (m_type == ParsingSegmentType::Integer) || (m_type == ParsingSegmentType::Real); }
@@ -185,7 +185,7 @@ private:
     //! Process's "colonized" expression using a Composite FUS
     //! Returns error codes when FUS does not match the expression.
     //! The input expression signature code mus be provided by the caller
-    BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatUnitSetCP fusP = nullptr);
+    BEU::Quantity ComposeColonizedQuantity(Formatting::FormatSpecialCodes cod, FormatCP fusP = nullptr);
 
 public:
     UNITS_EXPORT FormatParsingSet(Utf8CP input, BEU::UnitCP unit = nullptr);
@@ -198,15 +198,15 @@ public:
 
     bvector<FormatParsingSegment> GetSegments() {return m_segs;}
 
-    BEU::UnitCP GetUnit(FormatUnitSetCP fusP = nullptr) {return (nullptr == fusP) ? m_unit : fusP->GetUnit();}
+    BEU::UnitCP GetUnit() {return m_unit;}
 
     size_t GetSegmentNumber() { return m_segs.size(); }
 
     UNITS_EXPORT Utf8String GetSignature(bool distinct = true);
 
-    UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr, FormatUnitSetCP fusP = nullptr);
+    UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr, FormatCP fusP = nullptr);
 
-    UNITS_EXPORT bool ValidateParsingFUS(int reqUnitCount, FormatUnitSetCP fusP);
+    UNITS_EXPORT bool ValidateParsingFUS(int reqUnitCount, FormatCP format);
 };
 
 //=======================================================================================

@@ -709,148 +709,8 @@ public:
     //!                                          would return nullptr for a format string with name "BlaBlaBla".
     //! @returns BentleyStatus::SUCCESS if the string was successfully parsed.
     UNITS_EXPORT static BentleyStatus ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper);
-};
 
-//=======================================================================================
-//! A container to hold a set of Formats.
-//! @bsistruct
-//=======================================================================================
-struct StdFormatSet
-{
-private:
-    bvector<Format> m_formatSet;
-    FormatProblemDetail m_problem;
-
-    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP);
-    NumericFormatSpecCP AddFormat(Utf8CP name, NumericFormatSpecCR fmtP, CompositeValueSpecCR compS); 
-    NumericFormatSpecCP AddFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
-    FormatCP AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR context);
-
-    void StdInit();
-
-    bool IsFormatDefined(Utf8CP name);
-
-public:
-    //! Creates a StdFormatSet with an initial list of supported Formats.
-    UNITS_EXPORT StdFormatSet();
-    UNITS_EXPORT FormatCP FindFormat(Utf8StringCR name) const;
-
-    //! Returns all of the formats.
-    bvector<Format>const& GetFormats() {return m_formatSet;}
-
-    //! Initializes a standard set of CompositeSpecs.
-    //! @param[in] unitContext A UnitContext needed to create the composite specs. The BEU::UnitRegistry contains all of the required Units
-    //! @returns Success if the CompositeSpecs are successfully created and added to this; otherwise, Error.
-    UNITS_EXPORT BentleyStatus AddCompositeSpecs(BEU::IUnitsContextCR unitContext);
-};
-
-//=======================================================================================
-//! The Format-Unit Set(FUS) has two parts describing how a Quantity transformation
-//! between an internal form and presentation form should be handled.
-//! 
-//! The two parts:
-//! - The Unit member defines what Unit of Measurement(UOM) should be used when the format 
-//!      does not provide this information. When format refers to a Composite Format that 
-//!      provides at least one UOM, the format definition takes preference. Another 
-//!      important role of the Unit member is to help in converting a pure numeric text 
-//!      expression provided by the user input into a Quantity.
-//! - The Format member provides formatting parameters when the Quantity needs to be 
-//!      presented in the UI and it can be used as a reference for validating the complex user input
-//!
-// @bsiclass                                                    David.Fox-Rabinovitz  03/2017
-//=======================================================================================
-struct FormatUnitSet
-{
-private:
-    FormatCP m_formatSpec;
-    Utf8String  m_unitName;
-    BEU::UnitCP m_unit;
-    FormatProblemDetail m_problem;
-    Format m_localCopy;
-
-public:
-    UNITS_EXPORT void Init();
-    UNITS_EXPORT FormatUnitSet() : m_formatSpec(nullptr), m_unit(nullptr), m_problem(FormatProblemCode::NotInitialized) {}
-    FormatUnitSet(BEU::UnitCP unit) : FormatUnitSet(nullptr, unit) {}
-    FormatUnitSet(FormatCP format, BEU::UnitCP unit) : FormatUnitSet(format, unit, false) {}
-    UNITS_EXPORT FormatUnitSet(FormatUnitSetCR other);
-    UNITS_EXPORT FormatUnitSet(FormatCP format, BEU::UnitCP unit, bool cloneData);
-
-    UNITS_EXPORT FormatUnitSet& operator=(const FormatUnitSet& other);
-
-    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const;
-
-    //! The 'descriptor' argument is a text string in one of several formats as follows:
-    //! For compatibility with the obsolete KOQ def's it may consist of only a unit name, e.g.
-    //! FT. Since FUS consists of two components: the reference to the Unit and a reference to
-    //! a format specification, the DefaultReal format will be used in this case. The most
-    //! common descriptor consists of two names: the Unit Name and the Format Name, e.g.
-    //! FT(real6). For supporting the usage of comples Unit Names a "vertical bar" can be used
-    //! as a separator between the Unit Name and the Format Name as in "FT|real6" The closing
-    //! vertical bar delimiting the Format Name is not required if the Format Name is
-    //! terminated with the "end-of-line". However, the Fomat Name can be also delimited by
-    //! the "vertical bar" as in: "FT|real6|". The descriptor can be also a JSON-string enclosed
-    //! in the "curvy brackets". There are two types of this JSON-string which are currently
-    //! supported: A short one consists of the unitName and formatName. The optional cloneData
-    //! boolean value indicates that the format spec should be cloned into the newly created
-    //! FUS. The default value of the cloneData parameter if "false" the long one consists of
-    //! the unitName and formatSpec that contains the full description of this Spec.
-    UNITS_EXPORT FormatUnitSet(Utf8CP descriptor, BEU::IUnitsContextCP context);
-
-    //! Resets this FUS to its initial state and populates it will the json value.
-    //!
-    //! Supported JSON format:
-    //!     <code>
-    //!     {
-    //!         unitName: "",
-    //!         formatName: "",
-    //!         cloneData: true,
-    //!         formatSpec: { }
-    //!     }
-    //!     </code>
-    //!
-    //! Potential problem codes:
-    //!     - FormatProblemCode::NFS_InvalidJsonObject,
-    //!         - When Json value is empty
-    //!     - FormatProblemCode::UnknownUnitName
-    //!         - If the unitName is provided but cannot be found in the context.
-    //!
-    //! @note If a formatName or formatSpec is not defined in the JSON value the FormatConstant::DefaultFormatName is used.
-    //! @note If a formatName and formatSpec are provided in the JSON the last will be used.
-    //!
-    //! @param[in] jval Json to use to populate this.
-    UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
-
-    //! Returns whether this FormatUnitSet has a problem.
-    bool HasProblem() const { return m_problem.IsProblem(); }
-
-    //! Returns the problem code for this FUS.
-    FormatProblemCode GetProblemCode() const { return m_problem.GetProblemCode(); }
-    Utf8String GetProblemDescription() const { return m_problem.GetProblemDescription(); }
-    Utf8String GetUnitName() const { return m_unitName; }
-
-    UNITS_EXPORT Utf8String ToText() const;
-    BEU::UnitCP GetUnit() const { return m_unit; }
-    FormatCP GetFormat() const { return m_formatSpec; }
-    bool IsComparable(BEU::QuantityCR qty) const {return IsComparable(qty.GetUnit());}
-    bool IsComparable(BEU::UnitCP unit) const {return BEU::Unit::AreCompatible(unit, m_unit);}
-
-    UNITS_EXPORT Json::Value ToJson(bool verbose = false) const;
-    UNITS_EXPORT Utf8String ToJsonString(bool verbose = false) const;
-
-    UNITS_EXPORT Json::Value FormatQuantityJson(BEU::QuantityCR qty, Utf8CP space="") const;
-    BEU::PhenomenonCP GetPhenomenon() { return (nullptr == m_unit) ? nullptr : m_unit->GetPhenomenon(); }
-
-    UNITS_EXPORT bool IsIdentical(FormatUnitSetCR other) const;
-        
-    bool IsFullySpecified() { return (m_formatSpec == &m_localCopy); }
-    bool HasComposite() const { return nullptr != m_formatSpec && m_formatSpec->HasComposite(); }
-    size_t GetCompositeUnitCount() const { return HasComposite() ? m_formatSpec->GetCompositeUnitCount() : 0; }
-    BEU::UnitCP GetCompositeMajorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMajorUnit() : nullptr; }
-    BEU::UnitCP GetCompositeMiddleUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMiddleUnit() : nullptr; }
-    BEU::UnitCP GetCompositeMinorUnit() const { return HasComposite() ? m_formatSpec->GetCompositeMinorUnit() : nullptr; }
-    BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_formatSpec->GetCompositeSubUnit() : nullptr; }
-
+    // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
 };
 
@@ -859,8 +719,8 @@ public:
 //=======================================================================================
 struct QuantityFormatting
 {
-    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
-    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode);
+    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, double* persist, BEU::UnitCP outputUnit, FormatCR inputFUS, FormatProblemCode* problemCode);
+    UNITS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, FormatCR inputFUS, FormatProblemCode* problemCode);
 };
 
 END_BENTLEY_FORMATTING_NAMESPACE

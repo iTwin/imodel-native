@@ -496,15 +496,15 @@ void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
 // @bsimethod
 //----------------------------------------------------------------------------------------
 // static
-Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist, FormatUnitSetCR outputFUS, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
+Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist, BEU::UnitCP outputUnit, FormatCR inputFormat, FormatProblemCode* problemCode)
     {
     *problemCode = Formatting::FormatProblemCode::NoProblems;
-    BEU::Quantity qty = Formatting::FormatParsingSet(input, inputFUS.GetUnit()).GetQuantity(problemCode, &inputFUS);
+    BEU::Quantity qty = Formatting::FormatParsingSet(input, inputFormat.GetCompositeInputUnit()).GetQuantity(problemCode, &inputFormat);
     if (*problemCode == Formatting::FormatProblemCode::NoProblems)
         {
         if (nullptr != persist)
             {
-            BEU::Quantity persQty = qty.ConvertTo(outputFUS.GetUnit());
+            BEU::Quantity persQty = qty.ConvertTo(outputUnit);
             *persist = persQty.GetMagnitude();
             }
         }
@@ -518,9 +518,9 @@ Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist
 // @bsimethod
 //----------------------------------------------------------------------------------------
 // static
-BEU::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatUnitSetCR inputFUS, FormatProblemCode* problemCode)
+BEU::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatCR inputFormat, FormatProblemCode* problemCode)
     {
-    return Formatting::FormatParsingSet(input, inputFUS.GetUnit()).GetQuantity(problemCode, &inputFUS);
+    return Formatting::FormatParsingSet(input, inputFormat.GetCompositeInputUnit()).GetQuantity(problemCode, &inputFormat);
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

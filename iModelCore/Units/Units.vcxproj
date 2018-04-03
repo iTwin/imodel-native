@@ -8,7 +8,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ConstantDefinitions.cpp" />
-    <ClCompile Include="src\Formatting\NamedFormatSpec.cpp" />
+    <ClCompile Include="src\Formatting\Format.cpp" />
     <ClCompile Include="src\Formatting\NumericFormatSpec.cpp" />
     <ClCompile Include="src\Formatting\NumericFormatUtils.cpp" />
     <ClCompile Include="src\PhenomenonDefinitions.cpp" />
