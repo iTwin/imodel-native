@@ -387,6 +387,8 @@
 
     <Part Name="BisJson1Importer" BentleyBuildMakeFile="BimTeleporter/BimImporter/lib/BisJson1Importer.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <SubPart PartName="DgnView" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="Planning"                    PartFile="Planning"         Repository="DgnDomains-Planning"/>
         <SubPart PartName="TeleporterPublicAPI"/>
         <Bindings>
             <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)BisJson1Importer$(libext)</Libs>

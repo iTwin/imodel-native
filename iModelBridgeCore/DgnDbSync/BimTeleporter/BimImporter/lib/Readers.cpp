@@ -14,6 +14,7 @@
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/Render.h>
 #include <Bentley/Base64Utilities.h>
+#include <Planning/PlanningApi.h>
 #include "SyncInfo.h"
 #include "Readers.h"
 #include "BisJson1ImporterImpl.h"
@@ -23,6 +24,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_PLANNING
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
@@ -373,6 +375,8 @@ BentleyStatus Reader::RemapPropertyElementId(ECN::IECInstanceR properties, Utf8C
     {
     ECValue val;
     properties.GetValue(val, propertyName);
+    if (val.IsNull() || val.IsUninitialized())
+        return SUCCESS;
     uint64_t id;
     id = val.GetNavigationInfo().GetId<BeInt64Id>().GetValue();
     DgnElementId mappedId = GetSyncInfo()->LookupElement(DgnElementId(id));
@@ -666,7 +670,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
     DgnElementId newId;
     if (partitionType.Equals("GroupInformationPartition"))
         {
-        GroupInformationPartitionCPtr gip = GroupInformationPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
+        GroupInformationPartitionCPtr gip = GroupInformationPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
         if (!gip.IsValid())
             {
             GetLogger().errorv("Failed to create a GroupInformationPartition for %" PRIu64 "", oldInstanceId);
@@ -676,7 +680,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         }
     else if (partitionType.Equals("PhysicalPartition"))
         {
-        PhysicalPartitionCPtr pp = PhysicalPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
+        PhysicalPartitionCPtr pp = PhysicalPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
         if (!pp.IsValid())
             {
             GetLogger().errorv("Failed to create a PhysicalPartition for %s", oldInstanceId.ToString().c_str());
@@ -686,7 +690,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         }
     else if (partitionType.Equals("DocumentPartition"))
         {
-        DocumentPartitionCPtr dp = DocumentPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
+        DocumentPartitionCPtr dp = DocumentPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
         if (!dp.IsValid())
             {
             GetLogger().errorv("Failed to create a DocumentPartition for %s", oldInstanceId.ToString().c_str());
@@ -696,7 +700,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         }
     else if (partitionType.Equals("LinkPartition"))
         {
-        LinkPartitionCPtr lp = LinkPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
+        LinkPartitionCPtr lp = LinkPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
         if (!lp.IsValid())
             {
             GetLogger().errorv("Failed to create a LinkPartition for %s", oldInstanceId.ToString().c_str());
@@ -706,13 +710,23 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         }
     else if (partitionType.Equals("DefinitionPartition"))
         {
-        DefinitionPartitionCPtr dp = DefinitionPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
+        DefinitionPartitionCPtr dp = DefinitionPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
         if (!dp.IsValid())
             {
             GetLogger().errorv("Failed to create DefinitionPartition for %s", oldInstanceId.ToString().c_str());
             return ERROR;
             }
         newId = dp->GetElementId();
+        }
+    else if (partitionType.Equals("PlanningPartition"))
+        {
+        PlanningPartitionCPtr pp = PlanningPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asCString());
+        if (!pp.IsValid())
+            {
+            GetLogger().errorv("Failed to create PlanningPartition for %s", oldInstanceId.ToString().c_str());
+            return ERROR;
+            }
+        newId = pp->GetElementId();
         }
     else
         {
@@ -795,6 +809,13 @@ BentleyStatus ElementReader::_Read(Json::Value& element)
         }
 
     DgnElementCPtr inserted = dgnElement->Insert(&stat);
+    if (DgnDbStatus::DuplicateCode == stat)
+        {
+        DgnDbStatus stat2 = dgnElement->SetCode(DgnCode::CreateEmpty()); // just leave the code null
+        BeAssert(DgnDbStatus::Success == stat2);
+        inserted = dgnElement->Insert(&stat);
+        }
+
     if (!inserted.IsValid())
         {
         GetLogger().errorv("Failed to insert newly created %s into db.  Error code %d\n", _GetElementType(), stat);
@@ -1464,26 +1485,77 @@ BentleyStatus TextureReader::_Read(Json::Value& texture)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus SchemaReader::ProcessRelationshipClasses(ECN::ECSchemaP schema)
+BentleyStatus PlanReader::_OnInstanceCreated(ECN::IECInstanceR instance)
     {
+    // remap the Plan id
+    if (ERROR == RemapPropertyElementId(instance, "Plan"))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
+    {
+    ECN::ECClassP definitionElement = const_cast<ECN::ECClassP>(m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_DefinitionElement));
     ECN::ECClassCP elementClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
-    ECN::ECClassCP aspectClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
+    ECN::ECClassCP multiAspectClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
+    ECN::ECClassCP uniqueAspectClass = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect);
     ECN::ECRelationshipClassCP elementToMulti = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsMultiAspects)->GetRelationshipClassCP();
+    ECN::ECRelationshipClassCP elementToUnique = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)->GetRelationshipClassCP();
     ECN::ECRelationshipClassCP elementToElement = m_importer->GetDgnDb()->Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementRefersToElements)->GetRelationshipClassCP();
     // need to confirm that all relationship classes have a base class.  In 0601 we were able to get away with not having a base class.  That doesn't work here
     for (ECN::ECClassCP ecClass : schema->GetClasses())
         {
+        if (ecClass->GetBaseClasses().size() != 0)
+            continue;
+
+        if (ecClass->IsEntityClass())
+            {
+            ECN::ECClassP nonConstClass = const_cast<ECN::ECClassP>(ecClass);
+            if (ECN::ECObjectsStatus::Success != nonConstClass->AddBaseClass(*definitionElement))
+                {
+                schema->AddReferencedSchema(definitionElement->GetSchemaR(), "bis");
+                nonConstClass->AddBaseClass(*definitionElement);
+                }
+            continue;
+            }
         ECN::ECRelationshipClassP relClass = const_cast<ECN::ECRelationshipClassP>(ecClass->GetRelationshipClassCP());
         if (nullptr == relClass)
             continue;
-        if (relClass->GetBaseClasses().size() != 0)
+
+        bool hasNav = false;
+        // If there is a class that has a NavigationProperty to this class, then it doesn't need a base class
+        for (ECN::ECClassCP ecClass2 : schema->GetClasses())
+            {
+            if (!ecClass2->IsEntityClass())
+                continue;
+            for (ECN::ECPropertyCP prop : ecClass2->GetProperties(false))
+                {
+                ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
+                if (nullptr == navProp)
+                    continue;
+                if (navProp->GetRelationshipClass() == relClass)
+                    {
+                    hasNav = true;
+                    break;
+                    }
+                }
+            if (hasNav)
+                break;
+            }
+        if (hasNav)
             continue;
         ECN::ECClassCP source = relClass->GetSource().GetConstraintClasses()[0];
         ECN::ECClassCP target = relClass->GetTarget().GetConstraintClasses()[0];
         ECN::ECRelationshipClassCP base = nullptr;
         if (source->Is(elementClass))
             {
-            if (target->Is(aspectClass))
+            if (target->Is(uniqueAspectClass))
+                base = elementToUnique;
+            else if (target->Is(multiAspectClass))
                 base = elementToMulti;
             else if (target->Is(elementClass))
                 base = elementToElement;
@@ -1519,7 +1591,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
 
         Utf8CP schemaName = iter.memberName();
         BeFileName bimFileName = GetDgnDb()->GetFileName();
-#define EXPORT_0601JSON 1
+//#define EXPORT_0601JSON 1
 #ifdef EXPORT_0601JSON
         BeFileName jsonFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_json").c_str());
         if (!jsonFolder.DoesPathExist())
@@ -1546,6 +1618,9 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
         BimImportSchemaLocater locater;
         SchemaKey key;
         SchemaKey::ParseSchemaFullName(key, schemaName);
+        if (0 == strcmp("Planning", key.GetName().c_str()))
+            continue;
+
         locater.AddSchemaXmlR(key, schema.asString());
         ECN::ECSchemaPtr ecSchema = locater.DeserializeSchema(*m_importer->m_schemaReadContext, ECN::SchemaMatchType::Exact);
         if (!ecSchema.IsValid())
@@ -1554,7 +1629,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             return ERROR;
             }
 
-#define EXPORT_0601ECSCHEMAS 1
+//#define EXPORT_0601ECSCHEMAS 1
 #ifdef EXPORT_0601ECSCHEMAS
         BeFileName outFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_0601").c_str());
         if (!outFolder.DoesPathExist())
@@ -1605,11 +1680,11 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             }
         else
             {
-            ProcessRelationshipClasses(ecSchema.get());
+            ValidateBaseClasses(ecSchema.get());
             }
 
         ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest);
-#define EXPORT_FLATTENEDECSCHEMAS 1
+//#define EXPORT_FLATTENEDECSCHEMAS 1
 #ifdef EXPORT_FLATTENEDECSCHEMAS
         BeFileName flatFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_flat").c_str());
         if (!flatFolder.DoesPathExist())
@@ -1707,7 +1782,7 @@ BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& groups)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BentleyStatus ElementRefersToElementReader::_Read(Json::Value& relationships)
+BentleyStatus LinkTableReader::_Read(Json::Value& relationships)
     {
     if (!relationships.isArray())
         {
@@ -1789,4 +1864,56 @@ BentleyStatus ElementHasLinksReader::_Read(Json::Value& hasLinks)
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus BaselineReader::_Read(Json::Value& baseline)
+    {
+    PlanId id = ECJsonUtilities::JsonToId<PlanId>(baseline["Plan"]["id"]);
+    DgnElementId mappedPlan = GetSyncInfo()->LookupElement(DgnElementId(id.GetValue()));
+    if (!mappedPlan.IsValid())
+        {
+        Utf8PrintfString error("Failed to map PlanId for Baseline aspect %s.", id.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+    
+    PlanPtr plan = Plan::GetForEdit(*GetDgnDb(), mappedPlan);
+    if (!plan.IsValid())
+        {
+        Utf8PrintfString error("Failed to get Plan for mapped id %s.", mappedPlan.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+    if (nullptr == plan->CreateBaseline(baseline["Label"].asCString()))
+        {
+        Utf8PrintfString error("Failed to set baseline label '%s' on Plan %s.", baseline["Label"].asCString(), mappedPlan.ToString().c_str());
+        GetLogger().warning(error.c_str());
+        return ERROR;
+        }
+    plan->Update();
+    GetDgnDb()->SaveChanges();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus PropertyDataReader::_Read(Json::Value& propData)
+    {
+    if (propData.isMember("DefaultView"))
+        {
+        DgnElementId viewId = ECJsonUtilities::JsonToId<DgnElementId>(propData["DefaultView"]["id"]);
+        DgnElementId mappedView = GetSyncInfo()->LookupElement(viewId);
+        if (!mappedView.IsValid())
+            {
+            Utf8PrintfString error("Failed to map DefaultViewId %s.", viewId.ToString().c_str());
+            GetLogger().warning(error.c_str());
+            return ERROR;
+            }
+        PropertySpec prop = DgnViewProperty::DefaultView();
+        GetDgnDb()->SaveProperty(prop, &mappedView, sizeof(mappedView));
+        }
+    return SUCCESS;
+    }
 END_BIM_TELEPORTER_NAMESPACE

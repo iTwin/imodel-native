@@ -74,6 +74,8 @@ $(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumbe
 
 $(Delivery)Units$(ApiNumber).dll : $(DgnDbDlls)Units$(ApiNumber).dll
 
+$(Delivery)Planning$(ApiNumber).dll : $(DgnDbDlls)Planning$(ApiNumber).dll
+
 
 always:
    !~@mkdir ${DeliveryDgnDbPlatformLibs}
@@ -93,6 +95,8 @@ $(DeliveryDgnDbPlatformLibs)BentleyGeomSerialization.lib : $(DgnDbDlls)BentleyGe
 $(DeliveryDgnDbPlatformLibs)DgnPlatform.lib : $(DgnDbDlls)DgnPlatform.lib
 
 $(DeliveryDgnDbPlatformLibs)BaseGeoCoord.lib : $(DgnDbDlls)BaseGeoCoord.lib
+
+$(DeliveryDgnDbPlatformLibs)Planning.lib : $(DgnDbDlls)Planning.lib
 
 $(DeliveryDgnDbPlatformLibs)BeXml.lib : $(DgnDbDlls)BeXml.lib
 
