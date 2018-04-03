@@ -23,7 +23,7 @@ BE_JSON_NAME(displayLabel)
 BE_JSON_NAME(ecclass)
 BE_JSON_NAME(extendedType)
 BE_JSON_NAME(federationGuid)
-BE_JSON_NAME(id)
+// BE_JSON_NAME(id)
 BE_JSON_NAME(isCustomHandled)
 BE_JSON_NAME(isCustomHandledOrphan);
 BE_JSON_NAME(kindOfQuantity)
