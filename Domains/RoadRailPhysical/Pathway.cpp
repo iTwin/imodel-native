@@ -210,16 +210,18 @@ PathwayElement::ThruTravelSide ThruTravelComposite::QueryThruTravelSide() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThruwayCompositePtr ThruwayComposite::Create(PathwayElementCR pathway)
+ThruwayCompositePtr ThruwayComposite::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
     {
-    if (!pathway.GetElementId().IsValid())
+    if (!pathway.GetElementId().IsValid() || !linearElement.ToElement().GetElementId().IsValid())
         return nullptr;
 
     CreateParams params(pathway.GetDgnDb(), pathway.GetModelId(), QueryClassId(pathway.GetDgnDb()), pathway.GetCategoryId());
     params.SetParentId(pathway.GetElementId(), 
         DgnClassId(pathway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayAssemblesElements)));
 
-    return new ThruwayComposite(params);
+    ThruwayCompositePtr ptr(new ThruwayComposite(params));
+    ptr->SetMainLinearElement(&linearElement);
+    return ptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,7 +255,7 @@ ThruwayCompositeCPtr ThruwayComposite::Insert(PathwayElement::ThruTravelSide sid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThruwaySeparationCompositePtr ThruwaySeparationComposite::Create(PathwayElementCR pathway)
+ThruwaySeparationCompositePtr ThruwaySeparationComposite::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
     {
     if (!pathway.GetElementId().IsValid())
         return nullptr;
@@ -262,7 +264,9 @@ ThruwaySeparationCompositePtr ThruwaySeparationComposite::Create(PathwayElementC
     params.SetParentId(pathway.GetElementId(), 
         DgnClassId(pathway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayAssemblesElements)));
 
-    return new ThruwaySeparationComposite(params);
+    ThruwaySeparationCompositePtr ptr(new ThruwaySeparationComposite(params));
+    ptr->SetMainLinearElement(&linearElement);
+    return ptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

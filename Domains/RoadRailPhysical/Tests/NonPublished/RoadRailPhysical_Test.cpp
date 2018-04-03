@@ -61,16 +61,13 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     ASSERT_EQ(1, linearElements.size());
     ASSERT_EQ(alignmentPtr->GetElementId(), *linearElements.begin());
 
-    auto leftThruCompositePtr = ThruwayComposite::Create(*roadwayPtr);
-    leftThruCompositePtr->SetMainLinearElement(alignmentPtr.get());
+    auto leftThruCompositePtr = ThruwayComposite::Create(*roadwayPtr, *alignmentPtr);
     ASSERT_TRUE(leftThruCompositePtr->Insert(PathwayElement::ThruTravelSide::Left).IsValid());
 
-    auto thruSepCompositePtr = ThruwaySeparationComposite::Create(*roadwayPtr);
-    thruSepCompositePtr->SetMainLinearElement(alignmentPtr.get());
+    auto thruSepCompositePtr = ThruwaySeparationComposite::Create(*roadwayPtr, *alignmentPtr);
     ASSERT_TRUE(thruSepCompositePtr->Insert().IsValid());
 
-    auto rightThruCompositePtr = ThruwayComposite::Create(*roadwayPtr);
-    rightThruCompositePtr->SetMainLinearElement(alignmentPtr.get());
+    auto rightThruCompositePtr = ThruwayComposite::Create(*roadwayPtr, *alignmentPtr);
     ASSERT_TRUE(rightThruCompositePtr->Insert(PathwayElement::ThruTravelSide::Right).IsValid());
 
     ASSERT_EQ(3, roadwayCPtr->QueryPortionIds().size());

@@ -181,7 +181,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruwayComposite)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(ThruwayComposite)
 
-    ROADRAILPHYSICAL_EXPORT static ThruwayCompositePtr Create(PathwayElementCR pathway);
+    ROADRAILPHYSICAL_EXPORT static ThruwayCompositePtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
 
     ROADRAILPHYSICAL_EXPORT ThruwayCompositeCPtr Insert(PathwayElement::ThruTravelSide side, Dgn::DgnDbStatus* status = nullptr);
 }; // ThruwayComposite
@@ -205,7 +205,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruwaySeparationComposite)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(ThruwaySeparationComposite)
 
-    ROADRAILPHYSICAL_EXPORT static ThruwaySeparationCompositePtr Create(PathwayElementCR pathway);
+    ROADRAILPHYSICAL_EXPORT static ThruwaySeparationCompositePtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
 }; // ThruwaySeparationComposite
 
 //=======================================================================================
