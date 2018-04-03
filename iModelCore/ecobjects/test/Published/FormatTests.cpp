@@ -495,7 +495,7 @@ TEST_F(FormatOptionalAttributesTest, VerifyValidFractionalPrecision)
         <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <Format typeName="AmerMYFI4" type="fractional" precision="512"/>
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with fractional precision higher than max");
-    int i = 0;
+    int i = 1;
     int j = 0;
     while(i <= 256)
         { 
@@ -509,10 +509,7 @@ TEST_F(FormatOptionalAttributesTest, VerifyValidFractionalPrecision)
         ECSchemaPtr schema;
         ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml.c_str(), *context));
         ASSERT_EQ(static_cast<Formatting::FractionalPrecision>(j), schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetFractionalPrecision());
-        if (0 == i)
-            i+=2;
-        else
-            i<<=1;
+        i<<=1;
         j++;
         }
     }
