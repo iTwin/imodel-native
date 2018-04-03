@@ -457,6 +457,8 @@ public:
     //! Utility method to get the next id in a sequence
     //! @private internal use only
     BeSQLite::BeBriefcaseBasedIdSequence const& GetElementIdSequence() const { return m_elementIdSequence; }
+
+    BeSQLite::DbResult CreateRebaseTable(); //!< @private
 };
 
 END_BENTLEY_DGN_NAMESPACE

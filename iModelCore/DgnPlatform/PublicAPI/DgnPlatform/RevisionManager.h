@@ -177,13 +177,13 @@ private:
 
     RevisionStatus GroupChanges(BeSQLite::DbSchemaChangeSetR schemaChangeSet, BeSQLite::ChangeGroupR dataChangeGroup, TxnManager::TxnId endTxnId) const;
     DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeFileNameCR tempRevisionPathname);
-    RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DbSchemaChangeSetCR schemaChangeSet, BeSQLite::ChangeGroupCR dataChangeGroup);
+    RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::DbSchemaChangeSetCR schemaChangeSet, BeSQLite::ChangeGroupCR dataChangeGroup, BeSQLite::Rebaser*);
 
-    // If valid, currently creating a revision with all transactions upto *but* excluding this id
-    RevisionStatus SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId);
+    // If valid, currently creating a revision with all transactions upto *but* excluding this id. Rebase up to and *including* this rebaseId.
+    RevisionStatus SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId, int64_t rebaseId);
     RevisionStatus DeleteCurrentRevisionEndTxnId();
 
-    DgnRevisionPtr CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId);
+    DgnRevisionPtr CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId, int64_t lastRebaseId);
     RevisionStatus DoMergeRevision(DgnRevisionCR revision);
     RevisionStatus DoReverseRevision(DgnRevisionCR revision);
     RevisionStatus DoReinstateRevision(DgnRevisionCR revision);
@@ -279,6 +279,7 @@ public:
     DGNPLATFORM_EXPORT Utf8String GetReversedRevisionId() const;
 
     TxnManager::TxnId QueryCurrentRevisionEndTxnId() const; //!< @private
+    int64_t QueryLastRebaseId() const; //!< @private
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

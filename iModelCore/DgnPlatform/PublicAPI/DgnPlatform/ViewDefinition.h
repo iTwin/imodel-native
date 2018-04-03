@@ -785,6 +785,8 @@ public:
     //! Delete the thumbnail for this view.
     DGNPLATFORM_EXPORT void DeleteThumbnail() const;
     /** @} */
+
+    void AdjustAspectRatio(double windowAspect) { _AdjustAspectRatio(windowAspect); } //!< @private
 };
 
 /** @addtogroup GROUP_DgnView DgnView Module

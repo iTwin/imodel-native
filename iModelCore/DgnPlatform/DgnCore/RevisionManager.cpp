@@ -10,11 +10,13 @@
 #include <BeSQLite/BeLzma.h>
 #include <DgnPlatform/DgnChangeSummary.h>
 #include <ECDb/ChangeIterator.h>
+#include <folly/ProducerConsumerQueue.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
 #define CHANGESET_LZMA_MARKER   "ChangeSetLzma"
 #define CURRENT_CS_END_TXN_ID   "CurrentChangeSetEndTxnId"
+#define LAST_REBASE_ID          "LastRebaseId"
 #define INITIAL_PARENT_CS_ID    "InitialParentChangeSetId"
 #define PARENT_CS_ID           "ParentChangeSetId"
 #define REVERSED_CS_ID         "ReversedChangeSetId"
@@ -253,6 +255,9 @@ public:
         }
 
     ~RevisionChangesFileWriter() { _Reset(); }
+
+    DbResult CallOutputPage(const void* pData, int nData) {return _OutputPage(pData, nData);}
+
 };
 
 //---------------------------------------------------------------------------------------
@@ -426,102 +431,6 @@ ChangeSet::ConflictResolution ApplyRevisionChangeSet::_OnConflict(ChangeSet::Con
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    01/2018
-//---------------------------------------------------------------------------------------
-Utf8CP GetConflictCauseDescription(ChangeSet::ConflictCause cause)
-    {
-    switch (cause)
-        {
-        case ChangeSet::ConflictCause::Data:
-            return "Data (PRIMARY KEY found, but data was changed)";
-        case ChangeSet::ConflictCause::NotFound:
-            return "Not Found (PRIMARY KEY)";
-        case ChangeSet::ConflictCause::Conflict:
-            return "Conflict (Causes duplicate PRIMARY KEY)";
-        case ChangeSet::ConflictCause::Constraint:
-            return "Constraint (Causes UNIQUE, CHECK or NOT NULL constraint violation)";
-        case ChangeSet::ConflictCause::ForeignKey:
-            return "ForeignKey (Causes FOREIGN KEY constraint violation)";
-        default:
-            return "Unknown";
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8String formatOldValue(Statement& stmt)
-    {
-    switch (stmt.GetColumnType(0))
-        {
-        case DbValueType::IntegerVal:
-            return Utf8PrintfString("%" PRId64, stmt.GetValueInt64(0));
-
-        case DbValueType::FloatVal:
-            return Utf8PrintfString("%lg", stmt.GetValueDouble(0));
-
-        case DbValueType::TextVal:
-            return Utf8PrintfString("\"%s\"", stmt.GetValueText(0));
-
-        case DbValueType::NullVal:
-            return "null";
-        }
-
-    return "?";
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void dumpCurrentValues(DgnDbCR db, Changes::Change iter, Utf8CP tableName)
-    {
-    bvector<Utf8String> columnNames;
-    db.GetColumns(columnNames, tableName);
-
-    Byte* pcols = nullptr;
-    int npcols = 0;
-    iter.GetPrimaryKeyColumns(&pcols, &npcols);
-
-    if (!pcols)
-        return;
-
-    int64_t pk = 0;
-    int pki = 0;
-    for (int i = 0; i <= npcols; ++i)
-        {
-        if (pcols[i] == 0)
-            continue;
-
-        pk = iter.GetValue(i, Changes::Change::Stage::Old).GetValueInt64();
-        pki = i;
-        break;
-        }
-
-    for (int i = 0; i <= npcols; ++i)
-        {
-        if (pcols[i] > 0)
-            continue;
-
-        if (!iter.GetValue(i, Changes::Change::Stage::Old).IsValid()
-         && !iter.GetValue(i, Changes::Change::Stage::New).IsValid())
-            continue;   // this col was not changed
-
-        Statement stmt;
-        stmt.Prepare(db, Utf8PrintfString("SELECT %s from %s WHERE %s=%lld",
-            columnNames[i].c_str(),
-            tableName,
-            columnNames[pki].c_str(),
-            pk).c_str());
-        if (BE_SQLITE_ROW != stmt.Step())
-            return; // The row is not found. This must be a NOT_FOUND conflict, i.e., there is no current row with this Id.
-            
-        Utf8String oldVal = formatOldValue(stmt);
-
-        LOG.infov(Utf8PrintfString("%s.%s was %s", tableName, columnNames[i].c_str(), oldVal.c_str()).c_str());
-        }
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 // static
@@ -535,10 +444,13 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
 
     UNUSED_VARIABLE(result);
 
+    auto control = dgndb.GetOptimisticConcurrencyControl();
+    bool letControlHandleThis = (nullptr != control) && (const_cast<DgnDbR>(dgndb).Txns().HasLocalChanges());
+
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("------------------------------------------------------------------");
-        LOG.infov("Conflict detected - Cause: %s", GetConflictCauseDescription(cause));
+        LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
         if (cause == ChangeSet::ConflictCause::ForeignKey)
             {
             // Note: No current or conflicting row information is provided if it's a FKey conflict
@@ -549,10 +461,11 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
             }
         else 
             {
-            dumpCurrentValues(dgndb, iter, tableName);
             iter.Dump(dgndb, false, 1);
             }
         }
+
+    // Handle some special cases
 
     if (cause == ChangeSet::ConflictCause::ForeignKey)
         return ChangeSet::ConflictResolution::Skip;
@@ -578,12 +491,22 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
             return ChangeSet::ConflictResolution::Skip;
             }
 
-        LOG.infov("Aborted conflict resolution");
-        return ChangeSet::ConflictResolution::Abort; 
+        if (!letControlHandleThis)
+            {
+            LOG.infov("Aborted conflict resolution");
+            return ChangeSet::ConflictResolution::Abort; 
+            }
+        }
+
+    if (letControlHandleThis) 
+        {
+        // if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
+        // (We don't call the control in the case where there are no local changes. As explained below, we always want the incoming changes in that case.)
+        return control->_OnConflict(dgndb, cause, iter);
         }
 
     /*
-     * We ALWAYS(*) accept the incoming revision in cases of conflicts:
+     * If we don't have a control, we always accept the incoming revision in cases of conflicts:
      *
      * + In a briefcase with no local changes, the state of a row in the Db (i.e., the final state of a previous revision) 
      *   may not exactly match the initial state of the incoming revision. This will cause a conflict.
@@ -604,18 +527,6 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
      *
      * + Also see comments in TxnManager::MergeDataChangesInRevision()
      */
-
-    if (const_cast<DgnDbR>(dgndb).Txns().HasLocalChanges())
-        {
-        // (*) Actually, if we have a concurrency control, then we allow it to decide how to handle conflicts with local changes.
-        // (We don't call the control in the case where there are no local changes. As explained above, we always want the incoming changes in that case.)
-        auto control = dgndb.GetOptimisticConcurrencyControl();
-        if (nullptr != control)
-            {
-            return control->_OnConflict(dgndb, cause, iter);
-            }
-        }
-
     LOG.infov("Conflicting resolved by replacing the existing entry with the change");
     return ChangeSet::ConflictResolution::Replace;
     }
@@ -1241,9 +1152,13 @@ Utf8String RevisionManager::QueryInitialParentRevisionId() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId)
+RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId, int64_t rebaseId)
     {
     DbResult result = m_dgndb.SaveBriefcaseLocalValue(CURRENT_CS_END_TXN_ID, txnId.GetValue());
+
+    if (BE_SQLITE_DONE == result)
+        result = m_dgndb.SaveBriefcaseLocalValue(LAST_REBASE_ID, rebaseId);
+
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1266,6 +1181,9 @@ RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId tx
 RevisionStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
     {
     DbResult result = m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
+    if (BE_SQLITE_DONE == result)
+        result = m_dgndb.DeleteBriefcaseLocalValue(LAST_REBASE_ID);
+
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1293,6 +1211,16 @@ TxnManager::TxnId RevisionManager::QueryCurrentRevisionEndTxnId() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         03/2018
+//---------------------------------------------------------------------------------------
+int64_t RevisionManager::QueryLastRebaseId() const
+    {
+    uint64_t val;
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(val, LAST_REBASE_ID);
+    return (BE_SQLITE_ROW == result) ? val : 0;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
 bool RevisionManager::IsCreatingRevision() const
@@ -1316,7 +1244,7 @@ DgnRevisionPtr RevisionManager::GetCreatingRevision()
     if (!endTxnId.IsValid())
         return nullptr;
 
-    m_currentRevision = CreateRevision(nullptr, endTxnId);
+    m_currentRevision = CreateRevision(nullptr, endTxnId, QueryLastRebaseId());
     
     return m_currentRevision;
     }
@@ -1431,10 +1359,79 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
     return revision;
     }
 
+//=======================================================================================
+//! Handles a request to stream output by writing to a ProducerConsumerQueue. Can be used as the producer side of a concurrent pipeline.
+// @bsiclass                                                 Sam.Wilson     03/2018
+//=======================================================================================
+struct ChangeStreamQueueProducer : ChangeStream
+    {
+    folly::ProducerConsumerQueue<bvector<uint8_t>>& m_q;
+    ChangeStreamQueueProducer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
+    DbResult _OutputPage(const void *pData, int nData) override
+        {
+        while (!m_q.write((uint8_t*)pData, (uint8_t*)pData + nData))
+            ;   // spin until the queue has room
+        return BE_SQLITE_OK;
+        }
+    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) override {BeAssert(false); return ConflictResolution::Abort;}
+    };
+
+//=======================================================================================
+//! Satisfies a request for input by reading from a ProducerConsumerQueue. Can be used as the consumer side of a concurrent pipeline.
+// @bsiclass                                                 Sam.Wilson     03/2018
+//=======================================================================================
+struct ChangeStreamQueueConsumer : ChangeStream
+    {
+    folly::ProducerConsumerQueue<bvector<uint8_t>>& m_q;
+    bvector<uint8_t> m_remaining;
+
+    ChangeStreamQueueConsumer(folly::ProducerConsumerQueue<bvector<uint8_t>>& q) : m_q(q) {}
+    
+    DbResult _InputPage(void *pData, int *pnData) override
+        {
+        if (!m_remaining.empty())
+            {
+            // If the queued buffer was bigger than the caller's buffer, then we return
+            // the remaining portion in the amounts that the caller can deal with.
+            size_t retcount = std::min((size_t)*pnData, m_remaining.size());
+            memcpy(pData, m_remaining.data(), retcount);
+            *pnData = (int)retcount;
+            m_remaining.erase(m_remaining.begin(), m_remaining.begin() + retcount);
+            return BE_SQLITE_OK;
+            }
+
+        bvector<uint8_t>* pval;
+        do  {
+            pval = m_q.frontPtr();
+            }
+        while (!pval); // spin until we get a value;
+
+        if (pval->empty())
+            {
+            *pnData = 0;
+            }
+        else
+            {
+            // return as much of the queued buffer as the caller's buffer can hold.
+            size_t retcount = std::min((size_t)*pnData, pval->size());
+            memcpy(pData, pval->data(), retcount);
+            *pnData = (int)retcount;
+
+            // if the queued buffer has more, save it for the next call
+            if (retcount < pval->size())
+                m_remaining.assign(pval->data() + retcount, pval->data() + pval->size());
+            }
+
+        m_q.popFront();
+        return BE_SQLITE_OK;
+        }
+    ConflictResolution _OnConflict(ConflictCause clause, Changes::Change iter) override {BeAssert(false); return ConflictResolution::Abort;}
+    };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSchemaChangeSetCR dbSchemaChangeSet, ChangeGroupCR dataChangeGroup)
+RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSchemaChangeSetCR dbSchemaChangeSet, ChangeGroupCR dataChangeGroup, Rebaser* rebaser)
     {
     bool containsSchemaChanges = QueryContainsSchemaChanges() || (dbSchemaChangeSet.GetSize() > 0); // Note: Our workflows really disallow DbSchemaChanges without corresponding ECSchema changes, but we allow this here to for testing cases. 
     RevisionChangesFileWriter writer(pathname, containsSchemaChanges, dbSchemaChangeSet, m_dgndb);
@@ -1442,8 +1439,31 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
     DbResult result = writer.Initialize();
     if (BE_SQLITE_OK != result)
         return RevisionStatus::FileWriteError;
+	
+    if (nullptr == rebaser)
+        {
+        result = writer.FromChangeGroup(dataChangeGroup);
+        }
+    else
+        {
+        DbResult rebaseResult = BE_SQLITE_OK;
 
-    result = writer.FromChangeGroup(dataChangeGroup);
+        folly::ProducerConsumerQueue<bvector<uint8_t>> pageQueue{5};
+
+        ChangeStreamQueueConsumer readFromQueue(pageQueue);
+        std::thread writerThread([&] {rebaseResult = rebaser->DoRebase(readFromQueue, writer);});
+    
+        ChangeStreamQueueProducer writeToQueue(pageQueue);
+        result = writeToQueue.FromChangeGroup(dataChangeGroup);
+
+        while (!pageQueue.write(bvector<uint8_t>()))    // write an empty page to tell the consumer that we are done.
+	        ;
+        writerThread.join();
+
+        if (BE_SQLITE_OK == result)
+            result = rebaseResult;
+        }
+
     if (BE_SQLITE_OK != result)
         {
         BeAssert(false && "Could not write data changes to the revision file");
@@ -1470,7 +1490,7 @@ BeFileName RevisionManager::BuildTempRevisionPathname()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId)
+DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId, int64_t lastRebaseId)
     {
     RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
 
@@ -1480,7 +1500,11 @@ DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnMan
     if (RevisionStatus::Success != status)
         return nullptr;
 
-    status = WriteChangesToFile(m_tempRevisionPathname, dbSchemaChangeSet, dataChangeGroup);
+    Rebaser rebaser;
+    if (lastRebaseId != 0)
+        m_dgndb.Txns().LoadRebases(rebaser, lastRebaseId);
+
+    status = WriteChangesToFile(m_tempRevisionPathname, dbSchemaChangeSet, dataChangeGroup, (lastRebaseId != 0)? &rebaser: nullptr);
     if (RevisionStatus::Success != status)
         return nullptr;
 
@@ -1524,12 +1548,13 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
         }
 
     TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
+    int64_t lastRebaseId = txnMgr.QueryLastRebaseId();
 
-    DgnRevisionPtr currentRevision = CreateRevision(outStatus, endTxnId);
+    DgnRevisionPtr currentRevision = CreateRevision(outStatus, endTxnId, lastRebaseId);
     if (!currentRevision.IsValid())
         return nullptr;
 
-    status = SaveCurrentRevisionEndTxnId(endTxnId);
+    status = SaveCurrentRevisionEndTxnId(endTxnId, lastRebaseId);
     if (RevisionStatus::Success != status)
         return nullptr;
 
@@ -1553,6 +1578,9 @@ RevisionStatus RevisionManager::FinishCreateRevision()
     BeAssert(endTxnId.IsValid());
 
     if (DgnDbStatus::Success != m_dgndb.Txns().DeleteFromStartTo(endTxnId))
+        return RevisionStatus::SQLiteError;
+
+    if (DgnDbStatus::Success != m_dgndb.Txns().DeleteRebases(QueryLastRebaseId()))
         return RevisionStatus::SQLiteError;
 
     RevisionStatus status = SaveParentRevisionId(currentRevision->GetId());
@@ -1762,9 +1790,36 @@ void OptimisticConcurrencyControlBase::_OnQueriedHeld(DgnLockSet&, DgnCodeSet&, 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Sam.Wilson                         03/2018
+//---------------------------------------------------------------------------------------
+static DgnElementId getElementId(DgnDbCR db, Utf8CP tableName, BeSQLite::Changes::Change change, BeSQLite::DbOpcode opcode)
+    {
+    if (0 != strncmp("bis_", tableName, 4))
+        return DgnElementId();
+
+    auto stage = (BeSQLite::DbOpcode::Insert == opcode)? BeSQLite::Changes::Change::Stage::New: BeSQLite::Changes::Change::Stage::Old;
+
+    if (0 == strcmp(BIS_TABLE(BIS_CLASS_Element), tableName))
+        return DgnElementId(change.GetValue(0, stage).GetValueUInt64());
+
+    if (0 == strcmp(BIS_TABLE(BIS_CLASS_ElementMultiAspect), tableName) || 0 == strcmp(BIS_TABLE(BIS_CLASS_ElementUniqueAspect), tableName))
+        {
+        auto stmt = db.GetCachedStatement(Utf8PrintfString("SELECT ElementId from %s WHERE (Id = ?)", tableName).c_str());
+        stmt->BindInt64(1, change.GetValue(0, stage).GetValueUInt64());
+        stmt->Step();
+        return stmt->GetValueId<DgnElementId>(0);
+        }
+
+    // This may be a non-element-related table. We don't report it.
+    // This may be a split table, in which case, we'll always see and get the ElementId from the triggered change to the corresponding
+    //  row in the bis_Element table.
+    return DgnElementId();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Sam.Wilson                         01/2018
 //---------------------------------------------------------------------------------------
-BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConflict(OnConflict onConflict,
+BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConflict(OnConflict onConflict, DgnDbCR db,
                                                                                      Utf8CP tableName, BeSQLite::Changes::Change change, 
                                                                                      BeSQLite::DbOpcode opcode, bool indirect)
     {
@@ -1772,26 +1827,24 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::HandleConf
         return BeSQLite::ChangeSet::ConflictResolution::Replace;
 
     BeSQLite::ChangeSet::ConflictResolution res;
-    bvector<DgnElementId>* vec;
+    bset<DgnElementId>* eset;
 
     if (OptimisticConcurrencyControl::OnConflict::RejectIncomingChange == onConflict)
         {
         res = BeSQLite::ChangeSet::ConflictResolution::Skip;
-        vec = &m_conflictingElementsRejected;
+        eset = &m_conflictingElementsRejected;
         }
     else
         {
         res = BeSQLite::ChangeSet::ConflictResolution::Replace;
-        vec = &m_conflictingElementsAccepted;
+        eset = &m_conflictingElementsAccepted;
         }
 
     if (!indirect)
         {
-        // ***  NEEDS WORK: How to screen out tables that don't contain elements or models?
-        auto stage = (BeSQLite::DbOpcode::Insert == opcode)? BeSQLite::Changes::Change::Stage::New: BeSQLite::Changes::Change::Stage::Old;
-        DgnElementId elementId = DgnElementId(change.GetValue(0, stage).GetValueUInt64());
+        DgnElementId elementId = getElementId(db, tableName, change, opcode);
         if (elementId.IsValid())
-            vec->push_back(elementId);
+            eset->insert(elementId);
         }
 
     return res;
@@ -1874,7 +1927,7 @@ BeSQLite::ChangeSet::ConflictResolution OptimisticConcurrencyControl::_OnConflic
             break;
         }
         
-    return HandleConflict(onConflict, tableName, change, opcode, indirect);
+    return HandleConflict(onConflict, db, tableName, change, opcode, indirect);
     }
 
 //---------------------------------------------------------------------------------------
