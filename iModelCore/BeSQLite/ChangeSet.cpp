@@ -364,6 +364,7 @@ Changes::Change Changes::begin() const
 Changes::~Changes() {Finalize();}
 DbResult Changes::Change::GetOperation(Utf8CP* tableName, int* nCols, DbOpcode* opcode, int* indirect)const {return (DbResult) sqlite3changeset_op(m_iter, tableName, nCols, (int*) opcode, indirect);}
 DbResult Changes::Change::GetPrimaryKeyColumns(Byte** cols, int* nCols) const {return (DbResult) sqlite3changeset_pk(m_iter, cols, nCols);}
+DbResult Changes::Change::GetFKeyConflicts(int *nConflicts) const { return (DbResult)sqlite3changeset_fk_conflicts(m_iter, nConflicts); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15

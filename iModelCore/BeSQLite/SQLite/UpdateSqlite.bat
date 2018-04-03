@@ -12,7 +12,7 @@ rem SQLite uses the Fossil source code management system.
 rem You can track SQLite development at http://www.sqlite.org/src/timeline
 
 rem Bentley uses bentleybuild to compile SQLite, but the source code must be preprocessed first.
-rem The hundred or so .c files are consolidated into one, then split into smaller chunks (due to a limitation of Microsoft's compiler).
+rem The hundred or so .c files are consolidated into one.
 rem This is accomplished using TCL scripts.
 
 rem /*--------------------------------------------------------------------------------------+
@@ -48,9 +48,9 @@ make sqlite3.c
 
 rem Copy to bentley source tree
 set BeSqlOutRoot=%SrcRoot%BeSQLite\SQLite\
-copy sqlite3.c      %BeSqlOutRoot%
-copy shell.c        %BeSqlOutRoot%
-copy sqlite3.h      %BeSqlOutRoot%
+copy sqlite3.c %BeSqlOutRoot%
+copy shell.c %BeSqlOutRoot%
+copy sqlite3.h %BeSqlOutRoot%
 
 popd
 

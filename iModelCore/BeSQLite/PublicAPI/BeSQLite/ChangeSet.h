@@ -231,6 +231,12 @@ public:
 
             enum class Stage : bool {Old=0, New=1};
             DbValue GetValue(int colNum, Stage stage) const {return (stage==Stage::Old) ? GetOldValue(colNum) : GetNewValue(colNum);}
+            
+            //! Get the total number of foreign key violations in the database (if there's a ForeignKey conflict)
+            //! @param nConflicts The number of foreign key conflicts
+            //! @return Returns BE_SQLITE_OK if called from the conflict handler callback. In all other cases 
+            //! this returns BE_SQLITE_MISUSE. 
+            BE_SQLITE_EXPORT DbResult GetFKeyConflicts(int *nConflicts) const;
 
             //! Move the iterator to the next entry in the ChangeSet. After the last valid entry, the entry will be invalid.
             BE_SQLITE_EXPORT Change& operator++();
@@ -412,7 +418,7 @@ private:
 public:
     //! construct a blank, empty ChangeSet
     ChangeSet() {m_size=0; m_changeset=nullptr;}
-    ~ChangeSet() {Free();}
+    virtual ~ChangeSet() {Free();}
 
     //! Free the data held by this ChangeSet.
     //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.

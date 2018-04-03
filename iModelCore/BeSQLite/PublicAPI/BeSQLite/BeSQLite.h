@@ -1072,6 +1072,7 @@ protected:
 public:
     virtual bool _IsAggregate() {return false;}
     virtual ~DbFunction() {}
+    
     Utf8CP GetName() const {return m_name.c_str();} //!< Get the name of this function
     int GetNumArgs() const {return m_nArgs;}    //!< Get the number of arguments to this function
     DbValueType GetReturnType() const {return m_returnType;}//!< Gets the return type of the function.
@@ -2078,7 +2079,7 @@ protected:
     DbResult StopSavepoint(Savepoint&, bool isCommit, Utf8CP operation);
     DbResult CreatePropertyTable(Utf8CP tablename, Utf8CP ddl, bool temp);
     DbResult SaveCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId, Utf8CP stringData, void const* value, uint32_t size) const;
-    struct CachedProperyMap& GetCachedPropMap() const;
+    struct CachedPropertyMap& GetCachedPropMap() const;
     struct CachedPropertyValue& GetCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId) const;
     struct CachedPropertyValue* FindCachedProperty(PropertySpecCR spec, uint64_t id, uint64_t subId) const;
     DbResult QueryCachedProperty(Utf8String*, void** value, uint32_t size, PropertySpecCR spec, uint64_t id, uint64_t subId) const;
