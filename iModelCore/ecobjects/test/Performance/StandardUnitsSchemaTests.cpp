@@ -31,7 +31,7 @@ TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
     {
     StopWatch timer("Load Units Schema", false);
 
-    ECSchemaReadContextPtr context;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr unitsSchema;
 
     BeFileName assetsDir;
@@ -39,24 +39,20 @@ TEST_F(UnitsPerformanceTest, LoadUnitsSchema)
     assetsDir.append(L"ECSchemas\\Standard\\");
     assetsDir.append(L"Units.01.00.00.ecschema.xml");
 
-    double overallTime = 0;
+    timer.Start();
+    ECSchema::ReadFromXmlFile(unitsSchema, assetsDir.c_str(), *context);
+    timer.Stop();
 
-    for (int i = 0; i < 10000; i++)
-        {
-        unitsSchema = nullptr;
-        context = ECSchemaReadContext::CreateContext();
-        timer.Start();
-        ECSchema::ReadFromXmlFile(unitsSchema, assetsDir, *context);
-        timer.Stop();
-        overallTime += timer.GetElapsedSeconds();
-        }
+    EXPECT_EQ(451, unitsSchema->GetUnitCount());
+    EXPECT_EQ(66, unitsSchema->GetPhenomenonCount());
+    EXPECT_EQ(12, unitsSchema->GetUnitSystemCount());
 
-    PERFORMANCELOG.infov("Time to load the Standard Units Schema 10000 times with %lu units: %.17g", unitsSchema->GetUnitCount(), overallTime);
+    PERFORMANCELOG.infov("Time to load the Standard Units Schema with %lu units: %.17g", unitsSchema->GetUnitCount(), timer.GetElapsedSeconds());
 
-    LOGTODB(TEST_DETAILS, overallTime, 10000, "Loading the Units Schema");
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Loading the Units Schema");
 
     bmap<Utf8String, double> results;
-    results["LoadUnitsSchema"] = overallTime;
+    results["LoadUnitsSchema"] = timer.GetElapsedSeconds();
     LogResultsToFile(results);
     }
 
