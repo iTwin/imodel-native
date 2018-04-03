@@ -17,31 +17,35 @@ class RequestHandler
     {
     Utf8String serverPath; 
     public:
-        RequestHandler();
-        ~RequestHandler();
+        FAKESERVER_EXPORT RequestHandler();
+        FAKESERVER_EXPORT ~RequestHandler();
         //
-        Response BuddiRequest(Request req);
-        Response ImsTokenRequest (Request req);
-        Response PluginRequest(Request req);
+        FAKESERVER_EXPORT Response BuddiRequest(Request req);
+        FAKESERVER_EXPORT Response ImsTokenRequest (Request req);
+        FAKESERVER_EXPORT Response PluginRequest(Request req);
         ////
-        Response PerformGetRequest(Request req);
-        Response PerformOtherRequest(Request req);
+        FAKESERVER_EXPORT Response PerformGetRequest(Request req);
+        FAKESERVER_EXPORT Response PerformOtherRequest(Request req);
         
         //////
-        Response CreateiModel(Request req);
-        Response GetBriefcaseId(Request req);
-        Response DownloadiModel(Request req);
-        Response UploadNewSeedFile(Request req);
-        Response CreateFileInstance(Request req);
-        Response GetiModels(Request req);
-        Response DeleteiModels(Request req);
-        Response Push(Request req);
-        Response Pull(Request req);
-        Response GetChangeSetInfo(Request req);
+        FAKESERVER_EXPORT Response CreateiModelInstance(Request req);
+        FAKESERVER_EXPORT Response CreateSeedFileInstance(Request req);
+        FAKESERVER_EXPORT Response UploadSeedFile(Request req);
+        FAKESERVER_EXPORT Response FileCreationConfirmation(Request req);
+        FAKESERVER_EXPORT Response GetInitializationState(Request req);
+        FAKESERVER_EXPORT Response GetBriefcaseId(Request req);
+        FAKESERVER_EXPORT Response DownloadiModel(Request req);
+        FAKESERVER_EXPORT Response UploadNewSeedFile(Request req);
+        FAKESERVER_EXPORT Response CreateFileInstance(Request req);
+        FAKESERVER_EXPORT Response GetiModels(Request req);
+        FAKESERVER_EXPORT Response DeleteiModels(Request req);
+        FAKESERVER_EXPORT Response PushChangeSetMetadata(Request req);
+        FAKESERVER_EXPORT Response Pull(Request req);
+        FAKESERVER_EXPORT Response GetChangeSetInfo(Request req);
 
-        static DbResult Initialize(BeFileName temporaryDir, BeSQLiteLib::LogErrors logSqliteErrors = BeSQLiteLib::LogErrors::No);
-        void CheckDb();
-        void Insert(bvector<Utf8String> insertStr);
+        FAKESERVER_EXPORT BeFileName GetDbPath();
+        FAKESERVER_EXPORT void CheckDb();
+        FAKESERVER_EXPORT void Insert(bvector<Utf8String> insertStr);
 
 
     };
