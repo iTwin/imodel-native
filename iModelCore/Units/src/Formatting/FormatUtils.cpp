@@ -533,7 +533,7 @@ bool Utils::FractionalPrecisionByDenominator(FractionalPrecision& out, const siz
     {
     switch (prec)
         {
-        case 0: out = FractionalPrecision::Whole; break;
+        case 1: out = FractionalPrecision::Whole; break;
         case 2: out = FractionalPrecision::Half; break;
         case 4: out = FractionalPrecision::Quarter; break;
         case 8: out = FractionalPrecision::Eighth; break;
