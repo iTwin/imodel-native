@@ -1111,6 +1111,7 @@ TEST_F(ClassTest, SerializeClassWithProperties)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "ExampleSchema", "ex", 3, 1, 0, ECVersion::Latest);
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true));
 
     ECEntityClassP entityClass;
     schema->CreateEntityClass(entityClass, "ExampleEntityClass");
@@ -1123,7 +1124,7 @@ TEST_F(ClassTest, SerializeClassWithProperties)
 
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "TestKindOfQuantity");
-    koq->SetPersistenceUnit("M(DefaultRealU)");
+    koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
 
     ECStructClassP structClass;
     schema->CreateStructClass(structClass, "ExampleStructClass");

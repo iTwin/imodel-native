@@ -932,7 +932,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     // Format
     StopWatch readingUnitFormats("Reading Formats", true);
-    status = reader->ReadUnitTypeFromXml<Format>(schemaOut, *schemaNode, ECSchemaElementType::Format);
+    status = reader->ReadUnitTypeFromXml<ECFormat>(schemaOut, *schemaNode, ECSchemaElementType::Format);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -1244,9 +1244,9 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
             }
         else if (ECSchemaElementType::Format == elementType)
             {
-            FormatCP format = m_ecSchema.GetFormatCP(elementName);
+            ECFormatCP format = m_ecSchema.GetFormatCP(elementName);
             if(nullptr != format)
-                WriteSchemaChild<Format>(*format);
+                WriteSchemaChild<ECFormat>(*format);
             }
         }
 

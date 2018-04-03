@@ -1062,7 +1062,7 @@ TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     
     ECUnitCP mmUnit = unitsSchema.GetUnitCP("MM");
     EXPECT_NE(nullptr, mmUnit);
-    EXPECT_TRUE(koq->SetPersistenceUnit(*mmUnit, stdFormatSet.FindFormat("DefaultReal")));
+    EXPECT_TRUE(koq->SetPersistenceUnit(*mmUnit));
 
     PrimitiveECPropertyP primProp;
     EC_EXPECT_SUCCESS(entity->CreatePrimitiveProperty(primProp, "TestPrimProp"));
@@ -1605,18 +1605,21 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     ecSchema->CreateKindOfQuantity(temperature, "Temperature");
 
     // Phenomenon Length
-    feet->SetPersistenceUnit("u:MM");
-    feet->SetDefaultPresentationUnit("u:FT");
+    feet->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    // TODO
+    //feet->SetDefaultPresentationUnit("u:FT");
     feet->SetRelativeError(10e-3);
 
     // Phenomenon Length
-    inch->SetPersistenceUnit("u:M");
-    inch->SetDefaultPresentationUnit("u:IN");
+    inch->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    // TODO
+    //inch->SetDefaultPresentationUnit("u:IN");
     inch->SetRelativeError(10e-4);
     
     // Phenomenon Temperature
-    temperature->SetPersistenceUnit("u:CELSIUS");
-    temperature->SetDefaultPresentationUnit("u:FAHRENHEIT");
+    temperature->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CELCIUS"));
+    // TODO
+    //temperature->SetDefaultPresentationUnit("u:FAHRENHEIT");
     temperature->SetRelativeError(10e-3);
 
     // Test PrimitiveECProperty

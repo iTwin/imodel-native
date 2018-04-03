@@ -195,12 +195,6 @@ public:
     //! @return Fully qualified KindOfQuantity name for the ECJSON format
     static Utf8String FormatKindOfQuantityName(KindOfQuantityCR koq) {return Utf8PrintfString("%s.%s", koq.GetSchema().GetName().c_str(), koq.GetName().c_str());}
 
-    //! Generates a Json object in the ECJSON Unit Format from a FormatUnitSet.
-    //! @param [in] fus FormatUnitSet
-    //! @param [in] koq KindOfQuantity to generate Unit format for.
-    //! @return Json object for a FormatUnitSet in the ECJSON Unit Format 
-    static Json::Value FormatUnitSetToUnitFormatJson(Formatting::FormatUnitSetCR fus, KindOfQuantityCR koq);
-
     //! Lowers the first char of the specified string.
     //! @remarks Use this method to make a name, e.g. an ECProperty name a JSON member name.
     //! @param[in,out] str String to lower its first character

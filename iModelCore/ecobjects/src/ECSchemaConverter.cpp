@@ -987,14 +987,17 @@ bool kindOfQuantityHasMatchingPersitenceUnit(KindOfQuantityCP koq, Units::UnitCP
     if (nullptr == koq)
         return true;
 
-    return Units::Unit::AreEqual(koq->GetPersistenceUnit().GetUnit(), unit);
+    return Units::Unit::AreEqual(koq->GetPersistenceUnit(), unit);
     }
 
 bool kindOfQuantityHasMatchingPresentationUnit(KindOfQuantityCP koq, Units::UnitCP displayUnit, Units::UnitCP persistenceUnit)
     {
-    if (nullptr == displayUnit)
-        return Units::Unit::AreEqual(koq->GetDefaultPresentationUnit().GetUnit(), persistenceUnit);
-    return Units::Unit::AreEqual(koq->GetDefaultPresentationUnit().GetUnit(), displayUnit);
+    // TODO
+    //if (nullptr == displayUnit)
+    //    ; // Without explicit format we will use the default format
+    //if (koq->GetDefaultPresentationFormat().HasComposite())
+    //    return Units::Unit::AreEqual(koq->GetDefaultPresentationFormat().GetCompositeSpec()->GetInputUnit(), displayUnit);
+    return true; // TODO ask about this method. Not sure what correct behaviour is
     }
 
 bool unitIsAcceptable (Units::UnitCP unit)
@@ -1027,20 +1030,20 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
 
     if (kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newUnit))
         {
-        newKOQ->SetPersistenceUnit(*newUnit, s_stdFmtSet.FindFormat("DefaultRealU"));
+        newKOQ->SetPersistenceUnit(*newUnit);
         newKOQ->SetRelativeError(1e-4);
         }
     else
         {
-        newKOQ->SetPersistenceUnit((ECUnitCR) *baseKOQ->GetPersistenceUnit().GetUnit(), baseKOQ->GetPersistenceUnit().GetFormat());
+        newKOQ->SetPersistenceUnit((ECUnitCR) *baseKOQ->GetPersistenceUnit());
         newKOQ->SetRelativeError(baseKOQ->GetRelativeError());
         persistenceUnitChanged = true;
         }
-
-    if (nullptr != newDisplayUnit)
-        newKOQ->AddPresentationUnit(*newDisplayUnit, s_stdFmtSet.FindFormat("DefaultRealU"));
-    else if (persistenceUnitChanged)
-        newKOQ->AddPresentationUnit(*originalUnit, s_stdFmtSet.FindFormat("DefaultRealU"));
+    // TODO add static default formats
+    //if (nullptr != newDisplayUnit)
+    //    newKOQ->AddPresentationFormat(s_stdFmtSet.FindFormat("DefaultRealU"));
+    //else if (persistenceUnitChanged)
+    //    newKOQ->AddPresentationFormat(s_stdFmtSet.FindFormat("DefaultRealU"));
 
     return ECObjectsStatus::Success;
     }
@@ -1049,12 +1052,12 @@ bool baseAndNewUnitAreIncompatible(KindOfQuantityCP baseKOQ, ECUnitCP newUnit)
     {
     if (nullptr == baseKOQ)
         return false;
-    return !Units::Unit::AreCompatible(baseKOQ->GetPersistenceUnit().GetUnit(), newUnit);
+    return !Units::Unit::AreCompatible(baseKOQ->GetPersistenceUnit(), newUnit);
     }
 
 bool kindOfQuantityIsAcceptable(KindOfQuantityCP newKOQ, KindOfQuantityCP baseKOQ, ECUnitCP newUnit, ECUnitCP newDisplayUnit, bool& persistenceUnitChanged)
     {
-    if (!kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newKOQ->GetPersistenceUnit().GetUnit()))
+    if (!kindOfQuantityHasMatchingPersitenceUnit(baseKOQ, newKOQ->GetPersistenceUnit()))
         return false;
 
     if (!unitIsAcceptable(newUnit) && !baseAndNewUnitAreIncompatible(newKOQ, newUnit))
@@ -1076,7 +1079,7 @@ ECObjectsStatus obtainKindOfQuantity(ECSchemaR schema, ECPropertyP prop, KindOfQ
     if (baseAndNewUnitAreIncompatible(baseKOQ, newUnit))
         {
         LOG.errorv("Cannot convert UnitSpecification on '%s.%s' because the base property unit '%s' is not compatible with this properties unit '%s'",
-                   prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit().GetUnit()->GetName().c_str(), newUnit->GetName().c_str());
+                   prop->GetClass().GetFullName(), prop->GetName().c_str(), baseKOQ->GetPersistenceUnit()->GetName().c_str(), newUnit->GetName().c_str());
         return ECObjectsStatus::KindOfQuantityNotCompatible;
         }
 

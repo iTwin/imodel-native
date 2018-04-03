@@ -803,8 +803,8 @@ bool isKindOfQuantityCompatible(ECPropertyCR ecProp, ECPropertyCP baseProp, Kind
     if (nullptr == baseKOQ)
         return true;
 
-    Units::UnitCP baseUnit = baseKOQ->GetPersistenceUnit().GetUnit();
-    Units::UnitCP compareUnit = compareKOQ->GetPersistenceUnit().GetUnit();
+    Units::UnitCP baseUnit = baseKOQ->GetPersistenceUnit();
+    Units::UnitCP compareUnit = compareKOQ->GetPersistenceUnit();
 
     if (nullptr == baseUnit || nullptr == compareUnit)
         return true;

@@ -229,13 +229,34 @@ public:
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
+//=======================================================================================
+//! @bsistruct
+//=======================================================================================
+struct NamedFormat : Formatting::Format
+{
+DEFINE_T_SUPER(Formatting::Format)
+
+private:
+    Utf8String m_nameOrFormatString;
+    ECFormatCP m_ecFormat;
+
+protected:
+    NamedFormat(Utf8StringCR name, ECFormatCP format = nullptr) : Formatting::Format(), m_nameOrFormatString(name), m_ecFormat(format) {}
+
+public:
+    NamedFormat(Utf8String name, Formatting::FormatCR format) : Formatting::Format(format), m_nameOrFormatString(name), m_ecFormat(nullptr) {}
+    Utf8StringCR GetName() const {return m_nameOrFormatString;}
+    bool IsOverride() const {return this != (NamedFormatCP)m_ecFormat; }
+    ECFormatCP GetParentFormat() const {return m_ecFormat;}
+    void SetParentFormat(ECFormatCP parent) {m_ecFormat = parent;}
+};
 
 //=======================================================================================
 //! @bsistruct
 //=======================================================================================
-struct Format : Formatting::Format, NonCopyableClass
+struct ECFormat : NamedFormat, NonCopyableClass
 {
-DEFINE_T_SUPER(Formatting::Format)
+DEFINE_T_SUPER(NamedFormat)
 friend struct ECSchema;
 friend struct SchemaXmlWriter;
 friend struct SchemaXmlReaderImpl;
@@ -252,7 +273,7 @@ private:
 
     ECObjectsStatus SetDisplayLabel(Utf8StringCR displayLabel) {m_displayLabel = displayLabel; m_isDisplayLabelExplicitlyDefined = true; return ECObjectsStatus::Success;}
 
-    ECObjectsStatus Format::SetDescription(Utf8StringCR description) {m_description = description; return ECObjectsStatus::Success;}
+    ECObjectsStatus SetDescription(Utf8StringCR description) {m_description = description; return ECObjectsStatus::Success;}
 
     SchemaReadStatus ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR context);
     SchemaReadStatus ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context);
@@ -261,7 +282,7 @@ private:
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
 
-    Format(ECSchemaCR schema, Utf8StringCR name);
+    ECFormat(ECSchemaCR schema, Utf8StringCR name);
 
 public:
     ECOBJECTS_EXPORT ECSchemaCR GetSchema() const {return *m_schema;} //!< The ECSchema that this Format is defined in.
@@ -288,5 +309,6 @@ public:
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
+
 
 END_BENTLEY_ECOBJECT_NAMESPACE

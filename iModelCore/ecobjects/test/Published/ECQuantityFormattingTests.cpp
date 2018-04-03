@@ -84,10 +84,11 @@ TEST_F(ECQuantityFormattingTest, TestWithOnlyInputUnit)
 
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "Test");
-    koq->SetPersistenceUnit(*meter, fi);
+    koq->SetPersistenceUnit(*meter);
+    koq->SetDefaultPresentationFormat(NamedFormat("fi8", *fi));
 
     Formatting::FormatProblemCode problem;
-    BEU::Quantity newQuantity = ECQuantityFormatting::CreateQuantity("5", koq->GetDefaultPresentationUnit(), &problem);
+    BEU::Quantity newQuantity = ECQuantityFormatting::CreateQuantity("5", meter, &problem);
     EXPECT_EQ(meter, newQuantity.GetUnit());
     EXPECT_EQ(5, newQuantity.GetMagnitude());
     }

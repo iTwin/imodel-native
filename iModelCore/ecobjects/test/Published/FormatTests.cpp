@@ -25,7 +25,7 @@ TEST_F(FormatTest, BasicUnitFormatCreation)
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
 
-    FormatP ufmt;
+    ECFormatP ufmt;
     Formatting::NumericFormatSpec format = Formatting::NumericFormatSpec();
     format.SetApplyRounding(true);
     format.SetPresentationType(Formatting::PresentationType::Fractional);
@@ -67,7 +67,7 @@ TEST_F(FormatTest, BasicRoundTripTest)
 
     static auto const verify = [](ECSchemaPtr schema) -> void
         {
-        FormatCP ufmt = schema->GetFormatCP("AmerMYFI4");
+        ECFormatCP ufmt = schema->GetFormatCP("AmerMYFI4");
         ASSERT_NE(nullptr, ufmt);
         ASSERT_EQ(schema.get(), &ufmt->GetSchema());
         ASSERT_STREQ("AmerMYFI4", ufmt->GetName().c_str());
@@ -127,7 +127,7 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     ECSchema::CreateSchema(schema, "ExampleSchema", "es", 3, 2, 0);
     schema->AddReferencedSchema(*GetUnitsSchema(true));
 
-    FormatP ufmt;
+    ECFormatP ufmt;
     EC_ASSERT_SUCCESS(schema->CreateFormat(ufmt, "AmerMYFI4", "myfi4", ""));
     ASSERT_NE(nullptr, ufmt);
     using namespace Formatting;

@@ -1372,33 +1372,22 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     if (oldVal.GetRelativeError() != newVal.GetRelativeError())
         change.GetRelativeError().SetValue(oldVal.GetRelativeError(), newVal.GetRelativeError());
 
+    Utf8String oldPersUnitStr = oldVal.GetPersistenceUnit()->GetFullName();
 
-    auto qualifiedToText = [](ECUnitCR unit, Formatting::FormatCR format) -> Utf8String
-        {
-        Utf8String ret;
-        ret += unit.GetFullName();
-        ret += "(";
-        ret += format.GetName();
-        ret += ")";
-        return ret;
-        };
-
-    Utf8String oldPersUnitStr = qualifiedToText(*(ECUnitCP)oldVal.GetPersistenceUnit().GetUnit(), *oldVal.GetPersistenceUnit().GetFormat());
-
-    Utf8String newPersUnitStr = qualifiedToText(*(ECUnitCP)newVal.GetPersistenceUnit().GetUnit(), *newVal.GetPersistenceUnit().GetFormat());
+    Utf8String newPersUnitStr = newVal.GetPersistenceUnit()->GetFullName();
     
     if (!oldPersUnitStr.EqualsIAscii(newPersUnitStr))
         change.GetPersistenceUnit().SetValue(oldPersUnitStr, newPersUnitStr);
 
     std::vector<Utf8String> oldPresUnits, newPresUnits;
-    for (Formatting::FormatUnitSet const& fus : oldVal.GetPresentationUnitList())
+    for (NamedFormat const& format : oldVal.GetPresentationFormatList())
         {
-        oldPresUnits.push_back(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetFormat()));
+        oldPresUnits.push_back(format.GetName());
         }
 
-    for (Formatting::FormatUnitSet const& fus : newVal.GetPresentationUnitList())
+    for (NamedFormat const& format : newVal.GetPresentationFormatList())
         {
-        newPresUnits.push_back(qualifiedToText(*(ECUnitCP)fus.GetUnit(), *fus.GetFormat()));
+        newPresUnits.push_back(format.GetName());
         }
 
     const size_t oldPresUnitCount = oldPresUnits.size();
@@ -1824,12 +1813,10 @@ BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChanges& change
         change.GetDisplayLabel().SetValue(appendType, koq.GetInvariantDisplayLabel());
 
     change.GetDescription().SetValue(appendType, koq.GetInvariantDescription());
-    change.GetPersistenceUnit().SetValue(appendType, koq.GetPersistenceUnit().ToText());
+    change.GetPersistenceUnit().SetValue(appendType, koq.GetPersistenceUnit()->GetFullName());
     change.GetRelativeError().SetValue(appendType, koq.GetRelativeError());
-    for (Formatting::FormatUnitSet const& fus : koq.GetPresentationUnitList())
-        {
-        change.GetPresentationUnitList().Add(state).SetValue(appendType, fus.ToText());
-        }
+    for (NamedFormat const& format : koq.GetPresentationFormatList())
+        change.GetPresentationUnitList().Add(state).SetValue(appendType, format.GetName());
 
     return SUCCESS;
     }

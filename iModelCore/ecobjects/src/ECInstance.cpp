@@ -289,7 +289,7 @@ ECObjectsStatus IECInstance::GetQuantity(Units::QuantityR q, Utf8CP propertyAcce
 
     if (v.IsNull())
         {
-        q = Units::Quantity(0.0, *koq->GetPersistenceUnit().GetUnit());
+        q = Units::Quantity(0.0, *koq->GetPersistenceUnit());
         return ECObjectsStatus::PropertyValueNull;
         }
 
@@ -299,7 +299,7 @@ ECObjectsStatus IECInstance::GetQuantity(Units::QuantityR q, Utf8CP propertyAcce
         return ECObjectsStatus::DataTypeNotSupported;
         }
 
-    q = Units::Quantity(v.GetDouble(), *koq->GetPersistenceUnit().GetUnit());
+    q = Units::Quantity(v.GetDouble(), *koq->GetPersistenceUnit());
     return ECObjectsStatus::Success;
     }
 //---------------------------------------------------------------------------------------
@@ -479,7 +479,7 @@ ECObjectsStatus    IECInstance::SetQuantity(Utf8CP propertyAccessString, Units::
     if (nullptr == koq)
         return ECObjectsStatus::PropertyHasNoKindOfQuantity;
 
-    Units::Quantity converted = q.ConvertTo(koq->GetPersistenceUnit().GetUnit());
+    Units::Quantity converted = q.ConvertTo(koq->GetPersistenceUnit());
     if (!converted.IsValid())
         return ECObjectsStatus::KindOfQuantityNotCompatible;
 
@@ -2877,7 +2877,7 @@ struct  InstanceXmlReader
 
                     ECUnitCP oldUnit = StandardUnitsHelper::GetUnit(unitName.c_str());
                     double convertedValue;
-                    oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
+                    oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit());
 
                     ecValue.SetDouble(convertedValue);
                     }

@@ -243,7 +243,7 @@ Utf8StringCR SchemaLocalizedStrings::GetUnitSystemDescription(UnitSystemCR unitS
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-Utf8StringCR SchemaLocalizedStrings::GetFormatDisplayLabel(FormatCR format, Utf8StringCR invariantDisplayLabel) const
+Utf8StringCR SchemaLocalizedStrings::GetFormatDisplayLabel(ECFormatCR format, Utf8StringCR invariantDisplayLabel) const
     {
     if (m_empty)
         return invariantDisplayLabel;
@@ -255,7 +255,7 @@ Utf8StringCR SchemaLocalizedStrings::GetFormatDisplayLabel(FormatCR format, Utf8
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    01/2018
 //--------------------------------------------------------------------------------------
-Utf8StringCR SchemaLocalizedStrings::GetFormatDescription(FormatCR format, Utf8StringCR invariantDescription) const
+Utf8StringCR SchemaLocalizedStrings::GetFormatDescription(ECFormatCR format, Utf8StringCR invariantDescription) const
     {
     if (m_empty)
         return invariantDescription;

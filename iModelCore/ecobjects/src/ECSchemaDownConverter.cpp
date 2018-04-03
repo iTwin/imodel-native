@@ -36,7 +36,7 @@ bool tryCreateCA(ECSchemaR schema, Utf8CP origClassName, Utf8CP className, IECIn
 bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, ECSchemaR unitAttributesSchema)
     {
     schema.AddReferencedSchema(unitAttributesSchema);
-    Utf8CP perUnitName = ((ECUnitCP)ecProperty->GetKindOfQuantity()->GetPersistenceUnit().GetUnit())->GetFullName().c_str();
+    Utf8CP perUnitName = ((ECUnitCP)ecProperty->GetKindOfQuantity()->GetPersistenceUnit())->GetFullName().c_str();
     Utf8CP oldPerUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(perUnitName);
     if(nullptr == oldPerUnitName)
         {
@@ -52,26 +52,27 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
     unitSpecCA->SetValue(UNIT_NAME, oldName);
     ecProperty->SetCustomAttribute(*unitSpecCA);
 
-    if (ecProperty->GetKindOfQuantity()->HasPresentationUnits())
-        {
-        Utf8CP presUnitName = ((ECUnitCP)ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit())->GetFullName().c_str();
-        Utf8CP oldPresUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(presUnitName);
-        if (nullptr == oldPresUnitName)
-            {
-            LOG.warningv("Failed to find old  unit name for the presentation unit '%s' used on property '%s.%s.%s'",
-                         presUnitName, schema.GetName().c_str(), ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
-            return true;
-            }
-        
-        IECInstancePtr displayUnitSpecCA;
-        if (!tryCreateCA(unitAttributesSchema, DISPLAY_UNIT_SPECIFICATION_ORIG, DISPLAY_UNIT_SPECIFICATION, displayUnitSpecCA))
-            return false;
-        ECValue oldPresName(oldPresUnitName);
-        displayUnitSpecCA->SetValue(DISPLAY_UNIT_NAME, oldPresName);
-        ECValue formatString(DEFAULT_FORMATTER);
-        displayUnitSpecCA->SetValue(DISPLAY_FORMAT_STRING, formatString);
-        ecProperty->SetCustomAttribute(*displayUnitSpecCA);
-        }
+    // TODO fix
+    //if (ecProperty->GetKindOfQuantity()->HasPresentationUnits())
+    //    {
+    //    Utf8CP presUnitName = ((ECUnitCP)ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit()))->GetFullName().c_str();
+    //    Utf8CP oldPresUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(presUnitName);
+    //    if (nullptr == oldPresUnitName)
+    //        {
+    //        LOG.warningv("Failed to find old  unit name for the presentation unit '%s' used on property '%s.%s.%s'",
+    //                     presUnitName, schema.GetName().c_str(), ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
+    //        return true;
+    //        }
+    //    
+    //    IECInstancePtr displayUnitSpecCA;
+    //    if (!tryCreateCA(unitAttributesSchema, DISPLAY_UNIT_SPECIFICATION_ORIG, DISPLAY_UNIT_SPECIFICATION, displayUnitSpecCA))
+    //        return false;
+    //    ECValue oldPresName(oldPresUnitName);
+    //    displayUnitSpecCA->SetValue(DISPLAY_UNIT_NAME, oldPresName);
+    //    ECValue formatString(DEFAULT_FORMATTER);
+    //    displayUnitSpecCA->SetValue(DISPLAY_FORMAT_STRING, formatString);
+    //    ecProperty->SetCustomAttribute(*displayUnitSpecCA);
+    //    }
     return true;
     }
 

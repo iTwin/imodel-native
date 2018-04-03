@@ -1261,11 +1261,11 @@ ECObjectsStatus ECSchema::CreateConstant(ECUnitP& constant, Utf8CP name, Utf8CP 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECSchema::CreateFormat(FormatP& unitFormat, Utf8CP name, Utf8CP label, Utf8CP description, Formatting::NumericFormatSpecCP nfs, Formatting::CompositeValueSpecCP composite)
+ECObjectsStatus ECSchema::CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8CP label, Utf8CP description, Formatting::NumericFormatSpecCP nfs, Formatting::CompositeValueSpecCP composite)
     {
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
-    unitFormat = new Format(*this, name);
+    unitFormat = new ECFormat(*this, name);
     ECObjectsStatus status;
 
     if (ECObjectsStatus::Success != (status = unitFormat->SetDisplayLabel(label)))
@@ -1287,7 +1287,7 @@ ECObjectsStatus ECSchema::CreateFormat(FormatP& unitFormat, Utf8CP name, Utf8CP 
     if (nullptr != composite)
         unitFormat->SetCompositeSpec(*composite);
 
-    if (ECObjectsStatus::Success != (status = AddSchemaChildToMap<Format, FormatMap>(unitFormat, &m_formatMap, ECSchemaElementType::Format)))
+    if (ECObjectsStatus::Success != (status = AddSchemaChildToMap<ECFormat, FormatMap>(unitFormat, &m_formatMap, ECSchemaElementType::Format)))
         {
         delete unitFormat;
         unitFormat = nullptr;
@@ -1357,7 +1357,7 @@ template<> ECObjectsStatus ECSchema::AddSchemaChild<KindOfQuantity>(KindOfQuanti
 template<> ECObjectsStatus ECSchema::AddSchemaChild<UnitSystem>(UnitSystemP child, ECSchemaElementType childType) {return AddUnitType<UnitSystem>(child, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<Phenomenon>(PhenomenonP child, ECSchemaElementType childType) {return AddUnitType<Phenomenon>(child, childType);}
 template<> ECObjectsStatus ECSchema::AddSchemaChild<ECUnit>(ECUnitP child, ECSchemaElementType childType) {return AddUnitType<ECUnit>(child, childType);}
-template<> ECObjectsStatus ECSchema::AddSchemaChild<Format>(FormatP child, ECSchemaElementType childType) {return AddSchemaChildToMap<Format, FormatMap>(child, &m_formatMap, childType);}
+template<> ECObjectsStatus ECSchema::AddSchemaChild<ECFormat>(ECFormatP child, ECSchemaElementType childType) {return AddSchemaChildToMap<ECFormat, FormatMap>(child, &m_formatMap, childType);}
 //--------------------------------------------------------------------------------------
 // @bsimethod
 //--------------------------------------------------------------------------------------
@@ -1604,7 +1604,7 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
 
     ECSchemaR copyFromSchema = sourceKOQ.GetSchemaR();
 
-    ECUnitCP persistUnit = ((ECUnitCP)sourceKOQ.GetPersistenceUnit().GetUnit());
+    ECUnitCP persistUnit = sourceKOQ.GetPersistenceUnit();
     if (nullptr != persistUnit)
         {
         ECSchemaCR persistUnitSchema = persistUnit->GetSchema();
@@ -1618,26 +1618,27 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
         else
             persistUnit = GetUnitCP(persistUnit->GetName().c_str());
 
-        targetKOQ->SetPersistenceUnit(*persistUnit, sourceKOQ.GetPersistenceUnit().GetFormat());
+        targetKOQ->SetPersistenceUnit(*persistUnit);
         }
 
-    if (sourceKOQ.HasPresentationUnits())
+    if (sourceKOQ.HasPresentationFormats())
         {
-        for (const auto& fus : sourceKOQ.GetPresentationUnitList())
-            { 
-            ECUnitCP presUnit = ((ECUnitCP)fus.GetUnit());
-            ECSchemaCR presUnitSchema = presUnit->GetSchema();
-            SchemaKey key = SchemaKey(presUnitSchema.GetName().c_str(), presUnitSchema.GetVersionRead(), presUnitSchema.GetVersionWrite(), presUnitSchema.GetVersionMinor());
-            if (!this->GetSchemaKey().Matches(presUnitSchema.GetSchemaKey(), SchemaMatchType::Exact))
-                { 
-                ECSchemaP foundSchema = copyFromSchema.FindSchemaP(key, SchemaMatchType::Exact);
-                if (nullptr != foundSchema)
-                    AddReferencedSchema(*foundSchema);
+        for (const auto& format : sourceKOQ.GetPresentationFormatList())
+            {
+            auto newFormat = format;
+            auto parentFormat = targetKOQ->GetSchema().GetFormatCP(format.GetParentFormat()->GetName().c_str());
+            if (nullptr == parentFormat)
+                {
+                ECFormatP copiedFormat;
+                status = CopyFormat(copiedFormat, *format.GetParentFormat());
+                if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+                    return status;
+                newFormat.SetParentFormat(copiedFormat);
                 }
             else
-                presUnit = GetUnitCP(presUnit->GetName().c_str());
+                newFormat.SetParentFormat(parentFormat);
 
-            targetKOQ->AddPresentationUnit(*presUnit, fus.GetFormat());
+            targetKOQ->AddPresentationFormat(newFormat);
             }
         }
     
@@ -1776,6 +1777,60 @@ ECObjectsStatus ECSchema::CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit)
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceFormat)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status = CreateFormat(targetFormat, sourceFormat.GetName().c_str());
+    if (ECObjectsStatus::Success != status)
+        return status;
+    if (sourceFormat.GetIsDisplayLabelDefined())
+        targetFormat->SetDisplayLabel(sourceFormat.GetInvariantDisplayLabel());
+    if (sourceFormat.GetIsDescriptionDefined())
+        targetFormat->SetDescription(sourceFormat.GetInvariantDescription());
+    if (sourceFormat.HasNumeric())
+        targetFormat->SetNumericSpec(*sourceFormat.GetNumericSpec());
+    if (sourceFormat.HasComposite())
+        {
+        auto sourceComp = sourceFormat.GetCompositeSpec();
+        const auto copyIfNecessary = [&](Units::UnitCP source)
+            {
+            if (((ECUnitCP)source)->GetSchema().GetSchemaKey().Matches(GetSchemaKey(), SchemaMatchType::Exact))
+                {
+                ECUnitP copiedUnit = nullptr;
+                status = CopyUnit(copiedUnit, *(ECUnitCP)source);
+                ECUnitCP constCopied = copiedUnit;
+                return constCopied;
+                }
+            return (ECUnitCP)source;
+            };
+        auto comp = Formatting::CompositeValueSpec(*copyIfNecessary(sourceComp->GetMajorUnit()),
+                                                    *copyIfNecessary(sourceComp->GetMiddleUnit()),
+                                                    *copyIfNecessary(sourceComp->GetMinorUnit()),
+                                                    *copyIfNecessary(sourceComp->GetSubUnit()));
+        if (ECObjectsStatus::Success != status)
+            return status;
+
+        comp.SetSpacer(sourceComp->GetSpacer().c_str());
+        comp.SetIncludeZero(sourceComp->IsIncludeZero());
+        comp.SetInputUnit(copyIfNecessary(sourceComp->GetInputUnit()));
+        if (sourceComp->HasMajorLabel())
+            comp.SetMajorLabel(sourceComp->GetMajorLabel());
+        if (sourceComp->HasMiddleLabel())
+            comp.SetMiddleLabel(sourceComp->GetMiddleLabel());
+        if (sourceComp->HasMinorLabel())
+            comp.SetMinorLabel(sourceComp->GetMinorLabel());
+        if (sourceComp->HasSubLabel())
+            comp.SetSubLabel(sourceComp->GetSubLabel());
+
+        targetFormat->SetCompositeSpec(comp);
+        }
+    return status;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                05/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1838,6 +1893,14 @@ ECObjectsStatus ECSchema::CopySchema(ECSchemaPtr& schemaOut) const
         {
         ECUnitP copyUnit;
         status = schemaOut->CopyUnit(copyUnit, *unit);
+        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+            return status;
+        }
+
+    for (auto format : m_formatContainer)
+        {
+        ECFormatP copyFormat;
+        status = schemaOut->CopyFormat(copyFormat, *format);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }
@@ -2248,11 +2311,11 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
 
         for (auto koq : GetKindOfQuantities())
             {
-            ECUnitCP persUnit = (ECUnitCP)koq->GetPersistenceUnit().GetUnit();
+            ECUnitCP persUnit = koq->GetPersistenceUnit();
             if (nullptr != persUnit && persUnit->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                 return ECObjectsStatus::SchemaInUse;
 
-            for (auto presUnit : koq->GetPresentationUnitList())
+            for (auto presUnit : koq->GetPresentationFormatList())
                 {
                 if (persUnit->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;
@@ -3275,7 +3338,7 @@ void ECSchemaElementsOrder::CreateAlphabeticalOrder(ECSchemaCR ecSchema)
     AddElements<PropertyCategory, PropertyCategoryContainer>(ecSchema.GetPropertyCategories(), ECSchemaElementType::PropertyCategory);
     AddElements<UnitSystem, UnitSystemContainer>(ecSchema.GetUnitSystems(), ECSchemaElementType::UnitSystem);
     AddElements<Phenomenon, PhenomenonContainer>(ecSchema.GetPhenomena(), ECSchemaElementType::Phenomenon);
-    AddElements<Format, FormatContainer>(ecSchema.GetFormats(), ECSchemaElementType::Format);
+    AddElements<ECFormat, FormatContainer>(ecSchema.GetFormats(), ECSchemaElementType::Format);
     for (const auto u: ecSchema.GetUnits())
         {
         if (nullptr == u)

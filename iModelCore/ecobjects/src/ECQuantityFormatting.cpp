@@ -46,9 +46,9 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
     if (nullptr == koq)
         return defFormat->FormatDouble(qty.GetMagnitude());
     
-    Formatting::FormatUnitSet fus = koq->GetDefaultPresentationUnit();
-    if (ECUnit::AreCompatible(qty.GetUnit(), fus.GetUnit()))
-        return fus.FormatQuantity(qty, nullptr);
+    NamedFormat format = koq->GetDefaultPresentationFormat();
+    if (!format.HasCompositeInputUnit() || ECUnit::AreCompatible(qty.GetUnit(), format.GetCompositeSpec()->GetInputUnit()))
+        return format.FormatQuantity(qty, nullptr);
 
     *formatStatus = ECQuantityFormattingStatus::IncompatibleKOQ;
     return defFormat->FormatDouble(qty.GetMagnitude());
@@ -59,7 +59,7 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
 //----------------------------------------------------------------------------------------
 Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantityCP koq, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat)
     {
-    return FormatQuantity(BEU::Quantity(dval, *koq->GetPersistenceUnit().GetUnit()), koq, status, defFormat);
+    return FormatQuantity(BEU::Quantity(dval, *koq->GetPersistenceUnit()), koq, status, defFormat);
     }
 
 //---------------------------------------------------------------------------------------
@@ -67,7 +67,7 @@ Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantit
 //---------------------------------------------------------------------------------------
 Utf8String ECQuantityFormatting::FormatPersistedValue(double dval, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::FormatCR formatSpec, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat)
     {
-    return FormatQuantity(BEU::Quantity(dval, *koq->GetPersistenceUnit().GetUnit()), koq, presentationUnit, formatSpec, status, defFormat);
+    return FormatQuantity(BEU::Quantity(dval, *koq->GetPersistenceUnit()), koq, presentationUnit, formatSpec, status, defFormat);
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

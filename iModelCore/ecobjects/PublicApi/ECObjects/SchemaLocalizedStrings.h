@@ -54,8 +54,8 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDisplayLabel(ECPropertyCP ecProperty, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDescription(ECPropertyCP ecProperty, Utf8StringCR invariantDescription) const;
 
-    ECOBJECTS_EXPORT Utf8StringCR GetFormatDisplayLabel(FormatCR format, Utf8StringCR invariantDisplayLabel) const;
-    ECOBJECTS_EXPORT Utf8StringCR GetFormatDescription(FormatCR format, Utf8StringCR invariantDescription) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetFormatDisplayLabel(ECFormatCR format, Utf8StringCR invariantDisplayLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetFormatDescription(ECFormatCR format, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetUnitSystemDisplayLabel(UnitSystemCR unitSystem, Utf8StringCR invariantRoleLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetUnitSystemDescription(UnitSystemCR unitSystem, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetUnitDisplayLabel(ECUnitCR unit, Utf8StringCR invariantDisplayLabel) const;

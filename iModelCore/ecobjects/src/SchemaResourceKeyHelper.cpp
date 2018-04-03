@@ -147,14 +147,14 @@ Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECUnitCR unit)
         unit.GetInvariantDescription().c_str());
     }
 
-Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(FormatCR format)
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(ECFormatCR format)
     {
     return GetTypeDisplayLabelKey(format.GetSchema().GetName().c_str(),
         format.GetName().c_str(),
         format.GetInvariantDisplayLabel().c_str());
     }
 
-Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(FormatCR format)
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECFormatCR format)
     {
     return GetTypeDescriptionKey(format.GetSchema().GetName().c_str(),
         format.GetName().c_str(),

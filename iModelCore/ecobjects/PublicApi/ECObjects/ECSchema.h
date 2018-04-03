@@ -57,7 +57,7 @@ using PropertyCategoryMap = bmap<Utf8CP, PropertyCategoryP, less_str>;
 using UnitSystemMap = bmap<Utf8CP, UnitSystemP, less_str>;
 using PhenomenonMap = bmap<Utf8CP, PhenomenonP, less_str>;
 using UnitMap = bmap<Utf8CP, ECUnitP, less_str>;
-using FormatMap = bmap<Utf8CP, FormatP, less_str>;
+using FormatMap = bmap<Utf8CP, ECFormatP, less_str>;
 
 using ECCustomAttributeCollection = bvector<IECInstancePtr>;
 struct ECCustomAttributeInstanceIterable;
@@ -1430,12 +1430,12 @@ private:
     ECValidatedName m_validatedName; //wraps name and displaylabel
     Utf8String m_description;
 
-    //! Unit used for persistence and formatting if value is every shown in persistence unit
-    Formatting::FormatUnitSet m_persistenceFUS;
+    //! Unit used for persistence. Will be formatted with a default format if no formats are provided.
+    ECUnitCP m_persistenceUnit;
     //! Absolute Error divided by the measured value.
     double m_relativeError;
-    //! Units which can be used for presentation.  First FUS is default.
-    bvector<Formatting::FormatUnitSet> m_presentationUnits;
+    //! Formats which can be used for presentation. First format is default.
+    bvector<NamedFormat> m_presentationFormats;
 
     mutable KindOfQuantityId m_kindOfQuantityId;
 
@@ -1494,45 +1494,29 @@ public:
     //! @param[in]  value  The new value to apply
     void SetRelativeError(double value) {m_relativeError = value;}
     double GetRelativeError() const {return m_relativeError;}; //!< Gets the precision used for persisting the information. A precision of zero indicates that a default will be used.
-
-    //! Sets the Unit of measurement used for persisting the information
-    //! @param[in]  fusDescriptor  The new value to apply
-    //! @returns true if the persistence FormatUnitSet is valid, false if not
-    ECOBJECTS_EXPORT bool SetPersistenceUnit(Utf8StringCR fusDescriptor);
-    ECOBJECTS_EXPORT bool SetPersistenceUnit(ECUnitCR unit, Formatting::FormatCP format = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus SetPersistenceUnit(ECUnitCR unit);
     //! Gets the Unit of measurement used for persisting the information
-    Formatting::FormatUnitSetCR GetPersistenceUnit() const {return m_persistenceFUS;}
-    Utf8String GetPersistenceUnitDescriptor() const { return GetFUSDescriptor(m_persistenceFUS, GetSchema()); }
-
-    //! Sets the default presentation Unit of this KindOfQuantity
-    //! @param[in]  value  The new value to apply
-    //! @return true if the presentation FormatUnitSet is valid, false if not.
-    ECOBJECTS_EXPORT bool SetDefaultPresentationUnit(Utf8StringCR fusDescriptor);
-    ECOBJECTS_EXPORT ECObjectsStatus SetDefaultPresentationUnit(ECUnitCR unit, Formatting::FormatCP format = nullptr);
-    //! Gets the default presentation FormatUnitSet of this KindOfQuantity.
-    Formatting::FormatUnitSetCR GetDefaultPresentationUnit() const {return 0 < m_presentationUnits.size() ? *(&m_presentationUnits[0]) : GetPersistenceUnit();}
+    ECUnitCP GetPersistenceUnit() const {return m_persistenceUnit;}
+    ECOBJECTS_EXPORT ECObjectsStatus SetDefaultPresentationFormat(NamedFormatCR format);
+    //! Gets the default presentation format of this KindOfQuantity.
+    NamedFormat GetDefaultPresentationFormat() const {return *(&m_presentationFormats[0]);} // TODO fix
 
     ECOBJECTS_EXPORT Utf8String GetPresentationUnitDescriptor() const;
 
-    //! Adds the FormatUnitSet to the list of presentation Units.
-    //! @param[in]  value  The new FormatUnitSet to add to the list of presentation units
-    //! @return ECObjectsStatus::InvalidFormatUnitSet if there is a problem detected, otherwise ECObjectsStatus::Success.
-    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationUnit(Utf8StringCR fusDescriptor);
+    //! Adds NamedFormat to this KoQ's list of presentation formats. If the format has an input unit,
+    //! it must be compatible with the persistence unit.
+    //! @param[in] format  The format to add
+    //! @return ECObjectsStatus::Succcess if format is successfully added as a presentation format. Otherwise, ECObjectsStatus::Error.
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormat(NamedFormatCR format);
 
-    //! Creates a FormatUnitSet with the provided unit and format and adds it as a presentation FUS to this.
-    //! @param[in] unit  The Unit to use in the newly created FUS.
-    //! @param[in] format  The format to use in the newly created FUS.
-    //! @return ECObjectsStatus::Succcess if FUS is successfully created and added as a presentation FUS; otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationUnit(ECUnitCR unit, Formatting::FormatCP format = nullptr);
-
-    //! Removes the specified FUS as a presentation FUS of this.
-    ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSetCR fus);
-    //! Removes all presentation FUS from this KindOfQuantity
-    void RemoveAllPresentationUnits() {m_presentationUnits.clear();}
-    //! Gets a list of alternative FormatUnitSets appropriate for presenting quantities.
-    bvector<Formatting::FormatUnitSet> const& GetPresentationUnitList() const {return m_presentationUnits;}
-    //! Returns true if one or more presentation FormatUnitSets exist
-    bool HasPresentationUnits() const {return m_presentationUnits.size() > 0;}
+    //! Removes the specified presentation format.
+    ECOBJECTS_EXPORT void RemovePresentationFormat(NamedFormatCR fus);
+    //! Removes all presentation formats.
+    void RemoveAllPresentationFormats() {m_presentationFormats.clear();}
+    //! Gets a list of all presentation formats available for this KoQ.
+    bvector<NamedFormat> const& GetPresentationFormatList() const {return m_presentationFormats;}
+    //! Returns true if one or more presentation formats exist
+    bool HasPresentationFormats() const {return m_presentationFormats.size() > 0;}
 
     //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
     KindOfQuantityId GetId() const {BeAssert(HasId()); return m_kindOfQuantityId;}
@@ -1551,8 +1535,6 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
-
-    ECOBJECTS_EXPORT static Utf8String GetFUSDescriptor(Formatting::FormatUnitSetCR, ECSchemaCR koqSchema);
 
     //! Given a FUS descriptor string, with format {unitName}({formatName}), it will be parsed and used to populate the unit and format.
     //!
@@ -2989,10 +2971,10 @@ using SchemaItemContainer<KindOfQuantityMap, KindOfQuantityP>::SchemaItemContain
 //=======================================================================================
 // @bsistruct
 //=======================================================================================
-struct FormatContainer : SchemaItemContainer<FormatMap, FormatP>
+struct FormatContainer : SchemaItemContainer<FormatMap, ECFormatP>
 {
 friend struct ECSchema;
-using SchemaItemContainer<FormatMap, FormatP>::SchemaItemContainer;
+using SchemaItemContainer<FormatMap, ECFormatP>::SchemaItemContainer;
 };
 
 //=======================================================================================
@@ -3505,7 +3487,7 @@ public:
 
     FormatContainerCR GetFormats() const {return m_formatContainer;} //!< Returns an iterable container of Formats sorted by name.
     uint32_t GetFormatCount() const {return (uint32_t)m_formatMap.size(); } //!< Gets the number of formats in the schema.
-    ECOBJECTS_EXPORT ECObjectsStatus DeleteFormat(FormatR format); //!< Removes a format from this schema
+    ECOBJECTS_EXPORT ECObjectsStatus DeleteFormat(ECFormatR format); //!< Removes a format from this schema
 
     KindOfQuantityContainerCR GetKindOfQuantities() const {return m_kindOfQuantityContainer;} //!< Returns an iterable container of ECClasses sorted by name.
     uint32_t GetKindOfQuantityCount() const {return (uint32_t) m_kindOfQuantityMap.size();} //!< Gets the number of kind of quantity in the schema
@@ -3673,7 +3655,7 @@ public:
     //! @param[in] description  Description of the format
     //! @param[in] nfs          A NumericFormatSpec to use to create.
     //! @param[in] composite    A CompositeValueSpec to create this use to create. 
-    ECOBJECTS_EXPORT ECObjectsStatus CreateFormat(FormatP& unitFormat, Utf8CP name, Utf8CP label = nullptr, Utf8CP description = nullptr, Formatting::NumericFormatSpecCP nfs = nullptr, Formatting::CompositeValueSpecCP composite = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8CP label = nullptr, Utf8CP description = nullptr, Formatting::NumericFormatSpecCP nfs = nullptr, Formatting::CompositeValueSpecCP composite = nullptr);
 
     //! Creates a new ECUnit and adds it to the schema.
     //! @param[out] unit        If successful, will contain a new ECUnit object
@@ -3824,12 +3806,12 @@ public:
     //! Get a Format by name within the context of this schema.
     //! @param[in]  name     The name of the format to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
-    FormatCP GetFormatCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetFormatP(name);}
+    ECFormatCP GetFormatCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetFormatP(name);}
 
     //! Get a Format by name within the context of this schema.
     //! @param[in]  name     The name of the format to lookup.  This must be an unqualified (short) name.
     //! @return   A pointer to an ECN::Format if the named format exists in within the current schema; otherwise, nullptr
-    FormatP GetFormatP(Utf8CP name) {return GetSchemaChild<Format, FormatMap>(name, &m_formatMap);}
+    ECFormatP GetFormatP(Utf8CP name) {return GetSchemaChild<ECFormat, FormatMap>(name, &m_formatMap);}
 
     //! Get an ECUnit by name within the context of this schema.
     //! @param[in]  name     The name of the unit to lookup.  This must be an unqualified (short) name.
@@ -3967,6 +3949,11 @@ public:
     //! @param[out] targetUnit If successful, will contain a new ECUnit object that is a copy of the sourceUnit
     //! @param[in]  sourceUnit The ECUnit to copy
     ECOBJECTS_EXPORT ECObjectsStatus CopyUnit(ECUnitP& targetUnit, ECUnitCR sourceUnit);
+
+    //! Given a source ECFormat, will copy that ECFormat into this schema if it does not already exist
+    //! @param[out] targetFormat If successful, will contain a new ECFormat object that is a copy of the sourceFormat
+    //! @param[in]  sourceFormat The ECFormat to copy
+    ECOBJECTS_EXPORT ECObjectsStatus CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceFormat);
 
     //! Copies this schema
     //! @param[out] schemaOut   If successful, will contain a copy of this schema

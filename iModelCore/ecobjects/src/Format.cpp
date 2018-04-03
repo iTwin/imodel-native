@@ -13,7 +13,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus Format::SetSchema(ECSchemaCR schema)
+ECObjectsStatus ECFormat::SetSchema(ECSchemaCR schema)
     {
     m_schema = &schema;
     return ECObjectsStatus::Success;
@@ -22,12 +22,12 @@ ECObjectsStatus Format::SetSchema(ECSchemaCR schema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-Format::Format(ECSchemaCR schema, Utf8StringCR name) : Formatting::Format(name.c_str()), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
+ECFormat::ECFormat(ECSchemaCR schema, Utf8StringCR name) : NamedFormat(name.c_str(), this), m_isDisplayLabelExplicitlyDefined(false), m_schema(&schema), m_fullName(schema.GetName() + ":" + name) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8StringCR Format::GetFullName() const
+Utf8StringCR ECFormat::GetFullName() const
     {
     if (m_fullName.size() == 0)
         m_fullName = GetSchema().GetName() + ":" + GetName();
@@ -38,14 +38,14 @@ Utf8StringCR Format::GetFullName() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
-Utf8String Format::GetQualifiedName(ECSchemaCR primarySchema) const
+Utf8String ECFormat::GetQualifiedName(ECSchemaCR primarySchema) const
     {
     Utf8String alias;
     Utf8StringCR name = GetName();
     if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(GetSchema(), alias)))
         {
-        LOG.warningv ("warning: Cannot qualify an Format name with an alias unless the schema containing the Format is referenced by the primary schema."
-            "The name will remain unqualified.\n  Primary ECSchema: %s\n  Phenomenon: %s\n ECSchema containing Format: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
+        LOG.warningv ("warning: Cannot qualify an ECFormat name with an alias unless the schema containing the ECFormat is referenced by the primary schema."
+            "The name will remain unqualified.\n  Primary ECSchema: %s\n  Phenomenon: %s\n ECSchema containing ECFormat: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
         return name;
         }
 
@@ -58,7 +58,7 @@ Utf8String Format::GetQualifiedName(ECSchemaCR primarySchema) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                   03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR context)
+SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR context)
     {
     Utf8String value; // used by the macros.
     BeXmlStatus status;
@@ -260,7 +260,7 @@ SchemaReadStatus Format::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContextR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Kyle.Abramowitz                   02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus Format::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context)
+SchemaReadStatus ECFormat::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context)
     {
     uint32_t numChildren = 0;
     bvector<ECUnitCP> units;
@@ -323,7 +323,7 @@ SchemaReadStatus Format::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchema
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus Format::ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels)
+SchemaReadStatus ECFormat::ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels)
     {
     Utf8String unitName;
     if (BEXML_Success != unitNode.GetContent(unitName))
@@ -352,7 +352,7 @@ SchemaReadStatus Format::ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus Format::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
+SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
     if (ecXmlVersion < ECVersion::V3_2)
         return SchemaWriteStatus::Success;
@@ -429,7 +429,7 @@ SchemaWriteStatus Format::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus Format::WriteJson(Json::Value & outValue, bool standalone, bool includeSchemaVersion) const
+SchemaWriteStatus ECFormat::WriteJson(Json::Value & outValue, bool standalone, bool includeSchemaVersion) const
     {
     // Common properties to all Schema children
     if (standalone)
@@ -508,7 +508,7 @@ SchemaWriteStatus Format::WriteJson(Json::Value & outValue, bool standalone, boo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8StringCR Format::GetDisplayLabel() const
+Utf8StringCR ECFormat::GetDisplayLabel() const
     {
     return GetSchema().GetLocalizedStrings().GetFormatDisplayLabel(*this, GetInvariantDisplayLabel());
     }
@@ -516,7 +516,7 @@ Utf8StringCR Format::GetDisplayLabel() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8StringCR Format::GetDescription() const
+Utf8StringCR ECFormat::GetDescription() const
     {
     return GetSchema().GetLocalizedStrings().GetFormatDescription(*this, GetInvariantDescription());
     }
@@ -524,7 +524,7 @@ Utf8StringCR Format::GetDescription() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus Format::WriteJson(Json::Value& outValue, bool includeSchemaVersion) const
+SchemaWriteStatus ECFormat::WriteJson(Json::Value& outValue, bool includeSchemaVersion) const
     {
     return WriteJson(outValue, true, includeSchemaVersion);
     }
