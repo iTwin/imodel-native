@@ -119,6 +119,7 @@ struct Root2d : Attachment::Root
     RefCountedPtr<ViewController2d> m_view;
     TileTree::RootPtr               m_viewRoot;
     Transform                       m_drawingToAttachment;
+    ClipVectorPtr                   m_graphicsClip;
 private:
     Root2d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewController2dR view, TileTree::RootR viewRoot);
 public:
@@ -1228,7 +1229,7 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     TileTree::DrawArgs args = viewRoot.CreateDrawArgs(myArgs.m_context);
     args.m_location = myRoot.m_drawingToAttachment;
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
-    //// ###TODO: args.m_clip = GetRoot2d().m_clip.get();
+    args.m_clip = GetRoot2d().m_graphicsClip.get();
     myRoot.m_view->CreateScene(args);
 
     static bool s_drawClipPolys = false;
@@ -1634,6 +1635,10 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
     // (Containment tests can also be more efficiently performed if boundary range is specified).
     m_clip = attach.GetOrCreateClip();
     m_clip->m_boundingRange = attachRange;
+
+    Transform sheetToDrawing;
+    sheetToDrawing.InverseOf(m_drawingToAttachment);
+    m_graphicsClip = m_clip->Clone(&sheetToDrawing);
 
     m_rootTile = new Tile2d(*this, attach.GetPlacement().GetElementBox());
     }
