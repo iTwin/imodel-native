@@ -643,9 +643,9 @@ public:
     //! A Format that contains a CompositeValueSpec will also contain a NumericFormatSpec.
     bool HasComposite() const {return static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;}
     //! Returns true if the spec has no problems and is set successfully. False otherwise
-    bool SetCompositeSpec(CompositeValueSpec spec);
+    UNITS_EXPORT bool SetCompositeSpec(CompositeValueSpec spec);
     //! Returns true if the spec is set successfully.
-    bool SetNumericSpec(NumericFormatSpec spec);
+    UNITS_EXPORT bool SetNumericSpec(NumericFormatSpec spec);
     //! Returns a const pointer to this Format's NumericFormatSpec if it exists.
     //! Returns nullptr if no NumericFormatSpec is defined.
     NumericFormatSpecCP GetNumericSpec() const { return HasNumeric() ? &m_numericSpec : nullptr; }
