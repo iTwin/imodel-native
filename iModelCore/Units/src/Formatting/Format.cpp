@@ -28,8 +28,31 @@ Format::Format(FormatCR other)
 //---------------+---------------+---------------+---------------+---------------+-------
 Format::Format(NumericFormatSpecCR numSpec)
     : m_specType(FormatSpecType::None), m_numericSpec(numSpec), m_problem(FormatProblemCode::NoProblems)
-    {
+    {}
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Kyle.Abramowitz                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+bool Format::SetCompositeSpec(CompositeValueSpec spec) 
+    {
+    if (spec.IsProblem())
+        {
+        LOG.warningv("Failed to set composite spec because it has problem '%s'", spec.GetProblemDescription().c_str());
+        return false;
+        }
+    m_compositeSpec = spec;
+    m_specType = static_cast<FormatSpecType>(m_compositeSpec.GetUnitCount());
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Kyle.Abramowitz                 03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+bool Format::SetNumericSpec(NumericFormatSpec spec) 
+    {
+    m_problem = FormatProblemCode::NoProblems;
+    m_numericSpec = spec;
+    return true;
     }
 
 //----------------------------------------------------------------------------------------

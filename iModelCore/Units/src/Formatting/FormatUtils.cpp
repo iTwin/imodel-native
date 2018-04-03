@@ -979,8 +979,6 @@ Json::Value FormatUnitSet::ToJson(bool verbose) const
     jval[json_unitName()] = m_unit->GetName();
     if(verbose)
         jval[json_formatSpec()] = m_formatSpec->ToJson(true);
-    //else
-    //    jval[json_formatName()] = m_formatSpec->GetName();
     return jval;
     }
 

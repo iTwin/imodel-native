@@ -624,7 +624,7 @@ public:
     Format() : m_specType(FormatSpecType::None), m_problem(FormatProblemCode::NotInitialized) {};
     UNITS_EXPORT Format(FormatCR other);
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec);
-    UNITS_EXPORT Format( NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
+    UNITS_EXPORT Format(NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
 
     FormatR operator=(const Format& other) = default;
 
@@ -639,11 +639,13 @@ public:
 
     //! Returns true if this Format contains a NumericFormatSpec.
     bool HasNumeric() const {return !IsProblem() || (m_problem.GetProblemCode() != FormatProblemCode::NotInitialized);}
-    //! Returns true if this Format containst a CompositeFormatSpec.
+    //! Returns true if this Format contains a CompositeFormatSpec.
     //! A Format that contains a CompositeValueSpec will also contain a NumericFormatSpec.
     bool HasComposite() const {return static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;}
-    void SetCompositeSpec(CompositeValueSpec spec) {m_compositeSpec = spec; m_specType = static_cast<FormatSpecType>(m_compositeSpec.GetUnitCount()); /*TODO error checking !*/}
-    void SetNumericSpec(NumericFormatSpec spec) {m_problem = FormatProblemCode::NoProblems; m_numericSpec = spec;}
+    //! Returns true if the spec has no problems and is set successfully. False otherwise
+    bool SetCompositeSpec(CompositeValueSpec spec);
+    //! Returns true if the spec is set successfully.
+    bool SetNumericSpec(NumericFormatSpec spec);
     //! Returns a const pointer to this Format's NumericFormatSpec if it exists.
     //! Returns nullptr if no NumericFormatSpec is defined.
     NumericFormatSpecCP GetNumericSpec() const { return HasNumeric() ? &m_numericSpec : nullptr; }

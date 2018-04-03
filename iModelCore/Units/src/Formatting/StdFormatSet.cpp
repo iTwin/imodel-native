@@ -84,9 +84,6 @@ FormatCP StdFormatSet::AddNamedFormat(Utf8CP jsonString, BEU::IUnitsContextCR co
     if (nfs->IsProblem())
         return nullptr;
 
-    //if (IsFormatDefined(nfs->GetName().c_str()))
-    //    return nullptr;
-
     m_formatSet.push_back(*nfs);
     return nfs;
     }
@@ -105,12 +102,6 @@ bool StdFormatSet::IsFormatDefined(Utf8CP name)
 //---------------------------------------------------------------------------------------
 FormatCP StdFormatSet::FindFormat(Utf8StringCR name) const
     {
-    //for (auto const& fmt : m_formatSet)
-    //    {
-    //    if (fmt.GetName() == name)
-    //        return &fmt;
-    //    }
-
     return nullptr;
     }
 
