@@ -1576,22 +1576,25 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
 Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewController2dR view, TileTree::RootR viewRoot)
     : T_Super(view.GetViewedModelId(), sheetController, attach, context, view), m_view(&view), m_viewRoot(&viewRoot)
     {
+    auto& viewDef = view.GetViewDefinitionR();
+    DRange3d attachRange = attach.GetPlacement().CalculateRange();
+    double attachWidth = attachRange.high.x - attachRange.low.x,
+           attachHeight = attachRange.high.y - attachRange.low.y,
+           aspectRatio = attachWidth / attachHeight;
+
+    viewDef.AdjustAspectRatio(aspectRatio);
+    DPoint3d viewExtents = viewDef.GetExtents();
+    DPoint2d scale = DPoint2d::From(attachWidth / viewExtents.x, attachHeight / viewExtents.y);
+
     DPoint3d worldToAttachment = DPoint3d::From(attach.GetPlacement().GetOrigin());
     worldToAttachment.z = Render::Target::DepthFromDisplayPriority(attach.GetDisplayPriority());
-    double scaleOnSheet = attach.GetScale();
-    scaleOnSheet = 0.0 != scaleOnSheet ? 1.0 / scaleOnSheet : 1.0;
-    double skew = view.GetViewDefinition().GetAspectRatioSkew();
-    if (0.0 == skew)
-        { BeAssert(false); skew = 1.0; }
-
-    DPoint2d scale = DPoint2d::From(scaleOnSheet, scaleOnSheet * skew);
 
     Transform location = Transform::From(worldToAttachment);
     SetLocation(location);
     
-    m_drawingToAttachment = Transform::From(view.GetViewDefinition().GetRotation());
+    m_drawingToAttachment = Transform::From(viewDef.GetRotation());
     m_drawingToAttachment.ScaleMatrixColumns(scale.x, scale.y, 1.0);
-    DPoint3d viewOrg = view.GetViewDefinition().GetOrigin();
+    DPoint3d viewOrg = viewDef.GetOrigin();
     DPoint3d translation = viewRoot.GetLocation().Translation();
     viewOrg.DifferenceOf(viewOrg, translation);
     m_drawingToAttachment.Multiply(viewOrg);
@@ -1607,7 +1610,7 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
     // The renderer needs the unclipped range of the attachment in order to produce polys to be rendered as clip mask...
     // (Containment tests can also be more efficiently performed if boundary range is specified).
     m_clip = attach.GetOrCreateClip();
-    m_clip->m_boundingRange = attach.GetPlacement().CalculateRange();
+    m_clip->m_boundingRange = attachRange;
 
     m_rootTile = new Tile2d(*this, attach.GetPlacement().GetElementBox());
     }
