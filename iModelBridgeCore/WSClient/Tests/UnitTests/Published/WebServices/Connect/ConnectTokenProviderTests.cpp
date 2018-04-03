@@ -121,7 +121,7 @@ TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsSetAndTokenRecieved_Set
     EXPECT_CALL(*client, RequestToken(creds, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(newToken))));
 
-    ISecurityToken updatedToken = provider.UpdateToken()->GetResult();
+    auto updatedToken = provider.UpdateToken()->GetResult();
     EXPECT_EQ(newToken->AsString(), updatedToken->AsString());
     }
 #endif
