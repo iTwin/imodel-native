@@ -603,7 +603,7 @@ void Changes::Change::DumpCurrentValuesOfChangedColumns(Db const& db) const
     Utf8CP tableName = nullptr;
     int nCols, indirect;
     DbOpcode opcode;
-    DbResult result = GetOperation(&tableName, &nCols, &opcode, &indirect);
+    /* unused - DbResult result = */GetOperation(&tableName, &nCols, &opcode, &indirect);
 
     bvector<Utf8String> columnNames;
     db.GetColumns(columnNames, tableName);
