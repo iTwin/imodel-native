@@ -342,7 +342,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
     // KindOfQuantity Properties
     if (nullptr == GetPersistenceUnit())
         {
-        LOG.errorv("Failed to write schema because persistance UNIT for KindOfQuantity '%s' has null persistence Unit", GetName().c_str());
+        LOG.errorv("Failed to write schema because KindOfQuantity '%s' does not have a persistence unit ", GetName().c_str());
         return SchemaWriteStatus::FailedToCreateJson;
         }
 
@@ -412,7 +412,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
     if (nullptr == persUnit)
         { 
-        LOG.errorv("Persistence unit on KindOfQuantity '%s' is null.", GetName().c_str());
+        LOG.errorv("KindOfQuantity '%s' has a persistence unit that could not be found.", GetName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
