@@ -428,6 +428,9 @@ declare class NativeDgnDb {
      */
     saveFileProperty(props: string, value: string | ArrayBuffer | undefined): number;
 
+    /** query the next available major id for the given file property. If no properties yet exist, will return 0. */
+    queryNextAvailableFileProperty(props: string): number;
+
     /**
      * Execute a test by name
      * @param testName The name of the test to execute
