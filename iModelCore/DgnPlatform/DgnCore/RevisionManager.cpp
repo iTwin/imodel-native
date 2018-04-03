@@ -450,7 +450,7 @@ ChangeSet::ConflictResolution RevisionManager::ConflictHandler(DgnDbCR dgndb, Ch
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
         LOG.infov("------------------------------------------------------------------");
-        LOG.infov("Conflict detected - Cause: %s", GetConflictCauseDescription(cause));
+        LOG.infov("Conflict detected - Cause: %s", ChangeSet::InterpretConflictCause(cause, 1));
         if (cause == ChangeSet::ConflictCause::ForeignKey)
             {
             // Note: No current or conflicting row information is provided if it's a FKey conflict
