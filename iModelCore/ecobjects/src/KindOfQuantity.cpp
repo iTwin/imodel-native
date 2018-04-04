@@ -9,8 +9,6 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-static Formatting::StdFormatSet const s_stdFmtSet;
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -391,7 +389,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
     SetRelativeError(relError);
 
-    // Read Persistence FUS
+    // Read Persistence Unit/FUS
     if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
         {
         LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), PERSISTENCE_UNIT_ATTRIBUTE);
@@ -438,13 +436,14 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
                 return SchemaReadStatus::InvalidECSchemaXml;
                 }
 
-            Formatting::FormatUnitSet presFUS(presNFS, presUnit);
+            // TODO fix
+            /*Formatting::FormatUnitSet presFUS(presNFS, presUnit);
 
             if (presFUS.HasProblem())
                 LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                    value.c_str(), GetName().c_str(), presFUS.GetProblemDescription().c_str());
-            // TODO fix
-           // m_presentationUnits.push_back(presFUS);
+                    value.c_str(), GetName().c_str(), presFUS.GetProblemDescription().c_str());*/
+            
+            // m_presentationUnits.push_back(presFUS);
             }
         }
     return SchemaReadStatus::Success;
@@ -467,15 +466,18 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::F
 
     Utf8String unitName;
     Utf8String format;
-    Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, descriptor);
+    Formatting::Format::ParseUnitFormatDescriptor(unitName, format, descriptor);
+
+    // TODO: Needs work...
 
     nfs = nullptr;
     if (Utf8String::IsNullOrEmpty(format.c_str()))
         // Need to keep the default without a Unit for backwards compatibility.
-        nfs = s_stdFmtSet.FindFormat("DefaultRealU");
+        // nfs = formatSchema->GetFormatCP("DefaultRealU");
+        return ECObjectsStatus::Error;
     else
         {
-        nfs = s_stdFmtSet.FindFormat(format.c_str());
+        // nfs = s_stdFmtSet.FindFormat(format.c_str());
         if (nullptr == nfs)
             {
             if (xmlLessThanOrEqual32)
@@ -486,7 +488,7 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::F
                 }
             
             // Assuming since there was previously a format that it should contain the Unit with it.
-            nfs = s_stdFmtSet.FindFormat("DefaultRealU");
+            // nfs = s_stdFmtSet.FindFormat("DefaultRealU");
             LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.",
                 descriptor, koq.GetFullName().c_str());
             }
@@ -561,7 +563,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptor(Utf8String& updatedDescripto
 
     Utf8String unitName;
     Utf8String format;
-    Formatting::FormatUnitSet::ParseUnitFormatDescriptor(unitName, format, descriptor);
+    Formatting::Format::ParseUnitFormatDescriptor(unitName, format, descriptor);
 
     if (unitName.size() <= 0)
         return ECObjectsStatus::InvalidUnitName;

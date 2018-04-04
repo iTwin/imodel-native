@@ -15,7 +15,6 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct KindOfQuantityTest : ECTestFixture
     {
     ECSchemaPtr m_schema;
-    Formatting::StdFormatSet m_stdFmtSet;
 
     void CreateTestSchema(bool refUnitSchema = false)
         {
