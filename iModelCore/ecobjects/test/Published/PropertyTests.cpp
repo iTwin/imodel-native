@@ -1045,7 +1045,6 @@ TEST_F(PropertyDeserializationTest, CategoryAttributeInherited)
 TEST_F(PropertySerializationTest, KindOfQuantityAndExtendedTypeNameRoundtrip)
     {
     Utf8String schemaXml;
-    Formatting::StdFormatSet stdFormatSet;
 
     {
     ECSchemaPtr schema;

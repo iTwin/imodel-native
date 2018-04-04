@@ -38,14 +38,14 @@ public:
     ECOBJECTS_EXPORT static Utf8String FormatPersistedValue(double dval, KindOfQuantityCP koq, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat = nullptr);
     ECOBJECTS_EXPORT static Utf8String FormatPersistedValue(double dval, KindOfQuantityCP koq, BEU::UnitCR presentationUnit, BEF::FormatCR formatSpec, ECQuantityFormattingStatus* status, BEF::NumericFormatSpecCP defFormat = nullptr);
 
-    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, double* persist, KindOfQuantityCP koq, Formatting::FormatUnitSetCR presentationFUS, Formatting::FormatProblemCode* probCode)
-        {return Formatting::QuantityFormatting::CreateQuantity(input, persist, koq->GetPersistenceUnit(), presentationFUS, probCode);}
+    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, double* persist, KindOfQuantityCP koq, Formatting::FormatCR presentationFormat, Formatting::FormatProblemCode* probCode)
+        {return Formatting::QuantityFormatting::CreateQuantity(input, persist, koq->GetPersistenceUnit(), presentationFormat, probCode);}
 
     //! The quantity is created from the text string. It's consistency with the KOQ of the specific context must 
     //! be checked by the caller. When multiple Units are being used the Quantity Unit will be the "biggest",
     //! but in the first implementaiton the biggest is assumed to be the leftmost
-    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, Formatting::FormatUnitSetCR fus, Formatting::FormatProblemCode* probCode)
-        {return Formatting::QuantityFormatting::CreateQuantity(input, fus, probCode);}
+    ECOBJECTS_EXPORT static BEU::Quantity CreateQuantity(Utf8CP input, Formatting::FormatCR format, Formatting::FormatProblemCode* probCode)
+        {return Formatting::QuantityFormatting::CreateQuantity(input, format, probCode);}
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

@@ -8,8 +8,6 @@
 #include "ECObjectsPch.h"
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-static Formatting::StdFormatSet const s_stdFmtSet;
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Basanta.Kharel                  01/2016
 //+---------------+---------------+---------------+---------------+---------------+------

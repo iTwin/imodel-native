@@ -17,6 +17,8 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 ECSchemaPtr ECTestFixture::s_unitsSchema;
+ECSchemaPtr ECTestFixture::s_formatsSchema;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bill.Steinbock                  01/2018
 //---------------------------------------------------------------------------------------
@@ -105,6 +107,20 @@ ECSchemaPtr ECTestFixture::GetUnitsSchema(bool recreate)
         s_unitsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
         }
     return s_unitsSchema;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    03/2018
+//--------------------------------------------------------------------------------------
+ECSchemaCP ECTestFixture::GetFormatsSchema(bool recreate)
+    {
+    if (recreate || s_formatsSchema.IsNull())
+        {
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaKey key("Formats", 1, 0, 0);
+        s_formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+        }
+    return s_formatsSchema.get();
     }
 
 //---------------------------------------------------------------------------------------
