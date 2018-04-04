@@ -1230,6 +1230,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::String::New(Env(), fonts.ToString().c_str());
         }
 
+
     // query a property from the be_prop table.
     Napi::Value QueryFileProperty(Napi::CallbackInfo const& info)
         {
@@ -1302,7 +1303,28 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
 
         return Napi::Number::New(Env(), (int) stat);
         }
-
+    
+    Napi::Value QueryNextAvailableFileProperty(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, fileProps, Env().Undefined())
+        auto propsJson = Json::Value::From(fileProps);
+        if (!propsJson.isMember(JsInterop::json_namespace()) || !propsJson.isMember(JsInterop::json_name())) 
+            {
+            Napi::TypeError::New(Env(), "Invalid FilePropertyProps").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+        
+        auto& db = GetDgnDb();
+        Statement stmt(db, "SELECT count(Id),max(Id) FROM " BEDB_TABLE_Property " WHERE Namespace=? AND Name=?");
+        stmt.BindText(1, propsJson[JsInterop::json_namespace()].asCString(), Statement::MakeCopy::No);
+        stmt.BindText(2, propsJson[JsInterop::json_name()].asCString(), Statement::MakeCopy::No);
+        DbResult result = stmt.Step();
+        int count = stmt.GetValueInt(0);
+        int max  = stmt.GetValueInt(1);
+        int next = (result != BE_SQLITE_ROW || 0 == count) ? 0 : max + 1;
+        return Napi::Number::New(Env(), next);
+        }
+        
     // ========================================================================================
     // Test method handler
     // ========================================================================================
@@ -1360,6 +1382,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("openIModel", &NativeDgnDb::OpenDgnDb),
             InstanceMethod("processChangeSets", &NativeDgnDb::ProcessChangeSets),
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
+            InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
