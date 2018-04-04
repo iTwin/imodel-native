@@ -5,6 +5,13 @@ import sys
 import xml.etree.ElementTree as ET
 import os.path
 
+from collections import defaultdict
+
+def Insert(standardDict, standard, name, category):
+    if standard not in standardDict:
+        standardDict[standard] = defaultdict(list)
+    standardDict[standard][category].append(name)
+
 if (len(sys.argv) < 2) or (not os.path.isfile(sys.argv[1])) or (sys.argv[1] == '--help'):
     print("GenerateClassificationInserts.py [--help] InputFilePath OutputFilePath\
 \n\nTakes classification xml file, located in InputFilePath and parses it to C++ \
@@ -28,6 +35,7 @@ f.write('''/*-------------------------------------------------------------------
 f.write('void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const\n')
 f.write('    {\n')
 
+roomDict = {}
 
 for standardRoom in root.find('List').findall('StandardRoom'):
     output = '    '
@@ -35,11 +43,14 @@ for standardRoom in root.find('List').findall('StandardRoom'):
     category = standardRoom.find('Category').text
     calcStandard = standardRoom.find('CalculationStandard').text
     if calcStandard == 'eCIBSE':
+        Insert(roomDict, 'CIBSE', name, category)
         output+= "InsertCIBSE"
     elif calcStandard == 'eASHRAE':
         catalogue = standardRoom.find('Catalogue').text
+        Insert(roomDict, ('ASHRAE'+catalogue), name, category)
         output+= "InsertASHRAE"+catalogue
     output+="(db, \""+name+"\", \""+category+"\");\n"
     f.write(output)
 f.write('    }\n')
 f.close()
+print(roomDict)
