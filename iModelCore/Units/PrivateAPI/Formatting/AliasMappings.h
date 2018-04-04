@@ -53,4 +53,31 @@ public:
     UNITS_EXPORT static Utf8CP TryGetNameFromAlias(Utf8CP alias); //!< Returns the name corresponding to the given alias.
 };
 
+//=======================================================================================
+//! Used to map legacy Format names into their new corresponding FormatString
+// @bsistruct                                                    Caleb.Shafer      04/18
+//=======================================================================================
+struct LegacyNameMappings
+{
+private:
+    static LegacyNameMappings * s_mappings;
+
+    bmap<Utf8String, Utf8String, less_str> m_nameToFormatMapping; // key: legacy name value: formatString
+    bmap<Utf8String, Utf8String, less_str> m_formatToNameMapping; // key: formatString value: legacy name
+
+    LegacyNameMappings();
+    void AddMappings();
+    void AddMapping(Utf8CP name, Utf8CP formatString)
+        {
+        m_nameToFormatMapping[name] = formatString;
+        m_formatToNameMapping[formatString] = name;
+        }
+
+    static LegacyNameMappings * GetMappings();
+
+public:
+    UNITS_EXPORT static Utf8CP TryGetLegacyNameFromFormatString(Utf8CP formatString); //!< Returns the legacy name corresponding to the given format string.
+    UNITS_EXPORT static Utf8CP TryGetFormatStringFromLegacyName(Utf8CP name); //!< Returns the format string corresponding to the given name.
+};
+
 END_BENTLEY_FORMATTING_NAMESPACE

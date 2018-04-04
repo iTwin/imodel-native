@@ -70,7 +70,7 @@ $(o)NumericFormatSpec$(oext)  : $(formatSrcDir)NumericFormatSpec.cpp $(formatHea
 
 $(o)NumericFormatUtils$(oext)  : $(formatSrcDir)NumericFormatUtils.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
-$(o)StdFormatSet$(oext)   : $(formatSrcDir)StdFormatSet.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+$(o)FormatMappings$(oext)   : $(formatSrcDir)FormatMappings.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)

@@ -36,25 +36,6 @@ struct FormatDoubleTest : NumericFormatSpecTest
     };
 
 //===================================================
-// FormatUnitSet
-//===================================================
-struct FormatUnitSetTest : FormattingTestFixture
-    {
-    // Method for printing GTest FUS problem description error.
-    Utf8String GetTestFusProblemDescription(FormatUnitSetCR fus)
-        {
-        return Utf8String("Problem: ") + fus.GetProblemDescription();
-        }
-    };
-
-//===================================================
-// Format
-//===================================================
-struct FormatTest : FormattingTestFixture
-    {
-    };
-
-//===================================================
 // FormatParsingSet
 //===================================================
 struct FormatParsingSetTest : FormattingTestFixture
@@ -84,22 +65,21 @@ public:
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
-        FormatUnitSet fus = FormatUnitSet(expectedUnit->GetName().c_str(), s_unitsContext);
-        BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
+        Format format = Format();
+        BEU::Quantity qty = fps.GetQuantity(&probCode, &format);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
         EXPECT_EQ(expectedUnit, qty.GetUnit()) << GetFmtStringErrMsg(fmtStr);
         EXPECT_DOUBLE_EQ(expectedMagnitude, qty.GetMagnitude()) << GetFmtStringErrMsg(fmtStr);
         }
 
-    void TestValidParseToQuantityUsingStdFmt(Utf8CP fmtStr, BEU::UnitCP expectedUnit, double const expectedMagnitude, Utf8CP stdFmtDescription)
+    void TestValidParseToQuantityUsingStdFmt(Utf8CP fmtStr, BEU::UnitCP expectedUnit, double const expectedMagnitude, FormatCP format)
         {
         FormatParsingSet fps(fmtStr, expectedUnit);
         ASSERT_FALSE(fps.HasProblem()) << fps.GetProblemDescription() << '\n' << GetFmtStringErrMsg(fmtStr);
 
         FormatProblemCode probCode;
-        FormatUnitSet fus = FormatUnitSet(stdFmtDescription, s_unitsContext);
-        BEU::Quantity qty = fps.GetQuantity(&probCode, &fus);
+        BEU::Quantity qty = fps.GetQuantity(&probCode, format);
 
         ASSERT_FALSE(qty.IsNullQuantity()) << GetFmtStringErrMsg(fmtStr);
         EXPECT_EQ(expectedUnit, qty.GetUnit()) << GetFmtStringErrMsg(fmtStr);
@@ -682,332 +662,6 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests_IGNORED)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatUnitSetTest, ConstructFusFromDescription)
-    {
-    {
-    FormatUnitSet MMFusNoFormatName("MM", s_unitsContext);
-    EXPECT_FALSE(MMFusNoFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusNoFormatName);
-    EXPECT_STREQ("MM(DefaultReal)", MMFusNoFormatName.ToText().c_str());
-    EXPECT_STREQ("MM(Real)", MMFusNoFormatName.ToText().c_str());
-    }
-    {
-    FormatUnitSet MMFusParens("MM(Real2)", s_unitsContext);
-    EXPECT_FALSE(MMFusParens.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusParens);
-    EXPECT_STREQ("MM(Real2)", MMFusParens.ToText().c_str());
-    }
-    {
-    FormatUnitSet MMFusBarFormatName("MM|Real2", s_unitsContext);
-    EXPECT_FALSE(MMFusBarFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatName);
-    EXPECT_STREQ("MM(Real2)", MMFusBarFormatName.ToText().c_str());
-    }
-    {
-    FormatUnitSet MMFusBarFormatNameBar("MM|Real2|", s_unitsContext);
-    EXPECT_FALSE(MMFusBarFormatNameBar.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusBarFormatNameBar);
-    EXPECT_STREQ("MM(Real2)", MMFusBarFormatNameBar.ToText().c_str());
-    }
-    {
-    FormatUnitSet MMFusJsonOnlyUnitName(R"json({
-        unitName: "MM"
-    })json", s_unitsContext);
-    EXPECT_FALSE(MMFusJsonOnlyUnitName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonOnlyUnitName);
-    EXPECT_STREQ("MM(Real2)", MMFusJsonOnlyUnitName.ToText().c_str());
-    EXPECT_STREQ("MM(real2)", MMFusJsonOnlyUnitName.ToText().c_str());
-    EXPECT_TRUE(MMFusJsonOnlyUnitName.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
-    }
-    // TODO: The below JSON methods aren't parsing the formatName attribute correctly. I tried
-    // "formatName": "Real2"
-    // as well as
-    // "formatName": "real2"
-    // Neither works and I'm not sure whether I'm doing something wrong or the library has a bug.
-    // In any case, the documentation doesn't explain how the json description constructor works,
-    // even if though its format is described.
-    {
-    FormatUnitSet MMFusJsonUnitNameFormatName(R"json({
-        "unitName": "MM",
-        "formatName": "real2"
-    })json", s_unitsContext);
-    EXPECT_FALSE(MMFusJsonUnitNameFormatName.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonUnitNameFormatName);
-    EXPECT_STREQ("MM(Real2)", MMFusJsonUnitNameFormatName.ToText().c_str());
-    EXPECT_STREQ("MM(real2)", MMFusJsonUnitNameFormatName.ToText().c_str());
-    EXPECT_TRUE(MMFusJsonUnitNameFormatName.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
-    }
-    {
-    FormatUnitSet MMFusJsonAllMembers(R"json({
-        "unitName": "MM",
-        "formatName": "real2",
-        "cloneData": false,
-        "formatSpec": { }
-    })json", s_unitsContext);
-    EXPECT_FALSE(MMFusJsonAllMembers.HasProblem()) << FormatUnitSetTest::GetTestFusProblemDescription(MMFusJsonAllMembers);
-    EXPECT_STREQ("MM(Real2)", MMFusJsonAllMembers.ToText().c_str());
-    EXPECT_STREQ("MM(real2)", MMFusJsonAllMembers.ToText().c_str());
-    EXPECT_TRUE(MMFusJsonAllMembers.IsIdentical(FormatUnitSet("MM(Real2)", s_unitsContext)));
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, Constructors)
-    {
-    // Default constructed.
-    {
-    Format namedFmtSpec;
-
-    EXPECT_EQ(FormatSpecType::None, namedFmtSpec.GetSpecType());
-    EXPECT_TRUE(namedFmtSpec.IsProblem());
-    EXPECT_EQ(nullptr, namedFmtSpec.GetNumericSpec());
-    EXPECT_EQ(nullptr, namedFmtSpec.GetCompositeSpec());
-    }
-
-    // Constructed with NumericFormatSpec
-    {
-    NumericFormatSpec numFmtSpec;
-    Format namedFmtSpec(numFmtSpec);
-
-    EXPECT_EQ(FormatSpecType::None, namedFmtSpec.GetSpecType());
-    EXPECT_FALSE(namedFmtSpec.IsProblem());
-    ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
-    EXPECT_TRUE(namedFmtSpec.GetNumericSpec()->IsIdentical(numFmtSpec));
-    EXPECT_EQ(nullptr, namedFmtSpec.GetCompositeSpec());
-    }
-
-    // Constructed with name, NumericFormatSpec, and CompositeValueSpec
-    {
-    NumericFormatSpec numFmtSpec;
-    CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
-    Format namedFmtSpec(numFmtSpec, compValSpec);
-
-    EXPECT_EQ(FormatSpecType::Single, namedFmtSpec.GetSpecType());
-    EXPECT_FALSE(namedFmtSpec.IsProblem()) << namedFmtSpec.GetProblemDescription();
-    ASSERT_NE(nullptr, namedFmtSpec.GetNumericSpec());
-    EXPECT_TRUE(namedFmtSpec.GetNumericSpec()->IsIdentical(numFmtSpec));
-    ASSERT_NE(nullptr, namedFmtSpec.GetCompositeSpec());
-    // TODO: CompositeValueSpec::IsIdentical has a hacky unit proxy work around for now.
-    //       Until that's cleaned up there's no point in testing the method or testing methods that
-    //       call the method.
-    //EXPECT_TRUE(namedFmtSpec.GetCompositeSpec()->IsIdentical(compValSpec));
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, IsIdentical)
-    {
-    // Test format specs of varying value types.
-    // In these cases, only NumericFormatSpecs that are compared against themselves
-    // should be concidered identical by the identity principal.
-    {
-    NumericFormatSpec numFmtSpec;
-    CompositeValueSpec compValSpec(*s_unitsContext->LookupUnit("MILE"));
-
-    Format namedFmtSpecUndefined;
-    Format namedFmtSpecNumeric(numFmtSpec);
-    Format namedFmtSpecComposite(numFmtSpec, compValSpec);
-
-    // Identity checks.
-    EXPECT_TRUE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecUndefined))  << "Format is not identical to itself.";
-    EXPECT_TRUE(namedFmtSpecNumeric.IsIdentical(namedFmtSpecNumeric)) << "Format is not identical to itself.";
-    // TODO: CompositeValueSpec::IsIdentical has a hacky unit proxy work around for now.
-    //       Until that's cleaned up there's no point in testing the method or testing methods that
-    //       call the method.
-    //EXPECT_TRUE(namedFmtSpecComposite.IsIdentical(namedFmtSpecComposite)) << "Format is not identical to itself.";;
-
-    EXPECT_FALSE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecNumeric));
-    EXPECT_FALSE(namedFmtSpecUndefined.IsIdentical(namedFmtSpecComposite));
-
-    EXPECT_FALSE(namedFmtSpecNumeric.IsIdentical(namedFmtSpecUndefined));
-    EXPECT_FALSE(namedFmtSpecNumeric.IsIdentical(namedFmtSpecComposite));
-
-    // TODO: CompositeValueSpec::IsIdentical has a hacky unit proxy work around for now.
-    //       Until that's cleaned up there's no point in testing the method or testing methods that
-    //       call the method.
-    //EXPECT_FALSE(namedFmtSpecComposite.IsIdentical(namedFmtSpecUndefined));
-    //EXPECT_FALSE(namedFmtSpecComposite.IsIdentical(namedFmtSpecNumeric));
-    }
-
-    // Formats with differing NumericFormatSpecs.
-    {
-    NumericFormatSpec numFmtSpecA;
-    numFmtSpecA.SetDecimalPrecision(DecimalPrecision::Precision8);
-    NumericFormatSpec numFmtSpecB;
-    numFmtSpecB.SetDecimalPrecision(DecimalPrecision::Precision9);
-
-    Format namedFmtSpecA(numFmtSpecA);
-    Format namedFmtSpecB(numFmtSpecB);
-    EXPECT_FALSE(namedFmtSpecA.IsIdentical(namedFmtSpecB));
-    EXPECT_FALSE(namedFmtSpecB.IsIdentical(namedFmtSpecA));
-    }
-
-    // Formats with differing CompositeValueSpecs.
-    {
-    NumericFormatSpec numFmtSpec;
-    BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
-    CompositeValueSpec compValSpecA(*mile);
-    CompositeValueSpec compValSpecB;
-    compValSpecB.SetSpacer(" # ");
-
-    Format namedFmtSpecA(numFmtSpec, compValSpecA);
-    Format namedFmtSpecB(numFmtSpec, compValSpecB);
-    EXPECT_FALSE(namedFmtSpecA.IsIdentical(namedFmtSpecB));
-    EXPECT_FALSE(namedFmtSpecB.IsIdentical(namedFmtSpecA));
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
-    {
-    NumericFormatSpec numericFormatSpec;
-    numericFormatSpec.SetThousandSeparator('\'');
-    numericFormatSpec.SetUse1000Separator(true);
-    numericFormatSpec.SetKeepSingleZero(true);
-
-    BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
-    BEU::UnitCP inch = s_unitsContext->LookupUnit("IN");
-    CompositeValueSpec compositeValueSpec(*mile, *inch);
-    ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
-    Format Format(numericFormatSpec, compositeValueSpec);
-
-    // 1500.5 miles == 1,500 miles and 31,680 inches
-    BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
-    EXPECT_STREQ("1'500.0 31'680.0", Format::StdFormatQuantity(Format, quantity).c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, ParseFormatString)
-    {
-    // Valid format strings.
-    Utf8String const fmtStrBasic("ExampleFmt<9>");
-    Utf8String const fmtStrBasicTrailingComma("ExampleFmt<9,>");
-    Utf8String const fmtStrBasicNoOverrides("ExampleFmt");
-    Utf8String const fmtStrFutureAddition("ExampleFmt<9,banana>");
-    Utf8String const fmtStrFutureAdditionWhiteSpace("ExampleFmt \n < 9 \t , banana > ");
-    Utf8String const fmtStrFutureAdditionTrailingComma("ExampleFmt<9,banana,>");
-    Utf8String const fmtStrFutureAdditionNoFirstOverride("ExampleFmt<,banana>");
-
-    // Invalid format strings.
-    Utf8String const fmtStrBasicNoOverridesButStillHasBrackets("ExampleFmt<>");
-    Utf8String const fmtStrBasicNoOverridesButStillHasBracketsWithCommas("ExampleFmt<,,,,>");
-
-    // Mapping function that returns nullptr should always fail.
-    {
-    static auto const nullMapper = [](Utf8StringCR name) -> FormatCP {return nullptr;};
-    Format parsedNfs;
-
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasic, nullMapper));
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicTrailingComma, nullMapper));
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverrides, nullMapper));
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAddition, nullMapper));
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, nullMapper));
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, nullMapper));
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, nullMapper));
-
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBrackets, nullMapper));
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBracketsWithCommas, nullMapper));
-    }
-
-    // Parsing with a defined mapping function.
-    {
-    NumericFormatSpec exampleNumericFmtSpec;
-    exampleNumericFmtSpec.SetPresentationType(PresentationType::Decimal);
-    exampleNumericFmtSpec.SetDecimalPrecision(DecimalPrecision::Precision9);
-    Format const exampleNamedFmtSpec(exampleNumericFmtSpec);
-    auto const mapper = [exampleNamedFmtSpec](Utf8StringCR name) -> FormatCP
-        {
-        return name == "ExampleFmt" ? &exampleNamedFmtSpec : nullptr;
-        };
-    Format parsedNfs;
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasic, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicTrailingComma, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverrides, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAddition, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
-
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
-
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBrackets, mapper));
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBracketsWithCommas, mapper));
-    }
-
-    // Test using different expected format types.
-    {
-    NumericFormatSpec exampleNumericFmtSpecDec;
-    exampleNumericFmtSpecDec.SetPresentationType(PresentationType::Decimal);
-    exampleNumericFmtSpecDec.SetDecimalPrecision(DecimalPrecision::Precision5);
-    Format const exampleNamedFmtSpecDec(exampleNumericFmtSpecDec);
-
-    NumericFormatSpec exampleNumericFmtSpecFrac;
-    exampleNumericFmtSpecFrac.SetPresentationType(PresentationType::Fractional);
-    exampleNumericFmtSpecFrac.SetFractionalPrecision(FractionalPrecision::Over_128);
-    Format const exampleNamedFmtSpecFrac(exampleNumericFmtSpecFrac);
-
-    NumericFormatSpec exampleNumericFmtSpecSci;
-    exampleNumericFmtSpecSci.SetDecimalPrecision(DecimalPrecision::Precision4);
-    exampleNumericFmtSpecSci.SetPresentationType(PresentationType::Scientific);
-    Format const exampleNamedFmtSpecSci(exampleNumericFmtSpecSci);
-
-    NumericFormatSpec exampleNumericFmtSpecSciNorm;
-    exampleNumericFmtSpecSciNorm.SetDecimalPrecision(DecimalPrecision::Precision7);
-    exampleNumericFmtSpecSciNorm.SetPresentationType(PresentationType::Scientific);
-    exampleNumericFmtSpecSciNorm.SetScientificType(ScientificType::Normal);
-    Format const exampleNamedFmtSpecSciNorm(exampleNumericFmtSpecSciNorm);
-
-    NumericFormatSpec exampleNumericFmtSpecStation;
-    exampleNumericFmtSpecStation.SetPresentationType(PresentationType::Station);
-    exampleNumericFmtSpecStation.SetStationOffsetSize(2);
-    exampleNumericFmtSpecStation.SetDecimalPrecision(DecimalPrecision::Precision9);
-    Format const exampleNamedFmtSpecStation(exampleNumericFmtSpecStation);
-    auto const mapper = [&](Utf8StringCR name) -> FormatCP
-        {
-        if (name == "ExDec")
-            return &exampleNamedFmtSpecDec;
-        if (name == "ExFrac")
-            return &exampleNamedFmtSpecFrac;
-        if (name == "ExSci")
-            return &exampleNamedFmtSpecSci;
-        if (name == "ExSciNorm")
-            return &exampleNamedFmtSpecSciNorm;
-        if (name == "ExStation")
-            return &exampleNamedFmtSpecStation;
-        return nullptr;
-        };
-    Format parsedNfs;
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExDec<5>", mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecDec));
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExFrac<128>", mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecFrac));
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExSci<4>", mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSci));
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExSciNorm<7>", mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSciNorm));
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExStation<9>", mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecStation));
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatParsingSetTest, IdentityWholeNumber)
     {
     TestValidParseToQuantity("1 MILE", mile, 1.0);
@@ -1163,12 +817,29 @@ TEST_F(FormatParsingSetTest, CompositeFormats_IGNORED)
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatParsingSetTest, TestParseToStd)
     {
-    TestValidParseToQuantityUsingStdFmt("5:6", inch, 5.5, "fi8");
-    TestValidParseToQuantityUsingStdFmt("5:", inch, 5.0, "fi8");
-    TestValidParseToQuantityUsingStdFmt(":6", inch, 0.5, "fi8");
+    // Move to common spot to reuse within tests.
+    CompositeValueSpecP fi = new CompositeValueSpec(*foot, *inch);
+    fi->SetMajorLabel("'");
+    fi->SetMiddleLabel("\"");
 
-    TestValidParseToQuantityUsingStdFmt("135:23:11", arcDeg, 1, "dms8");
-    TestValidParseToQuantityUsingStdFmt("3  1/5 FT", inch, 3.2, "real");
+    NumericFormatSpecP numeric8 = new NumericFormatSpec();
+    numeric8->SetFormatTraits(FormatTraits::KeepSingleZero);
+    numeric8->SetFormatTraits(FormatTraits::KeepDecimalPoint);
+    numeric8->SetPresentationType(PresentationType::Fractional);
+    numeric8->SetFractionalPrecision(FractionalPrecision::Eighth);
+        
+    Format fi8 = Format(*numeric8, *fi);
+
+    // Format dms8 = Format();
+
+    // Format real = Format();
+
+    TestValidParseToQuantityUsingStdFmt("5:6", inch, 5.5, &fi8);
+    TestValidParseToQuantityUsingStdFmt("5:", inch, 5.0, &fi8);
+    TestValidParseToQuantityUsingStdFmt(":6", inch, 0.5, &fi8);
+
+    /*TestValidParseToQuantityUsingStdFmt("135:23:11", arcDeg, 1, &dms8);
+    TestValidParseToQuantityUsingStdFmt("3  1/5 FT", inch, 3.2, &real);*/
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
