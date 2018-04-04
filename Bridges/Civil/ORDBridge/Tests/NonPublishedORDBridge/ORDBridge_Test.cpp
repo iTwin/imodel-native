@@ -21,25 +21,25 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullyFederatedConversionTest)
+/*TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullyFederatedConversionTest)
     {
     ASSERT_TRUE(RunTestApp("Fully Federated\\container 2.dgn", "ORDFullyFederatedTest.bim", false));
     VerifyConvertedElements("ORDFullyFederatedTest.bim", 2, 0);
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CiviliModelBridgesORDBridgeTests, ORDIHLConversionTest)
+/*TEST_F(CiviliModelBridgesORDBridgeTests, ORDIHLConversionTest)
     {
     ASSERT_TRUE(RunTestApp("IHL.dgn", "ORDIHLTest.bim", false));
     VerifyConvertedElements("ORDIHLTest.bim", 11, 0);
-    }
+    }*/
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
+/*TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
     {
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Original.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp("NewIntersection.dgn", "ORDIntersectionTest.bim", false));
@@ -48,4 +48,4 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Edits.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp("NewIntersection.dgn", "ORDIntersectionTest.bim", true));
     VerifyConvertedElements("ORDIntersectionTest.bim", 43, 4);
-    }
+    }*/
