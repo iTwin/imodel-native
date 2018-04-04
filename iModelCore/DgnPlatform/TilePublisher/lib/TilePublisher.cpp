@@ -853,12 +853,12 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
         featureTableData.m_json["NORMAL_RIGHT"]["byteOffset"] = featureTableData.BinaryDataSize();
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
+        }
 
-        if (scaleRequired)
-            {
-            featureTableData.m_json["SCALE"]["byteOffset"] = featureTableData.BinaryDataSize();
-            featureTableData.AddBinaryData(scales.data(), scales.size()*sizeof(float));
-            }
+    if (scaleRequired)
+        {
+        featureTableData.m_json["SCALE"]["byteOffset"] = featureTableData.BinaryDataSize();
+        featureTableData.AddBinaryData(scales.data(), scales.size()*sizeof(float));
         }
 
     BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), m_context);
