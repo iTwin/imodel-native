@@ -13,10 +13,10 @@ HANDLER_DEFINE_MEMBERS(PathwayElementHandler)
 HANDLER_DEFINE_MEMBERS(PathwayPortionElementHandler)
 HANDLER_DEFINE_MEMBERS(RailwayHandler)
 HANDLER_DEFINE_MEMBERS(RoadwayHandler)
-HANDLER_DEFINE_MEMBERS(ThruTravelCompositeHandler)
-HANDLER_DEFINE_MEMBERS(ThruTravelSeparationCompositeHandler)
-HANDLER_DEFINE_MEMBERS(ThruwayCompositeHandler)
-HANDLER_DEFINE_MEMBERS(ThruwaySeparationCompositeHandler)
+HANDLER_DEFINE_MEMBERS(TravelPortionElementHandler)
+HANDLER_DEFINE_MEMBERS(TravelSeparationPortionElementHandler)
+HANDLER_DEFINE_MEMBERS(ThruwayPortionHandler)
+HANDLER_DEFINE_MEMBERS(ThruwaySeparationPortionHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
@@ -74,36 +74,36 @@ DgnElementIdSet PathwayElement::QueryPortionIds() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-PathwayElement::ThruTravelSide getSideForRelClassId(DgnDbCR dgnDb, DgnClassId relClassId)
+PathwayElement::TravelSide getSideForRelClassId(DgnDbCR dgnDb, DgnClassId relClassId)
     {
-    auto leftSideClassId = dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToLeftThruTravelComposite);
-    auto rightSideClassId = dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToRightThruTravelComposite);
-    auto singleSideClassId = dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToSingleThruTravelComposite);
+    auto leftSideClassId = dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToLeftTravelPortion);
+    auto rightSideClassId = dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToRightTravelPortion);
+    auto singleSideClassId = dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToSingleTravelPortion);
 
     if (relClassId == leftSideClassId)
-        return PathwayElement::ThruTravelSide::Left;
+        return PathwayElement::TravelSide::Left;
     else if (relClassId == rightSideClassId)
-        return PathwayElement::ThruTravelSide::Right;
+        return PathwayElement::TravelSide::Right;
     else if (relClassId == singleSideClassId)
-        return PathwayElement::ThruTravelSide::Single;
+        return PathwayElement::TravelSide::Single;
     else
         {
         BeAssert(false); // Unknown side-type
-        return PathwayElement::ThruTravelSide::Single;
+        return PathwayElement::TravelSide::Single;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnClassId getRelClassIdForSide(DgnDbCR dgnDb, PathwayElement::ThruTravelSide side)
+DgnClassId getRelClassIdForSide(DgnDbCR dgnDb, PathwayElement::TravelSide side)
     {
-    if (side == PathwayElement::ThruTravelSide::Left)
-        return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToLeftThruTravelComposite);
-    else if (side == PathwayElement::ThruTravelSide::Right)
-        return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToRightThruTravelComposite);
-    else if (side == PathwayElement::ThruTravelSide::Single)
-        return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToSingleThruTravelComposite);
+    if (side == PathwayElement::TravelSide::Left)
+        return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToLeftTravelPortion);
+    else if (side == PathwayElement::TravelSide::Right)
+        return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToRightTravelPortion);
+    else if (side == PathwayElement::TravelSide::Single)
+        return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayRefersToSingleTravelPortion);
     else
         {
         BeAssert(false); // Unknown side-type
@@ -115,15 +115,15 @@ DgnClassId getRelClassIdForSide(DgnDbCR dgnDb, PathwayElement::ThruTravelSide si
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<bpair<DgnElementId, PathwayElement::ThruTravelSide>> PathwayElement::QueryThruTravelCompositeIds() const
+bset<bpair<DgnElementId, PathwayElement::TravelSide>> PathwayElement::QueryTravelPortionIds() const
     {
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId, ECClassId FROM "
-        BRRP_SCHEMA(BRRP_REL_PathwayRefersToThruTravelComposite) " WHERE SourceECInstanceId = ?;");
+        BRRP_SCHEMA(BRRP_REL_PathwayRefersToTravelPortion) " WHERE SourceECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
 
-    bset<bpair<DgnElementId, PathwayElement::ThruTravelSide>> retVal;
+    bset<bpair<DgnElementId, PathwayElement::TravelSide>> retVal;
     while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
         retVal.insert({ stmtPtr->GetValueId<DgnElementId>(0), getSideForRelClassId(GetDgnDb(), stmtPtr->GetValueId<DgnClassId>(1)) });
 
@@ -133,10 +133,10 @@ bset<bpair<DgnElementId, PathwayElement::ThruTravelSide>> PathwayElement::QueryT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId PathwayElement::QueryThruTravelCompositeId(ThruTravelSide side) const
+DgnElementId PathwayElement::QueryTravelPortionId(TravelSide side) const
     {
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM "
-        BRRP_SCHEMA(BRRP_REL_PathwayRefersToThruTravelComposite) " WHERE SourceECInstanceId = ? AND ECClassId = ?;");
+        BRRP_SCHEMA(BRRP_REL_PathwayRefersToTravelPortion) " WHERE SourceECInstanceId = ? AND ECClassId = ?;");
 
     stmtPtr->BindId(1, GetElementId());
     stmtPtr->BindId(2, getRelClassIdForSide(GetDgnDb(), side));
@@ -150,10 +150,10 @@ DgnElementId PathwayElement::QueryThruTravelCompositeId(ThruTravelSide side) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId PathwayElement::QueryThruTravelSeparationId() const
+DgnElementId PathwayElement::QueryTravelSeparationId() const
     {
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM "
-        BRRP_SCHEMA(BRRP_CLASS_ThruTravelSeparationComposite) " WHERE Parent.Id = ?;");
+        BRRP_SCHEMA(BRRP_CLASS_TravelSeparationPortionElement) " WHERE Parent.Id = ?;");
 
     stmtPtr->BindId(1, GetElementId());
 
@@ -192,10 +192,10 @@ RailwayPtr Railway::Create(PhysicalModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-PathwayElement::ThruTravelSide ThruTravelComposite::QueryThruTravelSide() const
+PathwayElement::TravelSide TravelPortionElement::QueryTravelSide() const
     {
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId FROM "
-        BRRP_SCHEMA(BRRP_REL_PathwayRefersToThruTravelComposite) " WHERE TargetECInstanceId = ?;");
+        BRRP_SCHEMA(BRRP_REL_PathwayRefersToTravelPortion) " WHERE TargetECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
@@ -204,13 +204,13 @@ PathwayElement::ThruTravelSide ThruTravelComposite::QueryThruTravelSide() const
         return getSideForRelClassId(GetDgnDb(), stmtPtr->GetValueId<DgnClassId>(0));
 
     BeAssert(false);
-    return PathwayElement::ThruTravelSide::Single;
+    return PathwayElement::TravelSide::Single;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThruwayCompositePtr ThruwayComposite::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
+ThruwayPortionPtr ThruwayPortion::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
     {
     if (!pathway.GetElementId().IsValid() || !linearElement.ToElement().GetElementId().IsValid())
         return nullptr;
@@ -219,7 +219,7 @@ ThruwayCompositePtr ThruwayComposite::Create(PathwayElementCR pathway, ILinearEl
     params.SetParentId(pathway.GetElementId(), 
         DgnClassId(pathway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayAssemblesElements)));
 
-    ThruwayCompositePtr ptr(new ThruwayComposite(params));
+    ThruwayPortionPtr ptr(new ThruwayPortion(params));
     ptr->SetMainLinearElement(&linearElement);
     return ptr;
     }
@@ -227,22 +227,22 @@ ThruwayCompositePtr ThruwayComposite::Create(PathwayElementCR pathway, ILinearEl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThruwayCompositeCPtr ThruwayComposite::Insert(PathwayElement::ThruTravelSide side, Dgn::DgnDbStatus* status)
+ThruwayPortionCPtr ThruwayPortion::Insert(PathwayElement::TravelSide side, Dgn::DgnDbStatus* status)
     {
     Utf8String relClassName;
-    if (side == PathwayElement::ThruTravelSide::Single)
-        relClassName = BRRP_REL_PathwayRefersToSingleThruTravelComposite;
-    else if (side == PathwayElement::ThruTravelSide::Left)
-        relClassName = BRRP_REL_PathwayRefersToLeftThruTravelComposite;
-    else if (side == PathwayElement::ThruTravelSide::Right)
-        relClassName = BRRP_REL_PathwayRefersToRightThruTravelComposite;
+    if (side == PathwayElement::TravelSide::Single)
+        relClassName = BRRP_REL_PathwayRefersToSingleTravelPortion;
+    else if (side == PathwayElement::TravelSide::Left)
+        relClassName = BRRP_REL_PathwayRefersToLeftTravelPortion;
+    else if (side == PathwayElement::TravelSide::Right)
+        relClassName = BRRP_REL_PathwayRefersToRightTravelPortion;
     else
         {
         if (status) *status = DgnDbStatus::BadArg;
         return nullptr;
         }
 
-    auto retVal = GetDgnDb().Elements().Insert<ThruwayComposite>(*this, status);
+    auto retVal = GetDgnDb().Elements().Insert<ThruwayPortion>(*this, status);
 
     ECInstanceKey key;
     GetDgnDb().InsertLinkTableRelationship(key, 
@@ -255,7 +255,7 @@ ThruwayCompositeCPtr ThruwayComposite::Insert(PathwayElement::ThruTravelSide sid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ThruwaySeparationCompositePtr ThruwaySeparationComposite::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
+ThruwaySeparationPortionPtr ThruwaySeparationPortion::Create(PathwayElementCR pathway, ILinearElementCR linearElement)
     {
     if (!pathway.GetElementId().IsValid())
         return nullptr;
@@ -264,7 +264,7 @@ ThruwaySeparationCompositePtr ThruwaySeparationComposite::Create(PathwayElementC
     params.SetParentId(pathway.GetElementId(), 
         DgnClassId(pathway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayAssemblesElements)));
 
-    ThruwaySeparationCompositePtr ptr(new ThruwaySeparationComposite(params));
+    ThruwaySeparationPortionPtr ptr(new ThruwaySeparationPortion(params));
     ptr->SetMainLinearElement(&linearElement);
     return ptr;
     }

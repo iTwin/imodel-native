@@ -68,66 +68,66 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="ThruTravelComposite" modifier="Abstract" description="A PathwayPortion specially constructed for continuous travel of a particular type.">
+    <ECEntityClass typeName="TravelPortionElement" modifier="Abstract" description="A PathwayPortion specially constructed for continuous travel of a particular type.">
         <BaseClass>PathwayPortionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="ThruTravelSeparationComposite" modifier="Abstract" description="A PathwayPortion specially constructed to separate two portions of continuous travel.">
+    <ECEntityClass typeName="TravelSeparationPortionElement" modifier="Abstract" description="A PathwayPortion specially constructed to separate two portions of continuous travel.">
         <BaseClass>PathwayPortionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="ThruwayComposite" modifier="Sealed" description="A ThruTravelComposite specified using linear-referencing methods.">
-        <BaseClass>ThruTravelComposite</BaseClass>
+    <ECEntityClass typeName="ThruwayPortion" modifier="Sealed" description="A TravelPortionElement specified using linear-referencing methods.">
+        <BaseClass>TravelPortionElement</BaseClass>
         <BaseClass>IMainLinearElementSource</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="ThruwaySeparationComposite" modifier="Sealed" description="A ThruTravelSeparationComposite specified using linear-referencing methods.">
-        <BaseClass>ThruTravelSeparationComposite</BaseClass>
+    <ECEntityClass typeName="ThruwaySeparationPortion" modifier="Sealed" description="A TravelSeparationPortionElement specified using linear-referencing methods.">
+        <BaseClass>TravelSeparationPortionElement</BaseClass>
         <BaseClass>IMainLinearElementSource</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PathwayRefersToThruTravelComposite" strength="referencing" modifier="Abstract">
+    <ECRelationshipClass typeName="PathwayRefersToTravelPortion" strength="referencing" modifier="Abstract">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
             <Class class="PathwayElement"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="ThruTravelComposite"/>
+            <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PathwayRefersToSingleThruTravelComposite" strength="referencing" modifier="Sealed">
-        <BaseClass>PathwayRefersToThruTravelComposite</BaseClass>
+    <ECRelationshipClass typeName="PathwayRefersToSingleTravelPortion" strength="referencing" modifier="Sealed">
+        <BaseClass>PathwayRefersToTravelPortion</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
             <Class class="PathwayElement"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="ThruTravelComposite"/>
+            <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PathwayRefersToRightThruTravelComposite" strength="referencing" modifier="Sealed">
-        <BaseClass>PathwayRefersToThruTravelComposite</BaseClass>
+    <ECRelationshipClass typeName="PathwayRefersToRightTravelPortion" strength="referencing" modifier="Sealed">
+        <BaseClass>PathwayRefersToTravelPortion</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
             <Class class="PathwayElement"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="ThruTravelComposite"/>
+            <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PathwayRefersToLeftThruTravelComposite" strength="referencing" modifier="Sealed">
-        <BaseClass>PathwayRefersToThruTravelComposite</BaseClass>
+    <ECRelationshipClass typeName="PathwayRefersToLeftTravelPortion" strength="referencing" modifier="Sealed">
+        <BaseClass>PathwayRefersToTravelPortion</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
             <Class class="PathwayElement"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="ThruTravelComposite"/>
+            <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ILinearElementSourceRefersToGeneratedILinearElements" strength="referencing" modifier="Sealed">

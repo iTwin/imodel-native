@@ -36,10 +36,10 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(TravelwayStructureSignificantPointDefHandler::GetHandler());
 
     RegisterHandler(PathwayPortionElementHandler::GetHandler());
-    RegisterHandler(ThruTravelCompositeHandler::GetHandler());
-    RegisterHandler(ThruTravelSeparationCompositeHandler::GetHandler());
-    RegisterHandler(ThruwayCompositeHandler::GetHandler());
-    RegisterHandler(ThruwaySeparationCompositeHandler::GetHandler());
+    RegisterHandler(TravelPortionElementHandler::GetHandler());
+    RegisterHandler(TravelSeparationPortionElementHandler::GetHandler());
+    RegisterHandler(ThruwayPortionHandler::GetHandler());
+    RegisterHandler(ThruwaySeparationPortionHandler::GetHandler());
 
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
 

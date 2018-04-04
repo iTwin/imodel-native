@@ -61,19 +61,19 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     ASSERT_EQ(1, linearElements.size());
     ASSERT_EQ(alignmentPtr->GetElementId(), *linearElements.begin());
 
-    auto leftThruCompositePtr = ThruwayComposite::Create(*roadwayPtr, *alignmentPtr);
-    ASSERT_TRUE(leftThruCompositePtr->Insert(PathwayElement::ThruTravelSide::Left).IsValid());
+    auto leftThruPortionPtr = ThruwayPortion::Create(*roadwayPtr, *alignmentPtr);
+    ASSERT_TRUE(leftThruPortionPtr->Insert(PathwayElement::TravelSide::Left).IsValid());
 
-    auto thruSepCompositePtr = ThruwaySeparationComposite::Create(*roadwayPtr, *alignmentPtr);
-    ASSERT_TRUE(thruSepCompositePtr->Insert().IsValid());
+    auto thruSepPortionPtr = ThruwaySeparationPortion::Create(*roadwayPtr, *alignmentPtr);
+    ASSERT_TRUE(thruSepPortionPtr->Insert().IsValid());
 
-    auto rightThruCompositePtr = ThruwayComposite::Create(*roadwayPtr, *alignmentPtr);
-    ASSERT_TRUE(rightThruCompositePtr->Insert(PathwayElement::ThruTravelSide::Right).IsValid());
+    auto rightThruPortionPtr = ThruwayPortion::Create(*roadwayPtr, *alignmentPtr);
+    ASSERT_TRUE(rightThruPortionPtr->Insert(PathwayElement::TravelSide::Right).IsValid());
 
     ASSERT_EQ(3, roadwayCPtr->QueryPortionIds().size());
-    ASSERT_EQ(2, roadwayCPtr->QueryThruTravelCompositeIds().size());
-    ASSERT_EQ(thruSepCompositePtr->GetElementId(), roadwayCPtr->QueryThruTravelSeparationId());
-    ASSERT_EQ(leftThruCompositePtr->GetElementId(), roadwayCPtr->QueryThruTravelCompositeId(PathwayElement::ThruTravelSide::Left));
-    ASSERT_EQ(rightThruCompositePtr->GetElementId(), roadwayCPtr->QueryThruTravelCompositeId(PathwayElement::ThruTravelSide::Right));
+    ASSERT_EQ(2, roadwayCPtr->QueryTravelPortionIds().size());
+    ASSERT_EQ(thruSepPortionPtr->GetElementId(), roadwayCPtr->QueryTravelSeparationId());
+    ASSERT_EQ(leftThruPortionPtr->GetElementId(), roadwayCPtr->QueryTravelPortionId(PathwayElement::TravelSide::Left));
+    ASSERT_EQ(rightThruPortionPtr->GetElementId(), roadwayCPtr->QueryTravelPortionId(PathwayElement::TravelSide::Right));
 #pragma endregion
     }

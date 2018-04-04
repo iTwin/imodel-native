@@ -42,7 +42,7 @@ protected:
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
 
 public:
-    enum class ThruTravelSide { Single = 0, Left = 1, Right = 2 };
+    enum class TravelSide { Single = 0, Left = 1, Right = 2 };
 
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
@@ -50,9 +50,9 @@ public:
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(PathwayElementCR pathway, Dgn::DgnElementCR representedBy);
 
     ROADRAILPHYSICAL_EXPORT Dgn::DgnElementIdSet QueryPortionIds() const;
-    ROADRAILPHYSICAL_EXPORT bset<bpair<Dgn::DgnElementId, ThruTravelSide>> QueryThruTravelCompositeIds() const;    
-    ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryThruTravelCompositeId(ThruTravelSide side) const;
-    ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryThruTravelSeparationId() const;
+    ROADRAILPHYSICAL_EXPORT bset<bpair<Dgn::DgnElementId, TravelSide>> QueryTravelPortionIds() const;    
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryTravelPortionId(TravelSide side) const;
+    ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryTravelSeparationId() const;
 }; // PathwayElement
 
 //=======================================================================================
@@ -109,104 +109,104 @@ protected:
     //! @private
     explicit PathwayPortionElement(CreateParams const& params) : T_Super(params) {}
 
-    virtual ThruTravelCompositeCP _ToThruTravelComposite() const { return nullptr; }
-    virtual ThruTravelSeparationCompositeCP _ToThruTravelSeparationComposite() const { return nullptr; }
+    virtual TravelPortionElementCP _ToTravelPortionElement() const { return nullptr; }
+    virtual TravelSeparationPortionElementCP _ToTravelSeparationPortionElement() const { return nullptr; }
 
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayPortionElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayPortionElement)
 
-    ThruTravelCompositeCP ToThruTravelComposite() const { return _ToThruTravelComposite(); }
-    ThruTravelSeparationCompositeCP ToThruTravelSeparationComposite() const { return _ToThruTravelSeparationComposite(); }
+    TravelPortionElementCP ToTravelPortionElement() const { return _ToTravelPortionElement(); }
+    TravelSeparationPortionElementCP ToTravelSeparationPortionElement() const { return _ToTravelSeparationPortionElement(); }
 }; // PathwayPortionElement
 
 //=======================================================================================
 //! A PathwayPortion specially constructed for continuous travel of a particular type.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct ThruTravelComposite : PathwayPortionElement
+struct TravelPortionElement : PathwayPortionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_ThruTravelComposite, PathwayPortionElement);
-    friend struct ThruTravelCompositeHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelPortionElement, PathwayPortionElement);
+    friend struct TravelPortionElementHandler;
 
 protected:
     //! @private
-    explicit ThruTravelComposite(CreateParams const& params) : T_Super(params) {}
+    explicit TravelPortionElement(CreateParams const& params) : T_Super(params) {}
 
-    virtual ThruTravelCompositeCP _ToThruTravelComposite() const override { return this; }
+    virtual TravelPortionElementCP _ToTravelPortionElement() const override { return this; }
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruTravelComposite)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(ThruTravelComposite)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelPortionElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TravelPortionElement)
 
-    ROADRAILPHYSICAL_EXPORT PathwayElement::ThruTravelSide QueryThruTravelSide() const;
-}; // ThruTravelComposite
+    ROADRAILPHYSICAL_EXPORT PathwayElement::TravelSide QueryTravelSide() const;
+}; // TravelPortionElement
 
 //=======================================================================================
 //! A PathwayPortion specially constructed to separate two portions of continuous travel.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct ThruTravelSeparationComposite : PathwayPortionElement
+struct TravelSeparationPortionElement : PathwayPortionElement
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_ThruTravelSeparationComposite, PathwayPortionElement);
-    friend struct ThruTravelSeparationCompositeHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelSeparationPortionElement, PathwayPortionElement);
+    friend struct TravelSeparationPortionElementHandler;
 
 protected:
     //! @private
-    explicit ThruTravelSeparationComposite(CreateParams const& params) : T_Super(params) {}
+    explicit TravelSeparationPortionElement(CreateParams const& params) : T_Super(params) {}
 
-    virtual ThruTravelSeparationCompositeCP _ToThruTravelSeparationComposite() const override { return this; }
+    virtual TravelSeparationPortionElementCP _ToTravelSeparationPortionElement() const override { return this; }
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruTravelSeparationComposite)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(ThruTravelSeparationComposite)
-}; // ThruTravelSeparationComposite
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelSeparationPortionElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TravelSeparationPortionElement)
+}; // TravelSeparationPortionElement
 
 //=======================================================================================
-//! A ThruTravelComposite specified using linear-referencing methods.
+//! A TravelPortionElement specified using linear-referencing methods.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct ThruwayComposite : ThruTravelComposite, IMainLinearElementSource
+struct ThruwayPortion : TravelPortionElement, IMainLinearElementSource
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_ThruwayComposite, ThruTravelComposite);
-    friend struct ThruwayCompositeHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_ThruwayPortion, TravelPortionElement);
+    friend struct ThruwayPortionHandler;
 
 protected:
     //! @private
-    explicit ThruwayComposite(CreateParams const& params) : T_Super(params) {}
+    explicit ThruwayPortion(CreateParams const& params) : T_Super(params) {}
 
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruwayComposite)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(ThruwayComposite)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruwayPortion)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(ThruwayPortion)
 
-    ROADRAILPHYSICAL_EXPORT static ThruwayCompositePtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
+    ROADRAILPHYSICAL_EXPORT static ThruwayPortionPtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
 
-    ROADRAILPHYSICAL_EXPORT ThruwayCompositeCPtr Insert(PathwayElement::ThruTravelSide side, Dgn::DgnDbStatus* status = nullptr);
-}; // ThruwayComposite
+    ROADRAILPHYSICAL_EXPORT ThruwayPortionCPtr Insert(PathwayElement::TravelSide side, Dgn::DgnDbStatus* status = nullptr);
+}; // ThruwayPortion
 
 //=======================================================================================
-//! A ThruTravelSeparationComposite specified using linear-referencing methods.
+//! A TravelSeparationPortionElement specified using linear-referencing methods.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct ThruwaySeparationComposite : ThruTravelSeparationComposite, IMainLinearElementSource
+struct ThruwaySeparationPortion : TravelSeparationPortionElement, IMainLinearElementSource
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_ThruwaySeparationComposite, ThruTravelSeparationComposite);
-    friend struct ThruwaySeparationCompositeHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_ThruwaySeparationPortion, TravelSeparationPortionElement);
+    friend struct ThruwaySeparationPortionHandler;
 
 protected:
     //! @private
-    explicit ThruwaySeparationComposite(CreateParams const& params) : T_Super(params) {}
+    explicit ThruwaySeparationPortion(CreateParams const& params) : T_Super(params) {}
 
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const override { return *this; }
 
 public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruwaySeparationComposite)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(ThruwaySeparationComposite)
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(ThruwaySeparationPortion)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(ThruwaySeparationPortion)
 
-    ROADRAILPHYSICAL_EXPORT static ThruwaySeparationCompositePtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
-}; // ThruwaySeparationComposite
+    ROADRAILPHYSICAL_EXPORT static ThruwaySeparationPortionPtr Create(PathwayElementCR pathway, LinearReferencing::ILinearElementCR linearElement);
+}; // ThruwaySeparationPortion
 
 //=======================================================================================
 //! Utility class facilitating some operations against ILinearElements in the 
@@ -261,39 +261,39 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_PathwayPortionElement, PathwayPortionE
 }; // PathwayPortionElementHandler
 
 //=================================================================================
-//! ElementHandler for ThruTravelComposite Elements
+//! ElementHandler for TravelPortionElement Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThruTravelCompositeHandler : PathwayPortionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE TravelPortionElementHandler : PathwayPortionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_ThruTravelComposite, ThruTravelComposite, ThruTravelCompositeHandler, PathwayPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
-}; // ThruTravelCompositeHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelPortionElement, TravelPortionElement, TravelPortionElementHandler, PathwayPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TravelPortionElementHandler
 
 //=================================================================================
-//! ElementHandler for ThruTravelComposite Elements
+//! ElementHandler for TravelPortionElement Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThruTravelSeparationCompositeHandler : PathwayPortionElementHandler
+struct EXPORT_VTABLE_ATTRIBUTE TravelSeparationPortionElementHandler : PathwayPortionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_ThruTravelSeparationComposite, ThruTravelSeparationComposite, ThruTravelSeparationCompositeHandler, PathwayPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
-}; // ThruTravelSeparationCompositeHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelSeparationPortionElement, TravelSeparationPortionElement, TravelSeparationPortionElementHandler, PathwayPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TravelSeparationPortionElementHandler
 
 //=================================================================================
-//! ElementHandler for ThruwayComposite Elements
+//! ElementHandler for ThruwayPortion Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThruwayCompositeHandler : ThruTravelCompositeHandler
+struct EXPORT_VTABLE_ATTRIBUTE ThruwayPortionHandler : TravelPortionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_ThruwayComposite, ThruwayComposite, ThruwayCompositeHandler, ThruTravelCompositeHandler, ROADRAILPHYSICAL_EXPORT)
-}; // ThruwayCompositeHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_ThruwayPortion, ThruwayPortion, ThruwayPortionHandler, TravelPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // ThruwayPortionHandler
 
 //=================================================================================
-//! ElementHandler for ThruwayComposite Elements
+//! ElementHandler for ThruwayPortion Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ThruwaySeparationCompositeHandler : ThruTravelSeparationCompositeHandler
+struct EXPORT_VTABLE_ATTRIBUTE ThruwaySeparationPortionHandler : TravelSeparationPortionElementHandler
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_ThruwaySeparationComposite, ThruwaySeparationComposite, ThruwaySeparationCompositeHandler, ThruTravelSeparationCompositeHandler, ROADRAILPHYSICAL_EXPORT)
-}; // ThruwayCompositeHandler
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_ThruwaySeparationPortion, ThruwaySeparationPortion, ThruwaySeparationPortionHandler, TravelSeparationPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // ThruwayPortionHandler
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
