@@ -26,7 +26,7 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
     ECUnitCP unit = ECTestFixture::GetUnitsSchema()->GetUnitCP(fusUnit);
     ECFormatCP format = ECTestFixture::GetFormatsSchema()->GetFormatCP(formatName);
 
-    ECFormatCP real4u = ECTestFixture::GetFormatsSchema()->GetFormatCP("real4u");
+    ECFormatCP real4u = ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU");
 
     NamedFormatP namedFormat = nullptr;
     NamedFormatP real4uFormat = nullptr;
@@ -48,6 +48,7 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
             }
 
         real4uFormat = namedFormat = new NamedFormat(real4u->GetName() + "[" + unit->GetName().c_str() + "]", *real4u);
+        real4uFormat->GetNumericSpecP()->SetDecimalPrecision(Formatting::DecimalPrecision::Precision4);
         if (!real4uFormat->HasComposite())
             {
             Formatting::CompositeValueSpec compositeSpec;
@@ -81,26 +82,30 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECQuantityFormattingTest, Preliminary)
     {
-    ShowQuantifiedValue("3ft 4in", "real", "IN");
-    ShowQuantifiedValue("3ft 4in", "realu", "IN", "_");
-    ShowQuantifiedValue("3ft4in", "realu", "IN", "_");
-    ShowQuantifiedValue("3ft4 1/8in", "realu", "IN", "_");
-    ShowQuantifiedValue("3ft4 1/8in", "fract16u", "IN", "_");
-    ShowQuantifiedValue("3ft4 1/8in", "fract16", "IN");
+    ShowQuantifiedValue("3ft 4in", "DefaultReal", "IN");
+    ShowQuantifiedValue("3ft 4in", "DefaultRealU", "IN", "_");
+    ShowQuantifiedValue("3ft4in", "DefaultRealU", "IN", "_");
+    ShowQuantifiedValue("3ft4 1/8in", "DefaultRealU", "IN", "_");
 
-    ShowQuantifiedValue("3.5 FT", "fract16", "IN");
-    ShowQuantifiedValue("3.6 FT", "real", "IN");
-    ShowQuantifiedValue("3.75 FT", "realu", "IN", "-");
-    ShowQuantifiedValue("3 1/3ft", "realu", "IN");
-    ShowQuantifiedValue("3 1/3ft", "realu", "M");
-    ShowQuantifiedValue("3 1/3ft", "realu", "MM");
-    ShowQuantifiedValue("5:6", "fi8", "MM");
-    ShowQuantifiedValue("5:6", "fi8", "IN");
-    ShowQuantifiedValue("5:", "fi8", "MM");
-    ShowQuantifiedValue("5:", "fi8", "IN");
-    ShowQuantifiedValue(":6", "fi8", "MM");
-    ShowQuantifiedValue(":6", "fi8", "IN");
-    ShowQuantifiedValue("135:23:11", "dms8", "ARC_DEG");
+    // TODO These are all FormatStrings that override Fractional and FractionalU
+    // ShowQuantifiedValue("3ft4 1/8in", "fract16u", "IN", "_");
+    // ShowQuantifiedValue("3ft4 1/8in", "fract16", "IN");
+    // ShowQuantifiedValue("3.5 FT", "fract16", "IN");
+
+    ShowQuantifiedValue("3.6 FT", "DefaultReal", "IN");
+    ShowQuantifiedValue("3.75 FT", "DefaultRealU", "IN", "-");
+    ShowQuantifiedValue("3 1/3ft", "DefaultRealU", "IN");
+    ShowQuantifiedValue("3 1/3ft", "DefaultRealU", "M");
+    ShowQuantifiedValue("3 1/3ft", "DefaultRealU", "MM");
+    ShowQuantifiedValue("5:6", "AmerFI", "MM");
+    ShowQuantifiedValue("5:6", "AmerFI", "IN");
+    ShowQuantifiedValue("5:", "AmerFI", "MM");
+    ShowQuantifiedValue("5:", "AmerFI", "IN");
+    ShowQuantifiedValue(":6", "AmerFI", "MM");
+    ShowQuantifiedValue(":6", "AmerFI", "IN");
+
+    // TODO another FormatString override, f:AngleDMS<8>
+    // ShowQuantifiedValue("135:23:11", "dms8", "ARC_DEG");
     }
 
 //--------------------------------------------------------------------------------------
