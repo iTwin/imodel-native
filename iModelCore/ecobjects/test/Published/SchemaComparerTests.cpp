@@ -312,4 +312,43 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     EXPECT_STRCASEEQ("Units:FT(DefaultRealU)", pres.At(0).GetNew().Value().c_str());
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      03/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsIdentical)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    comp.SetInputUnit(ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    comp.SetMajorLabel("Apple");
+    comp.SetMiddleLabel("Bannana");
+    comp.SetMinorLabel("Carrot");
+    comp.SetSubLabel("Dragonfruit");
+
+    auto num = Formatting::NumericFormatSpec();
+    num.SetApplyRounding(true);
+    num.SetPresentationType(Formatting::PresentationType::Fractional);
+    num.SetFractionalPrecision(Formatting::FractionalPrecision::Over_128);
+    num.SetMinWidth(4);
+    num.SetUomSeparator("");
+    num.SetPrefixPadChar('0');
+    num.SetSignOption(Formatting::ShowSignOption::NegativeParentheses);
+    num.SetDecimalSeparator(',');
+    num.SetThousandSeparator(',');
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
+    m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(0, changes.Count()); //Identical
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
