@@ -31,7 +31,6 @@ Utf8StringCR ECFormat::GetFullName() const
     {
     if (m_fullName.size() == 0)
         m_fullName = GetSchema().GetName() + ":" + GetName();
-
     return m_fullName;
     }
 

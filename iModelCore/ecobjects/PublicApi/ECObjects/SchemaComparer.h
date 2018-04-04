@@ -28,6 +28,7 @@ struct PropertyCategoryChange;
 struct PhenomenonChange;
 struct UnitSystemChange;
 struct UnitChange;
+struct FormatChange;
 
 //=======================================================================================
 // @bsienum                                                Affan.Khan            03/2016
@@ -67,6 +68,8 @@ enum class SystemId
     ConstraintClass,
     ConstraintClasses,
     CustomAttributes,
+    DecimalPrecision,
+    DecimalSeparator,
     Description,
     Direction,
     DisplayLabel,
@@ -76,6 +79,21 @@ enum class SystemId
     Enumerator,
     Enumerators,
     ExtendedTypeName,
+    Format,
+    FormatCompositeInputUnit,
+    FormatCompositeSpacer,
+    FormatCompositeMajorUnit,
+    FormatCompositeMajorLabel,
+    FormatCompositeMiddleUnit,
+    FormatCompositeMiddleLabel,
+    FormatCompositeMinorUnit,
+    FormatCompositeMinorLabel,
+    FormatCompositeSubUnit,
+    FormatCompositeSubLabel,
+    FormatHasComposite,
+    Formats,
+    FormatTraits,
+    FractionalPrecision,
     Instance,
     Instances,
     Integer,
@@ -98,6 +116,7 @@ enum class SystemId
     MinimumLength,
     MinimumValue,
     MinOccurs,
+    MinWidth,
     Multiplicity,
     Name,
     Navigation,
@@ -106,6 +125,8 @@ enum class SystemId
     Phenomena,
     Phenomenon,
     PhenomenonDefinition,
+    PrefixPadChar,
+    PresentationType,
     Properties,
     Property,
     PropertyCategories,
@@ -120,13 +141,19 @@ enum class SystemId
     Relationship,
     RelationshipName,
     RoleLabel,
+    RoundFactor,
     Schema,
     Schemas,
+    ScientificType,
+    ShowSignOption,
     Source,
+    StationSeparator,
+    StationOffsetSize,
     StrengthDirection,
     StrengthType,
     String,
     Target,
+    ThousandSeparator,
     TypeName,
     Unit,
     UnitDefinition,
@@ -138,6 +165,7 @@ enum class SystemId
     Units,
     UnitSystem,
     UnitSystems,
+    UomSeparator,
     VersionRead,
     VersionMinor,
     VersionWrite
@@ -490,6 +518,20 @@ struct UnitChanges final : ECChangeArray<UnitChange>
             BeAssert(systemId == GetSystemId());
             }
         ~UnitChanges() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                              Kyle.Abramowtiz         04/2018
+//+===============+===============+===============+===============+===============+======
+struct FormatChanges final : ECChangeArray<FormatChange>
+    {
+    public:
+        FormatChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<FormatChange>(state, SystemId::Formats, parent, customId, SystemId::Format)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~FormatChanges() {}
     };
 
 //=======================================================================================
@@ -1221,6 +1263,47 @@ struct UnitChange final : ECObjectChange
     };
 
 //=======================================================================================
+// @bsiclass                                               Kyle.Abramowitz        04/2018
+//+===============+===============+===============+===============+===============+======
+struct FormatChange final : ECObjectChange
+    {
+    public:
+        FormatChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECObjectChange(state, SystemId::Unit, parent, customId)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~FormatChange() {}
+        StringChange& GetName() {return Get<StringChange>(SystemId::Name);}
+        StringChange& GetDisplayLabel() {return Get<StringChange>(SystemId::DisplayLabel);}
+        StringChange& GetDescription() {return Get<StringChange>(SystemId::Description);}
+        DoubleChange& GetRoundFactor() {return Get<DoubleChange>(SystemId::RoundFactor);}
+        StringChange& GetPresentationType() {return Get<StringChange>(SystemId::PresentationType);}
+        UInt32Change& GetDecimalPrecision() {return Get<UInt32Change>(SystemId::DecimalPrecision);}
+        UInt32Change& GetFractionalPrecision() {return Get<UInt32Change>(SystemId::FractionalPrecision);}
+        UInt32Change& GetMinWidth() {return Get<UInt32Change>(SystemId::MinWidth);}
+        StringChange& GetScientificType() {return Get<StringChange>(SystemId::ScientificType);}
+        StringChange& GetShowSignOption() {return Get<StringChange>(SystemId::ShowSignOption);}
+        StringChange& GetFormatTraits() {return Get<StringChange>(SystemId::FormatTraits);}
+        StringChange& GetDecimalSeparator() {return Get<StringChange>(SystemId::DecimalSeparator);}
+        StringChange& GetThousandsSeparator() {return Get<StringChange>(SystemId::ThousandSeparator);}
+        StringChange& GetUomSeparator() {return Get<StringChange>(SystemId::UomSeparator);}
+        StringChange& GetPrefixPadChar() {return Get<StringChange>(SystemId::PrefixPadChar);}
+        StringChange& GetStationSeparator() {return Get<StringChange>(SystemId::StationSeparator);}
+        UInt32Change& GetStationOffsetSize() {return Get<UInt32Change>(SystemId::StationOffsetSize);}
+        StringChange& GetCompositeInputUnit() {return Get<StringChange>(SystemId::FormatCompositeInputUnit);}
+        StringChange& GetCompositeSpacer() {return Get<StringChange>(SystemId::FormatCompositeSpacer);}
+        StringChange& GetCompositeMajorUnit() {return Get<StringChange>(SystemId::FormatCompositeMajorUnit);}
+        StringChange& GetCompositeMajorLabel() {return Get<StringChange>(SystemId::FormatCompositeMajorLabel);}
+        StringChange& GetCompositeMiddleUnit() {return Get<StringChange>(SystemId::FormatCompositeMiddleUnit);}
+        StringChange& GetCompositeMiddleLabel() {return Get<StringChange>(SystemId::FormatCompositeMiddleLabel);}
+        StringChange& GetCompositeMinorUnit() {return Get<StringChange>(SystemId::FormatCompositeMinorUnit);}
+        StringChange& GetCompositeMinorLabel() {return Get<StringChange>(SystemId::FormatCompositeMinorLabel);}
+        StringChange& GetCompositeSubUnit() {return Get<StringChange>(SystemId::FormatCompositeSubUnit);}
+        StringChange& GetCompositeSubLabel() {return Get<StringChange>(SystemId::FormatCompositeSubLabel);}
+    };
+
+//=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
 struct ECRelationshipConstraintClassChange final :ECObjectChange
@@ -1439,6 +1522,9 @@ private :
     BentleyStatus CompareUnits(UnitChanges&, ECN::UnitContainerCR, ECN::UnitContainerCR);
     BentleyStatus CompareUnit(UnitChange&, ECN::ECUnitCR, ECN::ECUnitCR);
     BentleyStatus AppendUnit(UnitChanges&, ECN::ECUnitCR, ValueId appendType);
+    BentleyStatus CompareFormats(FormatChanges&, ECN::FormatContainerCR, ECN::FormatContainerCR);
+    BentleyStatus CompareFormat(FormatChange&, ECN::ECFormatCR, ECN::ECFormatCR);
+    BentleyStatus AppendFormat(FormatChanges&, ECN::ECFormatCR, ValueId appendType);
 
 public:
     SchemaComparer(){}
