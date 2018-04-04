@@ -679,11 +679,13 @@ public:
 
     void SetSuppressUnitLabel() { m_numericSpec.SetShowUnitLabel(false); }
 
-    bool IsProblem() const { return m_problem.IsProblem(); }
+    bool IsProblem() const {return m_problem.IsProblem();}
+    FormatProblemCode GetProblem() const {return m_problem.GetProblemCode();}
     Utf8String GetProblemDescription() const {return m_problem.GetProblemDescription();}
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
 
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
+    Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const {return Format::StdFormatQuantity(*this, qty.ConvertTo(m_compositeSpec.GetInputUnit()), nullptr, space);}
     UNITS_EXPORT static Utf8String StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
 
     //! Parse a Format from the provided format string. A format string takes the form
