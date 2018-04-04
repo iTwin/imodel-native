@@ -162,9 +162,10 @@ def generate_imodeljs_native_platform_api(outdirParent, parentSourceDir, package
 # Generate imodeljs-native-platform-node
 # @param outdirParent The path to the output package's parent directory
 # @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
+# @param node_engine The version (family) of node that supports this addon. E.g., N_8
 # @param packageVersion The semantic version number for the generated package
 # @return the full path to the generated package directory
-def generate_imodeljs_nodeaddon(outputpackagedir, parentSourceDir, packageVersion):
+def generate_imodeljs_nodeaddon(outputpackagedir, parentSourceDir, node_engine, packageVersion):
 
     outputpackagedir = os.path.join(outdirParent, 'imodeljs-native-platform-node')
 
@@ -187,16 +188,17 @@ def generate_imodeljs_nodeaddon(outputpackagedir, parentSourceDir, packageVersio
 
     compatibleApiPackageVersionRange = compute_compatible_api_version_range(packageVersion)
 
-    setMacros(dstpackagefile, PACKAGE_VERSION = packageVersion, COMPATIBLE_API_PACKAGE_VERSIONS = compatibleApiPackageVersionRange, DECL_FILE_NAME = declFileName)
+    setMacros(dstpackagefile, NODE_VERSION_CODE = node_engine, PACKAGE_VERSION = packageVersion, COMPATIBLE_API_PACKAGE_VERSIONS = compatibleApiPackageVersionRange, DECL_FILE_NAME = declFileName)
     
     return outputpackagedir;
 
 # Generate imodeljs-native-platform-electron
 # @param outdirParent The path to the output package's parent directory
 # @param parentSourceDir The iModelJsNodeAddon source directory, i.e., %SrcRoot%iModelJsNodeAddon
+# @param electron_engine The version of electron that supports this addon.  E.g., E_1_6_11
 # @param packageVersion The semantic version number for the generated package
 # @return the full path to the generated package directory
-def generate_imodeljs_electronaddon(outputpackagedir, parentSourceDir, packageVersion):
+def generate_imodeljs_electronaddon(outputpackagedir, parentSourceDir, electron_engine, packageVersion):
 
     outputpackagedir = os.path.join(outdirParent, 'imodeljs-native-platform-electron')
 
@@ -219,7 +221,7 @@ def generate_imodeljs_electronaddon(outputpackagedir, parentSourceDir, packageVe
 
     compatibleApiPackageVersionRange = compute_compatible_api_version_range(packageVersion)
 
-    setMacros(dstpackagefile, PACKAGE_VERSION = packageVersion, COMPATIBLE_API_PACKAGE_VERSIONS = compatibleApiPackageVersionRange, DECL_FILE_NAME = declFileName)
+    setMacros(dstpackagefile, NODE_VERSION_CODE = electron_engine, PACKAGE_VERSION = packageVersion, COMPATIBLE_API_PACKAGE_VERSIONS = compatibleApiPackageVersionRange, DECL_FILE_NAME = declFileName)
     
     return outputpackagedir;
 
@@ -266,6 +268,8 @@ if __name__ == '__main__':
     os.makedirs(outdirParent)
 
     # Generate a platform-specific package fo each platform that was built
+    nodeversion = ''
+    electronversion = ''
     for versionsubdir in os.listdir(addonDir):    
         # We are looking for the version-specific addon subdirectories. They tell us the names of the addons
         if (re.match(r'^([a-z])_(\d+)_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)_(\d+)$', versionsubdir) is None and re.match(r'^([a-z])_(\d+)$', versionsubdir) is None):
@@ -274,6 +278,11 @@ if __name__ == '__main__':
         
         publishPackage(generate_addon_for_platform(outdirParent, productdir, versionsubdir, nodeOS, nodeCPU, packageVersion, sourceDir), doPublish, tag);
 
+        if versionsubdir.startswith("n_"):
+            nodeversion = versionsubdir
+        if versionsubdir.startswith("e_"):
+            electronversion = versionsubdir
+
     # Generate the other packages that describe or re-deliver the platform-specific addon packages.
     # Note that we do this only in a Windows build (and for the win32 platform). That is the "master" build.
     # Builds for all other platforms only publish their platform-specific addon packages.
@@ -281,7 +290,7 @@ if __name__ == '__main__':
         doPublish = False;
 
     publishPackage(generate_imodeljs_native_platform_api(outdirParent, sourceDir, packageVersion), doPublish, tag);
-    publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
-    publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, packageVersion), doPublish, tag);
+    publishPackage(generate_imodeljs_nodeaddon(outdirParent, sourceDir, nodeversion, packageVersion), doPublish, tag);
+    publishPackage(generate_imodeljs_electronaddon(outdirParent, sourceDir, electronversion, packageVersion), doPublish, tag);
 
     exit(0)

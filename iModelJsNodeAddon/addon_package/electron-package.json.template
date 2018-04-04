@@ -23,7 +23,7 @@
     "NOTE: List only the addons that a nodejs app/service might need. Do not list Electron-specific addons."
   ],
   "optionalDependencies": {
-    "@bentley/imodeljs-e_1_6_11-win32-x64": "~${PACKAGE_VERSION}"
+    "@bentley/imodeljs-${NODE_VERSION_CODE}-win32-x64": "~${PACKAGE_VERSION}"
   },
   "types": "./${DECL_FILE_NAME}"
 }
