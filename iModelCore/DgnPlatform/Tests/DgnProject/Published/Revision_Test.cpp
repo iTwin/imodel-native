@@ -2069,3 +2069,322 @@ TEST_F(RevisionTestFixture, DISABLED_MergeSpecificRevision)
 
 
 #endif
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static TestElementCPtr insertTestElement(DgnModelR model, DgnCategoryId catid, int32_t intProp1)
+    {
+    DgnDbR db = model.GetDgnDb();
+    auto el = TestElement::Create(db, model.GetModelId(), catid);
+    el->SetIntegerProperty(0, intProp1);
+    auto cpEl = db.Elements().Insert(*el);
+    EXPECT_TRUE(cpEl.IsValid());
+    return cpEl;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void verifyIntegerProperty(DgnDbR db, DgnElementId eId, int32_t prop)
+    {
+    auto el = db.Elements().Get<TestElement>(eId);
+    ASSERT_TRUE(el.IsValid());
+    EXPECT_EQ(el->GetIntegerProperty(0), prop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void updateIntegerProperty(DgnDbR db, DgnElementId eId, int32_t intProp1)
+    {
+    auto el = db.Elements().GetForEdit<TestElement>(eId);
+    ASSERT_TRUE(el.IsValid());
+    el->SetIntegerProperty(0, intProp1);
+    ASSERT_TRUE(el->Update().IsValid());
+    verifyIntegerProperty(db, eId, intProp1);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    07/2015
+//---------------------------------------------------------------------------------------
+static DgnRevisionPtr createRevision(DgnDbR db)
+    {
+    DgnRevisionPtr revision = db.Revisions().StartCreateRevision();
+    if (!revision.IsValid())
+        return nullptr;
+
+    RevisionStatus status = db.Revisions().FinishCreateRevision();
+    if (RevisionStatus::Success != status)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return revision;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
+    {
+    // Get any profile upgrades out of the way. We don't want any of that to appear in the revision history for the purposes of this test.
+    SetupDgnDb(RevisionTestFixture::s_seedFileInfo.fileName, L"upgraded.bim");
+    m_db->SaveChanges();
+    createRevision(*m_db);
+    auto catId = m_defaultCategoryId;
+
+    // Open two copies of the test bim.
+    BeFileName firstDbName(m_db->GetFileName().GetDirectoryName());
+    firstDbName.AppendToPath(L"first.bim");
+    BeFileName::BeCopyFile(m_db->GetFileName(), firstDbName);
+    auto first = DgnDb::OpenDgnDb(nullptr, firstDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    auto firstModel = first->Models().GetModel(m_defaultModel->GetModelId());
+
+    BeFileName secondDbName(m_db->GetFileName().GetDirectoryName());
+    secondDbName.AppendToPath(L"second.bim");
+    BeFileName::BeCopyFile(m_db->GetFileName(), secondDbName);
+    auto second = DgnDb::OpenDgnDb(nullptr, secondDbName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    // auto secondModel = second->Models().GetModel(m_defaultModel->GetModelId());
+
+    // Configure both copies to use optimistic concurrency    
+    OptimisticConcurrencyControl::Policy policy;
+    policy.updateVsUpdate = OptimisticConcurrencyControl::OnConflict::RejectIncomingChange;
+    policy.updateVsDelete = OptimisticConcurrencyControl::OnConflict::AcceptIncomingChange;
+    policy.deleteVsUpdate = OptimisticConcurrencyControl::OnConflict::RejectIncomingChange;
+    first->SetConcurrencyControl(new OptimisticConcurrencyControl(policy));  // adds ref
+    second->SetConcurrencyControl(new OptimisticConcurrencyControl(policy)); // adds ref
+
+    // The change "history" is a vector of DgnRevisions that we will be creating.
+    bvector<DgnRevisionPtr> history;
+    int firstParent = -1;
+    int secondParent = -1;
+
+    DgnElementId eid;   // The element that the two db's will fight over.
+    DgnElementId eid2;  // another element that the two db's will fight over.
+    
+    // First: Create an element.
+    int baseIntegerPropertyValue = 1;
+    int expectedIntegerPropertyValueForElement2 = baseIntegerPropertyValue;
+    if (true) 
+        {
+        eid = insertTestElement(*firstModel, catId, baseIntegerPropertyValue)->GetElementId();
+        eid2 = insertTestElement(*firstModel, catId, expectedIntegerPropertyValueForElement2)->GetElementId();
+        first->SaveChanges();
+        history.push_back(createRevision(*first));
+        firstParent = 0;        // when I push a changeset, it automatically becomes my parent
+        }
+
+    // Second: Pull first's change (no conflict)
+    if (true)
+        {
+        ASSERT_FALSE( second->Elements().Get<TestElement>(eid).IsValid() );
+        ASSERT_FALSE( second->Elements().Get<TestElement>(eid2).IsValid() );
+        ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
+        ASSERT_TRUE( second->Elements().Get<TestElement>(eid).IsValid() );
+        ASSERT_TRUE( second->Elements().Get<TestElement>(eid2).IsValid() );
+        verifyIntegerProperty(*second, eid, baseIntegerPropertyValue);
+        verifyIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2);
+        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+        }
+
+    // ------------------------
+    // --- update vs update ---
+    // ------------------------
+    int expectedIntegerPropertyValue = baseIntegerPropertyValue;
+
+    // First: modify el
+    int firstChangeValue;
+    if (true)
+        {
+        verifyIntegerProperty(*first, eid, baseIntegerPropertyValue);
+        verifyIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2);
+        updateIntegerProperty(*first, eid, firstChangeValue = 11);
+        first->SaveChanges();
+        history.push_back(createRevision(*first));
+        ++firstParent;
+        }
+
+    // Second: modify el, then merge in first's change, and handle the conflict.
+    if (true)
+        {
+        verifyIntegerProperty(*second, eid, baseIntegerPropertyValue);
+        
+        updateIntegerProperty(*second, eid, expectedIntegerPropertyValue = 22);
+        second->SaveChanges();
+        
+        // merge first's changeset and reject his change
+        ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
+
+        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());  // updateVsUpdate = RejectIncomingChange
+        second->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+
+        verifyIntegerProperty(*second, eid, expectedIntegerPropertyValue);
+        verifyIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2);
+
+        history.push_back(createRevision(*second));
+        ++secondParent;
+        }
+
+    // first: merge and see that second overrode my change. Verify that there is no conflict reported.
+    if (true)
+        {
+        verifyIntegerProperty(*first, eid, firstChangeValue);
+        ASSERT_EQ( RevisionStatus::Success, first->Revisions().MergeRevision(*history[++firstParent]) );
+        verifyIntegerProperty(*first, eid, expectedIntegerPropertyValue);
+        verifyIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2);
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+        }
+
+    // -----------------------------------------------
+    // --- Non-conflicting changes to same element ---
+    // -----------------------------------------------
+
+    // first: modify the property
+    auto wasExpectedIntegerPropertyValue = expectedIntegerPropertyValue;
+    if (true)
+        {
+        verifyIntegerProperty(*first, eid, expectedIntegerPropertyValue);
+        updateIntegerProperty(*first, eid, expectedIntegerPropertyValue = 1111);
+        first->SaveChanges();
+        history.push_back(createRevision(*first));
+        ++firstParent;
+        }
+
+    // second: modify userLabel
+    auto expectedUserLabelValue = "foo";
+    if (true)
+        {
+        auto el1before = second->Elements().GetElement(eid)->MakeCopy<TestElement>();
+        el1before->SetUserLabel(expectedUserLabelValue);
+        el1before->Update();
+        second->SaveChanges();
+        verifyIntegerProperty(*second, eid, wasExpectedIntegerPropertyValue);      // I didn't change the property
+
+        // pull + merge => no conflict + both changes should be intact
+        ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
+
+        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());  // NEEDS WORK: LastMod is reported as a conflict. While that's 
+                                                                                                            // always indirect, first changed another column in bis_Element.
+        second->GetOptimisticConcurrencyControl()->_ConflictsProcessed();                                   // So, the in-coming change, which includes LastMod and the other property, is marked as direct.
+
+        auto el1after = second->Elements().Get<TestElement>(eid);
+        verifyIntegerProperty(*second, eid, expectedIntegerPropertyValue);        // I see first's change to the property
+        ASSERT_STREQ(expectedUserLabelValue, el1after->GetUserLabel());           // I continue to see my change to user label
+
+        history.push_back(createRevision(*second));
+        ++secondParent;
+        }
+
+    // first: pull and see both changes
+    if (true)
+        {
+        ASSERT_EQ( RevisionStatus::Success, first->Revisions().MergeRevision(*history[++firstParent]) );
+
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+
+        verifyIntegerProperty(*first, eid, expectedIntegerPropertyValue);
+        auto el1after = first->Elements().Get<TestElement>(eid);
+        ASSERT_STREQ(expectedUserLabelValue, el1after->GetUserLabel());
+        }
+
+    // ------------------------
+    // --- delete vs update ---
+    // ------------------------
+
+    // First: modify el
+    baseIntegerPropertyValue = expectedIntegerPropertyValue;
+    if (true)
+        {
+        verifyIntegerProperty(*first, eid, baseIntegerPropertyValue);
+        updateIntegerProperty(*first, eid, expectedIntegerPropertyValue = 111);
+        first->SaveChanges();
+        history.push_back(createRevision(*first));
+        ++firstParent;
+        }
+
+    // Second: delete el, then merge in first's change, and handle the conflict in my favor.
+    if (true)
+        {
+        verifyIntegerProperty(*second, eid, baseIntegerPropertyValue);
+        
+        auto el = second->Elements().GetElement(eid);
+        ASSERT_TRUE(el.IsValid());
+        el->Delete();
+        el = nullptr;
+        second->SaveChanges();
+        
+        // merge first's changeset and reject his change
+        ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
+
+        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());  // deleteVsUpdate => RejectIncomingChange
+        second->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+
+        auto elafter = second->Elements().GetElement(eid);
+        ASSERT_FALSE(elafter.IsValid()) << " second deleted el and resolved the delete vs update conflict by rejecting the update, so el should be gone.";
+        
+        verifyIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2);  // Nothing should have happened to el2.
+
+        history.push_back(createRevision(*second));
+        ++secondParent;
+        }
+
+    // first: merge and see that second overrode my change. Verify that there is no conflict reported.
+    if (true)
+        {
+        verifyIntegerProperty(*first, eid, expectedIntegerPropertyValue);    // element is in my briefcase
+        ASSERT_EQ( RevisionStatus::Success, first->Revisions().MergeRevision(*history[++firstParent]) );
+        auto elafter = second->Elements().GetElement(eid);
+        ASSERT_FALSE(elafter.IsValid()) << " second deleted el and resolved the delete vs update conflict by rejecting the update, so el should be gone.";
+        verifyIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2);  // Nothing should have happened to el2.
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+        first->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+        }
+
+    // -------------------------
+    // --- update vs delete ----
+    // -------------------------
+    // Note that eid was deleted in the test above. Therefore, work with eid2
+    
+    if (true)
+        {
+        auto el2 = first->Elements().GetElement(eid2);
+        el2->Delete();
+        first->SaveChanges();
+        history.push_back(createRevision(*first));
+        ++firstParent;
+        }
+
+    if (true)
+        {
+        updateIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2 = 222);
+        second->SaveChanges();
+
+        // merge first's changeset and accept his change
+        ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
+
+        ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());  // updateVsDelete = acceptIncomingChanges
+        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());  
+        second->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+
+        ASSERT_FALSE(second->Elements().GetElement(eid2).IsValid()) << "First deleted el. Second updated el and resolved the update vs delete conflict by accepting the deletion. So, el2 should be gone.";
+
+        history.push_back(createRevision(*second));
+        ++secondParent;
+        }
+
+    first->SaveChanges();
+    first = nullptr;
+    second->SaveChanges();
+    second = nullptr;
+    }

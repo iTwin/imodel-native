@@ -102,7 +102,7 @@ public:
         double GetDouble(Utf8CP name, double defaultVal) const {return m_value[name].asDouble(defaultVal);}
         bool GetBool(Utf8CP name, bool defaultVal) const {return m_value[name].asBool(defaultVal);}
         JsonValueCR GetValue() const {return m_value;}
-        BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
+        DGNPLATFORM_EXPORT BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
         TextureMap(JsonValueCR val, Type type) : m_value(val), m_type(type) {}
     }; // TextureMap
 

@@ -4478,19 +4478,17 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 break;
                 }
 
-            case GeometryStreamIO::OpCode::ParasolidBRep:
-            case GeometryStreamIO::OpCode::BRepPolyface:
+            case GeometryStreamIO::OpCode::PointPrimitive:
+            case GeometryStreamIO::OpCode::PointPrimitive2d:
+            case GeometryStreamIO::OpCode::ArcPrimitive:
+            case GeometryStreamIO::OpCode::CurveVector:
+            case GeometryStreamIO::OpCode::Polyface:
+            case GeometryStreamIO::OpCode::CurvePrimitive:
+            case GeometryStreamIO::OpCode::SolidPrimitive:
+            case GeometryStreamIO::OpCode::BsplineSurface:
+            case GeometryStreamIO::OpCode::BRepPolyface: // Parasolid not currently supported return backup geometry...
             case GeometryStreamIO::OpCode::BRepCurveVector:
-                break; // NEEDSWORK...Ignore these for now...
-
-            case GeometryStreamIO::OpCode::Image:
-                break; // Doesn't currently exist...
-
-            default:
                 {
-                if (!egOp.IsGeometryOp())
-                    break;
-
                 GeometricPrimitivePtr geom;
 
                 if (!reader.Get(egOp, geom))
@@ -4542,6 +4540,24 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 output.append(value);
                 break;
                 }
+
+#if defined (NOT_NOW_RAW_OPCODE)
+            case GeometryStreamIO::OpCode::ParasolidBRep:
+            default:
+                {
+                // FOR_TESTING_ONLY: Bad to append this especially if it's geometry (brep) as we need to compute bounding box...
+                Utf8String dataStr = Base64Utilities::Encode((Utf8CP) egOp.m_data, egOp.m_dataSize);
+                Json::Value value;
+
+                value["code"] = (uint32_t)egOp.m_opCode;
+                value["data"] = dataStr;
+
+                Json::Value opCodeValue;
+                opCodeValue["unparsedOp"] = value;
+                output.append(opCodeValue);
+                break;
+                }
+#endif
             }
         }
 
@@ -5751,9 +5767,9 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input, JsonValueCR opts)
+bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
     {
-    Render::GeometryParams params = builder.GetGeometryParams();
+    Render::GeometryParams params = GetGeometryParams();
     int n = input.size();
 
     for (int i = 0; i < n; i++)
@@ -5796,6 +5812,10 @@ static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input,
                     LineStyleInfoPtr lsInfo = LineStyleInfo::Create(styleId, nullptr);
                     params.SetLineStyle(lsInfo.get());
                     }
+                else
+                    {
+                    params.SetLineStyle(nullptr);
+                    }
                 }
 
             if (!appearance["transparency"].isNull())
@@ -5836,10 +5856,10 @@ static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input,
                     geomToSource.ScaleMatrixColumns(geomToSource, scale, scale, scale);
                 }
 
-            if (!builder.Append(params))
+            if (!Append(params))
                 return false;
 
-            if (!builder.Append(partId, geomToSource))
+            if (!Append(partId, geomToSource))
                 return false;
             }
         else if (entry.isMember("textString"))
@@ -5849,7 +5869,7 @@ static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input,
             if (textString["font"].isNull() || textString["height"].isNull() || textString["text"].isNull())
                 return false; // A font, height, and text are required...
 
-            DgnFontCP font = builder.GetDgnDb().Fonts().FindFontById(DgnFontId((uint64_t) textString["font"].asInt()));
+            DgnFontCP font = GetDgnDb().Fonts().FindFontById(DgnFontId((uint64_t) textString["font"].asInt()));
 
             if (nullptr == font)
                 return false; // Invalid font id...
@@ -5903,12 +5923,28 @@ static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input,
                 text->SetOrientation(rMatrix);
                 }
 
-            if (!builder.Append(params))
+            if (!Append(params))
                 return false;
 
-            if (!builder.Append(*text))
+            if (!Append(*text))
                 return false;
             }
+#if defined (NOT_NOW_RAW_OPCODE)
+        else if (entry.isMember("unparsedOp"))
+            {
+            // FOR_TESTING_ONLY: Bad to append this especially if it's geometry (brep) as we need to compute bounding box...
+            Json::Value unparsedOp = entry["unparsedOp"];
+            GeometryStreamIO::OpCode opCode = (GeometryStreamIO::OpCode) unparsedOp["code"].asInt();
+            ByteStream byteStream;
+
+            Base64Utilities::Decode(byteStream, unparsedOp["data"].asString());
+
+            if (!byteStream.HasData())
+                return false;
+
+            m_writer.Append(GeometryStreamIO::Operation(opCode, byteStream.GetSize(), byteStream.GetData()));
+            }
+#endif
         else
             {
             bvector<IGeometryPtr> geometry;
@@ -5916,10 +5952,10 @@ static bool populateBuilderFromJson(GeometryBuilderR builder, JsonValueCR input,
             if (!IModelJson::TryIModelJsonValueToGeometry(entry, geometry) || 1 != geometry.size())
                 return false; // Should only ever be a single entry...
 
-            if (!builder.Append(params))
+            if (!Append(params))
                 return false;
 
-            if (!builder.Append(*geometry.at(0)))
+            if (!Append(*geometry.at(0)))
                 return false;
             }
         }
@@ -5940,7 +5976,7 @@ bool GeometryBuilder::UpdateFromJson(DgnGeometryPartR part, JsonValueCR input, J
     if (!builder.IsValid())
         return false;
 
-    if (!populateBuilderFromJson(*builder, input, opts))
+    if (!builder->FromJson(input, opts))
         return false;
 
     return (SUCCESS == builder->Finish(part));
@@ -5959,7 +5995,7 @@ bool GeometryBuilder::UpdateFromJson(GeometrySourceR source, JsonValueCR input, 
     if (!builder.IsValid())
         return false;
 
-    if (!populateBuilderFromJson(*builder, input, opts))
+    if (!builder->FromJson(input, opts))
         return false;
 
     return (SUCCESS == builder->Finish(source));

@@ -3943,10 +3943,16 @@ void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_FromJson(JsonValueR props)
     {
-    if (props.isMember(json_placement()))
-        m_placement.FromJson(props[json_placement()]); // Update placement before calling T_Super in case GeometryStream is also being updated...
-
     T_Super::_FromJson(props);
+
+    if (props.isMember(json_placement()))
+        {
+        // NOTE: Bounding box should not be updated from json, the GeometryBuilder computes the correct range from the GeometryStream...
+        Placement2d newPlacement;        
+        newPlacement.FromJson(props[json_placement()]);
+        m_placement.GetOriginR() = newPlacement.GetOrigin();
+        m_placement.GetAngleR()  = newPlacement.GetAngle();
+        }
 
     if (props.isMember(json_typeDefinition()))
         m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);
@@ -3998,10 +4004,16 @@ void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement3d::_FromJson(JsonValueR props)
     {
-    if (props.isMember(json_placement()))
-        m_placement.FromJson(props[json_placement()]); // Update placement before calling T_Super in case GeometryStream is also being updated...
-
     T_Super::_FromJson(props);
+
+    if (props.isMember(json_placement()))
+        {
+        // NOTE: Bounding box should not be updated from json, the GeometryBuilder computes the correct range from the GeometryStream...
+        Placement3d newPlacement;        
+        newPlacement.FromJson(props[json_placement()]);
+        m_placement.GetOriginR() = newPlacement.GetOrigin();
+        m_placement.GetAnglesR() = newPlacement.GetAngles();
+        }
 
     if (props.isMember(json_typeDefinition()))
         m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);

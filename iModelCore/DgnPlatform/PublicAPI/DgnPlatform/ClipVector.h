@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ClipVector.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,6 +22,8 @@ struct ClipVector : RefCounted<T_ClipPrimitiveVector>
 {
     // scratch vector for use in clip steps -- prevent reallocation per geometry tested.
     bvector<DSegment1d> m_clipIntervals;
+    DRange3d m_boundingRange = DRange3d::NullRange();
+
     ClipVector() {}
     ClipVector(ClipPrimitiveP primitive) {push_back(primitive);}
     ClipVector(GPArrayCR gpa, double chordTolerance, double angleTolerance, double* zLow, double* zHigh, TransformCP transform);

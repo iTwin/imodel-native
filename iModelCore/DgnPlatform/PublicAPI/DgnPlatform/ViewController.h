@@ -677,7 +677,6 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
-    TileTree::RootPtr GetRoot(SceneContextR context);
 
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 
@@ -693,6 +692,9 @@ public:
     bool _AllTileTreesLoaded() const override { return m_root.IsValid(); }
     DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
     void _UnloadAllTileTrees() override { m_root = nullptr; }
+
+    TileTree::RootP GetRoot(SceneContextR context);
+    BentleyStatus CreateScene(TileTree::DrawArgsR args);
 };
 
 //=======================================================================================

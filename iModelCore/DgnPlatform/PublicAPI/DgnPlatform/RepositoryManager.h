@@ -602,6 +602,10 @@ struct PessimisticConcurrencyControl : RefCounted<IConcurrencyControl>
 struct IOptimisticConcurrencyControl : IConcurrencyControl
     {
     virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) = 0;
+
+    virtual bset<DgnElementId> const& _GetConflictingElementsRejected() const = 0;
+    virtual bset<DgnElementId> const& _GetConflictingElementsAccepted() const = 0;
+    virtual void _ConflictsProcessed() = 0;
     };
 
 /* An optimistic concurrency control policy */
@@ -648,19 +652,18 @@ struct OptimisticConcurrencyControl : RefCounted<OptimisticConcurrencyControlBas
 
     private:
     Policy m_policy;
-    bvector<DgnElementId> m_conflictingElementsRejected;
-    bvector<DgnElementId> m_conflictingElementsAccepted;
+    bset<DgnElementId> m_conflictingElementsRejected;
+    bset<DgnElementId> m_conflictingElementsAccepted;
 
-    BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) override;
-
-    BeSQLite::ChangeSet::ConflictResolution HandleConflict(OptimisticConcurrencyControl::OnConflict, Utf8CP tableName, BeSQLite::Changes::Change, BeSQLite::DbOpcode, bool indirect);
+    BeSQLite::ChangeSet::ConflictResolution HandleConflict(OptimisticConcurrencyControl::OnConflict, DgnDbCR, Utf8CP tableName, BeSQLite::Changes::Change, BeSQLite::DbOpcode, bool indirect);
 
     public:
     DGNPLATFORM_EXPORT OptimisticConcurrencyControl(Policy conflicts);
 
-    bvector<DgnElementId> const& GetConflictingElementsRejected() const {return m_conflictingElementsRejected;}
-    bvector<DgnElementId> const& GetConflictingElementsAccepted() const {return m_conflictingElementsAccepted;}
-    void ConflictsProcessed() {m_conflictingElementsRejected.clear(); m_conflictingElementsAccepted.clear();}
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) override;
+    bset<DgnElementId> const& _GetConflictingElementsRejected() const override {return m_conflictingElementsRejected;}
+    bset<DgnElementId> const& _GetConflictingElementsAccepted() const override {return m_conflictingElementsAccepted;}
+    void _ConflictsProcessed() override {m_conflictingElementsRejected.clear(); m_conflictingElementsAccepted.clear();}
     };
 
 

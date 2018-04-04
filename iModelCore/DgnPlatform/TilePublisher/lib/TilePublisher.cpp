@@ -853,12 +853,12 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
         featureTableData.m_json["NORMAL_RIGHT"]["byteOffset"] = featureTableData.BinaryDataSize();
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
+        }
 
-        if (scaleRequired)
-            {
-            featureTableData.m_json["SCALE"]["byteOffset"] = featureTableData.BinaryDataSize();
-            featureTableData.AddBinaryData(scales.data(), scales.size()*sizeof(float));
-            }
+    if (scaleRequired)
+        {
+        featureTableData.m_json["SCALE"]["byteOffset"] = featureTableData.BinaryDataSize();
+        featureTableData.AddBinaryData(scales.data(), scales.size()*sizeof(float));
         }
 
     BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), m_context);
@@ -3460,7 +3460,7 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels)
     {
-    bvector<DgnElementId> attachmentIds; // = sheet.GetSheetAttachmentIds();
+    bvector<DgnElementId> attachmentIds = sheet.GetSheetAttachmentIds();
     Json::Value attachmentsJson(Json::arrayValue);
     for (DgnElementId attachmentId : attachmentIds)
         {
@@ -3777,8 +3777,9 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels;
 
+    bool includeAttachments = T_HOST._IsFeatureEnabled("TilePublisher.PublishViewAttachments");
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId, /*includeAttachments=*/ /*true*/ false);
+        GetViewedModelsFromView (viewedModels, viewId, includeAttachments);
 
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)

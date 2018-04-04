@@ -146,6 +146,7 @@
 #define DGN_TABLE_Font                      "dgn_Font"
 #define DGN_TABLE_Handler                   "dgn_Handler"
 #define DGN_TABLE_Txns                      "dgn_Txns"
+#define DGN_TABLE_Rebase                    "dgn_Rebase"
 #define DGN_VTABLE_SpatialIndex             "dgn_" BIS_CLASS_SpatialIndex
 
 #include <DgnPlatform/DgnProperties.h>

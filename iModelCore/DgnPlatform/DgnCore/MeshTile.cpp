@@ -1253,7 +1253,8 @@ T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
     else
         {
         for (auto& glyphCurve : m_glyphCurves)
-            addRegion(*polyfaceBuilder, *glyphCurve);
+            if (glyphCurve->IsAnyRegionType())
+                addRegion(*polyfaceBuilder, *glyphCurve);
         }
 
     PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
@@ -2763,7 +2764,7 @@ void TileGeometryProcessor::ProcessAttachment(ViewContextR context, Sheet::ViewA
     // Create an offscreen viewport to render the attached view to a texture
     auto viewId = attach.GetAttachedViewId();
     auto vc = ViewDefinition::LoadViewController(viewId, attach.GetDgnDb());
-    if (vc.IsNull())
+    if (vc.IsNull() || !vc->Is3d())
         return;
 
     auto vp = T_HOST._CreateSheetAttachViewport();

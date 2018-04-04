@@ -135,6 +135,7 @@ struct DgnGlyphLayoutResult
     T_GlyphOrigins m_glyphOrigins;
 
     DgnGlyphLayoutResult() { m_range.Init(); m_exactRange.Init(); m_justificationRange.Init(); }
+    void ZeroNullRanges();
 };
 
 //=======================================================================================
