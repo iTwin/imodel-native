@@ -71,7 +71,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     ASSERT_TRUE(rightThruPortionPtr->Insert(PathwayElement::TravelSide::Right).IsValid());
 
     ASSERT_EQ(3, roadwayCPtr->QueryPortionIds().size());
-    ASSERT_EQ(2, roadwayCPtr->QueryTravelPortionIds().size());
+    ASSERT_EQ(2, roadwayCPtr->QueryTravelPortionInfos().size());
     ASSERT_EQ(thruSepPortionPtr->GetElementId(), roadwayCPtr->QueryTravelSeparationId());
     ASSERT_EQ(leftThruPortionPtr->GetElementId(), roadwayCPtr->QueryTravelPortionId(PathwayElement::TravelSide::Left));
     ASSERT_EQ(rightThruPortionPtr->GetElementId(), roadwayCPtr->QueryTravelPortionId(PathwayElement::TravelSide::Right));

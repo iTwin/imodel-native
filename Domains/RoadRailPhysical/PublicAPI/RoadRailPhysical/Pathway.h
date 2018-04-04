@@ -44,13 +44,27 @@ protected:
 public:
     enum class TravelSide { Single = 0, Left = 1, Right = 2 };
 
+    struct TravelPortionInfo
+    {
+        Dgn::DgnElementId m_elementId;
+        TravelSide m_travelSide;
+
+        TravelPortionInfo(): m_travelSide(TravelSide::Single) {}
+        TravelPortionInfo(Dgn::DgnElementId elementId, TravelSide travelSide): m_elementId(elementId), m_travelSide(travelSide) {}
+
+        Dgn::DgnElementId GetElementId() const { return m_elementId; }
+        TravelSide GetTravelSide() const { return m_travelSide; }
+
+        bool operator< (TravelPortionInfo const& right) const { return m_elementId < right.m_elementId; }
+    }; // TravelPortionInfo
+
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(PathwayElementCR pathway, Dgn::DgnElementCR representedBy);
 
     ROADRAILPHYSICAL_EXPORT Dgn::DgnElementIdSet QueryPortionIds() const;
-    ROADRAILPHYSICAL_EXPORT bset<bpair<Dgn::DgnElementId, TravelSide>> QueryTravelPortionIds() const;    
+    ROADRAILPHYSICAL_EXPORT bset<TravelPortionInfo> QueryTravelPortionInfos() const;
     ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryTravelPortionId(TravelSide side) const;
     ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryTravelSeparationId() const;
 }; // PathwayElement

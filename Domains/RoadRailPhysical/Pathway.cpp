@@ -115,7 +115,7 @@ DgnClassId getRelClassIdForSide(DgnDbCR dgnDb, PathwayElement::TravelSide side)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<bpair<DgnElementId, PathwayElement::TravelSide>> PathwayElement::QueryTravelPortionIds() const
+bset<PathwayElement::TravelPortionInfo> PathwayElement::QueryTravelPortionInfos() const
     {
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId, ECClassId FROM "
         BRRP_SCHEMA(BRRP_REL_PathwayRefersToTravelPortion) " WHERE SourceECInstanceId = ?;");
@@ -123,9 +123,9 @@ bset<bpair<DgnElementId, PathwayElement::TravelSide>> PathwayElement::QueryTrave
 
     stmtPtr->BindId(1, GetElementId());
 
-    bset<bpair<DgnElementId, PathwayElement::TravelSide>> retVal;
+    bset<TravelPortionInfo> retVal;
     while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-        retVal.insert({ stmtPtr->GetValueId<DgnElementId>(0), getSideForRelClassId(GetDgnDb(), stmtPtr->GetValueId<DgnClassId>(1)) });
+        retVal.insert(TravelPortionInfo(stmtPtr->GetValueId<DgnElementId>(0), getSideForRelClassId(GetDgnDb(), stmtPtr->GetValueId<DgnClassId>(1))));
 
     return retVal;
     }
