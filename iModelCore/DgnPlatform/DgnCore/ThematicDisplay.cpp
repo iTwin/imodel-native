@@ -517,6 +517,8 @@ bool   ElementTileTree::ThematicMeshBuilder::DoThematicDisplay(PolyfaceHeaderR m
         return false;
 
     textureMapping = m_textureMapping;
+    mesh.ParamIndex().clear();
+    mesh.Param().clear();
 
     mesh.ParamIndex().SetActive(true);
     mesh.ParamIndex().resize(mesh.PointIndex().size());

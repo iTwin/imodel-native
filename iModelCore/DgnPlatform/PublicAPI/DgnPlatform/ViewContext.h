@@ -127,6 +127,7 @@ protected:
     Render::FrustumPlanes m_frustumPlanes;
     DgnViewportP m_viewport = nullptr;
     ClipVectorCPtr m_volume;
+    Utf8String m_auxChannel;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
@@ -188,6 +189,8 @@ public:
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipVectorCR volume) {m_volume=&volume;}
     ClipVectorCPtr GetActiveVolume() const {return m_volume;}
+    Utf8StringCR GetActiveAuxChannel() const { return m_auxChannel; }
+    void SetActiveAuxChannel(Utf8CP auxChannel) { m_auxChannel = nullptr == auxChannel ? Utf8String() : Utf8String(auxChannel); }
     void EnableStopAfterTimout(BeDuration::Milliseconds timeout) {m_endTime = BeTimePoint::FromNow(timeout); m_stopAfterTimeout=true;}
 
     Render::GraphicBuilderPtr CreateSceneGraphic(TransformCR tf=Transform::FromIdentity())

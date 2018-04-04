@@ -88,7 +88,7 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 constexpr double s_maxLeafTolerance = 1.0; // the maximum tolerance at which we will stop subdividing tiles, regardless of # of elements contained or whether curved geometry exists.
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::ShowBoundingVolume;
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -2035,8 +2035,9 @@ MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContext
     SetViewFlags(TileContext::GetDefaultViewFlags());
 
 
-#define TEST_THEMATIC_HEIGHT 
+//#define TEST_THEMATIC_HEIGHT
 #ifdef TEST_THEMATIC_HEIGHT
+    SetActiveAuxChannel("Height");
     ThematicDisplaySettings     heightDisplaySettings;
     heightDisplaySettings.SetSteppedDisplay(ThematicSteppedDisplay_FastWithIsolines);
     auto                        projectExtents = m_tile.GetElementRoot().GetDgnDb().GeoLocation().ComputeProjectExtents();
@@ -2214,20 +2215,27 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
     {
-    bool hasTexture = displayParams.IsTextured();
-    bool anyContributed = false;
-    uint32_t fillColor = displayParams.GetFillColor();
-    DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
+    bool        hasTexture = displayParams.IsTextured();
+    bool        anyContributed = false;
+    uint32_t    fillColor = displayParams.GetFillColor();
+    DgnDbR      db = m_tile.GetElementRoot().GetDgnDb();
 
     MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar);
-    MeshBuilderR builder = GetMeshBuilder(key);
+    MeshBuilderR        builder = GetMeshBuilder(key);
 
     builder.BeginPolyface(polyface, edgeOptions);
+
+    Utf8CP      thisAuxChannel = nullptr, activeAuxChannel =  GetActiveAuxChannel().empty() ? nullptr : GetActiveAuxChannel().c_str();
+
+    if (nullptr != activeAuxChannel &&
+        polyface.GetAuxDataCP().IsValid() &&
+        polyface.GetAuxDataCP()->GetChannel(activeAuxChannel).IsValid())
+       thisAuxChannel = activeAuxChannel;
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP());
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP(), thisAuxChannel);
         m_contentRange.Extend(visitor->Point());
         }
 

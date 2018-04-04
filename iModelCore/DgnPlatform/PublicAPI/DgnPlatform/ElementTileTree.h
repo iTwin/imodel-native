@@ -302,13 +302,13 @@ public:
 struct ThematicMeshBuilder : RefCountedBase
 {
 private:
-    Utf8String              m_channel;
-    TextureMapping          m_textureMapping;
-    ThematicCookedRange     m_cookedRange;
+    Utf8String                      m_channel;
+    Render::TextureMapping          m_textureMapping;
+    Render::ThematicCookedRange     m_cookedRange;
 
 public:
-    ThematicMeshBuilder(Utf8StringCR channel, SystemCR system, DgnDbR db, ThematicDisplaySettingsCR settings, ThematicCookedRangeCR range);
-    bool                DoThematicDisplay(PolyfaceHeaderR mesh, TextureMappingR textureMapping) const;
+    ThematicMeshBuilder(Utf8StringCR channel, Render::SystemCR system, DgnDbR db, Render::ThematicDisplaySettingsCR settings, Render::ThematicCookedRangeCR range);
+    bool                DoThematicDisplay(PolyfaceHeaderR mesh, Render::TextureMappingR textureMapping) const;
 
 };
 

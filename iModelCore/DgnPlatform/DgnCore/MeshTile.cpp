@@ -1743,6 +1743,10 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
         {
         bvector<PolyfaceHeaderPtr>  polyfaces;
         bvector<FaceAttachment>     params;
+        NullContext                 nullContext;        // Needed to cook faceParams.
+
+        nullContext.SetDgnDb(m_db);
+
 
         if (!BRepUtil::FacetEntity(*m_entity, polyfaces, params, *pFacetOptions))
             return TileGeometry::T_TilePolyfaces();;
@@ -1759,10 +1763,12 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
             auto&   polyface = polyfaces[i];
 
             if (polyface->HasFacets())
-                {                                                                    
+                { 
                 GeometryParams faceParams;
                 params[i].ToGeometryParams(faceParams, baseParams);
-                faceParams.Resolve(m_db);
+                
+                GraphicParams gfParams;
+                nullContext.CookGeometryParams(faceParams, gfParams);
 
                 TileDisplayParamsCPtr displayParams = TileDisplayParams::Create(GetDisplayParams().GetColor(), faceParams);
                 tilePolyfaces.push_back (TileGeometry::TilePolyface (*displayParams, *polyface));
