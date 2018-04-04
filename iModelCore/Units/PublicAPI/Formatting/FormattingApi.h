@@ -523,7 +523,11 @@ public:
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
     BEU::UnitCP GetInputUnit()  const {return m_inputUnit;}
     UNITS_EXPORT void SetInputUnit(BEU::UnitCP unit);
-    bool HasInputUnit() const {return nullptr != m_inputUnit;}
+    bool HasInputUnit()  const {return nullptr != m_inputUnit;}
+    bool HasMajorUnit()  const {return nullptr != GetUnit(indxMajor);}
+    bool HasMiddleUnit() const {return nullptr != GetUnit(indxMiddle);}
+    bool HasMinorUnit()  const {return nullptr != GetUnit(indxMinor);}
+    bool HasSubUnit()    const {return nullptr != GetUnit(indxSub);}
 
     UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
     Utf8String GetMajorLabel()  const {return GetEffectiveLabel(indxMajor);}
