@@ -49,7 +49,8 @@ void PolyfaceAuxData::AdvanceVisitorToNextFace(PolyfaceAuxData const& parent, ui
 
         for (size_t i=0; i<m_channels.size(); i++)
             for (size_t j=0; j<m_channels[i]->GetData().size(); j++)
-                m_channels[i]->GetData()[j]->m_values.push_back(parent.GetChannels()[i]->GetData()[j]->GetValues().at(k0));
+                for (size_t k = 0, blockSize = m_channels[i]->GetBlockSize();k<blockSize; k++)
+                    m_channels[i]->GetData()[j]->m_values.push_back(parent.GetChannels()[i]->GetData()[j]->GetValues().at(k0 * blockSize * k));
         }
     if (numOut > 0)
         {
@@ -59,7 +60,8 @@ void PolyfaceAuxData::AdvanceVisitorToNextFace(PolyfaceAuxData const& parent, ui
 
             for (auto& channel : m_channels)
                 for (auto& data : channel->GetData())
-                    data->m_values.push_back(data->m_values[i]);
+                    for (size_t k = 0, blockSize = m_channels[i]->GetBlockSize();k<blockSize; k++)
+                        data->m_values.push_back(data->m_values[i * blockSize + k]);
             }
         }
     }
@@ -130,30 +132,25 @@ void PolyfaceAuxData::Transform(TransformCR transform)
 void PolyfaceAuxData::Channels::Init(PolyfaceAuxData::ChannelsCR input)
     {
     for (auto& channel : input)
-        {
-        bvector<DataPtr>    dataVector;
-
-        for (auto& data : channel->GetData())
-            {
-            bvector<float>     values;
-            dataVector.push_back (new Data(data->GetInput(), std::move(values)));
-            }
-
-        this->push_back(new Channel(channel->GetDataType(), channel->GetName().c_str(), channel->GetInputName().c_str(), std::move(dataVector)));
-        }
+        this->push_back(channel->CloneWithoutData());
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      03/2018
 +--------------------------------------------------------------------------------------*/
-void PolyfaceAuxData::Channels::AppendDataByIndex(PolyfaceAuxData::ChannelsCR input, size_t index)
+PolyfaceAuxData::ChannelPtr  PolyfaceAuxData::Channel::CloneWithoutData() const
     {
-    if (this->empty())
-        Init(input);
+    bvector<DataPtr>    dataVector;
 
-    for (size_t i=0; i<this->size(); i++)
-        this->at(i)->AppendDataByIndex(*input.at(i), index);
+    for (auto& data : GetData())
+        {
+        bvector<float>     values;
+        dataVector.push_back (new Data(data->GetInput(), std::move(values)));
+        }
+
+    return new Channel(GetDataType(), GetName().c_str(), GetInputName().c_str(), std::move(dataVector));
     }
+
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      03/2018
