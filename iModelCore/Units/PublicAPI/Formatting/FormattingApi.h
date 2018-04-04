@@ -676,6 +676,7 @@ public:
     bool HasCompositeMinorUnit() const {return nullptr != GetCompositeMinorUnit();}
     bool HasCompositeSubUnit() const {return nullptr != GetCompositeSubUnit();}
     bool HasCompositeInputUnit() const {return nullptr != GetCompositeInputUnit();}
+    bool HasCompositeSpacer() const {return GetCompositeSpec()->HasSpacer();}
 
     void SetSuppressUnitLabel() { m_numericSpec.SetShowUnitLabel(false); }
 
