@@ -27,6 +27,8 @@ ClassificationSystemsDomain::ClassificationSystemsDomain () : Dgn::DgnDomain(CLA
     {
     RegisterHandler (CIBSEClassDefinitionHandler::GetHandler ());
     RegisterHandler (OmniClassClassDefinitionHandler::GetHandler ());
+    RegisterHandler(ASHRAE2004ClassDefinitionHandler::GetHandler());
+    RegisterHandler(ASHRAE2010ClassDefinitionHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------

@@ -13,6 +13,9 @@
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystemClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(CIBSEClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(OmniClassClassDefinition)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ASHRAEClassDefinition)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ASHRAE2004ClassDefinition)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ASHRAE2010ClassDefinition)
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
@@ -69,10 +72,10 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         //! @param[in]  Category   new Category for this CIBSEClassDefinition
         void SetCategory (Utf8CP Category) { SetPropertyValue(prop_Category(), Category); }   
 
-        //! Gets the name of this OmniClassClassDefinition
+        //! Gets the name of this CIBSEClassDefinition
         Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
 
-        //! Gets the Category of this OmniClassClassDefinition
+        //! Gets the Category of this CIBSEClassDefinition
         Utf8CP GetCategory() const { return GetPropertyValueString(prop_Category()).c_str(); }
         
     };
@@ -128,5 +131,87 @@ struct EXPORT_VTABLE_ATTRIBUTE OmniClassClassDefinition : ClassificationSystemCl
         //! Gets the description of this OmniClassClassDefinition
         Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
 
+    };
+
+//=======================================================================================
+//! A ASHRAE Class Definition element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ASHRAEClassDefinition : ClassificationSystemClassDefinition
+    {
+    DEFINE_T_SUPER(ClassificationSystemClassDefinition);
+    private:
+        BE_PROP_NAME(Name)
+        BE_PROP_NAME(Category)
+    protected:
+        
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ASHRAEClassDefinition(CreateParams const& params) : T_Super(params) {}
+
+    public:
+        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAEClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+        //! Sets the name of this ASHRAEClassDefinition
+        //! @param[in]  name   new name for this ASHRAEClassDefinition
+        void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
+
+        //! Sets the Category of this ASHRAEClassDefinition
+        //! @param[in]  Category   new Category for this ASHRAEClassDefinition
+        void SetCategory(Utf8CP Category) { SetPropertyValue(prop_Category(), Category); }
+
+        //! Gets the name of this ASHRAEClassDefinition
+        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+
+        //! Gets the Category of this ASHRAEClassDefinition
+        Utf8CP GetCategory() const { return GetPropertyValueString(prop_Category()).c_str(); }
+    };
+//=======================================================================================
+//! A ASHRAE2004 Class Definition element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ASHRAE2004ClassDefinition : ASHRAEClassDefinition
+    {
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2004ClassDefinition, ASHRAEClassDefinition);
+    private:
+
+    protected:
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ASHRAE2004ClassDefinition(CreateParams const& params) : T_Super(params) {}
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ASHRAE2004ClassDefinition(CreateParams const& params, Utf8CP name, Utf8CP Category);
+        friend struct ASHRAE2004ClassDefinitionHandler;
+        friend struct ClassificationSystemsDomain;
+
+        //---------------------------------------------------------------------------------------
+        // Creation
+        //---------------------------------------------------------------------------------------
+        //! Creates a ASHRAE2004ClassDefinition
+        //! @param[in]  db          db to insert class definition in
+        //! @param[in]  name        name of the ASHRAE2004 Class Definition
+        //! @param[in]  Category    Category of the ASHRAE2004 Class Definition
+        //! @return     a ptr to created ASHRAE2004ClassDefinition
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ASHRAE2004ClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category);
+    public:
+        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAE2004ClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+    };
+//=======================================================================================
+//! A ASHRAE2010 Class Definition element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ASHRAE2010ClassDefinition : ASHRAEClassDefinition
+    {
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2010ClassDefinition, ASHRAEClassDefinition);
+    private:
+
+    protected:
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ASHRAE2010ClassDefinition(CreateParams const& params) : T_Super(params) {}
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ASHRAE2010ClassDefinition(CreateParams const& params, Utf8CP name, Utf8CP Category);
+        friend struct ASHRAE2010ClassDefinitionHandler;
+        friend struct ClassificationSystemsDomain;
+
+        //---------------------------------------------------------------------------------------
+        // Creation
+        //---------------------------------------------------------------------------------------
+        //! Creates a ASHRAE2010ClassDefinition
+        //! @param[in]  db          db to insert class definition in
+        //! @param[in]  name        name of the ASHRAE2010 Class Definition
+        //! @param[in]  Category    Category of the ASHRAE2010 Class Definition
+        //! @return     a ptr to created CIBSEClassDefinition
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ASHRAE2010ClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category);
+    public:
+        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAE2010ClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
     };
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

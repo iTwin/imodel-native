@@ -77,6 +77,9 @@
 #define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinition                     "ClassificationSystemClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition                                    "CIBSEClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition                                "OmniClassClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_ASHRAEClassDefinition                                   "ASHRAEClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2004ClassDefinition                               "ASHRAE2004ClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2010ClassDefinition                               "ASHRAE2010ClassDefinition"
 
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemsSectionConnectsElements                            "ClassificationSystemsSectionConnectsElements"
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemsPathHasSections                                    "ClassificationSystemsPathHasSections"

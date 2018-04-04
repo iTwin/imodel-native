@@ -20,4 +20,14 @@ struct OmniClassClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
     ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition, OmniClassClassDefinition, OmniClassClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
     };
 
+struct ASHRAE2004ClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2004ClassDefinition, ASHRAE2004ClassDefinition, ASHRAE2004ClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
+    };
+
+struct ASHRAE2010ClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2010ClassDefinition, ASHRAE2010ClassDefinition, ASHRAE2010ClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
+    };
+
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
