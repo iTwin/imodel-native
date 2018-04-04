@@ -2,12 +2,13 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/SamlToken.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
+#include <WebServices/Connect/ISecurityToken.h>
 #include <WebServices/Client/WebServicesClient.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/DateTime.h>
@@ -18,7 +19,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SamlToken
+struct SamlToken : public ISecurityToken
     {
     private:
         Utf8String m_token;
@@ -42,7 +43,7 @@ struct SamlToken
         //! Check whenver given token is empty
         WSCLIENT_EXPORT bool IsEmpty() const;
         //! Check whenver given token is valid xml and supported
-        WSCLIENT_EXPORT bool IsSupported() const;
+        WSCLIENT_EXPORT bool IsSupported() const override;
         //! Check whenever token is valid at given date.
         //! Note that client clock might not be correctly set. This can be workarounded by using slight future DateTime. But not always
         WSCLIENT_EXPORT bool IsValidAt(DateTimeCR dateTimeUtc) const;
@@ -56,19 +57,19 @@ struct SamlToken
         //! Get base 64 encoded certificate
         WSCLIENT_EXPORT BentleyStatus GetX509Certificate(Utf8StringR certOut) const;
         //! Create string for authorization header
-        WSCLIENT_EXPORT Utf8String ToAuthorizationString() const;
+        WSCLIENT_EXPORT Utf8String ToAuthorizationString() const override;
         //! Create string for SAML authorization header
         WSCLIENT_EXPORT Utf8String ToSAMLAuthorizationString() const;
         //! Return original token representation
-        WSCLIENT_EXPORT Utf8StringCR AsString() const;
+        WSCLIENT_EXPORT Utf8StringCR AsString() const override;
         //! Compare contents of two tokens for equality
-        WSCLIENT_EXPORT bool operator==(const SamlToken& other) const;
+        WSCLIENT_EXPORT bool operator==(const ISecurityToken& other) const override;
     };
 
 typedef SamlToken& SamlTokenR;
 typedef const SamlToken& SamlTokenCR;
 typedef SamlToken* SamlTokenP;
 typedef const SamlToken* SamlTokenCP;
-typedef std::shared_ptr<const SamlToken> SamlTokenPtr;
+typedef std::shared_ptr<SamlToken> SamlTokenPtr;
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

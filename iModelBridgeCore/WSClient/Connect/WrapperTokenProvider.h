@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/WrapperTokenProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,13 +25,13 @@ struct WrapperTokenProvider : IConnectTokenProvider
             m_cs(cs), m_tokenProvider(tokenProvider)
             {}
 
-        AsyncTaskPtr<SamlTokenPtr> UpdateToken() override
+        AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override
             {
             BeMutexHolder lock(m_cs);
             return m_tokenProvider->UpdateToken();
             }
 
-        SamlTokenPtr GetToken() override
+        ISecurityTokenPtr GetToken() override
             {
             BeMutexHolder lock(m_cs);
             return m_tokenProvider->GetToken();
