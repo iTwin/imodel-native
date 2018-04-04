@@ -19,7 +19,7 @@
     <ClCompile Include="src\UnitTypes.cpp" />
     <ClCompile Include="src\Formatting\FormatParsing.cpp" />
     <ClCompile Include="src\Formatting\CompositeValueSpec.cpp" />
-    <ClCompile Include="src\Formatting\StdFormatSet.cpp" />
+    <ClCompile Include="src\Formatting\FormatMappings.cpp" />
     <ClCompile Include="src\Formatting\FormatUtils.cpp" />
     <ClCompile Include="src\SymbolicExpression.cpp" />
     <ClCompile Include="src\UnitsPCH.cpp" />
