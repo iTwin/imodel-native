@@ -395,7 +395,10 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
         fflush(pResultFile);            
     }
 
-    void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
+
+static bool s_usePolygon = true;
+
+void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     BeXmlStatus status;
     WString stmFileName;
@@ -561,15 +564,30 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                             }
                         }
                     });
+/*
+                if (s_usePolygon)
+                    { 
+                    bvector<DPoint3d> polygon;
 
+                    polygon.push_back(DPoint3d::From(360854.037,4388846.416,1.421));
+                    polygon.push_back(DPoint3d::From(371050.694,4388846.416,1.421));
+                    polygon.push_back(DPoint3d::From(371050.694,4385572.326,1.421));
+                    polygon.push_back(DPoint3d::From(360854.037,4385572.326,1.421));
+                    polygon.push_back(DPoint3d::From(360854.037,4388846.416,1.421));
+
+                    creatorPtr->SetSourceImportPolygon(&polygon[0], polygon.size());
+                    }
+*/
                 StatusInt status = creatorPtr->Create(isSingleFile);
                 importInProgress = false;
                 mythread.join();
+                
+                creatorPtr->SaveToFile();
+                creatorPtr = nullptr;
 
                 t = clock() - t;
                 double delay = (double)t / CLOCKS_PER_SEC;
-                creatorPtr->SaveToFile();
-                creatorPtr = nullptr;
+
                 if (status == SUCCESS)
                     {
                     StatusInt status;
@@ -623,8 +641,15 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         StatusInt stat;
                         IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);                        
                         WString url = WString(streamingRasterUrl.c_str(), true);
+
+                        t = clock();
+                        
                         if (stat == SUCCESS)
                             meshCreator->SetTextureStreamFromUrl(url);
+
+                        t = clock() - t;
+
+                        delay += (double)t / CLOCKS_PER_SEC;
                         }
 
                     stmFile = 0;
