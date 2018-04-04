@@ -1253,7 +1253,8 @@ T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
     else
         {
         for (auto& glyphCurve : m_glyphCurves)
-            addRegion(*polyfaceBuilder, *glyphCurve);
+            if (glyphCurve->IsAnyRegionType())
+                addRegion(*polyfaceBuilder, *glyphCurve);
         }
 
     PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
