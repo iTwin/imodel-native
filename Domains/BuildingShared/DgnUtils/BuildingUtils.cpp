@@ -733,6 +733,86 @@ Utf8CP pOperation
     return stat;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Jonas.Valiunas                03/2017
+//---------------------------------------------------------------------------------------
+Dgn::DgnCode            BuildingUtils::GetUniqueElementCode
+(
+    Dgn::DgnDbR db,
+    CodeSpecId codeSpecId,
+    Utf8String nameTemplate,
+    Dgn::DgnElementId modeledElementId,
+    int startIndex
+)
+    {
+    Utf8String uniqueName;
+
+    int index = startIndex;
+    uniqueName.Sprintf(nameTemplate.c_str(), index++);
+
+    DgnCode code = DgnCode(codeSpecId, modeledElementId, uniqueName);
+
+    while (db.Elements().QueryElementIdByCode(code).IsValid())
+        {
+        uniqueName.Sprintf(nameTemplate.c_str(), index++);
+        code = DgnCode(codeSpecId, modeledElementId, uniqueName);
+        }
+    return code;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Vytautas.Kaniusonis           03/2017
+//---------------------------------------------------------------------------------------
+Dgn::DgnCode            BuildingUtils::GetNamedElementCode
+(
+    Dgn::DgnDbR db,
+    CodeSpecId codeSpecId,
+    Utf8String name,
+    Dgn::DgnElementId modeledElementId,
+    int startIndex
+)
+    {
+    DgnCode code = DgnCode(codeSpecId, modeledElementId, name);
+    if (!db.Elements().QueryElementIdByCode(code).IsValid())
+        return code;
+
+    int index = startIndex;
+    Utf8String modifiedName = GetTemplateFromName(name, index);
+
+    return GetUniqueElementCode(db, codeSpecId, modifiedName, modeledElementId, index);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Vytautas.Kaniusonis           03/2017
+//---------------------------------------------------------------------------------------
+Utf8String BuildingUtils::GetTemplateFromName
+(
+    Utf8String name,
+    int &index
+)
+    {
+    Utf8String suffix;
+    auto pos = name.find_last_of('-');
+    bool isNumber = false;
+    if (pos != std::string::npos && pos < (name.length() - 1))
+        {
+        suffix = name.substr(++pos);
+        isNumber = true;
+        for (char& c : suffix)
+            {
+            if (!isdigit(c))
+                isNumber = false;
+            }
+        }
+    Utf8String modifiedName = name + "-%d";
+    if (isNumber)
+        {
+        index = std::stoi(suffix.c_str(), nullptr, 10);
+        modifiedName = modifiedName.substr(0, pos) + "%d";
+        }
+    return modifiedName;
+    }
+
 Dgn::DgnElementId ElementIdIteratorEntry::GetElementId() const { return m_statement->GetValueId<Dgn::DgnElementId>(0); }
 
 END_BUILDING_SHARED_NAMESPACE

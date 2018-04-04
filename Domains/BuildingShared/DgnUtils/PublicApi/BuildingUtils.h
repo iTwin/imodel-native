@@ -26,6 +26,7 @@ class BuildingUtils
 private:
     static Dgn::CategorySelectorPtr CreateDefaultCategorySelector(Dgn::DgnDbR db);
     static Dgn::DisplayStyle3dPtr CreateFloorView3dDisplayStyle(Dgn::DgnDbR db);
+    static Utf8String GetTemplateFromName(Utf8String name, int &index);
 
 public:
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr GetDefaultCategorySelector(Dgn::DgnDbR db);
@@ -54,6 +55,9 @@ public:
     BUILDINGSHAREDDGNUTILS_EXPORT static double ParseStringForDouble(Utf8CP string);
 
     BUILDINGSHAREDDGNUTILS_EXPORT static bool CheckIfModelHasElements(Dgn::DgnModelP model);
+
+    BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DgnCode GetUniqueElementCode(Dgn::DgnDbR db, Dgn::CodeSpecId codeSpecId, Utf8String baseName, Dgn::DgnElementId modeledElementId, int startIndex = 0);
+    BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DgnCode GetNamedElementCode(Dgn::DgnDbR db, Dgn::CodeSpecId codeSpecId, Utf8String baseName, Dgn::DgnElementId modeledElementId, int startIndex = 0);
 };
 
 class BuildingElementsUtils

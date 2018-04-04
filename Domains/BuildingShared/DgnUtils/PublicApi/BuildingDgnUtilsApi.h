@@ -26,3 +26,4 @@
 #include "ShortestPath.h"
 #include "RegionsApiWrapper.h"
 #include "ConflictSolver.h"
+#include "RelationshipUtils.h"
