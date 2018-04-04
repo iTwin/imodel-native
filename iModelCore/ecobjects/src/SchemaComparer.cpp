@@ -297,6 +297,9 @@ BentleyStatus SchemaComparer::CompareECSchema(SchemaChange& change, ECSchemaCR a
     if (CompareUnits(change.Units(), a.GetUnits(), b.GetUnits()) != SUCCESS)
         return ERROR;
 
+    if (SUCCESS != CompareFormats(change.Formats(), a.GetFormats(), b.GetFormats()))
+        return ERROR;
+
     if (CompareReferences(change.References(), a.GetReferencedSchemas(), b.GetReferencedSchemas()) != SUCCESS)
         return ERROR;
 
@@ -1754,7 +1757,7 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         change.GetCompositeMajorLabel().SetValue(oldComp->GetMajorLabel(), newComp->GetMajorLabel());
     else if (!oldComp->HasMajorLabel() && newComp->HasMajorLabel())
         change.GetCompositeMajorLabel().SetValue(ValueId::New, newComp->GetMajorLabel());
-    else if (oldComp->HasMajorLabel() && newComp->HasMajorLabel())
+    else if (oldComp->HasMajorLabel() && !newComp->HasMajorLabel())
         change.GetCompositeMajorLabel().SetValue(ValueId::Deleted, oldComp->GetMajorLabel());
 
     if (oldVal.HasCompositeMiddleUnit() && newVal.HasCompositeMiddleUnit() && oldVal.GetCompositeMiddleUnit()->GetName() != newVal.GetCompositeMiddleUnit()->GetName())
@@ -1768,7 +1771,7 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         change.GetCompositeMiddleLabel().SetValue(oldComp->GetMiddleLabel(), newComp->GetMiddleLabel());
     else if (!oldComp->HasMiddleLabel() && newComp->HasMiddleLabel())
         change.GetCompositeMiddleLabel().SetValue(ValueId::New, newComp->GetMiddleLabel());
-    else if (oldComp->HasMiddleLabel() && newComp->HasMiddleLabel())
+    else if (oldComp->HasMiddleLabel() && !newComp->HasMiddleLabel())
         change.GetCompositeMiddleLabel().SetValue(ValueId::Deleted, oldComp->GetMiddleLabel());
 
     if (oldVal.HasCompositeMinorUnit() && newVal.HasCompositeMinorUnit() && oldVal.GetCompositeMinorUnit()->GetName() != newVal.GetCompositeMinorUnit()->GetName())
@@ -1782,7 +1785,7 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         change.GetCompositeMinorLabel().SetValue(oldComp->GetMinorLabel(), newComp->GetMinorLabel());
     else if (!oldComp->HasMinorLabel() && newComp->HasMinorLabel())
         change.GetCompositeMinorLabel().SetValue(ValueId::New, newComp->GetMinorLabel());
-    else if (oldComp->HasMinorLabel() && newComp->HasMinorLabel())
+    else if (oldComp->HasMinorLabel() && !newComp->HasMinorLabel())
         change.GetCompositeMinorLabel().SetValue(ValueId::Deleted, oldComp->GetMinorLabel());
 
     if (oldVal.HasCompositeSubUnit() && newVal.HasCompositeSubUnit() && oldVal.GetCompositeSubUnit()->GetName() != newVal.GetCompositeSubUnit()->GetName())
@@ -1796,7 +1799,7 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         change.GetCompositeSubLabel().SetValue(oldComp->GetSubLabel(), newComp->GetSubLabel());
     else if (!oldComp->HasSubLabel() && newComp->HasSubLabel())
         change.GetCompositeSubLabel().SetValue(ValueId::New, newComp->GetSubLabel());
-    else if (oldComp->HasSubLabel() && newComp->HasSubLabel())
+    else if (oldComp->HasSubLabel() && !newComp->HasSubLabel())
         change.GetCompositeSubLabel().SetValue(ValueId::Deleted, oldComp->GetSubLabel());
     
     return SUCCESS;
@@ -2483,6 +2486,8 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::ConstraintClasses: return "ConstraintClasses";
             case SystemId::Constraint: return "Constraint";
             case SystemId::CustomAttributes: return "CustomAttributes";
+            case SystemId::DecimalPrecision: return "DecimalPrecision";
+            case SystemId::DecimalSeparator: return "DecimalSeparator";
             case SystemId::Description: return "Description";
             case SystemId::Direction: return "Direction";
             case SystemId::DisplayLabel: return "DisplayLabel";
@@ -2492,6 +2497,20 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Enumerator: return "Enumerator";
             case SystemId::Enumerators: return "Enumerators";
             case SystemId::ExtendedTypeName: return "ExtendedTypeName";
+            case SystemId::Format: return "Format";
+            case SystemId::FormatCompositeInputUnit: return "FormatCompositeInputUnit";
+            case SystemId::FormatCompositeSpacer: return "FormatCompositeSpacer";
+            case SystemId::FormatCompositeMajorUnit: return "FormatCompositeMajorUnit";
+            case SystemId::FormatCompositeMajorLabel: return "FormatCompositeMajorLabel";
+            case SystemId::FormatCompositeMiddleUnit: return "FormatCompositeMiddleUnit";
+            case SystemId::FormatCompositeMiddleLabel: return "FormatCompositeMiddleLabel";
+            case SystemId::FormatCompositeMinorUnit: return "FormatCompositeMinorUnit";
+            case SystemId::FormatCompositeMinorLabel: return "FormatCompositeMinorLabel";
+            case SystemId::FormatCompositeSubUnit: return "FormatCompositeSubUnit";
+            case SystemId::FormatCompositeSubLabel: return "FormatCompositeSubLabel";
+            case SystemId::Formats: return "Formats";
+            case SystemId::FormatTraits: return "FormatTraits";
+            case SystemId::FractionalPrecision: return "FractionalPrecision";
             case SystemId::Instance: return "Instance";
             case SystemId::Instances: return "Instances";
             case SystemId::Integer: return "Integer";
@@ -2515,6 +2534,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::MinimumLength: return "MinimumLength";
             case SystemId::MinimumValue: return "MinimumValue";
             case SystemId::MinOccurs: return "MinOccurs";
+            case SystemId::MinWidth: return "MinWidth";
             case SystemId::Multiplicity: return "Multiplicity";
             case SystemId::Name: return "Name";
             case SystemId::Navigation: return "Navigation";
@@ -2523,6 +2543,8 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Phenomena: return "Phenomena";
             case SystemId::Phenomenon: return "Phenomenon";
             case SystemId::PhenomenonDefinition: return "PhenomenonDefinition";
+            case SystemId::PrefixPadChar: return "PrefixPadChar";
+            case SystemId::PresentationType: return "PresentationType";
             case SystemId::Properties: return "Properties";
             case SystemId::Property: return "Property";
             case SystemId::PropertyCategories: return "PropertyCategories";
@@ -2537,13 +2559,19 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Relationship: return "Relationship";
             case SystemId::RelationshipName: return "RelationshipName";
             case SystemId::RoleLabel: return "RoleLabel";
+            case SystemId::RoundFactor: return "RoundFactor";
             case SystemId::Schema: return "Schema";
             case SystemId::Schemas: return "Schemas";
+            case SystemId::ScientificType: return "ScientificType";
+            case SystemId::ShowSignOption: return "ShowSignOption";
             case SystemId::Source: return "Source";
+            case SystemId::StationSeparator: return "StationSeparator";
+            case SystemId::StationOffsetSize: return "StationOffsetSize";
             case SystemId::StrengthDirection: return "StrengthDirection";
             case SystemId::StrengthType: return "StrengthType";
             case SystemId::String: return "String";
             case SystemId::Target: return "Target";
+            case SystemId::ThousandSeparator: return "ThousandSeparator";
             case SystemId::TypeName: return "TypeName";
             case SystemId::UnitSystem: return "UnitSystem";
             case SystemId::UnitSystems: return "UnitSystems";
@@ -2555,6 +2583,7 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::UnitIsConstant: return "UnitIsConstant";
             case SystemId::UnitOffset: return "UnitOffset";
             case SystemId::Units: return "Units";
+            case SystemId::UomSeparator: return "UomSeparator";
             case SystemId::VersionRead: return "VersionRead";
             case SystemId::VersionMinor: return "VersionMinor";
             case SystemId::VersionWrite: return "VersionWrite";

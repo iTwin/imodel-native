@@ -1011,6 +1011,7 @@ struct SchemaChange final : ECObjectChange
         PhenomenonChanges& Phenomena() { return Get<PhenomenonChanges>(SystemId::Phenomena); }
         UnitSystemChanges& UnitSystems() { return Get<UnitSystemChanges>(SystemId::UnitSystems); }
         UnitChanges& Units() { return Get<UnitChanges>(SystemId::Units); }
+        FormatChanges& Formats() {return Get<FormatChanges>(SystemId::Formats);}
     };
 
 //=======================================================================================
@@ -1269,7 +1270,7 @@ struct FormatChange final : ECObjectChange
     {
     public:
         FormatChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
-            : ECObjectChange(state, SystemId::Unit, parent, customId)
+            : ECObjectChange(state, SystemId::Format, parent, customId)
             {
             BeAssert(systemId == GetSystemId());
             }
