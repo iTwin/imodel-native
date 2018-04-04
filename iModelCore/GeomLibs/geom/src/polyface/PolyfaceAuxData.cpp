@@ -44,24 +44,17 @@ void PolyfaceAuxData::AdvanceVisitorToNextFace(PolyfaceAuxData const& parent, ui
         int k1 = oneBasedIndices[i0 + numOut];
         if (k1 == 0)
             break;
+
         uint32_t k0 = abs (k1) - 1;
         m_indices.push_back (k0);
-
-        for (size_t i=0; i<m_channels.size(); i++)
-            for (size_t j=0; j<m_channels[i]->GetData().size(); j++)
-                for (size_t k = 0, blockSize = m_channels[i]->GetBlockSize();k<blockSize; k++)
-                    m_channels[i]->GetData()[j]->m_values.push_back(parent.GetChannels()[i]->GetData()[j]->GetValues().at(k0 * blockSize * k));
+        m_channels.AppendDataByIndex(parent.GetChannels(), k0);
         }
     if (numOut > 0)
         {
         for (uint32_t i = 0; i < numWrap; i++)
             {
             m_indices.push_back (m_indices[i]);
-
-            for (auto& channel : m_channels)
-                for (auto& data : channel->GetData())
-                    for (size_t k = 0, blockSize = m_channels[i]->GetBlockSize();k<blockSize; k++)
-                        data->m_values.push_back(data->m_values[i * blockSize + k]);
+            m_channels.AppendDataByIndex(m_channels, i);
             }
         }
     }
@@ -155,10 +148,52 @@ PolyfaceAuxData::ChannelPtr  PolyfaceAuxData::Channel::CloneWithoutData() const
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      03/2018
 +--------------------------------------------------------------------------------------*/
+void PolyfaceAuxData::Channels::AppendDataByIndex(PolyfaceAuxData::ChannelsCR input, size_t index)
+    {
+    if (empty())
+        Init(input);
+
+    for (size_t i=0; i<this->size(); i++)
+        this->at(i)->AppendDataByIndex(*input.at(i), index);
+    }
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      03/2018
++--------------------------------------------------------------------------------------*/
+void PolyfaceAuxData::Channels::AppendInterpolatedData(PolyfaceAuxData::ChannelsCR input, size_t index, size_t nextIndex, double t)
+    {
+    if (empty())
+        Init(input);
+
+    for (size_t i=0; i<this->size(); i++)
+        this->at(i)->AppendInterpolatedData(*input.at(i), index, nextIndex, t);
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      03/2018
++--------------------------------------------------------------------------------------*/
 void PolyfaceAuxData::Channel::AppendDataByIndex(PolyfaceAuxData::ChannelCR input, size_t index)
     {
-    for (size_t i=0; i<this->m_data.size(); i++)    
-        this->m_data.at(i)->m_values.push_back(input.m_data.at(i)->m_values.at(index));
+    for (size_t i=0; i<this->m_data.size(); i++)  
+        for (size_t k = 0, blockSize = GetBlockSize(); k<blockSize; k++)
+            this->m_data.at(i)->m_values.push_back(input.m_data.at(i)->m_values.at(index * blockSize + k));
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      03/2018
++--------------------------------------------------------------------------------------*/
+void PolyfaceAuxData::Channel::AppendInterpolatedData(PolyfaceAuxData::ChannelCR input, size_t index, size_t nextIndex, double t)
+    {
+    for (size_t i=0; i<this->m_data.size(); i++)  
+        {
+        for (size_t k = 0, blockSize = GetBlockSize(); k<blockSize; k++)
+            {
+            auto const&     inputValues = input.m_data.at(i)->m_values;
+            float           value     = inputValues[blockSize * index + k],
+                            valueNext = inputValues[blockSize * nextIndex + k];
+
+            this->m_data.at(i)->m_values.push_back(value + (float) t * (valueNext - value));
+            }
+        }
     }
 
 /*--------------------------------------------------------------------------------**//**

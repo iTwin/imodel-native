@@ -289,7 +289,7 @@ OutputChainEdge* FindEdge (int32_t index0, int32_t index1)
     {
     T_EdgeIndexMap::iterator    found = m_edgeIndexMap.find (OrderedIndexPair (index0, index1));
 
-    return (found == m_edgeIndexMap.end()) ? NULL : found->second;
+    return (found == m_edgeIndexMap.end()) ? nullptr : found->second;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -365,6 +365,7 @@ struct PolyfaceClipFacet
     bvector <DPoint2d>                  m_params;
     bvector <bool>                      m_visibility;
     bvector <OutputChainEdge*>          m_chainEdges;
+    PolyfaceAuxData::Channels           m_auxChannels;
     mutable  size_t                     m_index;
                                 
 PolyfaceClipFacet (size_t index) : m_index (index) { }
@@ -397,13 +398,12 @@ PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipPlaneCR plane, bool h
         nextInside    = nextDistance > 0.0;
 
         if (nextInside != thisInside)
-            AddInterpolatedPoint (unclipped, i, iNext, thisDistance / (thisDistance - nextDistance), (nextInside ? unclipped.m_visibility[i] : !hideCutGeometry), (nextInside ? unclipped.m_chainEdges[i] : NULL));
+            AddInterpolatedPoint (unclipped, i, iNext, thisDistance / (thisDistance - nextDistance), (nextInside ? unclipped.m_visibility[i] : !hideCutGeometry), (nextInside ? unclipped.m_chainEdges[i] : nullptr));
 
         if (nextInside)
             AddPoint (unclipped, iNext, unclipped.m_visibility[iNext], unclipped.m_chainEdges[iNext]);
         }
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      12/2017
@@ -433,13 +433,12 @@ PolyfaceClipFacet (PolyfaceClipFacet const& unclipped, ClipRangeAxis const& rang
         nextInside    = nextDistance > 0.0;
 
         if (nextInside != thisInside)
-            AddInterpolatedPoint (unclipped, i, iNext, thisDistance / (thisDistance - nextDistance), (nextInside ? unclipped.m_visibility[i] : false), (nextInside ? unclipped.m_chainEdges[i] : NULL));
+            AddInterpolatedPoint (unclipped, i, iNext, thisDistance / (thisDistance - nextDistance), (nextInside ? unclipped.m_visibility[i] : false), (nextInside ? unclipped.m_chainEdges[i] : nullptr));
 
         if (nextInside)
             AddPoint (unclipped, iNext, unclipped.m_visibility[iNext], unclipped.m_chainEdges[iNext]);
         }
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      03/2012
@@ -455,6 +454,9 @@ void    AddPoint (PolyfaceClipFacet const& unclipped, size_t i, bool visibility,
 
     if (!unclipped.m_params.empty())
         m_params.push_back (unclipped.m_params[i]);
+    
+    if (!unclipped.m_auxChannels.empty())
+        m_auxChannels.AppendDataByIndex(unclipped.m_auxChannels, i);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -480,6 +482,8 @@ void    AddInterpolatedPoint (PolyfaceClipFacet const& unclipped, size_t i, size
         param.Interpolate (unclipped.m_params[i], t, unclipped.m_params[iNext]);
         m_params.push_back (param);
         }
+    if (!unclipped.m_auxChannels.empty())
+        m_auxChannels.AppendInterpolatedData(unclipped.m_auxChannels, i, iNext, t);
      }
 
 /*---------------------------------------------------------------------------------**//**
@@ -500,19 +504,22 @@ void    Init (PolyfaceVisitorR visitor, OutputChainMap& outputChainMap)
         m_visibility[i] = visitor.Visible()[i];
 
     for (size_t i=0; i<count; i++)
-        m_chainEdges[i] = m_visibility[i] ? outputChainMap.FindEdge (visitor.GetClientPointIndexCP()[i] + 1, visitor.GetClientPointIndexCP()[i+1] + 1) : NULL;
+        m_chainEdges[i] = m_visibility[i] ? outputChainMap.FindEdge (visitor.GetClientPointIndexCP()[i] + 1, visitor.GetClientPointIndexCP()[i+1] + 1) : nullptr;
 
-    if (NULL != visitor.GetNormalCP())
+    if (nullptr != visitor.GetNormalCP())
         {
         m_normals.resize (count);
         memcpy (&m_normals[0], visitor.GetNormalCP(), count * sizeof (DVec3d));
         }
 
-    if (NULL != visitor.GetParamCP())
+    if (nullptr != visitor.GetParamCP())
         {
         m_params.resize(count);
         memcpy (&m_params[0], visitor.GetParamCP(), count * sizeof (DPoint2d));
         }
+    m_auxChannels.empty();
+    if (visitor.GetAuxDataCP().IsValid())
+        m_auxChannels.Init(visitor.GetAuxDataCP()->GetChannels());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -523,7 +530,7 @@ void   AddToPolyface  (LightweightPolyfaceBuilder& builder, OutputChainMap& outp
     size_t          count;
 
     if ((count = m_points.size()) < 3 ||
-        bsiPolygon_polygonNormalAndArea (NULL, NULL, &m_points.front(), (int) m_points.size()) < areaTolerance)
+        bsiPolygon_polygonNormalAndArea (nullptr, nullptr, &m_points.front(), (int) m_points.size()) < areaTolerance)
         return;
 
     if (m_points[0].IsEqual (m_points[count-1]) && --count < 3)
@@ -541,6 +548,7 @@ void   AddToPolyface  (LightweightPolyfaceBuilder& builder, OutputChainMap& outp
         }
          
 #ifdef DO_EDGE_CHAINS
+    // We'll need these for visible edge processing - but for now, omit for tile generation they are not used and just overhead...
     for (size_t i=0; i<count; i++)
          if (nullptr != m_chainEdges[i])
             m_chainEdges[i]->AddClippedEdge (OrderedIndexPair (1+pointIndices[i], 1 + pointIndices[(i + 1) % count]));

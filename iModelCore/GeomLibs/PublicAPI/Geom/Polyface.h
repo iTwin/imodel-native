@@ -588,19 +588,21 @@ struct PolyfaceAuxData : RefCountedBase
         DataType                    GetDataType() const         { return (DataType) m_dataType; }
         Utf8StringCR                GetName() const             { return m_name; }
         Utf8StringCR                GetInputName() const        { return m_inputName; }
-        bvector<DataPtr> const&     GetData() const         { return m_data; }     
+        bvector<DataPtr> const&     GetData() const             { return m_data; }     
         bool                        IsScalar() const            { return DataType::Scalar == m_dataType || DataType::Distance == m_dataType; } 
-        GEOMDLLIMPEXP void          AppendDataByIndex(ChannelCR input, size_t index);
         size_t                      GetValueCount() const       { return m_data.empty() ? 0 : m_data.front()->GetValueCount(); }
         size_t                      GetBlockSize() const        { return m_dataType < Vector ? 1 : 3; }
         GEOMDLLIMPEXP ChannelPtr    CloneWithoutData() const;
+        GEOMDLLIMPEXP void          AppendDataByIndex(ChannelCR input, size_t index);
+        GEOMDLLIMPEXP void          AppendInterpolatedData(ChannelCR input, size_t index, size_t iNext, double t);
         };
     
     struct Channels : bvector<ChannelPtr> 
         {
-        GEOMDLLIMPEXP void          AppendDataByIndex(ChannelsCR input, size_t index);
-        GEOMDLLIMPEXP void          Init(PolyfaceAuxData::ChannelsCR input);
         size_t                      GetValueCount() const  { return empty() ? 0 : front()->GetValueCount(); }
+        GEOMDLLIMPEXP void          AppendDataByIndex(ChannelsCR input, size_t index);
+        GEOMDLLIMPEXP void          AppendInterpolatedData(ChannelsCR input, size_t index, size_t iNext, double t);
+        GEOMDLLIMPEXP void          Init(PolyfaceAuxData::ChannelsCR input);
         };
 
     private:
@@ -609,7 +611,7 @@ struct PolyfaceAuxData : RefCountedBase
 
     public:
     bvector<int32_t> const& GetIndices() const          { return m_indices; }
-    ChannelsCR GetChannels() const                      { return m_channels; }
+    ChannelsCR GetChannels() const                      { return m_channels; }                  
     GEOMDLLIMPEXP ChannelCPtr GetChannel(Utf8CP name) const;
 
     
