@@ -34,23 +34,25 @@ TEST_F(SchemaCompareTest, CompareSchemaWithUnitsSame)
 
     KindOfQuantityP koq;
     ECUnitP unit;
+    ECFormatP format;
     UnitSystemP system;
     PhenomenonP phenom;
     EC_ASSERT_SUCCESS(m_firstSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
     EC_ASSERT_SUCCESS(m_firstSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
     EC_ASSERT_SUCCESS(m_firstSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    auto num = Formatting::NumericFormatSpec();
+    EC_ASSERT_SUCCESS(m_firstSchema->CreateFormat(format, "SMOOT4U", nullptr, nullptr, &num));
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     koq->SetPersistenceUnit(*unit);
-    // TODO
-    //koq->AddPresentationUnit(*unit);
+    koq->AddPresentationFormat(*format);
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
     EC_ASSERT_SUCCESS(m_secondSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
     EC_ASSERT_SUCCESS(m_secondSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    EC_ASSERT_SUCCESS(m_secondSchema->CreateFormat(format, "SMOOT4U", nullptr, nullptr, &num));
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     koq->SetPersistenceUnit(*unit);
-    // TODO
-    //koq->AddPresentationUnit(*unit);
+    koq->AddPresentationFormat(*format);
 
     SchemaComparer comparer;
     SchemaChanges changes;
@@ -181,14 +183,12 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchema)
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    // TODO
-    //koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    // TODO
-    // koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
 
     SchemaComparer comparer;
     SchemaChanges changes;
@@ -213,25 +213,24 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
     ECSchema::CreateSchema(ref, "REF", "r", 1,0,0);
 
     ECUnitP unit;
-    ECUnitP unit2;
+    ECFormatP format;
     UnitSystemP system;
     PhenomenonP phenom;
     EC_ASSERT_SUCCESS(ref->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
     EC_ASSERT_SUCCESS(ref->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
     m_secondSchema->AddReferencedSchema(*ref);
     EC_ASSERT_SUCCESS(ref->CreateUnit(unit, "M", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
-    EC_ASSERT_SUCCESS(ref->CreateUnit(unit2, "FT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    auto num = Formatting::NumericFormatSpec();
+    EC_ASSERT_SUCCESS(ref->CreateFormat(format, "Feet4U", nullptr, nullptr, &num));
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    // TODO
-    // koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     koq->SetPersistenceUnit(*unit);
-    // TODO
-    // koq->AddPresentationUnit(*unit2);
+    koq->AddPresentationFormat(*format);
 
     SchemaComparer comparer;
     SchemaChanges changes;
@@ -250,16 +249,16 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
     auto& pers = koqChanges.At(0).GetPersistenceUnit();
     auto& pres = koqChanges.At(0).GetPresentationUnitList();
 
-    EXPECT_STRCASEEQ("Units:M(DefaultRealU)", pers.GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Ref:M(DefaultRealU)", pers.GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Units:M", pers.GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Ref:M", pers.GetNew().Value().c_str());
 
     ASSERT_EQ(1, pres.Count());
 
     EXPECT_FALSE(pres.At(0).GetOld().IsNull());
-    EXPECT_STRCASEEQ("Units:FT(DefaultRealU)", pres.At(0).GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Formats:Feet4U", pres.At(0).GetOld().Value().c_str());
 
     EXPECT_FALSE(pres.At(0).GetNew().IsNull());
-    EXPECT_STRCASEEQ("Ref:FT(DefaultRealU)", pres.At(0).GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Ref:Feet4U", pres.At(0).GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -274,16 +273,15 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success,koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
-    // TODO
-    //EC_ASSERT_SUCCESS(koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM")));
-    //ASSERT_EQ(1, koq->GetPresentationUnitList().size());
+    ECTestFixture::GetFormatsSchema();
+    EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU")));
+    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
-    // TODO
-    //EC_ASSERT_SUCCESS(koq->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("FT")));
-    //ASSERT_EQ(1, koq->GetPresentationUnitList().size());
+    EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U")));
+    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
 
     SchemaComparer comparer;
     SchemaChanges changes;
@@ -299,17 +297,17 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
 
     ASSERT_EQ(1, koqChanges.Count());
 
-    EXPECT_STRCASEEQ("Units:CM(DefaultRealU)", koqChanges.At(0).GetPersistenceUnit().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("Units:M(DefaultRealU)", koqChanges.At(0).GetPersistenceUnit().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Units:CM", koqChanges.At(0).GetPersistenceUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Units:M", koqChanges.At(0).GetPersistenceUnit().GetNew().Value().c_str());
 
     auto& pres = koqChanges.At(0).GetPresentationUnitList();
     ASSERT_EQ(1, pres.Count());
 
     ASSERT_FALSE(pres.At(0).GetOld().IsNull());
-    EXPECT_STRCASEEQ("Units:MM(DefaultRealU)", pres.At(0).GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Formats:InchesU", pres.At(0).GetOld().Value().c_str());
 
     ASSERT_FALSE(pres.At(0).GetNew().IsNull());
-    EXPECT_STRCASEEQ("Units:FT(DefaultRealU)", pres.At(0).GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Formats:Feet4U", pres.At(0).GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------

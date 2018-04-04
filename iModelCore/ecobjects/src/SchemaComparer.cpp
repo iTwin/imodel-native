@@ -1435,12 +1435,12 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     std::vector<Utf8String> oldPresUnits, newPresUnits;
     for (NamedFormat const& format : oldVal.GetPresentationFormatList())
         {
-        oldPresUnits.push_back(format.GetName());
+        oldPresUnits.push_back(format.GetParentFormat()->GetFullName());
         }
 
     for (NamedFormat const& format : newVal.GetPresentationFormatList())
         {
-        newPresUnits.push_back(format.GetName());
+        newPresUnits.push_back(format.GetParentFormat()->GetFullName());
         }
 
     const size_t oldPresUnitCount = oldPresUnits.size();
@@ -1647,161 +1647,169 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         }
     if (!oldVal.GetInvariantDescription().EqualsIAscii(newVal.GetInvariantDescription()))
         change.GetDescription().SetValue(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
-
-    auto oldNum = oldVal.GetNumericSpec();
-    auto newNum = newVal.GetNumericSpec();
-
-    if (oldNum->HasRoundingFactor() && newNum->HasRoundingFactor() && oldNum->GetRoundingFactor() != newNum->GetRoundingFactor())
-        change.GetRoundFactor().SetValue(oldNum->GetRoundingFactor(), newNum->GetRoundingFactor());
-    else if (!oldNum->HasRoundingFactor() && newNum->HasRoundingFactor())
-        change.GetRoundFactor().SetValue(ValueId::New, newNum->GetRoundingFactor());
-    else if (oldNum->HasRoundingFactor() && !newNum->HasRoundingFactor())
-        change.GetRoundFactor().SetValue(ValueId::Deleted, oldNum->GetRoundingFactor());
-
-    if (oldNum->GetPresentationType() != newNum->GetPresentationType())
-        change.GetPresentationType().SetValue(Formatting::Utils::PresentationTypeName(oldNum->GetPresentationType()), Formatting::Utils::PresentationTypeName(newNum->GetPresentationType()));
-
-    if (oldNum->GetDecimalPrecision() != newNum->GetDecimalPrecision())
-        change.GetDecimalPrecision().SetValue(Formatting::Utils::DecimalPrecisionToInt(oldNum->GetDecimalPrecision()), Formatting::Utils::DecimalPrecisionToInt(newNum->GetDecimalPrecision()));
-
-    if (oldNum->GetFractionalPrecision() != newNum->GetFractionalPrecision())
-        change.GetFractionalPrecision().SetValue((uint32_t)Formatting::Utils::FractionalPrecisionDenominator(oldNum->GetFractionalPrecision()), (uint32_t)Formatting::Utils::FractionalPrecisionDenominator(newNum->GetFractionalPrecision()));
-
-    if (oldNum->HasMinWidth() && newNum->HasMinWidth() && oldNum->GetMinWidth() != newNum->GetMinWidth())
-        change.GetMinWidth().SetValue(oldNum->GetMinWidth(), newNum->GetMinWidth());
-    else if (!oldNum->HasMinWidth() && newNum->HasMinWidth())
-        change.GetMinWidth().SetValue(ValueId::New, newNum->GetMinWidth());
-    else if (oldNum->HasMinWidth() && !newNum->HasMinWidth())
-        change.GetMinWidth().SetValue(ValueId::Deleted, oldNum->GetMinWidth());
-
-    if (oldNum->GetScientificType() != newNum->GetScientificType())
-        change.GetScientificType().SetValue(Formatting::Utils::ScientificTypeName(oldNum->GetScientificType()), Formatting::Utils::ScientificTypeName(newNum->GetScientificType()));
-
-    if (oldNum->HasSignOption() && newNum->HasSignOption() && oldNum->GetSignOption() != newNum->GetSignOption())
-        change.GetShowSignOption().SetValue(Formatting::Utils::SignOptionName(oldNum->GetSignOption()), Formatting::Utils::SignOptionName(newNum->GetSignOption()));
-    else if (!oldNum->HasSignOption() && newNum->HasSignOption())
-        change.GetShowSignOption().SetValue(ValueId::New, Formatting::Utils::SignOptionName(newNum->GetSignOption()));
-    else if (oldNum->HasSignOption() && !newNum->HasSignOption())
-        change.GetShowSignOption().SetValue(ValueId::Deleted, Formatting::Utils::SignOptionName(oldNum->GetSignOption()));
-
-    if (oldNum->HasFormatTraits() && newNum->HasFormatTraits() && oldNum->GetFormatTraits() != newNum->GetFormatTraits())
-        change.GetFormatTraits().SetValue(oldNum->GetFormatTraitsString(), newNum->GetFormatTraitsString());
-    else if (!oldNum->HasFormatTraits() && newNum->HasFormatTraits())
-        change.GetFormatTraits().SetValue(ValueId::New, newNum->GetFormatTraitsString());
-    else if (oldNum->HasFormatTraits() && !newNum->HasFormatTraits())
-        change.GetFormatTraits().SetValue(ValueId::Deleted, oldNum->GetFormatTraitsString());
-
-    if (oldNum->HasDecimalSeparator() && newNum->HasDecimalSeparator() && oldNum->GetDecimalSeparator() != newNum->GetDecimalSeparator())
-        change.GetDecimalSeparator().SetValue(Utf8String(1, oldNum->GetDecimalSeparator()), Utf8String(1, newNum->GetDecimalSeparator()));
-    else if (!oldNum->HasDecimalSeparator() && newNum->HasDecimalSeparator())
-        change.GetDecimalSeparator().SetValue(ValueId::New, Utf8String(1, newNum->GetDecimalSeparator()));
-    else if (oldNum->HasDecimalSeparator() && !newNum->HasDecimalSeparator())
-        change.GetDecimalSeparator().SetValue(ValueId::Deleted, Utf8String(1, oldNum->GetDecimalSeparator()));
-
-    if (oldNum->HasThousandsSeparator() && newNum->HasThousandsSeparator() && oldNum->GetThousandSeparator() != newNum->GetThousandSeparator())
-        change.GetThousandsSeparator().SetValue(Utf8String(1, oldNum->GetThousandSeparator()), Utf8String(1, newNum->GetThousandSeparator()));
-    else if (!oldNum->HasThousandsSeparator() && newNum->HasThousandsSeparator())
-        change.GetThousandsSeparator().SetValue(ValueId::New, Utf8String(1, newNum->GetThousandSeparator()));
-    else if (oldNum->HasThousandsSeparator() && !newNum->HasThousandsSeparator())
-        change.GetThousandsSeparator().SetValue(ValueId::Deleted, Utf8String(1, oldNum->GetThousandSeparator()));
-
-    if (oldNum->HasUomSeparator() && newNum->HasUomSeparator() && oldNum->GetUomSeparator() != newNum->GetUomSeparator())
-        change.GetUomSeparator().SetValue(Utf8String(oldNum->GetUomSeparator()), Utf8String(newNum->GetUomSeparator()));
-    else if (!oldNum->HasUomSeparator() && newNum->HasUomSeparator())
-        change.GetUomSeparator().SetValue(ValueId::New, newNum->GetUomSeparator());
-    else if (oldNum->HasUomSeparator() && !newNum->HasUomSeparator())
-        change.GetUomSeparator().SetValue(ValueId::Deleted, oldNum->GetUomSeparator());
-
-    if (oldNum->HasPrefixPadChar() && newNum->HasPrefixPadChar() && oldNum->GetPrefixPadChar() != newNum->GetPrefixPadChar())
-        change.GetPrefixPadChar().SetValue(Utf8String(1, oldNum->GetPrefixPadChar()), Utf8String(1, newNum->GetPrefixPadChar()));
-    else if (!oldNum->HasPrefixPadChar() && newNum->HasPrefixPadChar())
-        change.GetPrefixPadChar().SetValue(ValueId::New, Utf8String(1, newNum->GetPrefixPadChar()));
-    else if (oldNum->HasPrefixPadChar() && !newNum->HasPrefixPadChar())
-        change.GetPrefixPadChar().SetValue(ValueId::Deleted, Utf8String(1, oldNum->GetPrefixPadChar()));
-
-    if (oldNum->HasStationSeparator() && newNum->HasStationSeparator() && oldNum->GetStationSeparator() != newNum->GetStationSeparator())
-        change.GetStationSeparator().SetValue(Utf8String(1, oldNum->GetStationSeparator()), Utf8String(1, newNum->GetStationSeparator()));
-    else if (!oldNum->HasStationSeparator() && newNum->HasStationSeparator())
-        change.GetStationSeparator().SetValue(ValueId::New, Utf8String(1, newNum->GetStationSeparator()));
-    else if (oldNum->HasStationSeparator() && !newNum->HasStationSeparator())
-        change.GetStationSeparator().SetValue(ValueId::Deleted, Utf8String(1, oldNum->GetStationSeparator()));
-
-    if (oldNum->GetStationOffsetSize() != newNum->GetStationOffsetSize())
-        change.GetStationOffsetSize().SetValue(oldNum->GetStationOffsetSize(), newNum->GetStationOffsetSize());
-
-    if (oldVal.HasCompositeInputUnit() && newVal.HasCompositeInputUnit() && oldVal.GetCompositeInputUnit()->GetName() != newVal.GetCompositeInputUnit()->GetName())
-        change.GetCompositeInputUnit().SetValue(oldVal.GetCompositeInputUnit()->GetName(), newVal.GetCompositeInputUnit()->GetName());
-    else if (!oldVal.HasCompositeInputUnit() && newVal.HasCompositeInputUnit())
-        change.GetCompositeInputUnit().SetValue(ValueId::New, newVal.GetCompositeInputUnit()->GetName());
-    else if (oldVal.HasCompositeInputUnit() && !newVal.HasCompositeInputUnit())
-        change.GetCompositeInputUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeInputUnit()->GetName());
-
-    auto oldComp = oldVal.GetCompositeSpec();
-    auto newComp = oldVal.GetCompositeSpec();
-
-    if (oldComp->HasSpacer() && newComp->HasSpacer() && oldComp->GetSpacer() != newComp->GetSpacer())
-        change.GetCompositeSpacer().SetValue(oldComp->GetSpacer(), newComp->GetSpacer());
-    else if (!oldComp->HasSpacer() && newComp->HasSpacer())
-        change.GetCompositeSpacer().SetValue(ValueId::New, newComp->GetSpacer());
-    else if (oldComp->HasSpacer() && newComp->HasSpacer())
-        change.GetCompositeSpacer().SetValue(ValueId::Deleted, oldComp->GetSpacer());
-
-    if (oldVal.HasCompositeMajorUnit() && newVal.HasCompositeMajorUnit() && oldVal.GetCompositeMajorUnit()->GetName() != newVal.GetCompositeMajorUnit()->GetName())
-        change.GetCompositeMajorUnit().SetValue(oldVal.GetCompositeMajorUnit()->GetName(), newVal.GetCompositeMajorUnit()->GetName());
-    else if (!oldVal.HasCompositeMajorUnit() && newVal.HasCompositeMajorUnit())
-        change.GetCompositeMajorUnit().SetValue(ValueId::New, newVal.GetCompositeMajorUnit()->GetName());
-    else if (oldVal.HasCompositeMajorUnit() && !newVal.HasCompositeMajorUnit())
-        change.GetCompositeMajorUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeMajorUnit()->GetName());
-
-    if (oldComp->HasMajorLabel() && newComp->HasMajorLabel() && oldComp->GetMajorLabel() != newComp->GetMajorLabel())
-        change.GetCompositeMajorLabel().SetValue(oldComp->GetMajorLabel(), newComp->GetMajorLabel());
-    else if (!oldComp->HasMajorLabel() && newComp->HasMajorLabel())
-        change.GetCompositeMajorLabel().SetValue(ValueId::New, newComp->GetMajorLabel());
-    else if (oldComp->HasMajorLabel() && !newComp->HasMajorLabel())
-        change.GetCompositeMajorLabel().SetValue(ValueId::Deleted, oldComp->GetMajorLabel());
-
-    if (oldVal.HasCompositeMiddleUnit() && newVal.HasCompositeMiddleUnit() && oldVal.GetCompositeMiddleUnit()->GetName() != newVal.GetCompositeMiddleUnit()->GetName())
-        change.GetCompositeMiddleUnit().SetValue(oldVal.GetCompositeMiddleUnit()->GetName(), newVal.GetCompositeMiddleUnit()->GetName());
-    else if (!oldVal.HasCompositeMiddleUnit() && newVal.HasCompositeMiddleUnit())
-        change.GetCompositeMiddleUnit().SetValue(ValueId::New, newVal.GetCompositeMiddleUnit()->GetName());
-    else if (oldVal.HasCompositeMiddleUnit() && !newVal.HasCompositeMiddleUnit())
-        change.GetCompositeMiddleUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeMiddleUnit()->GetName());
-
-    if (oldComp->HasMiddleLabel() && newComp->HasMiddleLabel() && oldComp->GetMiddleLabel() != newComp->GetMiddleLabel())
-        change.GetCompositeMiddleLabel().SetValue(oldComp->GetMiddleLabel(), newComp->GetMiddleLabel());
-    else if (!oldComp->HasMiddleLabel() && newComp->HasMiddleLabel())
-        change.GetCompositeMiddleLabel().SetValue(ValueId::New, newComp->GetMiddleLabel());
-    else if (oldComp->HasMiddleLabel() && !newComp->HasMiddleLabel())
-        change.GetCompositeMiddleLabel().SetValue(ValueId::Deleted, oldComp->GetMiddleLabel());
-
-    if (oldVal.HasCompositeMinorUnit() && newVal.HasCompositeMinorUnit() && oldVal.GetCompositeMinorUnit()->GetName() != newVal.GetCompositeMinorUnit()->GetName())
-        change.GetCompositeMinorUnit().SetValue(oldVal.GetCompositeMinorUnit()->GetName(), newVal.GetCompositeMinorUnit()->GetName());
-    else if (!oldVal.HasCompositeMinorUnit() && newVal.HasCompositeMinorUnit())
-        change.GetCompositeMinorUnit().SetValue(ValueId::New, newVal.GetCompositeMinorUnit()->GetName());
-    else if (oldVal.HasCompositeMinorUnit() && !newVal.HasCompositeMinorUnit())
-        change.GetCompositeMinorUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeMinorUnit()->GetName());
-
-    if (oldComp->HasMinorLabel() && newComp->HasMinorLabel() && oldComp->GetMinorLabel() != newComp->GetMinorLabel())
-        change.GetCompositeMinorLabel().SetValue(oldComp->GetMinorLabel(), newComp->GetMinorLabel());
-    else if (!oldComp->HasMinorLabel() && newComp->HasMinorLabel())
-        change.GetCompositeMinorLabel().SetValue(ValueId::New, newComp->GetMinorLabel());
-    else if (oldComp->HasMinorLabel() && !newComp->HasMinorLabel())
-        change.GetCompositeMinorLabel().SetValue(ValueId::Deleted, oldComp->GetMinorLabel());
-
-    if (oldVal.HasCompositeSubUnit() && newVal.HasCompositeSubUnit() && oldVal.GetCompositeSubUnit()->GetName() != newVal.GetCompositeSubUnit()->GetName())
-        change.GetCompositeSubUnit().SetValue(oldVal.GetCompositeSubUnit()->GetName(), newVal.GetCompositeSubUnit()->GetName());
-    else if (!oldVal.HasCompositeSubUnit() && newVal.HasCompositeSubUnit())
-        change.GetCompositeSubUnit().SetValue(ValueId::New, newVal.GetCompositeSubUnit()->GetName());
-    else if (oldVal.HasCompositeSubUnit() && !newVal.HasCompositeSubUnit())
-        change.GetCompositeSubUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeSubUnit()->GetName());
-
-    if (oldComp->HasSubLabel() && newComp->HasSubLabel() && oldComp->GetSubLabel() != newComp->GetSubLabel())
-        change.GetCompositeSubLabel().SetValue(oldComp->GetSubLabel(), newComp->GetSubLabel());
-    else if (!oldComp->HasSubLabel() && newComp->HasSubLabel())
-        change.GetCompositeSubLabel().SetValue(ValueId::New, newComp->GetSubLabel());
-    else if (oldComp->HasSubLabel() && !newComp->HasSubLabel())
-        change.GetCompositeSubLabel().SetValue(ValueId::Deleted, oldComp->GetSubLabel());
     
+    if (oldVal.HasNumeric() && newVal.HasNumeric())
+        { 
+        auto oldNum = oldVal.GetNumericSpec();
+        auto newNum = newVal.GetNumericSpec();
+
+        if (oldNum->HasRoundingFactor() && newNum->HasRoundingFactor() && oldNum->GetRoundingFactor() != newNum->GetRoundingFactor())
+            change.GetRoundFactor().SetValue(oldNum->GetRoundingFactor(), newNum->GetRoundingFactor());
+        else if (!oldNum->HasRoundingFactor() && newNum->HasRoundingFactor())
+            change.GetRoundFactor().SetValue(ValueId::New, newNum->GetRoundingFactor());
+        else if (oldNum->HasRoundingFactor() && !newNum->HasRoundingFactor())
+            change.GetRoundFactor().SetValue(ValueId::Deleted, oldNum->GetRoundingFactor());
+
+        if (oldNum->GetPresentationType() != newNum->GetPresentationType())
+            change.GetPresentationType().SetValue(Formatting::Utils::PresentationTypeName(oldNum->GetPresentationType()), Formatting::Utils::PresentationTypeName(newNum->GetPresentationType()));
+
+        if (oldNum->GetDecimalPrecision() != newNum->GetDecimalPrecision())
+            change.GetDecimalPrecision().SetValue(Formatting::Utils::DecimalPrecisionToInt(oldNum->GetDecimalPrecision()), Formatting::Utils::DecimalPrecisionToInt(newNum->GetDecimalPrecision()));
+
+        if (oldNum->GetFractionalPrecision() != newNum->GetFractionalPrecision())
+            change.GetFractionalPrecision().SetValue((uint32_t)Formatting::Utils::FractionalPrecisionDenominator(oldNum->GetFractionalPrecision()), (uint32_t)Formatting::Utils::FractionalPrecisionDenominator(newNum->GetFractionalPrecision()));
+
+        if (oldNum->HasMinWidth() && newNum->HasMinWidth() && oldNum->GetMinWidth() != newNum->GetMinWidth())
+            change.GetMinWidth().SetValue(oldNum->GetMinWidth(), newNum->GetMinWidth());
+        else if (!oldNum->HasMinWidth() && newNum->HasMinWidth())
+            change.GetMinWidth().SetValue(ValueId::New, newNum->GetMinWidth());
+        else if (oldNum->HasMinWidth() && !newNum->HasMinWidth())
+            change.GetMinWidth().SetValue(ValueId::Deleted, oldNum->GetMinWidth());
+
+        if (oldNum->GetScientificType() != newNum->GetScientificType())
+            change.GetScientificType().SetValue(Formatting::Utils::ScientificTypeName(oldNum->GetScientificType()), Formatting::Utils::ScientificTypeName(newNum->GetScientificType()));
+
+        if (oldNum->HasSignOption() && newNum->HasSignOption() && oldNum->GetSignOption() != newNum->GetSignOption())
+            change.GetShowSignOption().SetValue(Formatting::Utils::SignOptionName(oldNum->GetSignOption()), Formatting::Utils::SignOptionName(newNum->GetSignOption()));
+        else if (!oldNum->HasSignOption() && newNum->HasSignOption())
+            change.GetShowSignOption().SetValue(ValueId::New, Formatting::Utils::SignOptionName(newNum->GetSignOption()));
+        else if (oldNum->HasSignOption() && !newNum->HasSignOption())
+            change.GetShowSignOption().SetValue(ValueId::Deleted, Formatting::Utils::SignOptionName(oldNum->GetSignOption()));
+
+        if (oldNum->HasFormatTraits() && newNum->HasFormatTraits() && oldNum->GetFormatTraits() != newNum->GetFormatTraits())
+            change.GetFormatTraits().SetValue(oldNum->GetFormatTraitsString(), newNum->GetFormatTraitsString());
+        else if (!oldNum->HasFormatTraits() && newNum->HasFormatTraits())
+            change.GetFormatTraits().SetValue(ValueId::New, newNum->GetFormatTraitsString());
+        else if (oldNum->HasFormatTraits() && !newNum->HasFormatTraits())
+            change.GetFormatTraits().SetValue(ValueId::Deleted, oldNum->GetFormatTraitsString());
+
+        if (oldNum->HasDecimalSeparator() && newNum->HasDecimalSeparator() && oldNum->GetDecimalSeparator() != newNum->GetDecimalSeparator())
+            change.GetDecimalSeparator().SetValue(Utf8String(1, oldNum->GetDecimalSeparator()), Utf8String(1, newNum->GetDecimalSeparator()));
+        else if (!oldNum->HasDecimalSeparator() && newNum->HasDecimalSeparator())
+            change.GetDecimalSeparator().SetValue(ValueId::New, Utf8String(1, newNum->GetDecimalSeparator()));
+        else if (oldNum->HasDecimalSeparator() && !newNum->HasDecimalSeparator())
+            change.GetDecimalSeparator().SetValue(ValueId::Deleted, Utf8String(1, oldNum->GetDecimalSeparator()));
+
+        if (oldNum->HasThousandsSeparator() && newNum->HasThousandsSeparator() && oldNum->GetThousandSeparator() != newNum->GetThousandSeparator())
+            change.GetThousandsSeparator().SetValue(Utf8String(1, oldNum->GetThousandSeparator()), Utf8String(1, newNum->GetThousandSeparator()));
+        else if (!oldNum->HasThousandsSeparator() && newNum->HasThousandsSeparator())
+            change.GetThousandsSeparator().SetValue(ValueId::New, Utf8String(1, newNum->GetThousandSeparator()));
+        else if (oldNum->HasThousandsSeparator() && !newNum->HasThousandsSeparator())
+            change.GetThousandsSeparator().SetValue(ValueId::Deleted, Utf8String(1, oldNum->GetThousandSeparator()));
+
+        if (oldNum->HasUomSeparator() && newNum->HasUomSeparator() && oldNum->GetUomSeparator() != newNum->GetUomSeparator())
+            change.GetUomSeparator().SetValue(Utf8String(oldNum->GetUomSeparator()), Utf8String(newNum->GetUomSeparator()));
+        else if (!oldNum->HasUomSeparator() && newNum->HasUomSeparator())
+            change.GetUomSeparator().SetValue(ValueId::New, newNum->GetUomSeparator());
+        else if (oldNum->HasUomSeparator() && !newNum->HasUomSeparator())
+            change.GetUomSeparator().SetValue(ValueId::Deleted, oldNum->GetUomSeparator());
+
+        if (oldNum->HasPrefixPadChar() && newNum->HasPrefixPadChar() && oldNum->GetPrefixPadChar() != newNum->GetPrefixPadChar())
+            change.GetPrefixPadChar().SetValue(Utf8String(1, oldNum->GetPrefixPadChar()), Utf8String(1, newNum->GetPrefixPadChar()));
+        else if (!oldNum->HasPrefixPadChar() && newNum->HasPrefixPadChar())
+            change.GetPrefixPadChar().SetValue(ValueId::New, Utf8String(1, newNum->GetPrefixPadChar()));
+        else if (oldNum->HasPrefixPadChar() && !newNum->HasPrefixPadChar())
+            change.GetPrefixPadChar().SetValue(ValueId::Deleted, Utf8String(1, oldNum->GetPrefixPadChar()));
+
+        if (oldNum->HasStationSeparator() && newNum->HasStationSeparator() && oldNum->GetStationSeparator() != newNum->GetStationSeparator())
+            change.GetStationSeparator().SetValue(Utf8String(1, oldNum->GetStationSeparator()), Utf8String(1, newNum->GetStationSeparator()));
+        else if (!oldNum->HasStationSeparator() && newNum->HasStationSeparator())
+            change.GetStationSeparator().SetValue(ValueId::New, Utf8String(1, newNum->GetStationSeparator()));
+        else if (oldNum->HasStationSeparator() && !newNum->HasStationSeparator())
+            change.GetStationSeparator().SetValue(ValueId::Deleted, Utf8String(1, oldNum->GetStationSeparator()));
+
+        if (oldNum->GetStationOffsetSize() != newNum->GetStationOffsetSize())
+            change.GetStationOffsetSize().SetValue(oldNum->GetStationOffsetSize(), newNum->GetStationOffsetSize());
+        }
+
+    if (oldVal.HasComposite() != newVal.HasComposite())
+        change.GetHasComposite().SetValue(oldVal.HasComposite(), newVal.HasComposite());
+
+    if (oldVal.HasComposite() && newVal.HasComposite())
+        { 
+        if (oldVal.HasCompositeInputUnit() && newVal.HasCompositeInputUnit() && oldVal.GetCompositeInputUnit()->GetName() != newVal.GetCompositeInputUnit()->GetName())
+            change.GetCompositeInputUnit().SetValue(oldVal.GetCompositeInputUnit()->GetName(), newVal.GetCompositeInputUnit()->GetName());
+        else if (!oldVal.HasCompositeInputUnit() && newVal.HasCompositeInputUnit())
+            change.GetCompositeInputUnit().SetValue(ValueId::New, newVal.GetCompositeInputUnit()->GetName());
+        else if (oldVal.HasCompositeInputUnit() && !newVal.HasCompositeInputUnit())
+            change.GetCompositeInputUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeInputUnit()->GetName());
+
+        auto oldComp = oldVal.GetCompositeSpec();
+        auto newComp = oldVal.GetCompositeSpec();
+
+        if (oldComp->HasSpacer() && newComp->HasSpacer() && oldComp->GetSpacer() != newComp->GetSpacer())
+            change.GetCompositeSpacer().SetValue(oldComp->GetSpacer(), newComp->GetSpacer());
+        else if (!oldComp->HasSpacer() && newComp->HasSpacer())
+            change.GetCompositeSpacer().SetValue(ValueId::New, newComp->GetSpacer());
+        else if (oldComp->HasSpacer() && newComp->HasSpacer())
+            change.GetCompositeSpacer().SetValue(ValueId::Deleted, oldComp->GetSpacer());
+
+        if (oldVal.HasCompositeMajorUnit() && newVal.HasCompositeMajorUnit() && oldVal.GetCompositeMajorUnit()->GetName() != newVal.GetCompositeMajorUnit()->GetName())
+            change.GetCompositeMajorUnit().SetValue(oldVal.GetCompositeMajorUnit()->GetName(), newVal.GetCompositeMajorUnit()->GetName());
+        else if (!oldVal.HasCompositeMajorUnit() && newVal.HasCompositeMajorUnit())
+            change.GetCompositeMajorUnit().SetValue(ValueId::New, newVal.GetCompositeMajorUnit()->GetName());
+        else if (oldVal.HasCompositeMajorUnit() && !newVal.HasCompositeMajorUnit())
+            change.GetCompositeMajorUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeMajorUnit()->GetName());
+
+        if (oldComp->HasMajorLabel() && newComp->HasMajorLabel() && oldComp->GetMajorLabel() != newComp->GetMajorLabel())
+            change.GetCompositeMajorLabel().SetValue(oldComp->GetMajorLabel(), newComp->GetMajorLabel());
+        else if (!oldComp->HasMajorLabel() && newComp->HasMajorLabel())
+            change.GetCompositeMajorLabel().SetValue(ValueId::New, newComp->GetMajorLabel());
+        else if (oldComp->HasMajorLabel() && !newComp->HasMajorLabel())
+            change.GetCompositeMajorLabel().SetValue(ValueId::Deleted, oldComp->GetMajorLabel());
+
+        if (oldVal.HasCompositeMiddleUnit() && newVal.HasCompositeMiddleUnit() && oldVal.GetCompositeMiddleUnit()->GetName() != newVal.GetCompositeMiddleUnit()->GetName())
+            change.GetCompositeMiddleUnit().SetValue(oldVal.GetCompositeMiddleUnit()->GetName(), newVal.GetCompositeMiddleUnit()->GetName());
+        else if (!oldVal.HasCompositeMiddleUnit() && newVal.HasCompositeMiddleUnit())
+            change.GetCompositeMiddleUnit().SetValue(ValueId::New, newVal.GetCompositeMiddleUnit()->GetName());
+        else if (oldVal.HasCompositeMiddleUnit() && !newVal.HasCompositeMiddleUnit())
+            change.GetCompositeMiddleUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeMiddleUnit()->GetName());
+
+        if (oldComp->HasMiddleLabel() && newComp->HasMiddleLabel() && oldComp->GetMiddleLabel() != newComp->GetMiddleLabel())
+            change.GetCompositeMiddleLabel().SetValue(oldComp->GetMiddleLabel(), newComp->GetMiddleLabel());
+        else if (!oldComp->HasMiddleLabel() && newComp->HasMiddleLabel())
+            change.GetCompositeMiddleLabel().SetValue(ValueId::New, newComp->GetMiddleLabel());
+        else if (oldComp->HasMiddleLabel() && !newComp->HasMiddleLabel())
+            change.GetCompositeMiddleLabel().SetValue(ValueId::Deleted, oldComp->GetMiddleLabel());
+
+        if (oldVal.HasCompositeMinorUnit() && newVal.HasCompositeMinorUnit() && oldVal.GetCompositeMinorUnit()->GetName() != newVal.GetCompositeMinorUnit()->GetName())
+            change.GetCompositeMinorUnit().SetValue(oldVal.GetCompositeMinorUnit()->GetName(), newVal.GetCompositeMinorUnit()->GetName());
+        else if (!oldVal.HasCompositeMinorUnit() && newVal.HasCompositeMinorUnit())
+            change.GetCompositeMinorUnit().SetValue(ValueId::New, newVal.GetCompositeMinorUnit()->GetName());
+        else if (oldVal.HasCompositeMinorUnit() && !newVal.HasCompositeMinorUnit())
+            change.GetCompositeMinorUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeMinorUnit()->GetName());
+
+        if (oldComp->HasMinorLabel() && newComp->HasMinorLabel() && oldComp->GetMinorLabel() != newComp->GetMinorLabel())
+            change.GetCompositeMinorLabel().SetValue(oldComp->GetMinorLabel(), newComp->GetMinorLabel());
+        else if (!oldComp->HasMinorLabel() && newComp->HasMinorLabel())
+            change.GetCompositeMinorLabel().SetValue(ValueId::New, newComp->GetMinorLabel());
+        else if (oldComp->HasMinorLabel() && !newComp->HasMinorLabel())
+            change.GetCompositeMinorLabel().SetValue(ValueId::Deleted, oldComp->GetMinorLabel());
+
+        if (oldVal.HasCompositeSubUnit() && newVal.HasCompositeSubUnit() && oldVal.GetCompositeSubUnit()->GetName() != newVal.GetCompositeSubUnit()->GetName())
+            change.GetCompositeSubUnit().SetValue(oldVal.GetCompositeSubUnit()->GetName(), newVal.GetCompositeSubUnit()->GetName());
+        else if (!oldVal.HasCompositeSubUnit() && newVal.HasCompositeSubUnit())
+            change.GetCompositeSubUnit().SetValue(ValueId::New, newVal.GetCompositeSubUnit()->GetName());
+        else if (oldVal.HasCompositeSubUnit() && !newVal.HasCompositeSubUnit())
+            change.GetCompositeSubUnit().SetValue(ValueId::Deleted, oldVal.GetCompositeSubUnit()->GetName());
+
+        if (oldComp->HasSubLabel() && newComp->HasSubLabel() && oldComp->GetSubLabel() != newComp->GetSubLabel())
+            change.GetCompositeSubLabel().SetValue(oldComp->GetSubLabel(), newComp->GetSubLabel());
+        else if (!oldComp->HasSubLabel() && newComp->HasSubLabel())
+            change.GetCompositeSubLabel().SetValue(ValueId::New, newComp->GetSubLabel());
+        else if (oldComp->HasSubLabel() && !newComp->HasSubLabel())
+            change.GetCompositeSubLabel().SetValue(ValueId::Deleted, oldComp->GetSubLabel());
+        }
     return SUCCESS;
     }
 
@@ -2142,47 +2150,50 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChanges& changes, ECFormatCR fo
         change.GetDisplayLabel().SetValue(appendType, format.GetInvariantDisplayLabel());
 
     change.GetDescription().SetValue(appendType, format.GetInvariantDescription());
-    auto num = format.GetNumericSpec();
+    if (format.HasNumeric())
+        {
+        auto num = format.GetNumericSpec();
 
-    if (num->HasRoundingFactor())
-        change.GetRoundFactor().SetValue(appendType, num->GetRoundingFactor());
+        if (num->HasRoundingFactor())
+            change.GetRoundFactor().SetValue(appendType, num->GetRoundingFactor());
 
-    change.GetPresentationType().SetValue(appendType, Formatting::Utils::PresentationTypeName(num->GetPresentationType()));
+        change.GetPresentationType().SetValue(appendType, Formatting::Utils::PresentationTypeName(num->GetPresentationType()));
 
-    if (Formatting::PresentationType::Fractional == num->GetPresentationType())
-        change.GetFractionalPrecision().SetValue(appendType, (uint32_t)Formatting::Utils::FractionalPrecisionDenominator(num->GetFractionalPrecision()));
-    else
-        change.GetDecimalPrecision().SetValue(appendType, Formatting::Utils::DecimalPrecisionToInt(num->GetDecimalPrecision()));
+        if (Formatting::PresentationType::Fractional == num->GetPresentationType())
+            change.GetFractionalPrecision().SetValue(appendType, (uint32_t)Formatting::Utils::FractionalPrecisionDenominator(num->GetFractionalPrecision()));
+        else
+            change.GetDecimalPrecision().SetValue(appendType, Formatting::Utils::DecimalPrecisionToInt(num->GetDecimalPrecision()));
 
-    if (num->HasMinWidth())
-        change.GetMinWidth().SetValue(appendType, num->GetMinWidth());
+        if (num->HasMinWidth())
+            change.GetMinWidth().SetValue(appendType, num->GetMinWidth());
 
-    if (Formatting::PresentationType::Scientific == num->GetPresentationType())
-        change.GetScientificType().SetValue(appendType, Formatting::Utils::ScientificTypeName(num->GetScientificType()));
+        if (Formatting::PresentationType::Scientific == num->GetPresentationType())
+            change.GetScientificType().SetValue(appendType, Formatting::Utils::ScientificTypeName(num->GetScientificType()));
 
-    if (num->HasSignOption())
-        change.GetShowSignOption().SetValue(appendType, Formatting::Utils::SignOptionName(num->GetSignOption()));
+        if (num->HasSignOption())
+            change.GetShowSignOption().SetValue(appendType, Formatting::Utils::SignOptionName(num->GetSignOption()));
 
-    if (num->HasFormatTraits())
-        change.GetFormatTraits().SetValue(appendType, num->GetFormatTraitsString());
+        if (num->HasFormatTraits())
+            change.GetFormatTraits().SetValue(appendType, num->GetFormatTraitsString());
 
-    if (num->HasDecimalSeparator())
-        change.GetDecimalSeparator().SetValue(appendType, Utf8String(1, num->GetDecimalSeparator()));
+        if (num->HasDecimalSeparator())
+            change.GetDecimalSeparator().SetValue(appendType, Utf8String(1, num->GetDecimalSeparator()));
 
-    if (num->HasThousandsSeparator())
-        change.GetThousandsSeparator().SetValue(appendType, Utf8String(1, num->GetThousandSeparator()));
+        if (num->HasThousandsSeparator())
+            change.GetThousandsSeparator().SetValue(appendType, Utf8String(1, num->GetThousandSeparator()));
 
-    if (num->HasUomSeparator())
-        change.GetUomSeparator().SetValue(appendType, num->GetUomSeparator());
+        if (num->HasUomSeparator())
+            change.GetUomSeparator().SetValue(appendType, num->GetUomSeparator());
 
-    if (num->HasPrefixPadChar())
-        change.GetPrefixPadChar().SetValue(appendType, Utf8String(1, num->GetPrefixPadChar()));
+        if (num->HasPrefixPadChar())
+            change.GetPrefixPadChar().SetValue(appendType, Utf8String(1, num->GetPrefixPadChar()));
 
-    if (num->HasStationSeparator())
-        change.GetStationSeparator().SetValue(appendType, Utf8String(1, num->GetStationSeparator()));
+        if (num->HasStationSeparator())
+            change.GetStationSeparator().SetValue(appendType, Utf8String(1, num->GetStationSeparator()));
 
-    if (Formatting::PresentationType::Station == num->GetPresentationType())
-        change.GetStationOffsetSize().SetValue(appendType, num->GetStationOffsetSize());
+        if (Formatting::PresentationType::Station == num->GetPresentationType())
+            change.GetStationOffsetSize().SetValue(appendType, num->GetStationOffsetSize());
+        }
 
     if (!format.HasComposite())
         return SUCCESS; // If there's no composite spec we're done.

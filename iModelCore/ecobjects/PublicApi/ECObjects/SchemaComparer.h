@@ -1292,6 +1292,7 @@ struct FormatChange final : ECObjectChange
         StringChange& GetPrefixPadChar() {return Get<StringChange>(SystemId::PrefixPadChar);}
         StringChange& GetStationSeparator() {return Get<StringChange>(SystemId::StationSeparator);}
         UInt32Change& GetStationOffsetSize() {return Get<UInt32Change>(SystemId::StationOffsetSize);}
+        BooleanChange& GetHasComposite() {return Get<BooleanChange>(SystemId::FormatHasComposite);}
         StringChange& GetCompositeInputUnit() {return Get<StringChange>(SystemId::FormatCompositeInputUnit);}
         StringChange& GetCompositeSpacer() {return Get<StringChange>(SystemId::FormatCompositeSpacer);}
         StringChange& GetCompositeMajorUnit() {return Get<StringChange>(SystemId::FormatCompositeMajorUnit);}
