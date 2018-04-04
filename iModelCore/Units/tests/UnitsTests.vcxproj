@@ -32,6 +32,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Published\CompositeValueTests.cpp" />
+    <ClCompile Include="Published\FormatTests.cpp" />
     <ClCompile Include="Published\FormattingTests.cpp" />
     <ClCompile Include="Published\LocaleTests.cpp" />
     <ClCompile Include="Published\UnitConversionTests.cpp" />
