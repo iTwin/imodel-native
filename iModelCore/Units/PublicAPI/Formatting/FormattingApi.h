@@ -649,6 +649,9 @@ public:
     //! Returns a const pointer to this Format's NumericFormatSpec if it exists.
     //! Returns nullptr if no NumericFormatSpec is defined.
     NumericFormatSpecCP GetNumericSpec() const { return HasNumeric() ? &m_numericSpec : nullptr; }
+    //! Returns a pointer to this Format's NumericFormatSpec if it exists.
+    //! Returns nullptr if no NumericFormatSpec is defined.
+    NumericFormatSpecP GetNumericSpecP() { return HasNumeric() ? &m_numericSpec : nullptr; }
     //! Returns a const pointer to this Format's CompositeValueSpec if it exists.
     //! Returns nullptr if no CompositeValueSpec is defined.
     CompositeValueSpecCP GetCompositeSpec() const { return HasComposite() ? &m_compositeSpec : nullptr; }
@@ -670,7 +673,7 @@ public:
     BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
     //! Returns a const pointer to the input unit of this Format's CompositeValueSpec.
     //! Returns nullptr if no CompositeValueSpec is defined.
-    BEU::UnitCP GetCompositeInputUnit() const { return HasComposite() ? m_compositeSpec.GetInputUnit() : nullptr; }
+    BEU::UnitCP GetCompositeInputUnit() const {return m_compositeSpec.GetInputUnit();}
     bool HasCompositeMajorUnit() const {return nullptr != GetCompositeMajorUnit();}
     bool HasCompositeMiddleUnit() const {return nullptr != GetCompositeMiddleUnit();}
     bool HasCompositeMinorUnit() const {return nullptr != GetCompositeMinorUnit();}

@@ -191,9 +191,11 @@ void CompositeValueSpec::CalculateUnitRatios()
 //---------------------------------------------------------------------------------------
 void CompositeValueSpec::SetInputUnit(BEU::UnitCP unit)
     {
-    if(!BEU::Unit::AreCompatible(unit, GetMajorUnit()))
+    if (nullptr != GetMajorUnit() && !BEU::Unit::AreCompatible(unit, GetMajorUnit()))
         m_problem.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
 
+    if (FormatProblemCode::NotInitialized == m_problem.GetProblemCode())
+        m_problem.Reset();
     m_inputUnit = unit;
     }
 //---------------------------------------------------------------------------------------
