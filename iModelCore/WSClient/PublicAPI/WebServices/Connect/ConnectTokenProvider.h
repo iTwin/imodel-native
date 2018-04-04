@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/ConnectTokenProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -34,8 +34,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ConnectTokenProvider : public IConnectTokenProvid
         //! Set new token lifetime in minutes
         WSCLIENT_EXPORT void Configure(uint64_t tokenLifetime);
 
-        WSCLIENT_EXPORT AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
-        WSCLIENT_EXPORT SamlTokenPtr GetToken() override;
+        WSCLIENT_EXPORT AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override;
+        WSCLIENT_EXPORT ISecurityTokenPtr GetToken() override;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

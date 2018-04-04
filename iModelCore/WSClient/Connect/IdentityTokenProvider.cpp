@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/IdentityTokenProvider.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -51,9 +51,9 @@ void IdentityTokenProvider::Configure(uint32_t tokenLifetime, uint32_t tokenRefr
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SamlTokenPtr> IdentityTokenProvider::UpdateToken()
+AsyncTaskPtr<ISecurityTokenPtr> IdentityTokenProvider::UpdateToken()
     {
-    return RenewToken()->Then<SamlTokenPtr>([=] (SamlTokenResult result)
+    return RenewToken()->Then<ISecurityTokenPtr>([=] (SamlTokenResult result)
         {
         return result.GetValue();
         });
@@ -62,7 +62,7 @@ AsyncTaskPtr<SamlTokenPtr> IdentityTokenProvider::UpdateToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr IdentityTokenProvider::GetToken()
+ISecurityTokenPtr IdentityTokenProvider::GetToken()
     {
     RenewTokenIfNeeded();
     return m_store->GetToken();

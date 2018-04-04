@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/SamlToken.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -376,7 +376,9 @@ Utf8StringCR SamlToken::AsString() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool SamlToken::operator==(const SamlToken& other) const
+bool SamlToken::operator==(const ISecurityToken& other) const
     {
-    return m_token == other.m_token;
+    const SamlToken* token = dynamic_cast<const SamlToken*>(&other);
+    if (token == nullptr) return false;
+    return m_token == token->m_token;
     }

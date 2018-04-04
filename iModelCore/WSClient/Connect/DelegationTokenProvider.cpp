@@ -41,9 +41,9 @@ void DelegationTokenProvider::Configure(uint32_t tokenLifetime, uint32_t tokenEx
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SamlTokenPtr> DelegationTokenProvider::UpdateToken()
+AsyncTaskPtr<ISecurityTokenPtr> DelegationTokenProvider::UpdateToken()
     {
-    return RetrieveNewToken()->Then<SamlTokenPtr>([=] (SamlTokenResult result)
+    return RetrieveNewToken()->Then<ISecurityTokenPtr>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
             return SamlTokenPtr();
@@ -59,7 +59,7 @@ AsyncTaskPtr<SamlTokenPtr> DelegationTokenProvider::UpdateToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr DelegationTokenProvider::GetToken()
+ISecurityTokenPtr DelegationTokenProvider::GetToken()
     {
     ValidateToken();
     return m_token;
@@ -105,7 +105,7 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool upd
 #if !defined(PRG)
         LOG.infov("Requesting '%s' delegation token", m_rpUri.c_str());
 #endif
-        SamlTokenPtr parentToken = m_parentTokenProvider->GetToken();
+        SamlTokenPtr parentToken = dynamic_pointer_cast<SamlToken>(m_parentTokenProvider->GetToken());
         if (nullptr == parentToken)
             {
 // Don't log "sensitive" information in production builds.
@@ -138,7 +138,7 @@ AsyncTaskPtr<SamlTokenResult> DelegationTokenProvider::RetrieveNewToken(bool upd
         if (!updateBaseTokenIfFailed)
             return;
 
-        m_parentTokenProvider->UpdateToken()->Then([=] (SamlTokenPtr token)
+        m_parentTokenProvider->UpdateToken()->Then([=] (ISecurityTokenPtr token)
             {
             if (nullptr == token)
                 return;
