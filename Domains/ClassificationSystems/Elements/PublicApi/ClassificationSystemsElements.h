@@ -12,6 +12,7 @@
 
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystemClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(CIBSEClassDefinition)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(OmniClassClassDefinition)
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
@@ -67,7 +68,65 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         //! Sets the Category of this CIBSEClassDefinition
         //! @param[in]  Category   new Category for this CIBSEClassDefinition
         void SetCategory (Utf8CP Category) { SetPropertyValue(prop_Category(), Category); }   
+
+        //! Gets the name of this OmniClassClassDefinition
+        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+
+        //! Gets the Category of this OmniClassClassDefinition
+        Utf8CP GetCategory() const { return GetPropertyValueString(prop_Category()).c_str(); }
         
     };
 
+//=======================================================================================
+//! A Omni Class Definition element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE OmniClassClassDefinition : ClassificationSystemClassDefinition
+    {
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition, ClassificationSystemClassDefinition);
+    private:
+        BE_PROP_NAME(Name)
+        BE_PROP_NAME(OmniClassID)
+        BE_PROP_NAME(Description)
+
+    protected:
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT OmniClassClassDefinition(CreateParams const& params) : T_Super(params) {}
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT OmniClassClassDefinition(CreateParams const& params, Utf8CP name, Utf8CP omniClassID, Utf8CP description);
+        friend struct OmniClassClassDefinitionHandler;
+        friend struct ClassificationSystemsDomain;
+
+        //---------------------------------------------------------------------------------------
+        // Creation
+        //---------------------------------------------------------------------------------------
+        //! Creates a OmniClassClassDefinition
+        //! @param[in]  db              db to insert class definition in
+        //! @param[in]  name            name of the OmniClass Class definition
+        //! @param[in]  omniClassID     ID of the OmniClass Class definition
+        //! @param[in]  description     Description of the OmniClass Class definition
+        //! @return     a ptr to created OmniClassClassDefinition
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static OmniClassClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP omniClassID, Utf8CP description);
+    public:
+        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(OmniClassClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+
+        //! Sets the name of this OmniClassClassDefinition
+        //! @param[in]  name            new name for this OmniClassClassDefinition
+        void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
+
+        //! Sets the ID of this OmniClassClassDefinition
+        //! @param[in]  omniClassID     new ID for this OmniClassClassDefinition
+        void SetOmniClassID(Utf8CP omniClassID) { SetPropertyValue(prop_OmniClassID(), omniClassID); }
+
+        //! Sets the description of this OmniClassClassDefinition
+        //! @param[in]  description     new description for this OmniClassClassDefinition
+        void SetDescription(Utf8CP description) { SetPropertyValue(prop_Description(), description); }
+
+        //! Gets the name of this OmniClassClassDefinition
+        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+
+        //! Gets the ID of this OmniClassClassDefinition
+        Utf8CP GetOmniClassID() const { return GetPropertyValueString(prop_OmniClassID()).c_str(); }
+
+        //! Gets the description of this OmniClassClassDefinition
+        Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
+
+    };
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
