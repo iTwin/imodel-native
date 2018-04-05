@@ -78,7 +78,7 @@ void PolyfaceAuxData::Transform(TransformCR transform)
             switch (channel->GetDataType())
                 {
                 case DataType::Vector:
-                case DataType::Convector:
+                case DataType::Covector:
                 case DataType::Point:
                     {
                     for (size_t i=0; i<dataSize; i += 3)
@@ -91,7 +91,7 @@ void PolyfaceAuxData::Transform(TransformCR transform)
                                 rMatrix.Multiply(point);
                                 break;
 
-                        case TransformType::Covector:
+                        case DataType::Covector:
                                 inverseRMatrix.MultiplyTranspose(point);
                                 break;
 

@@ -2919,7 +2919,9 @@ bvector<IGeometryPtr> &pipes       //!< [out] constructed geometry
         pipes.push_back (IGeometry::Create (pipeSurface));
         }
     }
-* @bsimethod                                                     Earlin.Lutz  10/17
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  04/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RuledSurface,ChiseledPipes)
     {
     bvector<DPoint3d> centerline {

@@ -416,7 +416,7 @@ TEST(Spiral,DocCheck)
          printf ("Final angles (expected %20.6lf) (actual %20.6lf)\n", expectedTurnDegrees, degrees1);
          }
     }
-
+#ifdef TestLangham
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -460,3 +460,4 @@ TEST(Spiral,SignedDistanceLangham)
         }
     Check::ClearGeometry ("Spiral.SignedDistanceAlongLangham");
     }
+#endif

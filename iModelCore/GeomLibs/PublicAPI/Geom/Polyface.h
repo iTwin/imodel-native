@@ -551,7 +551,7 @@ struct PolyfaceAuxData : RefCountedBase
         Scalar      = 0,
         Distance    = 1,
         Vector      = 2,
-        Covector   = 2,
+        Covector    = 3,
         Point       = 4, 
         };
 

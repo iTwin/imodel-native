@@ -45,14 +45,14 @@ void TestTrackingCurveOffset (char const *message, ICurvePrimitiveR curve0, doub
     auto strokeLengthSum1A = PolylineOps::SumSegmentLengths (stroke1A);
     double strokeLength1 = strokeLengthSum1.Sum ();
     double strokeLength1A = strokeLengthSum1A.Sum ();
-
+    static double s_lengthFactor = 1.0 + Angle::SmallAngle ();
     if (Check::True (curve1->Length (length1), "Evaluate length"))
         {
         if (expectedLength > 0.0)
             Check::Near (expectedLength, length1, "Offset length");
 
-        Check::True (strokeLength1 <= length1, "strokeLength < length");
-        Check::True (strokeLength1A <= length1, "strokeLength < length");
+        Check::True (strokeLength1 <= length1 * s_lengthFactor, "strokeLength < length");
+        Check::True (strokeLength1A <= length1 * s_lengthFactor, "strokeLength < length");
         if (isCurved)
             {
             // finer stroking approaches length from below ..
