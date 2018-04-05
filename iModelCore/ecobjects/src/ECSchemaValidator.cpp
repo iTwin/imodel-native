@@ -70,7 +70,7 @@ ECSchemaValidatorP ECSchemaValidator::GetSingleton()
 
         IECClassValidatorPtr allClassValidator = new AllClassValidator();
         ECSchemaValidatorSingleton->AddClassValidator(allClassValidator);
-        
+
         IECClassValidatorPtr structValidator = new StructValidator();
         ECSchemaValidatorSingleton->AddClassValidator(structValidator);
 
@@ -228,7 +228,7 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
             if (refSchema->GetVersionRead() <= 1) // Only the latest ECDbMap is valid
                 {
                 LOG.errorv("Failed to validate '%s' as the read version is less than 2.0",
-                    schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
+                           schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
 
                 status = ECObjectsStatus::Error;
                 }
@@ -236,7 +236,7 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
         else
             {
             LOG.errorv("Failed to validate '%s' since it references the old standard schema '%s'. Only new standard schemas should be used.",
-                schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
+                       schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
 
             status = ECObjectsStatus::Error;
             }
@@ -346,7 +346,7 @@ ECObjectsStatus AllClassValidator::Validate(ECClassCR ecClass) const
 
     // Validate no properties are of type long
     status = checkPropertiesForLongType(ecClass);
-    
+
     return status;
     }
 
@@ -393,27 +393,27 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
         };
     if (!entity.GetEntityClassCP()->IsMixin() && !isBisCoreClass(&entity) && !derivesFromBisHierarchy(&entity))
         {
-            LOG.errorv("Root entity class '%s' does not derive from bis hierarchy", entity.GetFullName());
-            status = ECObjectsStatus::Error;
+        LOG.errorv("Root entity class '%s' does not derive from bis hierarchy", entity.GetFullName());
+        status = ECObjectsStatus::Error;
+        }
+
+    // entity class may only have one entity base class
+    numBaseClasses = 0;
+    for (ECClassCP baseClass : entity.GetBaseClasses())
+        {
+        if (!baseClass->GetEntityClassCP()->IsMixin())
+            numBaseClasses++;
+        }
+    if (numBaseClasses > 1)
+        {
+        LOG.errorv("Entity class '%s' inherits from more than one entity class", entity.GetFullName());
+        status = ECObjectsStatus::Error;
         }
 
     for (ECPropertyP prop : entity.GetProperties(false))
         {
-        numBaseClasses = 0;
         if (prop->GetBaseProperty() == nullptr)
             continue;
-        for (ECClassP baseClass : entity.GetBaseClasses())
-            {
-            if (baseClass->GetPropertyP(prop->GetName().c_str()) != nullptr)
-                numBaseClasses++;
-            }
-        if (numBaseClasses > 1)
-            {
-            LOG.errorv("Error at property '%s'. There are %i base classes and entity class '%s' may not inherit a property from more than one base class",
-                       prop->GetName().c_str(), numBaseClasses, entity.GetFullName());
-
-            status = ECObjectsStatus::Error;
-            }
 
         if (prop->IsKindOfQuantityDefinedLocally())
             {
@@ -433,12 +433,57 @@ ECObjectsStatus EntityValidator::Validate(ECClassCR entity) const
                 status = ECObjectsStatus::Error;
                 }
             }
-        if (!prop->GetBaseProperty()->GetClass().GetEntityClassCP()->IsMixin())
-            continue;
-        LOG.errorv("Error at property '%s'. Entity class '%s' overrides a property inherited from mixin class '%s'",
-                   prop->GetName().c_str(), entity.GetFullName(), prop->GetBaseProperty()->GetClass().GetFullName());
+        }
 
-        status = ECObjectsStatus::Error;
+    // mixin property may not override an inherited property
+    bvector<bpair<ECPropertyP, ECClassP>> seenProperties;
+    
+    auto const isPropertyMatch = [](bpair<ECPropertyP, ECClassP> propPair, ECPropertyP prop) -> bool
+        {
+        return propPair.first->GetName().EqualsIAscii(prop->GetName());
+        };
+    auto const findProperty = [&isPropertyMatch, &seenProperties] (ECPropertyP prop) -> bpair<ECPropertyP, ECClassP>*
+        {
+        auto isMatch = std::bind(isPropertyMatch, std::placeholders::_1, prop);
+        return std::find_if(
+            seenProperties.begin(),
+            seenProperties.end(),
+            isMatch);
+        };
+
+    // iterate through all inherited properties and check for duplicates
+    for (ECClassP baseClass : entity.GetBaseClasses())
+        {
+        for (ECPropertyP prop : baseClass->GetProperties(true))
+            {
+            bpair<ECPropertyP, ECClassP>* propertyClassPair = findProperty(prop);
+            if (seenProperties.end() != propertyClassPair) // already seen property
+                {
+                if (prop != propertyClassPair->first)
+                    {
+                    ECClassP prevClass = propertyClassPair->second;
+                    bool prevIsMixin = prevClass->GetEntityClassCP()->IsMixin();
+                    if (baseClass->GetEntityClassCP()->IsMixin() && prevIsMixin)
+                        {
+                        LOG.errorv("Error at property '%s'. Mixin class '%s' overrides a property inherited from mixin class '%s'",
+                                   prop->GetName().c_str(), baseClass->GetFullName(), prevClass->GetFullName());
+                        status = ECObjectsStatus::Error;
+                        }
+                    else
+                        {
+                        LOG.errorv("Error at property '%s'. Mixin class '%s' overrides a property inherited from entity class '%s'",
+                                   prop->GetName().c_str(),
+                                   prevIsMixin ? prevClass->GetFullName() : baseClass->GetFullName(),
+                                   prevIsMixin ? baseClass->GetFullName() : prevClass->GetFullName());
+                        status = ECObjectsStatus::Error;
+                        }
+                    }
+                }
+            else
+                {
+                seenProperties.push_back(make_bpair<ECPropertyP, ECClassP>(prop, baseClass));
+                }
+            }
         }
 
     return status;
@@ -532,7 +577,7 @@ ECObjectsStatus KindOfQuantityValidator::Validate(KindOfQuantityCP koq) const
     {
     if (strcmp(koq->GetPersistenceUnit().GetUnit()->GetPhenomenon()->GetName(), "PERCENTAGE") == 0)
         {
-        LOG.errorv("KindOfQuantity %s has persistence unit of Phenomenon 'PERCENTAGE' unitless ratios are not allowed.  Use a ratio phenomenon which includes units like VOLUME_RATIO", 
+        LOG.errorv("KindOfQuantity %s has persistence unit of Phenomenon 'PERCENTAGE' unitless ratios are not allowed.  Use a ratio phenomenon which includes units like VOLUME_RATIO",
                    koq->GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
