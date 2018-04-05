@@ -24,7 +24,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    NSURL* url = [NSURL URLWithString:@"https://www.apple.com"];
+    NSURL* url = [[NSBundle mainBundle] URLForResource:@"index" withExtension:@"html"];
     NSURLRequest* request = [NSURLRequest requestWithURL:url];
     [self.webView loadRequest:request];
 }
