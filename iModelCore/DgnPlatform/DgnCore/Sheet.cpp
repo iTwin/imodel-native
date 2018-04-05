@@ -116,10 +116,11 @@ struct Root2d : Attachment::Root
 {
     DEFINE_T_SUPER(Attachment::Root);
 
-    RefCountedPtr<ViewController2d> m_view;
-    TileTree::RootPtr               m_viewRoot;
-    Transform                       m_drawingToAttachment;
-    ClipVectorPtr                   m_graphicsClip;
+    RefCountedPtr<ViewController2d>         m_view;
+    TileTree::RootPtr                       m_viewRoot;
+    Transform                               m_drawingToAttachment;
+    ClipVectorPtr                           m_graphicsClip;
+    Render::FeatureSymbologyOverridesCPtr   m_symbologyOverrides;
 private:
     Root2d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewController2dR view, TileTree::RootR viewRoot);
 public:
@@ -1226,10 +1227,13 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     {
     auto const& myRoot = GetRoot2d();
     auto& viewRoot = *myRoot.m_viewRoot;
+
     TileTree::DrawArgs args = viewRoot.CreateDrawArgs(myArgs.m_context);
     args.m_location = myRoot.m_drawingToAttachment;
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
     args.m_clip = GetRoot2d().m_graphicsClip.get();
+    args.m_graphics.m_symbologyOverrides = GetRoot2d().m_symbologyOverrides;
+
     myRoot.m_view->CreateScene(args);
 
     static bool s_drawClipPolys = false;
@@ -1601,6 +1605,9 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
 Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewController2dR view, TileTree::RootR viewRoot)
     : T_Super(view.GetViewedModelId(), sheetController, attach, context, view), m_view(&view), m_viewRoot(&viewRoot)
     {
+    // Ensure elements inside the view attachment are not affected to changes to category display etc for the sheet view.
+    m_symbologyOverrides = Render::FeatureSymbologyOverrides::Create(view);
+
     auto& viewDef = view.GetViewDefinitionR();
     DRange3d attachRange = attach.GetPlacement().CalculateRange();
     double attachWidth = attachRange.high.x - attachRange.low.x,

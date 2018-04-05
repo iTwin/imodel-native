@@ -2996,7 +2996,7 @@ public:
 //!     the subcategory are applied.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
-struct FeatureSymbologyOverrides
+struct FeatureSymbologyOverrides : RefCountedBase
 {
     //! Defines symbology overrides for a single element or subcategory.
     struct Appearance
@@ -3094,9 +3094,12 @@ private:
     uint8_t                             m_patterns:1;
     uint8_t                             m_alwaysDrawnExclusive:1;
     uint8_t                             m_lineWeights:1;
-public:
+
     FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false), m_lineWeights(true) { }
     DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
+public:
+    static FeatureSymbologyOverridesPtr Create() { return new FeatureSymbologyOverrides(); }
+    static FeatureSymbologyOverridesCPtr Create(ViewControllerCR view) { return new FeatureSymbologyOverrides(view); }
 
     // Returns false if the feature is invisible.
     // Otherwise, populates the feature's Appearance overrides
@@ -3191,6 +3194,7 @@ struct GraphicBranch
 {
     ViewFlagsOverrides m_viewFlagsOverrides;
     bvector<GraphicPtr> m_entries;
+    FeatureSymbologyOverridesCPtr m_symbologyOverrides;
 
     void Add(Graphic& graphic) {m_entries.push_back(&graphic);BeAssert(m_entries.back().IsValid());}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
@@ -3481,7 +3485,7 @@ public:
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
-    virtual void _OverrideFeatureSymbology(FeatureSymbologyOverrides&&) = 0;
+    virtual void _OverrideFeatureSymbology(FeatureSymbologyOverridesCR) = 0;
     virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
     virtual void _SetFlashed(DgnElementId, double) = 0;
     virtual void _SetViewRect(BSIRect rect, bool temporary=false) {}
