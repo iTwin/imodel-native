@@ -1748,6 +1748,7 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
 
         nullContext.SetDgnDb(m_db);
 
+
         if (!BRepUtil::FacetEntity(*m_entity, polyfaces, params, *pFacetOptions))
             return TileGeometry::T_TilePolyfaces();;
 

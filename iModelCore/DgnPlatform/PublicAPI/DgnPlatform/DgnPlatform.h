@@ -1002,6 +1002,7 @@ public:
     ColorDef() {m_intVal = 0;}
     explicit ColorDef(uint32_t intval) {m_intVal=intval;}
     ColorDef(Byte red, Byte green, Byte blue, Byte alpha=0) {SetColors(red,green,blue,alpha);}
+    ColorDef(ColorDef colorOnly, Byte alpha){SetColorNoAlpha(colorOnly); SetAlpha(alpha);}
 
     static ColorDef Black()       {return ColorDef(0,0,0);}
     static ColorDef White()       {return ColorDef(0xff,0xff,0xff);}

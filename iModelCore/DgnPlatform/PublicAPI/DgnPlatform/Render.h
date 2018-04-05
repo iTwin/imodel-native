@@ -2468,14 +2468,6 @@ struct MeshEdges : RefCountedBase
 };
 
 //=======================================================================================
-// @bsistruct                                                   Ray.Bentley     03/2018
-//=======================================================================================
-struct MeshVertexAuxData        
-{
-    
-};
-
-//=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
 struct EdgeArgs
@@ -2530,32 +2522,32 @@ struct TriMeshArgs
 {
     // The vertices of the edges are shared with those of the surface
     struct Edges
-    {
-        EdgeArgs            m_edges;
-        SilhouetteEdgeArgs  m_silhouettes;
-        PolylineEdgeArgs    m_polylines;
-        uint32_t            m_width = 0;
-        LinePixels          m_linePixels = LinePixels::Solid;
+        {
+        EdgeArgs                    m_edges;
+        SilhouetteEdgeArgs          m_silhouettes;
+        PolylineEdgeArgs            m_polylines;
+        uint32_t                    m_width = 0;
+        LinePixels                  m_linePixels = LinePixels::Solid;
 
         void Clear() { *this = Edges(); }
         bool IsValid() const { return m_edges.IsValid() || m_silhouettes.IsValid() || m_polylines.IsValid(); }
-    };
+        };
 
-    Edges               m_edges;
-    uint32_t            m_numIndices = 0;
-    uint32_t const*     m_vertIndex = nullptr;
-    uint32_t            m_numPoints = 0;
-    QPoint3dCP          m_points= nullptr;
-    OctEncodedNormalCP  m_normals = nullptr;
-    FPoint2d const*     m_textureUV= nullptr;
-    TexturePtr          m_texture;
-    ColorIndex          m_colors;
-    FeatureIndex        m_features;
-    QPoint3d::Params    m_pointParams;
-    MaterialPtr         m_material;
-    FillFlags           m_fillFlags = FillFlags::None;
-    bool                m_isPlanar = false;
-    bool                m_is2d = false;
+    Edges                           m_edges;
+    uint32_t                        m_numIndices = 0;
+    uint32_t const*                 m_vertIndex = nullptr;
+    uint32_t                        m_numPoints = 0;
+    QPoint3dCP                      m_points= nullptr;
+    OctEncodedNormalCP              m_normals = nullptr;
+    FPoint2d const*                 m_textureUV= nullptr;
+    TexturePtr                      m_texture;
+    ColorIndex                      m_colors;
+    FeatureIndex                    m_features;
+    QPoint3d::Params                m_pointParams;
+    MaterialPtr                     m_material;
+    FillFlags                       m_fillFlags = FillFlags::None;
+    bool                            m_isPlanar = false;
+    bool                            m_is2d = false;
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
