@@ -75,6 +75,7 @@
 // ECClass names (combine with CLASSIFICATIONSYSTEMS_ECCHEMA_NAME macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinition                     "ClassificationSystemClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinitionGroup                "ClassificationSystemClassDefinitionGroup"
 #define CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition                                    "CIBSEClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition                                "OmniClassClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_ASHRAEClassDefinition                                   "ASHRAEClassDefinition"

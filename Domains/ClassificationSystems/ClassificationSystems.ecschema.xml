@@ -15,6 +15,10 @@
     
     <ECEntityClass typeName="ClassificationSystemClassDefinitionGroup" displayLabel="ClassificationSystem ClassDefinition group" description="The ClassDefinition group element">
         <BaseClass>bis:GroupInformationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
     </ECEntityClass>
         
     <ECRelationshipClass typeName="ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup" modifier="None" strength="referencing" description="a relationship to map classificationSystemClassDefinition to its' group">

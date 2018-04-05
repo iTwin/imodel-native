@@ -25,8 +25,9 @@ DOMAIN_DEFINE_MEMBERS(ClassificationSystemsDomain)
 //---------------------------------------------------------------------------------------
 ClassificationSystemsDomain::ClassificationSystemsDomain () : Dgn::DgnDomain(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, "ClassificationSystems Domain", 1)
     {
-    RegisterHandler (CIBSEClassDefinitionHandler::GetHandler ());
-    RegisterHandler (OmniClassClassDefinitionHandler::GetHandler ());
+    RegisterHandler(ClassificationSystemClassDefinitionGroupHandler::GetHandler());
+    RegisterHandler(CIBSEClassDefinitionHandler::GetHandler());
+    RegisterHandler(OmniClassClassDefinitionHandler::GetHandler());
     RegisterHandler(ASHRAE2004ClassDefinitionHandler::GetHandler());
     RegisterHandler(ASHRAE2010ClassDefinitionHandler::GetHandler());
     RegisterHandler(MasterFormatClassDefinitionHandler::GetHandler());

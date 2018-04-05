@@ -12,6 +12,7 @@
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinition)
+DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinitionGroup)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(CIBSEClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(OmniClassClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAEClassDefinition)
@@ -21,17 +22,45 @@ DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(MasterFormatClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(UniFormatClassDefinition)
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationSystemClassDefinitionGroup::ClassificationSystemClassDefinitionGroup
+(
+CreateParams const& params,
+Utf8CP name
+) : T_Super(params)
+    {
+    SetName(name);
+    //SetCategory(Category);  
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationSystemClassDefinitionGroupPtr ClassificationSystemClassDefinitionGroup::Create
+(
+Dgn::DgnDbR db,
+Utf8CP name
+)
+    {
+    Dgn::DgnClassId classId = QueryClassId(db);
+    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    ClassificationSystemClassDefinitionGroupPtr group = new ClassificationSystemClassDefinitionGroup(params, name);
+    return group;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 CIBSEClassDefinition::CIBSEClassDefinition
 (
-    CreateParams const& params,
-    Utf8CP name,
-    Utf8CP Category
+CreateParams const& params,
+Utf8CP name,
+Utf8CP Category
 ) : T_Super(params)
     {
-        SetName(name);
-        //SetCategory(Category);  
+    SetName(name);
+    //SetCategory(Category);  
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -39,19 +68,15 @@ CIBSEClassDefinition::CIBSEClassDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 CIBSEClassDefinitionPtr CIBSEClassDefinition::Create
 (
-    Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP Category
+Dgn::DgnDbR db,
+Utf8CP name,
+Utf8CP Category
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(
-            db,
-            db.GetDictionaryModel().GetModelId(),
-            classId
-    );  
-        CIBSEClassDefinitionPtr gridSurface = new CIBSEClassDefinition(params, name, Category);
-        return gridSurface;
+    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    CIBSEClassDefinitionPtr definition = new CIBSEClassDefinition(params, name, Category);
+    return definition;
     }
 
 
@@ -60,10 +85,10 @@ CIBSEClassDefinitionPtr CIBSEClassDefinition::Create
 +---------------+---------------+---------------+---------------+---------------+------*/
 OmniClassClassDefinition::OmniClassClassDefinition
 (
-    CreateParams const& params,
-    Utf8CP name, 
-    Utf8CP omniClassID, 
-    Utf8CP description
+CreateParams const& params,
+Utf8CP name, 
+Utf8CP omniClassID, 
+Utf8CP description
 ) : T_Super(params)
     {
     SetName(name);
@@ -76,29 +101,25 @@ OmniClassClassDefinition::OmniClassClassDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 OmniClassClassDefinitionPtr OmniClassClassDefinition::Create
 (
-    Dgn::DgnDbR db,
-    Utf8CP name, 
-    Utf8CP omniClassID, 
-    Utf8CP description
+Dgn::DgnDbR db,
+Utf8CP name, 
+Utf8CP omniClassID, 
+Utf8CP description
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(
-        db,
-        db.GetDictionaryModel().GetModelId(),
-        classId
-    );
-    OmniClassClassDefinitionPtr gridSurface = new OmniClassClassDefinition(params, name, omniClassID, description);
-    return gridSurface;
+    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    OmniClassClassDefinitionPtr definition = new OmniClassClassDefinition(params, name, omniClassID, description);
+    return definition;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ASHRAE2004ClassDefinition::ASHRAE2004ClassDefinition
 (
-    CreateParams const& params,
-    Utf8CP name,
-    Utf8CP Category
+CreateParams const& params,
+Utf8CP name,
+Utf8CP Category
 ) : T_Super(params)
     {
     SetName(name);
@@ -110,28 +131,24 @@ ASHRAE2004ClassDefinition::ASHRAE2004ClassDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 ASHRAE2004ClassDefinitionPtr ASHRAE2004ClassDefinition::Create
 (
-    Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP Category
+Dgn::DgnDbR db,
+Utf8CP name,
+Utf8CP Category
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(
-        db,
-        db.GetDictionaryModel().GetModelId(),
-        classId
-    );
-    ASHRAE2004ClassDefinitionPtr gridSurface = new ASHRAE2004ClassDefinition(params, name, Category);
-    return gridSurface;
+    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    ASHRAE2004ClassDefinitionPtr definition = new ASHRAE2004ClassDefinition(params, name, Category);
+    return definition;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ASHRAE2010ClassDefinition::ASHRAE2010ClassDefinition
 (
-    CreateParams const& params,
-    Utf8CP name,
-    Utf8CP Category
+CreateParams const& params,
+Utf8CP name,
+Utf8CP Category
 ) : T_Super(params)
     {
     SetName(name);
@@ -143,19 +160,15 @@ ASHRAE2010ClassDefinition::ASHRAE2010ClassDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 ASHRAE2010ClassDefinitionPtr ASHRAE2010ClassDefinition::Create
 (
-    Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP Category
+Dgn::DgnDbR db,
+Utf8CP name,
+Utf8CP Category
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(
-        db,
-        db.GetDictionaryModel().GetModelId(),
-        classId
-    );
-    ASHRAE2010ClassDefinitionPtr gridSurface = new ASHRAE2010ClassDefinition(params, name, Category);
-    return gridSurface;
+    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    ASHRAE2010ClassDefinitionPtr definition = new ASHRAE2010ClassDefinition(params, name, Category);
+    return definition;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -163,9 +176,9 @@ ASHRAE2010ClassDefinitionPtr ASHRAE2010ClassDefinition::Create
 +---------------+---------------+---------------+---------------+---------------+------*/
 MasterFormatClassDefinition::MasterFormatClassDefinition
 (
-    CreateParams const& params,
-    Utf8CP name,
-    Utf8CP description
+CreateParams const& params,
+Utf8CP name,
+Utf8CP description
 ) : T_Super(params)
     {
     SetName(name);
@@ -177,28 +190,24 @@ MasterFormatClassDefinition::MasterFormatClassDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 MasterFormatClassDefinitionPtr MasterFormatClassDefinition::Create
 (
-    Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP description
+Dgn::DgnDbR db,
+Utf8CP name,
+Utf8CP description
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(
-        db,
-        db.GetDictionaryModel().GetModelId(),
-        classId
-    );
-    MasterFormatClassDefinitionPtr gridSurface = new MasterFormatClassDefinition(params, name, description);
-    return gridSurface;
+    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    MasterFormatClassDefinitionPtr definition = new MasterFormatClassDefinition(params, name, description);
+    return definition;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 UniFormatClassDefinition::UniFormatClassDefinition
 (
-    CreateParams const& params,
-    Utf8CP name,
-    Utf8CP description
+CreateParams const& params,
+Utf8CP name,
+Utf8CP description
 ) : T_Super(params)
     {
     SetName(name);
@@ -210,19 +219,15 @@ UniFormatClassDefinition::UniFormatClassDefinition
 +---------------+---------------+---------------+---------------+---------------+------*/
 UniFormatClassDefinitionPtr UniFormatClassDefinition::Create
 (
-    Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP description
+Dgn::DgnDbR db,
+Utf8CP name,
+Utf8CP description
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(
-        db,
-        db.GetDictionaryModel().GetModelId(),
-        classId
-    );
-    UniFormatClassDefinitionPtr gridSurface = new UniFormatClassDefinition(params, name, description);
-    return gridSurface;
+    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    UniFormatClassDefinitionPtr definition = new UniFormatClassDefinition(params, name, description);
+    return definition;
     }
 
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

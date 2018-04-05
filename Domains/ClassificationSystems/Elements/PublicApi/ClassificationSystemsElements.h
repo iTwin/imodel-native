@@ -11,6 +11,7 @@
 //__PUBLISH_SECTION_START__
 
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystemClassDefinition)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystemClassDefinitionGroup)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(CIBSEClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(OmniClassClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ASHRAEClassDefinition)
@@ -35,6 +36,39 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinition : Dgn::Defini
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
         
+    };
+//=======================================================================================
+//! A ClassificationSystem Class Definition Group element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinitionGroup : Dgn::GroupInformationElement
+    {
+    DEFINE_T_SUPER(Dgn::GroupInformationElement);
+    private:
+        BE_PROP_NAME(Name)
+    protected:
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystemClassDefinitionGroup(CreateParams const& params) : T_Super(params) {}
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystemClassDefinitionGroup(CreateParams const& params, Utf8CP name);
+        friend struct ClassificationSystemClassDefinitionGroupHandler;
+        friend struct ClassificationSystemsDomain;
+
+    public:
+        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinitionGroup, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+
+        //---------------------------------------------------------------------------------------
+        // Creation
+        //---------------------------------------------------------------------------------------
+        //! Creates a ClassificationSystemClassDefinitionGroup
+        //! @param[in]  db          db to insert class definition group in
+        //! @param[in]  name        name of the ClassificationSystem class definition group
+        //! @return     a ptr to created ClassificationSystemClassDefinitionGroup
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemClassDefinitionGroupPtr Create(Dgn::DgnDbR db, Utf8CP name);
+        
+        //! Sets the name of this ClassificationSystemClassDefinitionGroup
+        //! @param[in]  name   new name for this ClassificationSystemClassDefinitionGroup
+        void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
+
+        //! Gets the name of this ClassificationSystemClassDefinitionGroup
+        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
     };
     
     
@@ -218,7 +252,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ASHRAE2010ClassDefinition : ASHRAEClassDefinition
     };
 
 //=======================================================================================
-//! A CIBSE Class Definition element
+//! A MasterFormat Class Definition element
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE MasterFormatClassDefinition : ClassificationSystemClassDefinition
     {
@@ -236,33 +270,33 @@ struct EXPORT_VTABLE_ATTRIBUTE MasterFormatClassDefinition : ClassificationSyste
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates a CIBSEClassDefinition
+        //! Creates a MasterFormatClassDefinition
         //! @param[in]  db          db to insert class definition in
-        //! @param[in]  name        name of the CIBSE Class definition
-        //! @param[in]  Category    Category of the CIBSE Class definition
-        //! @return     a ptr to created CIBSEClassDefinition
+        //! @param[in]  name        name of the MasterFormat Class definition
+        //! @param[in]  description description of the MasterFormat Class definition
+        //! @return     a ptr to created MasterFormatClassDefinition
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static MasterFormatClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP description);
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(MasterFormatClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
-        //! Sets the name of this CIBSEClassDefinition
-        //! @param[in]  name   new name for this CIBSEClassDefinition
+        //! Sets the name of this MasterFormatClassDefinition
+        //! @param[in]  name   new name for this MasterFormatClassDefinition
         void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
 
-        //! Sets the Category of this CIBSEClassDefinition
-        //! @param[in]  Category   new Category for this CIBSEClassDefinition
+        //! Sets the Category of this MasterFormatClassDefinition
+        //! @param[in]  description   new description for this MasterFormatClassDefinition
         void SetDescription(Utf8CP description) { SetPropertyValue(prop_Description(), description); }
 
-        //! Gets the name of this CIBSEClassDefinition
+        //! Gets the name of this MasterFormatClassDefinition
         Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
 
-        //! Gets the Category of this CIBSEClassDefinition
+        //! Gets the description of this MasterFormatClassDefinition
         Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
 
     };
 
 //=======================================================================================
-//! A CIBSE Class Definition element
+//! A UniFormat Class Definition element
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE UniFormatClassDefinition : ClassificationSystemClassDefinition
     {
@@ -282,25 +316,25 @@ struct EXPORT_VTABLE_ATTRIBUTE UniFormatClassDefinition : ClassificationSystemCl
         //---------------------------------------------------------------------------------------
         //! Creates a CIBSEClassDefinition
         //! @param[in]  db          db to insert class definition in
-        //! @param[in]  name        name of the CIBSE Class definition
-        //! @param[in]  Category    Category of the CIBSE Class definition
-        //! @return     a ptr to created CIBSEClassDefinition
+        //! @param[in]  name        name of the UniFormat Class definition
+        //! @param[in]  description description of the UniFormat Class definition
+        //! @return     a ptr to created UniFormatClassDefinition
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static UniFormatClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP description);
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(UniFormatClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
-        //! Sets the name of this CIBSEClassDefinition
-        //! @param[in]  name   new name for this CIBSEClassDefinition
+        //! Sets the name of this UniFormatClassDefinition
+        //! @param[in]  name   new name for this UniFormatClassDefinition
         void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
 
-        //! Sets the Category of this CIBSEClassDefinition
-        //! @param[in]  Category   new Category for this CIBSEClassDefinition
+        //! Sets the description of this UniFormatClassDefinition
+        //! @param[in]  description   new Category for this UniFormatClassDefinition
         void SetDescription(Utf8CP description) { SetPropertyValue(prop_Description(), description); }
 
-        //! Gets the name of this CIBSEClassDefinition
+        //! Gets the name of this UniFormatClassDefinition
         Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
 
-        //! Gets the Category of this CIBSEClassDefinition
+        //! Gets the description of this UniFormatClassDefinition
         Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
 
     };

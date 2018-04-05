@@ -9,6 +9,10 @@
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
+struct ClassificationSystemClassDefinitionGroupHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinitionGroup, ClassificationSystemClassDefinitionGroup, ClassificationSystemClassDefinitionGroupHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
+    };
 
 struct CIBSEClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
     {
