@@ -809,11 +809,13 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                 StatusInt status = creatorPtr->Create(isSingleFile);
                 importInProgress = false;
                 mythread.join();
+                
+                creatorPtr->SaveToFile();
+                creatorPtr = nullptr;
 
                 t = clock() - t;
                 double delay = (double)t / CLOCKS_PER_SEC;
-                creatorPtr->SaveToFile();
-                creatorPtr = nullptr;
+
                 if (status == SUCCESS)
                     {
                     StatusInt status;
@@ -867,8 +869,15 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         StatusInt stat;
                         IScalableMeshCreatorPtr meshCreator = IScalableMeshCreator::GetFor(stmFile, stat);                        
                         WString url = WString(streamingRasterUrl.c_str(), true);
+
+                        t = clock();
+
                         if (stat == SUCCESS)
                             meshCreator->SetTextureStreamFromUrl(url);
+
+                        t = clock() - t;
+
+                        delay += (double)t / CLOCKS_PER_SEC;
                         }
 
                     stmFile = 0;
