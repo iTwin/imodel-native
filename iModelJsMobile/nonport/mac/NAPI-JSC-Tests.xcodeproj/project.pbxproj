@@ -143,7 +143,7 @@
 		269489632051D9D90062429D /* ECSchemaXmlContextUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ECSchemaXmlContextUtils.cpp; path = ../../../../iModelJsNodeAddon/ECSchemaXmlContextUtils.cpp; sourceTree = "<group>"; };
 		2694896A2051D9FC0062429D /* TestUtils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TestUtils.cpp; path = ../../../../iModelJsNodeAddon/TestUtils.cpp; sourceTree = "<group>"; };
 		26DF23B02037601A001FE257 /* NAPI-JSC-Tests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "NAPI-JSC-Tests"; sourceTree = BUILT_PRODUCTS_DIR; };
-		26DF23B32037601A001FE257 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		26DF23B32037601A001FE257 /* main.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = main.cpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

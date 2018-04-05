@@ -381,7 +381,7 @@
 /* Begin PBXShellScriptBuildPhase section */
 		26C3E65A206138CE002A6E96 /* Assets */ = {
 			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 8;
+			buildActionMask = 12;
 			files = (
 			);
 			inputPaths = (
@@ -389,9 +389,9 @@
 			name = Assets;
 			outputPaths = (
 			);
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\n";
+			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\ncp -L -R ~/Desktop/imjstest $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME";
 		};
 /* End PBXShellScriptBuildPhase section */
 

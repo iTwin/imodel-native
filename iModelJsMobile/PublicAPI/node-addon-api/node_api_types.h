@@ -137,6 +137,16 @@ public:
   JSContextRef GetContext() const { return m_jscContext;}
   napi_extended_error_info last_error;
 };
+
+struct napi_ref__ {
+};
+
+struct napi_handle_scope__ {
+};
+
+struct napi_escapable_handle_scope__ {
+};
+
 #endif
 
 #endif  // SRC_NODE_API_TYPES_H_

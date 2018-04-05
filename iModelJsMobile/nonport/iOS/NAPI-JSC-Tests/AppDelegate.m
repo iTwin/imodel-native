@@ -19,6 +19,8 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     // Override point for customization after application launch.
     NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
+    NSString *imjstestPath = [appFolderPath stringByAppendingPathComponent:@"imjstest"];
+    [[NSFileManager defaultManager] changeCurrentDirectoryPath:imjstestPath];
     Test(appFolderPath.UTF8String);
     return YES;
 }

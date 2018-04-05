@@ -1578,7 +1578,7 @@ napi_status napi_open_handle_scope(napi_env env, napi_handle_scope* result) {
   CHECK_ARG(env, result);
 
 //  JSContextRef ctx = env->GetContext();
-  // TODO
+    *result = new napi_handle_scope__();
 
   return napi_clear_last_error(env);
 }
@@ -1593,7 +1593,7 @@ napi_status napi_close_handle_scope(napi_env env, napi_handle_scope scope) {
   CHECK_ARG(env, scope);
   
 //  JSContextRef ctx = env->GetContext();
-  // TODO
+    delete scope;
 
   return napi_clear_last_error(env);
 }
@@ -1610,13 +1610,13 @@ napi_status napi_open_escapable_handle_scope(
   CHECK_ARG(env, result);
 
 //  JSContextRef ctx = env->GetContext();
-  // TODO
+    *result = new napi_escapable_handle_scope__();
 
   return napi_clear_last_error(env);
 }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod
+// @bsimethodhg 
 //---------------------------------------------------------------------------------------
 napi_status napi_close_escapable_handle_scope(
     napi_env env,
@@ -1627,8 +1627,8 @@ napi_status napi_close_escapable_handle_scope(
   CHECK_ARG(env, scope);
   
 //  JSContextRef ctx = env->GetContext();
-  // TODO
-
+    delete scope;
+    
   return napi_clear_last_error(env);
 }
 
