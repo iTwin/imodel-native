@@ -550,7 +550,7 @@ struct PolyfaceAuxData : RefCountedBase
         {
         None        = 0,
         Vector      = 1,
-        Convector   = 2,
+        Covector   = 2,
         Point       = 3, 
         Distance    = 4,
         };
