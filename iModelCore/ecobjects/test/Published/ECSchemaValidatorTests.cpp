@@ -219,6 +219,90 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
     }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, TestSchemaReferenceVersion)
+    {
+    
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="SchemaReferencedVersion" alias="srv" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:Element</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
+            <ECSchemaReference name="RefSchema" version="01.00" alias="ref"/>
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:Element</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    // Test successful validation of EC 3.1 reference
+    {
+    InitBisContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+
+    // Use an EC 3.1 schema as a reference
+    Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="TestClass"/>
+        </ECSchema>)xml";
+    ECSchemaPtr refSchema;
+    ECSchema::ReadFromXmlString(refSchema, refXml, *context);
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the referenced schema uses EC 3.1";
+    }
+
+    // Test unsuccessful validation of EC 3.0 reference
+    {
+    InitBisContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+
+    // Use an EC 3.0 schema as a reference
+    Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+            <ECEntityClass typeName="TestClass"/>
+        </ECSchema>)xml";
+    ECSchemaPtr refSchema;
+    ECSchema::ReadFromXmlString(refSchema, refXml, *context);
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the referenced schema uses EC 3.0";
+    }
+
+    // Test unsuccessful validation of EC 2.0 reference
+    {
+    InitBisContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+
+    // Use an EC 2.0 schema as a reference
+    Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECEntityClass typeName="TestClass"/>
+        </ECSchema>)xml";
+    ECSchemaPtr refSchema;
+    ECSchema::ReadFromXmlString(refSchema, refXml, *context);
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the referenced schema uses EC 2.0";
+    }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman              01/2018
 //---------------+---------------+---------------+---------------+---------------+-------
