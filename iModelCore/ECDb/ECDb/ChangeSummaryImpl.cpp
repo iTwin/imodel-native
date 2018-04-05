@@ -487,21 +487,14 @@ BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, bool include
 BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOption extractOption)
     {
     ChangeIterator iter(m_ecdb, changeSet);
-    TableMap const* lastTableMap = nullptr;
+
     for (ChangeIterator::RowEntry const& rowEntry : iter)
-        {
+    {
         if (!rowEntry.IsMapped())
-            {
-            if (LOG.isSeverityEnabled(LOG_WARNING))
-                {
-                if (lastTableMap != rowEntry.GetTableMap())
-                    {
-                    LOG.warningv("ChangeSet includes changes to unmapped table %s", rowEntry.GetTableName().c_str());
-                    lastTableMap = rowEntry.GetTableMap();
-                    }
-                }
+        {
+            LOG.warningv("ChangeSet includes changes to unmapped table %s", rowEntry.GetTableName().c_str());
             continue; // There are tables which are just not mapped to EC that we simply don't care about (e.g., be_Prop table)
-            }
+        }
 
         ECClassCP primaryClass = rowEntry.GetPrimaryClass();
         ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
