@@ -30,4 +30,14 @@ struct ASHRAE2010ClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
     ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2010ClassDefinition, ASHRAE2010ClassDefinition, ASHRAE2010ClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
     };
 
+struct MasterFormatClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_MasterFormatClassDefinition, MasterFormatClassDefinition, MasterFormatClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
+    };
+
+struct UniFormatClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition
+    {
+    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition, UniFormatClassDefinition, UniFormatClassDefinitionHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
+    };
+
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

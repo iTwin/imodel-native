@@ -16,6 +16,8 @@ CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(OmniClassClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ASHRAEClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ASHRAE2004ClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ASHRAE2010ClassDefinition)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(MasterFormatClassDefinition)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(UniFormatClassDefinition)
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
@@ -213,5 +215,93 @@ struct EXPORT_VTABLE_ATTRIBUTE ASHRAE2010ClassDefinition : ASHRAEClassDefinition
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ASHRAE2010ClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category);
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAE2010ClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+    };
+
+//=======================================================================================
+//! A CIBSE Class Definition element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE MasterFormatClassDefinition : ClassificationSystemClassDefinition
+    {
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_MasterFormatClassDefinition, ClassificationSystemClassDefinition);
+    private:
+        BE_PROP_NAME(Name)
+        BE_PROP_NAME(Description)
+
+    protected:
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT MasterFormatClassDefinition(CreateParams const& params) : T_Super(params) {}
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT MasterFormatClassDefinition(CreateParams const& params, Utf8CP name, Utf8CP description);
+        friend struct MasterFormatClassDefinitionHandler;
+        friend struct ClassificationSystemsDomain;
+
+        //---------------------------------------------------------------------------------------
+        // Creation
+        //---------------------------------------------------------------------------------------
+        //! Creates a CIBSEClassDefinition
+        //! @param[in]  db          db to insert class definition in
+        //! @param[in]  name        name of the CIBSE Class definition
+        //! @param[in]  Category    Category of the CIBSE Class definition
+        //! @return     a ptr to created CIBSEClassDefinition
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static MasterFormatClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP description);
+    public:
+        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(MasterFormatClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+
+        //! Sets the name of this CIBSEClassDefinition
+        //! @param[in]  name   new name for this CIBSEClassDefinition
+        void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
+
+        //! Sets the Category of this CIBSEClassDefinition
+        //! @param[in]  Category   new Category for this CIBSEClassDefinition
+        void SetDescription(Utf8CP description) { SetPropertyValue(prop_Description(), description); }
+
+        //! Gets the name of this CIBSEClassDefinition
+        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+
+        //! Gets the Category of this CIBSEClassDefinition
+        Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
+
+    };
+
+//=======================================================================================
+//! A CIBSE Class Definition element
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE UniFormatClassDefinition : ClassificationSystemClassDefinition
+    {
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition, ClassificationSystemClassDefinition);
+    private:
+        BE_PROP_NAME(Name)
+            BE_PROP_NAME(Description)
+
+    protected:
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT UniFormatClassDefinition(CreateParams const& params) : T_Super(params) {}
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT UniFormatClassDefinition(CreateParams const& params, Utf8CP name, Utf8CP description);
+        friend struct UniFormatClassDefinitionHandler;
+        friend struct ClassificationSystemsDomain;
+
+        //---------------------------------------------------------------------------------------
+        // Creation
+        //---------------------------------------------------------------------------------------
+        //! Creates a CIBSEClassDefinition
+        //! @param[in]  db          db to insert class definition in
+        //! @param[in]  name        name of the CIBSE Class definition
+        //! @param[in]  Category    Category of the CIBSE Class definition
+        //! @return     a ptr to created CIBSEClassDefinition
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static UniFormatClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP description);
+    public:
+        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(UniFormatClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+
+        //! Sets the name of this CIBSEClassDefinition
+        //! @param[in]  name   new name for this CIBSEClassDefinition
+        void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
+
+        //! Sets the Category of this CIBSEClassDefinition
+        //! @param[in]  Category   new Category for this CIBSEClassDefinition
+        void SetDescription(Utf8CP description) { SetPropertyValue(prop_Description(), description); }
+
+        //! Gets the name of this CIBSEClassDefinition
+        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+
+        //! Gets the Category of this CIBSEClassDefinition
+        Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
+
     };
 END_CLASSIFICATIONSYSTEMS_NAMESPACE

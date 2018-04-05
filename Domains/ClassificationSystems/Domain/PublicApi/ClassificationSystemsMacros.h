@@ -80,6 +80,8 @@
 #define CLASSIFICATIONSYSTEMS_CLASS_ASHRAEClassDefinition                                   "ASHRAEClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2004ClassDefinition                               "ASHRAE2004ClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_ASHRAE2010ClassDefinition                               "ASHRAE2010ClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_MasterFormatClassDefinition                             "MasterFormatClassDefinition"
+#define CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition                                "UniFormatClassDefinition"
 
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemsSectionConnectsElements                            "ClassificationSystemsSectionConnectsElements"
 #define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemsPathHasSections                                    "ClassificationSystemsPathHasSections"

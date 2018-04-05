@@ -17,6 +17,8 @@ DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(OmniClassClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAEClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAE2004ClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAE2010ClassDefinition)
+DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(MasterFormatClassDefinition)
+DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(UniFormatClassDefinition)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               03/2018
@@ -90,7 +92,7 @@ OmniClassClassDefinitionPtr OmniClassClassDefinition::Create
     return gridSurface;
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Martynas.Saulius               03/2018
+* @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ASHRAE2004ClassDefinition::ASHRAE2004ClassDefinition
 (
@@ -104,7 +106,7 @@ ASHRAE2004ClassDefinition::ASHRAE2004ClassDefinition
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Martynas.Saulius               03/2018
+* @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ASHRAE2004ClassDefinitionPtr ASHRAE2004ClassDefinition::Create
 (
@@ -123,7 +125,7 @@ ASHRAE2004ClassDefinitionPtr ASHRAE2004ClassDefinition::Create
     return gridSurface;
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Martynas.Saulius               03/2018
+* @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ASHRAE2010ClassDefinition::ASHRAE2010ClassDefinition
 (
@@ -137,7 +139,7 @@ ASHRAE2010ClassDefinition::ASHRAE2010ClassDefinition
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Martynas.Saulius               03/2018
+* @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ASHRAE2010ClassDefinitionPtr ASHRAE2010ClassDefinition::Create
 (
@@ -155,4 +157,72 @@ ASHRAE2010ClassDefinitionPtr ASHRAE2010ClassDefinition::Create
     ASHRAE2010ClassDefinitionPtr gridSurface = new ASHRAE2010ClassDefinition(params, name, Category);
     return gridSurface;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+MasterFormatClassDefinition::MasterFormatClassDefinition
+(
+    CreateParams const& params,
+    Utf8CP name,
+    Utf8CP description
+) : T_Super(params)
+    {
+    SetName(name);
+    SetDescription(description);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+MasterFormatClassDefinitionPtr MasterFormatClassDefinition::Create
+(
+    Dgn::DgnDbR db,
+    Utf8CP name,
+    Utf8CP description
+)
+    {
+    Dgn::DgnClassId classId = QueryClassId(db);
+    Dgn::DgnElement::CreateParams params(
+        db,
+        db.GetDictionaryModel().GetModelId(),
+        classId
+    );
+    MasterFormatClassDefinitionPtr gridSurface = new MasterFormatClassDefinition(params, name, description);
+    return gridSurface;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+UniFormatClassDefinition::UniFormatClassDefinition
+(
+    CreateParams const& params,
+    Utf8CP name,
+    Utf8CP description
+) : T_Super(params)
+    {
+    SetName(name);
+    SetDescription(description);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+UniFormatClassDefinitionPtr UniFormatClassDefinition::Create
+(
+    Dgn::DgnDbR db,
+    Utf8CP name,
+    Utf8CP description
+)
+    {
+    Dgn::DgnClassId classId = QueryClassId(db);
+    Dgn::DgnElement::CreateParams params(
+        db,
+        db.GetDictionaryModel().GetModelId(),
+        classId
+    );
+    UniFormatClassDefinitionPtr gridSurface = new UniFormatClassDefinition(params, name, description);
+    return gridSurface;
+    }
+
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
