@@ -23,7 +23,7 @@ struct TypeConfigImpl;
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   04/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-IMPORT_DLLE struct TypeConfig
+struct TypeConfig
     {
 public:  // OPERATOR_NEW_KLUDGE
 

@@ -13,6 +13,7 @@
 
 
 #include <ImagePP/all/h/HFCPtr.h>
+#include <TilePublisher\TilePublisher.h>
 #include "Threading\LightThreadPool.h"
 #include "SMSQLiteFile.h"
 #include "Stores/SMStoreUtils.h"
@@ -69,25 +70,27 @@ public:
 
 public:
 
-    DataSourceAccount*      GetDataSourceAccount();
-    StrategyType            GetStrategyType() { return m_strategyType; }
-    uint32_t                GetNextNodeID() { return m_nextNodeID++; }
-    WString                 GetWellKnownText() { return m_wktStr; }
-    void                    SetWellKnownText(const WString& wkt) { m_wktStr = wkt; }
+    DataSourceAccount*                  GetDataSourceAccount();
+    const DataSource::SessionName &     GetDataSourceSessionName();
+    StrategyType                        GetStrategyType() { return m_strategyType; }
+    uint32_t                            GetNextNodeID() { return m_nextNodeID++; }
+    WString                             GetWellKnownText() { return m_wktStr; }
+    void                                SetWellKnownText(const WString& wkt) { m_wktStr = wkt; }
 
-    BENTLEY_SM_EXPORT static Ptr Create(StrategyType strategy, DataSourceAccount* account);
+    BENTLEY_SM_EXPORT static Ptr        Create(StrategyType strategy, DataSourceAccount* account, const DataSource::SessionName &session);
 
 private:
 
     //SMGroupGlobalParameters() = delete;
-    SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account);
+    SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, const DataSource::SessionName &session);
 
 private:
 
-    StrategyType          m_strategyType = NORMAL;
-    DataSourceAccount*    m_account = nullptr;
-    std::atomic<uint32_t> m_nextNodeID = 0;
-    WString               m_wktStr;
+    StrategyType                m_strategyType = NORMAL;
+    DataSourceAccount*          m_dataSourceAccount = nullptr;
+    DataSource::SessionName     m_dataSourceSessionName;
+    std::atomic<uint32_t>       m_nextNodeID = 0;
+    WString                     m_wktStr;
     };
 
 struct SMGroupCache : public BENTLEY_NAMESPACE_NAME::RefCountedBase 
@@ -642,7 +645,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool IsRoot() { return m_isRoot; }
 
-        DataSourceAccount *GetDataSourceAccount(void);
+        DataSourceAccount   *           GetDataSourceAccount(void);
+        const DataSource::SessionName & GetDataSourceSessionName(void);
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
             {
@@ -1159,9 +1163,10 @@ void SMCesium3DTileStrategy<EXTENT>::_AddGroup(SMNodeGroup* pi_pNodeGroup)
 template<class EXTENT>
 size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT> pi_NodeHeader, SMNodeGroupPtr pi_Group)
     {
+    Json::Value nodeTile;
     if (m_sourceGCS != nullptr && m_sourceGCS != m_destinationGCS)
         {
-        auto reprojectExtentHelper = [this](DPoint3d& low, DPoint3d& high)
+        auto reprojectExtentHelper = [this](DRange3d& range, Json::Value& tile)
             {
             auto reprojectPointHelper = [this](DPoint3d& point)
                 {
@@ -1173,28 +1178,37 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
                 if (m_destinationGCS->XYZFromLatLong(point, outLatLong) != SUCCESS)
                     assert(false); // Error in reprojection
                 };
-            bvector<DPoint3d> corners =
-                { low,
-                  DPoint3d::From(high.x, low.y,  low.z),
-                  DPoint3d::From(high.x, high.y, low.z),
-                  DPoint3d::From(low.x,  high.y, low.z),
-                  DPoint3d::From(low.x,  low.y,  high.z),
-                  DPoint3d::From(high.x, low.y,  high.z),
-                  high,
-                  DPoint3d::From(low.x, high.y, high.z)
-                };
-            for (auto& point : corners) reprojectPointHelper(point);
-            DRange3d newExtent = DRange3d::From(corners);
-            low = newExtent.low;
-            high = newExtent.high;
+            //bvector<DPoint3d> corners(8);
+            //range.get8Corners(corners.data());
+            //for (auto& point : corners) reprojectPointHelper(point);
+            //range = DRange3d::From(corners);
+            DPoint3d    center = DPoint3d::FromInterpolate(range.low, .5, range.high);
+            DPoint3d lx = DPoint3d::From(range.high.x, center.y, center.z);
+            DPoint3d ly = DPoint3d::From(center.x, range.high.y, center.z);
+            DPoint3d lz = DPoint3d::From(center.x, center.y, range.high.z);
+            reprojectPointHelper(center);
+            reprojectPointHelper(lx);
+            reprojectPointHelper(ly);
+            reprojectPointHelper(lz);
+            DPoint3d halfAxesX, halfAxesY, halfAxesZ;
+            halfAxesX.DifferenceOf(lx, center);
+            halfAxesY.DifferenceOf(ly, center);
+            halfAxesZ.DifferenceOf(lz, center);
+            RotMatrix halfAxes = RotMatrix::FromRowValues(halfAxesX.x, halfAxesX.y, halfAxesX.z,
+                                                          halfAxesY.x, halfAxesY.y, halfAxesY.z,
+                                                          halfAxesZ.x, halfAxesZ.y, halfAxesZ.z);
+            TilePublisher::WriteBoundingVolume(tile, center, halfAxes);
+            //DPoint3d delta = DPoint3d::From(center.x - lx.x, center.y - ly.y, center.z - lz.z);
+            //range.low = DPoint3d::From(lx.x, ly.y, lz.z);
+            //range.high = DPoint3d::From(center.x + delta.x, center.y + delta.y, center.z + delta.z);
             };
-        reprojectExtentHelper(pi_NodeHeader.m_nodeExtent.low, pi_NodeHeader.m_nodeExtent.high);
-        if (/*pi_NodeHeader.m_nodeCount > 0 &&*/ pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+        reprojectExtentHelper(pi_NodeHeader.m_nodeExtent, nodeTile);
+        if (pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
             {
-            reprojectExtentHelper(pi_NodeHeader.m_contentExtent.low, pi_NodeHeader.m_contentExtent.high);
+            reprojectExtentHelper(pi_NodeHeader.m_contentExtent, nodeTile["content"]);
             }
         }
-    Json::Value nodeTile;
+
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
     pi_Group->Append3DTile(pi_NodeHeader.m_id.m_integerID, pi_NodeHeader.m_parentNodeID.m_integerID, nodeTile);
     m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, 0);

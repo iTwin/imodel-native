@@ -227,7 +227,6 @@ WebServiceKey GetBingKey()
     Utf8String readBuffer;    
     BENTLEY_NAMESPACE_NAME::NativeLogging::ILogger*   logger = BENTLEY_NAMESPACE_NAME::NativeLogging::LoggingManager::GetLogger("Bing");
 
-
     logger->debug("Retrieving Bing Key from CC");
 
     WString serverUrl;
@@ -508,7 +507,7 @@ void ScalableMeshLib::Host::Terminate(bool onProgramExit)
     t_scalableTerrainModelHost = NULL;
     TerminateProgressiveQueries();
 
-    //DataSourceManager::Shutdown();
+    DataSourceManager::Shutdown();
 
     }
 

@@ -18,13 +18,7 @@ public:
 
 private:
 
-    static DataSourceTransferScheduler* m_dataSourceTransferScheduler;
-
-    void                            shutDown(void);
-
-private:
-
-    DataSourceTransferScheduler(void);
+    void                            shutDown                        (void);
 
 protected:
 
@@ -66,8 +60,7 @@ protected:
     bool                            getShutDownFlag                 (void);
 
 public:
-    static Ptr                      Get                    (void);
-
+                                    DataSourceTransferScheduler     (void);
                                    ~DataSourceTransferScheduler     (void);
 
     DataSourceStatus                initializeTransferTasks         (unsigned int maxTasks);

@@ -18,6 +18,9 @@
     <ClCompile Include="SMUnitTestDisplayQuery.cpp">
       <Filter>Sources</Filter>
     </ClCompile>
+    <ClCompile Include="SMUnitTestGroundDetection.cpp">
+      <Filter>Sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SMUnitTestUtil.h">
@@ -26,9 +29,11 @@
     <ClInclude Include="SMUnitTestDisplayQuery.h">
       <Filter>Includes</Filter>
     </ClInclude>
+    <ClInclude Include="SMUnitTestGroundDetection.h">
+      <Filter>Includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="BuildTests.mke" />
     <None Include="BuildTests_vancouver.mke" />
     <None Include="filter_list.mki" />
     <None Include="Prewire.mke" />
@@ -38,5 +43,8 @@
     <Text Include="ignore_list.txt" />
     <Text Include="..\..\..\ScalableMesh-Data\displayQueryTestCases.txt" />
     <Text Include="..\..\..\ScalableMesh-Data\list.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\ScalableMeshCoreUnitTests.PartFile.xml" />
   </ItemGroup>
 </Project>

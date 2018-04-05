@@ -3,7 +3,7 @@
 #include "DataSourceAccountAzure.h"
 #include <assert.h>
 
-DataSourceAzure::DataSourceAzure(DataSourceAccount * sourceAccount) : DataSourceCloud(sourceAccount)
+DataSourceAzure::DataSourceAzure(DataSourceAccount * sourceAccount, const SessionName &session) : DataSourceCloud(sourceAccount, session)
 {
     setBuffer(nullptr);
 }

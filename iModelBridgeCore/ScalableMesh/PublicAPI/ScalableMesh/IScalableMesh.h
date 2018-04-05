@@ -19,6 +19,7 @@
 #include <ScalableMesh/IScalableMeshAnalysis.h>
 #include <ScalableMesh/IScalableMeshInfo.h>
 #include <ScalableMesh/IScalableMeshClippingOptions.h>
+#include "ScalableMeshDefs.h"
 
 #undef static_assert
 
@@ -205,9 +206,7 @@ struct IScalableMesh abstract:  IRefCounted
         virtual StatusInt                           _SetGCS(const GeoCoords::GCS& sourceGCS) = 0;
 
         virtual ScalableMeshState                          _GetState() const = 0;
-                       
-        virtual bool                                _IsProgressive() const = 0;
-
+                               
         virtual bool                                _IsReadOnly() const = 0;
 
         virtual bool                                _IsShareable() const = 0;
@@ -215,9 +214,7 @@ struct IScalableMesh abstract:  IRefCounted
         //Synchonization with data sources functions
         virtual bool                                _InSynchWithSources() const = 0; 
 
-        virtual bool                                _LastSynchronizationCheck(time_t& last) const = 0;        
-
-        virtual int                                 _SynchWithSources() = 0;  
+        virtual bool                                _LastSynchronizationCheck(time_t& last) const = 0;                
 
         virtual int                                 _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const = 0;
 
@@ -248,11 +245,15 @@ struct IScalableMesh abstract:  IRefCounted
         virtual void                               _SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts) = 0;
 
 
+        virtual bool                               _GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirt) = 0;
+
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) = 0;
 
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) = 0;
 
         virtual bool                               _RemoveSkirt(uint64_t skirtID) = 0;
+
+        virtual bool                               _IsInsertingClips() = 0;
 
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) = 0;
 
@@ -342,7 +343,7 @@ struct IScalableMesh abstract:  IRefCounted
         //! Gets the draping interface.
         //! @return The draping interface.
 
-        void TextureFromRaster(ITextureProviderPtr provider);
+        BENTLEY_SM_EXPORT void TextureFromRaster(ITextureProviderPtr provider);
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 
@@ -374,7 +375,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType queryType) const;
 
-        BENTLEY_SM_EXPORT IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
+        IScalableMeshPointQueryPtr         GetQueryInterface(ScalableMeshQueryType                queryType,                                                              
                                                                                BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS,
                                                                                const DRange3d&                      extentInTargetGCS) const;
 
@@ -385,8 +386,8 @@ struct IScalableMesh abstract:  IRefCounted
                                                                         const DRange3d&                      extentInTargetGCS) const;
 
         BENTLEY_SM_EXPORT IScalableMeshNodeRayQueryPtr    GetNodeQueryInterface() const;
-
-        BENTLEY_SM_EXPORT IScalableMeshEditPtr    GetMeshEditInterface() const;
+                
+        BENTLEY_SM_EXPORT IScalableMeshEditPtr        GetMeshEditInterface() const;
 
         BENTLEY_SM_EXPORT IScalableMeshAnalysisPtr    GetMeshAnalysisInterface();
 
@@ -408,9 +409,7 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   GetExtraFileNames(bvector<BeFileName>& extraFileNames) const;
 
         BENTLEY_SM_EXPORT ScalableMeshState      GetState() const;
-
-        BENTLEY_SM_EXPORT bool                   IsProgressive() const;
-
+        
         BENTLEY_SM_EXPORT bool                   IsReadOnly() const;
 
         BENTLEY_SM_EXPORT bool                   IsShareable() const;                        
@@ -421,15 +420,13 @@ struct IScalableMesh abstract:  IRefCounted
         // Deprecated. Remove.
         bool                                     InSynchWithDataSources() const { return InSynchWithSources(); }
 
-        BENTLEY_SM_EXPORT bool                   LastSynchronizationCheck(time_t& last) const;        
-
-        BENTLEY_SM_EXPORT int                    SynchWithSources(); 
+        BENTLEY_SM_EXPORT bool                   LastSynchronizationCheck(time_t& last) const;                
 
         BENTLEY_SM_EXPORT IScalableMeshNodePtr  GetRootNode();
 
-        BENTLEY_SM_EXPORT int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
+        int                    GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
 
-        BENTLEY_SM_EXPORT Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
+        Count                  GetCountInRange (const DRange2d& range, const CountType& type, const unsigned __int64& maxNumberCountedPoints) const;
 
         BENTLEY_SM_EXPORT uint64_t               AddClip(const DPoint3d* pts, size_t ptsSize);
 
@@ -448,12 +445,15 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void                   SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts);
 
 
+        BENTLEY_SM_EXPORT bool                   GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirtData);
 
         BENTLEY_SM_EXPORT bool                   ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
 
         BENTLEY_SM_EXPORT bool                   AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID);
 
         BENTLEY_SM_EXPORT bool                   RemoveSkirt(uint64_t skirtID);
+
+        BENTLEY_SM_EXPORT bool                   IsInsertingClips();
 
         BENTLEY_SM_EXPORT void                   SetIsInsertingClips(bool toggleInsertMode);
 
@@ -565,8 +565,8 @@ struct IScalableMesh abstract:  IRefCounted
         BENTLEY_SM_EXPORT void  GetAllTextures(bvector<IScalableMeshTexturePtr>& textures);
 #endif
 
-        BENTLEY_SM_EXPORT static void SetUserFilterCallback(MeshUserFilterCallback callback);
-        BENTLEY_SM_EXPORT void ReFilter();
+        static void SetUserFilterCallback(MeshUserFilterCallback callback);
+        void ReFilter();
 
     };
 

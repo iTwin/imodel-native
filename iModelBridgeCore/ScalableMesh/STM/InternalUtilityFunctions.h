@@ -85,4 +85,4 @@ struct BENTLEY_SM_EXPORT PtToPtConverter
     static void Transform(DPoint3d* ptsOut, const DPoint3d* ptsIn, size_t nbPts);
     };
 
-bool IsUrl(WCharCP filename);
+BENTLEY_SM_EXPORT bool IsUrl(WCharCP filename);

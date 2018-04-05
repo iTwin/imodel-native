@@ -1,19 +1,19 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ScalableMeshImportersLib_Vancouver.mke $
+#  $Source: ScalableMeshCreator_Vancouver.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshImportersLibPolicy.mki
-SolutionPolicyMki=$(baseDir)ScalableMeshImportersLib.mki
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshCreatorPolicy.mki
+SolutionPolicyMki=$(baseDir)ScalableMeshCreator.mki
 #BUILD_USING_VS2013=1
 OPTIMIZE_FOR_SPEED=1
 
 %include  mdl.mki
-appName     = ScalableMeshImportersLib
+appName     = ScalableMeshCreator
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
 
@@ -485,20 +485,11 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \
     $(ContextSubpartsLibs)CloudDataSource.lib \
-    $(ContextSubpartsLibs)ScalableMeshCoreLib.lib \
-	%if defined (BUILD_USING_VS2013)
-    $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
-    $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
-%elif defined (BUILD_USING_VS2015)
-    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
-    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
-%endif
+    $(ContextSubpartsLibs)ScalableMeshCore.lib \
     $(ContextSubpartsLibs)CGAL.lib \
     $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
     $(ContextSubpartsLibs)DgnView.lib \
     $(ContextSubpartsLibs)RasterCore.lib
-
-
 
 %include $(sharedMki)LinkLibrary.mki
 

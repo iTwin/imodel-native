@@ -1,19 +1,19 @@
 #----------------------------------------------------------------------------------------
 #
-#  $Source: ScalableMeshCoreLib_Vancouver.mke $
+#  $Source: ScalableMeshCore_Vancouver.mke $
 #
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
 baseDir         = $(_MakeFilePath)
-PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshCoreLibPolicy.mki
-SolutionPolicyMki=$(baseDir)ScalableMeshCoreLib.mki
+PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshCorePolicy.mki
+SolutionPolicyMki=$(baseDir)ScalableMeshCore.mki
 #BUILD_USING_VS2013=1
 OPTIMIZE_FOR_SPEED=1
 
 %include  mdl.mki
-appName     = ScalableMeshCoreLib
+appName     = ScalableMeshCore
 DLM_NAME    = $(appName)
 CCompPDBName = $(appName)
 
@@ -454,6 +454,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
 	$(ContextSubpartsLibs)acute3dio.lib \
 	$(ContextSubpartsLibs)freeimage.lib \
     $(ContextSubpartsLibs)RealityPlatform.lib \
+	$(ContextSubpartsLibs)RealityPlatformTools.lib \
     $(ContextSubpartsLibs)CCApi.lib\
 
 LINKER_LIBRARIES            = \

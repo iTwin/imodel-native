@@ -1180,6 +1180,12 @@ template <class DATATYPE, class EXTENT> bool SMSQLiteNodeDataStore<DATATYPE, EXT
         case SMStoreDataType::ClipDefinition:
             m_smSQLiteFile->DeleteClipPolygon(blockID.m_integerID);
             return true;
+        case SMStoreDataType::Skirt:
+            m_smSQLiteFile->DeleteSkirtPolygon(blockID.m_integerID);
+            return true;
+        case SMStoreDataType::DiffSet:
+            m_smSQLiteFile->DeleteDiffSet(blockID.m_integerID);
+            return true;
         }
     return false;
     }

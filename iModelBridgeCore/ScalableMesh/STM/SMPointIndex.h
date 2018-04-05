@@ -1456,9 +1456,9 @@ public:
     @return true if the index is balanced and false otherwise.
 
     -----------------------------------------------------------------------------*/
-    bool                IsBalanced() const;
+    BENTLEY_SM_EXPORT bool                IsBalanced() const;
 
-    SMTextureType       IsTextured() const;
+    BENTLEY_SM_EXPORT SMTextureType       IsTextured() const;
 
     BENTLEY_SM_EXPORT void              SetTextured(SMTextureType textureState);
 
@@ -1501,7 +1501,7 @@ public:
     Returns the data resolution
 
     -----------------------------------------------------------------------------*/
-    float              GetResolution() const;
+    BENTLEY_SM_EXPORT float              GetResolution() const;
 
     /**----------------------------------------------------------------------------
     Returns the highest depth level of the index
@@ -1515,7 +1515,7 @@ public:
 
     void FindNodes(bvector< HFCPtr<SMPointIndexNode<POINT, EXTENT> >>& nodes, EXTENT ext, size_t level, bool use2d = false) const;
 
-    size_t              GetTerrainDepth() const;
+    BENTLEY_SM_EXPORT size_t              GetTerrainDepth() const;
 
     /**----------------------------------------------------------------------------
     Returns the root node of the index
@@ -1580,7 +1580,7 @@ public:
     @return The treshold value.
 
     -----------------------------------------------------------------------------*/
-    size_t              GetSplitTreshold() const;
+    BENTLEY_SM_EXPORT size_t              GetSplitTreshold() const;
 
     void LoadIndexNodes(size_t& nLoaded, int level, bool headersOnly);
     void SetGenerating(bool isGenerating)

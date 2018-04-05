@@ -363,15 +363,15 @@ struct IScalableMeshMesh : public RefCountedBase
 
 		BENTLEY_SM_EXPORT void RemoveSlivers(double edgeLengthRatio=1e-6);
                 
-        BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const;
-        BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const;
+        bool FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const;
+        bool FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const;
 
-        BENTLEY_SM_EXPORT int ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const MTGNodeId triangleEdge, DPoint3d startPt) const;
+        int ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const MTGNodeId triangleEdge, DPoint3d startPt) const;
 
-        BENTLEY_SM_EXPORT int ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const;
+        int ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const;
 
-        BENTLEY_SM_EXPORT bool FindTriangleAlongRay(int* outTriangle, DRay3d& ray, MTGNodeId edge =-1) const;
-        BENTLEY_SM_EXPORT bool FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const;
+        bool FindTriangleAlongRay(int* outTriangle, DRay3d& ray, MTGNodeId edge =-1) const;
+        bool FindTriangleAlongRay(MTGNodeId& outTriangle, DRay3d& ray) const;
 
         BENTLEY_SM_EXPORT bool CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const;
 
@@ -495,8 +495,6 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual IScalableMeshNodePtr _GetParentNode() const = 0;
         
-        virtual void     _ApplyAllExistingClips(Transform tr) const = 0;
-
         virtual void     _RefreshMergedClip(Transform tr) const = 0;
 
         virtual bool     _AddClip(uint64_t id, bool isVisible) const = 0;
@@ -516,9 +514,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         virtual size_t  _GetPointCount() const = 0;                
 
         virtual bool _IsHeaderLoaded() const = 0;
-
-        virtual bool _IsMeshLoaded() const = 0;        
-
+        
         virtual void _LoadHeader() const = 0;
 
         virtual bool _HasClip(uint64_t id) const = 0;
@@ -580,17 +576,18 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT IScalableMeshNodePtr GetParentNode() const;
 
-        BENTLEY_SM_EXPORT void     ApplyAllExistingClips(Transform tr) const;
+        // Deprecated, use _RefreshMergedClip instead
+        //BENTLEY_SM_EXPORT void     ApplyAllExistingClips(Transform tr) const;
 
         BENTLEY_SM_EXPORT void     RefreshMergedClip(Transform tr) const;
 
-        BENTLEY_SM_EXPORT bool     AddClip(uint64_t id, bool isVisible=true) const;
+        bool     AddClip(uint64_t id, bool isVisible=true) const;
 
-        BENTLEY_SM_EXPORT bool     AddClipAsync(uint64_t id, bool isVisible = true) const;
+        bool     AddClipAsync(uint64_t id, bool isVisible = true) const;
 
-        BENTLEY_SM_EXPORT bool     ModifyClip(uint64_t id,bool isVisible=true) const;
+        bool     ModifyClip(uint64_t id,bool isVisible=true) const;
 
-        BENTLEY_SM_EXPORT bool     DeleteClip(uint64_t id, bool isVisible=true) const;
+        bool     DeleteClip(uint64_t id, bool isVisible=true) const;
 
         BENTLEY_SM_EXPORT DRange3d GetNodeExtent() const;
 
@@ -603,9 +600,7 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT size_t GetPointCount() const;        
 
         BENTLEY_SM_EXPORT bool IsHeaderLoaded() const;
-
-        BENTLEY_SM_EXPORT bool IsMeshLoaded() const;
-
+        
         BENTLEY_SM_EXPORT void LoadNodeHeader() const;
 
         BENTLEY_SM_EXPORT bool HasClip(uint64_t id) const;
@@ -789,13 +784,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         double              GetMaxPixelError() const;
 
-        StopQueryCallbackFP GetStopQueryCallback() const;
-
-        bool                GetUseSameResolutionWhenCameraIsOff() const;
-
-        bool                GetUseSplitThresholdForLevelSelection() const;
-
-        bool                GetUseSplitThresholdForTileSelection() const;
+        StopQueryCallbackFP GetStopQueryCallback() const;        
 
         const double*       GetRootToViewMatrix() const;
 
@@ -815,12 +804,6 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
         BENTLEY_SM_EXPORT void      SetRootToViewMatrix(const double rootToViewMatrix[][4]);    
 
         BENTLEY_SM_EXPORT StatusInt SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP);
-
-        BENTLEY_SM_EXPORT void      SetUseSameResolutionWhenCameraIsOff(bool useSameResolution);        
-
-        BENTLEY_SM_EXPORT void      SetUseSplitThresholdForLevelSelection(bool useSplitThreshold);        
-
-        BENTLEY_SM_EXPORT void      SetUseSplitThresholdForTileSelection(bool useSplitThreshold);    
 
         BENTLEY_SM_EXPORT void      SetViewClipVector(CLIP_VECTOR_NAMESPACE::ClipVectorPtr& viewClipVector);
         

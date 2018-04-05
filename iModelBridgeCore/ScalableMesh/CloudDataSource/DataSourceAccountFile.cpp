@@ -2,6 +2,8 @@
 #include "DataSourceAccountFile.h"
 #include "DataSourceFile.h"
 
+unsigned int const DATA_SOURCE_ACCOUNT_FILE_DEFAULT_TRANSFER_TASKS = 1;
+
 
 DataSourceAccountFile::DataSourceAccountFile(const ServiceName &service, const AccountName &account) : DataSourceAccount(service, account)
     {
@@ -15,13 +17,13 @@ DataSourceAccountFile::DataSourceAccountFile(const ServiceName &service, const A
 
 unsigned int DataSourceAccountFile::getDefaultNumTransferTasks(void)
     {
-    return DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS;
+    return DATA_SOURCE_ACCOUNT_FILE_DEFAULT_TRANSFER_TASKS;
     }
 
 
-DataSource * DataSourceAccountFile::createDataSource(void)
+DataSource * DataSourceAccountFile::createDataSource(const SessionName &session)
     {
-    return new DataSourceFile(this);
+    return new DataSourceFile(this, session);
     }
 
 DataSourceStatus DataSourceAccountFile::destroyDataSource(DataSource * dataSource)

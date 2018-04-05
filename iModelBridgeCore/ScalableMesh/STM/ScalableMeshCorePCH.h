@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: STM/ScalableMeshCoreLibPCH.h $
+|     $Source: STM/ScalableMeshCorePCH.h $
 |    $RCSfile: stdafx.h,v $
 |   $Revision: 1.11 $
 |       $Date: 2012/07/25 14:13:37 $

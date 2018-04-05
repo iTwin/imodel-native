@@ -153,7 +153,7 @@ bool Publish3DTile(IScalableMeshNodePtr& node, ISMDataStoreTypePtr<DRange3d>& pi
                 ++nbProcessedNodes;
             }
         };
-        distributor = new Distribution_Type(nodeDataSaver, nbThreads, maxQueueSize);
+        distributor = new Distribution_Type(nodeDataSaver, [](IScalableMeshNodePtr& node) {return true; }, nbThreads, maxQueueSize);
     }
 
     static auto loadChildExtentHelper = [](IScalableMeshNode* parent, IScalableMeshNode* child) ->void
@@ -297,7 +297,7 @@ StatusInt Publish3DTiles(SMMeshIndex<DPoint3d,DRange3d>* index, const WString& p
     oldMasterHeader.m_singleFile = false;
 
 #ifdef VANCOUVER_API
-    SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<DRange3d>*>(pDataStore.get())->GetDataSourceAccount());
+    SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<DRange3d>*>(pDataStore.get())->GetDataSourceAccount(), DataSource::SessionName());
     SMGroupCache::Ptr groupCache = nullptr;
     SMNodeGroupPtr rootNodeGroup = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
 

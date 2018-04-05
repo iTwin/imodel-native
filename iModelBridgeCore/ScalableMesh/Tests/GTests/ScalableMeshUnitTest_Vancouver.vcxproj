@@ -281,7 +281,6 @@ bb -ax64 -p ScalableMesh-Tested -f  ScalableMeshCoreUnitTests -r  ScalableMesh r
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="BuildTests.mke" />
     <None Include="BuildTests_vancouver.mke" />
     <None Include="filter_list.mki" />
     <None Include="Prewire.mke" />
@@ -295,11 +294,18 @@ bb -ax64 -p ScalableMesh-Tested -f  ScalableMeshCoreUnitTests -r  ScalableMesh r
   <ItemGroup>
     <ClCompile Include="ScalableMeshUnitTests.cpp" />
     <ClCompile Include="SMUnitTestDisplayQuery.cpp" />
+    <ClCompile Include="SMUnitTestGroundDetection.cpp" />
     <ClCompile Include="SMUnitTestUtil.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SMUnitTestDisplayQuery.h" />
+    <ClInclude Include="SMUnitTestGroundDetection.h" />
     <ClInclude Include="SMUnitTestUtil.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\ScalableMeshCoreUnitTests.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

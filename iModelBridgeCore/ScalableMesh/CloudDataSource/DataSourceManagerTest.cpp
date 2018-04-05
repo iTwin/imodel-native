@@ -170,7 +170,7 @@ DataSourceStatus DataSourceManagerTest::testDataSourceFile(void)
     service->createAccount(DataSourceAccount::AccountName(L"FileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey());
 
                                                             // Create DataSource
-    dataSource = manager->createDataSource(std::wstring(L"MyFileDataSource"), DataSourceService::ServiceName(L"FileAccount"), nullptr);
+    dataSource = manager->createDataSource(std::wstring(L"MyFileDataSource"), DataSourceService::ServiceName(L"FileAccount"), DataSource::SessionName());
     if (dataSource == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
                                                             // Run basic write/read test
@@ -205,7 +205,7 @@ DataSourceStatus DataSourceManagerTest::testDataSourceAzure(void)
                                                             // Create an account on Azure
     accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
                                                             // Create an Azure specific DataSource
-    dataSourceAzure = dynamic_cast<DataSourceAzure *>(manager->createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
+    dataSourceAzure = dynamic_cast<DataSourceAzure *>(manager->createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), DataSource::SessionName()));
     if (dataSourceAzure == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error);
                                                             // Blobs will be split up into segments of this size

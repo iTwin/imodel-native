@@ -1157,6 +1157,14 @@ size_t ScalableMeshDraping::ComputeLevelForTransform(const DMatrix4d& w2vMap)
     if (w2vMap.IsIdentity()) return m_scmPtr->GetTerrainDepth();
     DRange3d range;
     m_scmPtr->GetRange(range);
+    if (m_scmPtr->IsCesium3DTiles())
+        {
+        Transform tr = m_scmPtr->GetReprojectionTransform();
+        bvector<DPoint3d> box(8);
+        range.Get8Corners(box.data());
+        tr.Multiply(&box[0], &box[0], (int)box.size());
+        range = DRange3d::From(box);
+        }
     Transform w2vTrans;
     w2vTrans.InitFrom(w2vMap);
     w2vTrans.Multiply(range.low);

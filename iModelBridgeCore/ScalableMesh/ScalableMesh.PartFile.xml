@@ -16,7 +16,6 @@
     </Part>
 
   <Part Name="ScalableMeshRDSDependencies" >
-    <SubPart PartName="RealityPlatform"         PartFile="RealityModFramework"  Repository="RealityModFramework"/>
     <SubPart PartName="RealityPlatformTools"    PartFile="RealityModFramework"  Repository="RealityModFramework"/>
     <SubPart PartName="BentleyDesktopClientCCApi"  PartFile="SdkSources"        Repository="bsicommon" />
   </Part>
@@ -148,7 +147,6 @@
         <ProductDirectory   Name="Assemblies"                               Path="Dlls"                      />
 
         <ProductDirectory   Name="RealityAssemblies"                        Path="Dlls"                      />
-        <ProductDirectory   Name="RealityPlatformLibs"                      Path="Libs"                      />
         <ProductDirectory   Name="RealityPlatformToolsLibs"                 Path="Libs"                      />
         <ProductDirectory   Name="ZlibNativeAssemblies"                     Path="Dlls" />
         <ProductDirectory   Name="BentleyDesktopClientApi"                  Path="Dlls" />
@@ -217,7 +215,6 @@
         <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord" Repository="GeoCoord" />
         <SubPart PartName="DgnPlatformDataFiles" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>
-        <SubPart PartName="RealityPlatform" PartFile="RealityModFramework" Repository="RealityModFramework"/>
         <SubPart PartName="RealityPlatformTools" PartFile="RealityModFramework" Repository="RealityModFramework"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />      
         <Directories DirectoryListName="ScalableMeshSDK" />        
@@ -263,7 +260,7 @@
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
         <ProductDirectory Name="ZlibNativeAssemblies" Deliver="true" Path="Dlls"/>
-        <ProductDirectory Name="CGALAssemblies" Path="Dlls"/>
+        <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
         <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>        
         <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>            
@@ -287,7 +284,7 @@
         <ProductDirectory Name="DgnClientFxJavaScript"        Path="Dlls" Deliver="true"/>
         <ProductDirectory Name="DgnClientFxJavaScriptIcons"   Path="Dlls" Deliver="true"/>    
         <ProductDirectory Name="WSClientAssemblies" Path="Dlls" Deliver="true"/>
-        <ProductDirectory Name="PPNativeAssemblies" Path="Dlls" Deliver="true"/>
+        <ProductDirectory Name="RasterAssemblies" Path="Dlls" Deliver="true"/>            
         <ProductDirectory Name="DgnPlatformData" Path="Dlls"/>
         <ProductDirectory Name="GeoCoordNativeAssemblies" Path="Dlls"/>
         <ProductDirectory Name="AcisAssemblies" Path="Dlls"/>
@@ -321,7 +318,6 @@
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
         <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>        
         <ProductDirectory Name="BeCurlAssemblies" Path="Dlls"/>            
-        <ProductDirectory Name="Assets" Path="Dlls"/>         
         <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
         <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />

@@ -437,6 +437,15 @@ void SMSQLiteClipDefinitionsFile::DeleteClipPolygon(int64_t clipID)
     stmt->Step();
     }
 
+void SMSQLiteClipDefinitionsFile::DeleteSkirtPolygon(int64_t clipID)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "DELETE FROM SMSkirts WHERE PolygonId=?");
+    stmt->BindInt64(1, clipID);
+    stmt->Step();
+    }
+
 void SMSQLiteClipDefinitionsFile::DeleteCoveragePolygon(int64_t coverageID)
     {
     std::lock_guard<std::mutex> lock(dbLock);

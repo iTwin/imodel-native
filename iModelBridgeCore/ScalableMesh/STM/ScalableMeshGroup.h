@@ -175,8 +175,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         virtual const GeoCoords::GCS&  _GetGCS() const override;
         virtual StatusInt              _SetGCS(const GeoCoords::GCS& sourceGCS) override { return ERROR; }
-        virtual ScalableMeshState             _GetState() const override;
-        virtual bool                   _IsProgressive() const override { return false; }
+        virtual ScalableMeshState             _GetState() const override;        
         virtual bool                   _IsReadOnly() const override;
         virtual bool                   _IsShareable() const override;
         virtual int                    _GetRangeInSpecificGCS(DPoint3d& lowPt, DPoint3d& highPt, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& targetGCS) const;
@@ -187,6 +186,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
         virtual bool                               _GetClip(uint64_t clipID, bvector<DPoint3d>& clipData) override;
         virtual bool                               _AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveClip(uint64_t clipID) override;
+        virtual bool                               _IsInsertingClips() override;
         virtual void                               _SetIsInsertingClips(bool toggleInsertMode) override;
 
         virtual bool                               _ShouldInvertClips() override { return false; }
@@ -201,6 +201,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
 		virtual void                               _WriteExtraFiles() override {}
 
+        virtual bool                               _GetSkirt(uint64_t skirtID, bvector<bvector<DPoint3d>>& skirt) override;
         virtual bool                               _ModifySkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID) override;
         virtual bool                               _AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t skirtID, bool alsoAddOnTerrain = true) override;
         virtual bool                               _RemoveSkirt(uint64_t skirtID) override;
@@ -259,8 +260,7 @@ struct ScalableMeshGroup : public RefCounted<IScalableMesh>
 
         //Data source synchronization functions.
         virtual bool                   _InSynchWithSources() const override { return false; }
-        virtual bool                   _LastSynchronizationCheck(time_t& last) const override { return false; }
-        virtual int                    _SynchWithSources() override { return ERROR; }
+        virtual bool                   _LastSynchronizationCheck(time_t& last) const override { return false; }        
 
         virtual  IScalableMeshPtr             _GetGroup() override { return nullptr; }
 

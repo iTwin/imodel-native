@@ -71,6 +71,7 @@ EXE_LOPT1 = -ENTRY:wmainCRTStartup
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ECObjects.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeomSerialization.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)ScalableMesh.lib
@@ -80,7 +81,6 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(BeJsonCppLib)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BePointCloud.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJpeg.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)CloudDataSource.lib
-
 LINKER_LIBRARIES_DELAYLOADED  + $(ContextSubpartsLibs)BeXml.lib
 
 EXE_TMP_DIR  = $(o)

@@ -276,18 +276,18 @@ StatusInt SMNodeGroup::SaveTileToCache(Json::Value & tile, uint64_t tileID)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffer[]>& dest, DataSourceBuffer::BufferSize destSize)
     {
-    assert(this->GetDataSourceAccount() != nullptr); // The data source account must be set
+    assert(GetDataSourceAccount() != nullptr);      // The data source account must be set
 
                                                      // Get the thread's DataSource or create a new one
-    DataSource *dataSource = nullptr;
-    if ((dataSource = this->GetDataSourceAccount()->getOrCreateThreadDataSource()) == nullptr)
+    DataSource *dataSource;
+    if ((dataSource = DataSourceManager::Get()->getOrCreateThreadDataSource(*GetDataSourceAccount(), GetDataSourceSessionName())) == nullptr)
         {
         assert(!"Could not initialize data source");
         return nullptr;
         }
 
     // Make sure caching is enabled for this DataSource
-    dataSource->setCachingEnabled(s_stream_enable_caching);
+//  dataSource->setCachingEnabled(s_stream_enable_caching);
 
     dest.reset(new unsigned char[destSize]);
 
@@ -621,6 +621,14 @@ DataSourceAccount * SMNodeGroup::GetDataSourceAccount(void)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lee.Bull         02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+const DataSource::SessionName &SMNodeGroup::GetDataSourceSessionName(void)
+    {
+    return m_parametersPtr->GetDataSourceSessionName();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNodeGroup::DownloadCesiumTileset(const DataSourceURL & url, Json::Value & tileset)
@@ -874,9 +882,10 @@ SMGroupCache::Ptr SMGroupCache::Create(node_header_cache* nodeCache)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account)
+SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSourceAccount* account, const DataSource::SessionName &session)
     : m_strategyType(strategy),
-      m_account(account)
+      m_dataSourceAccount(account),
+      m_dataSourceSessionName(session)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -884,14 +893,22 @@ SMGroupGlobalParameters::SMGroupGlobalParameters(StrategyType strategy, DataSour
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataSourceAccount * SMGroupGlobalParameters::GetDataSourceAccount()
     {
-    return m_account;
+    return m_dataSourceAccount;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Lee.Bull        02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+const DataSource::SessionName &SMGroupGlobalParameters::GetDataSourceSessionName()
+    {
+    return m_dataSourceSessionName;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account)
+SMGroupGlobalParameters::Ptr SMGroupGlobalParameters::Create(StrategyType strategy, DataSourceAccount * account, const DataSource::SessionName &session)
     {
-    return new SMGroupGlobalParameters(strategy, account);
+    return new SMGroupGlobalParameters(strategy, account, session);
     }
 
