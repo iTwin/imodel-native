@@ -41,7 +41,7 @@ static int runBridge(int argc, WCharCP argv[])
 
     saparams.Initialize();
 
-    if (affinityLevel != iModelBridgeAffinityLevel::ExactMatch)
+    if (affinityLevel == iModelBridgeAffinityLevel::None)
         {
         fprintf(stderr, "Affinity-check failed\n");
         return BentleyStatus::ERROR;
