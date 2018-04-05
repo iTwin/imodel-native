@@ -468,6 +468,7 @@ private:
     bool m_explicitlyDefinedMinorLabel;
     bool m_explicitlyDefinedSubLabel;
     Utf8String m_spacer;
+    Utf8String m_labelOverride;
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
     BEU::UnitCP m_inputUnit;
@@ -523,6 +524,7 @@ public:
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
     BEU::UnitCP GetInputUnit()  const {return m_inputUnit;}
     UNITS_EXPORT void SetInputUnit(BEU::UnitCP unit);
+    void SetInputUnitLabel(Utf8CP label) {m_labelOverride = label;}
     bool HasInputUnit()  const {return nullptr != m_inputUnit;}
     bool HasMajorUnit()  const {return nullptr != GetUnit(indxMajor);}
     bool HasMiddleUnit() const {return nullptr != GetUnit(indxMiddle);}
@@ -659,6 +661,9 @@ public:
     //! Returns a const pointer to this Format's CompositeValueSpec if it exists.
     //! Returns nullptr if no CompositeValueSpec is defined.
     CompositeValueSpecCP GetCompositeSpec() const { return HasComposite() ? &m_compositeSpec : nullptr; }
+    //! Returns a pointer to this Format's CompositeValueSpec if it exists.
+    //! Returns nullptr if no CompositeValueSpec is defined.
+    CompositeValueSpecP GetCompositeSpecP() { return HasComposite() ? &m_compositeSpec : nullptr; }
     //! Returns the number of units defined on this Format's CompositeValueSpec.
     //! Returns 0 if the CompositeValueSpec has no units OR in the case that no CompositeValueSpec
     //! is defined on this NumericFormatSpec.
