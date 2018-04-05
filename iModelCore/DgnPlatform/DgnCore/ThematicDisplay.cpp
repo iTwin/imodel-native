@@ -246,8 +246,7 @@ void ThematicMeshColorMap::Init (ThematicDisplaySettingsCR settings, size_t size
 
     m_colors.resize (size);
     settings.GetGradient (keys, GradientSymb::MAX_GRADIENT_KEYS, &fetchedKeys);
-#pragma warning (push)
-#pragma warning (disable:4838)
+PUSH_MSVC_IGNORE(4838)
     for(size_t i=0; i < fetchedKeys; i++)
         {
         ColorDef color = ColorDef (keys[i].red, keys[i].green, keys[i].blue);
@@ -256,7 +255,7 @@ void ThematicMeshColorMap::Init (ThematicDisplaySettingsCR settings, size_t size
         keyColors[i] = color;
         falseColors [intKeyValues [i]] = color;
         }
-#pragma warning (pop)
+POP_MSVC_IGNORE
 
     for(size_t i=0; i+1 < fetchedKeys; i++)
         {
@@ -419,7 +418,7 @@ Image      ThematicDisplaySettings::GetImage()  const
     {
     int                     marginSize = (int) ((double) THEMATIC_TEXTURE_SIZE * s_margin);
     size_t                  colorSize = THEMATIC_TEXTURE_SIZE - 2 * marginSize;
-    static double           s_defaultDiffuse = .6, s_defaultAmbient = 0.1, s_defaultSbmapecularExponent = .9, s_defaultSpecular = .05, s_defaultFinish = 0.1;
+    // unused - static double           s_defaultDiffuse = .6, s_defaultAmbient = 0.1, s_defaultSbmapecularExponent = .9, s_defaultSpecular = .05, s_defaultFinish = 0.1;
 
     ThematicLegendCR        legend      = GetLegend ();
     size_t                  legendSize  = legend.GetNEntries ();
@@ -466,7 +465,7 @@ Image      ThematicDisplaySettings::GetImage()  const
         }
 
     for (auto& texturePixel : m_texturePixels)
-        texturePixel.m_alpha = 255;
+        texturePixel.SetAlpha(255);
 
     return Image(1, THEMATIC_TEXTURE_SIZE, ByteStream(reinterpret_cast<uint8_t*> (&m_texturePixels[0]), sizeof(m_texturePixels)), Image::Format::Rgba);
     }
