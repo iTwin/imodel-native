@@ -299,7 +299,7 @@ ICancellationTokenPtr ct
     HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
 
     request.SetCancellationToken(ct);
-    return request.PerformAsync()->Then<WSRepositoriesResult>([] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSRepositoriesResult>([this] (HttpResponse& httpResponse)
         {
         return ResolveGetRepositoriesResponse(httpResponse);
         });
@@ -345,7 +345,7 @@ ICancellationTokenPtr ct
 
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this] (HttpResponse& httpResponse)
         {
         return ResolveObjectsResponse(httpResponse);
         });
@@ -453,7 +453,7 @@ ICancellationTokenPtr ct
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this] (HttpResponse& httpResponse)
         {
         return ResolveObjectsResponse(httpResponse);
         });
@@ -610,7 +610,7 @@ ICancellationTokenPtr ct
     request.SetCancellationToken(ct);
     request.SetUploadProgressCallback(uploadProgressCallback);
 
-    return request.PerformAsync()->Then<WSUpdateObjectResult>([] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSUpdateObjectResult>([this] (HttpResponse& httpResponse)
         {
         return ResolveUpdateObjectResponse(httpResponse);
         });
