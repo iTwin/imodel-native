@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/structs/cpp/refmethods/refrotmatrixInvert.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -27,12 +27,17 @@ DPoint3dCR pointIN
     {
     DVec3d  col0, col1, col2, point;
     double  det, inverseDet;
-
+    static double s_cramerRelTol = 1.0e-10;
     this->GetColumns (col0, col1, col2);
-
+    double a0 = col0.Magnitude ();
+    double a1 = col1.Magnitude ();
+    double a2 = col2.Magnitude ();
+    double a = a0 + a1 + a2;
     det = col0.TripleProduct (col1, col2);
-
-    if (det != 0.0)
+    // We would like to use cramer's rule.  But deciding when it fails is tricky.
+    // Use it if the determinant is hugely clearly nonzoro.   If that fails, fall through to computing full inverse.
+    // determinant is a cubed distance quantity.
+    if (fabs (det) > s_cramerRelTol * (a * a * a))
         {
         inverseDet = 1.0 / det;
 
@@ -41,15 +46,18 @@ DPoint3dCR pointIN
         point.z = col0.TripleProduct (col1, (DVec3dCR)pointIN) * inverseDet;
 
         result = point;
-        }
-    else
-        {
-        /* Matrix is singular.  Treat it as the identity. */
-        result = pointIN;
-        return false;
+        return true;
         }
 
-    return true;
+    // maybe singular.   Let the inverter make awkward decisions . . .
+    RotMatrix inverse;
+    result = pointIN;
+    if (inverse.InverseOf (*this))
+        {
+        inverse.Multiply (result);
+        return true;
+        }
+    return false;
     }
 
 

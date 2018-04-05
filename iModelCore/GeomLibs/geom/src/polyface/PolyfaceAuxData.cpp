@@ -91,7 +91,7 @@ void PolyfaceAuxData::Transform(TransformCR transform)
                                 rMatrix.Multiply(point);
                                 break;
 
-                            case DataType::Convector:
+                        case TransformType::Covector:
                                 inverseRMatrix.MultiplyTranspose(point);
                                 break;
 
