@@ -1386,6 +1386,9 @@ Attachment::Root3dPtr Attachment::Root3d::Create(Sheet::ViewController& sheetCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 Attachment::Root2dPtr Attachment::Root2d::Create(Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context)
     {
+#if defined(NO_2D_ATTACHMENTS)
+    return nullptr;
+#else
     auto& db = sheetController.GetDgnDb();
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (attach.IsNull())
@@ -1408,6 +1411,7 @@ Attachment::Root2dPtr Attachment::Root2d::Create(Sheet::ViewController& sheetCon
         return nullptr;
 
     return new Sheet::Attachment::Root2d(sheetController, *attach, context, view2d, *viewRoot);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
