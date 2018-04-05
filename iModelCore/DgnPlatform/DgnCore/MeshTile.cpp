@@ -1764,14 +1764,14 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
             auto&   polyface = polyfaces[i];
 
             if (polyface->HasFacets())
-                { 
+                {
                 GeometryParams faceParams;
                 params[i].ToGeometryParams(faceParams, baseParams);
-                
+
                 GraphicParams gfParams;
                 nullContext.CookGeometryParams(faceParams, gfParams);
 
-                TileDisplayParamsCPtr displayParams = TileDisplayParams::Create(GetDisplayParams().GetColor(), faceParams);
+                TileDisplayParamsCPtr displayParams = TileDisplayParams::Create(gfParams.GetFillColor().GetValue(), faceParams);
                 tilePolyfaces.push_back (TileGeometry::TilePolyface (*displayParams, *polyface));
                 }
             }
