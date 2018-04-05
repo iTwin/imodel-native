@@ -638,5 +638,59 @@ public:
     };  // DwgDbXrecord
 DWGDB_DEFINE_OBJECTPTR (Xrecord)
 
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          04/18
++===============+===============+===============+===============+===============+======*/
+class DwgDbXrefGraphNode : public DWGDB_EXTENDCLASS(XrefGraphNode)
+    {
+public:
+    DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(XrefGraphNode))
+
+    DWGDB_EXPORT DwgDbXrefGraphNode (WCharCP name = nullptr, DwgDbObjectIdCR id = DwgDbObjectId(), DwgDbDatabaseP dwg = nullptr, DwgDbXrefStatus status = DwgDbXrefStatus::Resolved);
+
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetIncomingNode (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetOutgoingNode (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetCycleIn (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetCycleOut (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetNextCycleNode () const;
+    DWGDB_EXPORT int                    GetNumIncoming () const;
+    DWGDB_EXPORT int                    GetNumOutgoing () const;
+    DWGDB_EXPORT int                    GetNumCycleIn () const;
+    DWGDB_EXPORT int                    GetNumCycleOut () const;
+    DWGDB_EXPORT DwgDbXrefStatus        GetXrefStatus () const;
+    DWGDB_EXPORT DwgString      GetName () const;
+    DWGDB_EXPORT DwgDbObjectId  GetBlockId () const;
+    DWGDB_EXPORT DwgDbDatabaseP GetDatabase () const;
+    DWGDB_EXPORT bool           IsCycleNode () const;
+    DWGDB_EXPORT bool           IsNested () const;
+    DWGDB_EXPORT void           SetName (DwgStringCR name);
+    DWGDB_EXPORT void           SetBlockId (DwgDbObjectIdCR id);
+    DWGDB_EXPORT void           SetDatabase (DwgDbDatabaseP dwg);
+    };  // DwgDbXrefGraphNode
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbXrefGraphNode)
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          04/18
++===============+===============+===============+===============+===============+======*/
+class DwgDbXrefGraph : public DWGDB_EXTENDCLASS(XrefGraph)
+    {
+public:
+    DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(XrefGraph))
+
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetXrefNode (DwgStringCR name) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetXrefNode (DwgDbObjectIdCR blockId) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetXrefNode (DwgDbDatabaseP dwg) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetXrefNode (int index) const;
+    DWGDB_EXPORT DwgDbXrefGraphNodeP    GetHostDwg () const;
+    DWGDB_EXPORT bool   IsEmpty () const;
+    DWGDB_EXPORT size_t GetNodeCount () const;
+    DWGDB_EXPORT bool   MarkUnresolvedTrees ();
+    DWGDB_EXPORT bool   FindCycles (DwgDbXrefGraphNodeP start = nullptr);
+    DWGDB_EXPORT void   Reset ();
+
+    DWGDB_EXPORT static DwgDbStatus     Build (DwgDbXrefGraph& graphOut, DwgDbDatabaseP hostDwg, bool includeGhosts = false);
+    };  // DwgDbXrefGraph
+DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbXrefGraph)
+
 END_DWGDB_NAMESPACE
 //__PUBLISH_SECTION_END__

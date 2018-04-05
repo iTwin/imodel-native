@@ -113,6 +113,8 @@ public:
     DWGDB_EXPORT DwgFileVersion     GetFileVersion () const;
     DWGDB_EXPORT DwgDbStatus        SaveAs (WCharCP newFileName, DwgFileVersion ver = DwgFileVersion::Current, bool createBakFile = false);
     DWGDB_EXPORT DwgDbStatus        SaveAsDxf (WCharCP dxfFileName, DwgFileVersion ver = DwgFileVersion::Current, int precision = 6);
+    DWGDB_EXPORT DwgDbStatus        BindXrefs (DwgDbObjectIdArrayCR xrefBlocks, bool insertBind = true, bool allowUnresolved = false, bool quiet = true);
+    DWGDB_EXPORT DwgDbStatus        ResolveXrefs (bool useThreadEngine = true, bool newXrefsOnly = false);
     };  // DwgDbDatabase
 
 /*=================================================================================**//**

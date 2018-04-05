@@ -38,6 +38,7 @@
 #include    <Teigha/Drawing/Include/DbDatabase.h>
 #include    <Teigha/Drawing/Include/DbLayoutManager.h>
 #include    <Teigha/Drawing/Include/DbXrecord.h>
+#include    <Teigha/Drawing/Include/DbXrefGraph.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewBorder.h>
 #include    <Teigha/Drawing/Include/ModelDocObj/DbViewRepBlockReference.h>
 #include    <Teigha/Kernel/Include/OdString.h>
@@ -398,6 +399,8 @@ DEFINE_DWGDB_TYPEDEFS (DwgDbIBLBackground)
 DEFINE_DWGDB_TYPEDEFS (DwgDbImageBackground)
 DEFINE_DWGDB_TYPEDEFS (DwgDbSkyBackground)
 DEFINE_DWGDB_TYPEDEFS (DwgDbSolidBackground)
+DEFINE_DWGDB_TYPEDEFS (DwgDbXrefGraph)
+DEFINE_DWGDB_TYPEDEFS (DwgDbXrefGraphNode)
 
 
 enum class DwgDbStatus
@@ -758,6 +761,16 @@ enum class SnapIsoPair
     TopIsoplane             = 1,
     RightIsoplane           = 2
     };  // snapIsoPair
+
+enum class DwgDbXrefStatus
+    {
+    NotAnXref               = DWGDB_SDKENUM_DB(kXrfNotAnXref),
+    Resolved                = DWGDB_SDKENUM_DB(kXrfResolved),
+    Unloaded                = DWGDB_SDKENUM_DB(kXrfUnloaded),
+    Unreferenced            = DWGDB_SDKENUM_DB(kXrfUnreferenced),
+    FileNotFound            = DWGDB_SDKENUM_DB(kXrfFileNotFound ),
+    Unresolved              = DWGDB_SDKENUM_DB(kXrfUnresolved),
+    };  // XrefStatus
 
 // platform types commonly used across OpenDWG & RealDWG
 typedef DWGDB_SDKNAME(bool,     Adesk::Boolean)     DwgDbBool;

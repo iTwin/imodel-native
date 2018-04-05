@@ -379,6 +379,7 @@ bool            DwgDbBlockTableRecord::IsAnonymous () const     { return T_Super
 bool            DwgDbBlockTableRecord::HasAttributeDefinitions () const { return T_Super::hasAttributeDefinitions(); }
 DPoint3d        DwgDbBlockTableRecord::GetBase () const         { return Util::DPoint3dFrom(T_Super::origin()); }
 DwgDbDatabaseP  DwgDbBlockTableRecord::GetXrefDatabase (bool unresolve) const { return static_cast<DwgDbDatabaseP>(T_Super::xrefDatabase(unresolve)); }
+DwgDbXrefStatus DwgDbBlockTableRecord::GetXrefStatus () const { return DWGDB_UPWARDCAST(XrefStatus)(T_Super::xrefStatus()); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
