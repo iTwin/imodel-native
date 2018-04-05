@@ -17,7 +17,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                06/2017
 +===============+===============+===============+===============+===============+======*/
-struct DefaultECInstanceChangeHandlerTests : ::testing::Test
+struct DefaultECInstanceChangeHandlerTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     ECDbR m_db;
@@ -38,6 +38,7 @@ struct DefaultECInstanceChangeHandlerTests : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         s_project->GetECDb().AbandonChanges();
         m_handler = DefaultECInstanceChangeHandler::Create();
         }

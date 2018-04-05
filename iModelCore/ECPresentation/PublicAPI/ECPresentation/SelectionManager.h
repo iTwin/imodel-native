@@ -62,15 +62,8 @@ enum class SelectionChangeType
 //! @ingroup GROUP_UnifiedSelection
 // @bsiclass                                    Grigas.Petraitis                08/2016
 //=======================================================================================
-struct SelectionChangedEvent : RapidJsonExtendedDataHolder<>
+struct SelectionChangedEvent : RefCountedBase, RapidJsonExtendedDataHolder<>
 {
-    ECPRESENTATION_EXPORT static const Utf8CP JSON_MEMBER_Source;
-    ECPRESENTATION_EXPORT static const Utf8CP JSON_MEMBER_ConnectionId;
-    ECPRESENTATION_EXPORT static const Utf8CP JSON_MEMBER_IsSubSelection;
-    ECPRESENTATION_EXPORT static const Utf8CP JSON_MEMBER_ChangeType;
-    ECPRESENTATION_EXPORT static const Utf8CP JSON_MEMBER_Keys;
-    ECPRESENTATION_EXPORT static const Utf8CP JSON_MEMBER_ExtendedData;
-
 private:
     IConnection const* m_connection;
     Utf8String m_sourceName;
@@ -78,19 +71,23 @@ private:
     bool m_isSubSelection;
     KeySetCPtr m_keys;
 
-public:
-    //! Constructor. Creates the event based on the supplied parameters.
     SelectionChangedEvent(IConnectionCR connection, Utf8String sourceName, SelectionChangeType changeType, bool isSubSelection, KeySetCR keys)
         : m_connection(&connection), m_sourceName(sourceName), m_changeType(changeType), m_isSubSelection(isSubSelection), m_keys(&keys)
         {}
 
-    //! Copy-constructor. Copies the supplied event.
     SelectionChangedEvent(SelectionChangedEventCR other)
         : m_connection(other.m_connection), m_sourceName(other.m_sourceName), m_changeType(other.m_changeType), m_isSubSelection(other.m_isSubSelection), m_keys(other.m_keys)
         {}
 
-    //! Constructor. Creates the event from the JSON object. Uses the supplied connection cache to find the connection.
-    ECPRESENTATION_EXPORT SelectionChangedEvent(IConnectionCacheCR, JsonValueCR);
+public:
+    //! Constructor. Creates the event based on the supplied parameters.
+    ECPRESENTATION_EXPORT static SelectionChangedEventPtr Create(IConnectionCR connection, Utf8String sourceName, SelectionChangeType changeType, bool isSubSelection, KeySetCR keys)
+        {
+        return new SelectionChangedEvent(connection, sourceName, changeType, isSubSelection, keys);
+        }
+
+    //! Copy-constructor. Copies the supplied event.
+    ECPRESENTATION_EXPORT static SelectionChangedEventPtr Create(SelectionChangedEventCR other) {return new SelectionChangedEvent(other);}
 
     //! Is this event valid.
     bool IsValid() const {return nullptr != m_connection;}
@@ -115,6 +112,7 @@ public:
 
     //! Serialize this event to JSON.
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* = nullptr) const;
+    ECPRESENTATION_EXPORT static SelectionChangedEventPtr FromJson(IConnectionCacheCR, JsonValueCR);
 };
 
 //=======================================================================================

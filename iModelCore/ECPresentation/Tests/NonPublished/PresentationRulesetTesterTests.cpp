@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |  $Source: Tests/NonPublished/PresentationRulesetTesterTests.cpp $
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <Bentley/BeNumerical.h>
@@ -19,7 +19,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 //! Sets up a PresentationRulesetTester pointer for use in tests
 // @bsiclass                                               Emily.Pazienza        10/2016
 //+===============+===============+===============+===============+===============+======
-struct PresentationTestingUnitTests : public ::testing::Test, IIssueListener
+struct PresentationTestingUnitTests : ECPresentationTest, IIssueListener
     {
     static ECDbTestProject* s_project;
     PresentationRulesetTester* m_tester;
@@ -43,6 +43,7 @@ struct PresentationTestingUnitTests : public ::testing::Test, IIssueListener
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         BeFileName rulesetsDir;
         BeTest::GetHost().GetDocumentsRoot(rulesetsDir);
         rulesetsDir.AppendToPath(L"ECPresentationTestData");

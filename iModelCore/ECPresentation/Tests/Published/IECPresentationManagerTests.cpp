@@ -18,7 +18,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                12/2016
 +===============+===============+===============+===============+===============+======*/
-struct IECPresentationManagerTests : ::testing::Test
+struct IECPresentationManagerTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     TestConnectionManager m_connections;
@@ -52,6 +52,7 @@ struct IECPresentationManagerTests : ::testing::Test
     +---------------+---------------+---------------+---------------+---------------+------*/
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         Localization::Init();
 
         m_manager = new TestECPresentationManager(m_connections);

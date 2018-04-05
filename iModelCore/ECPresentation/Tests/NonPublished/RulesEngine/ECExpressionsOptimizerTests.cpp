@@ -2,13 +2,14 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/ECExpressionsOptimizerTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "../../../Source/RulesDriven/RulesEngine/ECExpressionContextsProvider.h"
 #include "../../../Source/RulesDriven/RulesEngine/CustomFunctions.h"
+#include "TestHelpers.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -17,7 +18,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2017
 +===============+===============+===============+===============+===============+======*/
-struct ECExpressionsOptimizerTests : ::testing::Test
+struct ECExpressionsOptimizerTests : ECPresentationTest
     {
     ECExpressionsCache m_expressionsCache;
     ECExpressionOptimizer m_optimizer;

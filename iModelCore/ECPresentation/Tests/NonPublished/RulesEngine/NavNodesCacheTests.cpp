@@ -45,7 +45,7 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2017
 +===============+===============+===============+===============+===============+======*/
-struct NodesCacheTests : ::testing::Test
+struct NodesCacheTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     
@@ -60,6 +60,7 @@ struct NodesCacheTests : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         if (!s_project->GetECDb().IsDbOpen())
             s_project->Open("NodesCacheTests");
 
@@ -1440,7 +1441,7 @@ TEST_F(NodesCacheTests, LocateNode_LocatesCustomNode)
     ASSERT_TRUE(locatedNode.IsValid());
     ASSERT_TRUE(node1->Equals(*locatedNode));
 
-    // verify the node is not found when node hash doesnt match
+    // verify the node is not found when node hash doesnt matchSetInstanceId
     locatedNode = m_cache->LocateNode(*m_connection, *NavNodeKey::Create("type", {"wrong hash"}));
     ASSERT_TRUE(locatedNode.IsNull());
     }

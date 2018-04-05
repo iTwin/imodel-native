@@ -2,7 +2,7 @@
 #
 #     $Source: Source/Dependencies.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 ECPresentationPublicHeaders     = $(PublicApiDirectory)ECPresentation.h         \
@@ -13,7 +13,11 @@ ECPresentationPublicHeaders     = $(PublicApiDirectory)ECPresentation.h         
                                   $(PublicApiDirectory)DataSource.h             \
                                   $(PublicApiDirectory)IECPresentationManager.h \
                                   $(PublicApiDirectory)SelectionManager.h       \
-                                  $(PublicApiDirectory)Connection.h  
+                                  $(PublicApiDirectory)IECPresentationSerializer.h\
+                                  $(PublicApiDirectory)DgnECPresentationSerializer.h\
+                                  $(PublicApiDirectory)Connection.h             \
+                                  $(PublicApiDirectory)Update.h                 \
+                                  $(PublicApiDirectory)ContentFieldEditors.h
 
 ECPresentationInternalHeaders   = $(SourceDirectory)ECDbBasedCache.h            \
                                   $(SourceDirectory)ValueHelpers.h

@@ -15,7 +15,7 @@
 #include <ECPresentation/RulesDriven/UserSettings.h>
 #include <ECPresentation/RulesDriven/ECInstanceChangeHandlers.h>
 #include <ECPresentation/RulesDriven/ECInstanceChangeEvents.h>
-#include <ECPresentation/RulesDriven/Update.h>
+#include <ECPresentation/Update.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE

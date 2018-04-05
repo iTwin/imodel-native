@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/RulesEngine/RulesEnginePerformanceTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -17,7 +17,7 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +===============+===============+===============+===============+===============+======*/
-struct RulesEnginePerformanceTests : ::testing::Test
+struct RulesEnginePerformanceTests : ECPresentationTest
 {
     struct Timer : StopWatch
         {

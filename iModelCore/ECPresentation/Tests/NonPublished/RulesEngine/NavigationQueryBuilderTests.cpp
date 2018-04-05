@@ -13,6 +13,7 @@
 //---------------------------------------------------------------------------------------
 void NavigationQueryBuilderTests::SetUp()
     {
+    ECPresentationTest::SetUp();
     Localization::Init();
     
     m_connection = &ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();

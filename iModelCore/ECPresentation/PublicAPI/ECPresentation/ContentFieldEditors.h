@@ -1,15 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Source/RulesDriven/RulesEngine/ContentFieldEditors.h $
+|     $Source: PublicAPI/ECPresentation/ContentFieldEditors.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once 
+#pragma once
+//__PUBLISH_SECTION_START__
 #include <ECPresentation/ECPresentation.h>
-#include <ECPresentation/RulesDriven/PresentationManager.h>
-#include "RulesEngineTypes.h"
-#include "ContentProviders.h"
+#include <ECPresentation/Content.h>
+#include <ECPresentation/RulesDriven/Rules/PropertyEditorsSpecification.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -25,7 +25,7 @@ protected:
     Utf8CP _GetName() const override {return "Json";}
     Params* _Clone() const override {return new FieldEditorJsonParams(*this);}
     ECPRESENTATION_EXPORT int _CompareTo(Params const& other) const override;
-    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
 
 public:
     FieldEditorJsonParams(PropertyEditorJsonParameters const& spec)
@@ -36,6 +36,7 @@ public:
         {
         m_json.CopyFrom(other.m_json, m_json.GetAllocator());
         }
+    RapidJsonDocumentCR GetJson() const {return m_json;};
 };
 
 /*=================================================================================**//**
@@ -50,11 +51,12 @@ protected:
     Utf8CP _GetName() const override {return "Multiline";}
     Params* _Clone() const override {return new FieldEditorMultilineParams(*this);}
     ECPRESENTATION_EXPORT int _CompareTo(Params const& other) const override;
-    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
 
 public:
     FieldEditorMultilineParams(PropertyEditorMultilineParameters const& spec) : m_spec(spec) {}
     FieldEditorMultilineParams(FieldEditorMultilineParams const& other) : m_spec(other.m_spec) {}
+    PropertyEditorMultilineParameters const& GetParameters() const {return m_spec;}
 };
 
 /*=================================================================================**//**
@@ -69,11 +71,12 @@ protected:
     Utf8CP _GetName() const override {return "Range";}
     Params* _Clone() const override {return new FieldEditorRangeParams(*this);}
     ECPRESENTATION_EXPORT int _CompareTo(Params const& other) const override;
-    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
 
 public:
     FieldEditorRangeParams(PropertyEditorRangeParameters const& spec) : m_spec(spec) {}
     FieldEditorRangeParams(FieldEditorRangeParams const& other) : m_spec(other.m_spec) {}  
+    PropertyEditorRangeParameters const& GetParameters() const {return m_spec;}
 };
 
 /*=================================================================================**//**
@@ -88,11 +91,12 @@ protected:
     Utf8CP _GetName() const override {return "Slider";}
     Params* _Clone() const override {return new FieldEditorSliderParams(*this);}
     ECPRESENTATION_EXPORT int _CompareTo(Params const& other) const override;
-    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const override;
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
 
 public:
     FieldEditorSliderParams(PropertyEditorSliderParameters const& spec) : m_spec(spec) {}
-    FieldEditorSliderParams(FieldEditorSliderParams const& other) : m_spec(other.m_spec) {}  
+    FieldEditorSliderParams(FieldEditorSliderParams const& other) : m_spec(other.m_spec) {} 
+    PropertyEditorSliderParameters const& GetParameters() const {return m_spec;}
 };
 
 /*=================================================================================**//**

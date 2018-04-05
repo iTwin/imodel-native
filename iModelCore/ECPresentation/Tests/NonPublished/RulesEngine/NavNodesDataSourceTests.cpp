@@ -20,7 +20,7 @@ static JsonNavNodesFactory s_nodesFactory;
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                09/2015
 +===============+===============+===============+===============+===============+======*/
-struct NavNodesDataSourceTests : ::testing::Test, IECExpressionsCacheProvider
+struct NavNodesDataSourceTests : ECPresentationTest, IECExpressionsCacheProvider
     {
     PresentationRuleSetPtr m_ruleset;
     NavNodesProviderContextPtr m_context;
@@ -35,6 +35,7 @@ struct NavNodesDataSourceTests : ::testing::Test, IECExpressionsCacheProvider
     
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         m_ruleset = PresentationRuleSet::CreateInstance("NavNodesDataSourceTests", 1, 0, false, "", "", "", false);
         m_context = NavNodesProviderContext::Create(*m_ruleset, true, TargetTree_Both, 0, 
             m_settings, m_expressionsCache, m_relatedPathsCache, m_polymorphicallyRelatedClassesCache, 

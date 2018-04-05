@@ -49,7 +49,7 @@ protected:
     virtual ECClassGroupingNodeKey const* _AsECClassGroupingNodeKey() const {return nullptr;}
     virtual ECPropertyGroupingNodeKey const* _AsECPropertyGroupingNodeKey() const {return nullptr;}
     virtual LabelGroupingNodeKey const* _AsLabelGroupingNodeKey() const {return nullptr;}
-    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const;
+    ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const;
     ECPRESENTATION_EXPORT virtual MD5 _ComputeHash() const;
 
 public:
@@ -80,7 +80,7 @@ public:
     Utf8StringCR GetType() const {return m_type;}
     
     //! Serialize this key to JSON.
-    rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const {return _AsJson(allocator);}
+    rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(allocator);}
 
     //! Create an @ref NavNodeKey from a JSON object.
     ECPRESENTATION_EXPORT static NavNodeKeyPtr Create(JsonValueCR);
@@ -139,7 +139,7 @@ private:
 protected:
     ECPRESENTATION_EXPORT bool _IsSimilar(NavNodeKey const& other) const override;
     ECInstanceNodeKey const* _AsECInstanceNodeKey() const override {return this;}
-    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     //! Create an @ref ECInstanceNodeKey from a JSON object.
@@ -178,6 +178,7 @@ public:
     ECInstanceKeyCR GetInstanceKey() const {return m_instanceKey;}
 };
 
+typedef RefCountedPtr<ECClassGroupingNodeKey>  ECClassGroupingNodeKeyPtr;
 //=======================================================================================
 //! NavNodeKey for ECClass grouping nodes.
 //! @ingroup GROUP_Presentation_Navigation
@@ -194,7 +195,7 @@ private:
 protected:
     //ECPRESENTATION_EXPORT int _Compare(NavNodeKey const& other) const override;
     ECClassGroupingNodeKey const* _AsECClassGroupingNodeKey() const override {return this;}
-    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     //! Create an @ref ECClassGroupingNodeKey from a JSON object.
@@ -212,6 +213,7 @@ public:
     ECClassId GetECClassId() const {return m_classId;}
 };
 
+typedef RefCountedPtr<ECPropertyGroupingNodeKey>  ECPropertyGroupingNodeKeyPtr;
 //=======================================================================================
 //! NavNodeKey for ECProperty grouping nodes.
 //! @ingroup GROUP_Presentation_Navigation
@@ -237,7 +239,7 @@ private:
     ~ECPropertyGroupingNodeKey() {DELETE_AND_CLEAR(m_groupingValue);}
 protected:
     ECPropertyGroupingNodeKey const* _AsECPropertyGroupingNodeKey() const override {return this;}
-    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     //! Create an @ref ECPropertyGroupingNodeKey from a JSON object.
@@ -258,6 +260,7 @@ public:
     rapidjson::Value const* GetGroupingValue() const {return m_groupingValue;}
 };
 
+typedef RefCountedPtr<LabelGroupingNodeKey>  LabelGroupingNodeKeyPtr;
 //=======================================================================================
 //! NavNodeKey for display label grouping nodes.
 //! @ingroup GROUP_Presentation_Navigation
@@ -273,7 +276,7 @@ private:
         {}
 protected:
     LabelGroupingNodeKey const* _AsLabelGroupingNodeKey() const override {return this;}
-    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     ECPRESENTATION_EXPORT MD5 _ComputeHash() const override;
 public:
     //! Create an @ref LabelGroupingNodeKey from a JSON object.
@@ -299,9 +302,10 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE NavNode : IRapidJsonExtendedDataHolder, RefCountedBase
 {
 protected:
+    virtual uint64_t _GetInstanceId() const = 0;
     virtual uint64_t _GetNodeId() const = 0;
     virtual uint64_t _GetParentNodeId() const = 0;
-    virtual NavNodeKeyCPtr _GetKey() const = 0;
+    virtual NavNodeKeyCPtr _GetNodeKey() const = 0;
     virtual Utf8String _GetLabel() const = 0;
     virtual Utf8String _GetDescription() const = 0;
     virtual Utf8String _GetExpandedImageId() const = 0;
@@ -317,59 +321,120 @@ protected:
     virtual bool _IsCheckboxVisible() const = 0;
     virtual bool _IsCheckboxEnabled() const = 0;  
     virtual bool _IsExpanded() const = 0;
-    virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const = 0;
+
+    virtual void _SetInstanceId(uint64_t instanceId) = 0;
+    virtual void _SetNodeId(uint64_t nodeId) = 0;
+    virtual void _SetParentNodeId(uint64_t parentNodeId) = 0;
+    virtual void _SetNodeKey(NavNodeKeyCR nodeKey) = 0;
+    virtual void _SetLabel(Utf8CP label) = 0;
+    virtual void _SetDescription(Utf8CP description) = 0;
+    virtual void _SetExpandedImageId(Utf8CP imageId) = 0;
+    virtual void _SetCollapsedImageId(Utf8CP imageId) = 0;
+    virtual void _SetForeColor(Utf8CP color) = 0;
+    virtual void _SetBackColor(Utf8CP color) = 0;
+    virtual void _SetFontStyle(Utf8CP style) = 0;
+    virtual void _SetType(Utf8CP type) = 0;
+    virtual void _SetHasChildren(bool value) = 0;
+    virtual void _SetIsSelectable(bool value) = 0;
+    virtual void _SetIsEditable(bool value) = 0;
+    virtual void _SetIsChecked(bool value) = 0;
+    virtual void _SetIsCheckboxVisible(bool value) = 0;
+    virtual void _SetIsCheckboxEnabled(bool value) = 0;
+    virtual void _SetIsExpanded(bool value) = 0;
 
 public:
+    //! Set the @ref NavNodeKey for this node.
+    void SetNodeKey(NavNodeKeyCR nodeKey) {_SetNodeKey(nodeKey);}
     //! Get the @ref NavNodeKey for this node.
-    NavNodeKeyCPtr GetKey() const {return _GetKey();};
+    NavNodeKeyCPtr GetKey() const {return _GetNodeKey();}
 
     //! Is this node equal to the supplied one.
     bool Equals(NavNodeCR other) const {return 0 == GetKey()->Compare(*other.GetKey());}
 
+    //! Set the instance Id.
+    void SetInstanceId(uint64_t instanceId) {_SetInstanceId(instanceId);}
+    //! Get the instance id.
+    uint64_t GetInstanceId() const {return _GetInstanceId();}
+
+    //! Set unique ID of this node.
+    void SetNodeId(uint64_t nodeId) {_SetNodeId(nodeId);}
     //! Get the unique ID of this node.
     uint64_t GetNodeId() const {return _GetNodeId();}
 
+    //! Set unique parent node ID
+    void SetParentNodeId(uint64_t parentNodeId) {_SetParentNodeId(parentNodeId);}
     //! Get unique parent node ID or 0 if this is a root node.
     uint64_t GetParentNodeId() const {return _GetParentNodeId();}
 
+    //! Set label.
+    void SetLabel(Utf8CP label) {_SetLabel(label);}
     //! Get the label.
     Utf8String GetLabel() const {return _GetLabel();}
+    //! Set description.
+    void SetDescription(Utf8CP description) {_SetDescription(description);}
     //! Get the description.
     Utf8String GetDescription() const {return _GetDescription();}
 
+    //! Set image ID for this node when it is expanded.
+    void SetExpandedImageId(Utf8CP imageId) {_SetExpandedImageId(imageId);}
     //! Get image ID for when this node is expanded.
     Utf8String GetExpandedImageId() const {return _GetExpandedImageId();}
+    //! Set image ID for this node when it is collapsed.
+    void SetCollapsedImageId(Utf8CP imageId) {_SetCollapsedImageId(imageId);}
     //! Get image ID for when this node is collapsed.
     Utf8String GetCollapsedImageId() const {return _GetCollapsedImageId();}
 
+    //! Set the color of this node's text.
+    void SetForeColor(Utf8CP color) {_SetForeColor(color);}
     //! Get the color of this node's text.
     Utf8String GetForeColor() const {return _GetForeColor();}
+    //! Set the background color of this node.
+    void SetBackColor(Utf8CP color) {_SetBackColor(color);}
     //! Get the background color of this node.
     Utf8String GetBackColor() const {return _GetBackColor();}
+    //! Set the font style of this node's text.
+    void SetFontStyle(Utf8CP style) {_SetFontStyle(style);}
     //! Get the font style of this node's text.
     Utf8String GetFontStyle() const {return _GetFontStyle();}
 
+    //! Set the type of this node.
+    void SetType(Utf8CP type) {_SetType(type);}
     //! Get the type of this node.
     Utf8String GetType() const {return _GetType();}
 
+    //! Set if this node has a children.
+    void SetHasChildren(bool value) {_SetHasChildren(value);}
     //! Does this node have children.
     bool HasChildren() const {return _HasChildren();}
 
+    //! Set if this node is selectable.
+    void SetIsSelectable(bool value) {_SetIsSelectable(value);}
     //! Is this node selectable.
     bool IsSelectable() const {return _IsSelectable();}
+    //! Set if this node is editable.
+    void SetIsEditable(bool value) {_SetIsEditable(value);}
     //! Is this node editable.
     bool IsEditable() const {return _IsEditable();}
+    //! Set if this node is checked.
+    void SetIsChecked(bool value) {_SetIsChecked(value);}
     //! Is this node checked.
     bool IsChecked() const {return _IsChecked();}
+    //! Set if the checkbox is visible for this node.
+    void SetIsCheckboxVisible(bool value) {_SetIsCheckboxVisible(value);}
     //! Is the checkbox visible for this node.
     bool IsCheckboxVisible() const {return _IsCheckboxVisible();}
+    //! Set if the checkbox is enabled for this node.
+    void SetIsCheckboxEnabled(bool value) {_SetIsCheckboxEnabled(value);}
     //! Is the checkbox enabled for this node.
     bool IsCheckboxEnabled() const {return _IsCheckboxEnabled();}
+    //! Set if this node is expanded.
+    void SetIsExpanded(bool value) {_SetIsExpanded(value);}
     //! Is this node expanded.
     bool IsExpanded() const {return _IsExpanded();}
 
     //! Serialize the node to JSON.
-    rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const {return _AsJson(allocator);}
+    ECPRESENTATION_EXPORT static NavNodePtr FromJson(RapidJsonValueCR json);
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 };
 
 //=======================================================================================
@@ -411,7 +476,7 @@ public:
     bool IsMarked() const {return m_isMarked;}
 
     //! Serialize this object to JSON.
-    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 };
 
 //=======================================================================================
@@ -469,7 +534,7 @@ public:
     //! Is this container empty.
     bool empty() const {return 0 == size();}
     //! Get hash string of all the keys in this container.
-    Utf8StringCR GetHash() const;
+    ECPRESENTATION_EXPORT Utf8StringCR GetHash() const;
 };
 typedef INavNodeKeysContainer const& INavNodeKeysContainerCR;
 typedef INavNodeKeysContainer const* INavNodeKeysContainerCP;
@@ -644,7 +709,7 @@ public:
     //! Remove supplied instance ky from this key set.
     bool Remove(ECInstanceKey instanceKey) {return Remove(instanceKey.GetClassId(), instanceKey.GetInstanceId());}
 
-    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator) const;
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
     ECPRESENTATION_EXPORT static KeySetPtr FromJson(JsonValueCR json);
 };
 

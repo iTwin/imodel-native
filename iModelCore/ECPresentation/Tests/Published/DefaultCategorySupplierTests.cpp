@@ -34,7 +34,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                10/2016
 +===============+===============+===============+===============+===============+======*/
-struct DefaultCategorySupplierTests : ::testing::Test
+struct DefaultCategorySupplierTests : ECPresentationTest
     {
     DefaultCategorySupplier m_supplier;
     ECSchemaReadContextPtr m_schemaContext;
@@ -44,6 +44,7 @@ struct DefaultCategorySupplierTests : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         Localization::Init();
 
         BeFileName assetsPath;

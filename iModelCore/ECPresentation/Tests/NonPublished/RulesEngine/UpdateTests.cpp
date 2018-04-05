@@ -39,7 +39,7 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2016
 +===============+===============+===============+===============+===============+======*/
-struct UpdateTests : ::testing::Test
+struct UpdateTests : ECPresentationTest
 {
     static BeFileName s_seedProjectPath;
     TestRuleSetLocaterPtr m_locater;
@@ -59,6 +59,7 @@ struct UpdateTests : ::testing::Test
     
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         m_localState.GetStubMap().clear();
         
         BeAssert(s_seedProjectPath.DoesPathExist());

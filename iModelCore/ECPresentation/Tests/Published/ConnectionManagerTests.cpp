@@ -19,7 +19,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2017
 +===============+===============+===============+===============+===============+======*/
-struct ConnectionManagerTests : ::testing::Test
+struct ConnectionManagerTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     ConnectionManager m_manager;
@@ -37,6 +37,7 @@ struct ConnectionManagerTests : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         if (!s_project->GetECDb().IsDbOpen())
             s_project->Open("ConnectionManagerTests");
         }

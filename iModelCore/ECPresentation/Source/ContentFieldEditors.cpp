@@ -1,13 +1,21 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Source/RulesDriven/RulesEngine/ContentFieldEditors.cpp $
+|     $Source: Source/ContentFieldEditors.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
 #include <ECPresentation/RulesDriven/PresentationManager.h>
-#include "ContentFieldEditors.h"
+#include <ECPresentation/ContentFieldEditors.h>
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document FieldEditorJsonParams::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                10/2017
@@ -30,13 +38,11 @@ int FieldEditorJsonParams::_CompareTo(Params const& other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2017
+* @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document FieldEditorJsonParams::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document FieldEditorMultilineParams::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.CopyFrom(m_json, json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -62,14 +68,11 @@ int FieldEditorMultilineParams::_CompareTo(Params const& other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2017
+* @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document FieldEditorMultilineParams::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document FieldEditorRangeParams::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("HeightInRows", m_spec.GetHeightInRows(), json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -112,24 +115,11 @@ int FieldEditorRangeParams::_CompareTo(Params const& other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2017
+* @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document FieldEditorRangeParams::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+rapidjson::Document FieldEditorSliderParams::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-
-    if (nullptr != m_spec.GetMinimumValue())
-        json.AddMember("Minimum", *m_spec.GetMinimumValue(), json.GetAllocator());
-    else
-        json.AddMember("Minimum", rapidjson::Value(), json.GetAllocator());
-    
-    if (nullptr != m_spec.GetMaximumValue())
-        json.AddMember("Maximum", *m_spec.GetMaximumValue(), json.GetAllocator());
-    else
-        json.AddMember("Maximum", rapidjson::Value(), json.GetAllocator());
-
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -169,19 +159,4 @@ int FieldEditorSliderParams::_CompareTo(Params const& other) const
     if (m_spec.IsVertical() > sliderParams->m_spec.IsVertical())
         return 1;
     return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document FieldEditorSliderParams::_AsJson(rapidjson::Document::AllocatorType* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("Minimum", m_spec.GetMinimumValue(), json.GetAllocator());
-    json.AddMember("Maximum", m_spec.GetMaximumValue(), json.GetAllocator());
-    json.AddMember("IntervalsCount", m_spec.GetIntervalsCount(), json.GetAllocator());
-    json.AddMember("ValueFactor", m_spec.GetValueFactor(), json.GetAllocator());
-    json.AddMember("IsVertical", m_spec.IsVertical(), json.GetAllocator());
-    return json;
     }

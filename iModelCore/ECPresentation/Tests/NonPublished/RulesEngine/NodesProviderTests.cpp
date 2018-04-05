@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/NodesProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "NodesProviderTests.h"
@@ -34,6 +34,7 @@ void NodesProviderTests::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void NodesProviderTests::SetUp()
     {
+    ECPresentationTest::SetUp();
     m_providerContextFactory.SetNodesCache(&m_nodesCache);
     m_providerContextFactory.SetUsedClassesListener(&m_usedClassesListener);
 

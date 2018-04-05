@@ -23,7 +23,7 @@ static JsonNavNodesFactory s_nodesFactory;
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2015
 +===============+===============+===============+===============+===============+======*/
-struct LocalizationHelperTests : ::testing::Test
+struct LocalizationHelperTests : ECPresentationTest
     {  
     PresentationRuleSetPtr m_ruleset;
     TestLocalizationProvider m_l10nProvider;
@@ -94,11 +94,12 @@ TEST_F(LocalizationHelperTests, LocalizeString_NoLocalizedParts)
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2015
 +===============+===============+===============+===============+===============+======*/
-struct SQLangLocalizationProviderTests : ::testing::Test
+struct SQLangLocalizationProviderTests : ECPresentationTest
     {  
     SQLangLocalizationProvider m_provider;
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         BeFileName sqlangFile;
         BeTest::GetHost().GetDocumentsRoot(sqlangFile);
         sqlangFile.AppendToPath(L"ECPresentationTestData");
@@ -150,11 +151,12 @@ TEST_F(SQLangLocalizationProviderTests, ReturnsEmptyStringIfInvalidFormat)
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                09/2016
 +===============+===============+===============+===============+===============+======*/
-struct RulesEngineLocalizedStringTests : ::testing::Test
+struct RulesEngineLocalizedStringTests : ECPresentationTest
     {  
     SQLangLocalizationProvider m_provider;
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         Localization::Init();
         }
     void TearDown() override

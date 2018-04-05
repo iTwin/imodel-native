@@ -87,7 +87,7 @@ public:
     IConnectionCR GetConnection() const {return *m_connection;}
     bool IsPrimaryConnection() const {return m_isPrimaryConnection;}
     ConnectionEventType GetEventType() const {return m_eventType;}
-    rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 };
 
 //=======================================================================================

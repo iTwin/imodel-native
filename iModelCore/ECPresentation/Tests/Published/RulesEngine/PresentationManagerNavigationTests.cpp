@@ -27,7 +27,7 @@ struct RulesDrivenECPresentationManagerNavigationTests : RulesDrivenECPresentati
     
     void SetUp() override
         {
-        RulesDrivenECPresentationManagerTests::SetUp();        
+        RulesDrivenECPresentationManagerTests::SetUp();
         m_schema = s_project->GetECDb().Schemas().GetSchema("RulesEngineTest");
         ASSERT_TRUE(nullptr != m_schema);
         

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/TestHelpers/ECPresentationTest.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,5 +37,13 @@ struct BeAssertIgnoreContext
     }
 };
 #define IGNORE_BE_ASSERT() BeAssertIgnoreContext _ignore_be_asserts;
+
+//=======================================================================================
+// @bsiclass                                                Mantas.Kontrimas     03/2018
+//=======================================================================================
+struct ECPresentationTest : ::testing::Test
+    {
+    virtual void SetUp() override;
+    };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

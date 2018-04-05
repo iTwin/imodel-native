@@ -2,7 +2,7 @@
 |
 |     $Source: Source/ValueHelpers.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -370,18 +370,6 @@ rapidjson::Document ValueHelpers::GetJsonFromString(PrimitiveType primitiveType,
         }
     BeAssert(false);
     return doc;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ValueHelpers::GetJson(ECInstanceKeyCR key, rapidjson::MemoryPoolAllocator<>* allocator)
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("ECClassId", rapidjson::Value(key.GetClassId().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("ECInstanceId", rapidjson::Value(key.GetInstanceId().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**

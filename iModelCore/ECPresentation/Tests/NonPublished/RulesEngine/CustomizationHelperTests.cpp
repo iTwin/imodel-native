@@ -22,7 +22,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Pranciskus.Ambrazas               03/2016
 +===============+===============+===============+===============+===============+======*/
-struct CustomizationHelperTests : ::testing::Test
+struct CustomizationHelperTests : ECPresentationTest
 {
     static ECDbTestProject* s_project;
     CustomFunctionsInjector* m_customFunctions;
@@ -46,6 +46,7 @@ struct CustomizationHelperTests : ::testing::Test
     
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         if (!s_project->GetECDb().GetDefaultTransaction()->IsActive())
             s_project->GetECDb().GetDefaultTransaction()->Begin();
         

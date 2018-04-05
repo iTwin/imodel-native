@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/RulesEngine/RuleSetEmbedderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -13,13 +13,14 @@
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                10/2017
 +===============+===============+===============+===============+===============+======*/
-struct RuleSetEmbedderTests : ::testing::Test
+struct RuleSetEmbedderTests : ECPresentationTest
 {
     static ECDbTestProject* s_project;
     RuleSetEmbedder* m_embedder;
 
     void SetUp()
         {
+        ECPresentationTest::SetUp();
         m_embedder = new RuleSetEmbedder(s_project->GetECDb());
         }
 

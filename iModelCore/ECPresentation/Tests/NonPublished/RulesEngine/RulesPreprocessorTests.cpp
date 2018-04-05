@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                03/2015
 +===============+===============+===============+===============+===============+======*/
-struct RulesPreprocessorTests : ::testing::Test
+struct RulesPreprocessorTests : ECPresentationTest
 {
 protected:
     static ECDbTestProject* s_project;
@@ -47,6 +47,7 @@ public:
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_locater = TestRuleSetLocater::Create();
         m_locaterManager.RegisterLocater(*m_locater);

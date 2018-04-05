@@ -22,7 +22,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                09/2015
 +===============+===============+===============+===============+===============+======*/
-struct CustomFunctionTests : ::testing::Test
+struct CustomFunctionTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     static ECClassP s_widgetClass;
@@ -44,6 +44,7 @@ struct CustomFunctionTests : ::testing::Test
     
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_ruleset = PresentationRuleSet::CreateInstance("QueryExecutorTests", 1, 0, false, "", "", "", false);
         m_customFunctionsInjector = new CustomFunctionsInjector(m_connections, *m_connection);        

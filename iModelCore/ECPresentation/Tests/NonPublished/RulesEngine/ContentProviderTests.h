@@ -19,7 +19,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct ContentProviderTests : public ::testing::Test
+struct ContentProviderTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     CustomFunctionsInjector* m_customFunctions;

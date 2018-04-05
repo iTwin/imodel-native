@@ -54,7 +54,7 @@ struct TestSelectionListener : ISelectionChangesListener
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                08/2016
 +===============+===============+===============+===============+===============+======*/
-struct SelectionTests : ::testing::Test
+struct SelectionTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     TestConnectionManager m_connections;
@@ -75,6 +75,7 @@ struct SelectionTests : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         m_manager = new SelectionManager(m_connections);
         m_manager->AddListener(m_listener);
         m_connections.NotifyConnectionOpened(s_project->GetECDb());
@@ -205,7 +206,7 @@ TEST_F(SelectionTests, ClearsSelectionWhenConnectionIsClosed)
 /*=================================================================================**//**
 * @bsiclass                                     Tautvydas.Zinys                    09/2016
 +===============+===============+===============+===============+===============+======*/
-struct MultipleECDbSelectionTest : ::testing::Test
+struct MultipleECDbSelectionTest : ECPresentationTest
     {
     static ECDbTestProject* s_project1;
     static ECDbTestProject* s_project2;
@@ -230,6 +231,7 @@ struct MultipleECDbSelectionTest : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         m_manager = new SelectionManager(m_connections);
         m_connections.NotifyConnectionOpened(s_project1->GetECDb());
         m_connections.NotifyConnectionOpened(s_project2->GetECDb());

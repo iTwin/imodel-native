@@ -13,7 +13,7 @@
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                01/2018
 +===============+===============+===============+===============+===============+======*/
-struct OptimizedExpressionsEvaluationTests : ::testing::Test
+struct OptimizedExpressionsEvaluationTests : ECPresentationTest
 {
     static ECDbTestProject* s_project;
     TestConnectionManager m_connections;
@@ -35,6 +35,7 @@ struct OptimizedExpressionsEvaluationTests : ::testing::Test
 
     void SetUp()
         {
+        ECPresentationTest::SetUp();
         m_widgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Widget");
         m_gadgetClass = s_project->GetECDb().Schemas().GetClass("RulesEngineTest", "Gadget");
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());

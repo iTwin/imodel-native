@@ -280,14 +280,14 @@ protected:
     void _OnSelectionChanged(SelectionChangedEventCR evt) override
         {
         m_manager.m_cancelableTasks->CancelSelectionDependants(evt.GetConnection());
-        folly::via(m_manager.m_executor, [&, evt]()
+        folly::via(m_manager.m_executor, [&, evt = SelectionChangedEventCPtr(&evt)]()
             {
-            IConnectionPtr connection = m_manager.GetConnections().GetConnection(evt.GetConnection().GetId().c_str());
-            SelectionChangedEvent evtForThisThread(*connection, evt.GetSourceName(), evt.GetChangeType(),
-                evt.IsSubSelection(), evt.GetSelectedKeys());
-            evtForThisThread.GetExtendedDataR().CopyFrom(evt.GetExtendedData(), evtForThisThread.GetExtendedDataAllocator());
+            IConnectionPtr connection = m_manager.GetConnections().GetConnection(evt->GetConnection().GetId().c_str());
+            SelectionChangedEventPtr evtForThisThread = SelectionChangedEvent::Create(*connection, evt->GetSourceName(), evt->GetChangeType(),
+                evt->IsSubSelection(), evt->GetSelectedKeys());
+            evtForThisThread->GetExtendedDataR().CopyFrom(evt->GetExtendedData(), evtForThisThread->GetExtendedDataAllocator());
             for (ISelectionChangesListener* listener : m_listeners)
-                listener->NotifySelectionChanged(evtForThisThread);
+                listener->NotifySelectionChanged(*evtForThisThread);
             });
         }
     void _RefreshSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData) override

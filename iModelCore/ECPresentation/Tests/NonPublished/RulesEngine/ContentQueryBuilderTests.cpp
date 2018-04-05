@@ -12,6 +12,7 @@
 //---------------------------------------------------------------------------------------
 void ContentQueryBuilderTests::SetUp()
     {
+    ECPresentationTest::SetUp();
     Localization::Init();
     IConnectionManagerCR connections = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnections();
     IConnectionCR connection = ExpectedQueries::GetInstance(BeTest::GetHost()).GetConnection();
