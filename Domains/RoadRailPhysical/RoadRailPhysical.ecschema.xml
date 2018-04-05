@@ -99,7 +99,7 @@
         <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
             <Class class="PathwayElement"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
             <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
@@ -117,7 +117,7 @@
         <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
             <Class class="PathwayElement"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
             <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
@@ -126,7 +126,7 @@
         <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
             <Class class="PathwayElement"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
             <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
