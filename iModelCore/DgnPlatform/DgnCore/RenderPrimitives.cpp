@@ -2600,7 +2600,7 @@ void GeometryListBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, Geome
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip, DRange3dR rangeOut) const
+bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip) const
     {
     bvector<PolyfaceHeaderPtr> sheetTilePolys;
 
@@ -2622,7 +2622,6 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
     builder->AddTriangulation(quadPts);
     PolyfaceHeaderPtr pfHdr = builder->GetClientMeshPtr();
 
-    rangeOut.Init();
     if (nullptr != clip)
         {
         GeometryClipper::PolyfaceClipper pfClipper;
@@ -2636,10 +2635,6 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
                 DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
                 uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
                 sheetTilePolys.push_back(clippedPolyfaceQuery->Clone());
-                for (uint32_t i = 0; i < numPts; i++)
-                    {
-                    rangeOut.Extend(pts[i]);
-                    }
                 }
             }
         // else no output, so don't output any polys (empty sheetTilePolys)
@@ -2647,8 +2642,6 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
     else // not clipped, so return original unclipped poly in sheetTilePolys
         {
         sheetTilePolys.push_back(pfHdr);
-        for (int i = 0; i < 4; i++)
-            rangeOut.Extend(corners.m_pts[i]);
         }
 
     return sheetTilePolys;

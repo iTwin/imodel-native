@@ -79,7 +79,6 @@ struct Tile3d : TileTree::Tile
     };
 
     bvector<PolyfaceHeaderPtr> m_tilePolys;
-    DRange3d m_polysRange; // this is clipped range.  m_range is this with aspect ratio scale factor applied.
     uint32_t m_maxPixelSize;
     bvector<Render::GraphicPtr> m_graphics;
     Placement m_placement;
@@ -99,7 +98,6 @@ struct Tile3d : TileTree::Tile
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
     double _GetMaximumSize() const override {return m_maxPixelSize;}
 
-    void ChangeRange(DRange3d newRange);
     void CreatePolys(SceneContextR context);
     void CreateGraphics(SceneContextR context);
     Root3dR GetTree() const {return static_cast<Root3dR>(m_root);}
@@ -1325,11 +1323,7 @@ void Sheet::Attachment::Tile3d::CreatePolys(SceneContextR context)
     corners.m_pts[3].Init(west, south, tree.m_biasDistance);
 
     // first create the polys for the tile so we can get the range (create graphics from polys later)
-    m_polysRange.Init();
-    m_tilePolys = renderSys->_CreateSheetTilePolys(corners, tree.m_graphicsClip.get(), m_polysRange);
-
-    m_polysRange.low.z  = 0.0;                // make sure entire z range.
-    m_polysRange.high.z = 1.0;
+    m_tilePolys = renderSys->_CreateSheetTilePolys(corners, tree.m_graphicsClip.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1586,10 +1580,6 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
     m_rootTile = rTile = new Tile3d(*this, nullptr, Sheet::Attachment::Tile3d::Placement::Root);
     rTile->CreatePolys(context); // m_graphicsClip must be set before creating polys (the polys that represent the tile)
 
-#if defined(WIP_CLIP_TILE_RANGE)
-    rTile->ChangeRange(rTile->m_polysRange);
-#endif
-
     Transform trans = m_viewport->m_toParent;
     SetLocation(trans);
 
@@ -1654,23 +1644,6 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
     m_graphicsClip->m_boundingRange = graphicsClipRange;
 
     m_rootTile = new Tile2d(*this, attach.GetPlacement().GetElementBox());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mark.Schlosser  03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Tile3d::ChangeRange(DRange3d newRange)
-    {
-    // make range square (extend shortest side to match length of longest side)
-    if (newRange.XLength() > newRange.YLength())
-        newRange.high.y = newRange.low.y + newRange.XLength();
-    else // y length >= x length
-        newRange.high.x = newRange.low.x + newRange.YLength();
-
-    // alter range so that it matches the actual range of the tile after being clipped
-    m_range.Init();
-    m_range.Extend(newRange.low);
-    m_range.Extend(newRange.high);
     }
 
 /*---------------------------------------------------------------------------------**//**
