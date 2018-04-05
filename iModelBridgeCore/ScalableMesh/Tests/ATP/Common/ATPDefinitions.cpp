@@ -396,7 +396,7 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     }
 
 
-static bool s_usePolygon = true;
+static bool s_usePolygon = false;
 
 void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
