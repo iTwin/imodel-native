@@ -2800,7 +2800,7 @@ TEST(SolidPrimitive,Seams)
         Check::Shift (0,15,0);
         // extrude in z direction ..
         facetAndSave (ISolidPrimitive::CreateDgnExtrusion (
-            DgnExtrusionDetail::DgnExtrusionDetail (path, DVec3d::From (0,0,3), false)));
+            DgnExtrusionDetail(path, DVec3d::From (0,0,3), false)));
         Check::Shift (0,15,0);
 
         // rotate about a line in the x directionabove the y top of the range.

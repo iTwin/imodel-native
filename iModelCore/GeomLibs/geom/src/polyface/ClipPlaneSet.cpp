@@ -1081,11 +1081,11 @@ static void AppendPrimitiveStartEnd (ICurvePrimitiveCR curve, bvector<CurveLocat
         {
         DPoint3d xyz0, xyz1;
         curve.GetStartEnd (xyz0, xyz1);
-        crossings.push_back (CurveLocationDetailPair::CurveLocationDetailPair (&curve, 0.0, xyz0));
-        crossings.push_back (CurveLocationDetailPair::CurveLocationDetailPair (&curve, 1.0, xyz1));
+        crossings.push_back (CurveLocationDetailPair (&curve, 0.0, xyz0));
+        crossings.push_back (CurveLocationDetailPair (&curve, 1.0, xyz1));
         }
     }
-bool CurveLocationDetailPair::cb_compareCurveFraction (CurveLocationDetailPair dataA, CurveLocationDetailPair dataB)
+bool CurveLocationDetailPair::cb_compareCurveFraction (CurveLocationDetailPairCR dataA, CurveLocationDetailPairCR dataB)
     {
     ptrdiff_t a = dataA.detailA.curve - dataB.detailB.curve;
     if (a != 0)
