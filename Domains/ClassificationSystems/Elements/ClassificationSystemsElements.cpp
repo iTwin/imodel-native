@@ -24,7 +24,7 @@ CIBSEClassDefinition::CIBSEClassDefinition
 ) : T_Super(params)
     {
         SetName(name);
-        SetCategory(Category);  
+        //SetCategory(Category);  
     }
 
 /*---------------------------------------------------------------------------------**//**
