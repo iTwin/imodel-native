@@ -11,6 +11,17 @@
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+NamedFormat::NamedFormat(Utf8StringCR name, ECFormatCP format) : Formatting::Format(), m_nameOrFormatString(name), m_ecFormat(format) 
+    {
+    if (format->HasNumeric())
+        SetNumericSpec(*format->GetNumericSpec());
+    if (format->HasComposite())
+        SetCompositeSpec(*format->GetCompositeSpec());
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Victor.Cushman                  02/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECFormat::SetSchema(ECSchemaCR schema)

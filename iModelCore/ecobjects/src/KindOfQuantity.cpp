@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
+#include <algorithm>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -27,7 +28,7 @@ ECObjectsStatus KindOfQuantity::SetName(Utf8CP name)
 bool KindOfQuantity::Verify() const
     {
     bool isValid = true;
-    if (nullptr != m_persistenceUnit)
+    if (nullptr == m_persistenceUnit)
         {
         LOG.errorv("Validation Error - KindOfQuantity '%s' does not have a persistence unit",
                    GetFullName().c_str());
@@ -149,49 +150,24 @@ ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
     {
     if (unit.IsConstant())
         return ECObjectsStatus::Error;
-    
-    m_persistenceUnit = &unit;
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
-//--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::SetDefaultPresentationFormat(NamedFormatCR format)
-    {
-    if (format.IsProblem())
-        return ECObjectsStatus::Error;
-
-    m_presentationFormats.insert(m_presentationFormats.begin(), format);
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Kyle.Abramowitz                    03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus KindOfQuantity::AddPresentationFormat(NamedFormatCR format)
-    {
-    if (format.IsProblem())
-        return ECObjectsStatus::Error;
-
-    if (format.HasCompositeInputUnit() && !Units::Unit::AreCompatible(m_persistenceUnit, format.GetCompositeInputUnit()))
+    if (HasPresentationFormats())
         {
-        LOG.errorv("Presentation format '%s' has input unit '%s' that is incompatible with this KOQ's persistence unit", format.GetName(), m_persistenceUnit->GetName());
-        return ECObjectsStatus::Error;
+        for (auto const& format : m_presentationFormats)
+            {
+            if (format.HasCompositeInputUnit() && !ECUnit::AreCompatible(&unit, format.GetCompositeInputUnit()))
+                return ECObjectsStatus::Error;
+            }
         }
-
-    m_presentationFormats.push_back(format);
+    m_persistenceUnit = &unit;
     return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-void KindOfQuantity::RemovePresentationFormat(NamedFormatCR presentationUnit)
+void KindOfQuantity::RemovePresentationFormat(NamedFormatCR presentationFormat)
     {
-    for (auto itor = m_presentationFormats.begin(); itor != m_presentationFormats.end(); itor++)
-        if (itor->IsIdentical(presentationUnit))
-            m_presentationFormats.erase(itor);
+    m_presentationFormats.erase(std::remove_if(m_presentationFormats.begin(), m_presentationFormats.end(), [&](NamedFormatCR format) {return format.IsIdentical(presentationFormat);}));
     }
 
 //--------------------------------------------------------------------------------------
@@ -389,64 +365,219 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 
     SetRelativeError(relError);
 
-    // Read Persistence Unit/FUS
+    // Read Persistence Unit
     if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
         {
         LOG.errorv("Invalid ECSchemaXML: KindOfQuantity %s must contain a %s attribute", GetFullName().c_str(), PERSISTENCE_UNIT_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    ECUnitCP persUnit;
-    Formatting::FormatCP persNFS;
-    ECObjectsStatus status = ParseFUSDescriptor(persUnit, persNFS, value.c_str(), *this, &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
-    if (ECObjectsStatus::Success != status)
-        return SchemaReadStatus::InvalidECSchemaXml; // log messages are in the ParseFUSDescriptor
+    ECUnitCP persUnit = nullptr;
+    ECFormatCP persFormat = nullptr;
+    if (ECObjectsStatus::Success != ParsePersistenceUnit(persUnit, persFormat, value.c_str(), &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
+        {
+        LOG.errorv("Failed to parse persistence unit '%s'", value.c_str());
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
 
-    if ((nullptr != persUnit) && persUnit->IsConstant())
+    BeAssert(nullptr != persUnit);
+    if (persUnit->IsConstant())
         { 
         LOG.errorv("Persistence FormatUnitSet: '%s' on KindOfQuanity '%s' has a Constant as a persistence unit", value.c_str(), GetName().c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    if (nullptr == persUnit)
-        { 
-        LOG.errorv("KindOfQuantity '%s' has a persistence unit that could not be found.", GetName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
     m_persistenceUnit = persUnit;
 
-    // Read Presentation FUS'
+    // Read Presentation Formats
     if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, PRESENTATION_UNITS_ATTRIBUTE))
         {
         bvector<Utf8String> presentationUnits;
         BeStringUtilities::Split(value.c_str(), ";", presentationUnits);
         for(auto const& presValue : presentationUnits)
             {
-            ECUnitCP presUnit;
-            Formatting::FormatCP presNFS;
-            status = ParseFUSDescriptor(presUnit, presNFS, presValue.c_str(), *this, &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor());
-            
-            if (ECObjectsStatus::Success != status)
+            ECUnitCP inputUnit = nullptr;
+            ECFormatCP presFormat = nullptr;
+            if (ECObjectsStatus::Success != ParsePresentationUnit(inputUnit, presFormat, presValue.c_str(), context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
+                {
+                LOG.errorv("Failed to parse presentation format '%s' on KindOfQuantity '%s'", presValue.c_str(), GetName().c_str());
                 return SchemaReadStatus::InvalidECSchemaXml;
-
-            if (nullptr != presUnit && presUnit->IsConstant())
+                }
+            
+            BeAssert(nullptr != inputUnit);
+            if (inputUnit->IsConstant())
                 { 
                 LOG.errorv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has constant as a presentation unit", presValue.c_str(), GetFullName().c_str());
                 return SchemaReadStatus::InvalidECSchemaXml;
                 }
-
-            // TODO fix
-            /*Formatting::FormatUnitSet presFUS(presNFS, presUnit);
-
-            if (presFUS.HasProblem())
-                LOG.warningv("Presentation FormatUnitSet: '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                    value.c_str(), GetName().c_str(), presFUS.GetProblemDescription().c_str());*/
             
-            // m_presentationUnits.push_back(presFUS);
+            m_presentationFormats.push_back(*presFormat);
             }
         }
+    if (nullptr != persFormat)
+        m_presentationFormats.push_back(*persFormat);
     return SchemaReadStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(ECUnitCP& unit, ECFormatCP& format, Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion)
+    {
+    unit = nullptr;
+    format = nullptr;
+    bool xmlLessThan32 = (3 == ecXmlMajorVersion && 2 > ecXmlMinorVersion) && (nullptr != context);
+
+    if (xmlLessThan32)
+        {
+        Utf8String unitName;
+        Utf8String formatName;
+        Formatting::Format::ParseUnitFormatDescriptor(unitName, formatName, descriptor);
+        if (!Utf8String::IsNullOrEmpty(formatName.c_str()))
+            {
+            SchemaKey key = SchemaKey("Formats", 1, 0, 0);
+            auto formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+
+            if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
+                { 
+                LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve format '%s'.",
+                    formatsSchema->GetName().c_str(), GetSchema().GetName().c_str(), formatName.c_str());
+                if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
+                    {
+                    LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                    return ECObjectsStatus::Error;
+                    }
+                }
+
+            format = formatsSchema->LookupFormat(formatName.c_str());
+            if (nullptr == format)
+                {
+                LOG.errorv("Failed to find format with name '%s' in standard formats schema", formatName.c_str());
+                return ECObjectsStatus::Error;
+                }
+            }
+
+        unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
+
+        if (unitName.empty())
+            {
+            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
+                descriptor, GetFullName().c_str(), unitName.c_str());
+            return ECObjectsStatus::Error;
+            }
+
+        SchemaKey key("Units", 1, 0, 0);
+        auto unitsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+
+        if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
+            { 
+            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve unit '%s'.",
+                unitsSchema->GetName().c_str(), GetSchema().GetName().c_str(), unitName.c_str());
+            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*unitsSchema))
+                {
+                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                return ECObjectsStatus::Error;
+                }
+            }
+        unit = unitsSchema->GetUnitsContext().LookupUnit(unitName.c_str());
+        if (nullptr == unit)
+            {
+            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located in the standard Units schema.",
+                descriptor, GetFullName().c_str(), unitName.c_str());
+            return ECObjectsStatus::Error;
+            }
+        }
+    else
+        unit = GetSchema().GetUnitsContext().LookupUnit(descriptor);
+
+    if (nullptr == unit)
+        {
+        LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located",
+            descriptor, GetFullName().c_str(), descriptor);
+        return ECObjectsStatus::Error;
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  02/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::ParsePresentationUnit(ECUnitCP& unit, ECFormatCP& format, Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion)
+    {
+    format = nullptr;
+    unit = nullptr;
+    bool xmlLessThan32 = (3 == ecXmlMajorVersion && 2 > ecXmlMinorVersion);
+
+    if (xmlLessThan32)
+        {
+        Utf8String unitName;
+        Utf8String formatName;
+        Formatting::Format::ParseUnitFormatDescriptor(unitName, formatName, descriptor);
+        SchemaKey key = SchemaKey("Formats", 1, 0, 0);
+        auto formatsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
+
+        if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
+            { 
+            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve format '%s'.",
+                formatsSchema->GetName().c_str(), GetSchema().GetName().c_str(), unitName.c_str());
+            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
+                {
+                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                return ECObjectsStatus::Error;
+                }
+            }
+
+        if (!Utf8String::IsNullOrEmpty(formatName.c_str()))
+            {
+            format = formatsSchema->LookupFormat(formatName.c_str());
+            if (nullptr == format)
+                {
+                    LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid format, '%s'.",
+                        descriptor, GetFullName().c_str(), formatName.c_str());
+                    return ECObjectsStatus::Error;
+                }
+            }
+            else
+                {
+                // Assuming since there was previously a format that it should contain the Unit with it.
+                format = formatsSchema->LookupFormat(Formatting::FormatConstant::DefaultFormatName());
+                BeAssert(nullptr != format);
+                LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.", descriptor, GetFullName().c_str());
+                }
+
+        unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
+
+        if (unitName.empty())
+            {
+            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
+                descriptor, GetFullName().c_str(), unitName.c_str());
+            return ECObjectsStatus::Error;
+            }
+
+        SchemaKey unitsKey("Units", 1, 0, 0);
+        auto unitsSchema = context.LocateSchema(unitsKey, SchemaMatchType::Latest);
+
+        if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
+            { 
+            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve unit '%s'.",
+                unitsSchema->GetName().c_str(), GetSchema().GetName().c_str(), unitName.c_str());
+            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*unitsSchema))
+                {
+                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                return ECObjectsStatus::Error;
+                }
+            }
+        unit = unitsSchema->GetUnitsContext().LookupUnit(unitName.c_str());
+        if (nullptr == unit)
+            {
+            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located in the standard Units schema.",
+                descriptor, GetFullName().c_str(), unitName.c_str());
+            return ECObjectsStatus::Error;
+            }
+        }
+
+    return ECObjectsStatus::Success;
     }
 
 //--------------------------------------------------------------------------------------
@@ -590,6 +721,113 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptor(Utf8String& updatedDescripto
         .append(format.c_str())
         .append(")");
         }
+
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride)
+    {
+    if (parent.IsOverride())
+        return ECObjectsStatus::Error;
+
+    out += parent.GetName();
+    
+    if (precisionOverride.IsValid())
+        {
+        out += "<";
+        out += std::to_string(precisionOverride.Value()).c_str();
+        out += ">";
+        }
+
+    if (nullptr != inputUnitOverride || nullptr != labelOverride)
+        {
+        out += "[";
+
+        if (nullptr != inputUnitOverride)
+            {
+            out += inputUnitOverride->GetQualifiedName(GetSchema());
+            }
+
+        out += "|";
+
+        if (nullptr != labelOverride)
+            out += labelOverride;
+
+        out += "]";
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormat(NamedFormat format)
+    {
+    // TODO error checking. Using this for copyKindOFQuantity right now so it is guaranteed to be valid there since its
+    // part of another kind of quanity already and has gone through error checking, but still should add it here.
+    m_presentationFormats.emplace_back(format);
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
+    {
+    // TODO logging
+    if (parent.IsOverride())
+        return ECObjectsStatus::Error;
+
+    if (parent.HasCompositeInputUnit() && nullptr != m_persistenceUnit && !ECUnit::AreCompatible(parent.GetCompositeInputUnit(), m_persistenceUnit))
+        return ECObjectsStatus::Error;
+
+    if (parent.HasCompositeInputUnit() && HasPresentationFormats())
+        {
+        for (auto const& format : m_presentationFormats)
+            {
+            if (format.HasCompositeInputUnit() && !ECUnit::AreCompatible(parent.GetCompositeInputUnit(), format.GetCompositeInputUnit()))
+                return ECObjectsStatus::Error;
+            }
+        }
+
+    Utf8String out;
+    CreateOverrideString(out, parent, precisionOverride, inputUnitOverride, labelOverride);
+
+    if (nullptr != inputUnitOverride && parent.HasCompositeInputUnit() && !ECUnit::AreCompatible(inputUnitOverride, parent.GetCompositeInputUnit()))
+        return ECObjectsStatus::Error;
+
+    if (isDefault)
+        m_presentationFormats.emplace(m_presentationFormats.begin(), out, &parent);
+    else
+        m_presentationFormats.emplace_back(out, &parent);
+
+    auto nfp = &m_presentationFormats.back();
+    if (precisionOverride.IsValid())
+        {
+        if (Formatting::PresentationType::Fractional == nfp->GetPresentationType())
+            {
+            Formatting::FractionalPrecision prec;
+            if (!Formatting::Utils::FractionalPrecisionByDenominator(prec, precisionOverride.Value()))
+                return ECObjectsStatus::Error;
+            nfp->GetNumericSpecP()->SetFractionalPrecision(prec);
+            }
+        else
+            {
+            Formatting::DecimalPrecision prec;
+            if (!Formatting::Utils::DecimalPrecisionByIndex(prec, precisionOverride.Value()))
+                return ECObjectsStatus::Error;
+            nfp->GetNumericSpecP()->SetDecimalPrecision(prec);
+            }
+        }
+
+    if (nullptr != inputUnitOverride)
+        nfp->GetCompositeSpecP()->SetInputUnit(inputUnitOverride);
+
+    if (nullptr != labelOverride)
+        nfp->GetCompositeSpecP()->SetInputUnitLabel(labelOverride);
 
     return ECObjectsStatus::Success;
     }

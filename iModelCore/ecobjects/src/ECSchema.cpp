@@ -2035,6 +2035,31 @@ ECUnitP ECSchema::GetUnitP(Utf8CP name) const
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    04/2018
+//--------------------------------------------------------------------------------------
+ECFormatCP ECSchema::LookupFormat(Utf8CP name) const
+    {
+    Utf8String formatAlias;
+    Utf8String formatName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(formatAlias, formatName, name))
+        return nullptr;
+
+    ECFormatCP format = nullptr;
+    if (formatAlias.empty())
+        format = GetFormatCP(formatName.c_str());
+    else
+        {
+        ECSchemaCP resolvedUnitSchema = GetSchemaByAliasP(formatAlias);
+        if (nullptr == resolvedUnitSchema)
+            return nullptr;
+
+        format = resolvedUnitSchema->GetFormatCP(formatName.c_str());
+        }
+
+    return format;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 ECObjectsStatus ECSchema::DeleteUnit(ECUnitR unit)

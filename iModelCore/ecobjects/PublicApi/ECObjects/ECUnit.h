@@ -229,6 +229,7 @@ public:
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteConstantJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
+
 //=======================================================================================
 //! @bsistruct
 //=======================================================================================
@@ -240,11 +241,8 @@ private:
     Utf8String m_nameOrFormatString;
     ECFormatCP m_ecFormat;
 
-protected:
-    NamedFormat(Utf8StringCR name, ECFormatCP format = nullptr) : Formatting::Format(), m_nameOrFormatString(name), m_ecFormat(format) {}
-
 public:
-    NamedFormat(Utf8String name, Formatting::FormatCR format) : Formatting::Format(format), m_nameOrFormatString(name), m_ecFormat(nullptr) {}
+    ECOBJECTS_EXPORT NamedFormat(Utf8StringCR name, ECFormatCP format = nullptr);
     Utf8StringCR GetName() const {return m_nameOrFormatString;}
     bool IsOverride() const {return this != (NamedFormatCP)m_ecFormat; }
     ECFormatCP GetParentFormat() const {return m_ecFormat;}
@@ -309,6 +307,5 @@ public:
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
 };
-
 
 END_BENTLEY_ECOBJECT_NAMESPACE

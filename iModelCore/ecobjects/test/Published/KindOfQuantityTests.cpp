@@ -71,7 +71,9 @@ TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
     auto resultKindOfQuantity = property->GetKindOfQuantity();
     ASSERT_NE(resultKindOfQuantity, nullptr);
     EXPECT_STREQ("MyKindOfQuantity", resultKindOfQuantity->GetName().c_str());
-    EXPECT_EQ(ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"), resultKindOfQuantity->GetPersistenceUnit());
+    SchemaKey key = SchemaKey("Units", 1, 0, 0);
+    auto unitSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_EQ(unitSchema->GetUnitCP("FT"), resultKindOfQuantity->GetPersistenceUnit());
     }
 
 //---------------------------------------------------------------------------------------
@@ -86,35 +88,26 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
 
     {
     KindOfQuantityP kindOfQuantity;
-
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
     EC_EXPECT_SUCCESS(kindOfQuantity->SetDescription("Kind of a Description here"));
     EC_EXPECT_SUCCESS(kindOfQuantity->SetDisplayLabel("best quantity of all times"));
     EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
     EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetConstantCP("PI"))); // constant
     kindOfQuantity->SetRelativeError(10e-3);
-    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDefaultPresentationFormat(NamedFormat("FT", Formatting::Format())));
-    auto format = Formatting::Format();
-    auto comp = Formatting::CompositeValueSpec();
-    comp.SetInputUnit(ECTestFixture::GetUnitsSchema()->GetUnitCP("ACRE"));
-    format.SetCompositeSpec(Formatting::CompositeValueSpec());
-    EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->SetDefaultPresentationFormat(NamedFormat("ACRE", format)));
-    //EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationUnit(*ECTestFixture::GetUnitsSchema()->GetConstantCP("PI")));
-    //EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationUnit("u:PI"));
-    //EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:IN"));
-    //EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:MILLIINCH"));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("InchesU")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U")));
+    EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("AngleDM")));
     }
 
     {
     KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
-    //EXPECT_STREQ("FT", koq->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
+    EXPECT_STREQ("InchesU", koq->GetDefaultPresentationFormat().GetName().c_str());
     auto const& presUnitList = koq->GetPresentationFormatList();
 
-    EXPECT_EQ(3, presUnitList.size());
-    //EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName().c_str());
-    //EXPECT_STREQ("IN", presUnitList.at(1).GetUnit()->GetName().c_str());
-    //EXPECT_STREQ("MILLIINCH", presUnitList.at(2).GetUnit()->GetName().c_str());
+    EXPECT_EQ(2, presUnitList.size());
+    EXPECT_STREQ("InchesU", presUnitList.at(0).GetName().c_str());
+    EXPECT_STREQ("Feet4U", presUnitList.at(1).GetName().c_str());
     }
 
     {
@@ -123,13 +116,11 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
     auto const& presUnitList = koq->GetPresentationFormatList();
 
     koq->RemovePresentationFormat(presUnitList.at(1));
-    EXPECT_EQ(2, presUnitList.size());
-    //EXPECT_STREQ("FT", presUnitList.at(0).GetUnit()->GetName().c_str());
-    //EXPECT_STREQ("MILLIINCH", presUnitList.at(1).GetUnit()->GetName().c_str());
+    EXPECT_EQ(1, presUnitList.size());
+    EXPECT_STRCASEEQ("Feet4U", presUnitList.at(0).GetName().c_str());
 
     koq->RemovePresentationFormat(presUnitList.at(0));
-    EXPECT_EQ(1, presUnitList.size());
-    //EXPECT_STREQ("MILLIINCH", presUnitList.at(0).GetUnit()->GetName().c_str());
+    EXPECT_EQ(0, presUnitList.size());
     }
     }
 
@@ -153,13 +144,13 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationUnits)
     
     EXPECT_EQ(0, kindOfQuantity->GetPresentationFormatList().size());
 
-    //EXPECT_TRUE(kindOfQuantity->SetDefaultPresentationUnit("u:FT"));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U")));
     EXPECT_EQ(1, kindOfQuantity->GetPresentationFormatList().size());
     kindOfQuantity->RemoveAllPresentationFormats();
-    //EXPECT_EQ(0, kindOfQuantity->GetPresentationUnitList().size());
+    EXPECT_EQ(0, kindOfQuantity->GetPresentationFormatList().size());
 
-    //EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:IN"));
-    //EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationUnit("u:MILLIINCH"));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("InchesU")));
     EXPECT_EQ(2, kindOfQuantity->GetPresentationFormatList().size());
 
     kindOfQuantity->RemoveAllPresentationFormats();
@@ -178,29 +169,28 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationUnits)
 
     ECUnitCP meterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
     ECUnitCP centimeterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("CM");
-    //ECUnitCP milliGramUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("MG");
-
-    // TODO
+    ECFormatCP angleDm = ECTestFixture::GetFormatsSchema()->GetFormatCP("AngleDMS");
+    ECFormatCP feet4u = ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U");
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
     EXPECT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*meterUnit));
-    //EXPECT_NE(ECObjectsStatus::Success, koq->AddPresentationUnit(*milliGramUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the Persistence Unit.";
+    EXPECT_NE(ECObjectsStatus::Success, koq->AddPresentationFormat(*angleDm)) << "The input unit ARC_DEG is from a different phenomeonon than the Persistence Unit.";
 
     KindOfQuantityP koq2;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq2, "MyKindOfQuantity2"));
-    //EC_EXPECT_SUCCESS(koq2->AddPresentationUnit(*milliGramUnit));
-    EXPECT_NE(ECObjectsStatus::Success, koq2->SetPersistenceUnit(*meterUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the Presentation Unit.";
+    EC_EXPECT_SUCCESS(koq2->AddPresentationFormat(*angleDm)) << "The input unit ARC_DEG is from a different phenomeonon than the Persistence Unit.";
+    EXPECT_NE(ECObjectsStatus::Success, koq2->SetPersistenceUnit(*meterUnit)) << "Meter is from a different phenomenon than the presentation unit";
 
     KindOfQuantityP koq3;
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq3, "MyKindOfQuantity3"));
-    //EC_EXPECT_SUCCESS(koq3->AddPresentationUnit(*meterUnit));
+    EC_EXPECT_SUCCESS(koq->AddPresentationFormat(*feet4u));
     EXPECT_EQ(ECObjectsStatus::Success, koq3->SetPersistenceUnit(*centimeterUnit));
-    //EXPECT_NE(ECObjectsStatus::Success, koq3->AddPresentationUnit(*milliGramUnit)) << "The Unit MG is from the MASS Phenomenon which is different than the existing Presentation and Persistence Unit.";
+    EXPECT_NE(ECObjectsStatus::Success, koq3->AddPresentationFormat(*angleDm)) << "The input unit ARC_DEG is from a different phenomeonon than the Persistence Unit and presentation unit.";
 
     KindOfQuantityP koq4;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq4, "MyKindOfQuantity4"));
-    //EC_EXPECT_SUCCESS(koq4->AddPresentationUnit(*milliGramUnit));
-    //EXPECT_NE(ECObjectsStatus::Success, koq4->AddPresentationUnit(*meterUnit)) << "The Unit M is from the LENGTH Phenomenon which is different than the existing Presentation Unit.";
+    EC_EXPECT_SUCCESS(koq4->AddPresentationFormat(*angleDm));
+    EXPECT_NE(ECObjectsStatus::Success, koq4->AddPresentationFormat(*feet4u)) << "The input Unit FT is from the LENGTH Phenomenon which is different than the existing Presentation Unit.";
     }
 
 //--------------------------------------------------------------------------------------
