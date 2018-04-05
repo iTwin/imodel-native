@@ -659,14 +659,10 @@ bool Attachment2d::_Load(DgnDbR db, Sheet::ViewController& sheetController, Scen
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool acceptAttachment(DgnElementId id, DgnDbR db, uint32_t index)
     {
+//#define FILTER_ATTACHMENTS
 #if defined(FILTER_ATTACHMENTS)
     // For debugging, define some criterion herein to filter out attachments not of interest...
-    auto view = db.Elements().Get<ViewDefinition>(id);
-    if (view.IsNull() || 1.0 == view->GetAspectRatioSkew())
-        return false;
-
-    DEBUG_PRINTF("Skew=%f", view->GetAspectRatioSkew());
-    return true;
+    return 1 == index;
 #else
     return true;
 #endif
@@ -1257,7 +1253,10 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     gf->ActivateGraphicParams(params);
     gf->AddRangeBox(range);
 
-    myArgs.m_graphics.Add(*gf->Finish());
+    // Put in a branch so it doesn't get clipped...
+    GraphicBranch branch;
+    branch.Add(*gf->Finish());
+    myArgs.m_graphics.Add(*args.m_context.CreateBranch(branch, GetRoot().GetDgnDb(), Transform::FromIdentity()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1266,7 +1265,7 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::Attachment::Root2d::DrawClipPolys(TileTree::DrawArgsR args) const
     {
-    DRange3d range = m_clip->m_boundingRange;
+    DRange3d range = GetRootTile()->GetRange();
 
     double zDepth = Render::Target::DepthFromDisplayPriority(0.5 * Render::Target::GetMaxDisplayPriority());
 
@@ -1299,11 +1298,7 @@ void Sheet::Attachment::Root2d::DrawClipPolys(TileTree::DrawArgsR args) const
     for (auto& mesh : clipper.GetOutput())
         gf->AddPolyface(*mesh, true);
 
-    Transform tf;
-    tf.InverseOf(GetLocation());
-    GraphicBranch branch;
-    branch.Add(*gf->Finish());
-    args.m_graphics.Add(*args.m_context.CreateBranch(branch, GetDgnDb(), tf));
+    args.m_graphics.Add(*gf->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1640,12 +1635,19 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
 
     // The renderer needs the unclipped range of the attachment in order to produce polys to be rendered as clip mask...
     // (Containment tests can also be more efficiently performed if boundary range is specified).
-    m_clip = attach.GetOrCreateClip();
-    m_clip->m_boundingRange = attachRange;
+    Transform clipTf;
+    clipTf.InverseOf(location);
+    m_clip = attach.GetOrCreateClip(&clipTf);
+    DRange3d clipRange;
+    clipTf.Multiply(clipRange, attachRange);
+    m_clip->m_boundingRange = clipRange;
 
     Transform sheetToDrawing;
     sheetToDrawing.InverseOf(m_drawingToAttachment);
-    m_graphicsClip = m_clip->Clone(&sheetToDrawing);
+    m_graphicsClip = attach.GetOrCreateClip(&sheetToDrawing);
+    DRange3d graphicsClipRange;
+    sheetToDrawing.Multiply(graphicsClipRange, attachRange);
+    m_graphicsClip->m_boundingRange = graphicsClipRange;
 
     m_rootTile = new Tile2d(*this, attach.GetPlacement().GetElementBox());
     }
