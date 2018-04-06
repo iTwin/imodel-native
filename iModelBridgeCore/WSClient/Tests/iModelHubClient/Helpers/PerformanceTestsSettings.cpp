@@ -58,6 +58,10 @@ void PerformanceTestSettings::ReadSettings(BeFileNameCR settingsFile)
     m_lockPostSize = settings["LockPostSize"].asInt64();
     m_lockGetSize = settings["LockGetSize"].asInt64();
     m_lockGetByIdSize = settings["LockGetByIDSize"].asInt64();
+    m_codeGetAttemptsCount = settings["CodeGetAttemptsCount"].asInt64();
+    m_lockGetAttemptsCount = settings["LockGetAttemptsCount"].asInt64();
+    m_codeGetSplitCount = settings["CodeGetSplitCount"].asInt64();
+    m_lockGetSplitCount = settings["LockGetSplitCount"].asInt64();
 
     m_codeGetSizeSecondCall = m_codeGetSize;
     if (settings.isMember("SecondCallCodeGetSize"))
