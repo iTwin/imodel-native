@@ -2632,11 +2632,7 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
             bvector<PolyfaceQueryCP>& clippedPolyfaceQueries = pfClipper.GetOutput();
 
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
-                {
-                // unused - DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
-                // unused - uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
                 sheetTilePolys.push_back(clippedPolyfaceQuery->Clone());
-                }
             }
         // else no output, so don't output any polys (empty sheetTilePolys)
         }
