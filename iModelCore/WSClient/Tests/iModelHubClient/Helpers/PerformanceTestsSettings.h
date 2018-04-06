@@ -21,7 +21,11 @@ struct PerformanceTestSettings
         int64_t m_lockGetByIdSize;
         int64_t m_lockGetSizeSecondCall;
         int64_t m_lockGetByIdSizeSecondCall;
-        
+        int64_t m_codeGetAttemptsCount;
+        int64_t m_lockGetAttemptsCount;
+        int64_t m_codeGetSplitCount;
+        int64_t m_lockGetSplitCount;
+
         void ReadSettings(BeFileNameCR settingsFile);
     public:
         static PerformanceTestSettings& Instance();
@@ -35,4 +39,8 @@ struct PerformanceTestSettings
         int64_t& GetLockGetByIdRequestSize() {return m_lockGetByIdSize;};
         int64_t& GetLockGetRequestSizeSecondCall() {return m_lockGetSizeSecondCall;};
         int64_t& GetLockGetByIdRequestSizeSecondCall() {return m_lockGetByIdSizeSecondCall;};
+        int64_t& GetCodeGetAttemptsCount() { return m_codeGetAttemptsCount; };
+        int64_t& GetLockGetAttemptsCount() { return m_lockGetAttemptsCount; };
+        int64_t& GetCodeGetSplitCount() { return m_codeGetSplitCount; };
+        int64_t& GetLockGetSplitCount() { return m_lockGetSplitCount; };
     };
