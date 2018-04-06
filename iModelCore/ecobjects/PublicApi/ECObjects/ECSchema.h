@@ -1501,7 +1501,7 @@ public:
     ECObjectsStatus SetDefaultPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr)
         {return AddPresentationFormat(parent, precisionOverride, inputUnitOverride, labelOverride, true);}
     //! Gets the default presentation format of this KindOfQuantity.
-    NamedFormat GetDefaultPresentationFormat() const {return *(&m_presentationFormats[0]);} // TODO fix
+    NamedFormatCP GetDefaultPresentationFormat() const {return HasPresentationFormats() ? &m_presentationFormats[0] : nullptr;}
 
     ECOBJECTS_EXPORT Utf8String GetPresentationUnitDescriptor() const;
 

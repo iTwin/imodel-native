@@ -424,6 +424,7 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     {
     ECSchemaPtr schema = SchemaJsonSerializationTest::CreateSchemaWithNoItems();
     schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     // Entity Class / Mixin Classes
     ECEntityClassP baseEntityClass;
@@ -486,10 +487,9 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "ExampleKoQ");
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
-    // TODO
-    //koq->SetDefaultPresentationUnit("u:IN");
-    //koq->AddPresentationUnit("u:MM");
-    //koq->AddPresentationUnit("u:CM");
+    koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
     koq->SetRelativeError(3);
 
     UnitSystemP unitSystem;
@@ -530,7 +530,6 @@ TEST_F(SchemaJsonSerializationTest, SchemaWithItems)
     ASSERT_EQ(BentleyStatus::SUCCESS, readJsonStatus);
 
     EXPECT_TRUE(ECTestUtility::JsonDeepEqual(schemaJson, testDataJson)) << ECTestUtility::JsonSchemasComparisonString(schemaJson, testDataJson);
-
 
     }
 

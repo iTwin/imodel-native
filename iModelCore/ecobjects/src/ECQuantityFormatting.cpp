@@ -46,9 +46,9 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
     if (nullptr == koq)
         return defFormat->FormatDouble(qty.GetMagnitude());
     
-    NamedFormat format = koq->GetDefaultPresentationFormat();
-    if (!format.HasCompositeInputUnit() || ECUnit::AreCompatible(qty.GetUnit(), format.GetCompositeSpec()->GetInputUnit()))
-        return format.FormatQuantity(qty, nullptr);
+    NamedFormatCP format = koq->GetDefaultPresentationFormat();
+    if (nullptr != format && (!format->HasCompositeInputUnit() || ECUnit::AreCompatible(qty.GetUnit(), format->GetCompositeSpec()->GetInputUnit())))
+        return format->FormatQuantity(qty, nullptr);
 
     *formatStatus = ECQuantityFormattingStatus::IncompatibleKOQ;
     return defFormat->FormatDouble(qty.GetMagnitude());

@@ -112,7 +112,7 @@ ECSchemaPtr ECTestFixture::GetUnitsSchema(bool recreate)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-ECSchemaCP ECTestFixture::GetFormatsSchema(bool recreate)
+ECSchemaPtr ECTestFixture::GetFormatsSchema(bool recreate)
     {
     if (recreate || s_formatsSchema.IsNull())
         {
@@ -120,7 +120,7 @@ ECSchemaCP ECTestFixture::GetFormatsSchema(bool recreate)
         SchemaKey key("Formats", 1, 0, 0);
         s_formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
         }
-    return s_formatsSchema.get();
+    return s_formatsSchema;
     }
 
 //---------------------------------------------------------------------------------------

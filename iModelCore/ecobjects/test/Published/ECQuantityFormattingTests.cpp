@@ -147,6 +147,8 @@ TEST_F(ECQuantityFormattingTest, FormatPersistedValueUsingKoQPersistenceUnit)
     koq->SetPersistenceUnit(*meter);
 
     ECQuantityFormattingStatus status;
+    // TODO where to handle case where we have no presentation units but we have a persistence unit that we'd like to use as an input unit 
+    // for defaultrealU
     Utf8String formatString = ECQuantityFormatting::FormatPersistedValue(5, koq, &status);
     EXPECT_STREQ("5.0 m", formatString.c_str());
     }

@@ -1441,7 +1441,7 @@ StatusInt     JsonEcInstanceWriter::WritePrimitiveValue(Json::Value& valueToPopu
 
                     quantityValue[json_rawValue()] = ecValue.GetDouble();
                     quantityValue[json_formattedValue()] = formattedVal;
-                    quantityValue[json_currentUnit()] = koq->GetDefaultPresentationFormat().GetName();
+                    quantityValue[json_currentUnit()] = koq->GetDefaultPresentationFormat()->GetName();
                     valueToPopulate[propertyName] = quantityValue;
                     return BSISUCCESS;
                     }
