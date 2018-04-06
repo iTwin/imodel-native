@@ -558,7 +558,7 @@ public:
 //! An unnamed resource is created for one-time use and cannot be looked up again for reuse.
 // @bsistruct                                                   Paul.Connelly   01/18
 //=======================================================================================
-template<typename T_Id> struct ResourceKey
+template <typename T_Id> struct ResourceKey
 {
 private:
     T_Id        m_id;
