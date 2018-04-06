@@ -4166,18 +4166,21 @@ void    PublisherContext::ExtractViewSelectors(DgnViewId& defaultViewId, DgnElem
                 all2dModelIds.insert(sheetView->GetBaseModelId());
                 omitThisView = false;
 
-                auto const&  model = GetDgnDb().Models().GetModel (sheetView->GetBaseModelId());
-                if (model.IsValid() && nullptr != model->ToSheetModel())
+                if (T_HOST._IsFeatureEnabled("TilePublisher.PublishViewAttachments"))
                     {
-                    auto   attachedViews = model->ToSheetModel()->GetSheetAttachmentViews(GetDgnDb());
-                    for (auto& attachedView : attachedViews)
+                    auto const&  model = GetDgnDb().Models().GetModel (sheetView->GetBaseModelId());
+                    if (model.IsValid() && nullptr != model->ToSheetModel())
                         {
-                        auto    insertPair = allCategorySelectors.Insert(attachedView->GetCategorySelectorId(), T_ViewDefs());
-                        insertPair.first->second.push_back(attachedView);
+                        auto   attachedViews = model->ToSheetModel()->GetSheetAttachmentViews(GetDgnDb());
+                        for (auto& attachedView : attachedViews)
+                            {
+                            auto    insertPair = allCategorySelectors.Insert(attachedView->GetCategorySelectorId(), T_ViewDefs());
+                            insertPair.first->second.push_back(attachedView);
 
-                        allDisplayStyles.insert(attachedView->GetDisplayStyleId());
-                        if (nullptr != attachedView->ToView2d())
-                            all2dModelIds.insert(attachedView->ToView2d()->GetBaseModelId());
+                            allDisplayStyles.insert(attachedView->GetDisplayStyleId());
+                            if (nullptr != attachedView->ToView2d())
+                                all2dModelIds.insert(attachedView->ToView2d()->GetBaseModelId());
+                            }
                         }
                     }
                 }
