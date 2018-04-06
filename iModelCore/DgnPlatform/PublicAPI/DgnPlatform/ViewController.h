@@ -124,8 +124,6 @@ protected:
     ClipVectorPtr m_activeVolume; //!< the active volume. If present, elements inside this volume may be treated specially
     Render::GraphicListPtr m_currentScene;
     Render::GraphicListPtr m_readyScene;
-    bmap<DgnModelId, TileTree::RootP> m_roots;
-    bool m_allRootsLoaded = false;
     GridOrientationType m_gridOrientation = GridOrientationType::WorldXY;
     DPoint2d m_gridSpacing = DPoint2d::From(1.0, 1.0);
     uint32_t m_gridsPerRef = 10;
@@ -225,8 +223,8 @@ protected:
     void ChangeSubCategoryDisplay(DgnSubCategoryId, bool onOff);
     void ToggleAllSubCategories(DgnCategoryId, bool onOff);
 
-    BentleyStatus CreateScene(SceneContextR context);
 public:
+    BentleyStatus CreateScene(SceneContextR context);
     Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
     BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
     void RequestScene(DgnViewportR vp, UpdatePlan const& plan, TileTree::TileRequestsR requests);
@@ -422,6 +420,18 @@ public:
 
     //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
+
+    //! Returns true if all of the TileTree::Roots associated with this ViewController have been loaded.
+    //! @private
+    virtual bool _AllTileTreesLoaded() const = 0;
+
+    //! Cancels loading of any tiles associated with this ViewController's TileTree::Roots and optionally waits.
+    //! @private
+    virtual void _CancelAllTileLoads(bool wait) = 0;
+
+    //! Unloads any TileTree::Roots associated with this ViewController.
+    //! @private
+    virtual void _UnloadAllTileTrees() = 0;
 };
 
 //=======================================================================================
@@ -434,20 +444,25 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController3d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
+    mutable Render::SceneLightsPtr m_lights;
+
     ViewController3dCP _ToView3d() const override final {return this;}
     ViewController3d(ViewDefinition3dCR definition) : T_Super(definition) {}
 
+    virtual void _AddModelLights(Render::SceneLightsR lights, Render::TargetR) const { }
+    void AddModelLights(Render::SceneLightsR lights, DgnModelId modelId, Render::TargetR) const;
 public:
     void SetDisplayStyle(DisplayStyle3dR style) { GetViewDefinition3dR().SetDisplayStyle3d(style); SetViewFlags(style.GetViewFlags()); }
     
     ViewDefinition3dCR GetViewDefinition3d() const {return static_cast<ViewDefinition3dCR>(*m_definition);}
     ViewDefinition3dR GetViewDefinition3dR() {return static_cast<ViewDefinition3dR>(*m_definition);}
     DGNPLATFORM_EXPORT ViewportStatus TurnCameraOn(Angle lensAngle);
+
+    DGNPLATFORM_EXPORT Render::SceneLightsPtr GetLights() const;
+    void ClearLights() {DgnDb::VerifyClientThread(); m_lights = nullptr;}
 };
 
 //=======================================================================================
-
-
 //! A SpatialViewController controls views of SpatialModels.
 //! It shows %DgnElements selected by an SQL query that can combine spatial criteria with business and graphic criteria.
 //! @ingroup GROUP_DgnView
@@ -557,12 +572,13 @@ private:
 protected:
     bool m_loading = false;
     bool m_defaultDeviceOrientationValid = false;
+    bool m_allRootsLoaded = false;
+    bmap<DgnModelId, TileTree::RootPtr> m_roots;
     RotMatrix m_defaultDeviceOrientation;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
-    mutable Render::SceneLightsPtr m_lights;
 
     void QueryModelExtents(FitContextR);
 
@@ -578,6 +594,7 @@ protected:
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
+    DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     BentleyStatus CreateThumbnailScene(SceneContextR context);
 
@@ -596,8 +613,6 @@ public:
     void ResetDeviceOrientation() {m_defaultDeviceOrientationValid = false;}
     DGNPLATFORM_EXPORT bool OnOrientationEvent(RotMatrixCR matrix, OrientationMode mode, UiOrientation ui, uint32_t nEventsSinceEnabled);
     DGNPLATFORM_EXPORT bool OnGeoLocationEvent(GeoLocationEventStatus& status, GeoPointCR point); //!< @private
-    DGNPLATFORM_EXPORT Render::SceneLightsPtr GetLights() const;
-    void ClearLights() {DgnDb::VerifyClientThread(); m_lights = nullptr;}
     SpatialViewDefinitionR GetSpatialViewDefinition() const {return static_cast<SpatialViewDefinitionR>(*m_definition);}
 
     //! Called when the display of a model is changed on or off
@@ -621,6 +636,9 @@ public:
     void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
     DGNPLATFORM_EXPORT Render::TextureCP GetEnvironmentMap(Render::SystemCR system) const;
 
+    bool _AllTileTreesLoaded() const override { return m_allRootsLoaded; }
+    DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
+    void _UnloadAllTileTrees() override { m_allRootsLoaded = false; m_roots.clear(); }
 };
 
 //=======================================================================================
@@ -652,12 +670,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
+    TileTree::RootPtr m_root;
+
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
-    TileTree::RootPtr GetRoot(SceneContextR context);
 
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 
@@ -669,6 +688,13 @@ public:
     GeometricModel2dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel2d>(GetViewedModelId()).get();}
 
     void SetDisplayStyle(DisplayStyle2dR style) { GetViewDefinition2dR().SetDisplayStyle2d(style); SetViewFlags(style.GetViewFlags()); }
+
+    bool _AllTileTreesLoaded() const override { return m_root.IsValid(); }
+    DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
+    void _UnloadAllTileTrees() override { m_root = nullptr; }
+
+    TileTree::RootP GetRoot(SceneContextR context);
+    BentleyStatus CreateScene(TileTree::DrawArgsR args);
 };
 
 //=======================================================================================
@@ -795,9 +821,6 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController2d : ViewController2d
 {
     DEFINE_T_SUPER(ViewController2d);
 
-private:
-    DgnModelId m_viewedModelId;
-
 protected:
     TemplateViewController2dCP _ToTemplateView2d() const override final {return this;}
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
@@ -807,7 +830,7 @@ public:
     TemplateViewDefinition2dCR GetTemplateViewDefinition2d() const {return static_cast<TemplateViewDefinition2dCR>(*m_definition);}
     TemplateViewDefinition2dR GetTemplateViewDefinition2dR() {return static_cast<TemplateViewDefinition2dR>(*m_definition);}
 
-    DgnModelId GetViewedModelId() const {return m_viewedModelId;}
+    DgnModelId GetViewedModelId() const {return GetTemplateViewDefinition2d().GetViewedModel();}
     GeometricModel2dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel2d>(GetViewedModelId()).get();}
     DGNPLATFORM_EXPORT DgnDbStatus SetViewedModel(DgnModelId modelId);
 };
@@ -822,8 +845,8 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewController3d : ViewController3d
     DEFINE_T_SUPER(ViewController3d);
 
 private:
-    DgnModelId m_viewedModelId;
-
+    TileTree::RootPtr m_root;
+    DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
 protected:
     TemplateViewController3dCP _ToTemplateView3d() const override final {return this;}
     GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
@@ -838,9 +861,13 @@ public:
     TemplateViewDefinition3dCR GetTemplateViewDefinition3d() const {return static_cast<TemplateViewDefinition3dCR>(*m_definition);}
     TemplateViewDefinition3dR GetTemplateViewDefinition3dR() {return static_cast<TemplateViewDefinition3dR>(*m_definition);}
 
-    DgnModelId GetViewedModelId() const {return m_viewedModelId;}
+    DgnModelId GetViewedModelId() const {return GetTemplateViewDefinition3d().GetViewedModel();}
     GeometricModel3dP GetViewedModel() const {return GetDgnDb().Models().Get<GeometricModel3d>(GetViewedModelId()).get();}
     DGNPLATFORM_EXPORT DgnDbStatus SetViewedModel(DgnModelId modelId);
+
+    bool _AllTileTreesLoaded() const override { return m_root.IsValid(); }
+    DGNPLATFORM_EXPORT void _CancelAllTileLoads(bool wait) override;
+    void _UnloadAllTileTrees() override { m_root = nullptr; }
 };
 
 END_BENTLEY_DGN_NAMESPACE

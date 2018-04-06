@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TxnManager.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -306,7 +306,7 @@ private:
     bvector<ValidationError> m_validationErrors;
     TxnRelationshipLinkTables m_rlt;
     bool m_initTableHandlers;
-
+    bool m_enableNotifyTxnMonitors;
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
 
@@ -314,13 +314,15 @@ private:
     BeSQLite::DbResult SaveChanges(BeSQLite::IByteArrayCR changeset, Utf8CP operation, bool isSchemaChange);
     BeSQLite::DbResult SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation);
     BeSQLite::DbResult SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation);
+    
+    BeSQLite::DbResult SaveRebase(int64_t& id, BeSQLite::Rebase const& rebase);
 
     Byte* ReadChanges(uint32_t& sizeRead, TxnId rowId);
     void ReadDbSchemaChanges(BeSQLite::DbSchemaChangeSet&, TxnId rowid);
     void ReadDataChanges(BeSQLite::ChangeSet&, TxnId rowid, TxnAction);
 
     void ApplyTxnChanges(TxnId, TxnAction);
-    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges);
+    BeSQLite::DbResult ApplyChanges(BeSQLite::IChangeSet& changeset, TxnAction txnAction, bool containsSchemaChanges, BeSQLite::Rebase* = nullptr);
     BeSQLite::DbResult ApplyDbSchemaChangeSet(BeSQLite::DbSchemaChangeSetCR schemaChanges);
     void OnBeginApplyChanges();
     void OnEndApplyChanges();
@@ -347,6 +349,7 @@ private:
 
 public:
     DgnDbStatus DeleteFromStartTo(TxnId lastId); //!< @private
+    DgnDbStatus DeleteRebases(int64_t lastRebaseId); //!< @private
     void DeleteReversedTxns(); //!< @private
     void OnBeginValidate(); //!< @private
     void OnEndValidate(); //!< @private
@@ -355,7 +358,7 @@ public:
     DGNPLATFORM_EXPORT ~TxnManager(); //!< @private
     BeSQLite::DbResult InitializeTableHandlers(); //!< @private
     TxnRelationshipLinkTables& RelationshipLinkTables(); //!< @private
-
+    void EnableNotifyTxnMontiors(bool enabled) { m_enableNotifyTxnMonitors = enabled; }
     
     //! A statement cache exclusively for Txn-based statements.
     BeSQLite::CachedStatementPtr GetTxnStatement(Utf8CP sql) const;
@@ -429,6 +432,17 @@ public:
     //! @return the current TxnId. This value can be saved and later used to reverse changes that happen after this time.
     //! @see   ReverseTo CancelTo
     TxnId GetCurrentTxnId() const {return m_curr;}
+
+    //! @private - query the ID of the last rebase blob stored by MergeRevision. Called by unit tests.
+    DGNPLATFORM_EXPORT int64_t QueryLastRebaseId();
+
+    //! @private - adds to `rebaser` all stored rebases up to and including `thruId`.
+    BeSQLite::DbResult LoadRebases(BeSQLite::Rebaser& rebaser, int64_t thruId);
+    
+#ifdef WIP_DONT_VALIDATE_REJECTIONS
+    //! @private - query if an in-coming change to this element was rejected/skipped
+    DGNPLATFORM_EXPORT bool WasElementChangeRejected(DgnElementId);
+#endif
 
     //! Get the current SessionId.
     SessionId GetCurrentSessionId() const {return m_curr.GetSession();}

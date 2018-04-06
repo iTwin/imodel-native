@@ -641,13 +641,15 @@ struct Texture : RefCounted<NonCopyableClass>
 protected:
     TextureKey m_key;
     bool m_isGlyph;
+    bool m_isTileSection;
 
     uint32_t _GetExcessiveRefCountThreshold() const override {return 100000;}
 
-    explicit Texture(CreateParams const& params) : m_key(params.m_key), m_isGlyph(params.m_isGlyph) { }
+    explicit Texture(CreateParams const& params) : m_key(params.m_key), m_isGlyph(params.m_isGlyph), m_isTileSection(params.m_isTileSection) { }
 public:
     TextureKeyCR GetKey() const { return m_key; }
     bool IsGlyph() const { return m_isGlyph; }
+    bool IsTileSection() const { return m_isTileSection; }
 
     // Named textures should preserve their image data so it can be obtained later.
     virtual ImageSource GetImageSource() const { BeAssert(false); return ImageSource(); }
@@ -2520,32 +2522,32 @@ struct TriMeshArgs
 {
     // The vertices of the edges are shared with those of the surface
     struct Edges
-    {
-        EdgeArgs            m_edges;
-        SilhouetteEdgeArgs  m_silhouettes;
-        PolylineEdgeArgs    m_polylines;
-        uint32_t            m_width = 0;
-        LinePixels          m_linePixels = LinePixels::Solid;
+        {
+        EdgeArgs                    m_edges;
+        SilhouetteEdgeArgs          m_silhouettes;
+        PolylineEdgeArgs            m_polylines;
+        uint32_t                    m_width = 0;
+        LinePixels                  m_linePixels = LinePixels::Solid;
 
         void Clear() { *this = Edges(); }
         bool IsValid() const { return m_edges.IsValid() || m_silhouettes.IsValid() || m_polylines.IsValid(); }
-    };
+        };
 
-    Edges               m_edges;
-    uint32_t            m_numIndices = 0;
-    uint32_t const*     m_vertIndex = nullptr;
-    uint32_t            m_numPoints = 0;
-    QPoint3dCP          m_points= nullptr;
-    OctEncodedNormalCP  m_normals = nullptr;
-    FPoint2d const*     m_textureUV= nullptr;
-    TexturePtr          m_texture;
-    ColorIndex          m_colors;
-    FeatureIndex        m_features;
-    QPoint3d::Params    m_pointParams;
-    MaterialPtr         m_material;
-    FillFlags           m_fillFlags = FillFlags::None;
-    bool                m_isPlanar = false;
-    bool                m_is2d = false;
+    Edges                           m_edges;
+    uint32_t                        m_numIndices = 0;
+    uint32_t const*                 m_vertIndex = nullptr;
+    uint32_t                        m_numPoints = 0;
+    QPoint3dCP                      m_points= nullptr;
+    OctEncodedNormalCP              m_normals = nullptr;
+    FPoint2d const*                 m_textureUV= nullptr;
+    TexturePtr                      m_texture;
+    ColorIndex                      m_colors;
+    FeatureIndex                    m_features;
+    QPoint3d::Params                m_pointParams;
+    MaterialPtr                     m_material;
+    FillFlags                       m_fillFlags = FillFlags::None;
+    bool                            m_isPlanar = false;
+    bool                            m_is2d = false;
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
@@ -2986,7 +2988,7 @@ public:
 //!     the subcategory are applied.
 // @bsistruct                                                   Paul.Connelly   03/17
 //=======================================================================================
-struct FeatureSymbologyOverrides
+struct FeatureSymbologyOverrides : RefCountedBase
 {
     //! Defines symbology overrides for a single element or subcategory.
     struct Appearance
@@ -3084,9 +3086,12 @@ private:
     uint8_t                             m_patterns:1;
     uint8_t                             m_alwaysDrawnExclusive:1;
     uint8_t                             m_lineWeights:1;
-public:
+
     FeatureSymbologyOverrides() : m_constructions(false), m_dimensions(false), m_patterns(false), m_alwaysDrawnExclusive(false), m_lineWeights(true) { }
     DGNPLATFORM_EXPORT explicit FeatureSymbologyOverrides(ViewControllerCR view);
+public:
+    static FeatureSymbologyOverridesPtr Create() { return new FeatureSymbologyOverrides(); }
+    static FeatureSymbologyOverridesCPtr Create(ViewControllerCR view) { return new FeatureSymbologyOverrides(view); }
 
     // Returns false if the feature is invisible.
     // Otherwise, populates the feature's Appearance overrides
@@ -3181,6 +3186,7 @@ struct GraphicBranch
 {
     ViewFlagsOverrides m_viewFlagsOverrides;
     bvector<GraphicPtr> m_entries;
+    FeatureSymbologyOverridesCPtr m_symbologyOverrides;
 
     void Add(Graphic& graphic) {m_entries.push_back(&graphic);BeAssert(m_entries.back().IsValid());}
     void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
@@ -3296,7 +3302,7 @@ struct System
     virtual uint32_t _GetMaxFeaturesPerBatch() const = 0;
 
     //! Create a Graphic consisting of batched Features.
-    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const = 0;
+    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features, DRange3dCR range) const = 0;
 
     //! Find a previously-created Texture by key. Returns null if no such texture exists.
     virtual TexturePtr _FindTexture(TextureKeyCR key, DgnDbR db) const = 0;
@@ -3393,25 +3399,25 @@ struct PixelData
     };
 private:
     DgnElementId    m_elementId;
-    double          m_distance;
+    double          m_distanceFraction;
     GeometryType    m_type;
     Planarity       m_planarity;
 public:
-    PixelData() : m_distance(-1.0), m_type(GeometryType::Unknown), m_planarity(Planarity::Unknown) { }
-    PixelData(DgnElementId id, double distance, GeometryType geomType, Planarity planarity)
-        : m_elementId(id), m_distance(distance), m_type(geomType), m_planarity(planarity) { }
+    PixelData() : m_distanceFraction(-1.0), m_type(GeometryType::Unknown), m_planarity(Planarity::Unknown) { }
+    PixelData(DgnElementId id, double distanceFraction, GeometryType geomType, Planarity planarity)
+        : m_elementId(id), m_distanceFraction(distanceFraction), m_type(geomType), m_planarity(planarity) { }
 
     //! Returns the ID of the foremost element which contributed to the pixel, or an invalid ID if no element or if element IDs were not selected.
     DgnElementId GetElementId() const { return m_elementId; }
-    //! Returns the distance from the near plane in world units, or a negative value if distances were not selected.
-    double GetDistance() const { return m_distance; }
+    //! Returns the fraction between the far and near clip planes (0 = far, 1.0 = near)
+    double GetDistanceFraction() const { return m_distanceFraction; }
     //! Returns the foremost type of geometry that produced this pixel, or Unknown if geometry was not selected
     GeometryType GetGeometryType() const { return m_type; }
     //! Returns the planarity of the foremost geometry that produced this pixel, or Unknown if geometry was not selected
     Planarity GetPlanarity() const { return m_planarity; }
 
     void SetElementId(DgnElementId elemId) { m_elementId=elemId; }
-    void SetDistance(double dist) { m_distance=dist; }
+    void SetDistanceFraction(double fraction) { m_distanceFraction = fraction; }
     void SetGeometry(GeometryType type, Planarity planarity) { m_type=type; m_planarity=planarity; }
 };
 
@@ -3471,10 +3477,10 @@ public:
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
-    virtual void _OverrideFeatureSymbology(FeatureSymbologyOverrides&&) = 0;
+    virtual void _OverrideFeatureSymbology(FeatureSymbologyOverridesCR) = 0;
     virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
     virtual void _SetFlashed(DgnElementId, double) = 0;
-    virtual void _SetViewRect(BSIRect rect) {}
+    virtual void _SetViewRect(BSIRect rect, bool temporary=false) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
     virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect, PixelData::Selector selector) = 0;
     DGNVIEW_EXPORT virtual void _QueueReset();

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
+#include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <DgnPlatformInternal/DgnCore/ElementGraphics.fb.h>
 #include <DgnPlatformInternal/DgnCore/TextStringPersistence.h>
 #include "DgnPlatform/Annotations/TextAnnotationDraw.h"
@@ -4347,6 +4348,223 @@ GeometryCollection::GeometryCollection(GeometrySourceCR source) : m_state(source
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
+    {
+    GeometryStreamIO::Collection collection(m_data, m_dataSize);
+    GeometryStreamIO::Reader reader(m_state.m_dgnDb);
+    DgnSubCategoryId lastSubCategory = m_state.m_geomParams.GetSubCategoryId();
+    Json::Value output;
+    
+    for (auto const& egOp : collection)
+        {
+        switch (egOp.m_opCode)
+            {
+            case GeometryStreamIO::OpCode::Header:
+                break;
+
+            case GeometryStreamIO::OpCode::BasicSymbology:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
+                Json::Value value;
+
+                DgnSubCategoryId subCategoryId((uint64_t)ppfb->subCategoryId());
+
+                // NOTE: Don't include default sub-category if sub-category isn't changing from a non-default sub-category (was un-necessarily included in some GeometryStreams)...
+                if (subCategoryId.IsValid() && subCategoryId != lastSubCategory)
+                    {
+                    value["subCategory"] = subCategoryId.ToHexStr();
+                    lastSubCategory = subCategoryId;
+                    }
+
+                if (ppfb->useColor())
+                    value["color"] = Json::Value(ppfb->color());
+
+                if (ppfb->useWeight())
+                    value["weight"] = Json::Value(ppfb->weight());
+
+                if (ppfb->useStyle())
+                    {
+                    DgnStyleId styleId((uint64_t)ppfb->lineStyleId());
+                    value["style"] = styleId.ToHexStr();
+                    }
+
+                if (0.0 != ppfb->transparency())
+                    value["transparency"] = ppfb->transparency();
+
+                if (0 != ppfb->displayPriority())
+                    value["displayPriority"] = ppfb->displayPriority();
+                
+                if (FB::GeometryClass_Primary != ppfb->geomClass())
+                    value["geometryClass"] = ppfb->geomClass();
+                    
+                Json::Value symbValue;
+                symbValue["appearance"] = value; // NOTE: A null "appearance" indicates a reset to default sub-category appearance...
+                output.append(symbValue);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::GeometryPartInstance:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
+                Json::Value value;
+
+                DgnGeometryPartId partId = DgnGeometryPartId((uint64_t)ppfb->geomPartId());
+                value["part"] = partId.ToHexStr();
+
+                if (ppfb->has_origin())
+                    JsonUtils::DPoint3dToJson(value["origin"], *((DPoint3dCP) ppfb->origin()));
+
+                if (ppfb->has_yaw() || ppfb->has_pitch() || ppfb->has_roll())
+                    value["rotation"] = JsonUtils::YawPitchRollToJson(YawPitchRollAngles::FromDegrees(ppfb->yaw(), ppfb->pitch(), ppfb->roll()));
+
+                if (ppfb->has_scale())
+                    value["scale"] = ppfb->scale();
+
+                Json::Value partValue;
+                partValue["geomPart"] = value;
+                output.append(partValue);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::TextString:
+                {
+                TextStringPtr text = TextString::Create();
+
+                if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(*text, egOp.m_data, egOp.m_dataSize, m_state.m_dgnDb))
+                    break;
+
+                TextStringStyleCR style = text->GetStyle();
+                DgnFontId fontId = m_state.m_dgnDb.Fonts().AcquireId(style.GetFont());
+
+                if (!fontId.IsValid())
+                    break; // Shouldn't happen...DecodeFromFlatBuf would have failed...
+
+                Json::Value value;
+
+                // we're going to store the fontid as a 32 bit value, even though in memory we have a 64bit value. Make sure the high bits are 0.
+                BeAssert(fontId.GetValue() == (int64_t)((uint32_t)fontId.GetValue())); 
+                value["font"] = (uint32_t)fontId.GetValue();
+                value["text"] = text->GetText().c_str();
+                value["height"] = style.GetHeight();
+
+                double widthFactor = (style.GetWidth() / style.GetHeight());
+                if (!DoubleOps::AlmostEqual(widthFactor, 1.0))
+                    value["widthFactor"] = widthFactor;
+
+                if (style.IsBold())
+                    value["bold"] = true;
+
+                if (style.IsItalic())
+                    value["italic"] = true;
+
+                if (style.IsUnderlined())
+                    value["underline"] = true;
+
+                if (!text->GetOrigin().IsEqual(DPoint3d::FromZero()))
+                    JsonUtils::DPoint3dToJson(value["origin"], text->GetOrigin());
+
+                if (!text->GetOrientation().IsIdentity())
+                    {
+                    YawPitchRollAngles angles;
+                    YawPitchRollAngles::TryFromRotMatrix(angles, text->GetOrientation()); // NOTE: Text orientation should not have scale/skew...can ignore strict Angle::SmallAngle check.
+                    value["rotation"] = JsonUtils::YawPitchRollToJson(angles);
+                    }
+
+                Json::Value textValue;
+                textValue["textString"] = value;
+                output.append(textValue);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::PointPrimitive:
+            case GeometryStreamIO::OpCode::PointPrimitive2d:
+            case GeometryStreamIO::OpCode::ArcPrimitive:
+            case GeometryStreamIO::OpCode::CurveVector:
+            case GeometryStreamIO::OpCode::Polyface:
+            case GeometryStreamIO::OpCode::CurvePrimitive:
+            case GeometryStreamIO::OpCode::SolidPrimitive:
+            case GeometryStreamIO::OpCode::BsplineSurface:
+            case GeometryStreamIO::OpCode::BRepPolyface: // Parasolid not currently supported return backup geometry...
+            case GeometryStreamIO::OpCode::BRepCurveVector:
+                {
+                GeometricPrimitivePtr geom;
+
+                if (!reader.Get(egOp, geom))
+                    break;
+
+                IGeometryPtr geomPtr;
+
+                switch (geom->GetGeometryType())
+                    {
+                    case GeometricPrimitive::GeometryType::CurvePrimitive:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsICurvePrimitive());
+                        break;
+                        }
+
+                    case GeometricPrimitive::GeometryType::CurveVector:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsCurveVector());
+                        break;
+                        }
+
+                    case GeometricPrimitive::GeometryType::SolidPrimitive:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsISolidPrimitive());
+                        break;
+                        }
+
+                    case GeometricPrimitive::GeometryType::BsplineSurface:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsMSBsplineSurface());
+                        break;
+                        }
+
+                    case GeometricPrimitive::GeometryType::Polyface:
+                        {
+                        geomPtr = IGeometry::Create(geom->GetAsPolyfaceHeader());
+                        break;
+                        }
+                    }
+
+                if (!geomPtr.IsValid())
+                    break;
+
+                Json::Value value;
+
+                if (!IModelJson::TryGeometryToIModelJsonValue(value, *geomPtr))
+                    break;
+
+                output.append(value);
+                break;
+                }
+
+#if defined (NOT_NOW_RAW_OPCODE)
+            case GeometryStreamIO::OpCode::ParasolidBRep:
+            default:
+                {
+                // FOR_TESTING_ONLY: Bad to append this especially if it's geometry (brep) as we need to compute bounding box...
+                Utf8String dataStr = Base64Utilities::Encode((Utf8CP) egOp.m_data, egOp.m_dataSize);
+                Json::Value value;
+
+                value["code"] = (uint32_t)egOp.m_opCode;
+                value["data"] = dataStr;
+
+                Json::Value opCodeValue;
+                opCodeValue["unparsedOp"] = value;
+                output.append(opCodeValue);
+                break;
+                }
+#endif
+            }
+        }
+
+    return output;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool is3dGeometryType(GeometricPrimitive::GeometryType geomType)
@@ -4581,6 +4799,7 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
     if (m_elParams.IsEquivalent(elParams))
         return true;
 
+    m_subCategoryChanged = (!m_isPartCreate && (elParams.GetSubCategoryId() != m_elParams.GetSubCategoryId()));
     m_elParams = elParams;
     m_appearanceChanged = true; // Defer append until we actually have some geometry...
 
@@ -4773,14 +4992,15 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic, Geom
         if (!m_appearanceModified || !m_elParamsModified.IsEquivalent(localParams))
             {
             m_elParamsModified = localParams;
-            m_writer.Append(m_elParamsModified, m_isPartCreate, m_is3d);
+            m_writer.Append(m_elParamsModified, m_isPartCreate || !m_subCategoryChanged, m_is3d);
             m_appearanceChanged = m_appearanceModified = true;
+            m_subCategoryChanged = false;
             }
         }
     else if (m_appearanceChanged)
         {
-        m_writer.Append(m_elParams, m_isPartCreate, m_is3d);
-        m_appearanceChanged = m_appearanceModified = false;
+        m_writer.Append(m_elParams, m_isPartCreate || !m_subCategoryChanged, m_is3d);
+        m_appearanceChanged = m_appearanceModified = m_subCategoryChanged = false;
         }
 
     if (isSubGraphic && !m_isPartCreate)
@@ -5543,3 +5763,241 @@ GeometryBuilderPtr GeometryBuilder::Create(GeometrySourceCR source)
 
     return new GeometryBuilder(source.GetSourceDgnDb(), categoryId, source.GetAsGeometrySource2d()->GetPlacement());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
+    {
+    Render::GeometryParams params = GetGeometryParams();
+    int n = input.size();
+
+    for (int i = 0; i < n; i++)
+        {
+        Json::Value entry = input[i];
+
+        if (!entry.isObject())
+            continue;
+
+        if (entry.isMember("appearance"))
+            {
+            Json::Value appearance = entry["appearance"];
+
+            params.ResetAppearance(); // Always reset to subCategory appearance...
+
+            if (!appearance["subCategory"].isNull())
+                {
+                DgnSubCategoryId subCategoryId;
+
+                subCategoryId.FromJson(appearance["subCategory"]);
+
+                if (subCategoryId.IsValid())
+                    params.SetSubCategoryId(subCategoryId);
+                }
+
+            if (!appearance["color"].isNull())
+                params.SetLineColor(ColorDef(appearance["color"].asInt()));
+
+            if (!appearance["weight"].isNull())
+                params.SetWeight(appearance["weight"].asInt());
+
+            if (!appearance["style"].isNull())
+                {
+                DgnStyleId styleId;
+
+                styleId.FromJson(appearance["style"]);
+
+                if (styleId.IsValid())
+                    {
+                    LineStyleInfoPtr lsInfo = LineStyleInfo::Create(styleId, nullptr);
+                    params.SetLineStyle(lsInfo.get());
+                    }
+                else
+                    {
+                    params.SetLineStyle(nullptr);
+                    }
+                }
+
+            if (!appearance["transparency"].isNull())
+                params.SetTransparency(appearance["transparency"].asDouble());
+
+            if (!appearance["displayPriority"].isNull())
+                params.SetDisplayPriority(appearance["displayPriority"].asInt());
+
+            if (!appearance["geometryClass"].isNull())
+                params.SetGeometryClass((Render::DgnGeometryClass) (appearance["geometryClass"].asInt()));
+            }
+        else if (entry.isMember("geomPart"))
+            {
+            Json::Value geomPart = entry["geomPart"];
+
+            if (geomPart["part"].isNull())
+                return false; // A part id is required...
+
+            DgnGeometryPartId partId;
+            partId.FromJson(geomPart["part"]);
+            if (!partId.IsValid())
+                return false;
+
+            DPoint3d origin = DPoint3d::FromZero();
+            if (!geomPart["origin"].isNull())
+                JsonUtils::DPoint3dFromJson(origin, geomPart["origin"]);
+
+            YawPitchRollAngles angles;
+            if (!geomPart["rotation"].isNull())
+                angles = JsonUtils::YawPitchRollFromJson(geomPart["rotation"]);
+
+            Transform geomToSource = angles.ToTransform(origin);
+
+            if (!geomPart["scale"].isNull())
+                {
+                double scale = geomPart["scale"].asDouble();
+                if (scale > 0.0 && 1.0 != scale)
+                    geomToSource.ScaleMatrixColumns(geomToSource, scale, scale, scale);
+                }
+
+            if (!Append(params))
+                return false;
+
+            if (!Append(partId, geomToSource))
+                return false;
+            }
+        else if (entry.isMember("textString"))
+            {
+            Json::Value textString = entry["textString"];
+
+            if (textString["font"].isNull() || textString["height"].isNull() || textString["text"].isNull())
+                return false; // A font, height, and text are required...
+
+            DgnFontCP font = GetDgnDb().Fonts().FindFontById(DgnFontId((uint64_t) textString["font"].asInt()));
+
+            if (nullptr == font)
+                return false; // Invalid font id...
+
+            double  height = textString["height"].asDouble();
+            double  width = height;
+
+            if (0.0 == height)
+                return false; // Invalid height...
+
+            if (!textString["widthFactor"].isNull())
+                {
+                double widthFactor = textString["widthFactor"].asDouble();
+                
+                if (0.0 != widthFactor)
+                    width = height * widthFactor;
+                }
+
+            TextStringStylePtr style = TextStringStyle::Create();
+
+            style->SetFont(*font);
+            style->SetSize(width, height);
+
+            if (!textString["bold"].isNull())
+                style->SetIsBold(textString["bold"].asBool());
+
+            if (!textString["italic"].isNull())
+                style->SetIsItalic(textString["italic"].asBool());
+
+            if (!textString["underline"].isNull())
+                style->SetIsUnderlined(textString["underline"].asBool());
+
+            TextStringPtr text = TextString::Create();
+
+            text->SetStyle(*style);
+            text->SetText(textString["text"].asString().c_str());
+
+            if (!textString["origin"].isNull())
+                {
+                DPoint3d origin;
+
+                JsonUtils::DPoint3dFromJson(origin, textString["origin"]);
+                text->SetOrigin(origin);
+                }
+
+            if (!textString["rotation"].isNull())
+                {
+                YawPitchRollAngles angles = JsonUtils::YawPitchRollFromJson(textString["rotation"]);
+                RotMatrix rMatrix = angles.ToRotMatrix();
+
+                text->SetOrientation(rMatrix);
+                }
+
+            if (!Append(params))
+                return false;
+
+            if (!Append(*text))
+                return false;
+            }
+#if defined (NOT_NOW_RAW_OPCODE)
+        else if (entry.isMember("unparsedOp"))
+            {
+            // FOR_TESTING_ONLY: Bad to append this especially if it's geometry (brep) as we need to compute bounding box...
+            Json::Value unparsedOp = entry["unparsedOp"];
+            GeometryStreamIO::OpCode opCode = (GeometryStreamIO::OpCode) unparsedOp["code"].asInt();
+            ByteStream byteStream;
+
+            Base64Utilities::Decode(byteStream, unparsedOp["data"].asString());
+
+            if (!byteStream.HasData())
+                return false;
+
+            m_writer.Append(GeometryStreamIO::Operation(opCode, byteStream.GetSize(), byteStream.GetData()));
+            }
+#endif
+        else
+            {
+            bvector<IGeometryPtr> geometry;
+
+            if (!IModelJson::TryIModelJsonValueToGeometry(entry, geometry) || 1 != geometry.size())
+                return false; // Should only ever be a single entry...
+
+            if (!Append(params))
+                return false;
+
+            if (!Append(*geometry.at(0)))
+                return false;
+            }
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::UpdateFromJson(DgnGeometryPartR part, JsonValueCR input, JsonValueCR opts)
+    {
+    if (!input.isArray())
+        return false;
+
+    GeometryBuilderPtr builder = CreateGeometryPart(part.GetDgnDb(), true); // NEEDSWORK...supply 2d/3d in opts?
+
+    if (!builder.IsValid())
+        return false;
+
+    if (!builder->FromJson(input, opts))
+        return false;
+
+    return (SUCCESS == builder->Finish(part));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryBuilder::UpdateFromJson(GeometrySourceR source, JsonValueCR input, JsonValueCR opts)
+    {
+    if (!input.isArray())
+        return false;
+
+    GeometryBuilderPtr builder = Create(source);
+
+    if (!builder.IsValid())
+        return false;
+
+    if (!builder->FromJson(input, opts))
+        return false;
+
+    return (SUCCESS == builder->Finish(source));
+    }
+

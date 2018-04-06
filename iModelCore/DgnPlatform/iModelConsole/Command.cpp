@@ -834,11 +834,6 @@ void ImportCommand::RunImportSchema(Session& session, std::vector<Utf8String> co
         options = SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues;
         pathIx = 2;
         }
-    else if (firstArg.EqualsIAscii("poisoning"))
-        {
-        options = SchemaManager::SchemaImportOptions::Poisoning;
-        pathIx = 2;
-        }
 
     BeFileName ecschemaPath(args[pathIx]);
     ecschemaPath.Trim(L"\"");

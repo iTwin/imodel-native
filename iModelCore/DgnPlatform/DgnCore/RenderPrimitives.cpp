@@ -672,16 +672,27 @@ DisplayParamsCPtr DisplayParams::Clone() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureR texture) const
+DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureCR texture) const
     {
     BeAssert(Type::Text == GetType());
-    auto clone = new DisplayParams(*this);
 
     TextureMapping::Trans2x3 tf(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
     TextureMapping::Params params;
     params.SetWeight(0.0);
     params.SetTransform(&tf);
-    clone->m_textureMapping = TextureMapping(texture, params);
+
+    return CloneWithTextureOverride(TextureMapping(texture, params));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::CloneWithTextureOverride(TextureMappingCR textureMapping) const
+    {
+    auto clone = new DisplayParams(*this);
+    clone->m_textureMapping = textureMapping;
+    clone->m_material = nullptr;
+
     return clone;
     }
 
@@ -952,6 +963,17 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void    Mesh::AddAuxChannel(PolyfaceAuxData::ChannelCR channel, size_t index)
+    {
+    if (!m_auxChannel.IsValid())
+        m_auxChannel = channel.CloneWithoutData();
+
+    m_auxChannel->AppendDataByIndex(channel, index);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Mesh::Features::Add(FeatureCR feat, size_t numVerts)
@@ -1167,7 +1189,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, Utf8CP auxChannelName)
     {
     if (visitor.Point().size() < 3)
         return;
@@ -1175,7 +1197,12 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
     size_t          nTriangles = points.size() - 2;
+
+    PolyfaceAuxData::ChannelCPtr auxChannel;
     
+    if (nullptr != auxChannelName && visitor.GetAuxDataCP().IsValid())
+        auxChannel = visitor.GetAuxDataCP()->GetChannel(auxChannelName);
+
     if (requireNormals && visitor.Normal().size() < points.size())
         return; // TFS#790263: Degenerate triangle - no normals.
 
@@ -1211,7 +1238,18 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             size_t      index = (0 == i) ? 0 : iTriangle + i; 
             VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
 
-            newTriangle[i] = AddVertex(vertex);
+            if (auxChannel.IsValid())
+                {
+                // No deduplication with auxData (for now...)
+                newTriangle[i] = m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
+                m_mesh->AddAuxChannel(*auxChannel, index);
+                }
+            else
+                {
+                newTriangle[i] = AddVertex(vertex);
+                }
+
+
             if (m_currentPolyface.IsValid())
                 m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[index]);
             }
@@ -1937,20 +1975,28 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
     // This ensures the builder map is organized in the same order as the geometry list, and no meshes are merged.
     // This is required to make overlay decorations render correctly.
-    uint16_t order = 0;
-    for (auto const& geom : m_geometries)
+    uint16_t    order = 0;
+    Utf8CP      activeAuxChannel =  context.GetActiveAuxChannel().empty() ? nullptr : context.GetActiveAuxChannel().c_str();
+    for (auto const& geom : m_geometries)                                                                        
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
         for (auto const& tilePolyface : polyfaces)
             {
+            Utf8CP      auxChannel = nullptr;
+
             PolyfaceHeaderPtr polyface = tilePolyface.m_polyface;
             if (polyface.IsNull() || 0 == polyface->GetPointCount())
                 continue;
 
+            if (nullptr != activeAuxChannel &&
+                polyface->GetAuxDataCP().IsValid() &&
+                polyface->GetAuxDataCP()->GetChannel(activeAuxChannel).IsValid())
+                auxChannel = activeAuxChannel;
+
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
-            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar, auxChannel);
             if (options.WantPreserveOrder())
                 key.SetOrder(order++);
 
@@ -1961,7 +2007,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP());
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), auxChannel);
 
             meshBuilder.EndPolyface();
             }
@@ -2196,6 +2242,8 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     DRange3d textRange = DRange3d::From(textRange2d.low.x, textRange2d.low.y, 0.0, textRange2d.high.x, textRange2d.high.y, 0.0);
     textTransform.Multiply(textRange, textRange);
 
+    auto facetOptions = CreateFacetOptions(chordTolerance);
+
     DPoint3d textRangeCenter = DPoint3d::FromInterpolate(textRange.low, 0.5, textRange.high);
     double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
     double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
@@ -2206,7 +2254,16 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     constexpr double s_texSizeThreshold = 64.0;
     bool doTextAsRasterIfPossible = textSize / s_minToleranceRatioMultiplier <= s_texSizeThreshold;
 
-    auto facetOptions = CreateFacetOptions(chordTolerance);
+    IPolyfaceConstructionPtr glyphBoxBuilder;
+    bool doGlyphBoxes = context.WantGlyphBoxes(textSize);
+    bvector<DPoint3d> glyphBox(5);
+    if (doGlyphBoxes)
+        {
+        if (nullptr == polyfaces)
+            return;
+
+        glyphBoxBuilder = IPolyfaceConstruction::Create(*facetOptions);
+        }
 
     for (size_t i = 0; i < textString.GetNumGlyphs(); i++)
         {
@@ -2215,13 +2272,33 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
         Glyph* glyph = nullptr != textGlyph ? FindOrInsert(*textGlyph, textString.GetStyle().GetFont()) : nullptr;
         if (nullptr == glyph || !glyph->IsValid())
             continue;
-        else if ((glyph->IsStrokes() && nullptr == strokes) || (!glyph->IsStrokes() && nullptr == polyfaces))
-            continue;
+
+        if (!doGlyphBoxes)
+            {
+            if ((glyph->IsStrokes() && nullptr == strokes) || (!glyph->IsStrokes() && nullptr == polyfaces))
+                continue;
+            }
 
         Transform glyphTransform = Transform::FromProduct(Transform::From(glyphOrigins[i]), rot);
         glyphTransform = Transform::FromProduct(textTransform, glyphTransform);
 
-        if (glyph->IsStrokes())
+        if (doGlyphBoxes)
+            {
+            DRange2d glyphRange = textGlyph->GetExactRange();
+
+            glyphBox[0].x = glyphBox[3].x = glyphBox[4].x = glyphRange.low.x;
+            glyphBox[1].x = glyphBox[2].x = glyphRange.high.x;
+
+            glyphBox[0].y = glyphBox[1].y = glyphBox[4].y = glyphRange.low.y;
+            glyphBox[2].y = glyphBox[3].y = glyphRange.high.y;
+
+            for (auto& pt : glyphBox)
+                pt.z = 0.0;
+
+            glyphTransform.Multiply(glyphBox, glyphBox);
+            glyphBoxBuilder->AddTriangulation(glyphBox);
+            }
+        else if (glyph->IsStrokes())
             {
             Strokes::PointLists points = glyph->GetStrokes(*facetOptions);
             if (!points.empty())
@@ -2258,6 +2335,13 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
                 polyfaces->push_back(Polyface(*displayParams, *polyface, false, true));
                 }
             }
+        }
+
+    if (doGlyphBoxes)
+        {
+        auto polyface = glyphBoxBuilder->GetClientMeshPtr();
+        if (polyface.IsValid() && polyface->HasFacets())
+            polyfaces->push_back(Polyface(geom.GetDisplayParams(), *polyface, false, true));
         }
     }
 
@@ -2520,28 +2604,27 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
     {
     bvector<PolyfaceHeaderPtr> sheetTilePolys;
 
+    // need to order these strangely to account for the way TileCorners arranges vertices 
+    DPoint3d pt0 = DPoint3d::FromXYZ(corners.m_pts[0].x, corners.m_pts[0].y, corners.m_pts[0].z);
+    DPoint3d pt1 = DPoint3d::FromXYZ(corners.m_pts[1].x, corners.m_pts[1].y, corners.m_pts[1].z);
+    DPoint3d pt2 = DPoint3d::FromXYZ(corners.m_pts[3].x, corners.m_pts[3].y, corners.m_pts[3].z);
+    DPoint3d pt3 = DPoint3d::FromXYZ(corners.m_pts[2].x, corners.m_pts[2].y, corners.m_pts[2].z);
+
+    bvector<DPoint3d> quadPts;
+    quadPts.push_back(pt0);
+    quadPts.push_back(pt1);
+    quadPts.push_back(pt2);
+    quadPts.push_back(pt3);
+
+    IFacetOptionsPtr facetOptions = IFacetOptions::Create();
+    facetOptions->SetParamsRequired(true);
+    IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOptions);
+    builder->AddTriangulation(quadPts);
+    PolyfaceHeaderPtr pfHdr = builder->GetClientMeshPtr();
+
     rangeOut.Init();
     if (nullptr != clip)
         {
-        // need to order these strangely to account for the way TileCorners arranges vertices 
-        const double scaleAmt = 1.0; // placeholder
-        DPoint3d pt0 = DPoint3d::FromXYZ(corners.m_pts[0].x, corners.m_pts[0].y, corners.m_pts[0].z);  pt0.Scale(scaleAmt);
-        DPoint3d pt1 = DPoint3d::FromXYZ(corners.m_pts[1].x, corners.m_pts[1].y, corners.m_pts[1].z);  pt1.Scale(scaleAmt);
-        DPoint3d pt2 = DPoint3d::FromXYZ(corners.m_pts[3].x, corners.m_pts[3].y, corners.m_pts[3].z);  pt2.Scale(scaleAmt);
-        DPoint3d pt3 = DPoint3d::FromXYZ(corners.m_pts[2].x, corners.m_pts[2].y, corners.m_pts[2].z);  pt3.Scale(scaleAmt);
-
-        bvector<DPoint3d> quadPts;
-        quadPts.push_back(pt0);
-        quadPts.push_back(pt1);
-        quadPts.push_back(pt2);
-        quadPts.push_back(pt3);
-
-        IFacetOptionsPtr facetOptions = IFacetOptions::Create();
-        facetOptions->SetParamsRequired(true);
-        IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create(*facetOptions);
-        builder->AddTriangulation(quadPts);
-        PolyfaceHeaderPtr pfHdr = builder->GetClientMeshPtr();
-
         GeometryClipper::PolyfaceClipper pfClipper;
         pfClipper.ClipPolyface(*pfHdr, clip, true);
         if (pfClipper.HasOutput())
@@ -2559,10 +2642,11 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
                     }
                 }
             }
-        // else if no output, still will try to use _CreateTile, which is wrong.  Need to address this.
+        // else no output, so don't output any polys (empty sheetTilePolys)
         }
-    else // not clipped.  return empty vector which signifies a need to use _CreateTile.  range is still updated.
+    else // not clipped, so return original unclipped poly in sheetTilePolys
         {
+        sheetTilePolys.push_back(pfHdr);
         for (int i = 0; i < 4; i++)
             rangeOut.Extend(corners.m_pts[i]);
         }
@@ -2581,11 +2665,6 @@ bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, bvector<PolyfaceHea
         {
         TriMeshArgs polyTile;
 
-#if 0 // ###TODO: necessary? 
-        if (!clippedPolyfaceQuery->IsTriangulated())
-            const_cast<PolyfaceHeaderP>(dynamic_cast<PolyfaceHeaderCP>(clippedPolyfaceQuery))->Triangulate();
-#endif
-
         DPoint3dCP pts = polyface->GetPointCP();
         uint32_t numPts = polyface->GetPointCount();
 
@@ -2600,24 +2679,40 @@ bvector<GraphicPtr> System::_CreateSheetTile(TextureCR tile, bvector<PolyfaceHea
         polyTile.m_numPoints = numPts;
 
         const DPoint2d* rawParams = polyface->GetParamCP();
-        bvector<FPoint2d> uv; // output these uv coordinates to clippedTile
-        for (uint32_t i = 0; i < numPts; i++)
+        bvector<FPoint2d> uvs; // temporary uv storage - will be rearranged below
+        for (uint32_t i = 0; i < polyface->GetParamCount(); i++)
             {
             FPoint2d fpt;  fpt.x = rawParams[i].x;  fpt.y = rawParams[i].y;
-            uv.push_back(fpt);
+            uvs.push_back(fpt);
             }
-        polyTile.m_textureUV = &uv[0];
 
-        bvector<uint32_t> indices;
+        bvector<uint32_t> pointIndices;
+        bvector<uint32_t> uvIndices;
+
         PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface, true);
         for (visitor->Reset(); visitor->AdvanceToNextFace();)
             {
-            indices.push_back(visitor->GetClientPointIndexCP()[0]);
-            indices.push_back(visitor->GetClientPointIndexCP()[1]);
-            indices.push_back(visitor->GetClientPointIndexCP()[2]);
+            for (int i = 0; i < 3; i++)
+                {
+                pointIndices.push_back(visitor->GetClientPointIndexCP()[i]);
+                uvIndices.push_back(visitor->GetClientParamIndexCP()[i]);
+                }
             }
-        polyTile.m_numIndices = indices.size();
-        polyTile.m_vertIndex = &indices[0];
+
+        // make uv arrangement and indices match that of the points
+        // this is necessary because TriMeshArgs assumes m_vertIndex refers to both points and UVs.
+        // output uvsOut to clippedTile.
+        int i = 0;
+        bvector<FPoint2d> uvsOut;
+        uvsOut.resize(pointIndices.size());
+        for (auto pointIndex : pointIndices)
+            {
+            uvsOut[pointIndex] = uvs[uvIndices[i++]];
+            }
+
+        polyTile.m_textureUV = &uvsOut[0];
+        polyTile.m_vertIndex = &pointIndices[0];
+        polyTile.m_numIndices = pointIndices.size();
 
         polyTile.m_texture = const_cast<Render::Texture*>(&tile);
         polyTile.m_material = params.GetMaterial();
@@ -3375,7 +3470,7 @@ MeshBuilderR MeshBuilderMap::operator[](Key const& key)
     auto found = m_map.find(key);
     if (m_map.end() == found)
         {
-        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar);
+        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar, key.m_auxChannel);
         found = m_map.Insert(key, builder).first;
         }
 

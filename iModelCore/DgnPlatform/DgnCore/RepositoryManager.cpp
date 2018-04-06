@@ -57,6 +57,8 @@ public:
     static IBriefcaseManagerPtr Create(DgnDbR db) { return new MasterBriefcaseManager(db); }
 };
 
+#define STMT_ModelIdFromElement "SELECT ModelId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?"
+
 /*---------------------------------------------------------------------------------**//**
 * Maintains a local state Db containing:
 *   - Locks held by this briefcase
@@ -75,6 +77,8 @@ protected:
 
     Db      m_localDb;
     DbState m_localDbState;
+
+    bset<BeInt64Id>    m_exclusivelyLockedModels;
 
     Response _ProcessRequest(Request&, RequestPurpose purpose) override;
     RepositoryStatus _Demote(DgnLockSet&, DgnCodeSet const&) override;
@@ -97,7 +101,12 @@ protected:
     void _OnUndoRedo(TxnManager& mgr, TxnAction) override { Save(mgr); }
     RepositoryStatus _PrepareForElementOperation(Request& req, DgnElementCR el, BeSQLite::DbOpcode op) override
         {
-        return el.PopulateRequest(req, op);
+        RepositoryStatus status = el.PopulateRequest(req, op);
+
+        if (!LockRequired(el))
+            req.Locks().Remove(LockableId(el));
+
+        return status;
         }
     RepositoryStatus _PrepareForModelOperation(Request& req, DgnModelCR model, BeSQLite::DbOpcode op) override
         {
@@ -106,6 +115,7 @@ protected:
 
     BriefcaseManagerBase(DgnDbR db) : IBriefcaseManager(db), m_localDbState(DbState::New)
         {
+        m_exclusivelyLockedModels = bset<BeInt64Id>();
         T_HOST.GetTxnAdmin().AddTxnMonitor(*this);
         }
     ~BriefcaseManagerBase()
@@ -152,6 +162,39 @@ protected:
     RepositoryStatus FastQueryLocks(Response& response, LockRequest const& locks, ResponseOptions options);
     RepositoryStatus FastQueryCodes(Response& response, DgnCodeSet const& codes, ResponseOptions options);
 
+    /*---------------------------------------------------------------------------------**//**
+     * Check if an element's model id is exclusively locked, if it is do not require a lock
+     * @bsimethod                                                    Diego.Pinate    03/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    bool LockRequired(DgnModelId elementsModelId)
+        {
+        if (LocksRequired())
+            return (m_exclusivelyLockedModels.find(elementsModelId) == m_exclusivelyLockedModels.end());
+
+        return false;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    03/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    bool LockRequired(DgnElementId elementId)
+        {
+        CachedStatementPtr stmt = GetDgnDb().GetCachedStatement(STMT_ModelIdFromElement);
+        stmt->Step();
+        DgnModelId modelId = stmt->GetValueId<DgnModelId>(0);
+        stmt->Reset();
+        return modelId.IsValid() ? LockRequired(modelId) : LocksRequired();
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    03/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    bool LockRequired(DgnElementCR element)
+        {
+        return LockRequired(element.GetModelId());
+        }
+
+
     BeFileName GetLocalDbFileName() const
         {
         BeFileName filename = GetDgnDb().GetFileName();
@@ -173,6 +216,7 @@ struct BulkUpdateBriefcaseManager : BriefcaseManagerBase
 protected:
     Request m_req;      // locks and codes that we must acquire before we can say that update has succeeded
     int m_inBulkUpdate = 0;
+    bset<CodeSpecId>    m_filterCodeSpecs;  // code specs to filter from code requests
 #ifndef NDEBUG
     intptr_t m_threadId = 0;
 #endif
@@ -198,6 +242,44 @@ protected:
         if (nullptr != status && _IsBulkOperation() && !m_req.IsEmpty())
             *status = RepositoryStatus::Success; // Don't report missing locks and codes if we are in the middle of a bulk op and haven't made our request yet.
         return ret;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * Create the set to filter codes from request
+     * @bsimethod                                                    Diego.Pinate    03/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void _PopulateFilterCodeSpecs()
+        {
+        m_filterCodeSpecs = bset<CodeSpecId>();
+        // Geometry Parts
+        auto geomPartCodeSpec = GetDgnDb().CodeSpecs().GetCodeSpec(BIS_CODESPEC_GeometryPart);
+        m_filterCodeSpecs.insert(geomPartCodeSpec->GetCodeSpecId());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    03/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    bset<CodeSpecId> _GetFilteredCodeSpecIds() override
+        {
+        // Cache filter code spec set
+        if (m_filterCodeSpecs.empty())
+            _PopulateFilterCodeSpecs();
+        
+        return m_filterCodeSpecs;
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+     * @bsimethod                                                    Diego.Pinate    03/18
+     +---------------+---------------+---------------+---------------+---------------+------*/
+    void FilterCodes(DgnCodeSet& outputCodes, DgnCodeSet const& inputCodes)
+        {
+        if (m_filterCodeSpecs.empty())
+            _PopulateFilterCodeSpecs();
+
+        // Only add output codes that are not in our filter set
+        for (auto code : inputCodes)
+            if (m_filterCodeSpecs.find(code.GetCodeSpecId()) == m_filterCodeSpecs.end())
+                outputCodes.insert(code);
         }
 
     // Note: functions like _QueryCodeStates and _QueryLockLevel do NOT look in m_req. They check what we actually have obtained from the server.
@@ -290,7 +372,6 @@ IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseMana
 #define STMT_SelectUnavailableCodesInSet "SELECT " CODE_Columns " FROM " TABLE_UnavailableCodes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_DeleteCodesInSet "DELETE FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_SelectCode "SELECT * FROM " TABLE_Codes " WHERE " CODE_CodeSpecId "=? AND " CODE_Scope "=? AND " CODE_Value "=?"
-#define STMT_ModelIdFromElement "SELECT ModelId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?"
 
 enum CodeColumn { CodeSpec=0, Scope, Value };
 
@@ -495,6 +576,8 @@ RepositoryStatus BriefcaseManagerBase::Refresh()
         return RepositoryStatus::SyncError;
         }
 
+    m_exclusivelyLockedModels.clear();
+
     return Pull();
     }
 
@@ -518,6 +601,8 @@ RepositoryStatus BriefcaseManagerBase::ClearUserHeldCodesLocks()
         {
         return RepositoryStatus::SyncError;
         }
+    
+    m_exclusivelyLockedModels.clear();
     
     Save();
     
@@ -636,6 +721,17 @@ void BriefcaseManagerBase::InsertLock(LockableId id, LockLevel level, TableType 
     bindEnum(*stmt, 3, level);
 
     stmt->Step();
+
+    // Maintain set of exclusively locked models
+    if (id.GetType() == LockableType::Model)
+        {
+        // Not exclusively locked anymore
+        if (m_exclusivelyLockedModels.find(id.GetId()) != m_exclusivelyLockedModels.end() && level != LockLevel::Exclusive)
+            m_exclusivelyLockedModels.erase(id.GetId());
+        // Exclusively locked, add to set
+        if (level == LockLevel::Exclusive)
+            m_exclusivelyLockedModels.insert(id.GetId());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -795,6 +891,7 @@ template<typename T> void BriefcaseManagerBase::InsertLocks(T const& locks, Tabl
         {
         for (auto const& model : exclusivelyLockedModels)
             {
+            m_exclusivelyLockedModels.insert(model);
             ModelElementLocks elemLocks(model, GetDgnDb());
             InsertLocks(elemLocks, tableType, true);
             }
@@ -1493,7 +1590,7 @@ RepositoryStatus BriefcaseManagerBase::_OnFinishRevision(DgnRevision const& rev)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseManagerBase::_OnElementInserted(DgnElementId id)
     {
-    if (LocksRequired() && Validate())
+    if (LockRequired(id) && Validate())
         InsertLock(LockableId(id), LockLevel::Exclusive, TableType::Owned);
     }
 
@@ -2382,8 +2479,11 @@ bool IBriefcaseManager::Response::FromJson(JsonValueCR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BulkUpdateBriefcaseManager::AccumulateRequests(Request const& req)
     {
+    DgnCodeSet filteredCodes;
+    FilterCodes(filteredCodes, req.Codes());
+
     BeAssert(m_inBulkUpdate);
-    m_req.Codes().insert(req.Codes().begin(), req.Codes().end());
+    m_req.Codes().insert(filteredCodes.begin(), filteredCodes.end());
     m_req.Locks().GetLockSet().insert(req.Locks().GetLockSet().begin(), req.Locks().GetLockSet().end());
     }
 
@@ -2515,7 +2615,7 @@ RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForElementOperation(Request
     {
     if (!m_inBulkUpdate)
         return T_Super::_PrepareForElementOperation(reqOut, el, op);
-
+    
 #ifndef NDEBUG
     BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
 #endif
@@ -2523,6 +2623,9 @@ RepositoryStatus BulkUpdateBriefcaseManager::_PrepareForElementOperation(Request
     auto rstat = el.PopulateRequest(reqOut, op);
     if (RepositoryStatus::Success != rstat)
         return rstat;
+
+    if (!LockRequired(el))
+        reqOut.Locks().Remove(LockableId(el));
 
     AccumulateRequests(reqOut);
     return RepositoryStatus::Success;
@@ -2563,7 +2666,7 @@ void BulkUpdateBriefcaseManager::_OnElementInserted(DgnElementId id)
 #ifndef NDEBUG
     BeAssert(BeThreadUtilities::GetCurrentThreadId() == m_threadId);
 #endif
-    if (LocksRequired()) // don't Validate
+    if (LockRequired(id)) // don't Validate
         m_req.Locks().GetLockSet().insert(DgnLock(LockableId(id), LockLevel::Exclusive));
     }
 

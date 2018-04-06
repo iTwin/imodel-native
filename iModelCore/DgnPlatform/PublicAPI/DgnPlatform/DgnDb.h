@@ -83,7 +83,9 @@ public:
     Utf8String m_client;
     BeFileName m_seedDb;
     BeSQLite::BeGuid m_guid;
-
+    DPoint3d m_globalOrigin = DPoint3d::FromZero();
+    AxisAlignedBox3d m_projectExtents;
+    
     //! Default constructor for CreateDgnDbParams
     //! @param[in] guid The BeSQLite::BeGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid value is created.
     //! @note The new BeSQLite::BeGuid can be obtained via GetGuid.
@@ -121,9 +123,13 @@ public:
     //! for your needs.
     void SetSeedDb(BeFileNameCR seedDb) {m_seedDb = seedDb;}
 
+    //! Set the project extents for the new project.
+    void SetProjectExtents(AxisAlignedBox3dCR extents) {m_projectExtents = extents;}
+    
     //! Get the BeSQLite::BeGuid to be stored in the newly created DgnDb. This is only necessary if you don't supply a valid BeSQLite::BeGuid
     //! to the ctor.
     BeSQLite::BeGuid GetGuid() const {return m_guid;}
+
 
     //! Determine whether to overwrite an existing file in DgnDb::CreateDgnDb. The default is to fail if a file by the supplied name
     //! already exists.
@@ -451,6 +457,8 @@ public:
     //! Utility method to get the next id in a sequence
     //! @private internal use only
     BeSQLite::BeBriefcaseBasedIdSequence const& GetElementIdSequence() const { return m_elementIdSequence; }
+
+    BeSQLite::DbResult CreateRebaseTable(); //!< @private
 };
 
 END_BENTLEY_DGN_NAMESPACE

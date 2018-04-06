@@ -119,6 +119,9 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
             if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
                 return ERROR;
 
+            if (!query->m_responseBody->GetByteStream().HasData())
+                return ERROR;
+
             me->m_tileBytes = std::move(query->m_responseBody->GetByteStream()); // NEEDSWORK this is a copy not a move...
             me->m_contentType = response.GetHeaders().GetContentType();
             me->m_saveToCache = query->GetCacheContolExpirationDate(me->m_expirationDate, response);
@@ -682,7 +685,29 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnDbR db, TransformCR location, Utf8CP rootResource, Render::SystemP system) : m_db(db), m_location(location), m_renderSystem(system)
+Root::Root(GeometricModelCR model, TransformCR location, Utf8CP rootResource, Render::SystemP system)
+    : Root(model.GetDgnDb(), model.GetModelId(), model.Is3d(), location, rootResource, system)
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Root::Root(DgnDbR db, DgnModelId modelId, TransformCR location, Utf8CP rootResource, Render::SystemP system)
+    : Root(db, modelId, true, location, rootResource, system)
+    {
+    auto model = db.Models().GetModel(modelId);
+    BeAssert(model.IsValid());
+    if (model.IsValid() && !model->Is3d())
+        m_is3d = false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Root::Root(DgnDbR db, DgnModelId modelId, bool is3d, TransformCR location, Utf8CP rootResource, Render::SystemP system)
+    : m_db(db), m_location(location), m_renderSystem(system), m_modelId(modelId), m_is3d(is3d)
     {
     // unless a root directory is specified, we assume it's http.
     m_isHttp = true;
@@ -883,7 +908,8 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
 
     // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
     Frustum box(range);
-    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation()));
+    Frustum worldBox = box.TransformBy(args.GetLocation());
+    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(worldBox);
     bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
     return isOutside || clipped;
     }
@@ -941,13 +967,21 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::DrawInView(SceneContextR context)
     {
+    DrawArgs args = CreateDrawArgs(context);
+    DrawInView(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::DrawInView(DrawArgsR args)
+    {
     if (!GetRootTile().IsValid())
         {
         BeAssert(false);
         return;
         }
 
-    DrawArgs args = CreateDrawArgs(context);
     bvector<TileCPtr> selectedTiles = SelectTiles(args);
 
     for (auto const& selectedTile : selectedTiles)
@@ -1153,7 +1187,7 @@ ViewFlagsOverrides Root::_GetViewFlagsOverrides() const
 void DrawArgs::DrawGraphics()
     {
     // Allow the tile tree to specify how view flags should be overridden
-    DrawBranch(m_root._GetViewFlagsOverrides(), m_graphics);
+    DrawBranch(m_viewFlagsOverrides, m_graphics);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1249,8 +1283,8 @@ void QuadTree::Tile::_ValidateChildren() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
-    : T_Super::Root(db, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
+QuadTree::Root::Root(GeometricModelCR model, TransformCR trans, Utf8CP rootUrl, Dgn::Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency) 
+    : T_Super::Root(model, trans, rootUrl, system), m_maxZoom(maxZoom), m_maxPixelSize(maxSize)
     {
     m_tileColor = ColorDef::White();
     if (0.0 != transparency)
@@ -1260,8 +1294,8 @@ QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-OctTree::Root::Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
-    : T_Super(db, location, rootUrl, system)
+OctTree::Root::Root(GeometricModelCR model, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
+    : T_Super(model, location, rootUrl, system)
     {
     // 
     }
@@ -1725,10 +1759,33 @@ void TileRequests::RequestMissing(BeDuration partialTimeout) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileRequests::HasMissingTiles() const
+    {
+    for (auto const& kvp : m_map)
+        if (!kvp.second.empty())
+            return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+double TileArgs::GetTileRadius(TileCR tile) const
+    {
+    DRange3d range = tile.GetRange();
+    m_location.Multiply(&range.low, 2);
+    return 0.5 * (tile.GetRoot().Is3d() ? range.low.Distance(range.high) : range.low.DistanceXY(range.high));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip)
-    : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan)
+    : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan),
+    m_viewFlagsOverrides(root._GetViewFlagsOverrides())
     {
     //
     }
@@ -1876,6 +1933,29 @@ PolyfaceHeaderPtr TriMeshTree::TriMesh::GetPolyface() const
     return trimesh.ToPolyface();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Marc.Neely   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr CreateTileGraphic(Render::GraphicR graphic, RootR root, TriMeshTree::TriMesh::CreateParams const& args)
+    {
+    Dgn::Render::SystemP renderSystem = root.GetRenderSystemP();
+    if (nullptr == renderSystem || !root.GetModelId().IsValid())
+        return &graphic;
+
+    Feature feature(DgnElementId(root.GetModelId().GetValue()), DgnSubCategoryId(), DgnGeometryClass::Primary);
+    FeatureTable features(root.GetModelId(), renderSystem->_GetMaxFeaturesPerBatch());
+    features.GetIndex(feature);
+
+    ElementAlignedBox3d range;
+    range.InitFrom(args.m_points[0].x, args.m_points[0].y, args.m_points[0].z);
+    for (size_t i = 1; i < args.m_numPoints; ++i)
+        {
+        range.Extend(args.m_points[i]);
+        }
+
+    return renderSystem->_CreateBatch(graphic, std::move(features), range);
+    }
+
 /*-----------------------------------------------------------------------------------**//**
 * Construct a Geometry from a CreateParams and a Scene. The scene is necessary to get the Render::System, and this
 * Geometry is only valid for that Render::System
@@ -1905,7 +1985,9 @@ TriMeshTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render:
 
     auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
 
-    m_graphics.push_back(renderSys->_CreateTriMesh(trimesh, root.GetDgnDb()));
+    GraphicPtr graphic = renderSys->_CreateTriMesh(trimesh, root.GetDgnDb());
+
+    m_graphics.push_back(CreateTileGraphic(*graphic, root, args));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2099,3 +2181,18 @@ void TriMeshTree::Tile::_PickGraphics(PickArgsR args, uint32_t depth) const
         mesh->Pick(args);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Marc.Neely   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+GraphicPtr Tile::CreateTileGraphic(Render::GraphicR graphic, DgnModelId modelId) const
+    {
+    Dgn::Render::SystemP renderSystem = m_root.GetRenderSystemP();
+    if (nullptr == renderSystem || !modelId.IsValid())
+        return &graphic;
+
+    Feature feature(DgnElementId(modelId.GetValue()), DgnSubCategoryId(), DgnGeometryClass::Primary);
+    FeatureTable features(modelId, renderSystem->_GetMaxFeaturesPerBatch());
+    features.GetIndex(feature);
+
+    return renderSystem->_CreateBatch(graphic, std::move(features), _GetContentRange());
+    }

@@ -8,13 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/ElementTileTree.h>
 
-#define MODEL_PROP_ECInstanceId "ECInstanceId"
-#define MODEL_PROP_ParentModel "ParentModel"
-#define MODEL_PROP_ModeledElement "ModeledElement"
-#define MODEL_PROP_IsPrivate "IsPrivate"
-#define MODEL_PROP_JsonProperties "JsonProperties"
-#define MODEL_PROP_IsTemplate "IsTemplate"
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -473,7 +466,6 @@ SpatialLocationModelPtr SpatialLocationModel::CreateAndInsert(SpatialLocationPor
     return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Jonas.Valiunas  03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -688,7 +680,7 @@ DgnDbStatus DgnModel::Read(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassParamsCR params)
     {
-    int propsIndex = params.GetSelectIndex(MODEL_PROP_JsonProperties);
+    int propsIndex = params.GetSelectIndex(prop_JsonProperties());
     if (!statement.IsValueNull(propsIndex))
         {
         if (!Json::Reader::Parse(statement.GetValueText(propsIndex), m_jsonProperties))
@@ -709,7 +701,7 @@ DgnDbStatus DgnModel::_ReadSelectParams(ECSqlStatement& statement, ECSqlClassPar
 void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert)
     {
     if (ForInsert::Yes == forInsert)
-        statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
+        statement.BindId(statement.GetParameterIndex(prop_ECInstanceId()), m_modelId);
 
     if (!m_parentModelId.IsValid() || !m_modeledElementId.IsValid() || !m_modeledElementRelClassId.IsValid())
         {
@@ -719,16 +711,16 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
 
     if (ForInsert::Yes == forInsert)
         {
-        statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ParentModel), m_parentModelId);
-        statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElement), m_modeledElementId, m_modeledElementRelClassId);
+        statement.BindNavigationValue(statement.GetParameterIndex(prop_ParentModel()), m_parentModelId);
+        statement.BindNavigationValue(statement.GetParameterIndex(prop_ModeledElement()), m_modeledElementId, m_modeledElementRelClassId);
         }
 
-    statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsPrivate), m_isPrivate);
-    statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
+    statement.BindBoolean(statement.GetParameterIndex(prop_IsPrivate()), m_isPrivate);
+    statement.BindBoolean(statement.GetParameterIndex(prop_IsTemplate()), m_isTemplate);
 
     _OnSaveJsonProperties();
     if (!m_jsonProperties.isNull())
-        statement.BindText(statement.GetParameterIndex(MODEL_PROP_JsonProperties), m_jsonProperties.ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
+        statement.BindText(statement.GetParameterIndex(prop_JsonProperties()), m_jsonProperties.ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1186,7 +1178,7 @@ DgnDbStatus DgnModel::Insert()
     {
     if (!m_modeledElementId.IsValid())
         {
-        BeAssert(false && "A DgnModel must be modeling a DgnElement (that is above it in the hiearchy)");
+        BeAssert(false && "A DgnModel must be modeling a DgnElement (that is above it in the hierarchy)");
         return DgnDbStatus::BadElement;
         }
 
@@ -1200,6 +1192,10 @@ DgnDbStatus DgnModel::Insert()
     // give the element being modeled a chance to reject the insert
     DgnElementCPtr modeledElement = GetDgnDb().Elements().GetElement(GetModeledElementId());
     BeAssert(modeledElement.IsValid());
+
+    BeAssert(m_parentModelId == modeledElement->GetModelId()); // alert caller that we're going to change this value
+    m_parentModelId = modeledElement->GetModelId(); // this is redundant data, make sure it's right
+
     if (modeledElement.IsValid() && (DgnDbStatus::Success != (status=modeledElement->_OnSubModelInsert(*this))))
         return status;
 
@@ -1403,12 +1399,12 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {  
-    params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
-    params.Add(MODEL_PROP_ParentModel, ECSqlClassParams::StatementType::Insert);
-    params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::Insert);
-    params.Add(MODEL_PROP_IsPrivate, ECSqlClassParams::StatementType::All);
-    params.Add(MODEL_PROP_JsonProperties, ECSqlClassParams::StatementType::All);
-    params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
+    params.Add(DgnModel::prop_ECInstanceId(), ECSqlClassParams::StatementType::Insert);
+    params.Add(DgnModel::prop_ParentModel(), ECSqlClassParams::StatementType::Insert);
+    params.Add(DgnModel::prop_ModeledElement(), ECSqlClassParams::StatementType::Insert);
+    params.Add(DgnModel::prop_IsPrivate(), ECSqlClassParams::StatementType::All);
+    params.Add(DgnModel::prop_JsonProperties(), ECSqlClassParams::StatementType::All);
+    params.Add(DgnModel::prop_IsTemplate(), ECSqlClassParams::StatementType::All);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1421,11 +1417,11 @@ DgnModel::CreateParams DgnModel::InitCreateParamsFromECInstance(DgnDbStatus* inS
     DgnClassId classId(properties.GetClass().GetId().GetValue());
     ECN::ECValue v;
     bool isPrivate = false;
-    if (ECN::ECObjectsStatus::Success == properties.GetValue(v, MODEL_PROP_IsPrivate) && !v.IsNull())
+    if (ECN::ECObjectsStatus::Success == properties.GetValue(v, prop_IsPrivate()) && !v.IsNull())
         isPrivate = v.GetBoolean();
 
     DgnElementId modeledElementId;
-    if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_ModeledElement) || v.IsNull())
+    if (ECN::ECObjectsStatus::Success != properties.GetValue(v, prop_ModeledElement()) || v.IsNull())
         stat = DgnDbStatus::BadArg;
     else
         modeledElementId = DgnElementId((uint64_t) v.GetNavigationInfo().GetId<BeInt64Id>().GetValue());
@@ -1454,10 +1450,10 @@ DgnDbStatus DgnModel::_SetProperty(Utf8CP name, ECN::ECValueCR value)
     //    return DgnDbStatus::BadArg;
     //    }
 
-    if (0 == strcmp("Id", name) || 0 == strcmp(MODEL_PROP_ECInstanceId, name))
+    if (0 == strcmp("Id", name) || 0 == strcmp(prop_ECInstanceId(), name))
         return DgnDbStatus::ReadOnly;
 
-    if (0 == strcmp(MODEL_PROP_JsonProperties, name))
+    if (0 == strcmp(prop_JsonProperties(), name))
         {
         if (!Json::Reader::Parse(value.GetUtf8CP(), m_jsonProperties))
             return DgnDbStatus::BadArg;
@@ -1466,7 +1462,7 @@ DgnDbStatus DgnModel::_SetProperty(Utf8CP name, ECN::ECValueCR value)
         return DgnDbStatus::Success;
         }
 
-    if (0 == strcmp(MODEL_PROP_IsTemplate, name))
+    if (0 == strcmp(prop_IsTemplate(), name))
         {
         if (!value.IsBoolean())
             return DgnDbStatus::BadArg;
@@ -1486,7 +1482,7 @@ DgnDbStatus DgnModel::_SetProperties(ECN::IECInstanceCR properties)
         Utf8StringCR propName = prop->GetName();
 
         // Skip special properties that were passed in CreateParams. Generally, these are set once and then read-only properties.
-        if (propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ParentModel) || propName.Equals(MODEL_PROP_ModeledElement) || propName.Equals(MODEL_PROP_IsPrivate))
+        if (propName.Equals(prop_ECInstanceId()) || propName.Equals(prop_ParentModel()) || propName.Equals(prop_ModeledElement()) || propName.Equals(prop_IsPrivate()))
             continue;
 
         ECN::ECValue value;
@@ -1529,7 +1525,6 @@ DgnModelPtr dgn_ModelHandler::Model::_CreateNewModel(DgnDbStatus* inStat, DgnDbR
         BeAssert(false && "when would a handler fail to construct an element?");
         return nullptr;
         }
-    model->m_parentModelId = db.Elements().QueryModelId(params.m_modeledElementId);
     stat = model->_SetProperties(properties);
     return (DgnDbStatus::Success == stat)? model : nullptr;
     }

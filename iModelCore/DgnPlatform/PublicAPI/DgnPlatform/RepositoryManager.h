@@ -205,6 +205,7 @@ protected:
     virtual bool _IsBulkOperation() const = 0;
     virtual Response _EndBulkOperation() = 0;
     virtual void _ExtractRequestFromBulkOperation(Request&, bool locks, bool codes) {;}
+    virtual bset<CodeSpecId> _GetFilteredCodeSpecIds() { return bset<CodeSpecId>(); }
 
     DGNPLATFORM_EXPORT IRepositoryManagerP GetRepositoryManager() const;
     DGNPLATFORM_EXPORT bool LocksRequired() const;
@@ -399,6 +400,10 @@ public:
     //! @return True if all codes have been previously reserved by this briefcase
     //! @remarks The DgnCodeSet may be modified.
     bool AreCodesReserved(DgnCodeSet& codes, RepositoryStatus* status=nullptr) { DgnLockSet locks; return AreResourcesHeld(locks, codes, status); }
+
+    //! Returns a set of the filtered CodeSpecIds that we don't want to include in bulk requests
+    //! @return set of CodeSpecId
+    bset<CodeSpecId> GetFilteredCodeSpecIds() { return _GetFilteredCodeSpecIds(); }
 
     //! Attempts to reserve a set of codes for this briefcase's use
     //! In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.
@@ -597,6 +602,10 @@ struct PessimisticConcurrencyControl : RefCounted<IConcurrencyControl>
 struct IOptimisticConcurrencyControl : IConcurrencyControl
     {
     virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) = 0;
+
+    virtual bset<DgnElementId> const& _GetConflictingElementsRejected() const = 0;
+    virtual bset<DgnElementId> const& _GetConflictingElementsAccepted() const = 0;
+    virtual void _ConflictsProcessed() = 0;
     };
 
 /* An optimistic concurrency control policy */
@@ -643,19 +652,18 @@ struct OptimisticConcurrencyControl : RefCounted<OptimisticConcurrencyControlBas
 
     private:
     Policy m_policy;
-    bvector<DgnElementId> m_conflictingElementsRejected;
-    bvector<DgnElementId> m_conflictingElementsAccepted;
+    bset<DgnElementId> m_conflictingElementsRejected;
+    bset<DgnElementId> m_conflictingElementsAccepted;
 
-    BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) override;
-
-    BeSQLite::ChangeSet::ConflictResolution HandleConflict(OptimisticConcurrencyControl::OnConflict, Utf8CP tableName, BeSQLite::Changes::Change, BeSQLite::DbOpcode, bool indirect);
+    BeSQLite::ChangeSet::ConflictResolution HandleConflict(OptimisticConcurrencyControl::OnConflict, DgnDbCR, Utf8CP tableName, BeSQLite::Changes::Change, BeSQLite::DbOpcode, bool indirect);
 
     public:
     DGNPLATFORM_EXPORT OptimisticConcurrencyControl(Policy conflicts);
 
-    bvector<DgnElementId> const& GetConflictingElementsRejected() const {return m_conflictingElementsRejected;}
-    bvector<DgnElementId> const& GetConflictingElementsAccepted() const {return m_conflictingElementsAccepted;}
-    void ConflictsProcessed() {m_conflictingElementsRejected.clear(); m_conflictingElementsAccepted.clear();}
+    BeSQLite::ChangeSet::ConflictResolution _OnConflict(DgnDbCR, BeSQLite::ChangeSet::ConflictCause, BeSQLite::Changes::Change) override;
+    bset<DgnElementId> const& _GetConflictingElementsRejected() const override {return m_conflictingElementsRejected;}
+    bset<DgnElementId> const& _GetConflictingElementsAccepted() const override {return m_conflictingElementsAccepted;}
+    void _ConflictsProcessed() override {m_conflictingElementsRejected.clear(); m_conflictingElementsAccepted.clear();}
     };
 
 

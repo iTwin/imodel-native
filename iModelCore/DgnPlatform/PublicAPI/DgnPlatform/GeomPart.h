@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/GeomPart.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -61,7 +61,7 @@ public:
     BE_PROP_NAME(BBoxHigh)
     BE_PROP_NAME(GeometryStream)
     BE_JSON_NAME(bbox)
-    BE_JSON_NAME(geometryStream)
+    BE_JSON_NAME(geom)
 
     //! Create a DgnGeometryPart
     //! @param[in] model Create the DgnGeometryPart in this model
@@ -87,7 +87,7 @@ public:
     //! Looks up a DgnGeometryPartId by its code.
     DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnDbR db, DgnCodeCR code);
     //! Looks up a DgnGeometryPartId by its containing model and name
-    static DgnGeometryPartId QueryGeometryPartId(DefinitionModelR model, Utf8StringCR name) {return QueryGeometryPartId(model.GetDgnDb(), CreateCode(model, name));}
+    DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DefinitionModelR model, Utf8StringCR name) {return QueryGeometryPartId(model.GetDgnDb(), CreateCode(model, name));}
 
     //! Query the range of a DgnGeometryPart by ID.
     //! @param[out] range On successful return, holds the DgnGeometryPart's range

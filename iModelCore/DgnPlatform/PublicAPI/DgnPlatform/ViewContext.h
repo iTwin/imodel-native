@@ -30,6 +30,7 @@ struct ILineStyleComponent
 {
     virtual bool _IsContinuous() const = 0;
     virtual bool _HasWidth() const = 0;
+    virtual double _GetMaxWidth() const = 0;
     virtual double _GetLength() const = 0;
     virtual StatusInt _StrokeLineString(LineStyleContextR, Render::LineStyleSymbR, DPoint3dCP, int nPts, bool isClosed) const = 0;
     virtual StatusInt _StrokeLineString2d(LineStyleContextR, Render::LineStyleSymbR, DPoint2dCP, int nPts, double zDepth, bool isClosed) const = 0;
@@ -46,6 +47,8 @@ struct ILineStyle
     virtual ILineStyleComponent const* _GetComponent() const = 0;
     virtual bool _IsSnappable() const = 0;
     virtual Render::Texture* _GetTexture(double& textureWidth, ViewContextR, Render::GeometryParamsCR, bool createGeometryTexture) = 0;
+    double GetMaxWidth () const { return nullptr == _GetComponent() ? 0.0 : _GetComponent()->_GetMaxWidth(); }
+    double GetLength () const { return nullptr == _GetComponent() ? 0.0 : _GetComponent()->_GetLength(); }
 };
 
 //=======================================================================================
@@ -124,6 +127,7 @@ protected:
     Render::FrustumPlanes m_frustumPlanes;
     DgnViewportP m_viewport = nullptr;
     ClipVectorCPtr m_volume;
+    Utf8String m_auxChannel;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
@@ -159,6 +163,7 @@ protected:
     DGNPLATFORM_EXPORT virtual Render::SystemP _GetRenderSystem() const;
     DGNPLATFORM_EXPORT virtual Render::TargetP _GetRenderTarget() const;
     DGNPLATFORM_EXPORT virtual double _GetPixelSizeAtPoint(DPoint3dCP origin) const;
+    virtual bool _WantGlyphBoxes(double sizeInPixels) const { return false; }
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
@@ -184,6 +189,8 @@ public:
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipVectorCR volume) {m_volume=&volume;}
     ClipVectorCPtr GetActiveVolume() const {return m_volume;}
+    Utf8StringCR GetActiveAuxChannel() const { return m_auxChannel; }
+    void SetActiveAuxChannel(Utf8CP auxChannel) { m_auxChannel = nullptr == auxChannel ? Utf8String() : Utf8String(auxChannel); }
     void EnableStopAfterTimout(BeDuration::Milliseconds timeout) {m_endTime = BeTimePoint::FromNow(timeout); m_stopAfterTimeout=true;}
 
     Render::GraphicBuilderPtr CreateSceneGraphic(TransformCR tf=Transform::FromIdentity())
@@ -331,6 +338,7 @@ public:
     StatusInt VisitElement(DgnElementId elementId, bool allowLoad=true) {return _VisitElement(elementId, allowLoad);}
 
     bool CheckStop() {return _CheckStop();}
+    bool WantGlyphBoxes(double sizeInPixels) const {return _WantGlyphBoxes(sizeInPixels);}
 }; // ViewContext
 
 //=======================================================================================

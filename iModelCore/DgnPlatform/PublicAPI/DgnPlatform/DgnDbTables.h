@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDbTables.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -146,6 +146,7 @@
 #define DGN_TABLE_Font                      "dgn_Font"
 #define DGN_TABLE_Handler                   "dgn_Handler"
 #define DGN_TABLE_Txns                      "dgn_Txns"
+#define DGN_TABLE_Rebase                    "dgn_Rebase"
 #define DGN_VTABLE_SpatialIndex             "dgn_" BIS_CLASS_SpatialIndex
 
 #include <DgnPlatform/DgnProperties.h>
@@ -155,6 +156,8 @@
 #include "ECSqlClassParams.h"
 #include "ECSqlStatementIterator.h"
 #include <Bentley/HeapZone.h>
+
+namespace IModelJsNative {struct JsInterop;}
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -381,7 +384,7 @@ struct DgnModels : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnModel;
-    friend struct AddonUtils;
+    friend struct IModelJsNative::JsInterop;
     friend struct dgn_TxnTable::Model;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
@@ -454,6 +457,11 @@ public:
 //=======================================================================================
 struct DgnFonts : NonCopyableClass
 {
+    BE_JSON_NAME(fonts);
+    BE_JSON_NAME(name);
+    BE_JSON_NAME(type);
+    BE_JSON_NAME(id);
+    
     typedef bmap<DgnFontId,DgnFontPtr> T_FontMap;
 
     //=======================================================================================
@@ -635,6 +643,7 @@ public:
 
     DbFontMapDirect& DbFontMap() {return m_dbFontMap;}
     DbFaceDataDirect& DbFaceData() {return m_dbFaceData;}
+    T_FontMap const& FontMap() {return m_fontMap;}
     void Invalidate() {m_isFontMapLoaded = false; m_fontMap.clear();}
     DGNPLATFORM_EXPORT void Update();
     DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;

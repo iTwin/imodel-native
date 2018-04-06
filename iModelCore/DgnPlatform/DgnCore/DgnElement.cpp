@@ -1184,10 +1184,10 @@ DgnDbStatus DgnElement::_LoadFromDb()
 Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
     {
     Json::Value val;
-    val[json_id()] = m_id.ToHexStr();
+    val[ECJsonUtilities::json_navId()] = m_id.ToHexStr();
     auto relClass = db.Schemas().GetClass(m_relClassId);
     if (relClass != nullptr)
-        val[json_relClassName()] = relClass->GetName();
+        ECJsonUtilities::ClassNameToJson(val[ECJsonUtilities::json_navRelClassName()], *relClass);
     return val;
     }
 
@@ -1202,9 +1202,9 @@ void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
         return;
         }
 
-    m_id.FromJson(val[json_id()]);
+    m_id.FromJson(val[ECJsonUtilities::json_navId()]);
     if (m_id.IsValid())
-        m_relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(val[json_relClassName()], db.GetClassLocater());
+        m_relClassId = ECJsonUtilities::GetClassIdFromClassNameJson(val[ECJsonUtilities::json_navRelClassName()], db.GetClassLocater());
     }
 
 //---------------------------------------------------------------------------------------
@@ -3720,11 +3720,12 @@ void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     T_Super::_ToJson(val, opts);
     val[json_category()] = m_categoryId.ToHexStr();
     
-    if (opts["noGeometry"].asBool(false))
+    if (!opts["wantGeometry"].asBool())
         return;
 
     // load geometry
-    val[json_geom()] = m_geom.ToBase64();
+    GeometryCollection collection(*ToGeometrySource());
+    val[json_geom()] = collection.ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3737,7 +3738,7 @@ void GeometricElement::_FromJson(JsonValueR props)
         m_categoryId.FromJson(props[json_category()]);
     
     if (props.isMember(json_geom()))
-        m_geom.FromBase64(props[json_geom()].asString());
+        GeometryBuilder::UpdateFromJson(*ToGeometrySourceP(), props[json_geom()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3929,7 +3930,7 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
-    {
+    {        
     T_Super::_ToJson(val, opts);
     val[json_placement()] = m_placement.ToJson();
 
@@ -3945,7 +3946,13 @@ void GeometricElement2d::_FromJson(JsonValueR props)
     T_Super::_FromJson(props);
 
     if (props.isMember(json_placement()))
-        m_placement.FromJson(props[json_placement()]);
+        {
+        // NOTE: Bounding box should not be updated from json, the GeometryBuilder computes the correct range from the GeometryStream...
+        Placement2d newPlacement;        
+        newPlacement.FromJson(props[json_placement()]);
+        m_placement.GetOriginR() = newPlacement.GetOrigin();
+        m_placement.GetAngleR()  = newPlacement.GetAngle();
+        }
 
     if (props.isMember(json_typeDefinition()))
         m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);
@@ -3998,8 +4005,16 @@ void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const
 void GeometricElement3d::_FromJson(JsonValueR props)
     {
     T_Super::_FromJson(props);
+
     if (props.isMember(json_placement()))
-        m_placement.FromJson(props[json_placement()]);
+        {
+        // NOTE: Bounding box should not be updated from json, the GeometryBuilder computes the correct range from the GeometryStream...
+        Placement3d newPlacement;        
+        newPlacement.FromJson(props[json_placement()]);
+        m_placement.GetOriginR() = newPlacement.GetOrigin();
+        m_placement.GetAnglesR() = newPlacement.GetAngles();
+        }
+
     if (props.isMember(json_typeDefinition()))
         m_typeDefinition.FromJson(GetDgnDb(), props[json_typeDefinition()]);
     }

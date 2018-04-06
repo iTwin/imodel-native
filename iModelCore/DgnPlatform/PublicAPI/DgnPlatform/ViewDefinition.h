@@ -786,6 +786,8 @@ public:
     //! Delete the thumbnail for this view.
     DGNPLATFORM_EXPORT void DeleteThumbnail() const;
     /** @} */
+
+    void AdjustAspectRatio(double windowAspect) { _AdjustAspectRatio(windowAspect); } //!< @private
 };
 
 /** @addtogroup GROUP_DgnView DgnView Module
@@ -941,7 +943,7 @@ public:
     BE_JSON_NAME(angles)
     BE_JSON_NAME(camera)
 
-    static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} 
+    double MinimumFrontDistance(double nearScaleLimit = 5.0E-5 /* between resolution of 24 and 32bit */) const;
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
     void VerifyFocusPlane();//!< private
     bool IsEyePointAbove(double elevation) const {return !IsCameraOn() ? (GetZVector().z > 0) : (GetEyePoint().z > elevation);}//!< private
@@ -1303,13 +1305,20 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewDefinition2d : ViewDefinition2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition2d, ViewDefinition2d);
     friend struct ViewElementHandler::TemplateView2d;
 
+private:
+    // Not persisted, only a necessary run-time variable of the current viewed model
+    DgnModelId  m_viewedModel;
+
 protected:
     TemplateViewDefinition2dCP _ToTemplateView2d() const override final {return this;}
-    bool _ViewsModel(DgnModelId modelId) override final {return false;} // TemplateViewController2d determines which model to view
+    bool _ViewsModel(DgnModelId modelId) override final {return modelId == m_viewedModel;}
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
     explicit TemplateViewDefinition2d(CreateParams const& params) : T_Super(params) {}
 
 public:
+    void SetViewedModel(DgnModelId viewedModel) { m_viewedModel = viewedModel; }
+    DgnModelId GetViewedModel() const { return m_viewedModel; }
+
     DGNPLATFORM_EXPORT static TemplateViewDefinition2dPtr Create(DefinitionModelR definitionModel, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle2dP displayStyle=nullptr);
 };
 
@@ -1322,13 +1331,20 @@ struct EXPORT_VTABLE_ATTRIBUTE TemplateViewDefinition3d : ViewDefinition3d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_TemplateViewDefinition3d, ViewDefinition3d);
     friend struct ViewElementHandler::TemplateView3d;
 
+private:
+    // Not persisted, only a necessary run-time variable of the current viewed model
+    DgnModelId  m_viewedModel;
+
 protected:
     TemplateViewDefinition3dCP _ToTemplateView3d() const override final {return this;}
-    bool _ViewsModel(DgnModelId modelId) override final {return false;} // TemplateViewController3d determines which model to view
+    bool _ViewsModel(DgnModelId modelId) override final {return modelId == m_viewedModel;}
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
     explicit TemplateViewDefinition3d(CreateParams const& params) : T_Super(params) {}
 
 public:
+    void SetViewedModel(DgnModelId viewedModel) { m_viewedModel = viewedModel; }
+    DgnModelId GetViewedModel() const { return m_viewedModel; }
+
     DGNPLATFORM_EXPORT static TemplateViewDefinition3dPtr Create(DefinitionModelR definitionModel, Utf8StringCR name, CategorySelectorP categories=nullptr, DisplayStyle3dP displayStyle=nullptr);
 };
 

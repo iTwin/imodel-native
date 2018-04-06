@@ -141,6 +141,7 @@ public:
     static TileDisplayParamsCPtr Create(uint32_t color, GeometryParamsCR geomParams) { return new TileDisplayParams(color, geomParams); }
     static TileDisplayParamsCPtr Create(uint32_t color, TileTextureImageP texture, bool ignoreLighting) { return new TileDisplayParams(color, texture, ignoreLighting); }
     static TileDisplayParamsCPtr Create() { return new TileDisplayParams(); }
+    static TileDisplayParamsCPtr CreateForAttachment(GraphicParamsCR gfParams, GeometryParamsCR geomParams, TileTextureImageR texture);
 
     // These comparisons ignore category, subcategory, and class.
     bool operator<(TileDisplayParamsCR rhs) const { return IsLessThan(rhs, true); }
@@ -277,7 +278,7 @@ private:
     DgnSubCategoryId    m_subCategoryId;
     DgnGeometryClass    m_class;
 
-    bool AreIdsValid() const { BeAssert(m_elementId.IsValid() == m_subCategoryId.IsValid()); return m_elementId.IsValid(); }
+    bool AreIdsValid() const { /* BeAssert(m_elementId.IsValid() == m_subCategoryId.IsValid()); */ return m_elementId.IsValid();  }
 public:
     FeatureAttributes() : m_class(DgnGeometryClass::Primary) { }
     FeatureAttributes(DgnElementId elementId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass) : m_elementId(elementId), m_subCategoryId(subCatId), m_class(geomClass) { }
@@ -639,6 +640,7 @@ struct TileGeometry : RefCountedBase
         void Transform(TransformCR transform);
 
         TileStrokes (TileDisplayParamsCR displayParams, bvector<bvector<DPoint3d>>&& strokes, bool disjoint = false) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)), m_disjoint(disjoint) { }
+        TileStrokes (TileDisplayParamsCR displayParams, bool disjoint = false) : m_displayParams(&displayParams), m_disjoint(disjoint) { }
         }; 
 
     typedef bvector<TilePolyface>   T_TilePolyfaces;
@@ -696,6 +698,8 @@ public:
     static TileGeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, DgnDbR db);
     //! Create a TileGeometry for a part instance.
     static TileGeometryPtr Create(TileGeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsCR params, DgnDbR db);
+    //! Create a TileGeometry for a view attachment
+    static TileGeometryPtr Create(Sheet::ViewAttachmentCR, TransformCR, DRange3dCR, TileDisplayParamsCR);
 
 };
 //=======================================================================================
@@ -897,7 +901,7 @@ public:
     TileNodeList& GetChildren() { return m_children; } //!< The direct children of this node
     void SetDgnRange(DRange3dCR range) { m_dgnRange = range; }
     void SetTileRange(DRange3dCR range) { Transform tf; DRange3d dgnRange = range; tf.InverseOf(m_transformFromDgn); tf.Multiply(dgnRange, dgnRange); SetDgnRange(dgnRange); }
-    void SetPublishedRange(DRange3dCR publishedRange) const { m_publishedRange = publishedRange; }
+    DGNPLATFORM_EXPORT void SetPublishedRange(DRange3dCR publishedRange) const;
     DRange3dCR GetPublishedRange() const { return m_publishedRange; }
 
     DGNPLATFORM_EXPORT size_t GetNodeCount() const;
@@ -1075,7 +1079,7 @@ private:
     FutureStatus GenerateTilesFromTileTree(ITileCollector* collector, double leafTolerance, bool surfacesOnly, GeometricModelP model);
 
 public:
-    DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, ITileCollectionFilterCP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
+    DGNPLATFORM_EXPORT explicit TileGenerator(DgnDbR dgndb, AxisAlignedBox3dCR projectExtents, ITileCollectionFilterCP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TransformCR GetSpatialTransformFromDgn() const { return m_spatialTransformFromDgn; }

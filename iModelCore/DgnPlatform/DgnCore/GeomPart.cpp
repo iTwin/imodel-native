@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/GeomPart.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -38,8 +38,14 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
 void DgnGeometryPart::_ToJson(JsonValueR out, JsonValueCR opts) const 
     {
     T_Super::_ToJson(out, opts);
-    out[json_geometryStream()] = m_geometry.ToBase64();
     JsonUtils::DRange3dToJson(out[json_bbox()], m_bbox);
+
+    if (!opts["wantGeometry"].asBool())
+        return;
+
+    // load geometry
+    GeometryCollection collection(m_geometry, GetDgnDb());
+    out[json_geom()] = collection.ToJson();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -48,11 +54,10 @@ void DgnGeometryPart::_ToJson(JsonValueR out, JsonValueCR opts) const
 void DgnGeometryPart::_FromJson(JsonValueR val)
     {
     T_Super::_FromJson(val);
-    if (val.isMember(json_geometryStream()))
-        m_geometry.FromBase64(val[json_geometryStream()].asString().c_str());
 
-    if (val.isMember(json_bbox()))
-        JsonUtils::DRange3dFromJson(m_bbox, val[json_bbox()]);
+    // NOTE: Bounding box should not be updated from json, the GeometryBuilder computes the correct range from the GeometryStream...
+    if (val.isMember(json_geom()))
+        GeometryBuilder::UpdateFromJson(*this, val[json_geom()]);
     }
 
 /*---------------------------------------------------------------------------------**//**

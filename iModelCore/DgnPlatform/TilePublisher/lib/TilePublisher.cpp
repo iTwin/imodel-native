@@ -853,12 +853,12 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
         featureTableData.m_json["NORMAL_RIGHT"]["byteOffset"] = featureTableData.BinaryDataSize();
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
+        }
 
-        if (scaleRequired)
-            {
-            featureTableData.m_json["SCALE"]["byteOffset"] = featureTableData.BinaryDataSize();
-            featureTableData.AddBinaryData(scales.data(), scales.size()*sizeof(float));
-            }
+    if (scaleRequired)
+        {
+        featureTableData.m_json["SCALE"]["byteOffset"] = featureTableData.BinaryDataSize();
+        featureTableData.AddBinaryData(scales.data(), scales.size()*sizeof(float));
         }
 
     BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), m_context);
@@ -965,7 +965,6 @@ struct ClassifierTileWriter
     ModelSpatialClassifierCR        m_classifier;
     bmap<DgnElementId, uint32_t>    m_elementColors;
     PublisherContext&               m_context;
-    DRange3d                        m_range;
 
 
     static constexpr double         s_pointTolerance = 1.0E-6;
@@ -977,7 +976,7 @@ struct ClassifierTileWriter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier, PublisherContext& context) : m_context(context), m_range(range), m_classifier(classifier) 
+ClassifierTileWriter( ModelSpatialClassifierCR classifier, PublisherContext& context) : m_context(context),  m_classifier(classifier) 
     { 
     }
 
@@ -1375,7 +1374,7 @@ struct VectorClassifierTileWriter : ClassifierTileWriter
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-VectorClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier, PublisherContext& context) : ClassifierTileWriter(range, classifier, context), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
+VectorClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier, PublisherContext& context) : ClassifierTileWriter(classifier, context), m_range(range), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
     {
     m_featureTable["RTC_CENTER"][0] = 0.0; m_featureTable["RTC_CENTER"][1] = 0.0; m_featureTable["RTC_CENTER"][2] = 0.0;
     m_featureTable["MINIMUM_HEIGHT"] = -1000.0;
@@ -1464,12 +1463,13 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
 +===============+===============+===============+===============+===============+======*/
 struct BatchedClassifierTileWriter : ClassifierTileWriter
 {
-    TileMeshPtr     m_mesh;
+    TileMeshPtr         m_mesh;
+    DRange3dR           m_outputContentRange;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BatchedClassifierTileWriter(DRange3dCR range,  ModelSpatialClassifierCR classifier, PublisherContext& context) : ClassifierTileWriter(range, classifier, context)
+BatchedClassifierTileWriter(DRange3dR outputContentRange,  ModelSpatialClassifierCR classifier, PublisherContext& context) : ClassifierTileWriter(classifier, context), m_outputContentRange(outputContentRange)
     {
     }
 
@@ -1481,6 +1481,7 @@ virtual void _AddClosedMesh(PolyfaceHeaderR polyface, uint16_t batchId, TileDisp
     if (!m_mesh.IsValid())
         m_mesh = TileMesh::Create(displayParams);
     
+    m_outputContentRange.Extend (polyface.GetPointCP(), polyface.GetPointCount());
     uint32_t      pointCount = m_mesh->Points().size();
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
@@ -1504,15 +1505,16 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
     {
     DRange3d        contentRange = DRange3d::NullRange();
 
-    for (auto& mesh : geometry.Meshes())
-        contentRange.Extend(mesh->Points());
-
     if (s_writeVectorClassifier)
         {
         VectorClassifierTileWriter      writer(contentRange, classifier, m_context);
 
         writer.AddGeometry(geometry, classifiedRange, m_tile.GetAttributes());
         writer.Write(outputFile, m_tile, m_context.GetDgnDb());
+
+        for (auto& mesh : geometry.Meshes())
+            contentRange.Extend(mesh->Points());
+
         }
     else
         {
@@ -1526,7 +1528,7 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
             WriteBatched3dModel (outputFile, meshes, writer.GetBatchTableString(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d()));
             }
         }
-
+    (const_cast<TileNodeR> (m_tile)).SetTileRange(contentRange);      // Need to account for expansion by height.
     m_tile.SetPublishedRange (contentRange);
     } 
 
@@ -3254,32 +3256,6 @@ void TilePublisher::AddSimplePolylinePrimitive(Json::Value& primitivesNode, Publ
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DPoint3d  cartesianFromRadians (double longitude, double latitude, double height = 0.0)
-    {
-    DPoint3d    s_wgs84RadiiSquared = DPoint3d::From (6378137.0 * 6378137.0, 6378137.0 * 6378137.0, 6356752.3142451793 * 6356752.3142451793);
-    double      cosLatitude = cos(latitude);
-    DPoint3d    normal, scratchK;
-
-    normal.x = cosLatitude * cos(longitude);
-    normal.y = cosLatitude * sin(longitude);
-    normal.z = sin(latitude);
-
-    normal.Normalize();
-    scratchK.x = normal.x * s_wgs84RadiiSquared.x;
-    scratchK.y = normal.y * s_wgs84RadiiSquared.y;
-    scratchK.z = normal.z * s_wgs84RadiiSquared.z;
-
-    double  gamma = sqrt(normal.DotProduct (scratchK));
-
-    DPoint3d    earthPoint = DPoint3d::FromScale(scratchK, 1.0 / gamma);
-    DPoint3d    heightDelta = DPoint3d::FromScale (normal, height);
-
-    return DPoint3d::FromSumOf (earthPoint, heightDelta);
-    };
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PublisherContext::IsGeolocated () const
@@ -3301,7 +3277,6 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
-
     m_isEcef = false;
 
     // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
@@ -3316,52 +3291,47 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
 
     // Some user might want to override the DgnGCS by specifying a geolocation on cmd line...
     m_isGeoLocated = nullptr != dgnGCS || nullptr != geoLocation;
+
+
+    // Create a WGS84 GCS to convert the WGS84 Lat/Long to ECEF/XYZ
+    WString     warningMsg;
+    StatusInt   warning;
+    auto        wgs84GCS = GeoCoordinates::BaseGCS::CreateGCS();        // WGS84 - used to convert Long/Latitude to ECEF.
+    GeoPoint    originLatLong;
+
+    wgs84GCS ->InitFromEPSGCode(&warning, &warningMsg, 4326); // We do not care about warnings. This GCS exists in the dictionary
+
+
     if (nullptr == dgnGCS || nullptr != geoLocation)
         {
-        double  longitude = -75.686844444444444444444444444444, latitude = 40.065702777777777777777777777778;
-
         if (nullptr != geoLocation)
             {
-            longitude = geoLocation->longitude;
-            latitude  = geoLocation->latitude;
+            originLatLong = *geoLocation;
             }
+        else
+            {
+            // NB: We have to translate to surface of globe even if we're not using the globe, because
+            // Cesium's camera freaks out if it approaches the origin (aka the center of the earth)
 
-        // NB: We have to translate to surface of globe even if we're not using the globe, because
-        // Cesium's camera freaks out if it approaches the origin (aka the center of the earth)
-
-        ecfOrigin = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, latitude * msGeomConst_radiansPerDegree);
-        ecfNorth  = cartesianFromRadians (longitude * msGeomConst_radiansPerDegree, 1.0E-4 + latitude * msGeomConst_radiansPerDegree);
+            originLatLong.longitude = -75.686844444444444444444444444444;
+            originLatLong.latitude = 40.065702777777777777777777777778;        // Arbitrary location (Exton flapole).
+            originLatLong.elevation = 0.0;
+            }
         }
     else
         {
-        GeoPoint        originLatLong, northLatLong;
-        DPoint3d        north = origin;
-    
-        north.y += 100.0;
-
         dgnGCS->LatLongFromUors (originLatLong, origin);
-        dgnGCS->LatLongFromUors (northLatLong, north);
 
-
-        // If the current GCS does not use WGS84, need to convert as XYZFromLatLong expects WGS84 Lat/Long... (TFS# 799148). 
-        if (0 != wcscmp (dgnGCS->GetDatumName(), L"WGS84"))
-            {
-            auto        wgs84Datum = GeoCoordinates::Datum::CreateDatum (L"WGS84");
-            auto        thisDatum = GeoCoordinates::Datum::CreateDatum(dgnGCS->GetDatumName());
-            auto        datumConverter = GeoCoordinates::DatumConverter::Create (*thisDatum, *wgs84Datum);
-            GeoPoint    wgsOrigin, wgsNorth;
-
-            datumConverter->ConvertLatLong3D(wgsOrigin, originLatLong);
-            datumConverter->ConvertLatLong3D(wgsNorth, northLatLong);
-
-            originLatLong = wgsOrigin;
-            northLatLong  = wgsNorth;
-            }
-
-        /// Note we used to call dgnGCS->XYZFromLatLong to do the ECEF conversion - but that seems unreliable when datum is not WGS84 (TFS# 799148).
-        ecfOrigin = cartesianFromRadians (originLatLong.longitude * msGeomConst_radiansPerDegree, originLatLong.latitude * msGeomConst_radiansPerDegree);
-        ecfNorth  = cartesianFromRadians (northLatLong.longitude * msGeomConst_radiansPerDegree, 1.0E-4 + northLatLong.latitude * msGeomConst_radiansPerDegree);
+        GeoPoint tempLatLong = originLatLong;
+        dgnGCS->LatLongFromLatLong(originLatLong, tempLatLong, *wgs84GCS);
         }
+    GeoPoint    northLatLong = originLatLong;
+
+    northLatLong.latitude += 3.0 / (60.0 * 60.0);   // To get a point north of origin move 3 seconds of latitude (per Alain Robert)                  
+
+
+    wgs84GCS->XYZFromLatLong(ecfOrigin, originLatLong);
+    wgs84GCS->XYZFromLatLong(ecfNorth, northLatLong);
 
     RotMatrix   rMatrix;
     rMatrix.InitIdentity();
@@ -3502,10 +3472,14 @@ Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnMo
         // Handle wacky 'spatial' views created for 2d models by DgnV8Converter...
         DgnModelIdSet viewedModels;
         GetViewedModelsFromView(viewedModels, attachment->GetAttachedViewId());
-        BeAssert(1 == viewedModels.size());
+        BeAssert(1 == viewedModels.size() || view->IsSpatialView());
         if (viewedModels.empty())
             continue;
 
+        if (view->IsSpatialView())
+            continue; // WIP - we will publish these differently - for now just skip.
+
+        // ###TODO: Spatial view attachments with multiple models unhandled...
         DgnModelId baseModelId = *viewedModels.begin();
         attachedModels.insert(baseModelId);
 
@@ -3761,48 +3735,38 @@ BeFileName  PublisherContext::GetModelDataDirectory(DgnModelId modelId, Classifi
     return modelDir;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId)
-    {
-    viewedModels.insert(modelId);
-
-    // Scan for viewAttachments...
-    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
-    stmt->BindId(1, modelId);
-
-    while (BE_SQLITE_ROW == stmt->Step())
-        {
-        auto attachId = stmt->GetValueId<DgnElementId>(0);
-        auto attach   = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
-
-        if (!attach.IsValid())
-            {
-            BeAssert(false);
-            continue;
-            }
-
-        GetViewedModelsFromView (viewedModels, attach->GetAttachedViewId());
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId)
+void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId, bool includeViewAttachments)
     {
     SpatialViewDefinitionPtr spatialView = nullptr;
     auto view2d = GetDgnDb().Elements().Get<ViewDefinition2d>(viewId);
     if (view2d.IsValid())
         {
-        AddViewedModel (viewedModels, view2d->GetBaseModelId()); 
+        viewedModels.insert(view2d->GetBaseModelId());
+        auto sheet = includeViewAttachments ? view2d->ToSheetView() : nullptr;
+        if (nullptr != sheet)
+            {
+            auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
+            stmt->BindId(1, view2d->GetBaseModelId());
+            while (BE_SQLITE_ROW == stmt->Step())
+                {
+                auto attachId = stmt->GetValueId<DgnElementId>(0);
+                auto attach = GetDgnDb().Elements().Get<Sheet::ViewAttachment>(attachId);
+                if (attach.IsValid())
+                    {
+                    // Exclude spatial views...publish as raster tiles directly into sheet tileset.
+                    if (GetDgnDb().Elements().Get<ViewDefinition2d>(attach->GetAttachedViewId()).IsValid())
+                        GetViewedModelsFromView(viewedModels, attach->GetAttachedViewId(), false); // view attachments don't nest...
+                    }
+                }
+            }
         }
     else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
         {
         for (auto& modelId : spatialView->GetModelSelector().GetModels())
-            AddViewedModel (viewedModels, modelId);
+            viewedModels.insert(modelId);
         }
     }
 
@@ -3813,8 +3777,9 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels;
 
+    bool includeAttachments = T_HOST._IsFeatureEnabled("TilePublisher.PublishViewAttachments");
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId);
+        GetViewedModelsFromView (viewedModels, viewId, includeAttachments);
 
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)

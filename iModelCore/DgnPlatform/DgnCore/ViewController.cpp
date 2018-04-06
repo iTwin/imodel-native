@@ -384,10 +384,10 @@ ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     if (nullptr == m_vp)
         return ViewportStatus::NotAttached;
 
-    // We need to figure out a new camera target. To do that, we need to know where the geometry is in the view.
+    // We need to figure out a new camera    target. To do that, we need to know where the geometry is in the view.
     // We use the depth of the center of the view for that.
     double low, high;
-    m_vp->DetermineVisibleDepthNpc(low, high);
+    m_vp->DetermineVisibleDepthNpcRange(low, high);
     double middle = low + ((high - low) / 2.0);
 
     DPoint3d corners[4];
@@ -400,7 +400,7 @@ ViewportStatus ViewController3d::TurnCameraOn(Angle lensAngle)
     DPoint3d eye = DPoint3d::FromInterpolate(corners[2], 0.5, corners[3]); // middle of closest plane
     DPoint3d target = DPoint3d::FromInterpolate(corners[0], 0.5, corners[1]); // middle of halfway plane
     double backDist  = eye.Distance(target) * 2.0;
-    double frontDist = ViewDefinition3d::MinimumFrontDistance();
+    double frontDist = cameraDef.MinimumFrontDistance();
     return cameraDef.LookAtUsingLensAngle(eye, target, cameraDef.GetYVector(), lensAngle, &frontDist, &backDist);
     }
 
@@ -968,53 +968,72 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
+* @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr ViewController2d::GetRoot(SceneContextR context)
+template<typename T> static TileTree::RootPtr getRoot(T& viewController, SceneContextR context)
     {
-    auto model = GetViewedModel();
-    if (nullptr == model)
-        return nullptr;
-    else
-        return model->GetTileTree(context);
+    TileTree::RootPtr root;
+    auto model = viewController.GetViewedModel();
+    if (nullptr != model)
+        root = model->GetTileTree(context);
+
+    return root;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
+* @bsimethod                                                    Paul.Connelly   03/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> static BentleyStatus createThumbnailScene(T& viewController, SceneContextR context)
+TileTree::RootP ViewController2d::GetRoot(SceneContextR context)
     {
-    auto model = viewController.GetViewedModel();
-    if (nullptr == model)
-        return ERROR;
+    if (m_root.IsNull())
+        m_root = getRoot(*this, context);
 
-    auto root = model->GetTileTree(context);
-    if (root.IsNull())
-        return ERROR;
+    return m_root.get();
+    }
 
-    uint32_t timeLimitMillis = 0;
-    BeDuration timeLimit;
-    auto const& plan = context.GetUpdatePlan();
-    if (plan.HasQuitTime() && plan.GetQuitTime().IsInFuture())
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus createScene(TileTree::DrawArgsR args)
+    {
+    auto const& plan = args.m_context.GetUpdatePlan();
+    if (plan.WantWait())
         {
-        timeLimit = BeDuration(plan.GetQuitTime() - BeTimePoint::Now());
-        timeLimitMillis = std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count();
+        BeDuration timeLimit = plan.HasQuitTime() && plan.GetQuitTime().IsInFuture() ? plan.GetQuitTime() - BeTimePoint::Now() : BeDuration();
+        args.m_root.SelectTiles(args);
+        args.m_context.m_requests.RequestMissing(timeLimit);
+        if (plan.HasQuitTime())
+            {
+            args.m_root.WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(timeLimit).count());
+            args.m_root.CancelAllTileLoads();
+            }
+        else
+            {
+            args.m_root.WaitForAllLoads();
+            }
         }
 
-    root->SelectTiles(context);
-    context.m_requests.RequestMissing(BeDuration());
-    if (0 != timeLimitMillis)
-        {
-        root->WaitForAllLoadsFor(timeLimitMillis);
-        root->CancelAllTileLoads();
-        }
-    else
-        {
-        root->WaitForAllLoads();
-        }
-
-    root->DrawInView(context);
+    args.m_root.DrawInView(args);
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static BentleyStatus createScene(TileTree::RootPtr& root, T& viewController, SceneContextR context)
+    {
+    if (root.IsNull())
+        {
+        auto model = viewController.GetViewedModel();
+        if (nullptr != model)
+            root = model->GetTileTree(context);
+
+        if (root.IsNull())
+            return ERROR;
+        }
+
+    auto args = root->CreateDrawArgs(context);
+    return createScene(args);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1022,23 +1041,15 @@ template<typename T> static BentleyStatus createThumbnailScene(T& viewController
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ViewController2d::_CreateScene(SceneContextR context)
     {
-    if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose())
-        return createThumbnailScene(*this, context);
+    return createScene(m_root, *this, context);
+    }
 
-    auto root = GetRoot(context);
-    if (root.IsNull())
-        return ERROR;
-
-    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
-        {
-        auto waitFor = context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now();
-        root->SelectTiles(context);
-        root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
-        root->CancelAllTileLoads();
-        }
-
-    root->DrawInView(context);
-    return SUCCESS;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ViewController2d::CreateScene(TileTree::DrawArgsR args)
+    {
+    return createScene(args);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1068,39 +1079,11 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::RootPtr TemplateViewController3d::GetRoot(SceneContextR context)
-    {
-    auto model = GetViewedModel();
-    if (nullptr == model)
-        return nullptr;
-    else
-        return model->GetTileTree(context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TemplateViewController3d::_CreateScene(SceneContextR context)
     {
-    if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose())
-        return createThumbnailScene(*this, context);
-
-    auto root = GetRoot(context);
-    if (root.IsNull())
-        return ERROR;
-
-    if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
-        {
-        auto waitFor = context.GetUpdatePlan().GetQuitTime() - BeTimePoint::Now();
-        root->SelectTiles(context);
-        root->WaitForAllLoadsFor(std::chrono::duration_cast<std::chrono::milliseconds>(waitFor).count());
-        root->CancelAllTileLoads();
-        }
-
-    root->DrawInView(context);
-    return SUCCESS;
+    return createScene(m_root, *this, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1127,17 +1110,44 @@ AxisAlignedBox3d TemplateViewController3d::_GetViewedExtents(DgnViewportCR vp) c
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TemplateViewController3d::SetViewedModel(DgnModelId viewedModelId)
     {
-    if (m_viewedModelId == viewedModelId)
+    if (GetViewedModelId() == viewedModelId)
         return DgnDbStatus::Success;
 
-    m_viewedModelId = viewedModelId;
+    GetTemplateViewDefinition3dR().SetViewedModel(viewedModelId);
     GeometricModel3dP model = GetViewedModel();
     if (!model || !model->IsTemplate())
         {
-        m_viewedModelId.Invalidate();
+        GetTemplateViewDefinition3dR().SetViewedModel(DgnModelId());
         return DgnDbStatus::WrongModel;
         }
 
     GetViewDefinitionR().LookAtVolume(model->QueryModelRange());
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TemplateViewController3d::_CancelAllTileLoads(bool wait)
+    {
+    if (m_root.IsValid())
+        {
+        m_root->CancelAllTileLoads();
+        if (wait)
+            m_root->WaitForAllLoads();
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController2d::_CancelAllTileLoads(bool wait)
+    {
+    if (m_root.IsValid())
+        {
+        m_root->CancelAllTileLoads();
+        if (wait)
+            m_root->WaitForAllLoads();
+        }
+    }
+

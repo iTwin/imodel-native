@@ -137,6 +137,66 @@ DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, boo
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::SaveRebase(int64_t& id, Rebase const& rebase)
+    {
+    BeAssert(0 != rebase.GetSize());
+
+    CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Rebase "(Rebase) VALUES(?)");
+
+    stmt->BindBlob(1, rebase.GetData(), rebase.GetSize(), Statement::MakeCopy::No);
+
+    auto rc = stmt->Step();
+    if (BE_SQLITE_DONE == rc)
+        id = m_dgndb.GetLastInsertRowId();
+    else
+        {
+        BeAssert(false);
+        }
+    return rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult TxnManager::LoadRebases(Rebaser& rebaser, int64_t thruId)
+    {
+    CachedStatementPtr stmt = GetTxnStatement("SELECT Rebase FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
+
+    stmt->BindInt64(1, thruId);
+
+    DbResult rc;
+    while (BE_SQLITE_ROW == (rc = stmt->Step()))
+        rebaser.AddRebase(stmt->GetValueBlob(0), stmt->GetColumnBytes(0));
+
+    return (BE_SQLITE_DONE == rc)? BE_SQLITE_OK: rc;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TxnManager::DeleteRebases(int64_t id)
+    {
+    if (id == 0)
+        return DgnDbStatus::Success;
+    auto delStmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
+    delStmt->BindInt64(1, id);
+    return (BE_SQLITE_DONE == delStmt->Step())? DgnDbStatus::Success: DgnDbStatus::SQLiteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+int64_t TxnManager::QueryLastRebaseId()
+    {
+    if (!m_dgndb.TableExists(DGN_TABLE_Rebase))
+        return 0;
+    auto queryLastRebaseId = GetTxnStatement("SELECT MAX(Id) FROM " DGN_TABLE_Rebase);
+    return (BE_SQLITE_ROW == queryLastRebaseId->Step())? queryLastRebaseId->GetValueInt64(0): 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Read the description of a Txn
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -179,7 +239,7 @@ bool TxnManager::IsMultiTxnMember(TxnId rowid) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false)
+TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false), m_enableNotifyTxnMonitors(true)
     {
     m_action = TxnAction::None;
 
@@ -498,6 +558,9 @@ TxnManager::TrackChangesForTable TxnManager::_FilterTable(Utf8CP tableName)
     if (0 == strncmp(DGN_TABLE_Txns, tableName, sizeof(DGN_TABLE_Txns)-1))
         return  TrackChangesForTable::No;
 
+    if (0 == strncmp(DGN_TABLE_Rebase, tableName, sizeof(DGN_TABLE_Rebase)-1))
+        return  TrackChangesForTable::No;
+
     if (DgnSearchableText::IsUntrackedFts5Table(tableName))
         return  TrackChangesForTable::No;
 
@@ -703,7 +766,8 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             return OnCommitStatus::Abort;
 
         // At this point, all of the changes to all tables have been applied. Tell TxnMonitors
-        T_HOST.GetTxnAdmin()._OnCommit(*this);
+        if (m_enableNotifyTxnMonitors)
+            T_HOST.GetTxnAdmin()._OnCommit(*this);
 
         OnEndValidate();
         }
@@ -742,7 +806,8 @@ RevisionStatus TxnManager::MergeDbSchemaChangesInRevision(DgnRevisionCR revision
 +---------------+---------------+---------------+---------------+---------------+------*/
 RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, RevisionChangesFileReader& changeStream, bool containsSchemaChanges)
     {
-    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges);
+    Rebase rebase;
+    DbResult result = ApplyChanges(changeStream, TxnAction::Merge, containsSchemaChanges, &rebase);
     if (!EXPECTED_CONDITION(result == BE_SQLITE_OK && "Could not apply/merge data changes in revision"))
         {
         BeAssert(false);
@@ -794,11 +859,22 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
                     {
                     BeAssert(false);
                     status = RevisionStatus::SQLiteError;
-                    }
+                    }                
                 }
             }
 
         OnEndValidate();
+        }
+
+    if ((RevisionStatus::Success == status) && (0 != rebase.GetSize()))
+        {
+        int64_t rebaseId;
+        result = SaveRebase(rebaseId, rebase);
+        if (BE_SQLITE_DONE != result)
+            {
+            BeAssert(false);
+            status = RevisionStatus::SQLiteError;
+            }
         }
 
     if (status == RevisionStatus::Success)
@@ -807,7 +883,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
 
         if (status == RevisionStatus::Success)
             {
-            result = m_dgndb.SaveChanges(); 
+            result = m_dgndb.SaveChanges();
             // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
             // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
@@ -1007,7 +1083,7 @@ void TxnManager::AddChanges(Changes const& changes)
 * and after it is applied.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool containsSchemaChanges)
+DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool containsSchemaChanges, Rebase* rebase)
     {
     BeAssert(action != TxnAction::None);
     m_action = action;
@@ -1017,8 +1093,9 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     if (!IsInAbandon())
         OnBeginApplyChanges();
     
+
     bool wasTracking = EnableTracking(false);
-    DbResult result = changeset.ApplyChanges(m_dgndb); // this actually updates the database with the changes
+    DbResult result = changeset.ApplyChanges(m_dgndb, rebase); // this actually updates the database with the changes
     EnableTracking(wasTracking);
 
     if (containsSchemaChanges)
@@ -1789,6 +1866,19 @@ void dgn_TxnTable::Element::AddElement(DgnElementId elementId, DgnModelId modelI
     m_stmt.ClearBindings();
     }
 
+#ifdef WIP_DONT_VALIDATE_REJECTIONS
+bool TxnManager::WasElementChangeRejected(DgnElementId eid)
+    {
+    auto control = GetDgnDb().GetConcurrencyControl();
+    if (nullptr == control)
+        return false;
+    auto optimistic = control->_AsIOptimisticConcurrencyControl();
+    if (nullptr == optimistic)
+        return false;
+    return optimistic->
+    }
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    02/2015
 //---------------------------------------------------------------------------------------
@@ -1821,7 +1911,10 @@ void dgn_TxnTable::Element::AddChange(Changes::Change const& change, ChangeType 
         stmt->BindId(1, elementId);
         if (BE_SQLITE_ROW != stmt->Step())
             {
+#ifdef WIP_DONT_VALIDATE_REJECTIONS
             BeAssert(false);
+#endif
+            return; // This happens because we deleted the element locally and rejected an incoming update
             }
         else
             {

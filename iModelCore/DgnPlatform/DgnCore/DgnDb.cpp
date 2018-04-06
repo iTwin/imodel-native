@@ -47,7 +47,7 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
                  m_geoLocation(*this), m_models(*this), m_elements(*this),
                  m_codeSpecs(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_elementIdSequence(*this, "bis_elementidsequence")
     {
-    ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */ , false /* allowChangesetMergingIncompatibleECSchemaImport */ );
+    ApplyECDbSettings(true /* requireECCrudWriteToken */, true /* requireECSchemaImportToken */);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -548,9 +548,6 @@ DgnDbPtr DgnDb::OpenDgnDb(DbResult* outResult, BeFileNameCR fileName, OpenParams
 DbResult DgnDb::CreateNewDgnDb(BeFileNameCR inFileName, CreateDgnDbParams const& params)
     {
     BeFileName projectFile(inFileName);
-
-    if (BeTest::IsInitialized())                                        // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
-        wprintf(L"!!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb %s\n", inFileName.c_str());     // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 
     if (inFileName.IsEmpty())
         {

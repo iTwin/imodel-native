@@ -19,17 +19,9 @@
     <!-- Also re-deliver some ECSchemas -->
     <Part Name="PublicAPI" BentleyBuildMakeFile="DgnPlatform.prewire.mke">
         <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
+        <SubPart PartName="Core" PartFile="BisSchemas" Repository="BisSchemas"/>
         <Bindings>
             <PublicAPI Domain="DgnPlatform" />
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Dgn" SubPartDirectory="ECSchemas/Dgn">
-                ECSchemas/BisCore.ecschema.xml
-                ECSchemas/Generic.ecschema.xml
-                ECSchemas/Markup.ecschema.xml
-            </Files>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Functional.ecschema.xml
-                ECSchemas/PhysicalMaterial.ecschema.xml
-            </Files>
             <Directory SourceName="Dox/Pages/DgnPlatform" SubPartDirectory="Dox/Pages/DgnPlatform"/>
         </Bindings>
     </Part>

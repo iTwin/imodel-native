@@ -2,7 +2,7 @@
 #
 #     $Source: DgnPlatform.prewire.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 SrcDgnPlatform                  = $(SrcRoot)DgnPlatform/
@@ -15,7 +15,6 @@ DgnPlatformPublicAPISrc         = $(SrcDgnPlatform)PublicAPI/
 #----------------------------------------------------------------------------------------
 always:
     ~linkdir "$(BuildContext)PublicAPI/DgnPlatform=$(DgnPlatformPublicAPISrc)DgnPlatform"
-    ~linkdir "$(BuildContext)ECSchemas=$(SrcDgnPlatform)ECSchemas"
 
 #----------------------------------------------------------------------------------------
 #   Wire in my own private header files (for unit tests).

@@ -1081,8 +1081,6 @@ public:
         {
         DgnElementId m_id;
         DgnClassId m_relClassId;
-        BE_JSON_NAME(id)                // NB: The name of this property is defined by the imodeljs JSON wire format. Do not change.
-        BE_JSON_NAME(relClassName)      // NB: The name of this property is defined by the imodeljs JSON wire format. Do not change.
 
         RelatedElement(DgnElementId id=DgnElementId(), DgnClassId relClassId=DgnClassId()) : m_id(id), m_relClassId(relClassId) {}
         bool IsValid() const {return m_id.IsValid();}
@@ -1930,7 +1928,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus ClearPropertyArray(uint32_t propertyIndex);
 
     //! Create a Json::Value that represents the state of this element.
-    //! @param[in] opts options for customizing the value. If opts["noGeometry"] == false, don't include geometry.
+    //! @param[in] opts options for customizing the value. If opts["wantGeometry"] != true, geometry stream Json::Value is not included.
     Json::Value ToJson(JsonValueCR opts = Json::Value()) const { Json::Value val; _ToJson(val, opts); return val; }
 
     void FromJson(JsonValueR props) {_FromJson(props);}
@@ -2863,9 +2861,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DefinitionElementCP _ToDefinitionElement() const override final {return this;}
+public:
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 
-public:
     BE_JSON_NAME(isPrivate)
     bool IsPrivate() const {return m_isPrivate;} //!< Test if this definition is private (should not be listed in the GUI, for example)
     void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this definition is private (should not appear in the GUI, for example)

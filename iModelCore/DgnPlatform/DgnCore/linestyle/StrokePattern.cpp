@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/StrokePattern.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -219,17 +219,6 @@ LsStrokePatternComponent::LsStrokePatternComponent (LsStrokePatternComponent con
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt       LsStrokePatternComponent::_DoStroke (LineStyleContextR context, DPoint3dCP inPoints, int nPoints, LineStyleSymbR modifiers) const
     {
-#if defined (NEEDS_WORK_CONTINUOUS_RENDER)
-    // test to see whether a single repetition of the pattern will be discernible in this view.
-    // If not, use a continuous line style so we'll get width.
-    if (!IsSingleRepDiscernible (context.GetViewContext(), modifiers, *inPoints))
-        {
-        LsStrokePatternComponent solid (this);
-        solid.SetContinuous();
-        return solid.ProcessStroke (context, NULL, inPoints, nPoints, modifiers);
-        }
-#endif
-
     return ProcessStroke (context, NULL, inPoints, nPoints, modifiers);
     }
 
