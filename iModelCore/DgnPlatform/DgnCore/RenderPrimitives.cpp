@@ -965,7 +965,7 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    Mesh::AddAuxChannel(PolyfaceAuxData::ChannelCR channel, size_t index)
+void    Mesh::AddAuxChannel(PolyfaceAuxChannelCR channel, size_t index)
     {
     if (!m_auxChannel.IsValid())
         m_auxChannel = channel.CloneWithoutData();
@@ -1198,7 +1198,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     bool const*     visitorVisibility = visitor.GetVisibleCP();
     size_t          nTriangles = points.size() - 2;
 
-    PolyfaceAuxData::ChannelCPtr auxChannel;
+    PolyfaceAuxChannelCPtr auxChannel;
     
     if (nullptr != auxChannelName && visitor.GetAuxDataCP().IsValid())
         auxChannel = visitor.GetAuxDataCP()->GetChannel(auxChannelName);

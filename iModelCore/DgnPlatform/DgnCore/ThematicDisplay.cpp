@@ -509,7 +509,7 @@ ElementTileTree::ThematicMeshBuilder::ThematicMeshBuilder(Utf8StringCR channel, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool   ElementTileTree::ThematicMeshBuilder::DoThematicDisplay(PolyfaceHeaderR mesh, TextureMappingR textureMapping) const  
     {
-    PolyfaceAuxData::ChannelCPtr        channel;
+    PolyfaceAuxChannelCPtr        channel;
 
     if (! mesh.GetAuxDataCP().IsValid() ||
         ! (channel = mesh.GetAuxDataCP()->GetChannel(m_channel.c_str())).IsValid())
