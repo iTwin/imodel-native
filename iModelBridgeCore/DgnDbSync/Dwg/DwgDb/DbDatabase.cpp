@@ -398,3 +398,81 @@ DwgDbStatus DwgDbDatabase::SaveAsDxf (WCharCP dxfFileName, DwgFileVersion versio
 
     return  DwgDbStatus::InvalidInput;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbDatabase::BindXrefs (DwgDbObjectIdArrayCR xrefBlocks, bool insertBind, bool allowUnresolved, bool quiet)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+#if DWGTOOLKIT_OpenDwg
+    for (auto id : xrefBlocks)
+        {
+        OdDbBlockTableRecordPtr xref = id.safeOpenObject (OdDb::kForWrite);
+        if (!xref.isNull())
+            {
+            OdResult result = OdDbXRefMan::bind (xref, insertBind);
+            if (result != OdResult::eOk)
+                status = ToDwgDbStatus (result);
+            }
+        }
+
+#elif DWGTOOLKIT_RealDwg
+    AcDbObjectIdArray   acArray;
+    if (Util::GetObjectIdArray(acArray, xrefBlocks) > 0)
+        {
+        Acad::ErrorStatus es = ::acdbBindXrefs(this, acArray, insertBind, allowUnresolved, quiet);
+        status = ToDwgDbStatus (es);
+        }
+#endif
+    return  status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbDatabase::ResolveXrefs (bool useThreadEngine, bool newXrefsOnly)
+    {
+    DwgDbStatus status = DwgDbStatus::UnknownError;
+#if DWGTOOLKIT_OpenDwg
+    status = ToDwgDbStatus (OdDbXRefMan::loadAll(this, false));
+    
+#elif DWGTOOLKIT_RealDwg
+#ifndef NDEBUG
+    // track xref events
+    class XrefEventReactor : public AcRxEventReactor
+        {
+        public:
+        void beginRestore (AcDbDatabase* to, const ACHAR* name, AcDbDatabase* from) override
+            {
+            std::cout << "Restoring AcDbDatabase: " << name << " 0x" << from << " 0x" << to << std::endl;
+            }
+        void databaseConstructed (AcDbDatabase* db) override
+            {
+            std::cout << "Created an xRef AcDbDatabase: 0x" << db << std::endl;
+            }
+        void databaseToBeDestroyed (AcDbDatabase* db) override
+            {
+            const ACHAR* name = nullptr;
+            if (Acad::eOk == db->getFilename(name))
+                std::cout << "Destroying AcDbDatabase: 0x" << db << ", " << name << std::endl;
+            }
+        };  // XrefEventReactor
+
+    AcRxEvent* arxEvent = AcRxEvent::cast (acrxSysRegistry()->at(ACRX_EVENT_OBJ));
+    XrefEventReactor* xrefReactor = new XrefEventReactor ();
+    arxEvent->addReactor (xrefReactor);
+#endif  // NDEBUG
+
+    Acad::ErrorStatus   es = ::acdbResolveCurrentXRefs (this, useThreadEngine, newXrefsOnly);
+    status = ToDwgDbStatus (es);
+
+#ifndef NDEBUG
+    if (nullptr != arxEvent && nullptr != xrefReactor)
+        arxEvent->removeReactor (xrefReactor);
+    if (nullptr != xrefReactor)
+        delete xrefReactor;
+#endif  // NDEBUG
+#endif
+    return  status;
+    }

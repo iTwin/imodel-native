@@ -189,6 +189,7 @@ public:
     DWGDB_EXPORT DPoint3d                   GetBase () const;
     DWGDB_EXPORT DwgDbUnits                 GetINSUNITS () const;
     DWGDB_EXPORT DwgDbDatabaseP             GetXrefDatabase (bool includeUnresolved = false) const;
+    DWGDB_EXPORT DwgDbXrefStatus            GetXrefStatus () const;
     DWGDB_EXPORT DwgDbStatus                GetBlockReferenceIds (DwgDbObjectIdArrayR ids, bool noNested = true, bool validate = false);
     DWGDB_EXPORT DwgDbStatus                OpenSpatialIndex (DwgDbSpatialIndexPtr& indexOut, DwgDbOpenMode mode) const;
     DWGDB_EXPORT DwgDbStatus                OpenSortentsTable (DwgDbSortentsTablePtr& sortentsOut, DwgDbOpenMode mode);
