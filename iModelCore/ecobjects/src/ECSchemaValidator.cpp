@@ -565,3 +565,4 @@ ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
+ 
