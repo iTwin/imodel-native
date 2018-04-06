@@ -165,7 +165,7 @@
     </Product>
 
     <!-- Build a gtest exe to run the tests -->
-    <Product Name="Gtest-CiviliModelBridges-Tests">
+    <Product Name="CiviliModelBridges-Gtest">
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest" />
         <SubPart PartName="Gtest" />
     </Product>
@@ -182,13 +182,22 @@
         </Bindings>
     </Part>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=Gtest-CiviliModelBridges-Tests -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
-        <SubProduct ProductName="Gtest-CiviliModelBridges-Tests" />
+    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=CiviliModelBridges-Gtest -dGTEST_NAME=CiviliModelBridgesTests -dGTEST_SHOW_PROGRESS -dGTEST_EXTRA_ARGS=--timeout=300" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+        <SubProduct ProductName="CiviliModelBridges-Gtest" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+    </Part>
+    
+    <Part Name="GTest-Run-CheckCoverage" Scope="Private" OnlyPlatforms="x64" 
+        BentleyBuildMakeFile="${SrcRoot}/Civil/Components/sharedmke/CodeCoverage.mke" 
+        BentleyBuildMakeOptions="-dProductName=CiviliModelBridges -dCodeSourceDir=${SrcRoot}\Civil\iModelBridges\ORDBridge\ -dFailIfCoverageNotMet=0 -dMinimumCoverage=0.0">
+        <RequiredRepository>Civil-Components</RequiredRepository>
+        <RequiredRepository>Bsitools-OpenCppCoverage</RequiredRepository>
+        <SubProduct ProductName="CiviliModelBridges-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest" />
     </Part>
 
     <Part Name="CiviliModelBridgesTested">
-        <SubPart PartName="RunGtest" />
+        <SubPart PartName="GTest-Run-CheckCoverage" />
     </Part>
 
   <!-- ........................................................................................................................................ -->
