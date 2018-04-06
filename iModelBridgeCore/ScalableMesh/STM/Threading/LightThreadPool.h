@@ -78,9 +78,9 @@ private:
 
     //int                                 m_maxIdleThreads;
     int                                 m_numWorkingThreads;
-    atomic<bool>                        m_run;
-    atomic<bool>*                       m_threadRun;
-    atomic<int>                         m_numberOfTask;
+    std::atomic<bool>                   m_run;
+    std::atomic<bool>*                  m_threadRun;
+    std::atomic<int>                    m_numberOfTask;
     //mutable BeConditionVariable         m_threadsCV;
     //mutable BeMutex                     m_workQueueCS;
     //mutable BeMutex                     m_memoryUsedCS;    
