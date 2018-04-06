@@ -102,6 +102,10 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
             *created = false;
                                                             // Set up DataSource for use with the given Session
         dataSource->setSessionName(session);
+
+                                                            // Make sure the dataSource has the correct prefix path
+        dataSource->setPrefixPath(account.getPrefixPath());
+
                                                             // Return the found DataSource
         //assert(!dataSource->isValid() || dataSource->isEmpty());
         return dataSource;
