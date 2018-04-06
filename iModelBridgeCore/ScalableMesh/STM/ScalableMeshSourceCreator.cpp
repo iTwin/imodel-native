@@ -94,6 +94,7 @@ bool canCreateFile(const WChar* fileName)
 template<class POINT, class EXTENT>
 static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType(ScalableMeshFilterType filterType)
 {
+#ifdef VANCOUVER_API
     WString filterTypeStr;
 
     if (BSISUCCESS == ConfigurationManager::GetVariable(filterTypeStr, L"SM_FILTER_TYPE"))
@@ -108,7 +109,7 @@ static ISMPointIndexFilter<POINT, EXTENT>* scm_createFilterFromType(ScalableMesh
             assert(!"Unknown filter type");
         }
     }
-
+#endif
     switch (filterType)
     {
     case SCM_FILTER_DUMB:
@@ -187,7 +188,7 @@ ScalableMeshMesherType Get3dMesherType()
     return SCM_MESHER_TETGEN;
 #else
     return SCM_MESHER_2D_DELAUNAY;
-#endif   
+#endif
 }
 
 

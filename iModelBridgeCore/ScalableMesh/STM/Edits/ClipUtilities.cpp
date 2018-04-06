@@ -1776,7 +1776,11 @@ bool GetRegionsFromClipVector3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, 
 					continue;
 				else
 				{
+#ifndef VANCOUVER_API
+                                        ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive.get());
+#else
 					ClipVectorPtr newClip = ClipVector::CreateFromPrimitive(primitive);
+#endif
 					clipPolys.push_back(newClip);
 				}
 			}
