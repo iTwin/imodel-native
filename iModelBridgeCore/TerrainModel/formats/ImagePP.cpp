@@ -2,7 +2,7 @@
 |
 |     $Source: formats/ImagePP.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -2326,6 +2326,7 @@ WCharCP    imageFileNameP,
 long       *numRowsP,
 long       *numColsP,
 double     *nullValueP,
+double     *unitsFromMeters,
 double     scaleFactor,
 WCharCP    projectionKeyP
 )
@@ -2393,7 +2394,15 @@ WCharCP    projectionKeyP
         auto rasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSysCP();
         BaseGCSP pRasterCoordSys = rasterCoordSys == nullptr ? nullptr : rasterCoordSys->GetBaseGCS();
 #endif
-        if (pRasterCoordSys != NULL) geoCordSysSet = 1;
+        if (pRasterCoordSys != NULL)
+            {
+            geoCordSysSet = 1;
+            *unitsFromMeters = pRasterCoordSys->UnitsFromMeters();
+            }
+        else
+            {
+            *unitsFromMeters = 1;
+            }
         if (dbg)
             {
             if (geoCordSysSet == 0) bcdtmWrite_message (0, 0, 0, "Image Does Not Have An Associated Projection");
@@ -2550,7 +2559,6 @@ WCharCP    projectionKeyP
         bcdtmWrite_message (1, 0, 0, "Unknown Error** Opening/Reading Image Files");
         goto errexit;
         }
-
     /*
     ** Set Bounding Cube
     */
@@ -2661,6 +2669,7 @@ double     elevationScaleFactor               // Elevation Scale Factor
     double xImageMin, yImageMin, zImageMin, xImageMax, yImageMax, zImageMax;
     double xDist, yDist, colSpacing, rowSpacing;
     DPoint3d *p1P, *p2P, *p3P, *pointP;
+    double unitsFromMeters = 1;
     BC_DTM_OBJ* dtmP;
     /*
     ** Write Entry Message
@@ -2689,7 +2698,7 @@ double     elevationScaleFactor               // Elevation Scale Factor
     */
     startTime = bcdtmClock ();
     if (dbg) bcdtmWrite_message (0, 0, 0, "Reading Image File = %s", m_filename.GetWCharCP ());
-    if (bcdtmImagePP_importImageDtmObject (dtmP, m_filename.GetWCharCP (), &numRows, &numCols, &nullValue, imageScaleFactor, projectionKeyP)) goto errexit;
+    if (bcdtmImagePP_importImageDtmObject (dtmP, m_filename.GetWCharCP (), &numRows, &numCols, &nullValue, &unitsFromMeters, imageScaleFactor, projectionKeyP)) goto errexit;
     if (dbg)
         {
         bcdtmWrite_message (0, 0, 0, "**** Image Read Time            = %8.3lf Secs", bcdtmClock_elapsedTime (bcdtmClock (), startTime));
@@ -2916,6 +2925,9 @@ double     elevationScaleFactor               // Elevation Scale Factor
         if (dbg) bcdtmWrite_message (0, 0, 0, "Voiding Missing Values");
         if (bcdtmObject_placeVoidsAroundNullValuesDtmObject (dtmP, nullValue)) goto errexit;
         }
+
+    if (unitsFromMeters != 1)
+        bcdtmMath_convertUnitsDtmObject(dtmP, unitsFromMeters, unitsFromMeters);
     /*
     ** Apply Unit Conversion Factor To Elevation Values
     */

@@ -39,7 +39,8 @@ namespace Bentley.TerrainModel.ElementTemplate
             property = structVal.ContainedValues["Type"];
             if (property != null && !property.IsNull)
                 paletteName = property.StringValue;
-            trianglesElement.SetMaterialInfo (paletteName, materialName);         
+            string[] paletteSplit = paletteName.Split('|');
+            trianglesElement.SetMaterialInfo (paletteSplit[paletteSplit.Length - 1], materialName);         
 
             property = structValue.ContainedValues["Value"];
 

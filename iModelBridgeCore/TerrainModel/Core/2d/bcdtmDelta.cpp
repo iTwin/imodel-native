@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmDelta.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -58,9 +58,18 @@ void SimplifyBoundaryPoints(DPoint3dP& clipPtsP, long& numClipPts)
 
     for (auto&& p : pts)
         {
-        while (sP != eP && sP->x != p.x || sP->y != p.y)
+        DPoint3d* startP = sP;
+        while (sP->x != p.x || sP->y != p.y)
+            {
             sP++;
-        BeAssert(sP != eP);
+            if (sP == eP)
+                sP = clipPtsP;
+            if (startP == sP)
+                {
+                BeAssert(startP != sP);
+                break;
+                }
+            }
         if (sP == eP)
             break;
         p.z = sP->z;

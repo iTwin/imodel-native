@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMElementHandlerManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -20,6 +20,7 @@ enum {MAX_ELEMENTBLOCK_BYTES = 500*K};
 
 BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE
 
+bool UpdateDTMLastModified(EditElementHandle& element, double newTime);
 void DTMRegisterDisplayHandlers();
 void Initializations ();
 
@@ -336,8 +337,6 @@ StatusInt DTMElementHandlerManager::ScheduleFromDtm (EditElementHandleR editHand
     DTMElementHandlerManager::GetDTMDataRef(dataRef, editHandle);
     DTMDataRefXAttribute* xAttributeDTMDataRef = dynamic_cast<DTMDataRefXAttribute*>(dataRef.get());
 
-    if (nullptr != xAttributeDTMDataRef && xAttributeDTMDataRef->IsSameDTM(dtm))
-        return false;
     Transform trsf;
     Transform dtmTransform;
 
@@ -351,6 +350,21 @@ StatusInt DTMElementHandlerManager::ScheduleFromDtm (EditElementHandleR editHand
         // This is an invalid transformation.
         BeAssert (true);
         return ERROR;
+        }
+
+    if (nullptr != xAttributeDTMDataRef && xAttributeDTMDataRef->IsSameDTM(dtm))
+        {
+        Transform currentTrsf;
+        GetStorageToUORMatrix(currentTrsf, editHandle);
+
+        if (!currentTrsf.IsEqual(trsf))
+            {
+            SetStorageToUORMatrix(trsf, editHandle);
+            UpdateDTMLastModified (editHandle, BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble ());
+            }
+
+        // Check if the storage units has changed.
+        return false;
         }
 
     if (DTMDataRefXAttribute::ScheduleFromDtm(editHandle, templateElement, dtm, trsf, modelRef, disposeDTM) != SUCCESS)

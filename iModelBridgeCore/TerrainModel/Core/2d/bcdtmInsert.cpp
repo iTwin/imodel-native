@@ -2,7 +2,7 @@
 |
 ** Module Code  bcdtmInsert.c
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -4247,7 +4247,7 @@ BENTLEYDTM_EXPORT int bcdtmInsert_internalStringIntoDtmObject
    {
     if( dbg == 1 )  bcdtmWrite_message(0,0,0,"Inserting Point[%4ld] ** %10.4lf %10.4lf %8.4lf",(long)(p3d-stringPtsP),p3d->x,p3d->y,p3d->z) ;
     if (bcdtmInsert_storePointInDtmObject(dtmP, drapeOption, insertOption, p3d->x, p3d->y, p3d->z, &dtmPntNum, insertPointCallback, existingLinesP)) goto errexit;
-    if( dtmP->numPoints - dtmP->numSortedPoints > 1500 )
+    if( dtmP->numPoints - dtmP->numSortedPoints > 1500 && nullptr == existingLinesP)
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Resorting Points") ;
        if( bcdtmTin_resortTinStructureDtmObject(dtmP) ) goto errexit  ;

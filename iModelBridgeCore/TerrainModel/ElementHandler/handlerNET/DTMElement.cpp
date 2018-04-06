@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handlerNET/DTMElement.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -1357,8 +1357,8 @@ DGNET::MaterialId^ DTMMaterialElement::MaterialId::get()
 //=======================================================================================
 void DTMMaterialElement::MaterialId::set (DGNET::MaterialId^ value)
     {
-// ToDo Vancouver    GETDISPLAYPARAM(DTMElementSubHandler::SymbologyAndMaterialParams);
-// ToDo Vancouver    params.SetMaterialElementId (value);
+    GETDISPLAYPARAM(DTMElementSubHandler::SymbologyAndMaterialParams);
+    params.SetMaterialElementID (value->ElementId);
     }
 
 //=======================================================================================
