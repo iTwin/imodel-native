@@ -3793,6 +3793,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         if (model->IsSpatialModel())
             rootRange.Extend(kvp.second.m_range);
         }
+
+    if (rootRange.IsNull())
+        return ConvertStatus(TileGeneratorStatus::NoGeometry);
+
     return PublishClassifiers(viewedModels, generator, toleranceInMeters, progressMeter);
     }
 

@@ -1968,7 +1968,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             })
         .then([=](GenerateTileResult result)
             {
-            if (result.m_tile.IsValid())
+            if (result.m_tile.IsValid() && TileGeneratorStatus::Success == result.m_status)
                 m_totalTiles += result.m_tile->GetNodeCount();
 
             m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);
