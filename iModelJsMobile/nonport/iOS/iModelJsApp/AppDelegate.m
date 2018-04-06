@@ -7,6 +7,8 @@
 //
 
 #import "AppDelegate.h"
+#include <iModelJs/iModelJs.h>
+#include <iModelJs/iModelJsServicesTier.h>
 
 @interface AppDelegate ()
 
@@ -14,9 +16,16 @@
 
 @implementation AppDelegate
 
+extern void imodeljs_addon_setMobileResourcesDir(Utf8CP d);
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    // Override point for customization after application launch.
+
+    // Start BackEnd libUv Thread
+    NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
+    imodeljs_addon_setMobileResourcesDir(appFolderPath.UTF8String);
+    BentleyApi::iModelJs::ServicesTier::UvHost host;
+    while (!host.IsReady()) { ; }
+
     return YES;
 }
 

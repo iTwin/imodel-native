@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		264171752077A61300A1B72B /* libiModelJs.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 264171732077A61300A1B72B /* libiModelJs.a */; };
+		264171762077A61300A1B72B /* libuv.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 264171742077A61300A1B72B /* libuv.a */; };
 		2699BBA020779C4200F763EE /* iModelJsApp.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */; };
 		2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA120779DAF00F763EE /* CFNetwork.framework */; };
 		2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA320779DB500F763EE /* JavaScriptCore.framework */; };
@@ -54,46 +56,48 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		264171732077A61300A1B72B /* libiModelJs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libiModelJs.a; sourceTree = "<group>"; };
+		264171742077A61300A1B72B /* libuv.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libuv.a; sourceTree = "<group>"; };
 		2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iModelJsApp.xcconfig; sourceTree = "<group>"; };
 		2699BBA120779DAF00F763EE /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
 		2699BBA320779DB500F763EE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		2699BBA520779DBE00F763EE /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
-		2699BBA720779E1600F763EE /* log4j.dtd */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = log4j.dtd; sourceTree = "<group>"; };
-		2699BBA820779E1600F763EE /* libBeOpenSSL.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeOpenSSL.a; sourceTree = "<group>"; };
-		2699BBA920779E1600F763EE /* libECObjects.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECObjects.a; sourceTree = "<group>"; };
-		2699BBAA20779E1600F763EE /* libBentleyGeom.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeom.a; sourceTree = "<group>"; };
-		2699BBAB20779E1600F763EE /* libBeLibxml2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibxml2.a; sourceTree = "<group>"; };
-		2699BBAC20779E1600F763EE /* libBaseGeoCoord.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBaseGeoCoord.a; sourceTree = "<group>"; };
-		2699BBAD20779E1600F763EE /* libBeHttp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeHttp.a; sourceTree = "<group>"; };
-		2699BBAE20779E1600F763EE /* libBeXml.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeXml.a; sourceTree = "<group>"; };
-		2699BBAF20779E1600F763EE /* liblibapr010502.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibapr010502.a; sourceTree = "<group>"; };
-		2699BBB020779E1600F763EE /* libBeLibJpegTurbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibJpegTurbo.a; sourceTree = "<group>"; };
-		2699BBB120779E1600F763EE /* libDgnPlatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libDgnPlatform.a; sourceTree = "<group>"; };
-		2699BBB220779E1600F763EE /* libfreetype2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype2.a; sourceTree = "<group>"; };
-		2699BBB320779E1600F763EE /* libBentleyGeomSerialization.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeomSerialization.a; sourceTree = "<group>"; };
-		2699BBB420779E1700F763EE /* libBeZlib.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeZlib.a; sourceTree = "<group>"; };
-		2699BBB520779E1700F763EE /* libBePng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBePng.a; sourceTree = "<group>"; };
-		2699BBB620779E1700F763EE /* libBeCsmapStatic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCsmapStatic.a; sourceTree = "<group>"; };
-		2699BBB720779E1700F763EE /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblzma.a; sourceTree = "<group>"; };
-		2699BBB820779E1700F763EE /* libBeJpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJpeg.a; sourceTree = "<group>"; };
-		2699BBB920779E1700F763EE /* libBeFolly.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeFolly.a; sourceTree = "<group>"; };
-		2699BBBA20779E1700F763EE /* libBentley.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentley.a; sourceTree = "<group>"; };
-		2699BBBB20779E1700F763EE /* libBeSQLiteEC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLiteEC.a; sourceTree = "<group>"; };
-		2699BBBC20779E1700F763EE /* libbentleylog4cxx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbentleylog4cxx.a; sourceTree = "<group>"; };
-		2699BBBD20779E1700F763EE /* libECPresentation.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECPresentation.a; sourceTree = "<group>"; };
-		2699BBBE20779E1700F763EE /* libliblog4cxx010.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libliblog4cxx010.a; sourceTree = "<group>"; };
-		2699BBBF20779E1700F763EE /* libsnappy.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsnappy.a; sourceTree = "<group>"; };
-		2699BBC020779E1700F763EE /* libBeIcu4c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeIcu4c.a; sourceTree = "<group>"; };
-		2699BBC120779E1700F763EE /* libUnits.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libUnits.a; sourceTree = "<group>"; };
-		2699BBC220779E1700F763EE /* libBeJsonCpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJsonCpp.a; sourceTree = "<group>"; };
-		2699BBC320779E1800F763EE /* libBeJavaScript.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJavaScript.a; sourceTree = "<group>"; };
-		2699BBC420779E1800F763EE /* libBeCurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCurl.a; sourceTree = "<group>"; };
-		2699BBC520779E1800F763EE /* liblibaprutil010504.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibaprutil010504.a; sourceTree = "<group>"; };
-		2699BBC620779E1800F763EE /* libBeSQLite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLite.a; sourceTree = "<group>"; };
+		2699BBA720779E1600F763EE /* log4j.dtd */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = log4j.dtd; sourceTree = "<group>"; };
+		2699BBA820779E1600F763EE /* libBeOpenSSL.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeOpenSSL.a; sourceTree = "<group>"; };
+		2699BBA920779E1600F763EE /* libECObjects.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libECObjects.a; sourceTree = "<group>"; };
+		2699BBAA20779E1600F763EE /* libBentleyGeom.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBentleyGeom.a; sourceTree = "<group>"; };
+		2699BBAB20779E1600F763EE /* libBeLibxml2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeLibxml2.a; sourceTree = "<group>"; };
+		2699BBAC20779E1600F763EE /* libBaseGeoCoord.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBaseGeoCoord.a; sourceTree = "<group>"; };
+		2699BBAD20779E1600F763EE /* libBeHttp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeHttp.a; sourceTree = "<group>"; };
+		2699BBAE20779E1600F763EE /* libBeXml.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeXml.a; sourceTree = "<group>"; };
+		2699BBAF20779E1600F763EE /* liblibapr010502.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liblibapr010502.a; sourceTree = "<group>"; };
+		2699BBB020779E1600F763EE /* libBeLibJpegTurbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeLibJpegTurbo.a; sourceTree = "<group>"; };
+		2699BBB120779E1600F763EE /* libDgnPlatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libDgnPlatform.a; sourceTree = "<group>"; };
+		2699BBB220779E1600F763EE /* libfreetype2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libfreetype2.a; sourceTree = "<group>"; };
+		2699BBB320779E1600F763EE /* libBentleyGeomSerialization.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBentleyGeomSerialization.a; sourceTree = "<group>"; };
+		2699BBB420779E1700F763EE /* libBeZlib.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeZlib.a; sourceTree = "<group>"; };
+		2699BBB520779E1700F763EE /* libBePng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBePng.a; sourceTree = "<group>"; };
+		2699BBB620779E1700F763EE /* libBeCsmapStatic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeCsmapStatic.a; sourceTree = "<group>"; };
+		2699BBB720779E1700F763EE /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liblzma.a; sourceTree = "<group>"; };
+		2699BBB820779E1700F763EE /* libBeJpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeJpeg.a; sourceTree = "<group>"; };
+		2699BBB920779E1700F763EE /* libBeFolly.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeFolly.a; sourceTree = "<group>"; };
+		2699BBBA20779E1700F763EE /* libBentley.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBentley.a; sourceTree = "<group>"; };
+		2699BBBB20779E1700F763EE /* libBeSQLiteEC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeSQLiteEC.a; sourceTree = "<group>"; };
+		2699BBBC20779E1700F763EE /* libbentleylog4cxx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libbentleylog4cxx.a; sourceTree = "<group>"; };
+		2699BBBD20779E1700F763EE /* libECPresentation.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libECPresentation.a; sourceTree = "<group>"; };
+		2699BBBE20779E1700F763EE /* libliblog4cxx010.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libliblog4cxx010.a; sourceTree = "<group>"; };
+		2699BBBF20779E1700F763EE /* libsnappy.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libsnappy.a; sourceTree = "<group>"; };
+		2699BBC020779E1700F763EE /* libBeIcu4c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeIcu4c.a; sourceTree = "<group>"; };
+		2699BBC120779E1700F763EE /* libUnits.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libUnits.a; sourceTree = "<group>"; };
+		2699BBC220779E1700F763EE /* libBeJsonCpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeJsonCpp.a; sourceTree = "<group>"; };
+		2699BBC320779E1800F763EE /* libBeJavaScript.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeJavaScript.a; sourceTree = "<group>"; };
+		2699BBC420779E1800F763EE /* libBeCurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeCurl.a; sourceTree = "<group>"; };
+		2699BBC520779E1800F763EE /* liblibaprutil010504.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liblibaprutil010504.a; sourceTree = "<group>"; };
+		2699BBC620779E1800F763EE /* libBeSQLite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeSQLite.a; sourceTree = "<group>"; };
 		26D5A7F62076C13B001AB387 /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		26E6C0B12076B63E0031769D /* iModelJsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iModelJsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		26E6C0B42076B63E0031769D /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		26E6C0B52076B63E0031769D /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		26E6C0B52076B63E0031769D /* AppDelegate.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.m; sourceTree = "<group>"; };
 		26E6C0B72076B63E0031769D /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		26E6C0B82076B63E0031769D /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		26E6C0BB2076B63E0031769D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -109,6 +113,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				264171752077A61300A1B72B /* libiModelJs.a in Frameworks */,
+				264171762077A61300A1B72B /* libuv.a in Frameworks */,
 				2699BBC720779E1800F763EE /* log4j.dtd in Frameworks */,
 				2699BBC820779E1800F763EE /* libBeOpenSSL.a in Frameworks */,
 				2699BBC920779E1800F763EE /* libECObjects.a in Frameworks */,
@@ -189,6 +195,8 @@
 		26E6C0CA2076B8200031769D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				264171732077A61300A1B72B /* libiModelJs.a */,
+				264171742077A61300A1B72B /* libuv.a */,
 				2699BBAC20779E1600F763EE /* libBaseGeoCoord.a */,
 				2699BBB620779E1700F763EE /* libBeCsmapStatic.a */,
 				2699BBC420779E1800F763EE /* libBeCurl.a */,
@@ -239,6 +247,7 @@
 				26E6C0AD2076B63E0031769D /* Sources */,
 				26E6C0AE2076B63E0031769D /* Frameworks */,
 				26E6C0AF2076B63E0031769D /* Resources */,
+				264171772077A9D200A1B72B /* Assets */,
 			);
 			buildRules = (
 			);
@@ -295,6 +304,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		264171772077A9D200A1B72B /* Assets */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = Assets;
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		26E6C0AD2076B63E0031769D /* Sources */ = {
@@ -448,6 +474,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
+				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/PublicAPI/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/VendorAPI/",
+				);
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -468,6 +499,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = WLDT6Q3PUY;
+				ENABLE_BITCODE = NO;
+				HEADER_SEARCH_PATHS = (
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/PublicAPI/",
+					"$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/VendorAPI/",
+				);
 				INFOPLIST_FILE = iModelJsApp/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
