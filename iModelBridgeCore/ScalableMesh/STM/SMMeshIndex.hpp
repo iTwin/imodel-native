@@ -3055,8 +3055,11 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
         SetNumberOfSubNodesOnSplit(4);                 
     
     if (m_nodeHeader.m_numberOfSubNodesOnSplit == 4)
-        {    
-		m_SMIndex->m_countsOfNodesTotal += 4;
+        { 
+        if (!m_SMIndex->m_precomputedCountNodes)
+        {
+            m_SMIndex->m_countsOfNodesTotal += 4;
+        }
         if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 2)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 2);
         m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 4;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
@@ -3101,8 +3104,10 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
             HDEBUGCODE(m_unspliteable = true;)
                 return;
             }
-
-		m_SMIndex->m_countsOfNodesTotal += 8;
+        if (!m_SMIndex->m_precomputedCountNodes)
+        {
+            m_SMIndex->m_countsOfNodesTotal += 8;
+        }
         if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 1)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 1);
         m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 8;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
@@ -5038,6 +5043,42 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
         m_indexHeader.m_terrainDepth = m_pRootNode->GetDepth();
         }
     if (sourceRasterP == nullptr) return;
+
+    //compute estimated number of needed texture nodes
+    DRange2d rasterBox = sourceRasterP->GetTextureExtent();
+
+    DRange3d ext = GetContentExtent();
+    //get overlap between node and raster extent
+    DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(ext), ExtentOp<EXTENT>::GetYMin(ext),
+        ExtentOp<EXTENT>::GetXMax(ext), ExtentOp<EXTENT>::GetYMax(ext));
+
+    unitTransform.Multiply(contentExtent.low, contentExtent.low);
+    unitTransform.Multiply(contentExtent.high, contentExtent.high);
+
+    if (contentExtent.IntersectionOf(rasterBox, contentExtent))
+    {
+        //we compute an approximation of the number of extra nodes that will be created to obtain a more reliable progress on datasets with more texture
+        DPoint2d pixSize = sourceRasterP->GetMinPixelSize();
+
+        float dimensionSize = 1024.0;
+        if (dynamic_cast<StreamTextureProvider*>(sourceRasterP.get()))
+        {
+            dimensionSize = 256.0;
+        }
+        double neededResolutions = log2(std::max(contentExtent.XLength()/pixSize.x, contentExtent.YLength()/pixSize.y) / dimensionSize);
+        int finalDepth = (int)ceil(neededResolutions);
+        int countNodes = (int)m_countsOfNodesAtLevel[m_indexHeader.m_terrainDepth];
+        if (finalDepth <= m_indexHeader.m_terrainDepth)
+        {
+            m_precomputedCountNodes = true;
+        }
+        else
+        {
+            m_precomputedCountNodes = true;
+            m_countsOfNodesTotal += countNodes * pow(4, finalDepth - (int)m_indexHeader.m_terrainDepth);
+        }
+    }
+
     if (m_pRootNode != NULL)   dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
    // WaitForThreadStop();
     for (auto& task : m_textureWorkerTasks) task.get();
