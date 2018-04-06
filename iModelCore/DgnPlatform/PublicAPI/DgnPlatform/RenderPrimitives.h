@@ -395,7 +395,7 @@ private:
     mutable MeshEdgesPtr            m_edges;
     bool                            m_is2d;
     bool                            m_isPlanar;
-    PolyfaceAuxData::ChannelPtr     m_auxChannel;
+    PolyfaceAuxChannelPtr     m_auxChannel;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
         : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar) { }
@@ -443,7 +443,7 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline);
     uint32_t AddVertex(QPoint3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
-    void AddAuxChannel(PolyfaceAuxData::ChannelCR channel, size_t index);
+    void AddAuxChannel(PolyfaceAuxChannelCR channel, size_t index);
 
     GraphicPtr GetGraphics (MeshGraphicArgs& args, Dgn::Render::SystemCR system, DgnDbR db) const;
 };
