@@ -558,7 +558,7 @@ public:
 //! An unnamed resource is created for one-time use and cannot be looked up again for reuse.
 // @bsistruct                                                   Paul.Connelly   01/18
 //=======================================================================================
-template<typename T_Id> struct ResourceKey
+template <typename T_Id> struct ResourceKey
 {
 private:
     T_Id        m_id;
@@ -3284,7 +3284,7 @@ struct System
     virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb) const = 0;
 
     // ! Create polygons on a range for a sheet tile
-    DGNPLATFORM_EXPORT bvector<PolyfaceHeaderPtr> _CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip, DRange3dR rangeOut) const;
+    DGNPLATFORM_EXPORT bvector<PolyfaceHeaderPtr> _CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip) const;
 
     //! Create a sheet tile primitive from polys
     DGNPLATFORM_EXPORT bvector<GraphicPtr> _CreateSheetTile(TextureCR tile, bvector<PolyfaceHeaderPtr>& polys, DgnDbR dgndb, GraphicParamsCR params) const;

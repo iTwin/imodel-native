@@ -965,7 +965,7 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    Mesh::AddAuxChannel(PolyfaceAuxData::ChannelCR channel, size_t index)
+void    Mesh::AddAuxChannel(PolyfaceAuxChannelCR channel, size_t index)
     {
     if (!m_auxChannel.IsValid())
         m_auxChannel = channel.CloneWithoutData();
@@ -1198,7 +1198,7 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     bool const*     visitorVisibility = visitor.GetVisibleCP();
     size_t          nTriangles = points.size() - 2;
 
-    PolyfaceAuxData::ChannelCPtr auxChannel;
+    PolyfaceAuxChannelCPtr auxChannel;
     
     if (nullptr != auxChannelName && visitor.GetAuxDataCP().IsValid())
         auxChannel = visitor.GetAuxDataCP()->GetChannel(auxChannelName);
@@ -2248,7 +2248,8 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
     double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
 
-    double minAxis = std::min(textRange.XLength(), textRange.YLength());
+    // NB: Need scaled 2d range - ignore 3d transform...
+    double minAxis = std::min(textRange2d.high.x - textRange2d.low.x, textRange2d.high.y - textRange2d.low.y) * geom.GetTransform().ColumnXMagnitude();
     double textSize = minAxis * meterSize;
     constexpr double s_minToleranceRatioMultiplier = 2.0; // from ElementTileTree.cpp; used to multiply the s_minToleranceRatio
     constexpr double s_texSizeThreshold = 64.0;
@@ -2600,7 +2601,7 @@ void GeometryListBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, Geome
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip, DRange3dR rangeOut) const
+bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip) const
     {
     bvector<PolyfaceHeaderPtr> sheetTilePolys;
 
@@ -2622,7 +2623,6 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
     builder->AddTriangulation(quadPts);
     PolyfaceHeaderPtr pfHdr = builder->GetClientMeshPtr();
 
-    rangeOut.Init();
     if (nullptr != clip)
         {
         GeometryClipper::PolyfaceClipper pfClipper;
@@ -2632,23 +2632,13 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
             bvector<PolyfaceQueryCP>& clippedPolyfaceQueries = pfClipper.GetOutput();
 
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
-                {
-                DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
-                uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
                 sheetTilePolys.push_back(clippedPolyfaceQuery->Clone());
-                for (uint32_t i = 0; i < numPts; i++)
-                    {
-                    rangeOut.Extend(pts[i]);
-                    }
-                }
             }
         // else no output, so don't output any polys (empty sheetTilePolys)
         }
     else // not clipped, so return original unclipped poly in sheetTilePolys
         {
         sheetTilePolys.push_back(pfHdr);
-        for (int i = 0; i < 4; i++)
-            rangeOut.Extend(corners.m_pts[i]);
         }
 
     return sheetTilePolys;

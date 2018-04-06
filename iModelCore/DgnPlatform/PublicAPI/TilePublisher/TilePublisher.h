@@ -31,7 +31,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_BENTLEY_TILEPUBLISHER_NAMESPACE
 
-typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
+typedef bset<DgnViewId> DgnViewIdSet;
 
 struct MeshMaterial;
 struct PolylineMaterial;
@@ -393,13 +393,16 @@ public:
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifier) const { return _GetTileUrl(tile, fileExtension, classifier); }
-    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId, GlobeMode);
+    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId& defaultViewId, GlobeMode);
     TILEPUBLISHER_EXPORT bool GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
     void AddBatchTableAttributes (Json::Value& json, FeatureAttributesMapCR attrs) { _AddBatchTableAttributes(json, attrs); }
 
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
     TILEPUBLISHER_EXPORT bool IsGeolocated () const;
+    ModelRange const* FindModelRange(DgnModelId modelId) const { auto found = m_modelRanges.find(modelId); return m_modelRanges.end() != found ? &found->second : nullptr; }
+    bool IsModelPublished(DgnModelId modelId) const { return nullptr != FindModelRange(modelId); }
+    bool IsAnyModelPublished(DgnElementId modelSelectorId) const;
 
     template<typename T> static Json::Value IdSetToJson(T const& ids)
         {
