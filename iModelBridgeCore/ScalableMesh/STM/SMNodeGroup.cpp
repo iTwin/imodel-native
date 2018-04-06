@@ -808,6 +808,11 @@ void SMNodeGroup::MergeChild(SMNodeGroupPtr child)
 
     // Replace tile in the parent tile
     parentTileChildren[childIndex] = childTileTreeNode;
+    auto childID = childTileTreeNode["SMHeader"]["id"].asUInt();
+    child->m_tileTreeMap[childID] = &parentTileChildren[childIndex];
+
+    // No longer need child tile tree node
+    childTileTreeNode = Json::Value();
 
     this->m_tileTreeMap.insert(child->m_tileTreeMap.begin(), child->m_tileTreeMap.end());
     }
