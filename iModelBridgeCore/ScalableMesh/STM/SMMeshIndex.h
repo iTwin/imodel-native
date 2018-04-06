@@ -1033,7 +1033,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         SharedTextureManager m_texMgr;
 
+        
         std::vector<std::future<bool>> m_textureWorkerTasks;
+        RasterTexturingThreadPoolPtr m_texturingThreadPoolPtr;
+
         bvector < RefCountedPtr<EditOperation> > m_edits;
 #if 0
         SMMeshIndex<POINT, EXTENT>* m_smTerrain;

@@ -396,7 +396,7 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     }
 
 
-static bool s_usePolygon = true;
+static bool s_usePolygon = false;
 
 void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
@@ -564,7 +564,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                             }
                         }
                     });
-/*
+
                 if (s_usePolygon)
                     { 
                     bvector<DPoint3d> polygon;
@@ -577,7 +577,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
 
                     creatorPtr->SetSourceImportPolygon(&polygon[0], polygon.size());
                     }
-*/
+
                 StatusInt status = creatorPtr->Create(isSingleFile);
                 importInProgress = false;
                 mythread.join();
