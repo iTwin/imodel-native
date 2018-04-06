@@ -1342,11 +1342,11 @@ inline flatbuffers::Offset<DgnRuledSweep> CreateDgnRuledSweep(flatbuffers::FlatB
 }
 
 struct PolyfaceAuxChannelData : private flatbuffers::Table {
-  float input() const { return GetField<float>(4, 0); }
-  const flatbuffers::Vector<float> *values() const { return GetPointer<const flatbuffers::Vector<float> *>(6); }
+  double input() const { return GetField<double>(4, 0); }
+  const flatbuffers::Vector<double> *values() const { return GetPointer<const flatbuffers::Vector<double> *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<float>(verifier, 4 /* input */) &&
+           VerifyField<double>(verifier, 4 /* input */) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* values */) &&
            verifier.Verify(values()) &&
            verifier.EndTable();
@@ -1358,8 +1358,8 @@ struct PolyfaceAuxChannelData : private flatbuffers::Table {
 struct PolyfaceAuxChannelDataBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_input(float input) { fbb_.AddElement<float>(4, input, 0); }
-  void add_values(flatbuffers::Offset<flatbuffers::Vector<float>> values) { fbb_.AddOffset(6, values); }
+  void add_input(double input) { fbb_.AddElement<double>(4, input, 0); }
+  void add_values(flatbuffers::Offset<flatbuffers::Vector<double>> values) { fbb_.AddOffset(6, values); }
   PolyfaceAuxChannelDataBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   PolyfaceAuxChannelDataBuilder &operator=(const PolyfaceAuxChannelDataBuilder &);
   flatbuffers::Offset<PolyfaceAuxChannelData> Finish() {
@@ -1369,11 +1369,11 @@ struct PolyfaceAuxChannelDataBuilder {
 };
 
 inline flatbuffers::Offset<PolyfaceAuxChannelData> CreatePolyfaceAuxChannelData(flatbuffers::FlatBufferBuilder &_fbb,
-   float input = 0,
-   flatbuffers::Offset<flatbuffers::Vector<float>> values = 0) {
+   double input = 0,
+   flatbuffers::Offset<flatbuffers::Vector<double>> values = 0) {
   PolyfaceAuxChannelDataBuilder builder_(_fbb);
-  builder_.add_values(values);
   builder_.add_input(input);
+  builder_.add_values(values);
   return builder_.Finish();
 }
 

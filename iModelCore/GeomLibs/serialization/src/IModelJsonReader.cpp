@@ -626,6 +626,85 @@ bool tryValueToRuledSweep (JsonValueCR value, ISolidPrimitivePtr &result)
         }
     return false;
     }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      04/2018
++--------------------------------------------------------------------------------------*/
+PolyfaceAuxChannel::DataPtr  tryValueToPolyfaceAuxDataChannelData(JsonValueCR value)
+    {
+    if (!value.isObject() ||
+        !value["values"].isArray())
+        return nullptr;
+
+    bvector<double> values;
+    JsonValueCR     valuesValue = value["values"];
+
+    for (uint32_t i=0; i<valuesValue.size(); i++)
+        values.push_back(valuesValue[i].asDouble());
+
+    return values.empty() ? nullptr : new PolyfaceAuxChannel::Data(value["input"].asDouble(), std::move(values));
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      04/2018
++--------------------------------------------------------------------------------------*/
+PolyfaceAuxChannelPtr  tryValueToPolyfaceAuxDataChannel(JsonValueCR value)
+    {
+    if (!value.isObject() ||
+        !value["dataType"].isIntegral() ||
+        !value["name"].isString() ||
+        !value["data"].isArray())
+        return nullptr;
+        
+    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
+    JsonValueCR                         dataValue = value["data"];
+
+
+    for (uint32_t i=0; i < dataValue.size(); i++)
+        {
+        PolyfaceAuxChannel::DataPtr    data;
+
+        if ((data = tryValueToPolyfaceAuxDataChannelData(dataValue[i])).IsValid())
+            dataVector.push_back(data);
+        }
+    
+    return dataVector.empty() ? nullptr : new PolyfaceAuxChannel((PolyfaceAuxChannel::DataType) value["dataType"].asInt(), value["name"].asString().c_str(), value["inputName"].asString().c_str(), std::move(dataVector));
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      04/2018
++--------------------------------------------------------------------------------------*/
+bool  tryValueToPolyfaceAuxDataChannels(PolyfaceAuxData::ChannelsR channels, JsonValueCR value)
+    {
+    if (!value.isArray())
+        return false;
+
+    for (uint32_t i=0; i < value.size(); i++)
+        {
+        PolyfaceAuxChannelPtr     channel;
+
+        if ((channel = tryValueToPolyfaceAuxDataChannel(value[i])).IsValid())
+            channels.push_back(channel);
+        }
+    return !channels.empty();
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      04/2018
++--------------------------------------------------------------------------------------*/
+PolyfaceAuxDataPtr  tryValueToPolyfaceAuxData(JsonValueCR value)
+    {
+    bvector<int32_t>            indices;
+    PolyfaceAuxData::Channels   channels;
+
+    if (value.isNull() ||
+        !tryValueToBVectorInt(value["indices"], indices) ||
+        !tryValueToPolyfaceAuxDataChannels(channels, value["channels"]))
+        return nullptr;
+
+    return new PolyfaceAuxData(std::move(indices), std::move(channels));
+    }
+
 PolyfaceHeaderPtr tryValueToPolyfaceHeader (JsonValueCR parentValue)
     {
     if (parentValue.isNull ())
@@ -658,6 +737,11 @@ PolyfaceHeaderPtr tryValueToPolyfaceHeader (JsonValueCR parentValue)
         pf->Param().SetActive (true);
     if (tryValueToBVectorInt(value["paramIndex"], pf->ParamIndex()))
         pf->ParamIndex().SetActive (true);
+
+    PolyfaceAuxDataPtr      auxData;
+    if ((auxData = tryValueToPolyfaceAuxData(value["auxData"])).IsValid())
+        pf->SetAuxData(auxData);
+
     return pf;
     }
 

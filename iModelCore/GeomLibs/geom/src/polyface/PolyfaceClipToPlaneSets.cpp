@@ -517,9 +517,8 @@ void    Init (PolyfaceVisitorR visitor, OutputChainMap& outputChainMap)
         m_params.resize(count);
         memcpy (&m_params[0], visitor.GetParamCP(), count * sizeof (DPoint2d));
         }
-    m_auxChannels.empty();
     if (visitor.GetAuxDataCP().IsValid())
-        m_auxChannels.Init(visitor.GetAuxDataCP()->GetChannels());
+        m_auxChannels = visitor.GetAuxDataCP()->GetChannels();
     }
 
 /*---------------------------------------------------------------------------------**//**

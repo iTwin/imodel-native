@@ -660,21 +660,22 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsVariantGeometry (bvector<IGeom
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                      Ray.Bentley      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-flatbuffers::Offset<BGFB::PolyfaceAuxChannelData> WriteAsFBPolyfaceAuxChannelData (PolyfaceAuxData::DataP pData)
+flatbuffers::Offset<BGFB::PolyfaceAuxChannelData> WriteAsFBPolyfaceAuxChannelData (PolyfaceAuxChannel::DataP pData)
     {
     if (nullptr == pData)
         return 0;
 
     BGFB::PolyfaceAuxChannelDataBuilder builder (m_fbb);
+    auto        valuesOffset = WriteOptionalVector<double, double, 1> (pData->GetValues());
     builder.add_input (pData->GetInput());
-    builder.add_values(WriteOptionalVector<float, float, 1> (pData->GetValues()));
+    builder.add_values(valuesOffset);
 
     return builder.Finish();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                      Ray.Bentley      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-flatbuffers::Offset<BGFB::PolyfaceAuxChannel> WriteAsFBPolyfaceAuxChannel(PolyfaceAuxData::ChannelCP pChannel)
+flatbuffers::Offset<BGFB::PolyfaceAuxChannel> WriteAsFBPolyfaceAuxChannel(PolyfaceAuxChannelCP pChannel)
     {
     if (nullptr == pChannel)
         return 0;
@@ -1022,18 +1023,18 @@ static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPol
         {
         auto    fbChannel = fbChannels->Get(i);
         auto    fbChannelDataVector = fbChannel->data();
-        bvector<PolyfaceAuxData::DataPtr>  channelDataVector;
+        bvector<PolyfaceAuxChannel::DataPtr>  channelDataVector;
 
         for (unsigned int j=0; j<fbChannelDataVector->Length(); j++)
             {
             auto            fbChannelData = fbChannelDataVector->Get(j);
             auto            fbChannelDataValues = fbChannelData->values();
-            bvector<float> values(fbChannelDataValues->Length());
+            bvector<double> values(fbChannelDataValues->Length());
 
-            memcpy (values.data(), fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(float));
-            channelDataVector.push_back(new PolyfaceAuxData::Data(fbChannelData->input(), std::move(values)));
+            memcpy (values.data(), fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(double));
+            channelDataVector.push_back(new PolyfaceAuxChannel::Data(fbChannelData->input(), std::move(values)));
             }
-        channels.push_back(new PolyfaceAuxData::Channel(PolyfaceAuxData::DataType(fbChannel->dataType()), fbChannel->name()->c_str(), fbChannel->inputName()->c_str(), std::move(channelDataVector)));
+        channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType(fbChannel->dataType()), fbChannel->name()->c_str(), fbChannel->inputName()->c_str(), std::move(channelDataVector)));
         }
 
     return new PolyfaceAuxData(std::move(indices), std::move(channels));

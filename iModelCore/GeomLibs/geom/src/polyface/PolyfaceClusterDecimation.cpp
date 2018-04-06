@@ -163,20 +163,20 @@ PolyfaceHeaderPtr   PolyfaceQuery::ClusteredVertexDecimate (double tolerance)
             cluster->m_outputAuxIndex = outputAuxChannels.GetValueCount();
             for (size_t iChannel = 0; iChannel < inputAuxChannels->size(); iChannel++)
                 {
-                PolyfaceAuxData::ChannelCR inputChannel  = *inputAuxChannels->at(iChannel);
-                PolyfaceAuxData::ChannelR  outputChannel = *outputAuxChannels.at(iChannel);
+                PolyfaceAuxChannelCR inputChannel  = *inputAuxChannels->at(iChannel);
+                PolyfaceAuxChannelR  outputChannel = *outputAuxChannels.at(iChannel);
 
                 for (size_t iData = 0; iData < inputChannel.GetData().size(); iData++)
                     {
                     for (size_t k = 0, blockSize = inputChannel.GetBlockSize(); k<blockSize; k++)
                         {
-                        float           value = 0.0;
-                        float const*    inValues = inputChannel.GetData().at(iData)->GetValues().data();
+                        double           value = 0.0;
+                        double const*    inValues = inputChannel.GetData().at(iData)->GetValues().data();
 
                         for (auto& auxIndex : cluster->m_auxIndices)
                             value += inValues[auxIndex * blockSize + k];
                         
-                        value *= (float) scale;
+                        value *= scale;
                         outputChannel.GetData().at(iData)->AddValue(value);
                         }
                     }

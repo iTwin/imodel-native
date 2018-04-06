@@ -14,6 +14,9 @@
 #include <Bentley/WString.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/NonCopyableClass.h>
+
+#include <Geom/PolyfaceAuxData.h>
+
 #include <limits.h>
 #include <cstdlib> // for std::abs
 /*__PUBLISH_SECTION_END__*/
@@ -532,96 +535,6 @@ double fraction;
 };
 
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(PolyfaceAuxData);
-DEFINE_REF_COUNTED_PTR(PolyfaceAuxData);
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-struct PolyfaceAuxData : RefCountedBase
-{
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Data);
-    DEFINE_REF_COUNTED_PTR(Data);
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Channel);
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Channels);
-    DEFINE_REF_COUNTED_PTR(Channel);
-
-    enum DataType
-        {
-        Scalar      = 0,
-        Distance    = 1,
-        Vector      = 2,
-        Convector   = 3,
-        Point       = 4, 
-        };
-
-    struct Data : RefCountedBase
-        { 
-        friend PolyfaceAuxData;
-
-        private:
-        float              m_input;
-        bvector<float>     m_values;
-
-        public:
-        float  GetInput() const                     { return m_input; }
-        size_t GetValueCount() const                { return m_values.size(); }
-        bvector<float> const& GetValues() const     { return m_values; }
-        void   GetValueRange(float& min, float& max);
-        void   AddValue(float value)                { m_values.push_back(value); }
-
-        Data(float input, bvector<float>&& values) : m_input(input), m_values(values) { }
-        };
-
-    struct Channel : RefCountedBase
-        {
-        private:
-
-        DataType            m_dataType;         
-        Utf8String          m_name;             // Channel name (stress, temperature etc...)
-        Utf8String          m_inputName;        // Input that may vary, time, force etc...
-        bvector<DataPtr>    m_data;
-
-        public:
-        Channel(DataType dataType, Utf8CP name, Utf8CP inputName, bvector<DataPtr> const&& data) : m_dataType(dataType), m_name(name), m_inputName(inputName), m_data(data) { }
-
-        DataType                    GetDataType() const         { return (DataType) m_dataType; }
-        Utf8StringCR                GetName() const             { return m_name; }
-        Utf8StringCR                GetInputName() const        { return m_inputName; }
-        bvector<DataPtr> const&     GetData() const             { return m_data; }     
-        bool                        IsScalar() const            { return DataType::Scalar == m_dataType || DataType::Distance == m_dataType; } 
-        size_t                      GetValueCount() const       { return m_data.empty() ? 0 : m_data.front()->GetValueCount(); }
-        size_t                      GetBlockSize() const        { return m_dataType < Vector ? 1 : 3; }
-        GEOMDLLIMPEXP ChannelPtr    CloneWithoutData() const;
-        GEOMDLLIMPEXP void          AppendDataByIndex(ChannelCR input, size_t index);
-        GEOMDLLIMPEXP void          AppendInterpolatedData(ChannelCR input, size_t index, size_t iNext, double t);
-        };
-    
-    struct Channels : bvector<ChannelPtr> 
-        {
-        size_t                      GetValueCount() const  { return empty() ? 0 : front()->GetValueCount(); }
-        GEOMDLLIMPEXP void          AppendDataByIndex(ChannelsCR input, size_t index);
-        GEOMDLLIMPEXP void          AppendInterpolatedData(ChannelsCR input, size_t index, size_t iNext, double t);
-        GEOMDLLIMPEXP void          Init(PolyfaceAuxData::ChannelsCR input);
-        };
-
-    private:
-    bvector<int32_t>        m_indices;
-    Channels                m_channels; 
-
-    public:
-    bvector<int32_t> const& GetIndices() const          { return m_indices; }
-    ChannelsCR GetChannels() const                      { return m_channels; }                  
-    GEOMDLLIMPEXP ChannelCPtr GetChannel(Utf8CP name) const;
-
-    
-    PolyfaceAuxData(bvector<int32_t>&& indices, Channels&& channels) : m_indices(indices), m_channels(channels) { }
-    PolyfaceAuxDataPtr CreateForVisitor() const;
-    void AdvanceVisitorToNextFace(PolyfaceAuxDataCR parent, uint32_t i0, uint32_t numItem, uint32_t numWrap);
-
-    GEOMDLLIMPEXP void Transform(TransformCR transform);
-
-};  // PolyfaceAuxData
 
 
 //=======================================================================================

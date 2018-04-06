@@ -311,8 +311,8 @@ table DgnRuledSweep
     
 table PolyfaceAuxChannelData
     {
-	input       	:   float;
-	values      	:  [float];
+	input       	:   double;
+	values      	:  [double];
 	}
 table PolyfaceAuxChannel
     {
