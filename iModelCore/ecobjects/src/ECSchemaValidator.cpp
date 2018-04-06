@@ -221,23 +221,31 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
         ECSchemaPtr refSchema = ref.second;
         Utf8String refName = refSchema->GetName();
 
-        if (!IsOldStandardSchema(refName))
-            continue;
-        if (refName.EqualsIAscii("ECDbMap"))
+        if (IsOldStandardSchema(refName))
             {
-            if (refSchema->GetVersionRead() <= 1) // Only the latest ECDbMap is valid
+            if (refName.EqualsIAscii("ECDbMap"))
                 {
-                LOG.errorv("Failed to validate '%s' as the read version is less than 2.0",
+                if (refSchema->GetVersionRead() <= 1) // Only the latest ECDbMap is valid
+                    {
+                    LOG.errorv("Failed to validate '%s' as the read version is less than 2.0",
+                               schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
+
+                    status = ECObjectsStatus::Error;
+                    }
+                }
+            else
+                {
+                LOG.errorv("Failed to validate '%s' since it references the old standard schema '%s'. Only new standard schemas should be used.",
                            schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
 
                 status = ECObjectsStatus::Error;
                 }
             }
-        else
-            {
-            LOG.errorv("Failed to validate '%s' since it references the old standard schema '%s'. Only new standard schemas should be used.",
-                       schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
 
+        if (refSchema->OriginalECXmlVersionLessThan(ECVersion::V3_1))
+            {
+            LOG.errorv("Failed to validate '%s' since it references '%s' using EC%d.%d. A schema may not reference any EC2 or EC3.0 schemas.",
+                       schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str(), refSchema->GetOriginalECXmlVersionMajor(), refSchema->GetOriginalECXmlVersionMinor());
             status = ECObjectsStatus::Error;
             }
         }
