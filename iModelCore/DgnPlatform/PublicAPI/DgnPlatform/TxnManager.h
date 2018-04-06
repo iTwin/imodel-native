@@ -63,6 +63,7 @@ enum class TxnAction
 struct TxnMonitor
 {
     virtual void _OnCommit(TxnManager&) {}
+    virtual void _OnCommitted(TxnManager&) {}
     virtual void _OnAppliedChanges(TxnManager&) {}
     virtual void _OnPrepareForUndoRedo() {}
     virtual void _OnUndoRedo(TxnManager&, TxnAction) {}
@@ -562,9 +563,8 @@ struct DynamicChangeTracker : BeSQLite::ChangeTracker
 {
 private:
     TxnManager& m_txnMgr;
-
-    DynamicChangeTracker(TxnManager& txnMgr);
-    ~DynamicChangeTracker();
+    DynamicChangeTracker(TxnManager& txnMgr) : m_txnMgr(txnMgr) {}
+    ~DynamicChangeTracker() {}
 
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
