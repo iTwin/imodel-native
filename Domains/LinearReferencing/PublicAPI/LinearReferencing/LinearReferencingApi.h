@@ -14,3 +14,13 @@
 #include "LinearReferencingDomain.h"
 //__PUBLISH_SECTION_END__
 #include "Segmentation.h"
+
+//__PUBLISH_SECTION_START__
+/** @cond BENTLEY_SDK_LinearReferencing */
+/**
+
+@defgroup GROUP_LinearReferencing Linear Referencing
+
+*/
+/* @endcond */
+
