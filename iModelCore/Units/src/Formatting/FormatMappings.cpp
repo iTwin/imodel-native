@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
-#include "../../PrivateAPI/Formatting/AliasMappings.h"
+#include <Formatting/AliasMappings.h>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -199,9 +199,11 @@ void LegacyNameMappings::AddMappings()
     {
     AddMapping("DefaultReal", "f:DefaultReal");
     AddMapping("DefaultRealU", "f:DefaultRealU");
+    AddMapping("Real", "f:DefaultReal");
     AddMapping("Real2", "f:DefaultReal<2>");
     AddMapping("Real3", "f:DefaultReal<3>");
     AddMapping("Real4", "f:DefaultReal<4>");
+    AddMapping("RealU", "f:DefaultRealU");
     AddMapping("Real2U", "f:DefaultRealU<2>");
     AddMapping("Real3U", "f:DefaultRealU<3>");
     AddMapping("Real4U", "f:DefaultRealU<4>");

@@ -1,12 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PrivateAPI/Formatting/AliasMappings.h $
+|     $Source: PublicAPI/Formatting/AliasMappings.h $
 |
 |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+//__PUBLISH_SECTION_START__
 #include <Bentley/bmap.h>
 #include <Formatting/FormattingDefinitions.h>
 

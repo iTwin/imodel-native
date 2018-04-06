@@ -10,6 +10,7 @@
 #include <Units/Units.h>
 #include <Formatting/FormattingDefinitions.h>
 #include <Formatting/FormattingEnum.h>
+#include <Formatting/AliasMappings.h>
 
 namespace BEU = BentleyApi::Units;
 
@@ -616,6 +617,7 @@ public:
 struct Format
 {
 private:
+    bool                m_explicitlyDefinedComposite;
     FormatSpecType      m_specType;
     NumericFormatSpec   m_numericSpec;
     CompositeValueSpec  m_compositeSpec;
@@ -627,7 +629,7 @@ public:
     UNITS_EXPORT void FromJson(Json::Value jval, BEU::IUnitsContextCP context = nullptr);
     // !TODO====================================================================
 
-    Format() : m_specType(FormatSpecType::None), m_problem(FormatProblemCode::NotInitialized) {};
+    Format() : m_specType(FormatSpecType::None), m_explicitlyDefinedComposite(false), m_problem(FormatProblemCode::NotInitialized) {};
     UNITS_EXPORT Format(FormatCR other);
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec);
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
@@ -647,7 +649,7 @@ public:
     bool HasNumeric() const {return !IsProblem() || (m_problem.GetProblemCode() != FormatProblemCode::NotInitialized);}
     //! Returns true if this Format contains a CompositeFormatSpec.
     //! A Format that contains a CompositeValueSpec will also contain a NumericFormatSpec.
-    bool HasComposite() const {return static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;}
+    bool HasComposite() const {return m_explicitlyDefinedComposite || static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;}
     //! Returns true if the spec has no problems and is set successfully. False otherwise
     UNITS_EXPORT bool SetCompositeSpec(CompositeValueSpec spec);
     //! Returns true if the spec is set successfully.

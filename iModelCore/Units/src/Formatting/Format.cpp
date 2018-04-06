@@ -16,19 +16,22 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 Format::Format(FormatCR other)
-    : m_specType(other.m_specType), m_problem(other.m_problem)
+    : m_specType(other.m_specType), m_explicitlyDefinedComposite(false), m_problem(other.m_problem)
     {
     if (other.HasNumeric())
         m_numericSpec = other.m_numericSpec;
     if (other.HasComposite())
+        { 
+        m_explicitlyDefinedComposite = true;
         m_compositeSpec = other.m_compositeSpec;
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 Format::Format(NumericFormatSpecCR numSpec)
-    : m_specType(FormatSpecType::None), m_numericSpec(numSpec), m_problem(FormatProblemCode::NoProblems)
+    : m_specType(FormatSpecType::None), m_explicitlyDefinedComposite(false), m_numericSpec(numSpec), m_problem(FormatProblemCode::NoProblems)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -41,6 +44,7 @@ bool Format::SetCompositeSpec(CompositeValueSpec spec)
         LOG.warningv("Failed to set composite spec because it has problem '%s'", spec.GetProblemDescription().c_str());
         return false;
         }
+    m_explicitlyDefinedComposite = true;
     m_compositeSpec = spec;
     m_specType = static_cast<FormatSpecType>(m_compositeSpec.GetUnitCount());
     return true;
