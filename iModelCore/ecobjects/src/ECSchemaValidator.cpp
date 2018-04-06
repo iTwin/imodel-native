@@ -209,23 +209,31 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
                 }
             return false;
             };
-        if (!IsOldStandardSchema(refName))
-            continue;
-        if (refName.EqualsIAscii("ECDbMap"))
+        if (IsOldStandardSchema(refName))
             {
-            // RULE: Only the latest ECDbMap is valid.
-            if (refSchema->GetVersionRead() < 2)
+            if (refName.EqualsIAscii("ECDbMap"))
                 {
-                LOG.errorv("Referenced Schema ECDbMap has read version less than 2.0. Only ECDbMap.2.0 is allowed.");
+                // RULE: Only the latest ECDbMap is valid
+                if (refSchema->GetVersionRead() <= 1) 
+                    {
+                    LOG.errorv("Failed to validate '%s' as the read version is less than 2.0",
+                               schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
+                    status = ECObjectsStatus::Error;
+                    }
+                }
+            else
+                {
+                LOG.errorv("Failed to validate '%s' since it references the old standard schema '%s'. Only new standard schemas should be used.",
+                            schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str());
                 status = ECObjectsStatus::Error;
                 }
             }
-        else
+
+        if (refSchema->OriginalECXmlVersionLessThan(ECVersion::V3_1))
             {
-            // RULE* (cont.)
-            LOG.errorv("Schema references the old standard schema '%s'. Only new standard schemas should be used.",
-                refSchema->GetFullSchemaName().c_str());
-            status = ECObjectsStatus::Error;
+            LOG.errorv("Failed to validate '%s' since it references '%s' using EC%d.%d. A schema may not reference any EC2 or EC3.0 schemas.",
+                       schema.GetFullSchemaName().c_str(), refSchema->GetFullSchemaName().c_str(), refSchema->GetOriginalECXmlVersionMajor(), refSchema->GetOriginalECXmlVersionMinor());
+             status = ECObjectsStatus::Error;
             }
         }
 
@@ -340,29 +348,26 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
         };
     if (!entity.GetEntityClassCP()->IsMixin() && !isBisCoreClass(&entity) && !derivesFromBisHierarchy(&entity))
         {
-        LOG.errorv("Entity class does not derive from the bis hierarchy");
+        LOG.errorv("Root entity class '%s' does not derive from bis hierarchy", entity.GetFullName());
         status = ECObjectsStatus::Error;
+        }
+        // RULE: entity class may only have one entity base class
+        int numBaseClasses = 0;
+        for (ECClassCP baseClass : entity.GetBaseClasses())
+            {
+            if (!baseClass->GetEntityClassCP()->IsMixin())
+                numBaseClasses++;
+            }
+        if (numBaseClasses > 1)
+            {
+            LOG.errorv("Entity class '%s' inherits from more than one entity class", entity.GetFullName());
+            status = ECObjectsStatus::Error;
         }
 
     for (ECPropertyP prop : entity.GetProperties(false))
         {
         if (nullptr == prop->GetBaseProperty())
             continue;
-
-        // RULE: Entity classes may not inherit a property from more than one base class.
-        size_t numBaseClasses = 0;
-        for (ECClassP baseClass : entity.GetBaseClasses())
-            {
-            if (nullptr != baseClass->GetPropertyP(prop->GetName().c_str()))
-                numBaseClasses += 1;
-            }
-        if (numBaseClasses > 1)
-            {
-            LOG.errorv("Property '%s.%s' is inherited from more than one base class. A property may only be inherited from a single base class.",
-                prop->GetClass().GetFullName(), prop->GetName().c_str());
-
-            status = ECObjectsStatus::Error;
-            }
 
         if (prop->IsKindOfQuantityDefinedLocally())
             {
@@ -385,12 +390,56 @@ ECObjectsStatus ECSchemaValidator::EntityValidator(ECClassCR entity)
                 }
             }
 
-        // RULE: Entity classes must not override a property inherited from a mixin class.
-        if (prop->GetBaseProperty()->GetClass().GetEntityClassCP()->IsMixin())
+        }
+
+    // mixin property may not override an inherited property
+    bvector<bpair<ECPropertyP, ECClassP>> seenProperties;
+    
+    auto const isPropertyMatch = [](bpair<ECPropertyP, ECClassP> propPair, ECPropertyP prop) -> bool
+        {
+        return propPair.first->GetName().EqualsIAscii(prop->GetName());
+        };
+    auto const findProperty = [&isPropertyMatch, &seenProperties] (ECPropertyP prop) -> bpair<ECPropertyP, ECClassP>*
+        {
+        auto isMatch = std::bind(isPropertyMatch, std::placeholders::_1, prop);
+        return std::find_if(
+            seenProperties.begin(),
+            seenProperties.end(),
+            isMatch);
+        };
+
+    // iterate through all inherited properties and check for duplicates
+    for (ECClassP baseClass : entity.GetBaseClasses())
+        {
+        for (ECPropertyP prop : baseClass->GetProperties(true))
             {
-            LOG.errorv("Property '%s.%s' overrides an inherited property from MixinClass %s. Entity Classes cannot override Mixin class properties",
-                prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetBaseProperty()->GetClass().GetFullName());
-            status = ECObjectsStatus::Error;
+            bpair<ECPropertyP, ECClassP>* propertyClassPair = findProperty(prop);
+            if (seenProperties.end() != propertyClassPair) // already seen property
+                {
+                if (prop != propertyClassPair->first)
+                    {
+                    ECClassP prevClass = propertyClassPair->second;
+                    bool prevIsMixin = prevClass->GetEntityClassCP()->IsMixin();
+                    if (baseClass->GetEntityClassCP()->IsMixin() && prevIsMixin)
+                        {
+                        LOG.errorv("Error at property '%s'. Mixin class '%s' overrides a property inherited from mixin class '%s'",
+                                   prop->GetName().c_str(), baseClass->GetFullName(), prevClass->GetFullName());
+                        status = ECObjectsStatus::Error;
+                        }
+                    else
+                        {
+                        LOG.errorv("Error at property '%s'. Mixin class '%s' overrides a property inherited from entity class '%s'",
+                                   prop->GetName().c_str(),
+                                   prevIsMixin ? prevClass->GetFullName() : baseClass->GetFullName(),
+                                   prevIsMixin ? baseClass->GetFullName() : prevClass->GetFullName());
+                        status = ECObjectsStatus::Error;
+                        }
+                    }
+                }
+            else
+                {
+                seenProperties.push_back(make_bpair<ECPropertyP, ECClassP>(prop, baseClass));
+                }
             }
         }
 
@@ -550,7 +599,7 @@ ECObjectsStatus ECSchemaValidator::KindOfQuantityValidator(KindOfQuantityCR koq)
     // RULE: Persistence unit of phenomenon 'PERCENTAGE' (or other unitless ratios) are not allowed.
     if (0 == strcmp(koq.GetPersistenceUnit()->GetPhenomenon()->GetName().c_str(), "PERCENTAGE"))
         {
-        LOG.errorv("KindOfQuantity has persistence unit of Phenomenon 'PERCENTAGE'. Unitless ratios are not allowed. Use a ratio phenomenon which includes units like VOLUME_RATIO");
+        LOG.errorv("KindOfQuantity %s has persistence unit of Phenomenon 'PERCENTAGE'. Unitless ratios are not allowed. Use a ratio phenomenon which includes units like VOLUME_RATIO", koq.GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
