@@ -79,7 +79,6 @@ struct Tile3d : TileTree::Tile
     };
 
     bvector<PolyfaceHeaderPtr> m_tilePolys;
-    DRange3d m_polysRange; // this is clipped range.  m_range is this with aspect ratio scale factor applied.
     uint32_t m_maxPixelSize;
     bvector<Render::GraphicPtr> m_graphics;
     Placement m_placement;
@@ -99,7 +98,6 @@ struct Tile3d : TileTree::Tile
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) override {return nullptr;} // implement tileloader
     double _GetMaximumSize() const override {return m_maxPixelSize;}
 
-    void ChangeRange(DRange3d newRange);
     void CreatePolys(SceneContextR context);
     void CreateGraphics(SceneContextR context);
     Root3dR GetTree() const {return static_cast<Root3dR>(m_root);}
@@ -116,9 +114,11 @@ struct Root2d : Attachment::Root
 {
     DEFINE_T_SUPER(Attachment::Root);
 
-    RefCountedPtr<ViewController2d> m_view;
-    TileTree::RootPtr               m_viewRoot;
-    Transform                       m_drawingToAttachment;
+    RefCountedPtr<ViewController2d>         m_view;
+    TileTree::RootPtr                       m_viewRoot;
+    Transform                               m_drawingToAttachment;
+    ClipVectorPtr                           m_graphicsClip;
+    Render::FeatureSymbologyOverridesCPtr   m_symbologyOverrides;
 private:
     Root2d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewController2dR view, TileTree::RootR viewRoot);
 public:
@@ -657,14 +657,10 @@ bool Attachment2d::_Load(DgnDbR db, Sheet::ViewController& sheetController, Scen
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool acceptAttachment(DgnElementId id, DgnDbR db, uint32_t index)
     {
+//#define FILTER_ATTACHMENTS
 #if defined(FILTER_ATTACHMENTS)
     // For debugging, define some criterion herein to filter out attachments not of interest...
-    auto view = db.Elements().Get<ViewDefinition>(id);
-    if (view.IsNull() || 1.0 == view->GetAspectRatioSkew())
-        return false;
-
-    DEBUG_PRINTF("Skew=%f", view->GetAspectRatioSkew());
-    return true;
+    return 1 == index;
 #else
     return true;
 #endif
@@ -1225,10 +1221,13 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     {
     auto const& myRoot = GetRoot2d();
     auto& viewRoot = *myRoot.m_viewRoot;
+
     TileTree::DrawArgs args = viewRoot.CreateDrawArgs(myArgs.m_context);
     args.m_location = myRoot.m_drawingToAttachment;
     args.m_viewFlagsOverrides = Render::ViewFlagsOverrides(myRoot.m_view->GetViewFlags());
-    //// ###TODO: args.m_clip = GetRoot2d().m_clip.get();
+    args.m_clip = GetRoot2d().m_graphicsClip.get();
+    args.m_graphics.m_symbologyOverrides = GetRoot2d().m_symbologyOverrides;
+
     myRoot.m_view->CreateScene(args);
 
     static bool s_drawClipPolys = false;
@@ -1252,7 +1251,10 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
     gf->ActivateGraphicParams(params);
     gf->AddRangeBox(range);
 
-    myArgs.m_graphics.Add(*gf->Finish());
+    // Put in a branch so it doesn't get clipped...
+    GraphicBranch branch;
+    branch.Add(*gf->Finish());
+    myArgs.m_graphics.Add(*args.m_context.CreateBranch(branch, GetRoot().GetDgnDb(), Transform::FromIdentity()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1261,7 +1263,7 @@ void Sheet::Attachment::Tile2d::_DrawGraphics(TileTree::DrawArgsR myArgs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::Attachment::Root2d::DrawClipPolys(TileTree::DrawArgsR args) const
     {
-    DRange3d range = m_clip->m_boundingRange;
+    DRange3d range = GetRootTile()->GetRange();
 
     double zDepth = Render::Target::DepthFromDisplayPriority(0.5 * Render::Target::GetMaxDisplayPriority());
 
@@ -1294,11 +1296,7 @@ void Sheet::Attachment::Root2d::DrawClipPolys(TileTree::DrawArgsR args) const
     for (auto& mesh : clipper.GetOutput())
         gf->AddPolyface(*mesh, true);
 
-    Transform tf;
-    tf.InverseOf(GetLocation());
-    GraphicBranch branch;
-    branch.Add(*gf->Finish());
-    args.m_graphics.Add(*args.m_context.CreateBranch(branch, GetDgnDb(), tf));
+    args.m_graphics.Add(*gf->Finish());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1325,11 +1323,7 @@ void Sheet::Attachment::Tile3d::CreatePolys(SceneContextR context)
     corners.m_pts[3].Init(west, south, tree.m_biasDistance);
 
     // first create the polys for the tile so we can get the range (create graphics from polys later)
-    m_polysRange.Init();
-    m_tilePolys = renderSys->_CreateSheetTilePolys(corners, tree.m_graphicsClip.get(), m_polysRange);
-
-    m_polysRange.low.z  = 0.0;                // make sure entire z range.
-    m_polysRange.high.z = 1.0;
+    m_tilePolys = renderSys->_CreateSheetTilePolys(corners, tree.m_graphicsClip.get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1386,6 +1380,9 @@ Attachment::Root3dPtr Attachment::Root3d::Create(Sheet::ViewController& sheetCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 Attachment::Root2dPtr Attachment::Root2d::Create(Sheet::ViewController& sheetController, DgnElementId attachmentId, SceneContextR context)
     {
+#if defined(NO_2D_ATTACHMENTS)
+    return nullptr;
+#else
     auto& db = sheetController.GetDgnDb();
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (attach.IsNull())
@@ -1408,6 +1405,7 @@ Attachment::Root2dPtr Attachment::Root2d::Create(Sheet::ViewController& sheetCon
         return nullptr;
 
     return new Sheet::Attachment::Root2d(sheetController, *attach, context, view2d, *viewRoot);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1582,10 +1580,6 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
     m_rootTile = rTile = new Tile3d(*this, nullptr, Sheet::Attachment::Tile3d::Placement::Root);
     rTile->CreatePolys(context); // m_graphicsClip must be set before creating polys (the polys that represent the tile)
 
-#if defined(WIP_CLIP_TILE_RANGE)
-    rTile->ChangeRange(rTile->m_polysRange);
-#endif
-
     Transform trans = m_viewport->m_toParent;
     SetLocation(trans);
 
@@ -1600,6 +1594,9 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
 Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAttachmentCR attach, SceneContextR context, Dgn::ViewController2dR view, TileTree::RootR viewRoot)
     : T_Super(view.GetViewedModelId(), sheetController, attach, context, view), m_view(&view), m_viewRoot(&viewRoot)
     {
+    // Ensure elements inside the view attachment are not affected to changes to category display etc for the sheet view.
+    m_symbologyOverrides = Render::FeatureSymbologyOverrides::Create(view);
+
     auto& viewDef = view.GetViewDefinitionR();
     DRange3d attachRange = attach.GetPlacement().CalculateRange();
     double attachWidth = attachRange.high.x - attachRange.low.x,
@@ -1632,27 +1629,21 @@ Sheet::Attachment::Root2d::Root2d(Sheet::ViewController& sheetController, ViewAt
 
     // The renderer needs the unclipped range of the attachment in order to produce polys to be rendered as clip mask...
     // (Containment tests can also be more efficiently performed if boundary range is specified).
-    m_clip = attach.GetOrCreateClip();
-    m_clip->m_boundingRange = attachRange;
+    Transform clipTf;
+    clipTf.InverseOf(location);
+    m_clip = attach.GetOrCreateClip(&clipTf);
+    DRange3d clipRange;
+    clipTf.Multiply(clipRange, attachRange);
+    m_clip->m_boundingRange = clipRange;
+
+    Transform sheetToDrawing;
+    sheetToDrawing.InverseOf(m_drawingToAttachment);
+    m_graphicsClip = attach.GetOrCreateClip(&sheetToDrawing);
+    DRange3d graphicsClipRange;
+    sheetToDrawing.Multiply(graphicsClipRange, attachRange);
+    m_graphicsClip->m_boundingRange = graphicsClipRange;
 
     m_rootTile = new Tile2d(*this, attach.GetPlacement().GetElementBox());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Mark.Schlosser  03/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::Attachment::Tile3d::ChangeRange(DRange3d newRange)
-    {
-    // make range square (extend shortest side to match length of longest side)
-    if (newRange.XLength() > newRange.YLength())
-        newRange.high.y = newRange.low.y + newRange.XLength();
-    else // y length >= x length
-        newRange.high.x = newRange.low.x + newRange.YLength();
-
-    // alter range so that it matches the actual range of the tile after being clipped
-    m_range.Init();
-    m_range.Extend(newRange.low);
-    m_range.Extend(newRange.high);
     }
 
 /*---------------------------------------------------------------------------------**//**

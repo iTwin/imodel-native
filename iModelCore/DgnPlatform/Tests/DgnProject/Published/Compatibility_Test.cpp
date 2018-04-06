@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/Compatibility_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -863,7 +863,10 @@ void CompatibilityTests::SetUpFromBaselineCopy(Utf8CP versionString, Utf8CP dest
     ASSERT_TRUE(destFileName.DoesPathExist());
     destFileName.AppendToPath(BeFileName(Utf8PrintfString("%s%s", destBaseName, versionString).c_str(), BentleyCharEncoding::Utf8));
     destFileName.AppendExtension(L"bim");
-    ASSERT_FALSE(destFileName.DoesPathExist());
+    
+    // Did a previous test run leave the file?
+    if (destFileName.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeDeleteFile(destFileName.c_str()));
 
     BeFileNameStatus copyStatus = BeFileName::BeCopyFile(sourceFileName, destFileName, true /*failIfFileExists*/);
     ASSERT_EQ(BeFileNameStatus::Success, copyStatus);
