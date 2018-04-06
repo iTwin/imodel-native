@@ -1035,7 +1035,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         
         std::vector<std::future<bool>> m_textureWorkerTasks;
-        RasterTexturingThreadPoolPtr m_texturingThreadPoolPtr;
+        WorkerThreadPoolPtr            m_texturingThreadPoolPtr;
 
         bvector < RefCountedPtr<EditOperation> > m_edits;
 #if 0

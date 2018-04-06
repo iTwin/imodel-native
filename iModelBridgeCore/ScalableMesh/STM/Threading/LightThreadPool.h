@@ -46,8 +46,8 @@ void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda);
 void WaitForThreadStop(IScalableMeshProgress* p =nullptr);
 
 
-struct RasterTexturingThreadPool;
-typedef RefCountedPtr<RasterTexturingThreadPool> RasterTexturingThreadPoolPtr;
+struct WorkerThreadPool;
+typedef RefCountedPtr<WorkerThreadPool> WorkerThreadPoolPtr;
 
 struct RasterTexturingWork;
 typedef RefCountedPtr<RasterTexturingWork> RasterTexturingWorkPtr;
@@ -55,7 +55,7 @@ typedef RefCountedPtr<RasterTexturingWork> RasterTexturingWorkPtr;
 
 struct RasterTexturingWork : RefCountedBase
 {
-    friend struct RasterTexturingThreadPool;
+    friend struct WorkerThreadPool;
     //size_t          GetMemorySize() { return _GetMemorySize(); }
 protected:
     virtual void    _DoWork() = 0;
@@ -67,7 +67,7 @@ public:
 };
 
 
-struct RasterTexturingThreadPool : public RefCountedBase //: RefCounted<PointCloudWorkerThread::IStateListener>
+struct WorkerThreadPool : public RefCountedBase //: RefCounted<PointCloudWorkerThread::IStateListener>
 {
     struct IActiveWait
     {
@@ -97,7 +97,7 @@ private:
 
 protected:
 
-    RasterTexturingThreadPool(int numWorkingThreads);
+    WorkerThreadPool(int numWorkingThreads);
 
     void WorkThread(/*DgnPlatformLib::Host* hostToAdopt, */int threadId);
 
@@ -119,8 +119,8 @@ protected:
 
 public:
 
-    static RasterTexturingThreadPoolPtr Create(int maxThreads) { return new RasterTexturingThreadPool(maxThreads); }
-    virtual ~RasterTexturingThreadPool();
+    static WorkerThreadPoolPtr Create(int maxThreads) { return new WorkerThreadPool(maxThreads); }
+    virtual ~WorkerThreadPool();
     //int  GetThreadsCount() const;
 
     void ClearQueueWork();

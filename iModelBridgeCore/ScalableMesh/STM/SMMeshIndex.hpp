@@ -5176,34 +5176,17 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
         {
         if (s_textureMultiThread)
             {
-            m_texturingThreadPoolPtr = RasterTexturingThreadPool::Create(8);
+            m_texturingThreadPoolPtr = WorkerThreadPool::Create(std::thread::hardware_concurrency());
             }
 
-        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
-
-        
-/*
-        if (s_textureMultiThread)
-            {
-*/
-
-/*
-            }
-        else
-            {
-            dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
-            }
-*/
+        dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP, unitTransform);        
 
         if (s_textureMultiThread)
             {
             m_texturingThreadPoolPtr->Start();
             m_texturingThreadPoolPtr->WaitAndStop();
             m_texturingThreadPoolPtr = nullptr;
-            }
-
-        
-        
+            }                
         }
 
 
