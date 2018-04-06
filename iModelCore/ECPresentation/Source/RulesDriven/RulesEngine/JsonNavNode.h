@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <ECPresentation/NavNode.h>
-#include <ECPresentation/RulesDriven/Update.h>
+#include <ECPresentation/Update.h>
 #include "RulesEngineTypes.h"
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
@@ -53,11 +53,12 @@ private:
     ECPRESENTATION_EXPORT void AddMember(Utf8CP name, rapidjson::Value& value);
 
 protected:
+    ECPRESENTATION_EXPORT uint64_t _GetInstanceId() const override;
     ECPRESENTATION_EXPORT uint64_t _GetNodeId() const override;
     ECPRESENTATION_EXPORT uint64_t _GetParentNodeId() const override;
     ECPRESENTATION_EXPORT Utf8String _GetLabel() const override;
     ECPRESENTATION_EXPORT Utf8String _GetDescription() const override;
-    ECPRESENTATION_EXPORT NavNodeKeyCPtr _GetKey() const override;
+    ECPRESENTATION_EXPORT NavNodeKeyCPtr _GetNodeKey() const override;
     ECPRESENTATION_EXPORT Utf8String _GetExpandedImageId() const override;
     ECPRESENTATION_EXPORT Utf8String _GetCollapsedImageId() const override;
     ECPRESENTATION_EXPORT Utf8String _GetForeColor() const override;
@@ -71,7 +72,27 @@ protected:
     ECPRESENTATION_EXPORT bool _IsCheckboxVisible() const override;
     ECPRESENTATION_EXPORT bool _IsCheckboxEnabled() const override;
     ECPRESENTATION_EXPORT bool _IsExpanded() const override;
-    ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const override;
+
+    ECPRESENTATION_EXPORT void _SetInstanceId(uint64_t instanceId) override;
+    ECPRESENTATION_EXPORT void _SetLabel(Utf8CP label) override;
+    ECPRESENTATION_EXPORT void _SetType(Utf8CP type) override;
+    ECPRESENTATION_EXPORT void _SetExpandedImageId(Utf8CP imageId) override;
+    ECPRESENTATION_EXPORT void _SetCollapsedImageId(Utf8CP imageId) override;
+    ECPRESENTATION_EXPORT void _SetDescription(Utf8CP description) override;
+    ECPRESENTATION_EXPORT void _SetForeColor(Utf8CP color) override;
+    ECPRESENTATION_EXPORT void _SetBackColor(Utf8CP color) override;
+    ECPRESENTATION_EXPORT void _SetFontStyle(Utf8CP style) override;
+    ECPRESENTATION_EXPORT void _SetHasChildren(bool value) override;
+    ECPRESENTATION_EXPORT void _SetIsChecked(bool value) override;
+    ECPRESENTATION_EXPORT void _SetIsCheckboxVisible(bool value) override;
+    ECPRESENTATION_EXPORT void _SetIsCheckboxEnabled(bool value) override;
+    ECPRESENTATION_EXPORT void _SetNodeId(uint64_t) override;
+    ECPRESENTATION_EXPORT void _SetParentNodeId(uint64_t) override;
+    ECPRESENTATION_EXPORT void _SetIsExpanded(bool value) override;
+    ECPRESENTATION_EXPORT void _SetIsSelectable(bool value) override;
+    ECPRESENTATION_EXPORT void _SetIsEditable(bool value) override;
+    ECPRESENTATION_EXPORT void _SetNodeKey(NavNodeKeyCR nodeKey) override {m_nodeKey = &nodeKey;}
+
     ECPRESENTATION_EXPORT RapidJsonValueR _GetExtendedData() const override;
     ECPRESENTATION_EXPORT rapidjson::MemoryPoolAllocator<>& _GetExtendedDataAllocator() const override;
 
@@ -81,27 +102,8 @@ public:
 
     ECPRESENTATION_EXPORT RapidJsonValueCR GetJson() const;
     bool DeterminedChildren() const {return m_json.HasMember(NAVNODE_HasChildren);}
-    
-    ECPRESENTATION_EXPORT void SetLabel(Utf8CP label);
     ECPRESENTATION_EXPORT void SetImageId(Utf8CP imageId);
-    ECPRESENTATION_EXPORT void SetType(Utf8CP type);
-    ECPRESENTATION_EXPORT void SetExpandedImageId(Utf8CP imageId);
-    ECPRESENTATION_EXPORT void SetCollapsedImageId(Utf8CP imageId);
-    ECPRESENTATION_EXPORT void SetDescription(Utf8CP description);
-    ECPRESENTATION_EXPORT void SetForeColor(Utf8CP color);
-    ECPRESENTATION_EXPORT void SetBackColor(Utf8CP color);
-    ECPRESENTATION_EXPORT void SetFontStyle(Utf8CP style);
-    ECPRESENTATION_EXPORT void SetHasChildren(bool value);
-    ECPRESENTATION_EXPORT void SetIsChecked(bool value);
-    ECPRESENTATION_EXPORT void SetIsCheckboxVisible(bool value);
-    ECPRESENTATION_EXPORT void SetIsCheckboxEnabled(bool value);
-    ECPRESENTATION_EXPORT void SetInstanceId(uint64_t instanceId);
-    ECPRESENTATION_EXPORT void SetNodeId(uint64_t);
-    ECPRESENTATION_EXPORT void SetParentNodeId(uint64_t);
-    ECPRESENTATION_EXPORT void SetIsExpanded(bool value);
-    void SetNodeKey(NavNodeKeyCR nodeKey) {m_nodeKey = &nodeKey;}
     void SetParentNode(NavNodeCR node) {SetParentNodeId(node.GetNodeId());}
-    ECPRESENTATION_EXPORT uint64_t GetInstanceId() const;
 };
 
 /*=================================================================================**//**

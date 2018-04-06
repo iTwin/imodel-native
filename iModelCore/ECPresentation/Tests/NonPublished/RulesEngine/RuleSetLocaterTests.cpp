@@ -677,7 +677,7 @@ TEST(SupplementalRuleSetLocater, FindsSupplementalRuleSetsAndSetsProvidedId)
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                10/2017
 +===============+===============+===============+===============+===============+======*/
-struct EmbeddedRuleSetLocaterTests : ::testing::Test
+struct EmbeddedRuleSetLocaterTests : ECPresentationTest
 {
     static ECDbTestProject* s_project;
     IConnectionPtr m_connection;
@@ -685,6 +685,7 @@ struct EmbeddedRuleSetLocaterTests : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         m_connection = new TestConnection(s_project->GetECDb());
         m_embedder = new RuleSetEmbedder(m_connection->GetECDb());
         }

@@ -2,7 +2,7 @@
 #
 #     $Source: Source/ECPresentation.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include MultiCppCompileRule.mki
@@ -22,6 +22,12 @@ $(o)ECDbBasedCache$(oext)           : $(SourceDirectory)ECDbBasedCache.cpp $(ECP
 $(o)ValueHelpers$(oext)             : $(SourceDirectory)ValueHelpers.cpp $(ECPresentationDependencies)
 
 $(o)RelatedClass$(oext)             : $(SourceDirectory)RelatedClass.cpp $(ECPresentationDependencies)
+
+$(o)ContentFieldEditors$(oext)      : $(SourceDirectory)ContentFieldEditors.cpp $(ECPresentationDependencies)
+
+$(o)IECPresentationSerializer$(oext): $(SourceDirectory)IECPresentationSerializer.cpp $(ECPresentationDependencies)
+
+$(o)DgnECPresentationSerializer$(oext) : $(SourceDirectory)DgnECPresentationSerializer.cpp $(ECPresentationDependencies)
 
 %include MultiCppCompileGo.mki
 

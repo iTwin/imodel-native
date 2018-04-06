@@ -77,6 +77,7 @@ void RulesDrivenECPresentationManagerTests::RegisterSchemaXml(Utf8String name, U
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerTests::SetUp()
     {
+    ECPresentationTest::SetUp();
     Localization::Init();
 
     m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);

@@ -19,112 +19,55 @@ const Utf8CP ContentDisplayType::PropertyPane = "PropertyPane";
 const Utf8CP ContentDisplayType::List = "List";
 const Utf8CP ContentDisplayType::Graphics = "Graphics";
 
-static ContentDescriptor::Field::TypeDescriptionPtr CreateTypeDescription(ECPropertyCR);
-
-//===================================================================================
-// @bsiclass                                    Grigas.Petraitis            09/2017
-//===================================================================================
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentDescriptor::Field::TypeDescription::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("TypeName", rapidjson::Value(m_typeName.c_str(), json.GetAllocator()), json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
-//===================================================================================
-// @bsiclass                                    Grigas.Petraitis            09/2017
-//===================================================================================
-struct PrimitiveTypeDescription : ContentDescriptor::Field::TypeDescription
-{
-protected:
-    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
-        {
-        rapidjson::Document json = TypeDescription::_AsJson(allocator);
-        json.AddMember("ValueFormat", "Primitive", json.GetAllocator());
-        return json;
-        }
-public:
-    PrimitiveTypeDescription(Utf8String type) : TypeDescription(type) {}
-};
-//===================================================================================
-// @bsiclass                                    Grigas.Petraitis            09/2017
-//===================================================================================
-struct ArrayTypeDescription : ContentDescriptor::Field::TypeDescription
-{
-private:
-    ContentDescriptor::Field::TypeDescriptionPtr m_memberType;
-private:
-    static Utf8String CreateTypeName(TypeDescription const& memberType)
-        {
-        Utf8String typeName = memberType.GetTypeName();
-        typeName.append("[]");
-        return typeName;
-        }
-protected:
-    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
-        {
-        rapidjson::Document json = TypeDescription::_AsJson(allocator);
-        json.AddMember("ValueFormat", "Array", json.GetAllocator());
-        json.AddMember("MemberType", m_memberType->AsJson(&json.GetAllocator()), json.GetAllocator());
-        return json;
-        }
-public:
-    ArrayTypeDescription(TypeDescription& memberType) : TypeDescription(CreateTypeName(memberType)), m_memberType(&memberType) {}
-};
-//===================================================================================
-// @bsiclass                                    Grigas.Petraitis            09/2017
-//===================================================================================
-struct StructTypeDescription : ContentDescriptor::Field::TypeDescription
-{
-private:
-    ECStructClassCR m_struct;
-protected:
-    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
-        {
-        rapidjson::Document json = TypeDescription::_AsJson(allocator);
-        json.AddMember("ValueFormat", "Struct", json.GetAllocator());
-        rapidjson::Value members(rapidjson::kArrayType);
-        for (ECPropertyCP prop : m_struct.GetProperties())
-            {
-            rapidjson::Value member(rapidjson::kObjectType);
-            member.AddMember("Name", rapidjson::StringRef(prop->GetName().c_str()), json.GetAllocator());
-            member.AddMember("Label", rapidjson::StringRef(prop->GetDisplayLabel().c_str()), json.GetAllocator());
-            member.AddMember("Type", CreateTypeDescription(*prop)->AsJson(&json.GetAllocator()), json.GetAllocator());
-            members.PushBack(member, json.GetAllocator());
-            }
-        json.AddMember("Members", members, json.GetAllocator());
-        return json;
-        }
-public:
-    StructTypeDescription(ECStructClassCR structClass) : TypeDescription(structClass.GetName()), m_struct(structClass) {}
-};
-//===================================================================================
-// @bsiclass                                    Grigas.Petraitis            09/2017
-//===================================================================================
-struct NestedContentTypeDescription : ContentDescriptor::Field::TypeDescription
-{
-private:
-    ContentDescriptor::NestedContentField const& m_field;
-protected:
-    rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const
-        {
-        rapidjson::Document json = TypeDescription::_AsJson(allocator);
-        json.AddMember("ValueFormat", "Struct", json.GetAllocator());
-        rapidjson::Value members(rapidjson::kArrayType);
-        for (ContentDescriptor::Field const* nestedField : m_field.GetFields())
-            {
-            rapidjson::Value member(rapidjson::kObjectType);
-            member.AddMember("Name", rapidjson::StringRef(nestedField->GetName().c_str()), json.GetAllocator());
-            member.AddMember("Label", rapidjson::StringRef(nestedField->GetLabel().c_str()), json.GetAllocator());
-            member.AddMember("Type", nestedField->GetTypeDescription().AsJson(&json.GetAllocator()), json.GetAllocator());
-            members.PushBack(member, json.GetAllocator());
-            }
-        json.AddMember("Members", members, json.GetAllocator());
-        return json;
-        }
-public:
-    NestedContentTypeDescription(ContentDescriptor::NestedContentField const& field) : TypeDescription(field.GetContentClass().GetDisplayLabel()), m_field(field) {}
-};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::Field::PrimitiveTypeDescription::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::Field::ArrayTypeDescription::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::Field::StructTypeDescription::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::Field::NestedContentTypeDescription::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ContentDescriptor::Field::ArrayTypeDescription::CreateTypeName(TypeDescription const& memberType)
+    {
+    Utf8String typeName = memberType.GetTypeName();
+    typeName.append("[]");
+    return typeName;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
@@ -460,101 +403,19 @@ void ContentDescriptor::OnECPropertiesFieldAdded(ECPropertiesField& field)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2017
+* @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Document GetClassInfoJson(ECClassCR ecClass, rapidjson::MemoryPoolAllocator<>& allocator)
+rapidjson::Document ContentDescriptor::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(&allocator);
-    json.SetObject();
-    json.AddMember("Id", rapidjson::Value(ecClass.GetId().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Name", rapidjson::StringRef(ecClass.GetFullName()), json.GetAllocator());
-    json.AddMember("Label", rapidjson::StringRef(ecClass.GetDisplayLabel().c_str()), json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Value CreateRelationshipPathJson(RelatedClassPathCR path, rapidjson::Document::AllocatorType& allocator)
+rapidjson::Document ContentDescriptor::Category::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Value pathJson(rapidjson::kArrayType);
-    for (RelatedClass const& relatedClass : path)
-        {
-        BeAssert(relatedClass.IsValid());
-        rapidjson::Value relatedClassJson(rapidjson::kObjectType);
-        relatedClassJson.AddMember("SourceClassInfo", GetClassInfoJson(*relatedClass.GetSourceClass(), allocator), allocator);
-        relatedClassJson.AddMember("TargetClassInfo", GetClassInfoJson(*relatedClass.GetTargetClass(), allocator), allocator);
-        relatedClassJson.AddMember("RelationshipInfo", GetClassInfoJson(*relatedClass.GetRelationship(), allocator), allocator);
-        relatedClassJson.AddMember("IsForwardRelationship", relatedClass.IsForwardRelationship(), allocator);
-        relatedClassJson.AddMember("IsPolymorphicRelationship", relatedClass.IsPolymorphic(), allocator);
-        pathJson.PushBack(relatedClassJson, allocator);
-        }
-    return pathJson;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Value CreateSelectionInfoJson(SelectionInfo const& info, rapidjson::Document::AllocatorType& allocator)
-    {
-    rapidjson::Value selectionInfo(rapidjson::kObjectType);
-    selectionInfo.AddMember("SelectionProvider", rapidjson::StringRef(info.GetSelectionProviderName().c_str()), allocator);
-    selectionInfo.AddMember("IsSubSelection", info.IsSubSelection(), allocator);
-    return selectionInfo;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentDescriptor::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    bvector<Field*> visibleFields = GetVisibleFields();
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("PreferredDisplayType", rapidjson::StringRef(m_preferredDisplayType.c_str()), json.GetAllocator());
-    json.AddMember("SelectClasses", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
-    for (SelectClassInfo const& selectClass : m_classes)
-        {
-        rapidjson::Value selectClassJson(rapidjson::kObjectType);
-        selectClassJson.AddMember("SelectClassInfo", GetClassInfoJson(selectClass.GetSelectClass(), json.GetAllocator()), json.GetAllocator());
-        selectClassJson.AddMember("IsPolymorphic", selectClass.IsSelectPolymorphic(), json.GetAllocator());
-        selectClassJson.AddMember("PathToPrimaryClass", CreateRelationshipPathJson(selectClass.GetPathToPrimaryClass(), json.GetAllocator()), json.GetAllocator());
-        selectClassJson.AddMember("RelatedPropertyPaths", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
-        for (RelatedClassPathCR propertyPath : selectClass.GetRelatedPropertyPaths())
-            selectClassJson["RelatedPropertyPaths"].PushBack(CreateRelationshipPathJson(propertyPath, json.GetAllocator()), json.GetAllocator());
-        json["SelectClasses"].PushBack(selectClassJson, json.GetAllocator());
-        }
-    json.AddMember("Fields", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
-    for (Field const* field : visibleFields)
-        json["Fields"].PushBack(field->AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember("SortingFieldIndex", m_sortingFieldIndex, json.GetAllocator());
-    json.AddMember("SortDirection", (int)m_sortDirection, json.GetAllocator());
-    json.AddMember("ContentFlags", m_contentFlags, json.GetAllocator());
-    json.AddMember("ConnectionId", rapidjson::StringRef(m_connection.GetId().c_str()), json.GetAllocator());
-    json.AddMember("FilterExpression", rapidjson::StringRef(m_filterExpression.c_str()), json.GetAllocator());
-    json.AddMember("InputKeysHash", rapidjson::Value(m_inputKeys->GetHash().c_str(), json.GetAllocator()), json.GetAllocator());
-    rapidjson::Document options(&json.GetAllocator());
-    options.Parse(m_options.ToString().c_str());
-    json.AddMember("ContentOptions", options, json.GetAllocator());
-    if (nullptr != m_selectionInfo)
-        json.AddMember("SelectionInfo", CreateSelectionInfoJson(*m_selectionInfo, json.GetAllocator()), json.GetAllocator());
-
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentDescriptor::Category::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("Name", rapidjson::Value(GetName().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("DisplayLabel", rapidjson::Value(GetLabel().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Description", rapidjson::Value(GetDescription().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Expand", ShouldExpand(), json.GetAllocator());
-    json.AddMember("Priority", GetPriority(), json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -585,75 +446,12 @@ bool ContentDescriptor::Property::operator==(Property const& other) const
         && m_prefix.Equals(other.m_prefix) 
         && m_relatedClassPath == other.m_relatedClassPath;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Value GetEnumerationChoicesJson(ECEnumerationCR enumeration, rapidjson::MemoryPoolAllocator<>& allocator)
-    {
-    rapidjson::Value json(rapidjson::kArrayType);
-    for (ECEnumeratorCP enumerator : enumeration.GetEnumerators())
-        {
-        rapidjson::Value choice(rapidjson::kObjectType);
-        choice.AddMember("Label", rapidjson::Value(enumerator->GetDisplayLabel().c_str(), allocator), allocator);
-        if (enumerator->IsInteger())
-            choice.AddMember("Value", rapidjson::Value(enumerator->GetInteger()), allocator);
-        else
-            choice.AddMember("Value", rapidjson::Value(enumerator->GetString().c_str(), allocator), allocator);
-
-        json.PushBack(choice, allocator);
-        }
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                08/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-static rapidjson::Value CreateKindOfQuantityJson(KindOfQuantityCR koq, rapidjson::MemoryPoolAllocator<>& allocator)
-    {
-    rapidjson::Value json(rapidjson::kObjectType);
-    json.AddMember("Name", rapidjson::StringRef(koq.GetFullName().c_str()), allocator);
-    json.AddMember("DisplayLabel", rapidjson::StringRef(koq.GetDisplayLabel().c_str()), allocator);
-    json.AddMember("PersistenceUnit", rapidjson::Value(koq.GetPersistenceUnit().ToText().c_str(), allocator), allocator);
-    json.AddMember("CurrentFusId", rapidjson::Value(koq.GetDefaultPresentationUnit().ToText().c_str(), allocator), allocator);
-
-    return json;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentDescriptor::Property::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document ContentDescriptor::Property::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    
-    rapidjson::Value propertyJson(rapidjson::kObjectType);
-    propertyJson.AddMember("BaseClassInfo", GetClassInfoJson(m_property->GetClass(), json.GetAllocator()), json.GetAllocator());
-    propertyJson.AddMember("ActualClassInfo", GetClassInfoJson(*m_propertyClass, json.GetAllocator()), json.GetAllocator());
-    propertyJson.AddMember("Name", rapidjson::StringRef(m_property->GetName().c_str()), json.GetAllocator());
-
-    if (m_property->GetIsPrimitive() && nullptr != m_property->GetAsPrimitiveProperty()->GetEnumeration())
-        {
-        ECEnumerationCP propEnum = m_property->GetAsPrimitiveProperty()->GetEnumeration();
-        propertyJson.AddMember("Type", rapidjson::Value("enum", json.GetAllocator()), json.GetAllocator());
-        propertyJson.AddMember("IsStrict", rapidjson::Value(propEnum->GetIsStrict()), json.GetAllocator());
-        propertyJson.AddMember("Choices", GetEnumerationChoicesJson(*propEnum, json.GetAllocator()), json.GetAllocator());
-        }
-    else
-        {
-        propertyJson.AddMember("Type", rapidjson::Value(m_property->GetTypeName().c_str(), json.GetAllocator()), json.GetAllocator());
-        }
-
-    if (nullptr != m_property->GetKindOfQuantity())
-        {
-        KindOfQuantityCP koq = m_property->GetKindOfQuantity();
-        propertyJson.AddMember("KindOfQuantity", CreateKindOfQuantityJson(*koq, json.GetAllocator()), json.GetAllocator());
-        }
-
-    json.AddMember("Property", propertyJson, json.GetAllocator());
-    json.AddMember("RelatedClassPath", CreateRelationshipPathJson(m_relatedClassPath, json.GetAllocator()), json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -696,19 +494,7 @@ ContentFieldEditor::~ContentFieldEditor()
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ContentFieldEditor::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("Name", rapidjson::Value(m_name.c_str(), json.GetAllocator()), json.GetAllocator());
-
-    rapidjson::Value paramsJson(rapidjson::kObjectType);
-    for (Params const* params : m_params)
-        {
-        BeAssert(!paramsJson.HasMember(params->GetName()));
-        paramsJson.AddMember(rapidjson::Value(params->GetName(), json.GetAllocator()), params->AsJson(&json.GetAllocator()), json.GetAllocator());
-        }
-    json.AddMember("Params", paramsJson, json.GetAllocator());
-
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -753,29 +539,19 @@ ContentDescriptor::Field::TypeDescription const& ContentDescriptor::Field::GetTy
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentDescriptor::Field::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("Category", GetCategory().AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Name", rapidjson::Value(GetName().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("DisplayLabel", rapidjson::Value(GetLabel().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Type", GetTypeDescription().AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember("IsReadOnly", _IsReadOnly(), json.GetAllocator());
-    json.AddMember("Priority", _GetPriority(), json.GetAllocator());
-    if (nullptr != GetEditor())
-        json.AddMember("Editor", GetEditor()->AsJson(&json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::DisplayLabelField::_CreateTypeDescription() const
     {
     return new PrimitiveTypeDescription("string");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::DisplayLabelField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -787,9 +563,25 @@ ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::CalculatedProper
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::CalculatedPropertyField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::ECPropertiesField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ContentDescriptor::Field::TypeDescriptionPtr CreateTypeDescription(ECPropertyCR prop) 
+ContentDescriptor::Field::TypeDescriptionPtr ContentDescriptor::ECPropertiesField::CreateTypeDescription(ECPropertyCR prop)
     {
     if (prop.GetIsPrimitive() && nullptr != prop.GetAsPrimitiveProperty()->GetEnumeration())
         return new PrimitiveTypeDescription("enum");
@@ -827,21 +619,6 @@ bool ContentDescriptor::ECPropertiesField::IsCompositePropertiesField() const
 
     ECPropertyCR prop = m_properties.front().GetProperty();
     return prop.GetIsStruct() || prop.GetIsArray();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentDescriptor::ECPropertiesField::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    rapidjson::Document json = Field::_AsJson(allocator);
-
-    rapidjson::Value propertiesJson(rapidjson::kArrayType);
-    for (Property const& prop : m_properties)
-        propertiesJson.PushBack(prop.AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Properties", propertiesJson, json.GetAllocator());
-
-    return json;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1034,20 +811,27 @@ bool ContentDescriptor::NestedContentField::_Equals(Field const& other) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2017
+* @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentDescriptor::NestedContentField::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document ContentDescriptor::NestedContentField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json = Field::_AsJson(allocator);
-    json.AddMember("ContentClassInfo", GetClassInfoJson(m_contentClass, json.GetAllocator()), json.GetAllocator());
-    json.AddMember("PathToPrimary", CreateRelationshipPathJson(m_relationshipPath, json.GetAllocator()), json.GetAllocator());
-    
-    rapidjson::Value nestedFieldsJson(rapidjson::kArrayType);
-    for (Field const* nestedField : m_fields)
-        nestedFieldsJson.PushBack(nestedField->AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember("NestedFields", nestedFieldsJson, json.GetAllocator());
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
 
-    return json;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::ECInstanceKeyField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ContentDescriptor::ECNavigationInstanceIdField::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1224,86 +1008,17 @@ bvector<ECInstanceKey> const& ContentSetItem::GetPropertyValueKeys(FieldProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ContentSetItem::AsJson(int flags, rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document ContentSetItem::AsJson(int flags, rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-
-    if (0 != (SERIALIZE_DisplayLabel & flags))
-        json.AddMember("DisplayLabel", rapidjson::Value(m_displayLabel.c_str(), json.GetAllocator()), json.GetAllocator());
-
-    if (0 != (SERIALIZE_ImageId & flags))
-        json.AddMember("ImageId", rapidjson::Value(m_imageId.c_str(), json.GetAllocator()), json.GetAllocator());
-
-    if (0 != (SERIALIZE_Values & flags))
-        json.AddMember("Values", rapidjson::Value(m_values, json.GetAllocator()), json.GetAllocator());
-
-    if (0 != (SERIALIZE_DisplayValues & flags))
-        json.AddMember("DisplayValues", rapidjson::Value(m_displayValues, json.GetAllocator()), json.GetAllocator());
-
-    if (m_class != nullptr && 0 != (SERIALIZE_ClassInfo & flags))
-        json.AddMember("ClassInfo", GetClassInfoJson(*m_class, json.GetAllocator()), json.GetAllocator());
-
-    if (0 != (SERIALIZE_PrimaryKeys & flags))
-        {
-        rapidjson::Value primaryKeys(rapidjson::kArrayType);
-        for (ECInstanceKeyCR key : m_keys)
-            primaryKeys.PushBack(ValueHelpers::GetJson(key, &json.GetAllocator()), json.GetAllocator());
-        json.AddMember("PrimaryKeys", primaryKeys, json.GetAllocator());
-        }
-
-    if (0 != (SERIALIZE_MergedFieldNames & flags))
-        {
-        rapidjson::Value fieldNamesJson(rapidjson::kArrayType);
-        for (Utf8StringCR fieldName : m_mergedFieldNames)
-            fieldNamesJson.PushBack(rapidjson::Value(fieldName.c_str(), json.GetAllocator()), json.GetAllocator());
-        json.AddMember("MergedFieldNames", fieldNamesJson, json.GetAllocator());
-        }
-
-    if (0 != (SERIALIZE_FieldPropertyInstanceKeys & flags))
-        {
-        rapidjson::Value fieldValueKeys(rapidjson::kObjectType);
-        for (auto pair : m_fieldPropertyInstanceKeys)
-            {
-            Utf8CP fieldName = pair.first.GetField().GetName().c_str();
-            if (!fieldValueKeys.HasMember(fieldName))
-                fieldValueKeys.AddMember(rapidjson::StringRef(fieldName), rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
-            rapidjson::Value& fieldProperties = fieldValueKeys[fieldName];
-
-        rapidjson::Value propertyKeys(rapidjson::kArrayType);
-        for (ECInstanceKeyCR key : pair.second)
-            propertyKeys.PushBack(ValueHelpers::GetJson(key, &json.GetAllocator()), json.GetAllocator());
-
-            rapidjson::Value fieldProperty(rapidjson::kObjectType);
-            fieldProperty.AddMember("PropertyIndex", rapidjson::Value((uint64_t)pair.first.GetPropertyIndex()), json.GetAllocator());
-            fieldProperty.AddMember("Keys", propertyKeys, json.GetAllocator());
-            fieldProperties.PushBack(fieldProperty, json.GetAllocator());
-            }
-        json.AddMember("FieldValueKeys", fieldValueKeys, json.GetAllocator());
-        }
-
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, flags, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document Content::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document Content::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("Descriptor", m_descriptor->AsJson(&json.GetAllocator()), json.GetAllocator());
-
-    rapidjson::Value set(rapidjson::kArrayType);
-    DataContainer<ContentSetItemCPtr> container = GetContentSet();
-    for (ContentSetItemCPtr item : container)
-        {
-        if (item.IsValid())
-            set.PushBack(item->AsJson(ContentSetItem::SERIALIZE_All, &json.GetAllocator()), json.GetAllocator());
-        }
-    json.AddMember("ContentSet", set, json.GetAllocator());
-
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1339,26 +1054,9 @@ ECInstanceChangeResult ECInstanceChangeResult::Ignore(Utf8String reason)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ECInstanceChangeResult::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document ECInstanceChangeResult::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    if (SUCCESS == m_status && !m_changedValue.IsUninitialized())
-        {
-        json.AddMember("Status", 0, json.GetAllocator());
-        json.AddMember("Value", ValueHelpers::GetJsonFromECValue(m_changedValue, &json.GetAllocator()), json.GetAllocator());
-        }
-    else if (SUCCESS == m_status)
-        {
-        json.AddMember("Status", 1, json.GetAllocator());
-        json.AddMember("IgnoreReason", rapidjson::Value(m_errorMessage.c_str(), json.GetAllocator()), json.GetAllocator());
-        }
-    else
-        {
-        json.AddMember("Status", 2, json.GetAllocator());
-        json.AddMember("ErrorMessage", rapidjson::Value(m_errorMessage.c_str(), json.GetAllocator()), json.GetAllocator());
-        }
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -35,7 +35,7 @@ struct ECInstanceTestsHelper
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2016
 +===============+===============+===============+===============+===============+======*/
-struct ECExpressionContextsProviderTests : ::testing::Test
+struct ECExpressionContextsProviderTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     static IConnectionPtr s_connection;
@@ -69,6 +69,7 @@ struct ECExpressionContextsProviderTests : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         s_project->GetECDb().AbandonChanges();
         }
 

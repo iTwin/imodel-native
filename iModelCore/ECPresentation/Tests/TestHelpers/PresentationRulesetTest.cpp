@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TestHelpers/PresentationRulesetTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -357,6 +357,7 @@ void PresentationRulesetTester::SetECDb(ECDbR db)
 //----------------------------------------------------------------------------------------
 void PresentationRulesetTest::SetUp()
     {
+    ECPresentationTest::SetUp();
     m_rulesetTester = new PresentationRulesetTester(BeTest::GetHost(), _GetRulesetsDirectory());
     }
 

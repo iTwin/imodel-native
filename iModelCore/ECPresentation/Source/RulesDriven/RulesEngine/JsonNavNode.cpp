@@ -27,18 +27,6 @@ JsonNavNode::JsonNavNode()
 RapidJsonValueCR JsonNavNode::GetJson() const {return m_json;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                12/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document JsonNavNode::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    rapidjson::Document json(allocator);
-    json.CopyFrom(m_json, json.GetAllocator());
-    json.RemoveMember(NAVNODE_ExtendedData);
-    json.AddMember(NAVNODE_Key, GetKey()->AsJson(&json.GetAllocator()), json.GetAllocator());
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas            06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::MemoryPoolAllocator<>& JsonNavNode::_GetExtendedDataAllocator() const {return m_json.GetAllocator();}
@@ -56,7 +44,7 @@ uint64_t JsonNavNode::_GetNodeId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetNodeId(uint64_t id) {AddMember(NAVNODE_NodeId, rapidjson::Value(id).Move());}
+void JsonNavNode::_SetNodeId(uint64_t id) {AddMember(NAVNODE_NodeId, rapidjson::Value(id).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
@@ -66,7 +54,7 @@ uint64_t JsonNavNode::_GetParentNodeId() const {return m_json.HasMember(NAVNODE_
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetParentNodeId(uint64_t id)
+void JsonNavNode::_SetParentNodeId(uint64_t id)
     {
     AddMember(NAVNODE_ParentNodeId, rapidjson::Value(id).Move());
     NavNodeExtendedData extendedData(*this);
@@ -77,7 +65,7 @@ void JsonNavNode::SetParentNodeId(uint64_t id)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodeKeyCPtr JsonNavNode::_GetKey() const
+NavNodeKeyCPtr JsonNavNode::_GetNodeKey() const
     {
     if (m_nodeKey.IsNull())
         {
@@ -194,22 +182,22 @@ void JsonNavNode::AddMember(Utf8CP name, rapidjson::Value& value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetLabel(Utf8CP label) {AddMember(NAVNODE_Label, rapidjson::Value(label, m_json.GetAllocator()).Move());}
+void JsonNavNode::_SetLabel(Utf8CP label) {AddMember(NAVNODE_Label, rapidjson::Value(label, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetInstanceId(uint64_t instanceId) {AddMember(NAVNODE_InstanceId, rapidjson::Value(instanceId).Move());}
+void JsonNavNode::_SetInstanceId(uint64_t instanceId) {AddMember(NAVNODE_InstanceId, rapidjson::Value(instanceId).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t JsonNavNode::GetInstanceId() const {return m_json.HasMember(NAVNODE_InstanceId) ? m_json[NAVNODE_InstanceId].GetUint64() : 0;}
+uint64_t JsonNavNode::_GetInstanceId() const {return m_json.HasMember(NAVNODE_InstanceId) ? m_json[NAVNODE_InstanceId].GetUint64() : 0;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetDescription(Utf8CP descr) {AddMember(NAVNODE_Description, rapidjson::Value(descr, m_json.GetAllocator()).Move());}
+void JsonNavNode::_SetDescription(Utf8CP description) {AddMember(NAVNODE_Description, rapidjson::Value(description, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2015
@@ -223,57 +211,67 @@ void JsonNavNode::SetImageId(Utf8CP imageId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetForeColor(Utf8CP color) {AddMember(NAVNODE_ForeColor, rapidjson::Value(color, m_json.GetAllocator()).Move());}
+void JsonNavNode::_SetForeColor(Utf8CP color) {AddMember(NAVNODE_ForeColor, rapidjson::Value(color, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetBackColor(Utf8CP color) {AddMember(NAVNODE_BackColor, rapidjson::Value(color, m_json.GetAllocator()).Move());}
+void JsonNavNode::_SetBackColor(Utf8CP color) {AddMember(NAVNODE_BackColor, rapidjson::Value(color, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetExpandedImageId(Utf8CP imageId) {AddMember(NAVNODE_ExpandedImageId, rapidjson::Value(imageId, m_json.GetAllocator()).Move());}
+void JsonNavNode::_SetExpandedImageId(Utf8CP imageId) {AddMember(NAVNODE_ExpandedImageId, rapidjson::Value(imageId, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetCollapsedImageId(Utf8CP imageId) {AddMember(NAVNODE_CollapsedImageId, rapidjson::Value(imageId, m_json.GetAllocator()).Move());}
+void JsonNavNode::_SetCollapsedImageId(Utf8CP imageId) {AddMember(NAVNODE_CollapsedImageId, rapidjson::Value(imageId, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Pranciskus.Ambrazas             05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetType(Utf8CP type) {AddMember(NAVNODE_Type, rapidjson::Value(type, m_json.GetAllocator()).Move());}
+void JsonNavNode::_SetType(Utf8CP type) {AddMember(NAVNODE_Type, rapidjson::Value(type, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetFontStyle(Utf8CP style) {AddMember(NAVNODE_FontStyle, rapidjson::Value(style, m_json.GetAllocator()).Move());}
+void JsonNavNode::_SetFontStyle(Utf8CP style) {AddMember(NAVNODE_FontStyle, rapidjson::Value(style, m_json.GetAllocator()).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetHasChildren(bool value) {AddMember(NAVNODE_HasChildren, rapidjson::Value(value).Move());}
+void JsonNavNode::_SetHasChildren(bool value) {AddMember(NAVNODE_HasChildren, rapidjson::Value(value).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetIsChecked(bool value) {AddMember(NAVNODE_IsChecked, rapidjson::Value(value).Move());}
+void JsonNavNode::_SetIsChecked(bool value) {AddMember(NAVNODE_IsChecked, rapidjson::Value(value).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetIsCheckboxVisible(bool value) {AddMember(NAVNODE_IsCheckboxVisible, rapidjson::Value(value).Move());}
+void JsonNavNode::_SetIsCheckboxVisible(bool value) {AddMember(NAVNODE_IsCheckboxVisible, rapidjson::Value(value).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetIsCheckboxEnabled(bool value) {AddMember(NAVNODE_IsCheckboxEnabled, rapidjson::Value(value).Move());}
+void JsonNavNode::_SetIsCheckboxEnabled(bool value) {AddMember(NAVNODE_IsCheckboxEnabled, rapidjson::Value(value).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void JsonNavNode::SetIsExpanded(bool value) {AddMember(NAVNODE_IsExpanded, rapidjson::Value(value).Move());}
+void JsonNavNode::_SetIsExpanded(bool value) {AddMember(NAVNODE_IsExpanded, rapidjson::Value(value).Move());}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsonNavNode::_SetIsSelectable(bool value) {AddMember(NAVNODE_IsSelectable, rapidjson::Value(value).Move());}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsonNavNode::_SetIsEditable(bool value) {AddMember(NAVNODE_IsEditable, rapidjson::Value(value).Move());}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017

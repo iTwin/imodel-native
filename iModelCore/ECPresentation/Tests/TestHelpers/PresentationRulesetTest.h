@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/TestHelpers/PresentationRulesetTest.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -112,7 +112,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                Saulius.Skliutas     06/2017
 //=======================================================================================
-struct PresentationRulesetTest : ::testing::Test
+struct PresentationRulesetTest : ECPresentationTest
 {
 private:
     PresentationRulesetTester* m_rulesetTester;

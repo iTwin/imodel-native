@@ -47,6 +47,7 @@ void ECSchemaHelperTests::TearDownTestCase()
 //---------------------------------------------------------------------------------------
 void ECSchemaHelperTests::SetUp()
     {
+    ECPresentationTest::SetUp();
     m_connection = new TestConnection(s_project->GetECDb());
     m_helper = new ECSchemaHelper(*m_connection, nullptr, nullptr, nullptr, nullptr);
     }

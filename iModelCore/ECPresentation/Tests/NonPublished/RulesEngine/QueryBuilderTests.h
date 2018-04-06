@@ -24,7 +24,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct NavigationQueryBuilderTests : ::testing::Test
+struct NavigationQueryBuilderTests : ECPresentationTest
     {
     ECSchemaHelper* m_schemaHelper;
     PresentationRuleSetPtr m_ruleset;
@@ -67,7 +67,7 @@ struct NavigationQueryBuilder_MultiLevelGroupingTests : NavigationQueryBuilderTe
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2016
 +===============+===============+===============+===============+===============+======*/
-struct ContentQueryBuilderTests : ::testing::Test
+struct ContentQueryBuilderTests : ECPresentationTest
     {    
     ECSchemaHelper* m_schemaHelper;
     PresentationRuleSetPtr m_ruleset;

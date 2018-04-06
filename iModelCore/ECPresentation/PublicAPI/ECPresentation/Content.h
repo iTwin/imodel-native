@@ -270,7 +270,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         bool operator==(Category const& other) const {return m_name == other.m_name && m_label == other.m_label && m_priority == other.m_priority && m_description == other.m_description && m_shouldExpand == other.m_shouldExpand;}
 
         //! Serialize this category to JSON.
-        ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
+        ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 
         //! Get the name of the category.
         Utf8StringCR GetName() const {return m_name;}
@@ -332,7 +332,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT bool operator==(Property const& other) const;
 
         //! Serialize this struct to JSON.
-        ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
+        ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 
         //! Get the class alias used to query this property.
         Utf8CP GetPrefix() const {return m_prefix.c_str();}
@@ -380,7 +380,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         private:
             Utf8String m_typeName;
         protected:
-            ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType*) const;
+            ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const;
         public:
             TypeDescription(Utf8String typeName) : m_typeName(typeName) {}
             virtual ~TypeDescription() {}
@@ -388,6 +388,61 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
             rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(allocator);}
         };
         typedef RefCountedPtr<TypeDescription> TypeDescriptionPtr;
+
+        //===================================================================================
+        // @bsiclass                                    Grigas.Petraitis            09/2017
+        //===================================================================================
+        struct PrimitiveTypeDescription : TypeDescription
+        {
+        protected:
+            ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+        public:
+            PrimitiveTypeDescription(Utf8String type) : TypeDescription(type) {}
+        };
+
+        //===================================================================================
+        // @bsiclass                                    Grigas.Petraitis            09/2017
+        //===================================================================================
+        struct ArrayTypeDescription : TypeDescription
+        {
+        private:
+            TypeDescriptionPtr m_memberType;
+        private:
+            ECPRESENTATION_EXPORT static Utf8String CreateTypeName(TypeDescription const& memberType);
+        protected:
+            ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+        public:
+            ArrayTypeDescription(TypeDescription& memberType) : TypeDescription(CreateTypeName(memberType)), m_memberType(&memberType) {}
+            TypeDescriptionPtr GetMemberType() const {return m_memberType;}
+        };
+
+        //===================================================================================
+        // @bsiclass                                    Grigas.Petraitis            09/2017
+        //===================================================================================
+        struct StructTypeDescription : TypeDescription
+        {
+        private:
+            ECStructClassCR m_struct;
+        protected:
+            ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+        public:
+            StructTypeDescription(ECStructClassCR structClass) : TypeDescription(structClass.GetName()), m_struct(structClass) {}
+            ECStructClassCR GetStruct() const {return m_struct;}
+        };
+
+        //===================================================================================
+        // @bsiclass                                    Grigas.Petraitis            09/2017
+        //===================================================================================
+        struct NestedContentTypeDescription : TypeDescription
+        {
+        private:
+            NestedContentField const& m_field;
+        protected:
+            ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
+        public:
+            NestedContentTypeDescription(ContentDescriptor::NestedContentField const& field) : TypeDescription(field.GetContentClass().GetDisplayLabel()), m_field(field) {}
+            NestedContentField const& GetNestedContentField() const {return m_field;}
+        };
 
     private:
         Category m_category;
@@ -413,7 +468,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         virtual bool _IsReadOnly() const = 0;
         virtual bool _IsVisible() const {return true;}
         virtual bool _Equals(Field const& other) const {return m_category == other.m_category && m_name == other.m_name && m_label == other.m_label;}
-        ECPRESENTATION_EXPORT virtual rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const;
+        virtual rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const = 0;
         virtual int _GetPriority() const = 0;
         virtual void _OnFieldsCloned(bmap<Field const*, Field const*> const& fieldsRemapInfo) {}
         virtual bool _OnFieldRemoved(Field const&) {return false;}
@@ -451,7 +506,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Field* Clone() const {return _Clone();}
 
         //! Serialize this field to JSON.
-        rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const {return _AsJson(allocator);}
+        rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const {return _AsJson(allocator);}
 
         //! Is this field equal to the supplied one.
         bool operator==(Field const& other) const {return _Equals(other);}
@@ -517,6 +572,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Get field's priority.
         int GetPriority() const {return _GetPriority();}
 
+        //! Is field read only
+        bool IsReadOnly() const {return _IsReadOnly();}
+
         //! Get field's type information.
         ECPRESENTATION_EXPORT TypeDescription const& GetTypeDescription() const;
         
@@ -546,6 +604,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
         int _GetPriority() const override {return m_priority;}
         bool _IsReadOnly() const override {return true;}
+        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
 
     public:
         //! Constructor.
@@ -590,6 +649,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
         int _GetPriority() const override {return m_priority;}
         bool _IsReadOnly() const override {return true;}
+        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
 
     public:
         //! Constructor.
@@ -633,7 +693,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         Field* _Clone() const override {return new ECPropertiesField(*this);}
         ECPRESENTATION_EXPORT TypeDescriptionPtr _CreateTypeDescription() const override;
         ECPRESENTATION_EXPORT bool _IsReadOnly() const override;
-        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
         ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
         ECPRESENTATION_EXPORT int _GetPriority() const override;
         ECPRESENTATION_EXPORT Utf8StringCR _GetName() const override;
@@ -681,6 +741,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         //! Find properties that match the supplied class. If nullptr is supplied, 
         //! all properties are returned.
         bvector<Property const*> const& FindMatchingProperties(ECClassCP) const;
+
+        //! Create type description for property
+        static TypeDescriptionPtr CreateTypeDescription(ECPropertyCR prop);
     };
     
     //===================================================================================
@@ -704,7 +767,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         bool _IsReadOnly() const override {return true;}
         ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
         int _GetPriority() const override {return m_priority;}
-        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::MemoryPoolAllocator<>*) const override;
+        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     public:
         //! Constructor.
         //! @param[in] category The category of this field.
@@ -800,6 +863,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
         ECPRESENTATION_EXPORT Utf8StringCR _GetName() const override;
         void _SetName(Utf8String name) override {m_isValidName = true; Field::_SetName(name);}
+        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     public:
         ECInstanceKeyField() : SystemField("Invalid"), m_isValidName(false) {}
         ECPRESENTATION_EXPORT void RecalculateName();
@@ -822,6 +886,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentDescriptor : RefCountedBase
         ECPRESENTATION_EXPORT bool _Equals(Field const& other) const override;
         ECPRESENTATION_EXPORT void _OnFieldsCloned(bmap<Field const*, Field const*> const&) override;
         ECPRESENTATION_EXPORT bool _OnFieldRemoved(Field const&) override;
+        ECPRESENTATION_EXPORT rapidjson::Document _AsJson(rapidjson::Document::AllocatorType* allocator) const override;
     public:
         ECNavigationInstanceIdField(ECPropertiesField const& propertiesField)
             : SystemField(""), m_propertyField(&propertiesField)
@@ -905,7 +970,7 @@ public:
     static ContentDescriptorPtr Create(ContentDescriptorCR other) {return new ContentDescriptor(other);}
 
     //! Serializes this descriptor to JSON.
-    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 
     //! Is this desciptor equal to the supplied one.
     ECPRESENTATION_EXPORT bool Equals(ContentDescriptorCR other) const;
@@ -960,6 +1025,8 @@ public:
 
     //! Get the sorting field used to sort content.
     Field const* GetSortingField() const {return (m_sortingFieldIndex < 0 || m_sortingFieldIndex >= (int)m_fields.size()) ? nullptr : m_fields[m_sortingFieldIndex];}
+    //! Get the sorting field index used to sort content.
+    int GetSortingFieldIndex() const {return m_sortingFieldIndex;}
     //! Set the sorting field by index.
     void SetSortingField(int index) {m_sortingFieldIndex = index;}
     //! Set the sorting field by name.
@@ -1065,7 +1132,6 @@ private:
         m_values(std::move(values)), m_displayValues(std::move(displayValues)), 
         m_mergedFieldNames(mergedFieldNames), m_fieldPropertyInstanceKeys(std::move(fieldPropertyInstanceKeys))
         {}
-    
 //__PUBLISH_SECTION_END__
 public:
     rapidjson::Document const& GetValues() const {return m_values;}
@@ -1073,7 +1139,8 @@ public:
     rapidjson::Document const& GetDisplayValues() const {return m_displayValues;}
     rapidjson::Document& GetDisplayValues() {return m_displayValues;}
     bvector<Utf8String>& GetMergedFieldNames() {return m_mergedFieldNames;}
-    FieldPropertyInstanceKeyMap& GetFieldInstanceKeys() {return m_fieldPropertyInstanceKeys;}
+    bvector<BeSQLite::EC::ECInstanceKey>& GetKeys() {return m_keys;}
+    FieldPropertyInstanceKeyMap const& GetFieldInstanceKeys() const {return m_fieldPropertyInstanceKeys;}
 //__PUBLISH_SECTION_START__
 
 public:
@@ -1094,7 +1161,7 @@ public:
         }
 
     //! Serialize this item to JSON.
-    ECPRESENTATION_EXPORT rapidjson::Document AsJson(int flags = SERIALIZE_All, rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(int flags = SERIALIZE_All, rapidjson::Document::AllocatorType* allocator = nullptr) const;
 
     //! Get keys of ECInstances whose values this item contains.
     bvector<BeSQLite::EC::ECInstanceKey> const& GetKeys() const {return m_keys;}
@@ -1151,7 +1218,7 @@ public:
     DataContainer<ContentSetItemCPtr> GetContentSet() const {return DataContainer<ContentSetItemCPtr>(*m_contentSource);}
 
     //! Serialize this object to JSON.
-    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 };
 
 //=======================================================================================
@@ -1230,7 +1297,7 @@ public:
     BentleyStatus GetStatus() const {return m_status;}
     ECValueCR GetChangedValue() const {return m_changedValue;}
     Utf8StringCR GetErrorMessage() const {return m_errorMessage;}
-    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::MemoryPoolAllocator<>* allocator = nullptr) const;
+    ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* allocator = nullptr) const;
 };
 
 //=======================================================================================

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/UserSettingsTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -18,13 +18,14 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                01/2016
 +===============+===============+===============+===============+===============+======*/
-struct UserSettingsTests : ::testing::Test
+struct UserSettingsTests : ECPresentationTest
     {  
     TestLocalState m_localState;
     UserSettingsManager* m_settingsManager;
     
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         BeFileName temporaryDirectory;
         BeTest::GetHost().GetTempDir(temporaryDirectory);
 

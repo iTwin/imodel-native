@@ -2,11 +2,12 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/SingleThreadedQueueExecutorTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include "../../../Source/RulesDriven/RulesEngine/SingleThreadQueueExecutor.h"
+#include "TestHelpers.h"
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
@@ -20,7 +21,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                11/2017
 +===============+===============+===============+===============+===============+======*/
-struct SingleThreadQueueExecutorTests : ::testing::Test
+struct SingleThreadQueueExecutorTests : ECPresentationTest
     {
     BeConditionVariable m_cv;
     SingleThreadedQueueExecutor m_executor;

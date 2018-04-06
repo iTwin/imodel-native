@@ -9,6 +9,7 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "../../../Source/RulesDriven/RulesEngine/ECExpressionContextsProvider.h"
 #include "../../../Source/RulesDriven/RulesEngine/CustomFunctions.h"
+#include "TestHelpers.h"
 
 USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -17,7 +18,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                05/2016
 +===============+===============+===============+===============+===============+======*/
-struct ECExpressionsToECSqlConverterTests : ::testing::Test
+struct ECExpressionsToECSqlConverterTests : ECPresentationTest
     {
     ECExpressionsCache m_expressionsCache;
     ECExpressionsHelper m_helper;

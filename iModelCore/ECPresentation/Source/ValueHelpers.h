@@ -2,7 +2,7 @@
 |
 |     $Source: Source/ValueHelpers.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -41,7 +41,6 @@ public:
     static rapidjson::Document GetJsonFromArrayValue(BeSQLite::EC::IECSqlValue const&, rapidjson::MemoryPoolAllocator<>*);
     static rapidjson::Document GetJsonFromString(ECN::PrimitiveType, Utf8StringCR, rapidjson::MemoryPoolAllocator<>*);
     static rapidjson::Document GetJsonFromECValue(ECN::ECValueCR, rapidjson::MemoryPoolAllocator<>*);
-    static rapidjson::Document GetJson(BeSQLite::EC::ECInstanceKeyCR, rapidjson::MemoryPoolAllocator<>*);
 
     static ECN::ECValue GetECValueFromSqlValue(ECN::PrimitiveType, BeSQLite::EC::IECSqlValue const&);
     static ECN::ECValue GetECValueFromString(ECN::PrimitiveType, Utf8StringCR);

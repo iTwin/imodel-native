@@ -201,7 +201,7 @@ USING_NAMESPACE_BENTLEY_ECPRESENTATION
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                06/2015
 +===============+===============+===============+===============+===============+======*/
-struct ECSchemaHelperTests : ::testing::Test
+struct ECSchemaHelperTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     IConnectionPtr m_connection;

@@ -1,15 +1,15 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/ECPresentation/RulesDriven/Update.h $
+|     $Source: PublicAPI/ECPresentation/Update.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
 //__PUBLISH_SECTION_START__
 
 #include <ECPresentation/ECPresentation.h>
-#include <ECPresentation/RulesDriven/ECInstanceChangeEvents.h>
+#include <ECPresentation/NavNode.h>
 
 //__PUBLISH_SECTION_END__
 struct ReportTask;
@@ -21,7 +21,7 @@ struct UpdateHandler;
 
 //=======================================================================================
 //! A class that represents a single property change.
-//! @ingroup GROUP_RulesDrivenPresentation
+//! @ingroup GROUP_Presentation
 // @bsiclass                                    Grigas.Petraitis                02/2016
 //=======================================================================================
 struct JsonChange
@@ -72,8 +72,20 @@ public:
 };
 
 //=======================================================================================
+//! ECInstance change type.
+//! @ingroup GROUP_Presentation
+// @bsiclass                                        Grigas.Petraitis            01/2016
+//=======================================================================================
+enum class ChangeType
+    {
+    Insert, //!< An ECInstance was inserted.
+    Update, //!< An ECInstance was updated.
+    Delete, //!< An ECInstance was deleted.
+    };
+
+//=======================================================================================
 //! A class that represents multiple changes of a single node.
-//! @ingroup GROUP_RulesDrivenPresentation
+//! @ingroup GROUP_Presentation
 // @bsiclass                                    Grigas.Petraitis                02/2016
 //=======================================================================================
 struct UpdateRecord
@@ -145,7 +157,7 @@ public:
 
 //=======================================================================================
 //! A class that represents a full update request.
-//! @ingroup GROUP_RulesDrivenPresentation
+//! @ingroup GROUP_Presentation
 // @bsiclass                                    Grigas.Petraitis                04/2016
 //=======================================================================================
 struct FullUpdateRecord
@@ -191,7 +203,7 @@ public:
 //=======================================================================================
 //! An interface for a class that takes and handles a number of update records.
 //! @note Handler methods may be called from multiple different threads.
-//! @ingroup GROUP_RulesDrivenPresentation
+//! @ingroup GROUP_Presentation
 // @bsiclass                                    Grigas.Petraitis                02/2016
 //=======================================================================================
 struct IUpdateRecordsHandler : RefCountedBase

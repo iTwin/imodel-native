@@ -2,7 +2,7 @@
 #
 #     $Source: Source/RulesDriven/RulesEngine/RulesEngine.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -78,8 +78,6 @@ $(o)ContentCache$(oext):                 $(RulesEngineSourceDirectory)ContentCac
 $(o)SelectionSyncHandler$(oext):         $(RulesEngineSourceDirectory)SelectionSyncHandler.cpp $(RulesEngineDependencies)
 
 $(o)ECExpressionOptimizer$(oext):        $(RulesEngineSourceDirectory)ECExpressionOptimizer.cpp $(RulesEngineDependencies)
-
-$(o)ContentFieldEditors$(oext):          $(RulesEngineSourceDirectory)ContentFieldEditors.cpp $(RulesEngineDependencies)
 
 $(o)ContentClassesLocater$(oext):        $(RulesEngineSourceDirectory)ContentClassesLocater.cpp $(RulesEngineDependencies)
 

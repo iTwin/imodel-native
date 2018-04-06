@@ -18,7 +18,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct RulesDrivenECPresentationManagerImplTests : ::testing::Test
+struct RulesDrivenECPresentationManagerImplTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     IConnectionPtr m_connection;
@@ -79,6 +79,7 @@ void RulesDrivenECPresentationManagerImplTests::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImplTests::SetUp()
     {
+    ECPresentationTest::SetUp();
     Localization::Init();
     m_impl = new RulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManagerDependenciesFactory(), m_connections,
         RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);

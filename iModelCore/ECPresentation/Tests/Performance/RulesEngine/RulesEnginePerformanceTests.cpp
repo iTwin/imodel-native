@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Performance/RulesEngine/RulesEnginePerformanceTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RulesEnginePerformanceTests.h"
@@ -25,6 +25,7 @@ void RulesEnginePerformanceTests::SetUpTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesEnginePerformanceTests::SetUp()
     {
+    ECPresentationTest::SetUp();
     Localization::Init();
 
     BeFileName assetsDirectory, temporaryDirectory;

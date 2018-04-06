@@ -2,29 +2,18 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/ECInstanceChangeEvents.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
 //__PUBLISH_SECTION_START__
 #include <ECPresentation/ECPresentation.h>
+#include <ECPresentation/Update.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
-
-//=======================================================================================
-//! ECInstance change type.
-//! @ingroup GROUP_RulesDrivenPresentation
-// @bsiclass                                        Grigas.Petraitis            01/2016
-//=======================================================================================
-enum class ChangeType
-    {
-    Insert, //!< An ECInstance was inserted.
-    Update, //!< An ECInstance was updated.
-    Delete, //!< An ECInstance was deleted.
-    };
 
 //=======================================================================================
 //! An interface for a class which listens for when ECClasses are used in specific ECDb.

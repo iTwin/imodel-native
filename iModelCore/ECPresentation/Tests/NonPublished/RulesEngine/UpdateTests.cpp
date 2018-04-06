@@ -39,7 +39,7 @@ public:
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                02/2016
 +===============+===============+===============+===============+===============+======*/
-struct UpdateTests : ::testing::Test
+struct UpdateTests : ECPresentationTest
 {
     static BeFileName s_seedProjectPath;
     TestRuleSetLocaterPtr m_locater;
@@ -59,12 +59,13 @@ struct UpdateTests : ::testing::Test
     
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         m_localState.GetStubMap().clear();
         
         BeAssert(s_seedProjectPath.DoesPathExist());
         BeFileName projectPath = BeFileName(s_seedProjectPath)
             .PopDir()
-            .AppendToPath(WString(Utf8PrintfString("%s_%s", Utf8String(s_seedProjectPath.GetFileNameWithoutExtension()).c_str(), "Grigas").c_str(), BentleyCharEncoding::Utf8).c_str())
+            .AppendToPath(WString(Utf8PrintfString("%s_%s", Utf8String(s_seedProjectPath.GetFileNameWithoutExtension()).c_str(), BeTest::GetNameOfCurrentTest()).c_str(), BentleyCharEncoding::Utf8).c_str())
             .AppendExtension(s_seedProjectPath.GetExtension().c_str());
         projectPath.BeDeleteFile();
         BeFileName::BeCopyFile(s_seedProjectPath, projectPath, true);

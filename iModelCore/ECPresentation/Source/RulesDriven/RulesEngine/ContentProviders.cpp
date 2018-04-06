@@ -195,33 +195,44 @@ static rapidjson::Document GetNestedContent(NestedContentProviderCR provider, Co
     ContentSetItemPtr item;
     while (provider.GetContentSetItem(item, index++))
         {
-        rapidjson::Document itemJson = item->AsJson(serializationFlags, &json.GetAllocator());
         if (!isRelatedContent && ContentRequest::Values == req)
-            json.CopyFrom(itemJson["Values"][provider.GetContentField().GetName().c_str()], json.GetAllocator());
+            json.CopyFrom(item->GetValues()[provider.GetContentField().GetName().c_str()], json.GetAllocator());
         else if (!isRelatedContent && ContentRequest::DisplayValues == req)
-            json.CopyFrom(itemJson["DisplayValues"][provider.GetContentField().GetName().c_str()], json.GetAllocator());
+            json.CopyFrom(item->GetDisplayValues()[provider.GetContentField().GetName().c_str()], json.GetAllocator());
         else
-            json.PushBack(itemJson, json.GetAllocator());
+            json.PushBack(item->AsJson(serializationFlags, &json.GetAllocator()), json.GetAllocator());
         }
 
     return json;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static bvector<ContentSetItemPtr> GetNestedContentSetItems(NestedContentProviderCR provider)
+    {
+    bvector<ContentSetItemPtr> contentSetItems;
+
+    size_t index = 0;
+    ContentSetItemPtr item;
+    while (provider.GetContentSetItem(item, index++))
+        contentSetItems.push_back(item);
+
+    return contentSetItems;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void MergePrimaryKeys(RapidJsonValueR target, RapidJsonValueCR source, rapidjson::Document::AllocatorType& allocator)
+static void MergePrimaryKeys(bvector<ContentSetItemPtr> const& targetSetItems, bvector<ContentSetItemPtr> const& sourceSetItems)
     {
-    BeAssert(source.IsArray() && target.IsArray());
-    BeAssert(source.Size() == target.Size());    
-    for (rapidjson::SizeType i = 0; i < source.Size(); ++i)
+    BeAssert(targetSetItems.size() == sourceSetItems.size());
+    for (size_t i = 0; i < sourceSetItems.size(); ++i)
         {
-        BeAssert(source[i].HasMember("PrimaryKeys") && target[i]["PrimaryKeys"].IsArray());
-        BeAssert(target[i].HasMember("PrimaryKeys") && target[i]["PrimaryKeys"].IsArray());
-        RapidJsonValueCR sourceKeys = source[i]["PrimaryKeys"];
-        RapidJsonValueR targetKeys = target[i]["PrimaryKeys"];
-        for (rapidjson::SizeType j = 0; j < sourceKeys.Size(); ++j)
-            targetKeys.PushBack(rapidjson::Value(sourceKeys[j], allocator), allocator);
+        bvector<ECInstanceKey>& sourceKeys = sourceSetItems[i]->GetKeys();
+        bvector<ECInstanceKey>& targetKeys = targetSetItems[i]->GetKeys();
+        for (size_t j = 0; j < sourceKeys.size(); ++j)
+            targetKeys.push_back(sourceKeys[j]);
         }
     }
 
@@ -248,91 +259,19 @@ static void MergeField (RapidJsonValueR targetValue, RapidJsonValueR targetDispl
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mantas.Kontrimas                02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void AddMergedFieldNames(RapidJsonValueR targetValue, rapidjson::Document::AllocatorType& targetValuesAllocator,
-    bvector<Utf8String> const& mergedFieldNames)
-    {
-    BeAssert(targetValue.HasMember("MergedFieldNames") && targetValue["MergedFieldNames"].IsArray());
-    RapidJsonValueR targetMergedFieldNames = targetValue["MergedFieldNames"];
-    for (Utf8StringCR fieldName : mergedFieldNames) 
-        {
-        bool inArray = false;
-        for (rapidjson::SizeType i = 0; i < targetMergedFieldNames.Size(); ++i)
-            {
-            if (targetMergedFieldNames[i].GetString() == fieldName)
-                {
-                inArray = true;
-                break;
-                }
-            }
-
-        if (!inArray)
-            targetMergedFieldNames.PushBack(rapidjson::Value(fieldName.c_str(), targetValuesAllocator), targetValuesAllocator);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool MergeContent(RapidJsonValueR targetValues, rapidjson::Document::AllocatorType& targetValuesAllocator, 
-    RapidJsonValueR targetDisplayValues, rapidjson::Document::AllocatorType& targetDisplayValuesAllocator, 
-    RapidJsonValueCR source, bool isRelatedContent, ILocalizationProvider const& localizationProvider)
+static bool MergeContent(RapidJsonValueR targetValues, RapidJsonValueR targetDisplayValues,
+    rapidjson::Document::AllocatorType& targetDisplayValuesAllocator, RapidJsonValueCR source,
+    ILocalizationProvider const& localizationProvider)
     {
-    if (!isRelatedContent)
-        {
-        if (targetValues != source)
-            {
-            // values are different - set the "varies" string
-            MergeField(targetValues, targetDisplayValues, targetDisplayValuesAllocator, localizationProvider);
-            return true;
-            }
-
-        return false;
-        }
-
-    BeAssert(targetValues.IsArray() && source.IsArray());
-    if (targetValues.Size() != source.Size())
+    if (targetValues != source)
         {
         // values are different - set the "varies" string
         MergeField(targetValues, targetDisplayValues, targetDisplayValuesAllocator, localizationProvider);
         return true;
         }
 
-    for (rapidjson::SizeType i = 0; i < targetValues.Size(); ++i)
-        {
-        BeAssert(targetValues[i].HasMember("Values") && source[i].HasMember("Values"));
-        RapidJsonValueR lhsValues = targetValues[i]["Values"];
-        RapidJsonValueCR rhsValues = source[i]["Values"];
-        if (lhsValues != rhsValues)
-            {
-            if (1 < targetValues.Size())
-                {
-                MergeField(targetValues, targetDisplayValues, targetDisplayValuesAllocator, localizationProvider);
-                return true;
-                }
-
-            BeAssert(lhsValues.IsObject() && rhsValues.IsObject());
-            bvector<Utf8String> mergedFieldNames;
-            RapidJsonValueR lhsDisplayValues = targetValues[i]["DisplayValues"];
-            for (rapidjson::Value::ConstMemberIterator iterator = lhsValues.MemberBegin(); iterator != lhsValues.MemberEnd(); ++iterator)
-                {
-                Utf8CP fieldName = iterator->name.GetString();
-                BeAssert(lhsValues.HasMember(fieldName) && rhsValues.HasMember(fieldName));
-                if (lhsValues[fieldName] != rhsValues[fieldName])
-                    {
-                    mergedFieldNames.push_back(fieldName);
-                    MergeField(lhsValues[fieldName], lhsDisplayValues[fieldName],
-                        targetDisplayValuesAllocator, localizationProvider);
-                    }
-                }
-
-            AddMergedFieldNames(targetValues[i], targetValuesAllocator, mergedFieldNames);
-            }
-        }
-
-    // merge PrimaryKeys arrays (only for related fields)
-    MergePrimaryKeys(targetValues, source, targetValuesAllocator);
     return false;
     }
 
@@ -340,10 +279,51 @@ static bool MergeContent(RapidJsonValueR targetValues, rapidjson::Document::Allo
 * @bsimethod                                    Grigas.Petraitis                09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool MergeContent(rapidjson::Document& targetValues, rapidjson::Document& targetDisplayValues, RapidJsonValueCR source,
-    bool isRelatedContent, ILocalizationProvider const& localizationProvider)
+    ILocalizationProvider const& localizationProvider)
     {
-    return MergeContent(targetValues, targetValues.GetAllocator(), targetDisplayValues, targetDisplayValues.GetAllocator(),
-        source, isRelatedContent, localizationProvider);
+    return MergeContent(targetValues, targetDisplayValues, targetDisplayValues.GetAllocator(), source, localizationProvider);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool MergeContentSetItems(bvector<ContentSetItemPtr> const& targetSetItems, bvector<ContentSetItemPtr> const& sourceSetItems, ILocalizationProvider const& localizationProvider)
+    {
+    if (targetSetItems.size() != sourceSetItems.size())
+        {
+        // values are different - set the "varies" string
+        return true;
+        }
+
+    for (size_t i = 0; i < targetSetItems.size(); ++i)
+        {
+        RapidJsonValueR lhsValues = targetSetItems[i]->GetValues();
+        RapidJsonValueCR rhsValues = sourceSetItems[i]->GetValues();
+        if (lhsValues != rhsValues)
+            {
+            if (1 < targetSetItems.size())
+                {
+                // values are only merged if there is one item in contentSetItems vector
+                return true;
+                }
+
+            BeAssert(lhsValues.IsObject() && rhsValues.IsObject());
+            RapidJsonDocumentR lhsDisplayValues = targetSetItems[i]->GetDisplayValues();
+            for (rapidjson::Value::ConstMemberIterator iterator = lhsValues.MemberBegin(); iterator != lhsValues.MemberEnd(); ++iterator)
+                {
+                Utf8CP fieldName = iterator->name.GetString();
+                BeAssert(lhsValues.HasMember(fieldName) && rhsValues.HasMember(fieldName));
+                if (!targetSetItems[i]->IsMerged(fieldName) && lhsValues[fieldName] != rhsValues[fieldName])
+                    {
+                    targetSetItems[i]->GetMergedFieldNames().push_back(fieldName);
+                    MergeField(lhsValues[fieldName], lhsDisplayValues[fieldName], lhsDisplayValues.GetAllocator(), localizationProvider);
+                    }
+                }
+            }
+        }
+
+    MergePrimaryKeys(targetSetItems, sourceSetItems);
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -381,33 +361,74 @@ void ContentProvider::LoadNestedContentFieldValue(ContentSetItemR item, ContentD
         // if records are merged, have to query nested content for each merged record individually 
         // and merge them one after one
         rapidjson::Document contentValues, contentDisplayValues;
+        bvector<ContentSetItemPtr> targetSetitems;
+        bool mergeAllField = false;
+        bool firstPass = true;
         for (ECInstanceKeyCR key : item.GetKeys())
             {
             if (!isRelatedContent && field.GetContentClass().GetId() != key.GetClassId())
                 continue;
 
             provider->SetPrimaryInstanceKey(key);
-            rapidjson::Document instanceValues = GetNestedContent(*provider, ContentRequest::Values, true, GetContext().IsNestedContent(), isRelatedContent);
-            rapidjson::Document instanceDisplayValues = GetNestedContent(*provider, ContentRequest::DisplayValues, true, GetContext().IsNestedContent(), isRelatedContent);
-            if (contentValues.IsNull())
+            if (!isRelatedContent)
                 {
-                // first pass - save the instance content
-                contentValues = std::move(instanceValues);
-                contentDisplayValues = std::move(instanceDisplayValues);
+                rapidjson::Document instanceValues = GetNestedContent(*provider, ContentRequest::Values, true, GetContext().IsNestedContent(), isRelatedContent);
+                rapidjson::Document instanceDisplayValues = GetNestedContent(*provider, ContentRequest::DisplayValues, true, GetContext().IsNestedContent(), isRelatedContent);
+                if (firstPass)
+                    {
+                    // first pass - save the instance content
+                    contentValues = std::move(instanceValues);
+                    contentDisplayValues = std::move(instanceDisplayValues);
+                    firstPass = false;
+                    }
+                else if (MergeContent(contentValues, contentDisplayValues, instanceValues, GetContext().GetLocalizationProvider()))
+                    {
+                    // if detected different values during merge, stop
+                    item.GetMergedFieldNames().push_back(fieldName);
+                    break;
+                    }
                 }
-            else if (MergeContent(contentValues, contentDisplayValues, instanceValues, isRelatedContent, GetContext().GetLocalizationProvider()))
+            else
                 {
-                // if detected different values during merge, stop
-                item.GetMergedFieldNames().push_back(fieldName);
-                break;
+                bvector<ContentSetItemPtr> sourceSetItems = GetNestedContentSetItems(*provider);
+                if (firstPass)
+                    {
+                    // first pass
+                    targetSetitems = sourceSetItems;
+                    firstPass = false;
+                    }
+                else if (MergeContentSetItems(targetSetitems, sourceSetItems, GetContext().GetLocalizationProvider()))
+                    {
+                    // if detected different values during merge, stop
+                    mergeAllField = true;
+                    item.GetMergedFieldNames().push_back(fieldName);
+                    break;
+                    }
                 }
             }
+
+        if (isRelatedContent)
+            {
+            if (mergeAllField)
+                MergeField(contentValues, contentDisplayValues, contentDisplayValues.GetAllocator(), GetContext().GetLocalizationProvider());
+            else
+                {
+                int serializationFlags = GetSerializationFlags(isRelatedContent, true, GetContext().IsNestedContent(), ContentRequest::Values);
+
+                contentValues.SetArray();
+                for (size_t i = 0; i < targetSetitems.size(); ++i)
+                    contentValues.PushBack(targetSetitems[i]->AsJson(serializationFlags, &contentValues.GetAllocator()), contentValues.GetAllocator());
+
+                contentDisplayValues.CopyFrom(contentValues, contentDisplayValues.GetAllocator());
+                }
+            }
+
         if (item.GetDisplayValues().HasMember(fieldName) || item.GetValues().HasMember(fieldName))
             {
             RapidJsonValueR values = item.GetValues()[fieldName];
             RapidJsonValueR displayValues = item.GetDisplayValues()[fieldName];
-            bool areValuesDifferent = MergeContent(values, item.GetValues().GetAllocator(), displayValues, item.GetDisplayValues().GetAllocator(),
-                contentValues, isRelatedContent, GetContext().GetLocalizationProvider());
+            bool areValuesDifferent = MergeContent(values, displayValues, item.GetDisplayValues().GetAllocator(), contentValues,
+                GetContext().GetLocalizationProvider());
             if (areValuesDifferent)
                 item.GetMergedFieldNames().push_back(fieldName);
             }

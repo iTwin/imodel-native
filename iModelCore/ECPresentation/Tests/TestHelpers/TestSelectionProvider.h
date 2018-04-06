@@ -109,14 +109,14 @@ public:
         m_subSelections.erase(&ecdb);
         IConnectionCPtr connection = m_connections.GetConnection(ecdb);
         for (ISelectionChangesListener* listener : m_listeners)
-            listener->NotifySelectionChanged(SelectionChangedEvent(*connection, "TestSource", SelectionChangeType::Replace, false, selection));
+            listener->NotifySelectionChanged(*SelectionChangedEvent::Create(*connection, "TestSource", SelectionChangeType::Replace, false, selection));
         }
     void SetSubSelection(ECDbCR ecdb, KeySetCR selection)
         {
         m_subSelections[&ecdb] = const_cast<KeySetP>(&selection);
         IConnectionCPtr connection = m_connections.GetConnection(ecdb);
         for (ISelectionChangesListener* listener : m_listeners)
-            listener->NotifySelectionChanged(SelectionChangedEvent(*connection, "TestSource", SelectionChangeType::Replace, true, selection));
+            listener->NotifySelectionChanged(*SelectionChangedEvent::Create(*connection, "TestSource", SelectionChangeType::Replace, true, selection));
         }
 };
 

@@ -13,6 +13,7 @@
 #include <ECPresentation/NavNode.h>
 #include <ECPresentation/Content.h>
 #include <ECPresentation/Connection.h>
+#include <ECPresentation/IECPresentationSerializer.h>
 
 BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 
@@ -32,6 +33,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECPresentationManager : public NonCopyableClass
 //__PUBLISH_SECTION_END__
 private:
     static IECPresentationManager* s_instance;
+    static IECPresentationSerializer const* s_serializer;
     
 private:
     folly::Future<NodesPathElement> FindNode(ECDbCR, NavNodeCP, ECInstanceKeyCR, JsonValueCR);
@@ -121,6 +123,9 @@ public:
     //! Get the presentation manager.
     //! @warning @ref IsActive() can be used to verify if a manager is registered.
     ECPRESENTATION_EXPORT static IECPresentationManagerR GetManager();
+
+    //! Set EC presentation serializer
+    ECPRESENTATION_EXPORT static void SetSerializer(IECPresentationSerializer const*);
     
     //! Constructor.
     IECPresentationManager(IConnectionManagerR connections) : m_connections(connections) {}
@@ -131,6 +136,9 @@ public:
     //! Get the connection manager used by this presentation manager.
     IConnectionManagerCR GetConnections() const {return m_connections;}
     IConnectionManagerR Connections() { return m_connections; }
+
+    //! Get EC presentation serializer
+    static IECPresentationSerializer const& GetSerializer();
 /** @} */
 
 /** @name Navigation  

@@ -80,7 +80,6 @@
     <ClCompile Include="Published\PresentationRules\SortingRuleTests.cpp" />
     <ClCompile Include="Published\PresentationRules\StyleOverrideTests.cpp" />
     <ClCompile Include="Published\PresentationRules\UserSettingsGroupTests.cpp" />
-    <ClCompile Include="Published\RulesEngine\ContentSerializationTests.cpp" />
     <ClCompile Include="Published\RulesEngine\Content_LocatingClasses.cpp" />
     <ClCompile Include="Published\RulesEngine\ECInstanceChangeHandlerTests.cpp" />
     <ClCompile Include="Published\RulesEngine\PresentationManagerContentTests.cpp" />
@@ -97,6 +96,7 @@
     <ClCompile Include="NonPublished\RulesEngine\OptimizedExpressionsEvaluationTests.cpp" />
     <ClCompile Include="Published\PresentationRules\InstanceLabelOverrideTests.cpp" />
     <ClCompile Include="Published\DefaultPropertyFormatterTests.cpp" />
+    <ClCompile Include="Published\DgnECPresentationSerializerTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECPresentation\BackDoor.h" />

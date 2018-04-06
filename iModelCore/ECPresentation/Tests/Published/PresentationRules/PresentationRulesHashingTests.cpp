@@ -2,18 +2,19 @@
 |
 |     $Source: Tests/Published/PresentationRules/PresentationRulesHashingTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
 #include <ECPresentation/RulesDriven/Rules/PresentationRules.h>
+#include "../../NonPublished/RulesEngine/TestHelpers.h"
 
 USING_NAMESPACE_BENTLEY_ECPRESENTATION
 
 /*=================================================================================**//**
 * @bsiclass                                     Saulius.Skliutas                09/2017
 +===============+===============+===============+===============+===============+======*/
-struct PresentationRulesHashingTests : ::testing::Test
+struct PresentationRulesHashingTests : ECPresentationTest
     {
     };
 

@@ -18,12 +18,13 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                12/2015
 +===============+===============+===============+===============+===============+======*/
-struct NavigationQueryTests : ::testing::Test
+struct NavigationQueryTests : ECPresentationTest
     {
     ECSchemaReadContextPtr m_schemaContext;
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         BeFileName applicationSchemaDir, temporaryDir;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(applicationSchemaDir);
         BeTest::GetHost().GetOutputRoot(temporaryDir);

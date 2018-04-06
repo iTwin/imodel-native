@@ -11,6 +11,7 @@
 #include "ValueHelpers.h"
 
 IECPresentationManager* IECPresentationManager::s_instance = nullptr;
+IECPresentationSerializer const* IECPresentationManager::s_serializer = nullptr;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -509,3 +510,13 @@ folly::Future<bvector<NodesPathElement>> IECPresentationManager::GetFilteredNode
 * @bsimethod                                    Grigas.Petraitis                03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IECPresentationManager::RegisterImplementation(IECPresentationManager* impl) {s_instance = impl;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void IECPresentationManager::SetSerializer(IECPresentationSerializer const* serializer) {s_serializer = serializer;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IECPresentationSerializer const& IECPresentationManager::GetSerializer() {BeAssert(nullptr != s_serializer); return *s_serializer;}

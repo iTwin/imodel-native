@@ -17,47 +17,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document UpdateRecord::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-
-    switch (m_changeType)
-        {
-        case ChangeType::Delete:
-            {
-            json.AddMember("Type", "Delete", json.GetAllocator());
-            json.AddMember("Node", m_node->AsJson(&json.GetAllocator()), json.GetAllocator());
-            break;
-            }
-        case ChangeType::Insert:
-            {
-            json.AddMember("Type", "Insert", json.GetAllocator());
-            json.AddMember("Node", m_node->AsJson(&json.GetAllocator()), json.GetAllocator());
-            json.AddMember("Position", (uint64_t)m_position, json.GetAllocator());
-            break;
-            }
-        case ChangeType::Update:
-            {
-            json.AddMember("Type", "Update", json.GetAllocator());
-            json.AddMember("Node", m_node->AsJson(&json.GetAllocator()), json.GetAllocator());
-            json.AddMember("Changes", rapidjson::Value(rapidjson::kArrayType), json.GetAllocator());
-            RapidJsonValueR changesJson = json["Changes"];
-            for (JsonChange const& change : m_changes)
-                {
-                rapidjson::Value changeJson(rapidjson::kObjectType);
-                changeJson.AddMember("Name", rapidjson::Value(change.GetName(), json.GetAllocator()), json.GetAllocator());
-                changeJson.AddMember("OldValue", rapidjson::Value(change.GetOldValue(), json.GetAllocator()), json.GetAllocator());
-                changeJson.AddMember("NewValue", rapidjson::Value(change.GetNewValue(), json.GetAllocator()), json.GetAllocator());
-                changesJson.PushBack(changeJson, json.GetAllocator());
-                }
-            break;
-            }
-        }
-
-    NavNodeExtendedData extendedData(*m_node);
-    if (extendedData.HasRulesetId())
-        json.AddMember("RulesetId", rapidjson::Value(extendedData.GetRulesetId(), json.GetAllocator()), json.GetAllocator());
-
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 uint64_t s_taskId = 1;

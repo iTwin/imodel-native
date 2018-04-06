@@ -21,7 +21,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct QueryExecutorTests : ::testing::Test
+struct QueryExecutorTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
     
@@ -48,6 +48,7 @@ struct QueryExecutorTests : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         Localization::Init();
         m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb());
         m_customFunctionsInjector = new CustomFunctionsInjector(m_connections, *m_connection);

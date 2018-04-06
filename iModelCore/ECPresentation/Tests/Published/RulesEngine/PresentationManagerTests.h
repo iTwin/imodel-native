@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/RulesEngine/PresentationManagerTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -15,7 +15,7 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct RulesDrivenECPresentationManagerTests : ::testing::Test
+struct RulesDrivenECPresentationManagerTests : ECPresentationTest
     {
     static ECDbTestProject* s_project;
 

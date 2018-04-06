@@ -18,19 +18,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document ConnectionEvent::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("EventType", (int)m_eventType, json.GetAllocator());
-
-    rapidjson::Value connectionJson(rapidjson::kObjectType);
-    connectionJson.AddMember("ConnectionId", rapidjson::Value(m_connection->GetId().c_str(), json.GetAllocator()), json.GetAllocator());
-    if (m_eventType == ConnectionEventType::Opened)
-        connectionJson.AddMember("IsProjectPrimary", m_isPrimaryConnection, json.GetAllocator());
-    else
-        connectionJson.AddMember("IsProjectPrimary", rapidjson::Value(), json.GetAllocator());
-    json.AddMember("Connection", connectionJson, json.GetAllocator());
-
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 struct ProxyConnection;

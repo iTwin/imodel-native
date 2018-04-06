@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
+#include <ECPresentation/ContentFieldEditors.h>
 #include "PropertyInfoStore.h"
-#include "ContentFieldEditors.h"
 #include "LoggingHelper.h"
 
 /*-----------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/PresentationRules/PresentationRulesTests.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -14,7 +14,7 @@ BEGIN_ECPRESENTATIONTESTS_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct PresentationRulesTests : ::testing::Test
+struct PresentationRulesTests : ECPresentationTest
     {
     static Utf8String ToPrettyString(BeXmlDomCR xml)
         {

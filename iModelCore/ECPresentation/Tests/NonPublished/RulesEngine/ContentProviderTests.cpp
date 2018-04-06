@@ -33,6 +33,7 @@ void ContentProviderTests::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentProviderTests::SetUp()
     {
+    ECPresentationTest::SetUp();
     s_project->GetECDb().AbandonChanges();
 
     Localization::Init();

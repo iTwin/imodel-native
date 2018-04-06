@@ -39,7 +39,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                10/2016
 +===============+===============+===============+===============+===============+======*/
-struct DefaultPropertyFormatterTests : ::testing::Test
+struct DefaultPropertyFormatterTests : ECPresentationTest
     {
     DefaultPropertyFormatter m_formatter;
     ECSchemaReadContextPtr m_schemaContext;
@@ -48,6 +48,7 @@ struct DefaultPropertyFormatterTests : ::testing::Test
 
     void SetUp() override
         {
+        ECPresentationTest::SetUp();
         Localization::Init();
 
         BeFileName assetsPath;

@@ -258,13 +258,13 @@ void  SelectionManager::RemoveSyncHandler(SelectionSyncHandlerR handler)
 void SelectionManager::BroadcastSelectionChangedEvent(IConnectionCR connection, Utf8CP source, SelectionChangeType changeType, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData) const
     {
     // create the selection changed event
-    SelectionChangedEvent evt(connection, source, changeType, isSubSelection, keys);
-    evt.GetExtendedDataR().CopyFrom(extendedData, evt.GetExtendedDataAllocator());
+    SelectionChangedEventPtr evt = SelectionChangedEvent::Create(connection, source, changeType, isSubSelection, keys);
+    evt->GetExtendedDataR().CopyFrom(extendedData, evt->GetExtendedDataAllocator());
 
     // notify listeners on the work thread
     bvector<ISelectionChangesListener*> listeners = m_listeners;
     for (ISelectionChangesListener* listener : listeners)
-        listener->NotifySelectionChanged(evt);
+        listener->NotifySelectionChanged(*evt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -413,65 +413,20 @@ KeySetCPtr SelectionManager::_GetSubSelection(ECDbCR ecdb) const
     return GetStorage(*connection, true).GetSelection();
     }
 
-const Utf8CP SelectionChangedEvent::JSON_MEMBER_Source = "Source";
-const Utf8CP SelectionChangedEvent::JSON_MEMBER_ConnectionId = "ConnectionId";
-const Utf8CP SelectionChangedEvent::JSON_MEMBER_IsSubSelection = "IsSubSelection";
-const Utf8CP SelectionChangedEvent::JSON_MEMBER_ChangeType = "ChangeType";
-const Utf8CP SelectionChangedEvent::JSON_MEMBER_Keys = "Keys";
-const Utf8CP SelectionChangedEvent::JSON_MEMBER_ExtendedData = "ExtendedData";
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document SelectionChangedEvent::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json;
-    json.SetObject();
-
-    if (nullptr != m_connection)
-        json.AddMember(rapidjson::StringRef(JSON_MEMBER_ConnectionId), rapidjson::Value(m_connection->GetId().c_str(), json.GetAllocator()), json.GetAllocator());
-
-    json.AddMember(rapidjson::StringRef(JSON_MEMBER_Source), rapidjson::StringRef(m_sourceName.c_str()), json.GetAllocator());
-    json.AddMember(rapidjson::StringRef(JSON_MEMBER_IsSubSelection), m_isSubSelection, json.GetAllocator());
-    json.AddMember(rapidjson::StringRef(JSON_MEMBER_ChangeType), (int)m_changeType, json.GetAllocator());
-    json.AddMember(rapidjson::StringRef(JSON_MEMBER_Keys), m_keys->AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember(rapidjson::StringRef(JSON_MEMBER_ExtendedData), rapidjson::Value(GetExtendedData(), json.GetAllocator()), json.GetAllocator());
-
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
-// @bsimethod                                    Grigas.Petraitis                09/2016
+* @bsimethod                                    Mantas.Kontrimas                03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-SelectionChangedEvent::SelectionChangedEvent(IConnectionCacheCR connectionCache, JsonValueCR json)
-    : m_connection(nullptr)
+SelectionChangedEventPtr SelectionChangedEvent::FromJson(IConnectionCacheCR connectionCache, JsonValueCR json)
     {
-    BeAssert(json.isMember(JSON_MEMBER_ConnectionId) && json[JSON_MEMBER_ConnectionId].isString());
-    Utf8CP connectionId = json[JSON_MEMBER_ConnectionId].asCString();
-    m_connection = connectionCache.GetConnection(connectionId);
-
-    BeAssert(json.isMember(JSON_MEMBER_Source) && json[JSON_MEMBER_Source].isString());
-    m_sourceName = json[JSON_MEMBER_Source].asCString();
-
-    BeAssert(json.isMember(JSON_MEMBER_ChangeType) && json[JSON_MEMBER_ChangeType].isInt());
-    m_changeType = (SelectionChangeType)json[JSON_MEMBER_ChangeType].asInt();
-
-    BeAssert(json.isMember(JSON_MEMBER_IsSubSelection) && json[JSON_MEMBER_IsSubSelection].isBool());
-    m_isSubSelection = json[JSON_MEMBER_IsSubSelection].asBool();
-
-    NavNodeKeySet keys;
-    if (json.isMember(JSON_MEMBER_Keys))
-        {
-        JsonValueCR keysJson = json[JSON_MEMBER_Keys];
-        m_keys = KeySet::FromJson(keysJson);
-        }
-
-    if (json.isMember(JSON_MEMBER_ExtendedData) && json[JSON_MEMBER_ExtendedData].isObject() && !json[JSON_MEMBER_ExtendedData].empty())
-        {
-        Utf8String serializedExtendedData = Json::FastWriter().write(json[JSON_MEMBER_ExtendedData]);
-        rapidjson::Document extendedData;
-        extendedData.Parse(serializedExtendedData.c_str());
-        GetExtendedDataR().CopyFrom(extendedData, GetExtendedDataAllocator());
-        }
+    return IECPresentationManager::GetSerializer().GetSelectionChangedEventFromJson(connectionCache, json);
     }
 
 //---------------------------------------------------------------------------------------

@@ -26,37 +26,9 @@ Utf8String NavNodeKey::GetNodeHash() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T_JSON>
-static NavNodeKeyPtr CreateNodeKeyFromJson(Utf8CP type, T_JSON const& json)
-    {
-    if (nullptr == type)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    if (0 == strcmp(NAVNODE_TYPE_ECInstanceNode, type))
-        return ECInstanceNodeKey::Create(json);
-    if (0 == strcmp(NAVNODE_TYPE_ECClassGroupingNode, type))
-        return ECClassGroupingNodeKey::Create(json);
-    if (0 == strcmp(NAVNODE_TYPE_ECPropertyGroupingNode, type))
-        return ECPropertyGroupingNodeKey::Create(json);
-    if (0 == strcmp(NAVNODE_TYPE_DisplayLabelGroupingNode, type))
-        return LabelGroupingNodeKey::Create(json);
-    return NavNodeKey::Create(json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeKeyPtr NavNodeKey::FromJson(RapidJsonValueCR json)
     {
-    if (!json.IsObject() || json.IsNull())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    Utf8CP type = json["Type"].GetString();
-    return CreateNodeKeyFromJson<rapidjson::Value>(type, json);
+    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJsonPoly(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -64,35 +36,7 @@ NavNodeKeyPtr NavNodeKey::FromJson(RapidJsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeKeyPtr NavNodeKey::FromJson(JsonValueCR json)
     {
-    if (!json.isObject() || json.isNull())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-    Utf8CP type = json["Type"].asCString();
-    return CreateNodeKeyFromJson<Json::Value>(type, json);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<Utf8String> ParseNodeKeyHashPath(JsonValueCR pathJson)
-    {
-    bvector<Utf8String> path;
-    for (JsonValueCR pathElement : pathJson)
-        path.push_back(pathElement.asString());
-    return path;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                01/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bvector<Utf8String> ParseNodeKeyHashPath(RapidJsonValueCR pathJson)
-    {
-    bvector<Utf8String> path;
-    for (RapidJsonValueCR pathElement : pathJson.GetArray())
-        path.push_back(pathElement.GetString());
-    return path;
+    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJsonPoly(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -100,8 +44,7 @@ static bvector<Utf8String> ParseNodeKeyHashPath(RapidJsonValueCR pathJson)
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeKeyPtr NavNodeKey::Create(JsonValueCR json)
     {
-    Utf8CP type = json["Type"].asCString();
-    return Create(type, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -109,24 +52,15 @@ NavNodeKeyPtr NavNodeKey::Create(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 NavNodeKeyPtr NavNodeKey::Create(RapidJsonValueCR json)
     {
-    Utf8CP type = json["Type"].GetString();
-    return Create(type, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return IECPresentationManager::GetSerializer().GetNavNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
+* @bsimethod                                    Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document NavNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document NavNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();
-    json.AddMember("Type", rapidjson::Value(m_type.c_str(), json.GetAllocator()), json.GetAllocator());
-
-    rapidjson::Value pathJson(rapidjson::kArrayType);
-    for (Utf8StringCR pathElement : m_pathFromRoot)
-        pathJson.PushBack(rapidjson::Value(pathElement.c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("PathFromRoot", pathJson, json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,9 +106,7 @@ int NavNodeKey::_Compare(NavNodeKey const& other) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(JsonValueCR json)
     {
-    ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    ECInstanceId instanceId(BeJsonUtilities::UInt64FromValue(json["ECInstanceId"]));
-    return Create(classId, instanceId, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return IECPresentationManager::GetSerializer().GetECInstanceNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -182,20 +114,7 @@ RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(JsonValueCR json)
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ECInstanceNodeKey> ECInstanceNodeKey::Create(RapidJsonValueCR json)
     {
-    ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    ECInstanceId instanceId(BeRapidJsonUtilities::UInt64FromValue(json["ECInstanceId"]));
-    return Create(classId, instanceId, ParseNodeKeyHashPath(json["PathFromRoot"]));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                09/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ECInstanceNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
-    {
-    rapidjson::Document json = NavNodeKey::_AsJson(allocator);
-    json.AddMember("ECClassId", rapidjson::Value(m_instanceKey.GetClassId().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("ECInstanceId", rapidjson::Value(m_instanceKey.GetInstanceId().ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().GetECInstanceNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -209,6 +128,14 @@ bool ECInstanceNodeKey::_IsSimilar(NavNodeKey const& other) const
     BeAssert(nullptr != dynamic_cast<ECInstanceNodeKey const*>(&other));
     ECInstanceNodeKey const& otherKey = static_cast<ECInstanceNodeKey const&>(other);
     return m_instanceKey == otherKey.m_instanceKey;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document ECInstanceNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -226,8 +153,7 @@ MD5 ECInstanceNodeKey::_ComputeHash() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(JsonValueCR json)
     {
-    ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    return Create(classId, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return IECPresentationManager::GetSerializer().GetECClassGroupingNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,18 +161,15 @@ RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(JsonValueCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ECClassGroupingNodeKey> ECClassGroupingNodeKey::Create(RapidJsonValueCR json)
     {
-    ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    return Create(classId, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return IECPresentationManager::GetSerializer().GetECClassGroupingNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2018
+* @bsimethod                                    Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ECClassGroupingNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document ECClassGroupingNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json = NavNodeKey::_AsJson(allocator);
-    json.AddMember("ECClassId", rapidjson::Value(m_classId.ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -264,14 +187,7 @@ MD5 ECClassGroupingNodeKey::_ComputeHash() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(JsonValueCR json)
     {
-    ECClassId classId(BeJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    Utf8CP propertyName = json["PropertyPane"].asCString();
-    if (!json.isMember("GroupingValue"))
-        return Create(classId, propertyName, nullptr, ParseNodeKeyHashPath(json["PathFromRoot"]));
-
-    rapidjson::Document groupingValue;
-    groupingValue.Parse(Json::FastWriter().write(json["GroupingValue"]).c_str());
-    return Create(classId, propertyName, &groupingValue, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return IECPresentationManager::GetSerializer().GetECPropertyGroupingNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -279,25 +195,15 @@ RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(JsonV
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<ECPropertyGroupingNodeKey> ECPropertyGroupingNodeKey::Create(RapidJsonValueCR json)
     {
-    ECClassId classId(BeRapidJsonUtilities::UInt64FromValue(json["ECClassId"]));
-    Utf8CP propertyName = json["PropertyPane"].GetString();
-    rapidjson::Value const* groupingValue = nullptr;
-    if (json.HasMember("GroupingValue"))
-        groupingValue = &json["GroupingValue"];
-    return Create(classId, propertyName, groupingValue, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return IECPresentationManager::GetSerializer().GetECPropertyGroupingNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2018
+* @bsimethod                                    Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document ECPropertyGroupingNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document ECPropertyGroupingNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json = NavNodeKey::_AsJson(allocator);
-    json.AddMember("ECClassId", rapidjson::Value(m_classId.ToString().c_str(), json.GetAllocator()), json.GetAllocator());
-    json.AddMember("PropertyName", rapidjson::Value(m_propertyName.c_str(), json.GetAllocator()), json.GetAllocator());
-    if (nullptr != m_groupingValue)
-        json.AddMember("GroupingValue", rapidjson::Value(*m_groupingValue, json.GetAllocator()), json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -317,8 +223,7 @@ MD5 ECPropertyGroupingNodeKey::_ComputeHash() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::Create(JsonValueCR json)
     {
-    Utf8CP label = json["Label"].asCString();
-    return Create(label, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return IECPresentationManager::GetSerializer().GetLabelGroupingNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,18 +231,15 @@ RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::Create(JsonValueCR jso
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<LabelGroupingNodeKey> LabelGroupingNodeKey::Create(RapidJsonValueCR json)
     {
-    Utf8CP label = json["Label"].GetString();
-    return Create(label, ParseNodeKeyHashPath(json["PathFromRoot"]));
+    return IECPresentationManager::GetSerializer().GetLabelGroupingNodeKeyFromJson(json);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                02/2018
+* @bsimethod                                    Mantas.Kontrimas                04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document LabelGroupingNodeKey::_AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document LabelGroupingNodeKey::_AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json = NavNodeKey::_AsJson(allocator);
-    json.AddMember("Label", rapidjson::Value(m_label.c_str(), json.GetAllocator()), json.GetAllocator());
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -508,26 +410,7 @@ uint64_t KeySet::Remove(KeySetCR toRemove)
 +---------------+---------------+---------------+---------------+---------------+------*/
 rapidjson::Document KeySet::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    json.SetObject();  
-    rapidjson::Value instances(rapidjson::kObjectType);
-    for (auto& pair : m_instances)
-        {
-        ECClassId classId = pair.first;
-        rapidjson::Value instanceIds(rapidjson::kArrayType);
-        for (ECInstanceId const& instanceId : pair.second)
-            instanceIds.PushBack(instanceId.GetValueUnchecked(), json.GetAllocator());
-        instances.AddMember(rapidjson::Value(classId.ToString().c_str(), json.GetAllocator()), instanceIds, json.GetAllocator());
-        }
-
-    rapidjson::Value nodeKeys(rapidjson::kArrayType);
-    for (NavNodeKeyCPtr const& key : m_nodes)
-        nodeKeys.PushBack(key->AsJson(&json.GetAllocator()), json.GetAllocator());
-
-    json.AddMember("InstanceKeys", instances, json.GetAllocator());
-    json.AddMember("NodeKeys", nodeKeys, json.GetAllocator());
-
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -535,50 +418,31 @@ rapidjson::Document KeySet::AsJson(rapidjson::Document::AllocatorType* allocator
 +---------------+---------------+---------------+---------------+---------------+------*/
 KeySetPtr KeySet::FromJson(JsonValueCR json)
     {
-    InstanceKeyMap instanceKeys;
-    JsonValueCR instanceKey = json["InstanceKeys"];
-    bvector<Utf8String> classIds = instanceKey.getMemberNames();
-    for (Utf8StringCR classIdString : classIds)
-        {
-        bset<ECInstanceId> instanceIdSet;
-        for (JsonValueCR instanceIdJson : instanceKey[classIdString.c_str()])
-            {
-            uint64_t instanceId = BeJsonUtilities::UInt64FromValue(instanceIdJson);
-            instanceIdSet.insert(ECInstanceId(instanceId));
-            }
-        ECClassId ecClassId;
-        ECClassId::FromString(ecClassId, classIdString.c_str());
-        instanceKeys[ecClassId] = instanceIdSet;
-        }
+    return IECPresentationManager::GetSerializer().GetKeySetFromJson(json);
+    }
 
-    NavNodeKeySet nodeKeys;
-    for (JsonValueCR nodeKeyJson : json["NodeKeys"])
-        nodeKeys.insert(NavNodeKey::FromJson(nodeKeyJson));
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+NavNodePtr NavNode::FromJson(RapidJsonValueCR json)
+    {
+    return IECPresentationManager::GetSerializer().GetNavNodeFromJson(json);
+    }
 
-    return KeySet::Create(instanceKeys, nodeKeys);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+rapidjson::Document NavNode::AsJson(rapidjson::Document::AllocatorType* allocator) const
+    {
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-rapidjson::Document NodesPathElement::AsJson(rapidjson::MemoryPoolAllocator<>* allocator) const
+rapidjson::Document NodesPathElement::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
-    rapidjson::Document json(allocator);
-    if (m_node.IsNull())
-        return json;
-
-    json.SetObject();
-    json.AddMember("Node", m_node->AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Index", (uint64_t)m_index, json.GetAllocator());
-    json.AddMember("IsMarked", m_isMarked, json.GetAllocator());
-
-    rapidjson::Value childrenJson;
-    childrenJson.SetArray();
-    for (NodesPathElement const& child : m_children)
-        childrenJson.PushBack(child.AsJson(&json.GetAllocator()), json.GetAllocator());
-    json.AddMember("Children", childrenJson, json.GetAllocator());
-
-    return json;
+    return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
     }
 
 /*---------------------------------------------------------------------------------**//**

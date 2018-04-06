@@ -20,7 +20,7 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct RulesDrivenECPresentationManagerMultithreadingTests : ::testing::Test
+struct RulesDrivenECPresentationManagerMultithreadingTests : ECPresentationTest
     {
     static Utf8CP s_projectName;
     static ECDbTestProject* s_project;
@@ -63,6 +63,7 @@ void RulesDrivenECPresentationManagerMultithreadingTests::TearDownTestCase()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerMultithreadingTests::SetUp()
     {
+    ECPresentationTest::SetUp();
     m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
     m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb()).get();
     Sync();
