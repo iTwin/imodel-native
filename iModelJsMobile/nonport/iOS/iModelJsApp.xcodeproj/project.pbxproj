@@ -45,7 +45,6 @@
 		2699BBE420779E1800F763EE /* libBeCurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC420779E1800F763EE /* libBeCurl.a */; };
 		2699BBE520779E1800F763EE /* liblibaprutil010504.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC520779E1800F763EE /* liblibaprutil010504.a */; };
 		2699BBE620779E1800F763EE /* libBeSQLite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC620779E1800F763EE /* libBeSQLite.a */; };
-		26D5A7F72076C13B001AB387 /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 26D5A7F62076C13B001AB387 /* index.html */; };
 		26E6C0B62076B63E0031769D /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0B52076B63E0031769D /* AppDelegate.m */; };
 		26E6C0B92076B63E0031769D /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0B82076B63E0031769D /* ViewController.m */; };
 		26E6C0BC2076B63E0031769D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 26E6C0BA2076B63E0031769D /* Main.storyboard */; };
@@ -94,7 +93,6 @@
 		2699BBC420779E1800F763EE /* libBeCurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeCurl.a; sourceTree = "<group>"; };
 		2699BBC520779E1800F763EE /* liblibaprutil010504.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = liblibaprutil010504.a; sourceTree = "<group>"; };
 		2699BBC620779E1800F763EE /* libBeSQLite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libBeSQLite.a; sourceTree = "<group>"; };
-		26D5A7F62076C13B001AB387 /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		26E6C0B12076B63E0031769D /* iModelJsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iModelJsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		26E6C0B42076B63E0031769D /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		26E6C0B52076B63E0031769D /* AppDelegate.m */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -178,7 +176,6 @@
 			isa = PBXGroup;
 			children = (
 				2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */,
-				26D5A7F62076C13B001AB387 /* index.html */,
 				26E6C0B42076B63E0031769D /* AppDelegate.h */,
 				26E6C0B52076B63E0031769D /* AppDelegate.m */,
 				26E6C0B72076B63E0031769D /* ViewController.h */,
@@ -297,7 +294,6 @@
 			files = (
 				26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */,
 				2699BBA020779C4200F763EE /* iModelJsApp.xcconfig in Resources */,
-				26D5A7F72076C13B001AB387 /* index.html in Resources */,
 				26E6C0BE2076B63F0031769D /* Assets.xcassets in Resources */,
 				26E6C0BC2076B63E0031769D /* Main.storyboard in Resources */,
 			);
@@ -318,7 +314,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\n";
+			shellScript = "AppBundleRoot=\"$BUILT_PRODUCTS_DIR/$FULL_PRODUCT_NAME\"\n\n# iModelJsNative Assets folder\nrm -rf $AppBundleRoot/iModelJsNative\nmkdir $AppBundleRoot/iModelJsNative\ncp -L -R $OutRoot$BuildArchitecture/Product/iModelJs-Tests/Assets $AppBundleRoot/iModelJsNative\n\n# FrontEnd Assets folder\nrm -rf $AppBundleRoot/FrontEnd\nmkdir $AppBundleRoot/FrontEnd\ncp $AssetRoot/index.html $AppBundleRoot/FrontEnd/\ncp $AssetRoot/MyAppUi.js $AppBundleRoot/FrontEnd/\n\n# BackEnd Assets folder\nrm -rf $AppBundleRoot/BackEnd\nmkdir $AppBundleRoot/BackEnd\ncp $AssetRoot/backend/MyAppMobileBackend.js $AppBundleRoot/BackEnd/\ncp -L -R $AssetRoot/backend/assets $AppBundleRoot/BackEnd/\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

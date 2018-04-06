@@ -1,4 +1,5 @@
 SrcRoot = /Users/satyakam/code/imodeljsdev/src/
 OutRoot = /Users/satyakam/code/imodeljsdev/out-release/
+AssetRoot = /Users/satyakam/code/imjs/test-imodel-service/source/backend/lib/backend/dist/
 BuildArchitecture = iOSARM64
 

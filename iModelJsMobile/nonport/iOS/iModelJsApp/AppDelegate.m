@@ -22,7 +22,8 @@ extern void imodeljs_addon_setMobileResourcesDir(Utf8CP d);
 
     // Start BackEnd libUv Thread
     NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
-    imodeljs_addon_setMobileResourcesDir(appFolderPath.UTF8String);
+    NSString *iModelJsNativePath = [appFolderPath stringByAppendingPathComponent:@"iModelJsNative"];
+    imodeljs_addon_setMobileResourcesDir(iModelJsNativePath.UTF8String);
     BentleyApi::iModelJs::ServicesTier::UvHost host;
     while (!host.IsReady()) { ; }
 

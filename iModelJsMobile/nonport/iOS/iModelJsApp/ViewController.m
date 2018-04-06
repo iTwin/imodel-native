@@ -24,7 +24,9 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    NSURL* url = [[NSBundle mainBundle] URLForResource:@"index" withExtension:@"html"];
+    NSString *appFolderPath = [[NSBundle mainBundle] resourcePath];
+    NSString *frontEndIndexPath = [appFolderPath stringByAppendingPathComponent:@"FrontEnd/index.html"];
+    NSURL* url = [NSURL fileURLWithPath:frontEndIndexPath];
     NSURLRequest* request = [NSURLRequest requestWithURL:url];
     [self.webView loadRequest:request];
 }
