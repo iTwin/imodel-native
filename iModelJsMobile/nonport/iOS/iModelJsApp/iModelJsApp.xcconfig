@@ -1,0 +1,4 @@
+SrcRoot = /Users/satyakam/code/imodeljsdev/src/
+OutRoot = /Users/satyakam/code/imodeljsdev/out-release/
+BuildArchitecture = iOSARM64
+

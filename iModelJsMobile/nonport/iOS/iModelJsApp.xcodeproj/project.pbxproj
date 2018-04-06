@@ -7,6 +7,42 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2699BBA020779C4200F763EE /* iModelJsApp.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */; };
+		2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA120779DAF00F763EE /* CFNetwork.framework */; };
+		2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA320779DB500F763EE /* JavaScriptCore.framework */; };
+		2699BBA620779DBF00F763EE /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA520779DBE00F763EE /* CoreFoundation.framework */; };
+		2699BBC720779E1800F763EE /* log4j.dtd in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA720779E1600F763EE /* log4j.dtd */; };
+		2699BBC820779E1800F763EE /* libBeOpenSSL.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA820779E1600F763EE /* libBeOpenSSL.a */; };
+		2699BBC920779E1800F763EE /* libECObjects.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBA920779E1600F763EE /* libECObjects.a */; };
+		2699BBCA20779E1800F763EE /* libBentleyGeom.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAA20779E1600F763EE /* libBentleyGeom.a */; };
+		2699BBCB20779E1800F763EE /* libBeLibxml2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAB20779E1600F763EE /* libBeLibxml2.a */; };
+		2699BBCC20779E1800F763EE /* libBaseGeoCoord.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAC20779E1600F763EE /* libBaseGeoCoord.a */; };
+		2699BBCD20779E1800F763EE /* libBeHttp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAD20779E1600F763EE /* libBeHttp.a */; };
+		2699BBCE20779E1800F763EE /* libBeXml.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAE20779E1600F763EE /* libBeXml.a */; };
+		2699BBCF20779E1800F763EE /* liblibapr010502.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBAF20779E1600F763EE /* liblibapr010502.a */; };
+		2699BBD020779E1800F763EE /* libBeLibJpegTurbo.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB020779E1600F763EE /* libBeLibJpegTurbo.a */; };
+		2699BBD120779E1800F763EE /* libDgnPlatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB120779E1600F763EE /* libDgnPlatform.a */; };
+		2699BBD220779E1800F763EE /* libfreetype2.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB220779E1600F763EE /* libfreetype2.a */; };
+		2699BBD320779E1800F763EE /* libBentleyGeomSerialization.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB320779E1600F763EE /* libBentleyGeomSerialization.a */; };
+		2699BBD420779E1800F763EE /* libBeZlib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB420779E1700F763EE /* libBeZlib.a */; };
+		2699BBD520779E1800F763EE /* libBePng.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB520779E1700F763EE /* libBePng.a */; };
+		2699BBD620779E1800F763EE /* libBeCsmapStatic.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB620779E1700F763EE /* libBeCsmapStatic.a */; };
+		2699BBD720779E1800F763EE /* liblzma.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB720779E1700F763EE /* liblzma.a */; };
+		2699BBD820779E1800F763EE /* libBeJpeg.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB820779E1700F763EE /* libBeJpeg.a */; };
+		2699BBD920779E1800F763EE /* libBeFolly.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBB920779E1700F763EE /* libBeFolly.a */; };
+		2699BBDA20779E1800F763EE /* libBentley.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBA20779E1700F763EE /* libBentley.a */; };
+		2699BBDB20779E1800F763EE /* libBeSQLiteEC.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBB20779E1700F763EE /* libBeSQLiteEC.a */; };
+		2699BBDC20779E1800F763EE /* libbentleylog4cxx.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBC20779E1700F763EE /* libbentleylog4cxx.a */; };
+		2699BBDD20779E1800F763EE /* libECPresentation.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBD20779E1700F763EE /* libECPresentation.a */; };
+		2699BBDE20779E1800F763EE /* libliblog4cxx010.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBE20779E1700F763EE /* libliblog4cxx010.a */; };
+		2699BBDF20779E1800F763EE /* libsnappy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBBF20779E1700F763EE /* libsnappy.a */; };
+		2699BBE020779E1800F763EE /* libBeIcu4c.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC020779E1700F763EE /* libBeIcu4c.a */; };
+		2699BBE120779E1800F763EE /* libUnits.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC120779E1700F763EE /* libUnits.a */; };
+		2699BBE220779E1800F763EE /* libBeJsonCpp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC220779E1700F763EE /* libBeJsonCpp.a */; };
+		2699BBE320779E1800F763EE /* libBeJavaScript.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC320779E1800F763EE /* libBeJavaScript.a */; };
+		2699BBE420779E1800F763EE /* libBeCurl.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC420779E1800F763EE /* libBeCurl.a */; };
+		2699BBE520779E1800F763EE /* liblibaprutil010504.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC520779E1800F763EE /* liblibaprutil010504.a */; };
+		2699BBE620779E1800F763EE /* libBeSQLite.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2699BBC620779E1800F763EE /* libBeSQLite.a */; };
 		26D5A7F72076C13B001AB387 /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = 26D5A7F62076C13B001AB387 /* index.html */; };
 		26E6C0B62076B63E0031769D /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0B52076B63E0031769D /* AppDelegate.m */; };
 		26E6C0B92076B63E0031769D /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 26E6C0B82076B63E0031769D /* ViewController.m */; };
@@ -18,6 +54,42 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = iModelJsApp.xcconfig; sourceTree = "<group>"; };
+		2699BBA120779DAF00F763EE /* CFNetwork.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CFNetwork.framework; path = System/Library/Frameworks/CFNetwork.framework; sourceTree = SDKROOT; };
+		2699BBA320779DB500F763EE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		2699BBA520779DBE00F763EE /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		2699BBA720779E1600F763EE /* log4j.dtd */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = log4j.dtd; sourceTree = "<group>"; };
+		2699BBA820779E1600F763EE /* libBeOpenSSL.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeOpenSSL.a; sourceTree = "<group>"; };
+		2699BBA920779E1600F763EE /* libECObjects.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECObjects.a; sourceTree = "<group>"; };
+		2699BBAA20779E1600F763EE /* libBentleyGeom.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeom.a; sourceTree = "<group>"; };
+		2699BBAB20779E1600F763EE /* libBeLibxml2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibxml2.a; sourceTree = "<group>"; };
+		2699BBAC20779E1600F763EE /* libBaseGeoCoord.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBaseGeoCoord.a; sourceTree = "<group>"; };
+		2699BBAD20779E1600F763EE /* libBeHttp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeHttp.a; sourceTree = "<group>"; };
+		2699BBAE20779E1600F763EE /* libBeXml.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeXml.a; sourceTree = "<group>"; };
+		2699BBAF20779E1600F763EE /* liblibapr010502.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibapr010502.a; sourceTree = "<group>"; };
+		2699BBB020779E1600F763EE /* libBeLibJpegTurbo.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeLibJpegTurbo.a; sourceTree = "<group>"; };
+		2699BBB120779E1600F763EE /* libDgnPlatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libDgnPlatform.a; sourceTree = "<group>"; };
+		2699BBB220779E1600F763EE /* libfreetype2.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libfreetype2.a; sourceTree = "<group>"; };
+		2699BBB320779E1600F763EE /* libBentleyGeomSerialization.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentleyGeomSerialization.a; sourceTree = "<group>"; };
+		2699BBB420779E1700F763EE /* libBeZlib.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeZlib.a; sourceTree = "<group>"; };
+		2699BBB520779E1700F763EE /* libBePng.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBePng.a; sourceTree = "<group>"; };
+		2699BBB620779E1700F763EE /* libBeCsmapStatic.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCsmapStatic.a; sourceTree = "<group>"; };
+		2699BBB720779E1700F763EE /* liblzma.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblzma.a; sourceTree = "<group>"; };
+		2699BBB820779E1700F763EE /* libBeJpeg.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJpeg.a; sourceTree = "<group>"; };
+		2699BBB920779E1700F763EE /* libBeFolly.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeFolly.a; sourceTree = "<group>"; };
+		2699BBBA20779E1700F763EE /* libBentley.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBentley.a; sourceTree = "<group>"; };
+		2699BBBB20779E1700F763EE /* libBeSQLiteEC.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLiteEC.a; sourceTree = "<group>"; };
+		2699BBBC20779E1700F763EE /* libbentleylog4cxx.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libbentleylog4cxx.a; sourceTree = "<group>"; };
+		2699BBBD20779E1700F763EE /* libECPresentation.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libECPresentation.a; sourceTree = "<group>"; };
+		2699BBBE20779E1700F763EE /* libliblog4cxx010.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libliblog4cxx010.a; sourceTree = "<group>"; };
+		2699BBBF20779E1700F763EE /* libsnappy.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsnappy.a; sourceTree = "<group>"; };
+		2699BBC020779E1700F763EE /* libBeIcu4c.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeIcu4c.a; sourceTree = "<group>"; };
+		2699BBC120779E1700F763EE /* libUnits.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libUnits.a; sourceTree = "<group>"; };
+		2699BBC220779E1700F763EE /* libBeJsonCpp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJsonCpp.a; sourceTree = "<group>"; };
+		2699BBC320779E1800F763EE /* libBeJavaScript.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeJavaScript.a; sourceTree = "<group>"; };
+		2699BBC420779E1800F763EE /* libBeCurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeCurl.a; sourceTree = "<group>"; };
+		2699BBC520779E1800F763EE /* liblibaprutil010504.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblibaprutil010504.a; sourceTree = "<group>"; };
+		2699BBC620779E1800F763EE /* libBeSQLite.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libBeSQLite.a; sourceTree = "<group>"; };
 		26D5A7F62076C13B001AB387 /* index.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; path = index.html; sourceTree = "<group>"; };
 		26E6C0B12076B63E0031769D /* iModelJsApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iModelJsApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		26E6C0B42076B63E0031769D /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -37,6 +109,41 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2699BBC720779E1800F763EE /* log4j.dtd in Frameworks */,
+				2699BBC820779E1800F763EE /* libBeOpenSSL.a in Frameworks */,
+				2699BBC920779E1800F763EE /* libECObjects.a in Frameworks */,
+				2699BBCA20779E1800F763EE /* libBentleyGeom.a in Frameworks */,
+				2699BBCB20779E1800F763EE /* libBeLibxml2.a in Frameworks */,
+				2699BBCC20779E1800F763EE /* libBaseGeoCoord.a in Frameworks */,
+				2699BBCD20779E1800F763EE /* libBeHttp.a in Frameworks */,
+				2699BBCE20779E1800F763EE /* libBeXml.a in Frameworks */,
+				2699BBCF20779E1800F763EE /* liblibapr010502.a in Frameworks */,
+				2699BBD020779E1800F763EE /* libBeLibJpegTurbo.a in Frameworks */,
+				2699BBD120779E1800F763EE /* libDgnPlatform.a in Frameworks */,
+				2699BBD220779E1800F763EE /* libfreetype2.a in Frameworks */,
+				2699BBD320779E1800F763EE /* libBentleyGeomSerialization.a in Frameworks */,
+				2699BBD420779E1800F763EE /* libBeZlib.a in Frameworks */,
+				2699BBD520779E1800F763EE /* libBePng.a in Frameworks */,
+				2699BBD620779E1800F763EE /* libBeCsmapStatic.a in Frameworks */,
+				2699BBD720779E1800F763EE /* liblzma.a in Frameworks */,
+				2699BBD820779E1800F763EE /* libBeJpeg.a in Frameworks */,
+				2699BBD920779E1800F763EE /* libBeFolly.a in Frameworks */,
+				2699BBDA20779E1800F763EE /* libBentley.a in Frameworks */,
+				2699BBDB20779E1800F763EE /* libBeSQLiteEC.a in Frameworks */,
+				2699BBDC20779E1800F763EE /* libbentleylog4cxx.a in Frameworks */,
+				2699BBDD20779E1800F763EE /* libECPresentation.a in Frameworks */,
+				2699BBDE20779E1800F763EE /* libliblog4cxx010.a in Frameworks */,
+				2699BBDF20779E1800F763EE /* libsnappy.a in Frameworks */,
+				2699BBE020779E1800F763EE /* libBeIcu4c.a in Frameworks */,
+				2699BBE120779E1800F763EE /* libUnits.a in Frameworks */,
+				2699BBE220779E1800F763EE /* libBeJsonCpp.a in Frameworks */,
+				2699BBE320779E1800F763EE /* libBeJavaScript.a in Frameworks */,
+				2699BBE420779E1800F763EE /* libBeCurl.a in Frameworks */,
+				2699BBE520779E1800F763EE /* liblibaprutil010504.a in Frameworks */,
+				2699BBE620779E1800F763EE /* libBeSQLite.a in Frameworks */,
+				2699BBA620779DBF00F763EE /* CoreFoundation.framework in Frameworks */,
+				2699BBA420779DB500F763EE /* JavaScriptCore.framework in Frameworks */,
+				2699BBA220779DAF00F763EE /* CFNetwork.framework in Frameworks */,
 				26E6C0CC2076B8200031769D /* WebKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -64,6 +171,7 @@
 		26E6C0B32076B63E0031769D /* iModelJsApp */ = {
 			isa = PBXGroup;
 			children = (
+				2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */,
 				26D5A7F62076C13B001AB387 /* index.html */,
 				26E6C0B42076B63E0031769D /* AppDelegate.h */,
 				26E6C0B52076B63E0031769D /* AppDelegate.m */,
@@ -81,6 +189,41 @@
 		26E6C0CA2076B8200031769D /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2699BBAC20779E1600F763EE /* libBaseGeoCoord.a */,
+				2699BBB620779E1700F763EE /* libBeCsmapStatic.a */,
+				2699BBC420779E1800F763EE /* libBeCurl.a */,
+				2699BBB920779E1700F763EE /* libBeFolly.a */,
+				2699BBAD20779E1600F763EE /* libBeHttp.a */,
+				2699BBC020779E1700F763EE /* libBeIcu4c.a */,
+				2699BBC320779E1800F763EE /* libBeJavaScript.a */,
+				2699BBB820779E1700F763EE /* libBeJpeg.a */,
+				2699BBC220779E1700F763EE /* libBeJsonCpp.a */,
+				2699BBB020779E1600F763EE /* libBeLibJpegTurbo.a */,
+				2699BBAB20779E1600F763EE /* libBeLibxml2.a */,
+				2699BBBA20779E1700F763EE /* libBentley.a */,
+				2699BBAA20779E1600F763EE /* libBentleyGeom.a */,
+				2699BBB320779E1600F763EE /* libBentleyGeomSerialization.a */,
+				2699BBBC20779E1700F763EE /* libbentleylog4cxx.a */,
+				2699BBA820779E1600F763EE /* libBeOpenSSL.a */,
+				2699BBB520779E1700F763EE /* libBePng.a */,
+				2699BBC620779E1800F763EE /* libBeSQLite.a */,
+				2699BBBB20779E1700F763EE /* libBeSQLiteEC.a */,
+				2699BBAE20779E1600F763EE /* libBeXml.a */,
+				2699BBB420779E1700F763EE /* libBeZlib.a */,
+				2699BBB120779E1600F763EE /* libDgnPlatform.a */,
+				2699BBA920779E1600F763EE /* libECObjects.a */,
+				2699BBBD20779E1700F763EE /* libECPresentation.a */,
+				2699BBB220779E1600F763EE /* libfreetype2.a */,
+				2699BBAF20779E1600F763EE /* liblibapr010502.a */,
+				2699BBC520779E1800F763EE /* liblibaprutil010504.a */,
+				2699BBBE20779E1700F763EE /* libliblog4cxx010.a */,
+				2699BBB720779E1700F763EE /* liblzma.a */,
+				2699BBBF20779E1700F763EE /* libsnappy.a */,
+				2699BBC120779E1700F763EE /* libUnits.a */,
+				2699BBA720779E1600F763EE /* log4j.dtd */,
+				2699BBA520779DBE00F763EE /* CoreFoundation.framework */,
+				2699BBA320779DB500F763EE /* JavaScriptCore.framework */,
+				2699BBA120779DAF00F763EE /* CFNetwork.framework */,
 				26E6C0CB2076B8200031769D /* WebKit.framework */,
 			);
 			name = Frameworks;
@@ -144,6 +287,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				26E6C0C12076B63F0031769D /* LaunchScreen.storyboard in Resources */,
+				2699BBA020779C4200F763EE /* iModelJsApp.xcconfig in Resources */,
 				26D5A7F72076C13B001AB387 /* index.html in Resources */,
 				26E6C0BE2076B63F0031769D /* Assets.xcassets in Resources */,
 				26E6C0BC2076B63E0031769D /* Main.storyboard in Resources */,
@@ -187,6 +331,7 @@
 /* Begin XCBuildConfiguration section */
 		26E6C0C52076B63F0031769D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -245,6 +390,7 @@
 		};
 		26E6C0C62076B63F0031769D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -297,6 +443,7 @@
 		};
 		26E6C0C82076B63F0031769D /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -307,6 +454,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.imodeljsapp.iModelJsApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -315,6 +463,7 @@
 		};
 		26E6C0C92076B63F0031769D /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2699BB9F20779C4200F763EE /* iModelJsApp.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -325,6 +474,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = "$(OutRoot)$(BuildArchitecture)/static/BuildContexts/iModelJs/SubParts/Libs/";
 				PRODUCT_BUNDLE_IDENTIFIER = com.bentley.imodeljsapp.iModelJsApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
