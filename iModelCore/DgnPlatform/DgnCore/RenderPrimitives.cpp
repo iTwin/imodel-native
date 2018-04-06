@@ -2633,8 +2633,8 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
 
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
                 {
-                DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
-                uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
+                // unused - DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
+                // unused - uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
                 sheetTilePolys.push_back(clippedPolyfaceQuery->Clone());
                 }
             }
