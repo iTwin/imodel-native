@@ -1569,12 +1569,9 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
     bsiTransform_initFromRange(&m_viewport->m_toParent, nullptr, &range.low, &range.high);
     m_viewport->m_toParent.ScaleMatrixColumns(scale.x, scale.y, 1.0);
 
-    // set a clip volume around view, so we only show the original volume
-    m_clip = attach.GetOrCreateClip();
-
     Transform fromParent;
     fromParent.InverseOf(m_viewport->m_toParent);
-    m_graphicsClip = m_clip->Clone(&fromParent);
+    m_graphicsClip = attach.GetOrCreateClip(&fromParent);
 
     Tile3d* rTile;
     m_rootTile = rTile = new Tile3d(*this, nullptr, Sheet::Attachment::Tile3d::Placement::Root);
@@ -1582,8 +1579,6 @@ Sheet::Attachment::Root3d::Root3d(Sheet::ViewController& sheetController, ViewAt
 
     Transform trans = m_viewport->m_toParent;
     SetLocation(trans);
-
-    m_viewport->m_clips = m_clip; // save original clip in viewport
 
     SetExpirationTime(BeDuration::Seconds(15)); // only save unused sheet tiles for 15 seconds
     }
