@@ -8,6 +8,7 @@
 
 #include "PublicApi/BuildingDgnUtilsApi.h"
 
+#include <DgnClientFx/DgnClientApp.h>
 //#include "PublicApi/BuildingUtils.h"
 #include <DgnView/DgnTool.h>
 #include <dgnPlatform/ViewController.h>
@@ -60,6 +61,7 @@
 #define GRIDS_CATEGORY_CODE_GridCurve                           "GridCurve"
 
 USING_NAMESPACE_BENTLEY_DGN
+namespace DgnFx = BentleyApi::DgnClientFx;
 
 BEGIN_BUILDING_SHARED_NAMESPACE
 
@@ -381,6 +383,7 @@ DisplayStyle3dPtr  BuildingUtils::CreateFloorView3dDisplayStyle (DgnDbR db)
 
     dstyle.SetSkyBoxEnabled (false);
     dstyle.SetGroundPlaneEnabled (false);
+    SetDisplayStyleOverrides(dstyle);
 
     auto insertedElement = db.Elements ().Insert (dstyle);
     if (insertedElement.IsValid ())
@@ -404,6 +407,30 @@ DisplayStyle3dPtr  BuildingUtils::GetFloorView3dDisplayStyle (DgnDbR db)
         }
 
     return dstyle;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Jonas.Valiunas                  04/2018
+//---------------------------------------------------------------------------------------
+void                BuildingUtils::SetDisplayStyleOverrides
+(
+Dgn::DisplayStyle3dR displaystyle
+)
+    {
+    Dgn::DgnDbR db = displaystyle.GetDgnDb();
+    Dgn::DgnSubCategory::Override genericGraphics3dOverride;
+    genericGraphics3dOverride.SetColor(Dgn::ColorDef::White());
+    Dgn::DgnSubCategory::Override genericGraphics2dOverride;
+    genericGraphics2dOverride.SetColor(Dgn::ColorDef::Black());
+
+    DefinitionModelR dictionary = db.GetDictionaryModel();
+    DgnCode spatialCategoryCode = Dgn::SpatialCategory::CreateCode(dictionary, "Default3D");
+    DgnCategoryId spatialCategoryId = DgnCategory::QueryCategoryId(db, spatialCategoryCode);
+    DgnCode drawingCategoryCode = SpatialCategory::CreateCode(dictionary, "Default");
+    DgnCategoryId drawingCategoryId = DgnCategory::QueryCategoryId(db, drawingCategoryCode);
+
+    displaystyle.OverrideSubCategory(DgnCategory::GetDefaultSubCategoryId(drawingCategoryId), genericGraphics2dOverride);
+    displaystyle.OverrideSubCategory(DgnCategory::GetDefaultSubCategoryId(spatialCategoryId), genericGraphics3dOverride);
     }
 
 //---------------------------------------------------------------------------------------

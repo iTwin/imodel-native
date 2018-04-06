@@ -39,6 +39,9 @@ public:
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr CreateEgressPathViewCategorySelector(Dgn::DgnDbR db);
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::CategorySelectorPtr GetBuildingCategorySelector(Dgn::DgnDbR db);
     BUILDINGSHAREDDGNUTILS_EXPORT static Dgn::DisplayStyle3dPtr GetFloorView3dDisplayStyle(Dgn::DgnDbR db);
+    BUILDINGSHAREDDGNUTILS_EXPORT static void                       SetDisplayStyleOverrides(Dgn::DisplayStyle3dR displaystyle);
+
+
     BUILDINGSHAREDDGNUTILS_EXPORT static ECN::IECInstancePtr GetECInstance(Dgn::DgnDbR db, BeSQLite::EC::ECInstanceId instanceId, Utf8CP ECSqlName);
     BUILDINGSHAREDDGNUTILS_EXPORT static bool TryExtractIndexFromName(Utf8CP name, int& indexOut);
     BUILDINGSHAREDDGNUTILS_EXPORT static int ExtractNameIndexAndTemplateString(Utf8String& tmpStr);
