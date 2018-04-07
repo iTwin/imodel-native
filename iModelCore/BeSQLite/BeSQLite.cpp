@@ -766,6 +766,10 @@ DbResult DbFile::StopSavepoint(Savepoint& txn, bool isCommit, Utf8CP operation)
         (*it)->_OnDeactivate(isCommit);
 
     m_txns.erase(thisPos, m_txns.end());
+    
+    if (m_tracker.IsValid()) // notify trackers that commit/cancel operation finished successfully
+        m_tracker->_OnCommitted(isCommit, operation);
+
     return BE_SQLITE_OK;
     }
 

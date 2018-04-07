@@ -77,7 +77,7 @@ public:
 };
 
 //=======================================================================================
-//! When enabled, this class maintains a list of "changed rows" (inserts, updates and deletes) for a BeSQLite::Db. This information is
+//! When enabled, this class maintains a list of changed rows (inserts, updates and deletes) for a BeSQLite::Db. This information is
 //! stored in memory by this class. At appropriate boundaries, applications convert the contents of a ChangeTracker
 //! into a ChangeSet that can be saved as a blob and recorded.
 //! @note @li ChangeTrackers keep track of "net changes" so, for example, if a row is added and then subsequently deleted
@@ -108,6 +108,7 @@ protected:
 
     BE_SQLITE_EXPORT DbResult CreateSession();
     virtual OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) = 0;
+    virtual void _OnCommitted(bool isCommit, Utf8CP operation) {}
     void SetDb(Db* db) {m_db = db;}
     Db* GetDb() {return m_db;}
     Utf8CP GetName() const {return m_name.c_str();}
@@ -124,7 +125,7 @@ public:
     //! Track all of the differences between the Db of this ChangeTracker and a changed copy of that database.
     //! @param[out] errMsg  If not null, an explanatory error message is returned in case of failure
     //! @param[in] baseFile A different version of the same db
-    //! @return BE_SQLITE_OK if hangeset was created; else a non-zero error status if the diff failed. Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
+    //! @return BE_SQLITE_OK if changeset was created; else a non-zero error status if the diff failed. Returns BE_SQLITE_MISMATCH if the two Dbs have different GUIDs.
     //! @note This function will return an error if the two files have different DbGuids. 'baseFile' must identify a version of Db.
     BE_SQLITE_EXPORT DbResult DifferenceToDb(Utf8StringP errMsg, BeFileNameCR baseFile);
 
