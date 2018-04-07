@@ -774,10 +774,17 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
 
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
 
-    if (m_enableNotifyTxnMonitors)
-        T_HOST.GetTxnAdmin()._OnCommitted(*this);
-
     return OnCommitStatus::Continue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* called after the commit or cancel operation is complete
+* @bsimethod                                    Keith.Bentley                   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::_OnCommitted(bool isCommit, Utf8CP)
+    {
+    if (isCommit && m_enableNotifyTxnMonitors) // only notify on commit, not cancel
+        T_HOST.GetTxnAdmin()._OnCommitted(*this); 
     }
 
 /*---------------------------------------------------------------------------------**//**

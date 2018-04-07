@@ -309,6 +309,7 @@ private:
     bool m_initTableHandlers;
     bool m_enableNotifyTxnMonitors;
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
+    void _OnCommitted(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
 
     void AddChanges(BeSQLite::Changes const&);
