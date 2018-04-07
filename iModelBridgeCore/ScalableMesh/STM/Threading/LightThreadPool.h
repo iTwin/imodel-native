@@ -49,11 +49,11 @@ void WaitForThreadStop(IScalableMeshProgress* p =nullptr);
 struct WorkerThreadPool;
 typedef RefCountedPtr<WorkerThreadPool> WorkerThreadPoolPtr;
 
-struct RasterTexturingWork;
-typedef RefCountedPtr<RasterTexturingWork> RasterTexturingWorkPtr;
+struct WorkItem;
+typedef RefCountedPtr<WorkItem> WorkItemPtr;
 
 
-struct RasterTexturingWork : RefCountedBase
+struct WorkItem : RefCountedBase
 {
     friend struct WorkerThreadPool;
     //size_t          GetMemorySize() { return _GetMemorySize(); }
@@ -88,7 +88,7 @@ private:
 
     //bmap<PointCloudWorkerThread*, bool> m_threads;
     //GroundDetectionWorkQueue            m_workQueue;
-    bvector<RasterTexturingWorkPtr>       m_workQueue;
+    bvector<WorkItemPtr>       m_workQueue;
     std::mutex                            m_workQueueMutex;
     std::atomic<uint32_t>                 m_currentWorkInd;
     IActiveWait*                          m_activeWait;
@@ -125,7 +125,7 @@ public:
 
     void ClearQueueWork();
 
-    void QueueWork(RasterTexturingWorkPtr& work);
+    void QueueWork(WorkItemPtr& work);
 
     void Start(IActiveWait* activeWait = nullptr);
 

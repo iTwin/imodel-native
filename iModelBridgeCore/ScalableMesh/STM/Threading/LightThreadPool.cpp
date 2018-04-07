@@ -173,7 +173,7 @@ void WorkerThreadPool::ClearQueueWork()
     m_workQueueMutex.unlock();
     }
 
-void WorkerThreadPool::QueueWork(RasterTexturingWorkPtr& work)
+void WorkerThreadPool::QueueWork(WorkItemPtr& work)
     {    
     m_workQueueMutex.lock();
     m_workQueue.push_back(work);
@@ -225,7 +225,7 @@ void WorkerThreadPool::WaitAndStop()
 
 void WorkerThreadPool::WorkThread(int threadId)
     {    
-    RasterTexturingWorkPtr currentWork;
+    WorkItemPtr currentWork;
     int i;
 
     do

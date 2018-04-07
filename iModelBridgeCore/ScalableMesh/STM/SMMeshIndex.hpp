@@ -3966,63 +3966,32 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 // @bsimethod                                                   Elenie.Godzaridis 10/15
 //=======================================================================================
 
-struct TextureFromRasterWork;
-typedef RefCountedPtr<TextureFromRasterWork> TextureFromRasterWorkPtr;
+struct RasterTexturingWorkItem;
+typedef RefCountedPtr<RasterTexturingWorkItem> RasterTexturingWorkItemPtr;
 
-/*template<class POINT, class EXTENT> */ struct TextureFromRasterWork : RefCounted<RasterTexturingWork> //RefCounted<PointCloudWork>
+struct RasterTexturingWorkItem : RefCounted<WorkItem> 
     {
     private: 
 
 
         std::function<void()> m_lambda;
-/*
-        SMMeshIndexNode<POINT, EXTENT>* m_node;
-        ITextureProviderPtr             m_sourceRasterP;
-        Transform                       m_unitTransform;
-*/
 
     protected:
 
-        TextureFromRasterWork(std::function<void()>& lambda /*SMMeshIndexNode<POINT, EXTENT>* node, ITextureProviderPtr sourceRasterP, Transform& unitTransform*/) :m_lambda(lambda){}
-        ~TextureFromRasterWork() {};
+        RasterTexturingWorkItem(std::function<void()>& lambda) :m_lambda(lambda){}
+        ~RasterTexturingWorkItem() {};
         virtual void    _DoWork() override
             {
             m_lambda();
-/*
-            m_node->TextureFromRaster(m_sourceRasterP, m_unitTransform);
-
-            if (m_node->m_SMIndex->m_progress != nullptr && m_node->m_SMIndex->m_progress->IsCanceled()) return;
-
-            if (m_node->m_pSubNodeNoSplit != NULL && !m_node->m_pSubNodeNoSplit->IsVirtualNode())
-            {
-                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_node->m_pSubNodeNoSplit)->TextureFromRasterRecursive(m_sourceRasterP, m_unitTransform);
             }
-            else if (!m_node->IsLeaf())
-            {
-                for (size_t indexNodes = 0; indexNodes < m_node->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
-                {
-                    if (m_node->m_apSubNodes[indexNodes] != nullptr)
-                    {
-                        if (m_node->m_SMIndex->m_progress != nullptr && m_node->m_SMIndex->m_progress->IsCanceled()) return;
-                        auto mesh = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_node->m_apSubNodes[indexNodes]);
-                        assert(mesh != nullptr);
-                        mesh->TextureFromRasterRecursive(m_sourceRasterP, m_unitTransform);
-                    }
-                }
-            }
-*/
-            }
-        //virtual size_t  _GetMemorySize(); //override;
-
+        
     public:
 
-        static TextureFromRasterWorkPtr Create(std::function<void()>& workingFnc /*SMMeshIndexNode<POINT, EXTENT>* node, ITextureProviderPtr sourceRasterP, Transform& unitTransform*/)
-        {
-            return new TextureFromRasterWork(workingFnc /*node, sourceRasterP, unitTransform*/);
-        }
+        static RasterTexturingWorkItemPtr Create(std::function<void()>& workingFnc)
+            {
+            return new RasterTexturingWorkItem(workingFnc);
+            }
     };
-
-
 
 
 static bool s_textureMultiThread = false;
@@ -4057,45 +4026,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
                     }
                 }
             }
-
-            //SetThreadAvailableAsync(threadId);
         }, this, sourceRasterP, unitTransform);
 
-
-
-        //RasterTexturingWorkPtr rasterWork(TextureFromRasterWork<POINT, EXTENT>::Create(this, ITextureProviderPtr sourceRasterP, Transform& unitTransform));
-
-        RasterTexturingWorkPtr rasterWork(TextureFromRasterWork::Create(textureFnc));
-        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->m_texturingThreadPoolPtr->QueueWork(rasterWork);
-
-        
-#if 0 
-        RunOnNextAvailableThread(std::bind([](SMMeshIndexNode<POINT, EXTENT>* node, ITextureProviderPtr sourceRasterP, Transform unitTransform, size_t threadId) ->void
-            {
-            node->TextureFromRaster(sourceRasterP, unitTransform);
-            if (node->m_SMIndex->m_progress != nullptr && node->m_SMIndex->m_progress->IsCanceled()) return;
-
-            if (node->m_pSubNodeNoSplit != NULL && !node->m_pSubNodeNoSplit->IsVirtualNode())
-            {
-                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(node->m_pSubNodeNoSplit)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
-            }
-            else if (!node->IsLeaf())
-            {
-                for (size_t indexNodes = 0; indexNodes < node->m_nodeHeader.m_numberOfSubNodesOnSplit; indexNodes++)
-                {
-                    if (node->m_apSubNodes[indexNodes] != nullptr)
-                    {
-                        if (node->m_SMIndex->m_progress != nullptr && node->m_SMIndex->m_progress->IsCanceled()) return;
-                        auto mesh = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(node->m_apSubNodes[indexNodes]);
-                        assert(mesh != nullptr);
-                        mesh->TextureFromRasterRecursive(sourceRasterP, unitTransform);
-                    }
-                }
-            }
-
-            SetThreadAvailableAsync(threadId);
-            }, this, sourceRasterP, unitTransform, std::placeholders::_1));
-#endif
+        WorkItemPtr texturingWorkItem(RasterTexturingWorkItem::Create(textureFnc));
+        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->m_texturingThreadPoolPtr->QueueWork(texturingWorkItem);
         }
     else
         {        
