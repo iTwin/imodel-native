@@ -161,10 +161,10 @@ struct PerformanceTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     //@bsimethod                                     julius.cepukenas             10/2016
     //---------------------------------------------------------------------------------------
-    void LogTiming(StopWatch& timer, int numberOfInstances, int total, bool isPassed)
+    void LogTiming(StopWatch& timer, int numberOfInstances, int total, bool isPassed, int counter)
         {
         Utf8String description;
-        description.Sprintf("Test searched for [%d] of [%d] instances", numberOfInstances, total);
+        description.Sprintf("Test searched for [%d] of [%d] instances for the time no. %d", numberOfInstances, total, counter);
         LogTiming(timer, description, isPassed);
         }
 
@@ -174,7 +174,17 @@ struct PerformanceTests : public IntegrationTestsBase
     void LogTiming(StopWatch& timer, int numberOfInstances, bool isPassed)
         {
         Utf8String description;
-        description.Sprintf("Test used[%d] number of instances", numberOfInstances);
+        description.Sprintf("Test used [%d] number of instances", numberOfInstances);
+        LogTiming(timer, description, isPassed);
+        }
+
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                     Benas.Kikutis             01/2018
+    //---------------------------------------------------------------------------------------
+    void LogTiming(StopWatch& timer, int numberOfInstances, bool isPassed, int counter, Utf8String method)
+        {
+        Utf8String description;
+        description.Sprintf("Test part used [%d] number of instances for the time no. %d with %s method", numberOfInstances, counter, method);
         LogTiming(timer, description, isPassed);
         }
 
@@ -300,13 +310,13 @@ struct PerformanceTests : public IntegrationTestsBase
         }
 
     //---------------------------------------------------------------------------------------
-    //@bsimethod                                     julius.cepukenas             10/2016
+    //@bsimethod                                     Benas.Kikutis             01/2018
     //---------------------------------------------------------------------------------------
-    bool ExpectCodesCount(Briefcase& briefcase, int expectedCount)
+    bool ExpectAllCodesCount(Briefcase& briefcase, int expectedCount)
         {
-        auto result = briefcase.GetiModelConnection().QueryCodesLocks(briefcase.GetBriefcaseId())->GetResult();
+        auto result = briefcase.GetiModelConnection().QueryAllCodes()->GetResult();
         EXPECT_SUCCESS(result);
-        auto actualCount = result.GetValue().GetCodes().size();
+        auto actualCount = result.GetValue().size();
         EXPECT_EQ(expectedCount, actualCount);
         return (result.IsSuccess() && expectedCount == actualCount);
         }
@@ -314,12 +324,23 @@ struct PerformanceTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     //@bsimethod                                     julius.cepukenas             10/2016
     //---------------------------------------------------------------------------------------
-    bool ExpectCodesCount(Briefcase& briefcase, int expectedCount, DgnCodeSet& codes)
+    bool ExpectCodesCountByBriefcase(Briefcase& briefcase, int expectedCount)
         {
-        LockableIdSet ids;
-        auto result = briefcase.GetiModelConnection().QueryCodesLocksById(codes, ids)->GetResult();
+        auto result = briefcase.GetiModelConnection().QueryCodesByBriefcaseId(briefcase.GetBriefcaseId())->GetResult();
         EXPECT_SUCCESS(result);
-        auto actualCount = result.GetValue().GetCodes().size();
+        auto actualCount = result.GetValue().size();
+        EXPECT_EQ(expectedCount, actualCount);
+        return (result.IsSuccess() && expectedCount == actualCount);
+        }
+
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                     julius.cepukenas             10/2016
+    //---------------------------------------------------------------------------------------
+    bool ExpectCodesCountByIdsAndBriefcase(Briefcase& briefcase, int expectedCount, DgnCodeSet& codes)
+        {
+        auto result = briefcase.GetiModelConnection().QueryCodesByIds(codes)->GetResult();
+        EXPECT_SUCCESS(result);
+        auto actualCount = result.GetValue().size();
         EXPECT_EQ(expectedCount, actualCount);
         return (result.IsSuccess() && expectedCount == actualCount);
         }
@@ -335,13 +356,13 @@ struct PerformanceTests : public IntegrationTestsBase
         }
 
     //---------------------------------------------------------------------------------------
-    //@bsimethod                                     julius.cepukenas             10/2016
+    //@bsimethod                                     Benas.Kikutis             01/2018
     //---------------------------------------------------------------------------------------
-    bool ExpectLocksCount(Briefcase& briefcase, int expectedCount)
+    bool ExpectAllLocksCount(Briefcase& briefcase, int expectedCount)
         {
-        auto result = briefcase.GetiModelConnection().QueryCodesLocks(briefcase.GetBriefcaseId())->GetResult();
+        auto result = briefcase.GetiModelConnection().QueryAllLocks()->GetResult();
         EXPECT_SUCCESS(result);
-        auto actualCount = result.GetValue().GetLocks().size();
+        auto actualCount = result.GetValue().size();
         EXPECT_EQ(expectedCount, actualCount);
         return (result.IsSuccess() && expectedCount == actualCount);
         }
@@ -349,12 +370,23 @@ struct PerformanceTests : public IntegrationTestsBase
     //---------------------------------------------------------------------------------------
     //@bsimethod                                     julius.cepukenas             10/2016
     //---------------------------------------------------------------------------------------
-    bool ExpectLocksCount(Briefcase& briefcase, int expectedCount, LockableIdSet& locks)
+    bool ExpectLocksCountByBriefcase(Briefcase& briefcase, int expectedCount)
         {
-        DgnCodeSet codes;
-        auto result = briefcase.GetiModelConnection().QueryCodesLocksById(codes, locks)->GetResult();
+        auto result = briefcase.GetiModelConnection().QueryLocksByBriefcaseId(briefcase.GetBriefcaseId())->GetResult();
         EXPECT_SUCCESS(result);
-        auto actualCount = result.GetValue().GetLocks().size();
+        auto actualCount = result.GetValue().size();
+        EXPECT_EQ(expectedCount, actualCount);
+        return (result.IsSuccess() && expectedCount == actualCount);
+        }
+
+    //---------------------------------------------------------------------------------------
+    //@bsimethod                                     julius.cepukenas             10/2016
+    //---------------------------------------------------------------------------------------
+    bool ExpectLocksCountByIdsAndBriefcase(Briefcase& briefcase, int expectedCount, LockableIdSet& locks)
+        {
+        auto result = briefcase.GetiModelConnection().QueryLocksByIds(locks)->GetResult();
+        EXPECT_SUCCESS(result);
+        auto actualCount = result.GetValue().size();
         EXPECT_EQ(expectedCount, actualCount);
         return (result.IsSuccess() && expectedCount == actualCount);
         }
@@ -370,6 +402,7 @@ struct PerformanceTests : public IntegrationTestsBase
         DgnCodeSet requestCodesSet;
         DgnCodeSet fullCodeSet;
 
+        int counter = 0;
         int index = 0;
         //Create and then acquire many codes
         for (int i = 0; i < getRequestSize; i++)
@@ -381,7 +414,8 @@ struct PerformanceTests : public IntegrationTestsBase
             index++;
             if (index == postRequestSize)
                 {
-                EXPECT_STATUS(Success, db.BriefcaseManager().ReserveCodes(requestCodesSet).Result());
+                auto result = db.BriefcaseManager().ReserveCodes(requestCodesSet).Result();
+                EXPECT_STATUS(Success, result);
                 requestCodesSet.clear();
                 index = 0;
                 }
@@ -461,45 +495,68 @@ TEST_F(PerformanceTests, ReserveCodes)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             10/2016
+//@bsimethod                                     Benas.Kikutis             01/2018
 //---------------------------------------------------------------------------------------
 TEST_F(PerformanceTests, RetrieveCodes)
     {
     auto postRequestSize = PerformanceTestSettings::Instance().GetCodePostRequestSize();
-    auto getRequestSize = PerformanceTestSettings::Instance().GetCodeGetRequestSize();
+    auto finalGetRequestSize = PerformanceTestSettings::Instance().GetCodeGetRequestSize();
+    auto getRequestAttempts = PerformanceTestSettings::Instance().GetCodeGetAttemptsCount();
+    auto splitMaxGetRequestSize = PerformanceTestSettings::Instance().GetCodeGetSplitCount();
+    auto oneGetRequestSize = finalGetRequestSize / splitMaxGetRequestSize;
 
-    RetrieveCodesHelper(postRequestSize, getRequestSize, m_briefcase);
+    auto codesCountBeforePush = m_briefcase->GetiModelConnection().QueryAllCodes()->GetResult().GetValue().size();
 
-    StopWatch timer(true);
-    auto isPassed = ExpectCodesCount(*m_briefcase, getRequestSize + 1); //One model code
-    timer.Stop();
-    LogTiming(timer, getRequestSize, isPassed);
+    auto currentGetRequestSize = 0;
+    while (currentGetRequestSize < finalGetRequestSize)
+        {
+        currentGetRequestSize += oneGetRequestSize;
+        RetrieveCodesHelper(postRequestSize, oneGetRequestSize, m_briefcase);
+
+        auto i = 0;
+        while (i < getRequestAttempts)
+            {
+            StopWatch timer(true);
+            auto isPassed = ExpectAllCodesCount(*m_briefcase, currentGetRequestSize + codesCountBeforePush);
+            timer.Stop();
+            LogTiming(timer, currentGetRequestSize, isPassed, ++i, "GET");
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             10/2016
+//@bsimethod                                     Benas.Kikutis             01/2018
 //---------------------------------------------------------------------------------------
 TEST_F(PerformanceTests, RetrieveFractionOfAllAvailableCodes)
     {
     auto postRequestSize = PerformanceTestSettings::Instance().GetCodePostRequestSize();
-    auto getRequestSize = PerformanceTestSettings::Instance().GetCodeGetRequestSize();
-    auto totalGetSize = getRequestSize;
-
-    RetrieveCodesHelper(postRequestSize, getRequestSize, m_briefcase);
+    auto finalGetRequestSize = PerformanceTestSettings::Instance().GetCodeGetRequestSize();
+    auto getRequestAttempts = PerformanceTestSettings::Instance().GetCodeGetAttemptsCount();
+    auto splitMaxGetRequestSize = PerformanceTestSettings::Instance().GetCodeGetSplitCount();
+    auto oneGetRequestSize = finalGetRequestSize / splitMaxGetRequestSize;
+    auto totalGetSize = finalGetRequestSize;
 
     BriefcaseResult briefcaseResult = iModelHubHelpers::AcquireAndOpenBriefcase(s_client, m_info);
     ASSERT_SUCCESS(briefcaseResult);
     auto secondBriefcase = briefcaseResult.GetValue();
 
-    getRequestSize = PerformanceTestSettings::Instance().GetCodeGetRequestSizeSecondCall();
-    totalGetSize += getRequestSize;
+    auto currentGetRequestSize = 0;
+    while (currentGetRequestSize < finalGetRequestSize)
+        {
+        currentGetRequestSize += oneGetRequestSize;
+        
+        RetrieveCodesHelper(postRequestSize, oneGetRequestSize, m_briefcase);
+        RetrieveCodesHelper(postRequestSize, oneGetRequestSize, secondBriefcase);
 
-    RetrieveCodesHelper(postRequestSize, getRequestSize, secondBriefcase);
-
-    StopWatch timer(true);
-    auto isPassed = ExpectCodesCount(*secondBriefcase, getRequestSize);
-    timer.Stop();
-    LogTiming(timer, getRequestSize, totalGetSize, isPassed);
+        auto i = 0;
+        while (i < getRequestAttempts)
+            {
+            StopWatch timer(true);
+            auto isPassed = ExpectCodesCountByBriefcase(*secondBriefcase, currentGetRequestSize);
+            timer.Stop();
+            LogTiming(timer, currentGetRequestSize, currentGetRequestSize * 2, isPassed, ++i);
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -513,7 +570,7 @@ TEST_F(PerformanceTests, RetrieveCodesById)
     auto fullCodeSet = RetrieveCodesHelper(postRequestSize, getRequestSize, m_briefcase);
 
     StopWatch timer(true);
-    auto isPassed = ExpectCodesCount(*m_briefcase, getRequestSize, fullCodeSet);
+    auto isPassed = ExpectCodesCountByIdsAndBriefcase(*m_briefcase, getRequestSize, fullCodeSet);
     timer.Stop();
     LogTiming(timer, getRequestSize, isPassed);
     }
@@ -535,9 +592,9 @@ TEST_F(PerformanceTests, RetrieveFractionOfAllAvailableCodesById)
     auto fullCodeSet = RetrieveCodesHelper(postRequestSize, getRequestSize, m_briefcase);
 
     StopWatch timer(true);
-    auto isPassed = ExpectCodesCount(*m_briefcase, getRequestSize, fullCodeSet);
+    auto isPassed = ExpectCodesCountByIdsAndBriefcase(*m_briefcase, getRequestSize, fullCodeSet);
     timer.Stop();
-    LogTiming(timer, getRequestSize, totalGetSize, isPassed);
+    LogTiming(timer, getRequestSize, totalGetSize, isPassed, 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -566,7 +623,7 @@ TEST_F(PerformanceTests, PushLocks)
     StopWatch timer(true);
     db.SaveChanges();
     result = m_briefcase->PullMergeAndPush(nullptr, false)->GetResult();
-    ExpectLocksCount(*m_briefcase, postRequestSize);
+    ExpectAllLocksCount(*m_briefcase, postRequestSize);
     EXPECT_SUCCESS(result);
     timer.Stop();
     LogTiming(timer, postRequestSize, result.IsSuccess());
@@ -609,50 +666,75 @@ TEST_F(PerformanceTests, AcquireLocks)
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
+//@bsimethod                                     Benas.Kikutis             01/2018
 //---------------------------------------------------------------------------------------
 TEST_F(PerformanceTests, RetrieveLocks)
     {
     auto postRequestSize = PerformanceTestSettings::Instance().GetLockPostRequestSize();
-    auto getRequestSize = PerformanceTestSettings::Instance().GetLockGetRequestSize();
+    auto finalGetRequestSize = PerformanceTestSettings::Instance().GetLockGetRequestSize();
+    auto getRequestAttempts = PerformanceTestSettings::Instance().GetLockGetAttemptsCount();
+    auto splitMaxGetRequestSize = PerformanceTestSettings::Instance().GetLockGetSplitCount();
+    auto oneGetRequestSize = finalGetRequestSize / splitMaxGetRequestSize;
     auto aspect = CreateAspect(m_model);
 
-    RetrieveLocksHelper(postRequestSize, getRequestSize, m_briefcase, m_model, aspect->GetToken());
+    auto locksCountBeforePush = m_briefcase->GetiModelConnection().QueryAllLocks()->GetResult().GetValue().size();
 
-    StopWatch timer(true);
-    auto isPassed = ExpectLocksCount(*m_briefcase, getRequestSize + 2); //One model lock
-    timer.Stop();
-    LogTiming(timer, getRequestSize, isPassed);
+    auto currentGetRequestSize = 0;
+    while (currentGetRequestSize < finalGetRequestSize)
+        {
+        currentGetRequestSize += oneGetRequestSize;
+        RetrieveLocksHelper(postRequestSize, oneGetRequestSize, m_briefcase, m_model, aspect->GetToken());
+
+        auto i = 0;
+        while (i < getRequestAttempts)
+            {
+            StopWatch timer(true);
+            auto isPassed = ExpectAllLocksCount(*m_briefcase, currentGetRequestSize + locksCountBeforePush);
+            timer.Stop();
+            LogTiming(timer, currentGetRequestSize, isPassed, ++i, "GET");
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
+//@bsimethod                                     Benas.Kikutis             01/2018
 //---------------------------------------------------------------------------------------
 TEST_F(PerformanceTests, RetrieveFractionOfAllAvailableLocks)
     {
     auto postRequestSize = PerformanceTestSettings::Instance().GetLockPostRequestSize();
-    auto getRequestSize = PerformanceTestSettings::Instance().GetLockGetRequestSize();
-    auto totalGetSize = getRequestSize;
-    auto aspect = CreateAspect(m_model);
+    auto finalGetRequestSize = PerformanceTestSettings::Instance().GetLockGetRequestSize();
+    auto getRequestAttempts = PerformanceTestSettings::Instance().GetLockGetAttemptsCount();
+    auto splitMaxGetRequestSize = PerformanceTestSettings::Instance().GetLockGetSplitCount();
+    auto oneGetRequestSize = finalGetRequestSize / splitMaxGetRequestSize;
+    auto totalGetSize = finalGetRequestSize;
+    auto aspectModel1 = CreateAspect(m_model);
+
+    auto locksCountBeforePush = m_briefcase->GetiModelConnection().QueryAllLocks()->GetResult().GetValue().size();
+
     m_briefcase->GetiModelConnection().RelinquishCodesLocks(m_briefcase->GetBriefcaseId());
-
-    RetrieveLocksHelper(postRequestSize, getRequestSize, m_briefcase, m_model, aspect->GetToken());
-
     BriefcaseResult briefcaseResult = iModelHubHelpers::AcquireAndOpenBriefcase(s_client, m_info);
     ASSERT_SUCCESS(briefcaseResult);
     auto secondBriefcase = briefcaseResult.GetValue();
     auto secondModel = CreateModel(TestCodeName(1).c_str(), secondBriefcase->GetDgnDb());
-    aspect = CreateAspect(secondModel, TestCodeName(2).c_str());
+    auto aspectModel2 = CreateAspect(secondModel, TestCodeName(2).c_str());
 
-    getRequestSize = PerformanceTestSettings::Instance().GetLockGetRequestSizeSecondCall();
-    totalGetSize += getRequestSize;
+    auto currentGetRequestSize = 0;
+    while (currentGetRequestSize < finalGetRequestSize)
+        {
+        currentGetRequestSize += oneGetRequestSize;
 
-    RetrieveLocksHelper(postRequestSize, getRequestSize, secondBriefcase, secondModel, aspect->GetToken());
+        RetrieveLocksHelper(postRequestSize, oneGetRequestSize, m_briefcase, m_model, aspectModel1->GetToken());
+        RetrieveLocksHelper(postRequestSize, oneGetRequestSize, secondBriefcase, secondModel, aspectModel2->GetToken());
 
-    StopWatch timer(true);
-    auto isPassed = ExpectLocksCount(*secondBriefcase, getRequestSize + 2); //One model lock
-    timer.Stop();
-    LogTiming(timer, getRequestSize, totalGetSize, isPassed);
+        auto i = 0;
+        while (i < getRequestAttempts)
+            {
+            StopWatch timer(true);
+            auto isPassed = ExpectLocksCountByBriefcase(*secondBriefcase, currentGetRequestSize + locksCountBeforePush);
+            timer.Stop();
+            LogTiming(timer, currentGetRequestSize, currentGetRequestSize * 2, isPassed, ++i);
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -667,7 +749,7 @@ TEST_F(PerformanceTests, RetrieveLocksById)
     auto queryLockSet = RetrieveLocksHelper(postRequestSize, getRequestSize, m_briefcase, m_model, aspect->GetToken());
 
     StopWatch timer(true);
-    auto isPassed = ExpectLocksCount(*m_briefcase, getRequestSize, queryLockSet);
+    auto isPassed = ExpectLocksCountByIdsAndBriefcase(*m_briefcase, getRequestSize, queryLockSet);
     timer.Stop();
     LogTiming(timer, getRequestSize, isPassed);
     }
@@ -691,9 +773,9 @@ TEST_F(PerformanceTests, RetrieveFractionOfAllAvailableLocksById)
     auto queryLockSet = RetrieveLocksHelper(postRequestSize, getRequestSize, m_briefcase, secondModel, aspect->GetToken());
     EXPECT_EQ(getRequestSize, queryLockSet.size());
     StopWatch timer(true);
-    auto isPassed = ExpectLocksCount(*m_briefcase, getRequestSize, queryLockSet); //Two model locks
+    auto isPassed = ExpectLocksCountByIdsAndBriefcase(*m_briefcase, getRequestSize, queryLockSet); //Two model locks
     timer.Stop();
-    LogTiming(timer, getRequestSize, totalGetSize, isPassed);
+    LogTiming(timer, getRequestSize, totalGetSize, isPassed, 0);
     }
 
 //---------------------------------------------------------------------------------------
