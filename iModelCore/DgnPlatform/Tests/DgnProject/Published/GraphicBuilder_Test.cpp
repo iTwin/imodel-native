@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/GraphicBuilder_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
@@ -484,7 +484,7 @@ void MeshBuilderTest::ExpectEqualMeshEdgeLists(bvector<MeshEdge> const& base, bv
         {
         baseIndices[0] = base[i].m_indices[0];
         baseIndices[1] = base[i].m_indices[1];
-        baseIndices[0] = base[i].m_indices[0];
+        compIndices[0] = comp[i].m_indices[0];
         compIndices[1] = comp[i].m_indices[1];
 
         ExpectEqualVertexLists(baseIndices, compIndices, baseMesh, compMesh);

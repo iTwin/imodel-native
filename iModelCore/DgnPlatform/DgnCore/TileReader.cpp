@@ -1223,6 +1223,7 @@ private:
     void AddMeshEdges(MeshBuilderR builder, MeshPrimitive const& mesh, Json::Value const& json);
     void AddPolylineEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
     void AddSilhouetteEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
+    void AddVisibleEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
 public:
     DgnCacheTileRebuilder(StreamBufferR buffer, DgnModelR model, Render::System& system, Render::Primitives::MeshBuilderMapR builders)
         : GltfReader(buffer, model, system), m_builders(builders) { }
@@ -1465,11 +1466,8 @@ void DgnCacheTileRebuilder::AddMeshEdges(MeshBuilderR builder, MeshPrimitive con
     MeshEdgesPtr edges = new MeshEdges();
     AddPolylineEdges(*edges, mesh, edgesJson);
     AddSilhouetteEdges(*edges, mesh, edgesJson);
+    AddVisibleEdges(*edges, mesh, edgesJson);
     builder.GetMesh()->GetEdgesR() = edges;
-
-    // ###TODO: Overlooking some edges?? See:
-    //  DgnCacheTileWriter::CreateMeshEdges() - adds as "visibles"
-    //  GltfReader::ReadMeshEdges() - does not look for "visibles"
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1611,6 +1609,30 @@ void DgnCacheTileRebuilder::AddSilhouetteEdges(MeshEdgesR edges, MeshPrimitive c
         {
         uint32_t baseIndex = i * 2;
         edges.m_silhouette[i] = MeshEdge(mesh.RemapIndex(indexView[baseIndex]), mesh.RemapIndex(indexView[baseIndex+1]));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCacheTileRebuilder::AddVisibleEdges(MeshEdgesR edges, MeshPrimitive const& mesh, Json::Value const& edgesJson)
+    {
+    uint32_t numIndices;
+    BufferData32 indexView = ReadBufferData32(edgesJson, "visibles", &numIndices);
+    if (!indexView.IsValid() || 0 == numIndices)
+        return;
+
+    // If any vertex was removed, the entire silhouette was removed...
+    uint32_t newFirstIndex = mesh.RemapIndex(indexView[0]);
+    if (-1 == newFirstIndex)
+        return;
+
+    edges.m_visible.resize(numIndices/2);
+    edges.m_visible[0] = MeshEdge(newFirstIndex, mesh.RemapIndex(indexView[1]));
+    for (uint32_t i = 0; i < edges.m_visible.size(); i++)
+        {
+        uint32_t baseIndex = i * 2;
+        edges.m_visible[i] = MeshEdge(mesh.RemapIndex(indexView[baseIndex]), mesh.RemapIndex(indexView[baseIndex+1]));
         }
     }
 
