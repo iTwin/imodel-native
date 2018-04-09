@@ -590,7 +590,11 @@ void NodesCache::OnRulesetCreated(PresentationRuleSetCR ruleset)
 struct SqliteSavepoint : IHierarchyCache::Savepoint
     {
     BeSQLite::Savepoint m_sqliteSavepoint;
-    SqliteSavepoint(BeSQLite::Db& db) : m_sqliteSavepoint(db, BeGuid(true).ToString().c_str()){}
+    SqliteSavepoint(BeSQLite::Db& db) 
+        : m_sqliteSavepoint(db, BeGuid(true).ToString().c_str())
+        {
+        BeAssert(m_sqliteSavepoint.IsActive());
+        }
     void _Cancel() override {m_sqliteSavepoint.Cancel();}
     };
 
@@ -1709,7 +1713,9 @@ static bool AreRelated(IConnectionCR connection, DataSourceFilter::RelatedInstan
             }
         }
 
-    Savepoint txn(connection.GetDb(), "NodesCache/AreRelated"); 
+    Savepoint txn(connection.GetDb(), "NodesCache/AreRelated");
+    BeAssert(txn.IsActive());
+
     CachedECSqlStatementPtr stmt = statements.GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), query.c_str());
     if (!stmt.IsValid())
         {

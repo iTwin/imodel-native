@@ -189,6 +189,7 @@ ECClassCP ECSchemaHelper::GetECClass(ECClassId id) const {return m_connection.Ge
 bvector<ECClassCP> ECSchemaHelper::GetECClassesByName(Utf8CP name) const
     {
     Savepoint txn(m_connection.GetDb(), "ECSchemaHelper::GetECClassesByName");
+    BeAssert(txn.IsActive());
     
     static Utf8CP statementStr = "SELECT ECInstanceId FROM [meta].[ECClassDef] WHERE Name = ?";
     CachedECSqlStatementPtr stmt = m_statementCache->GetPreparedStatement(m_connection.GetECDb().Schemas(), m_connection.GetDb(), statementStr);
@@ -575,7 +576,8 @@ private:
     +---------------+---------------+---------------+---------------+---------------+------*/
     IdSet<ECClassId> DeterminePolymorphicallySupportedClassesIds(bool include) const
         {
-        Savepoint txn(m_connection.GetDb(), "SupportedClassesResolver::DeterminePolymorphicallySupportedClassesIds");    
+        Savepoint txn(m_connection.GetDb(), "SupportedClassesResolver::DeterminePolymorphicallySupportedClassesIds");
+        BeAssert(txn.IsActive());
     
         IdSet<ECClassId> const& ids = include ? GetIncludedEntityClassIds() : GetExcludedEntityClassIds();
         IdsFilteringHelper<IdSet<ECClassId>> helper(ids);

@@ -798,6 +798,7 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
     context.GetHandledHierarchies().insert(newInfo);
 
     Savepoint txn(connection.GetDb(), "Update");
+    BeAssert(txn.IsActive());
 
     if (IsHierarchyRemoved(context, oldInfo))
         {

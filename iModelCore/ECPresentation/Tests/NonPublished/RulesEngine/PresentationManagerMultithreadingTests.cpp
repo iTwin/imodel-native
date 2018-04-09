@@ -20,40 +20,41 @@ USING_NAMESPACE_ECPRESENTATIONTESTS
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
-struct RulesDrivenECPresentationManagerMultithreadingTests : ECPresentationTest
+struct RulesDrivenECPresentationManagerMultithreadingTestsBase : ECPresentationTest
     {
     static Utf8CP s_projectName;
     static ECDbTestProject* s_project;
-    TestConnectionManager m_connections;
-    TestConnection* m_connection;
+    IConnectionManager* m_connections;
+    IConnection* m_connection;
     RulesDrivenECPresentationManager* m_manager;
-    
+
     static void SetUpTestCase();
     static void TearDownTestCase();
     virtual void SetUp() override;
     virtual void TearDown() override;
+    virtual IConnectionManager* _CreateConnectionManager() const = 0;
 
     void Sync()
         {
-        folly::via(&m_manager->GetExecutor(), [](){}).wait();
+        folly::via(&m_manager->GetExecutor(), []() {}).wait();
         }
     };
-Utf8CP RulesDrivenECPresentationManagerMultithreadingTests::s_projectName = "RulesDrivenECPresentationManagerMultithreadingTests";
-ECDbTestProject* RulesDrivenECPresentationManagerMultithreadingTests::s_project = nullptr;
+Utf8CP RulesDrivenECPresentationManagerMultithreadingTestsBase::s_projectName = "RulesDrivenECPresentationManagerMultithreadingTestsBase";
+ECDbTestProject* RulesDrivenECPresentationManagerMultithreadingTestsBase::s_project = nullptr;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerMultithreadingTests::SetUpTestCase()
+void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUpTestCase()
     {
     s_project = new ECDbTestProject();
-    s_project->Create(s_projectName);
+    s_project->Create(s_projectName, "RulesEngineTest.01.00.ecschema.xml");
     }
 
 /*---------------------------------------------------------------------------------**//**
 // @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerMultithreadingTests::TearDownTestCase()
+void RulesDrivenECPresentationManagerMultithreadingTestsBase::TearDownTestCase()
     {
     DELETE_AND_CLEAR(s_project);
     }
@@ -61,20 +62,22 @@ void RulesDrivenECPresentationManagerMultithreadingTests::TearDownTestCase()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerMultithreadingTests::SetUp()
+void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUp()
     {
     ECPresentationTest::SetUp();
-    m_manager = new RulesDrivenECPresentationManager(m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
-    m_connection = m_connections.NotifyConnectionOpened(s_project->GetECDb()).get();
+    m_connections = _CreateConnectionManager();
+    m_manager = new RulesDrivenECPresentationManager(*m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
+    m_connection = m_connections->CreateConnection(s_project->GetECDb()).get();
     Sync();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                07/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerMultithreadingTests::TearDown()
+void RulesDrivenECPresentationManagerMultithreadingTestsBase::TearDown()
     {
     DELETE_AND_CLEAR(m_manager);
+    DELETE_AND_CLEAR(m_connections);
     }
 
 #ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
@@ -82,6 +85,14 @@ void RulesDrivenECPresentationManagerMultithreadingTests::TearDown()
 #else
     #define VERIFY_THREAD_NE(threadId)  EXPECT_NE(threadId, BeThreadUtilities::GetCurrentThreadId())
 #endif
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++===============+===============+===============+===============+===============+======*/
+struct RulesDrivenECPresentationManagerMultithreadingTests : RulesDrivenECPresentationManagerMultithreadingTestsBase
+    {
+    IConnectionManager* _CreateConnectionManager() const override {return new TestConnectionManager();}
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
@@ -168,6 +179,50 @@ TEST_F(RulesDrivenECPresentationManagerMultithreadingTests, ECInstanceChangeEven
 /*=================================================================================**//**
 * @bsiclass                                     Grigas.Petraitis                04/2015
 +===============+===============+===============+===============+===============+======*/
+struct RulesDrivenECPresentationManagerMultithreadingRealConnectionTests : RulesDrivenECPresentationManagerMultithreadingTestsBase
+    {
+    IConnectionManager* _CreateConnectionManager() const override {return new ConnectionManager();}
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerMultithreadingRealConnectionTests, HandlesBusyConnectionByWaiting)
+    {
+    // set up some ruleset so we do actually hit the db
+    PresentationRuleSetPtr ruleset = PresentationRuleSet::CreateInstance("ruleset_id", 1, 0, false, "", "", "", false);
+    ruleset->AddPresentationRule(*new RootNodeRule());
+    ruleset->GetRootNodesRules().back()->AddSpecification(*new AllInstanceNodesSpecification());
+    RefCountedPtr<TestRuleSetLocater> locater = TestRuleSetLocater::Create();
+    locater->AddRuleSet(*ruleset);
+    m_manager->GetLocaters().RegisterLocater(*locater);
+
+    // lock the db using the primary connection
+    s_project->GetECDb().GetDefaultTransaction()->Cancel();
+    Savepoint txn(s_project->GetECDb(), "Lock primary", true, BeSQLiteTxnMode::Exclusive);
+    ASSERT_TRUE(txn.IsActive());
+
+    // attempt to get some data (don't expect to get any, but make sure request succeeds)
+    NavNodeKeyCPtr key = LabelGroupingNodeKey::Create("label", {"a", "b", "c"});
+    RulesDrivenECPresentationManager::NavigationOptions options(ruleset->GetRuleSetId().c_str(), RuleTargetTree::TargetTree_MainTree);
+    folly::Future<size_t> count = m_manager->GetRootNodesCount(s_project->GetECDb(), options.GetJson());
+
+    // verify we don't get any result for 1 second
+    count.wait(std::chrono::seconds(1));
+    ASSERT_FALSE(count.isReady());
+
+    // unlock the db
+    txn.Cancel();
+    s_project->GetECDb().GetDefaultTransaction()->Begin();
+
+    // verify we do get the result after the lock is released
+    count.wait(std::chrono::seconds(1));
+    ASSERT_TRUE(count.isReady());
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2015
++===============+===============+===============+===============+===============+======*/
 struct RulesDrivenECPresentationManagerCustomImplMultithreadingTests : RulesDrivenECPresentationManagerMultithreadingTests
     {
     TestRulesDrivenECPresentationManagerImpl* m_impl;
@@ -180,7 +235,7 @@ struct RulesDrivenECPresentationManagerCustomImplMultithreadingTests : RulesDriv
 void RulesDrivenECPresentationManagerCustomImplMultithreadingTests::SetUp()
     {
     RulesDrivenECPresentationManagerMultithreadingTests::SetUp();
-    m_impl = new TestRulesDrivenECPresentationManagerImpl(*m_manager->CreateDependenciesFactory(), m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
+    m_impl = new TestRulesDrivenECPresentationManagerImpl(*m_manager->CreateDependenciesFactory(), *m_connections, RulesEngineTestHelpers::GetPaths(BeTest::GetHost()));
     m_manager->SetImpl(*m_impl);
     }
 
@@ -564,7 +619,7 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
         m_manager->GetLocaters().RegisterLocater(*m_locater);
         m_locater->AddRuleSet(*PresentationRuleSet::CreateInstance(s_rulesetId, 1, 0, false, "", "", "", false));
 
-        m_connection->SetInterruptHandler([&](){m_connectionInterrupted = true;});
+        static_cast<TestConnection*>(m_connection)->SetInterruptHandler([&](){m_connectionInterrupted = true;});
         }
 
     template<typename TCallback>
@@ -615,7 +670,7 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
 
     void CloseConnectionAndVerifyResult()
         {
-        m_connections.NotifyConnectionClosed(*m_connections.GetConnection(s_project->GetECDb()));
+        static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*m_connections->GetConnection(s_project->GetECDb()));
         VerifyCancelation(true, true, 0);
         }
     
@@ -1200,7 +1255,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     {
     ECDbTestProject project2;
     project2.Create("DoesntCancelContentDescriptorRequestWhenSelectionOnDifferentConnectionChanges");
-    RefCountedPtr<TestConnection> connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+    RefCountedPtr<TestConnection> connection2 = static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionOpened(project2.GetECDb());
 
     // set the request handler
     m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
@@ -1229,7 +1284,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     // verify
     VerifyCancelation(false, false, 2);
 
-    m_connections.NotifyConnectionClosed(*connection2);
+    static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1361,7 +1416,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     {
     ECDbTestProject project2;
     project2.Create(BeTest::GetNameOfCurrentTest());
-    RefCountedPtr<TestConnection> connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+    IConnectionPtr connection2 = static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionOpened(project2.GetECDb());
 
     // set the request handler
     m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
@@ -1392,7 +1447,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     // verify
     VerifyCancelation(false, false, 2);
 
-    m_connections.NotifyConnectionClosed(*connection2);
+    static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1524,7 +1579,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     {
     ECDbTestProject project2;
     project2.Create(BeTest::GetNameOfCurrentTest());
-    RefCountedPtr<TestConnection> connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
+    RefCountedPtr<TestConnection> connection2 = static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionOpened(project2.GetECDb());
     
     // set the request handler
     m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
@@ -1555,7 +1610,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     // verify
     VerifyCancelation(false, false, 2);
 
-    m_connections.NotifyConnectionClosed(*connection2);
+    static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*connection2);
     }
 
 /*---------------------------------------------------------------------------------**//**

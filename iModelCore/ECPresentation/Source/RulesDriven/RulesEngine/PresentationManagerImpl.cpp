@@ -317,7 +317,6 @@ public:
         for (auto iter : m_caches)
             delete iter.second;
         }
-    void NotifyECInstancesChanged(IConnectionCR connection) {GetPolymorphicallyRelatedClassesCache(connection).Clear();}
     RelatedPathsCache& GetRelatedPathsCache(IConnectionCR connection) const {return *GetCaches(connection).m_relatedPathsCache;}
     PolymorphicallyRelatedClassesCache& GetPolymorphicallyRelatedClassesCache(IConnectionCR connection) const {return *GetCaches(connection).m_polymorphicallyRelatedClassesCache;}
     ECSqlStatementCache& GetStatementsCache(IConnectionCR connection) const {return *GetCaches(connection).m_statementsCache;}
@@ -649,8 +648,16 @@ void RulesDrivenECPresentationManagerImpl::_OnCategoriesChanged()
 void RulesDrivenECPresentationManagerImpl::_OnECInstancesChanged(ECDbCR db, bvector<ECInstanceChangeEventSource::ChangedECInstance> changes)
     {
     IConnectionPtr connection = m_connections.GetConnection(db);
-    m_updateHandler->NotifyECInstancesChanged(*connection, changes);
-    m_ecdbCaches->NotifyECInstancesChanged(*connection);
+    if (connection.IsNull())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    m_ecdbCaches->GetPolymorphicallyRelatedClassesCache(*connection).Clear();
+
+    if (!changes.empty())
+        m_updateHandler->NotifyECInstancesChanged(*connection, changes);
     }
 
 /*---------------------------------------------------------------------------------**//**

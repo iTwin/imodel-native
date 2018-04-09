@@ -99,7 +99,10 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
 
     // get the statement
     RefCountedPtr<PerformanceLogger> _l = LoggingHelper::CreatePerformanceLogger(Log::Default, "[QueryExecutor] Getting prepared statement", NativeLogging::LOG_TRACE);
+
     Savepoint txn(m_connection.GetDb(), "QueryExecutor::ReadRecords");
+    BeAssert(txn.IsActive());
+
     CachedECSqlStatementPtr statement = GetStatement();
     if (statement.IsNull())
         {
