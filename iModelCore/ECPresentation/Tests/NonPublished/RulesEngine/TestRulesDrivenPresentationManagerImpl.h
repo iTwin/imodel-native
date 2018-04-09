@@ -44,7 +44,6 @@ struct TestRulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManag
     typedef std::function<void(ECInstanceChangeEventSource&)> Handler_OnECInstanceChangeEventSourceRegistered;
     typedef std::function<void(ECInstanceChangeEventSource&)> Handler_OnECInstanceChangeEventSourceUnregister;
     typedef std::function<void()> Handler_OnCategoriesChanged;
-    typedef std::function<void(ISelectionManager*, ISelectionManager*)> Handler_OnSelectionManagerChanged;
 
 private:
     Handler_GetRootNodes m_rootNodesHandler;
@@ -72,7 +71,6 @@ private:
     Handler_OnECInstanceChangeEventSourceRegistered m_ecInstanceChangeEventSourceRegisteredHandler;
     Handler_OnECInstanceChangeEventSourceUnregister m_ecInstanceChangeEventSourceUnregisterHandler;
     Handler_OnCategoriesChanged m_categoriesChangedHandler;
-    Handler_OnSelectionManagerChanged m_selectionManagerChangedHandler;
         
 protected:
     INavNodesDataSourcePtr _GetRootNodes(IConnectionCR connection, PageOptionsCR pageOptions, NavigationOptions const& options, ICancelationTokenCR cancelationToken) override 
@@ -201,11 +199,6 @@ protected:
         if (m_categoriesChangedHandler)
             m_categoriesChangedHandler();
         }
-    void _OnSelectionManagerChanged(ISelectionManager* before, ISelectionManager* after) override
-        {
-        if (m_selectionManagerChangedHandler)
-            m_selectionManagerChangedHandler(before, after);
-        }
 
 public:
     TestRulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, IConnectionManagerCR connections, Paths const& paths)
@@ -237,7 +230,6 @@ public:
     void SetSetECInstanceChangeEventSourceRegisteredHandler(Handler_OnECInstanceChangeEventSourceRegistered handler) {m_ecInstanceChangeEventSourceRegisteredHandler = handler;}
     void SetECInstanceChangeEventSourceUnregisterHandler(Handler_OnECInstanceChangeEventSourceUnregister handler) {m_ecInstanceChangeEventSourceUnregisterHandler = handler;}
     void SetCategoriesChangedHandler(Handler_OnCategoriesChanged handler) {m_categoriesChangedHandler = handler;}
-    void SetSelectionManagerChangedHandler(Handler_OnSelectionManagerChanged handler) {m_selectionManagerChangedHandler = handler;}
 };
 
 END_ECPRESENTATIONTESTS_NAMESPACE

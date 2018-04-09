@@ -62,13 +62,11 @@ struct UpdateContext
 {
 private:
     bmap<uint64_t, uint64_t> m_remapInfo;
-    bmap<Utf8String, ChangeType> m_changedNodesInfo;
     bset<uint64_t> m_removedNodeIds;
     bset<HierarchyLevelInfo> m_handledHierarchies;
     bset<Utf8String> m_reportedContentRulesetIds;
 public:
     bmap<uint64_t, uint64_t>& GetRemapInfo() {return m_remapInfo;}
-    bmap<Utf8String, ChangeType>& GetChangedNodesInfo() {return m_changedNodesInfo;}
     bset<uint64_t>& GetRemovedNodeIds() {return m_removedNodeIds;}
     bset<uint64_t> const& GetRemovedNodeIds() const {return m_removedNodeIds;}
     bset<HierarchyLevelInfo>& GetHandledHierarchies() {return m_handledHierarchies;}
@@ -112,15 +110,13 @@ struct UpdateTasksFactory
 {
 private:
     mutable IUpdateRecordsHandler* m_recordsHandler;
-    ISelectionManager* m_selectionManager;
     NodesCache* m_nodesCache;
     
 public:
     UpdateTasksFactory(NodesCache* nodesCache, ContentCache* contentCache, IUpdateRecordsHandler* recordsHandler) 
-        : m_nodesCache(nodesCache), m_recordsHandler(recordsHandler), m_selectionManager(nullptr)
+        : m_nodesCache(nodesCache), m_recordsHandler(recordsHandler)
         {}
     void SetRecordsHandler(IUpdateRecordsHandler* handler) {m_recordsHandler = handler;}
-    void SetSelectionManager(ISelectionManager* selectionManager) {m_selectionManager = selectionManager;}
 
     // hierarchy-related update tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRemapNodeIdsTask(bmap<uint64_t, uint64_t> const&) const;
@@ -133,9 +129,6 @@ public:
     // reporting tasks
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(UpdateRecord) const;
     ECPRESENTATION_EXPORT IUpdateTaskPtr CreateReportTask(FullUpdateRecord) const;
-
-    // selection-related tasks
-    ECPRESENTATION_EXPORT IUpdateTaskPtr CreateRefreshSelectionTask(IConnectionCR, bmap<Utf8String, ChangeType>&) const;
 };
 
 /*=================================================================================**//**
@@ -148,7 +141,6 @@ private:
     ContentCache* m_contentCache;
     IConnectionManagerCR m_connections;
     UpdateTasksFactory m_tasksFactory;
-    ISelectionManager* m_selectionManager;
     IECExpressionsCacheProvider& m_ecexpressionsCacheProvider;
     RefCountedPtr<IUpdateRecordsHandler> m_updateRecordsHandler;
     HierarchyUpdater* m_hierarchyUpdater;
@@ -168,7 +160,6 @@ public:
         INodesProviderFactoryCR, IECExpressionsCacheProvider&);
     ECPRESENTATION_EXPORT ~UpdateHandler();
     UpdateTasksFactory const& GetTasksFactory() const {return m_tasksFactory;}
-    void SetSelectionManager(ISelectionManager* selectionManager) {m_selectionManager = selectionManager; m_tasksFactory.SetSelectionManager(selectionManager);}
     void SetRecordsHandler(IUpdateRecordsHandler* handler) {m_updateRecordsHandler = handler; m_tasksFactory.SetRecordsHandler(handler);}
 
     void NotifyRulesetDisposed(PresentationRuleSetCR ruleset);

@@ -45,14 +45,14 @@ struct TaskDependencies
 private:
     Utf8String m_connectionId;
     Utf8String m_rulesetId;
-    bool m_selection;
+    Utf8String m_selectionSourceName;
 public:
-    TaskDependencies(Utf8String connectionId = "", Utf8String rulesetId = "", bool selection = false)
-        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_selection(selection)
+    TaskDependencies(Utf8String connectionId = "", Utf8String rulesetId = "", SelectionInfo const* selectionInfo = nullptr)
+        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_selectionSourceName(selectionInfo ? selectionInfo->GetSelectionProviderName() : "")
         {}
     Utf8StringCR GetConnectionIdDependency() const {return m_connectionId;}
     Utf8StringCR GetRulesetIdDependency() const {return m_rulesetId;}
-    bool DependsOnSelection() const {return m_selection;}
+    Utf8StringCR GetSelectionSourceDependency() const {return m_selectionSourceName;}
 };
 
 /*=================================================================================**//**
@@ -115,11 +115,11 @@ public:
         m_tasks.erase(&task);
         }
     void CancelAll(){Cancel(nullptr);}
-    void CancelSelectionDependants(IConnectionCR connection)
+    void CancelSelectionDependants(IConnectionCR connection, SelectionInfo const& selectionInfo)
         {
         bool didCancel = Cancel([&](ICancelableTask const& task)
             {
-            return task.GetDependencies().DependsOnSelection() 
+            return task.GetDependencies().GetSelectionSourceDependency().Equals(selectionInfo.GetSelectionProviderName())
                 && task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId());
             });
         if (didCancel)
@@ -233,8 +233,6 @@ protected:
         folly::via(&m_executor, [&, connectionId = m_connections.GetConnection(db)->GetId(), changes]()
             {
             IConnectionPtr connection = m_connections.GetConnection(connectionId.c_str());
-            // we didn't make any changes, but need to restart the transaction so changes from other connections become visible
-            //connection->GetDb().AbandonChanges(); 
             NotifyECInstancesChanged(connection->GetECDb(), changes);
             });
         }
@@ -244,67 +242,6 @@ public:
         return new ECInstanceChangeEventSourceWrapper(executor, connections, wrapped);
         }
     ECInstanceChangeEventSource& GetWrappedEventSource() const {return *m_wrapped;}
-};
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                11/2017
-+===============+===============+===============+===============+===============+======*/
-struct RulesDrivenECPresentationManager::SelectionManagerWrapper : ISelectionManager, ISelectionChangesListener
-{
-private:
-    RulesDrivenECPresentationManager& m_manager;
-    ISelectionManager& m_wrapped;
-    bvector<ISelectionChangesListener*> m_listeners;
-
-protected:
-    KeySetCPtr _GetSelection(ECDbCR ecdb) const override {return m_wrapped.GetSelection(ecdb);}
-    KeySetCPtr _GetSubSelection(ECDbCR ecdb) const override {return m_wrapped.GetSubSelection(ecdb);}
-    void _AddListener(ISelectionChangesListener& listener) override {m_listeners.push_back(&listener);}
-    void _RemoveListener(ISelectionChangesListener& listener) override {m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), &listener));}
-    void _AddToSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData) override
-        {
-        m_wrapped.AddToSelection(db, source, isSubSelection, keys, extendedData);
-        }
-    void _RemoveFromSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData) override
-        {
-        m_wrapped.RemoveFromSelection(db, source, isSubSelection, keys, extendedData);
-        }
-    void _ChangeSelection(ECDbCR db, Utf8CP source, bool isSubSelection, KeySetCR keys, RapidJsonValueCR extendedData) override
-        {
-        m_wrapped.ChangeSelection(db, source, isSubSelection, keys, extendedData);
-        }
-    void _ClearSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData) override
-        {
-        m_wrapped.ClearSelection(db, source, isSubSelection, extendedData);
-        }
-    void _OnSelectionChanged(SelectionChangedEventCR evt) override
-        {
-        m_manager.m_cancelableTasks->CancelSelectionDependants(evt.GetConnection());
-        folly::via(m_manager.m_executor, [&, evt = SelectionChangedEventCPtr(&evt)]()
-            {
-            IConnectionPtr connection = m_manager.GetConnections().GetConnection(evt->GetConnection().GetId().c_str());
-            SelectionChangedEventPtr evtForThisThread = SelectionChangedEvent::Create(*connection, evt->GetSourceName(), evt->GetChangeType(),
-                evt->IsSubSelection(), evt->GetSelectedKeys());
-            evtForThisThread->GetExtendedDataR().CopyFrom(evt->GetExtendedData(), evtForThisThread->GetExtendedDataAllocator());
-            for (ISelectionChangesListener* listener : m_listeners)
-                listener->NotifySelectionChanged(*evtForThisThread);
-            });
-        }
-    void _RefreshSelection(ECDbCR db, Utf8CP source, bool isSubSelection, RapidJsonValueCR extendedData) override
-        {
-        m_wrapped.RefreshSelection(db, source, isSubSelection, extendedData);
-        }
-
-public:
-    SelectionManagerWrapper(RulesDrivenECPresentationManager& manager, ISelectionManager& wrapped)
-        : m_manager(manager), m_wrapped(wrapped)
-        {
-        m_wrapped.AddListener(*this);
-        }
-    ~SelectionManagerWrapper()
-        {
-        m_wrapped.RemoveListener(*this);
-        }
 };
 
 /*=================================================================================**//**
@@ -447,7 +384,7 @@ std::unique_ptr<IRulesDrivenECPresentationManagerDependenciesFactory> RulesDrive
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::RulesDrivenECPresentationManager(IConnectionManagerR connections, Paths const& paths, bool disableDiskCache)
-    : IECPresentationManager(connections), m_selectionProviderWrapper(nullptr)
+    : IECPresentationManager(connections)
     {
 #ifdef RULES_ENGINE_FORCE_SINGLE_THREAD
     m_executor = new folly::InlineExecutor();
@@ -478,7 +415,6 @@ RulesDrivenECPresentationManager::~RulesDrivenECPresentationManager()
 #endif
 
     DELETE_AND_CLEAR(m_connectionsWrapper);
-    DELETE_AND_CLEAR(m_selectionProviderWrapper);
 
     DELETE_AND_CLEAR(m_executor);
     DELETE_AND_CLEAR(m_cancelableTasks);
@@ -685,7 +621,10 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions)
     {
-    auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), true));
+    if (selectionInfo)
+        m_cancelableTasks->CancelSelectionDependants(primaryConnection, *selectionInfo);
+
+    auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), selectionInfo));
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, input = KeySetCPtr(&inputKeys), selectionInfo, jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -705,7 +644,10 @@ folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOpts)
     {
-    auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), true));
+    if (descriptor.GetSelectionInfo())
+        m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), *descriptor.GetSelectionInfo());
+
+    auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetSelectionInfo()));
     folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts]()
         {
         if (promise->IsCanceled())
@@ -722,7 +664,10 @@ folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(Content
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(ContentDescriptorCR descriptor)
     {
-    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), true));
+    if (descriptor.GetSelectionInfo())
+        m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), *descriptor.GetSelectionInfo());
+
+    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetSelectionInfo()));
     folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor)]()
         {
         if (promise->IsCanceled())
@@ -780,23 +725,12 @@ void RulesDrivenECPresentationManager::UnregisterECInstanceChangeEventSource(ECI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::SetUpdateRecordsHandler(IUpdateRecordsHandler* handler) {m_impl->SetUpdateRecordsHandler(handler);}
+void RulesDrivenECPresentationManager::RegisterUpdateRecordsHandler(IUpdateRecordsHandler& handler) {m_impl->RegisterUpdateRecordsHandler(handler);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
+* @bsimethod                                    Grigas.Petraitis                02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::SetSelectionManager(ISelectionManager* manager)
-    {
-    SelectionManagerWrapper* oldWrapper = m_selectionProviderWrapper;
-    SelectionManagerWrapper* newWrapper = (nullptr != manager) ? new SelectionManagerWrapper(*this, *manager) : nullptr;
-    m_impl->SetSelectionManager(newWrapper);
-    DELETE_AND_CLEAR(oldWrapper);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-ISelectionManager* RulesDrivenECPresentationManager::GetSelectionManager() const {return m_impl->GetSelectionManager();}
+void RulesDrivenECPresentationManager::UnregisterUpdateRecordsHandler(IUpdateRecordsHandler& handler) {m_impl->UnregisterUpdateRecordsHandler(handler);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017

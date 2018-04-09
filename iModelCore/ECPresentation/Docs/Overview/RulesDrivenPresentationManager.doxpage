@@ -2,7 +2,7 @@
 |
 |     $Source: Docs/Overview/RulesDrivenPresentationManager.doxpage $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // __PUBLISH_SECTION_START__
@@ -95,12 +95,6 @@ The first thing the application should do is create and register the rules-drive
 implementation:
 $SAMPLECODE_BEGIN[SetUpPresentationManager, Set Up IECPresentationManager]
 __PUBLISH_INSERT_FILE__ PresentationManagerSample_SetUp.sampleCode
-$SAMPLECODE_END
-
-For the cached content to be correctly discarded when selection changes, the unified selection manager used by the application
-has to be set for rules-driven presentation manager:
-$SAMPLECODE_BEGIN[SetSelectionManager, Set SelectionManager]
-__PUBLISH_INSERT_FILE__ PresentationManagerSample_SetUp_SelectionRelated.sampleCode
 $SAMPLECODE_END
 
 For apps which allow editing the below part is also needed:

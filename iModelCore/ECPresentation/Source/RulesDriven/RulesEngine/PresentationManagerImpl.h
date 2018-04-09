@@ -46,18 +46,18 @@ struct RulesDrivenECPresentationManager::Impl
     typedef RulesDrivenECPresentationManager::Paths Paths;
     typedef RulesDrivenECPresentationManager::NavigationOptions NavigationOptions;
     typedef RulesDrivenECPresentationManager::ContentOptions ContentOptions;
+    struct CompositeUpdateRecordsHandler;
 
 private:
     IRulesetLocaterManager* m_locaters;
     IUserSettingsManager* m_userSettings;
     IJsonLocalState* m_localState;
-    ISelectionManager* m_selectionManager;
     ILocalizationProvider const* m_localizationProvider;
     IECPropertyFormatter const* m_ecPropertyFormatter;
     IPropertyCategorySupplier* m_categorySupplier;
     bset<IECInstanceChangeHandlerPtr, IECInstanceChangeHandlerPtrComparer> m_ecInstanceChangeHandlers;
     bvector<ECInstanceChangeEventSourcePtr> m_ecInstanceChangeEventSources;
-    RefCountedPtr<IUpdateRecordsHandler> m_updateRecordsHandler;
+    CompositeUpdateRecordsHandler* m_compositeUpdateRecordsHandler;
 
 protected:
 /** @name IECPresentationManager: Navigation */
@@ -92,7 +92,6 @@ protected:
     virtual void _OnECInstanceChangeEventSourceRegistered(ECInstanceChangeEventSource&) {}
     virtual void _OnECInstanceChangeEventSourceUnregister(ECInstanceChangeEventSource&) {}
     virtual void _OnCategoriesChanged() {}
-    virtual void _OnSelectionManagerChanged(ISelectionManager* before, ISelectionManager* after) {}
 /**/
 
 public:
@@ -108,9 +107,7 @@ public:
     IRulesetLocaterManager& GetLocaters() const {return *m_locaters;}
     IUserSettings& GetUserSettings(Utf8CP rulesetId) const {return m_userSettings->GetSettings(rulesetId);}
     ECPRESENTATION_EXPORT void SetLocalState(IJsonLocalState* localState);
-    IJsonLocalState* GetLocalState() const {return m_localState;}    
-    ECPRESENTATION_EXPORT void SetSelectionManager(ISelectionManager*);
-    ISelectionManager* GetSelectionManager() const {return m_selectionManager;}
+    IJsonLocalState* GetLocalState() const {return m_localState;}
 /** @} */
 
 /** @name Localization */
@@ -138,12 +135,17 @@ public:
     void UnregisterECInstanceChangeHandler(IECInstanceChangeHandler& handler) {m_ecInstanceChangeHandlers.erase(&handler);}
 /** @} */
 
-/** @name Reacting to ECInstance Changes */
+/** @name Notifying about ECInstance Changes */
 /** @{ */
     ECPRESENTATION_EXPORT void RegisterECInstanceChangeEventSource(ECInstanceChangeEventSource&);
     ECPRESENTATION_EXPORT void UnregisterECInstanceChangeEventSource(ECInstanceChangeEventSource&);
-    void SetUpdateRecordsHandler(IUpdateRecordsHandler* handler) {m_updateRecordsHandler = handler; _OnUpdateRecordsHandlerChanged();}
-    IUpdateRecordsHandler* GetUpdateRecordsHandler() const {return m_updateRecordsHandler.get();}
+/** @} */
+
+/** @name Reacting to Content / Hierarchy Changes */
+/** @{ */
+    ECPRESENTATION_EXPORT void RegisterUpdateRecordsHandler(IUpdateRecordsHandler&);
+    ECPRESENTATION_EXPORT void UnregisterUpdateRecordsHandler(IUpdateRecordsHandler&);
+    ECPRESENTATION_EXPORT IUpdateRecordsHandler& GetCompositeUpdateRecordsHandler() const;
 /** @} */
 
 /** @name IECPresentationManager: Navigation */
@@ -178,7 +180,7 @@ public:
 // @bsiclass                                    Grigas.Petraitis                03/2015
 //=======================================================================================
 struct RulesDrivenECPresentationManagerImpl : RulesDrivenECPresentationManager::Impl, ECInstanceChangeEventSource::IEventHandler, 
-    ISelectionChangesListener, IRulesetCallbacksHandler, IUserSettingsChangeListener, IConnectionsListener
+    IRulesetCallbacksHandler, IUserSettingsChangeListener, IConnectionsListener
 {
     struct ECDbCaches;
     struct RulesetECExpressionsCache;
@@ -210,9 +212,6 @@ protected:
     // IRulesetCallbacksHandler
     ECPRESENTATION_EXPORT void _OnRulesetDispose(PresentationRuleSetCR) override;
     ECPRESENTATION_EXPORT void _OnRulesetCreated(PresentationRuleSetCR) override;
-
-    // ISelectionChangesListener
-    ECPRESENTATION_EXPORT void _OnSelectionChanged(SelectionChangedEventCR) override;
 
     // IUserSettingsChangeListener
     ECPRESENTATION_EXPORT void _OnSettingChanged(Utf8CP rulesetId, Utf8CP settingId) const override;
@@ -252,7 +251,6 @@ protected:
     ECPRESENTATION_EXPORT void _OnECInstanceChangeEventSourceUnregister(ECInstanceChangeEventSource&) override;    
     ECPRESENTATION_EXPORT void _OnUpdateRecordsHandlerChanged() override;
     ECPRESENTATION_EXPORT void _OnCategoriesChanged() override;
-    ECPRESENTATION_EXPORT void _OnSelectionManagerChanged(ISelectionManager* before, ISelectionManager* after) override;
 
 public:
     ECPRESENTATION_EXPORT RulesDrivenECPresentationManagerImpl(IRulesDrivenECPresentationManagerDependenciesFactory const&, IConnectionManagerCR, Paths const&, bool disableDiskCache = false);

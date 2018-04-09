@@ -24,6 +24,37 @@
 #include "ContentClassesLocater.h"
 #include "UsedClassesListener.h"
 
+//=======================================================================================
+// @bsiclass                                    Grigas.Petraitis                04/2018
+//=======================================================================================
+struct RulesDrivenECPresentationManager::Impl::CompositeUpdateRecordsHandler : IUpdateRecordsHandler
+{
+private:
+    bvector<RefCountedPtr<IUpdateRecordsHandler>> m_handlers;
+protected:
+    void _Start() override {std::for_each(m_handlers.begin(), m_handlers.end(), [](RefCountedPtr<IUpdateRecordsHandler> h){h->Start();});}
+    void _Accept(UpdateRecord const& record) override {std::for_each(m_handlers.begin(), m_handlers.end(), [&record](RefCountedPtr<IUpdateRecordsHandler> h){h->Accept(record);});}
+    void _Accept(FullUpdateRecord const& record) override {std::for_each(m_handlers.begin(), m_handlers.end(), [&record](RefCountedPtr<IUpdateRecordsHandler> h){h->Accept(record);});}
+    void _Finish() override {std::for_each(m_handlers.begin(), m_handlers.end(), [](RefCountedPtr<IUpdateRecordsHandler> h){h->Finish();});}
+public:
+    void Register(IUpdateRecordsHandler& handler)
+        {
+        m_handlers.push_back(&handler);
+        }
+    bool Unregister(IUpdateRecordsHandler& handler)
+        {
+        for (auto iter = m_handlers.begin(); iter != m_handlers.end(); ++iter)
+            {
+            if (iter->get() == &handler)
+                {
+                m_handlers.erase(iter);
+                return true;
+                }
+            }
+        return false;
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -38,11 +69,13 @@ IUserSettingsManager* RulesDrivenECPresentationManagerDependenciesFactory::_Crea
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::Impl::Impl(IRulesDrivenECPresentationManagerDependenciesFactory const& dependenciesFactory, IConnectionManagerCR connections, Paths const& paths)
-    : m_localState(nullptr), m_selectionManager(nullptr), m_localizationProvider(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr)
+    : m_localState(nullptr), m_localizationProvider(nullptr), m_ecPropertyFormatter(nullptr), m_categorySupplier(nullptr)
     {
     m_locaters = dependenciesFactory._CreateRulesetLocaterManager(connections);
     m_userSettings = dependenciesFactory._CreateUserSettingsManager(paths.GetTemporaryDirectory());
     m_userSettings->SetLocalizationProvider(&GetLocalizationProvider());
+    m_compositeUpdateRecordsHandler = new CompositeUpdateRecordsHandler();
+    m_compositeUpdateRecordsHandler->AddRef();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -50,6 +83,7 @@ RulesDrivenECPresentationManager::Impl::Impl(IRulesDrivenECPresentationManagerDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 RulesDrivenECPresentationManager::Impl::~Impl()
     {
+    m_compositeUpdateRecordsHandler->Release();
     DELETE_AND_CLEAR(m_userSettings);
     DELETE_AND_CLEAR(m_locaters);
     }
@@ -61,16 +95,6 @@ void RulesDrivenECPresentationManager::Impl::SetLocalState(IJsonLocalState* loca
     {
     m_localState = localState;
     m_userSettings->SetLocalState(localState);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManager::Impl::SetSelectionManager(ISelectionManager* manager)
-    {
-    ISelectionManager* before = m_selectionManager;
-    m_selectionManager = manager;
-    _OnSelectionManagerChanged(before, m_selectionManager);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,6 +158,29 @@ void RulesDrivenECPresentationManager::Impl::UnregisterECInstanceChangeEventSour
     {
     _OnECInstanceChangeEventSourceUnregister(source);
     m_ecInstanceChangeEventSources.erase(std::remove(m_ecInstanceChangeEventSources.begin(), m_ecInstanceChangeEventSources.end(), &source));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+IUpdateRecordsHandler& RulesDrivenECPresentationManager::Impl::GetCompositeUpdateRecordsHandler() const {return *m_compositeUpdateRecordsHandler;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::Impl::RegisterUpdateRecordsHandler(IUpdateRecordsHandler& handler)
+    {
+    m_compositeUpdateRecordsHandler->Register(handler);
+    _OnUpdateRecordsHandlerChanged();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void RulesDrivenECPresentationManager::Impl::UnregisterUpdateRecordsHandler(IUpdateRecordsHandler& handler)
+    {
+    if (m_compositeUpdateRecordsHandler->Unregister(handler))
+        _OnUpdateRecordsHandlerChanged();
     }
 
 /*=================================================================================**//**
@@ -597,20 +644,6 @@ void RulesDrivenECPresentationManagerImpl::_OnCategoriesChanged()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::_OnSelectionChanged(SelectionChangedEventCR evt)
-    {
-    if (!evt.IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    m_contentCache->ClearCache(evt.GetConnection());
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImpl::_OnECInstancesChanged(ECDbCR db, bvector<ECInstanceChangeEventSource::ChangedECInstance> changes)
@@ -1041,21 +1074,7 @@ void RulesDrivenECPresentationManagerImpl::_OnECInstanceChangeEventSourceUnregis
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImpl::_OnUpdateRecordsHandlerChanged()
     {
-    m_updateHandler->SetRecordsHandler(GetUpdateRecordsHandler());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RulesDrivenECPresentationManagerImpl::_OnSelectionManagerChanged(ISelectionManager* before, ISelectionManager* after)
-    {
-    if (nullptr != before)
-        before->RemoveListener(*this);
-
-    if (nullptr != after)
-        after->AddListener(*this);
-
-    m_updateHandler->SetSelectionManager(after);
+    m_updateHandler->SetRecordsHandler(&GetCompositeUpdateRecordsHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**

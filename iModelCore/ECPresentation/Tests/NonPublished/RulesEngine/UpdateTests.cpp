@@ -9,6 +9,7 @@
 #include <ECPresentation/RulesDriven/PresentationManager.h>
 #include "../../../Source/RulesDriven/RulesEngine/PresentationManagerImpl.h"
 #include <UnitTests/BackDoor/ECPresentation/TestRuleSetLocater.h>
+#include <UnitTests/BackDoor/ECPresentation/TestSelectionProvider.h>
 #include "ECDbTestProject.h"
 #include "TestHelpers.h"
 
@@ -57,7 +58,7 @@ struct UpdateTests : ECPresentationTest
 
     static void SetUpTestCase();
     
-    void SetUp() override
+    virtual void SetUp() override
         {
         ECPresentationTest::SetUp();
         m_localState.GetStubMap().clear();
@@ -79,7 +80,7 @@ struct UpdateTests : ECPresentationTest
         m_manager->SetLocalState(&m_localState);
         m_manager->GetLocaters().RegisterLocater(*m_locater);
         m_manager->RegisterECInstanceChangeEventSource(*m_eventsSource);
-        m_manager->SetUpdateRecordsHandler(m_updateRecordsHandler.get());
+        m_manager->RegisterUpdateRecordsHandler(*m_updateRecordsHandler);
         IECPresentationManager::RegisterImplementation(m_manager);
 
         m_connections.NotifyConnectionOpened(m_db);
@@ -110,6 +111,11 @@ struct UpdateTests : ECPresentationTest
             return Utf8String(label.c_str());
 
         return Utf8String(instance.GetClass().GetDisplayLabel().c_str());
+        }
+
+    void Sync()
+        {
+        folly::via(&m_manager->GetExecutor(), [](){}).wait();
         }
 };
 BeFileName UpdateTests::s_seedProjectPath;
@@ -5196,295 +5202,53 @@ TEST_F(HierarchyUpdateTests, DoesNotUpdateFixedHierarchyWhenChildIsDeleted)
     EXPECT_EQ(0, m_updateRecordsHandler->GetRecords().size());
     }
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                10/2017
-+===============+===============+===============+===============+===============+======*/
-struct TempSelectionManager : SelectionManager
-    {
-    RulesDrivenECPresentationManager& m_mgr;
-    TempSelectionManager(RulesDrivenECPresentationManager& mgr)
-        : SelectionManager(mgr.GetConnections()), m_mgr(mgr)
-        {
-        m_mgr.GetImpl().SetSelectionManager(this);
-        }
-    ~TempSelectionManager() {m_mgr.GetImpl().SetSelectionManager(nullptr);}
-    };
-
 /*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                10/2017
+* @betest                                       Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HierarchyUpdateTests, RemapsECInstanceNodeKeysWhenNodeIdsChangeAfterUpdate)
+TEST_F (HierarchyUpdateTests, DoesNotCollapseNodeIfItWasExpandedAndLastChildrenWasRemoved)
     {
     // insert some widget instances
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, nullptr, true);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
-    
+
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
+    ChildNodeRule* childRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
+    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
     rules->AddPresentationRule(*rule);
+    rules->AddPresentationRule(*childRule);
     
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
     
-    // expect 1 node
-    ASSERT_EQ(1, rootNodes.GetSize());
-    NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
-
-    // add the node to selection
-    TempSelectionManager selectionManager(*m_manager);
-    KeySetPtr input = KeySet::Create(*keyBefore);
-    selectionManager.AddToSelection(m_db, "", false, *input);
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
-
-    // send update notification
-    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
-
-    // get updated hierarchy
-    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    // expect 1 root node which has children
     ASSERT_EQ(1, rootNodes.GetSize());
     ASSERT_TRUE(rootNodes[0].IsValid());
-    NavNodeKeyCPtr keyAfter = rootNodes[0]->GetKey();
+    EXPECT_TRUE(rootNodes[0]->HasChildren());
 
-    // expect the key to be found in the selection
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyAfter));
-    }
+    // expand root node
+    SetNodeExpanded(*rootNodes[0]);
 
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HierarchyUpdateTests, RemapsECClassGroupingNodeKeysWhenNodeIdsChangeAfterUpdate)
-    {
-    // insert some widget instances
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
+    // request for children
+    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
+
+    // expect 1 child
+    ASSERT_EQ(1, childNodes.GetSize());
+
+    // delete child
+    RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
     
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-    
-    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
-    rules->AddPresentationRule(*rule);
-    
-    // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    
-    // expect 1 node
-    ASSERT_EQ(1, rootNodes.GetSize());
-    NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
-
-    // add the node to selection
-    TempSelectionManager selectionManager(*m_manager);
-    KeySetPtr input = KeySet::Create(*keyBefore);
-    selectionManager.AddToSelection(m_db, "", false, *input);
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
-
-    // send update notification
-    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
-
-    // get updated hierarchy
+    // expect root node to be expanded but without children
     rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
     ASSERT_EQ(1, rootNodes.GetSize());
-    ASSERT_TRUE(rootNodes[0].IsValid());
-    NavNodeKeyCPtr keyAfter = rootNodes[0]->GetKey();
-
-    // expect the key to be found in the selection
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyAfter));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HierarchyUpdateTests, RemapsECPropertyGroupingNodeKeysWhenNodeIdsChangeAfterUpdate)
-    {
-    // insert some widget instances
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
-    
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-    
-    rules->AddPresentationRule(*new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", ""));
-    PropertyGroupP groupSpec = new PropertyGroup("", "", true, "Description");
-    groupSpec->SetCreateGroupForUnspecifiedValues(true);
-    rules->GetGroupingRules().back()->AddGroup(*groupSpec);
-
-    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
-    rules->AddPresentationRule(*rule);
-    
-    // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    
-    // expect 1 node
-    ASSERT_EQ(1, rootNodes.GetSize());
-    NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
-
-    // add the node to selection
-    TempSelectionManager selectionManager(*m_manager);
-    KeySetPtr input = KeySet::Create(*keyBefore);
-    selectionManager.AddToSelection(m_db, "", false, *input);
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
-
-    // send update notification
-    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
-
-    // get updated hierarchy
-    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    ASSERT_EQ(1, rootNodes.GetSize());
-    ASSERT_TRUE(rootNodes[0].IsValid());
-    NavNodeKeyCPtr keyAfter = rootNodes[0]->GetKey();
-
-    // expect the key to be found in the selection
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyAfter));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Grigas.Petraitis                10/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HierarchyUpdateTests, RemapsDisplayLabelGroupingNodeKeysWhenNodeIdsChangeAfterUpdate)
-    {
-    // insert some widget instances
-    IECInstancePtr widget1 = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("My Label"));});
-    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("My Label"));});
-    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Other Label"));}, true);
-    
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-    
-    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName=\"Widget\"", 1, "this.MyID", ""));
-
-    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
-    rules->AddPresentationRule(*rule);
-    
-    // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    
-    // expect 2 grouping nodes
-    ASSERT_EQ(2, rootNodes.GetSize());
-    NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
-
-    // add the node to selection
-    TempSelectionManager selectionManager(*m_manager);
-    KeySetPtr input = KeySet::Create(*keyBefore);
-    selectionManager.AddToSelection(m_db, "", false, *input);
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
-
-    // send update notification
-    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget1);
-
-    // get updated hierarchy
-    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    ASSERT_EQ(2, rootNodes.GetSize());
-    ASSERT_TRUE(rootNodes[0].IsValid());
-    NavNodeKeyCPtr keyAfter = rootNodes[0]->GetKey();
-
-    // expect the key to be found in the selection
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyAfter));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Saulius.Skliutas                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(HierarchyUpdateTests, UpdatesSelectionWhenNodeIsInsertedIntoSelectedGroup)
-    {
-    // insert some widget instances
-    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2)); });
-    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2)); }, true);
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
-    GroupingRuleP grouping = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
-    grouping->AddGroup(*new PropertyGroup("", "", false, "IntProperty"));
-    rootRule->AddCustomizationRule(*grouping);
-
-    rootRule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
-    rules->AddPresentationRule(*rootRule);
-
-    // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-
-    // expect 1 grouping node
-    ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
-
-    // add node to selection
-    TempSelectionManager selectionManager(*m_manager);
-    KeySetPtr input = KeySet::Create(*keyBefore);
-    selectionManager.AddToSelection(m_db, "", false, *input);
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
-
-    // insert new instance
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2));}, true);
-    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
-
-    // get updated hierarchy
-    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(NAVNODE_TYPE_ECPropertyGroupingNode, rootNodes[0]->GetType().c_str());
-    NavNodeKeyCPtr keyAfter = rootNodes[0]->GetKey();
-
-    // expect the key to be found in the selection
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyAfter));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @betest                                       Saulius.Skliutas                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HierarchyUpdateTests, UpdatesSelectionWhenUserSettingChanges_UsedInCustomizationRuleCondition)
-    {
-    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
-    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
-
-    // create the rule set
-    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
-    m_locater->AddRuleSet(*rules);
-
-    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->AddSpecification(*new AllInstanceNodesSpecification(1, false, false, false, true, false, "RulesEngineTest"));
-
-    rules->AddPresentationRule(*rule);
-    rules->AddPresentationRule(*new LabelOverride("ThisNode.IsClassGroupingNode AND 1 = GetSettingIntValue(\"test\")", 1, "\"Test\"", "\"Test\""));
-
-    // request for root nodes
-    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
-    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("Widget", rootNodes[0]->GetLabel().c_str());
-    NavNodeKeyCPtr keyBefore = rootNodes[0]->GetKey();
-
-    // add node to selection
-    TempSelectionManager selectionManager(*m_manager);
-    KeySetPtr input = KeySet::Create(*keyBefore);
-    selectionManager.AddToSelection(m_db, "", false, *input);
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyBefore));
-    
-    // change a setting
-    m_manager->GetUserSettings(rules->GetRuleSetId().c_str()).SetSettingIntValue("test", 1);
-
-    // get updated hierarchy
-    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
-    ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_STREQ(NAVNODE_TYPE_ECClassGroupingNode, rootNodes[0]->GetType().c_str());
-    EXPECT_STREQ("Test", rootNodes[0]->GetLabel().c_str());
-    NavNodeKeyCPtr keyAfter = rootNodes[0]->GetKey();
-
-    // expect the key to be found in the selection
-    EXPECT_TRUE(selectionManager.GetSelection(m_db)->Contains(keyAfter));
+    EXPECT_TRUE(rootNodes[0]->IsExpanded());
+    EXPECT_FALSE(rootNodes[0]->HasChildren());
     }
 
 /*=================================================================================**//**
@@ -5895,51 +5659,384 @@ TEST_F (ContentUpdateTests, DoesNotInvalidateWhenUnusedUserSettingChanges)
     ASSERT_EQ(0, m_updateRecordsHandler->GetFullUpdateRecords().size());
     }
 
+/*=================================================================================**//**
+* @bsiclass                                     Grigas.Petraitis                04/2018
++===============+===============+===============+===============+===============+======*/
+struct SelectionUpdateTests : UpdateTests
+    {
+    TestSelectionManager m_selectionManager;
+    RefCountedPtr<SelectionUpdateRecordsHandler> m_updateHandler;
+
+    SelectionUpdateTests(): m_selectionManager(m_connections) {}
+
+    void SetUp() override
+        {
+        UpdateTests::SetUp();
+        m_updateHandler = SelectionUpdateRecordsHandler::Create(m_connections, m_selectionManager);
+        m_manager->RegisterUpdateRecordsHandler(*m_updateHandler);
+        }
+    };
+
 /*---------------------------------------------------------------------------------**//**
-* @betest                                       Saulius.Skliutas                01/2018
+* @betest                                       Grigas.Petraitis                10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (HierarchyUpdateTests, DoesNotCollapseNodeIfItWasExpandedAndLastChildrenWasRemoved)
+TEST_F(SelectionUpdateTests, RemovesECInstanceNodeKeyFromSelection)
     {
     // insert some widget instances
-    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
-    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, nullptr, true);
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
     
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
     m_locater->AddRuleSet(*rules);
-
+    
     RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
-    rule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Widget", false));
-    ChildNodeRule* childRule = new ChildNodeRule("", 1, false, RuleTargetTree::TargetTree_Both);
-    childRule->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, false, false, false, false, false, false, "", "RulesEngineTest:Gadget", false));
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
     rules->AddPresentationRule(*rule);
-    rules->AddPresentationRule(*childRule);
     
     // request for root nodes
     RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
     DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
     
-    // expect 1 root node which has children
+    // expect 1 node
     ASSERT_EQ(1, rootNodes.GetSize());
-    ASSERT_TRUE(rootNodes[0].IsValid());
-    EXPECT_TRUE(rootNodes[0]->HasChildren());
+    NavNodeKeyCPtr key = rootNodes[0]->GetKey();
 
-    // expand root node
-    SetNodeExpanded(*rootNodes[0]);
+    // add the node to selection
+    m_selectionManager.AddToSelection(m_db, "", false, *key);
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
 
-    // request for children
-    DataContainer<NavNodeCPtr> childNodes = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
+    // send update notification
+    RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    Sync();
 
-    // expect 1 child
-    ASSERT_EQ(1, childNodes.GetSize());
+    // expect the key to *not* be found in the selection
+    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    }
 
-    // delete child
-    RulesEngineTestHelpers::DeleteInstance(m_db, *gadget, true);
-    m_eventsSource->NotifyECInstanceDeleted(m_db, *gadget);
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectionUpdateTests, RemovesECClassGroupingNodeKeyFromSelection)
+    {
+    // insert some widget instances
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
     
-    // expect root node to be expanded but without children
-    rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, true, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+    
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    
+    // expect 1 node
     ASSERT_EQ(1, rootNodes.GetSize());
-    EXPECT_TRUE(rootNodes[0]->IsExpanded());
-    EXPECT_FALSE(rootNodes[0]->HasChildren());
+    NavNodeKeyCPtr key = rootNodes[0]->GetKey();
+
+    // add the node to selection
+    m_selectionManager.AddToSelection(m_db, "", false, *key);
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+
+    // send update notification
+    RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    Sync();
+
+    // expect the key to *not* be found in the selection
+    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectionUpdateTests, RemovesECPropertyGroupingNodeKeyFromSelection)
+    {
+    // insert some widget instances
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    
+    rules->AddPresentationRule(*new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", ""));
+    PropertyGroupP groupSpec = new PropertyGroup("", "", true, "Description");
+    groupSpec->SetCreateGroupForUnspecifiedValues(true);
+    rules->GetGroupingRules().back()->AddGroup(*groupSpec);
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+    
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    
+    // expect 1 node
+    ASSERT_EQ(1, rootNodes.GetSize());
+    NavNodeKeyCPtr key = rootNodes[0]->GetKey();
+
+    // add the node to selection
+    m_selectionManager.AddToSelection(m_db, "", false, *key);
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+
+    // send update notification
+    RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    Sync();
+
+    // expect the key to be found in the selection
+    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                10/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectionUpdateTests, RemovesDisplayLabelGroupingNodeKeyFromSelection)
+    {
+    // insert some widget instances
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("My Label"));});
+    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("My Label"));});
+    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Other Label"));}, true);
+    
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+    
+    rules->AddPresentationRule(*new LabelOverride("ThisNode.ClassName=\"Widget\"", 1, "this.MyID", ""));
+
+    RootNodeRule* rule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_Both, false);
+    rule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, true, "RulesEngineTest"));
+    rules->AddPresentationRule(*rule);
+    
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    
+    // expect 2 grouping nodes
+    ASSERT_EQ(2, rootNodes.GetSize());
+    NavNodeKeyCPtr key = rootNodes[0]->GetKey();
+
+    // add the node to selection
+    m_selectionManager.AddToSelection(m_db, "", false, *key);
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+
+    // send update notification
+    RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
+    m_eventsSource->NotifyECInstanceDeleted(m_db, *widget);
+    Sync();
+
+    // expect the key to be found in the selection
+    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectionUpdateTests, RefreshesSelectionWhenAffectedECInstanceNodeChanges)
+    {
+    bvector<SelectionChangedEventCPtr> selectionChangeEvents;
+    TestSelectionChangesListener listener([&](SelectionChangedEventCR evt){selectionChangeEvents.push_back(&evt);});
+    m_selectionManager.AddListener(listener);
+
+    // insert some widget instances
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    rootRule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rootRule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+
+    // expect 1 node
+    ASSERT_EQ(1, rootNodes.GetSize());
+    NavNodeKeyCPtr key = rootNodes[0]->GetKey();
+
+    // add node to selection
+    m_selectionManager.AddToSelection(m_db, "", false, *key);
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    selectionChangeEvents.clear();
+
+    // update instance
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
+    Sync();
+
+    // expect a selection change event to be fired
+    ASSERT_EQ(1, selectionChangeEvents.size());
+    EXPECT_EQ(SelectionChangeType::Replace, selectionChangeEvents[0]->GetChangeType());
+    EXPECT_EQ(1, selectionChangeEvents[0]->GetSelectedKeys().size());
+    EXPECT_TRUE(selectionChangeEvents[0]->GetSelectedKeys().Contains(key));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectionUpdateTests, DoesntRefreshSelectionWhenUnaffectedECInstanceNodeChanges)
+    {
+    bvector<SelectionChangedEventCPtr> selectionChangeEvents;
+    TestSelectionChangesListener listener([&](SelectionChangedEventCR evt){selectionChangeEvents.push_back(&evt);});
+    m_selectionManager.AddListener(listener);
+
+    // insert some instances
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, nullptr, true);
+    IECInstancePtr gadget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "custom1", "custom", "custom", "custom"));
+    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "custom2", "custom", "custom", "custom"));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRuleP childRule1 = new ChildNodeRule("ParentNode.Type = \"custom1\"", 1, false, RuleTargetTree::TargetTree_MainTree);
+    childRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false,
+        "", m_widgetClass->GetFullName(), false));
+    rules->AddPresentationRule(*childRule1);
+
+    ChildNodeRuleP childRule2 = new ChildNodeRule("ParentNode.Type = \"custom2\"", 1, false, RuleTargetTree::TargetTree_MainTree);
+    childRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, false, false, false,
+        "", m_gadgetClass->GetFullName(), false));
+    rules->AddPresentationRule(*childRule2);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(2, rootNodes.GetSize());
+
+    // request child nodes
+    DataContainer<NavNodeCPtr> childNodes1 = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> childNodes2 = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[1], PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, childNodes2.GetSize());
+    NavNodeKeyCPtr key = childNodes2[0]->GetKey();
+
+    // add node to selection
+    m_selectionManager.AddToSelection(m_db, "", false, *key);
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    selectionChangeEvents.clear();
+
+    // update instance
+    m_eventsSource->NotifyECInstanceUpdated(m_db, *widget);
+    Sync();
+
+    // expect no selection change events
+    EXPECT_EQ(0, selectionChangeEvents.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectionUpdateTests, RefreshesSelectionWhenAffectedGroupingNodeChanges)
+    {
+    bvector<SelectionChangedEventCPtr> selectionChangeEvents;
+    TestSelectionChangesListener listener([&](SelectionChangedEventCR evt){selectionChangeEvents.push_back(&evt);});
+    m_selectionManager.AddListener(listener);
+
+    // insert some widget instances
+    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2)); });
+    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2)); }, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    GroupingRuleP grouping = new GroupingRule("", 1, false, "RulesEngineTest", "Widget", "", "", "");
+    grouping->AddGroup(*new PropertyGroup("", "", false, "IntProperty"));
+    rootRule->AddCustomizationRule(*grouping);
+
+    rootRule->AddSpecification(*new AllInstanceNodesSpecification(1, true, false, false, false, false, "RulesEngineTest"));
+    rules->AddPresentationRule(*rootRule);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+
+    // expect 1 grouping node
+    ASSERT_EQ(1, rootNodes.GetSize());
+    NavNodeKeyCPtr key = rootNodes[0]->GetKey();
+
+    // add node to selection
+    m_selectionManager.AddToSelection(m_db, "", false, *key);
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    selectionChangeEvents.clear();
+
+    // insert new instance
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass, [](IECInstanceR instance) {instance.SetValue("IntProperty", ECValue(2));}, true);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    Sync();
+
+    // expect a selection change event to be fired
+    ASSERT_EQ(1, selectionChangeEvents.size());
+    EXPECT_EQ(SelectionChangeType::Replace, selectionChangeEvents[0]->GetChangeType());
+    EXPECT_EQ(1, selectionChangeEvents[0]->GetSelectedKeys().size());
+    EXPECT_TRUE(selectionChangeEvents[0]->GetSelectedKeys().Contains(key));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SelectionUpdateTests, DoesntRefreshSelectionWhenUnaffectedGroupingNodeChanges)
+    {
+    bvector<SelectionChangedEventCPtr> selectionChangeEvents;
+    TestSelectionChangesListener listener([&](SelectionChangedEventCR evt){selectionChangeEvents.push_back(&evt);});
+    m_selectionManager.AddListener(listener);
+
+    // insert some widget instances
+    RulesEngineTestHelpers::InsertInstance(m_db, *m_widgetClass);
+    RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, nullptr, true);
+
+    // create the rule set
+    PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
+    m_locater->AddRuleSet(*rules);
+
+    RootNodeRuleP rootRule = new RootNodeRule("", 1, false, RuleTargetTree::TargetTree_MainTree, false);
+    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "custom1", "custom", "custom", "custom"));
+    rootRule->AddSpecification(*new CustomNodeSpecification(1, false, "custom2", "custom", "custom", "custom"));
+    rules->AddPresentationRule(*rootRule);
+
+    ChildNodeRuleP childRule1 = new ChildNodeRule("ParentNode.Type = \"custom1\"", 1, false, RuleTargetTree::TargetTree_MainTree);
+    childRule1->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, true, false, false,
+        "", m_widgetClass->GetFullName(), false));
+    rules->AddPresentationRule(*childRule1);
+
+    ChildNodeRuleP childRule2 = new ChildNodeRule("ParentNode.Type = \"custom2\"", 1, false, RuleTargetTree::TargetTree_MainTree);
+    childRule2->AddSpecification(*new InstanceNodesOfSpecificClassesSpecification(1, true, false, false, true, false, false,
+        "", m_gadgetClass->GetFullName(), false));
+    rules->AddPresentationRule(*childRule2);
+
+    // request for root nodes
+    RulesDrivenECPresentationManager::NavigationOptions options(rules->GetRuleSetId().c_str(), TargetTree_Both);
+    DataContainer<NavNodeCPtr> rootNodes = IECPresentationManager::GetManager().GetRootNodes(m_db, PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(2, rootNodes.GetSize());
+
+    // request child nodes
+    DataContainer<NavNodeCPtr> childNodes1 = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
+    DataContainer<NavNodeCPtr> childNodes2 = IECPresentationManager::GetManager().GetChildren(m_db, *rootNodes[0], PageOptions(), options.GetJson()).get();
+    ASSERT_EQ(1, childNodes2.GetSize());
+    NavNodeKeyCPtr key = childNodes2[0]->GetKey();
+
+    // add node to selection
+    m_selectionManager.AddToSelection(m_db, "", false, *key);
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    selectionChangeEvents.clear();
+
+    // insert a new gadget
+    IECInstancePtr widget = RulesEngineTestHelpers::InsertInstance(m_db, *m_gadgetClass, nullptr, true);
+    m_eventsSource->NotifyECInstanceInserted(m_db, *widget);
+    Sync();
+
+    // expect no selection change events
+    EXPECT_EQ(0, selectionChangeEvents.size());
     }
