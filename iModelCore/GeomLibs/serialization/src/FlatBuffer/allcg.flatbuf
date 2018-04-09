@@ -311,13 +311,12 @@ table DgnRuledSweep
     
 table PolyfaceAuxChannelData
     {
-	input       	:   float;
-	values      	:  [float];
+	input       	:   double;
+	values      	:  [double];
 	}
 table PolyfaceAuxChannel
     {
-    blockSize       :   int;
-	transformType   :   int;
+    dataType        :   int;
 	name            :   string;
 	inputName       :   string;
 	data            :  [PolyfaceAuxChannelData];

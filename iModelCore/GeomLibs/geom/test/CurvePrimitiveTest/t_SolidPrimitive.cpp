@@ -2829,6 +2829,26 @@ TEST(SolidPrimitive,Seams)
         }
     Check::ClearGeometry ("SolidPrimitive.Seams");
     }
+
+//!
+//! Create a curve vector for an elliptic disk.
+//! This should be an single arc primitive in a loop.
+//! But microstation is aggressive about converting that to an ellipse element whose start point
+//!   might be shifted to a major axis point.
+//! To prevent that, split the arc in two pieces.
+CurveVectorPtr CreateSplitDisk (DEllipse3dCR arc, bool closed = true)
+    {
+    auto cv = CurveVector::Create (closed ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
+    auto arc0 = arc;
+    auto arc1 = arc;
+    arc0.sweep *= 0.5;
+    arc1.sweep *= 0.5;
+    arc1.start = arc0.start + arc0.sweep;
+    cv->push_back (ICurvePrimitive::CreateArc (arc0));
+    cv->push_back (ICurvePrimitive::CreateArc (arc1));
+    return cv;
+    }
+
 // find s such that (vectorR + s * vectorV) DOT planeNormal = 0.
 DVec3d MoveVectorToPlane (DVec3dCR vectorR, DVec3dCR vectorV, DVec3dCR planeNormal)
     {
@@ -2881,8 +2901,8 @@ bvector<IGeometryPtr> &pipes       //!< [out] constructed geometry
             ellipseB.vector90 = MoveVectorToPlane (ellipseA.vector90, vectorAB, bisector);
             sectionArcs.push_back (ellipseB);
             if (!combineAllPipesToSingleSolid){
-                auto cvA = CurveVector::CreateDisk (ellipseA);
-                auto cvB = CurveVector::CreateDisk (ellipseB);
+                auto cvA = CreateSplitDisk (ellipseA);
+                auto cvB = CreateSplitDisk (ellipseB);
                 auto sections = bvector<CurveVectorPtr> { cvA, cvB};
                 auto pipeSurface = ISolidPrimitive::CreateDgnRuledSweep (DgnRuledSweepDetail (sections, false));
                 pipes.push_back (IGeometry::Create (pipeSurface));
@@ -2894,19 +2914,24 @@ bvector<IGeometryPtr> &pipes       //!< [out] constructed geometry
         {
         bvector<CurveVectorPtr> sections;
         for (auto &arc : sectionArcs)
-            sections.push_back (CurveVector::CreateDisk (arc));
+            sections.push_back (CreateSplitDisk (arc));
         auto pipeSurface = ISolidPrimitive::CreateDgnRuledSweep (DgnRuledSweepDetail (sections, false));
         pipes.push_back (IGeometry::Create (pipeSurface));
         }
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  04/18
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(RuledSurface,ChiseledPipes)
     {
     bvector<DPoint3d> centerline {
         DPoint3d::From (0,0,0),
-        DPoint3d::From (10,0,0),
+        DPoint3d::From (10,0,5),
         DPoint3d::From (20, 10, 0),
         DPoint3d::From (30, 10, 0),
-        DPoint3d::From (30,10, 5)
+        DPoint3d::From (30,10, 5),
+        DPoint3d::From (30,15,7),
+        DPoint3d::From (35,5,3)
         };
     double r = 0.5;
     bvector<IGeometryPtr> pipes;
@@ -2927,4 +2952,142 @@ TEST(RuledSurface,ChiseledPipes)
     Check::SaveTransformed (pipes);
 
     Check::ClearGeometry ("RuledSurface.ChiseledPipes");
+    }
+
+void SaveEllipseWithDefiningLines (DEllipse3dCR arc)
+    {
+    Check::SaveTransformed (arc);
+    Check::SaveTransformed (
+        bvector<DPoint3d>{
+            arc.center + arc.vector0,
+            arc.center,
+            arc.center + arc.vector90
+            });
+    }
+
+// GIVEN ... vectorA from centerA to any point on one section ellipse for a cone.
+//           (Note that pointA = centerA + vectorA is on both (a) the ellipse at section A and (b) a particular
+//                rule line of the cone.)
+// AND   ... the defining vectors (usually major/minor vectors) of the other ellipse . . .
+// COMPUTE A vector from centerB to that is (a) on ellipseB and (b) on the same cone rule line as vectorA
+//
+DVec3d ConstructCorrespondingEllipseVector
+(
+DPoint3dCR centerA,         // center of ellipse A
+DVec3dCR   vectorA,         // any vector from centerA to a point on ellipseA
+DPoint3dCR centerB,         // center of ellipseB
+DVec3dCR   vectorB0,        // 0 degree vector (e.g. major axis)
+DVec3dCR   vectorB90        // 90 degree vector (e.g. minor axis
+)
+    {
+    DVec3d vectorAB = centerB - centerA;
+    DVec3d planeNormal = DVec3d::FromCrossProduct (vectorA, vectorAB);
+    // The centerA, centerB, and vectorA are in a plane, with planeNormal perpendicular to all vectors in that plane.
+    // Find the intersections of ellipseB with that plane.
+    // There are two intersections, 180 degrees apart in the parameter space of ellipseB.
+    // A vector from centerB to a point "at parameter space angle theta" on ellipseB
+    //     vectorB0 * cos(theta) + vectorB90 * sin(theta)
+    // To make that vector "in plane", it must be perpendicular to the planeNormal:
+    //     planeNormal DOT (vectorB0 * cos(theta) + vectorB90 * sin(theta)) = 0
+    double dot0 = planeNormal.DotProduct (vectorB0);
+    double dot90 = planeNormal.DotProduct (vectorB90);
+    // we need         dot0 * cos(theta) + dot90 * sin(theta) = 0
+    //      i.e.    sin(theta)/cos(theta) = tan (theta) = - dot0 / dot90
+    // There are two such angles.  The angles are 180 degrees apart and define vectors that are opposite of each other.
+    double theta = atan2 (-dot0, dot90);
+    DVec3d candidateVector = vectorB0 * cos (theta) + vectorB90 * sin (theta);
+    if (candidateVector.DotProduct (vectorA) < 0.0)
+        candidateVector = candidateVector * -1.0;
+    return candidateVector;  
+    }
+
+// When a cone (or cylinder) is cut but unrelated planes at two ends, the "Major and minor axis" points commonly
+// used to define the ellipse are determined inedpendently on each plane, and are not on the same rule lines of the cone.
+//
+// This logic takes ellipseA and ellipseB from any two sections and constructs replacement for ellipseB, such that
+// the parameterizations agree and thus preserve rule lines of the (possibly skewed) cone.
+//
+// Typically both inputs will be "major minor" ellipse form.
+// But the "top ellipse" of the ruled surface will have non-perpendicular defining vectors.
+ISolidPrimitivePtr ConstructChiseledConeFromSectionsWithUnrelatedEllipseDefinitions
+(
+DEllipse3d ellipseA,     // Ellipse from cross section A
+DEllipse3d ellipseB     // Ellipse from cross section B
+)
+    {
+    // vectorC0 and vectorC90 are defining vectors for the same ellipse points as ellipseB.
+    // But they are shifted so that they are in the same rule lines as vectorA0 and vectorA90.
+    DVec3d vectorC0 = ConstructCorrespondingEllipseVector (ellipseA.center, ellipseA.vector0, ellipseB.center, ellipseB.vector0, ellipseB.vector90);
+    DVec3d vectorC90 = ConstructCorrespondingEllipseVector (ellipseA.center, ellipseA.vector90, ellipseB.center, ellipseB.vector0, ellipseB.vector90);
+    DEllipse3d ellipseC = DEllipse3d::FromVectors (ellipseB.center, vectorC0, vectorC90, 0.0, Angle::TwoPi ());
+
+    auto cvA = CreateSplitDisk (ellipseA);
+    auto cvC = CreateSplitDisk (ellipseC);
+    auto sections = bvector<CurveVectorPtr> { cvA, cvC};
+    auto pipeSurface = ISolidPrimitive::CreateDgnRuledSweep (DgnRuledSweepDetail (sections, false));
+    return pipeSurface;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(RuledSurface,ChiseledPipesFromArbitrarySectionEllipses)
+    {
+
+    for (double majorAxis : {1.0, 2.0})
+        {
+        // First cone tip is one the z axis, second is skewed off
+        for (DPoint3d coneTip : {DPoint3d::From (0,0,10), DPoint3d::From (1,2,10)})
+            {
+            SaveAndRestoreCheckTransform shifter (0.0, 10.0, 0.0);
+            // Construct an elliptic base with obvious major/minor vectors ...
+            DEllipse3d ellipseA = DEllipse3d::FromVectors (
+                        DPoint3d::From (0,0,0),
+                        DVec3d::From (majorAxis, 0,0),
+                        DVec3d::From (0.0, 1.0, 0),
+                        0.0, Angle::TwoPi ());
+
+            // These are the major/minor axis points ...
+            DPoint3d majorA = ellipseA.center + ellipseA.vector0;
+            DPoint3d minorA = ellipseA.center + ellipseA.vector90;
+
+
+            // Make points on the axis and the 0 and 90 degree rule lines.  These are at unrelated fractional positions,
+            //  so the plane through these three points is pretty random ..
+            DPoint3d majorRulePointB = DPoint3d::FromInterpolate (majorA, 0.3835, coneTip);
+            DPoint3d minorRulePointB = DPoint3d::FromInterpolate (minorA, 0.4, coneTip);
+            DPoint3d centerB = DPoint3d::FromInterpolate (ellipseA.center, 0.378, coneTip);
+
+            // Assemble these into an ellipse where they are 90 degrees apart parametrically but not physically (they are NOT on its major and minor axes)
+            // (This is actually the ellipse we want to end up with, but we're going to make a major/minor version and back the skewed one out)
+            DEllipse3d skewedEllipseB = DEllipse3d::FromPoints (centerB, majorRulePointB, minorRulePointB,
+                            0.0, Angle::TwoPi ());
+            // Get a major/minor ellipse that goes through all the points of ellipseB.   This is the major/minor ellipse
+            //   for the cut plane that independent of ellipseA other than having the rule points 90 degrees apart
+            //   in its parameterization.
+            DEllipse3d majorMinorB = DEllipse3d::FromPerpendicularAxes (skewedEllipseB);
+
+
+            auto ruledSurface = ConstructChiseledConeFromSectionsWithUnrelatedEllipseDefinitions (ellipseA, majorMinorB);
+
+            // Save the major/minor base and skewed top -- note that the linework from cone tip to the 0 and 90 degree points of the
+            // base hits the 0 and 90 degree points of the skewed ellipse.
+            SaveEllipseWithDefiningLines (ellipseA);
+            SaveEllipseWithDefiningLines (skewedEllipseB);
+            Check::SaveTransformed (bvector<DPoint3d> {majorA, coneTip, minorA});
+            // Now draw the same base and cone tip, but use the major minor form of the section cut.
+            // Note that the rule lines do NOT hit the major and minor axis points of the upper cut.
+            Check::Shift (3,0,0);
+            SaveEllipseWithDefiningLines (ellipseA);
+            SaveEllipseWithDefiningLines (majorMinorB);
+            Check::SaveTransformed (bvector<DPoint3d> {majorA, coneTip, minorA});
+
+            Check::Shift (10,0,0);
+            Check::SaveTransformed (*ruledSurface);
+            SaveEllipseWithDefiningLines (skewedEllipseB);
+            Check::SaveTransformed (bvector<DPoint3d> {majorA, coneTip, minorA});
+            }
+        }
+    Check::ClearGeometry ("RuledSurface.ChiseledPipesAnyEllipsePair");
     }

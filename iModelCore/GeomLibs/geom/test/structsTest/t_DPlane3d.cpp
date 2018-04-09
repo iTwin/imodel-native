@@ -163,8 +163,22 @@ TEST(DPlane3d,IntersectByDistance)
         "confirm no intersection case");
 #endif
 
+    // on windows, this generated an exact 0 determinant which (correctly) triggered a failure in RotMatrix::Solve
+    // on mobiles, the determinant was fuzz and it seemed to succeed.
+    // But now the ::Solve test is more subtle so the mobile (correctly) fails
     Check::False (DPlane3d::Intersect3Planes (normalA, distanceA, normalB, distanceB, normalA, distanceC).IsValid (),
             "confirm intesrection failure with repeated plane");
+
+    // confirm things close to the perturbation that (experimentally) failed on windows:
+    double epsilon = 1.0e-12;   // should pass.
+    DVec3d normalA1 = normalA;
+    normalA1.x += epsilon;
+    Check::True(DPlane3d::Intersect3Planes (normalA, distanceA, normalB, distanceB, normalA1, distanceC).IsValid (),
+            "confirm intesrection ok with big fuzz");
+    normalA1 = normalA;
+    normalA1.x += epsilon / 10.0;
+    Check::False (DPlane3d::Intersect3Planes (normalA, distanceA, normalB, distanceB, normalA1, distanceC).IsValid (),
+            "confirm intesrection failure with fuzz");
     }
 
 //---------------------------------------------------------------------------------------

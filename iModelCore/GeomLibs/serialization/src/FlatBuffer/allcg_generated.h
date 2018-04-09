@@ -1342,11 +1342,11 @@ inline flatbuffers::Offset<DgnRuledSweep> CreateDgnRuledSweep(flatbuffers::FlatB
 }
 
 struct PolyfaceAuxChannelData : private flatbuffers::Table {
-  float input() const { return GetField<float>(4, 0); }
-  const flatbuffers::Vector<float> *values() const { return GetPointer<const flatbuffers::Vector<float> *>(6); }
+  double input() const { return GetField<double>(4, 0); }
+  const flatbuffers::Vector<double> *values() const { return GetPointer<const flatbuffers::Vector<double> *>(6); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<float>(verifier, 4 /* input */) &&
+           VerifyField<double>(verifier, 4 /* input */) &&
            VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* values */) &&
            verifier.Verify(values()) &&
            verifier.EndTable();
@@ -1358,8 +1358,8 @@ struct PolyfaceAuxChannelData : private flatbuffers::Table {
 struct PolyfaceAuxChannelDataBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_input(float input) { fbb_.AddElement<float>(4, input, 0); }
-  void add_values(flatbuffers::Offset<flatbuffers::Vector<float>> values) { fbb_.AddOffset(6, values); }
+  void add_input(double input) { fbb_.AddElement<double>(4, input, 0); }
+  void add_values(flatbuffers::Offset<flatbuffers::Vector<double>> values) { fbb_.AddOffset(6, values); }
   PolyfaceAuxChannelDataBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   PolyfaceAuxChannelDataBuilder &operator=(const PolyfaceAuxChannelDataBuilder &);
   flatbuffers::Offset<PolyfaceAuxChannelData> Finish() {
@@ -1369,59 +1369,54 @@ struct PolyfaceAuxChannelDataBuilder {
 };
 
 inline flatbuffers::Offset<PolyfaceAuxChannelData> CreatePolyfaceAuxChannelData(flatbuffers::FlatBufferBuilder &_fbb,
-   float input = 0,
-   flatbuffers::Offset<flatbuffers::Vector<float>> values = 0) {
+   double input = 0,
+   flatbuffers::Offset<flatbuffers::Vector<double>> values = 0) {
   PolyfaceAuxChannelDataBuilder builder_(_fbb);
-  builder_.add_values(values);
   builder_.add_input(input);
+  builder_.add_values(values);
   return builder_.Finish();
 }
 
 struct PolyfaceAuxChannel : private flatbuffers::Table {
-  int32_t blockSize() const { return GetField<int32_t>(4, 0); }
-  int32_t transformType() const { return GetField<int32_t>(6, 0); }
-  const flatbuffers::String *name() const { return GetPointer<const flatbuffers::String *>(8); }
-  const flatbuffers::String *inputName() const { return GetPointer<const flatbuffers::String *>(10); }
-  const flatbuffers::Vector<flatbuffers::Offset<PolyfaceAuxChannelData>> *data() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<PolyfaceAuxChannelData>> *>(12); }
+  int32_t dataType() const { return GetField<int32_t>(4, 0); }
+  const flatbuffers::String *name() const { return GetPointer<const flatbuffers::String *>(6); }
+  const flatbuffers::String *inputName() const { return GetPointer<const flatbuffers::String *>(8); }
+  const flatbuffers::Vector<flatbuffers::Offset<PolyfaceAuxChannelData>> *data() const { return GetPointer<const flatbuffers::Vector<flatbuffers::Offset<PolyfaceAuxChannelData>> *>(10); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
-           VerifyField<int32_t>(verifier, 4 /* blockSize */) &&
-           VerifyField<int32_t>(verifier, 6 /* transformType */) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* name */) &&
+           VerifyField<int32_t>(verifier, 4 /* dataType */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 6 /* name */) &&
            verifier.Verify(name()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* inputName */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 8 /* inputName */) &&
            verifier.Verify(inputName()) &&
-           VerifyField<flatbuffers::uoffset_t>(verifier, 12 /* data */) &&
+           VerifyField<flatbuffers::uoffset_t>(verifier, 10 /* data */) &&
            verifier.Verify(data()) &&
            verifier.VerifyVectorOfTables(data()) &&
            verifier.EndTable();
   }
-  bool has_blockSize() const { return CheckField(4); }
-  bool has_transformType() const { return CheckField(6); }
-  bool has_name() const { return CheckField(8); }
-  bool has_inputName() const { return CheckField(10); }
-  bool has_data() const { return CheckField(12); }
+  bool has_dataType() const { return CheckField(4); }
+  bool has_name() const { return CheckField(6); }
+  bool has_inputName() const { return CheckField(8); }
+  bool has_data() const { return CheckField(10); }
 };
 
 struct PolyfaceAuxChannelBuilder {
   flatbuffers::FlatBufferBuilder &fbb_;
   flatbuffers::uoffset_t start_;
-  void add_blockSize(int32_t blockSize) { fbb_.AddElement<int32_t>(4, blockSize, 0); }
-  void add_transformType(int32_t transformType) { fbb_.AddElement<int32_t>(6, transformType, 0); }
-  void add_name(flatbuffers::Offset<flatbuffers::String> name) { fbb_.AddOffset(8, name); }
-  void add_inputName(flatbuffers::Offset<flatbuffers::String> inputName) { fbb_.AddOffset(10, inputName); }
-  void add_data(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<PolyfaceAuxChannelData>>> data) { fbb_.AddOffset(12, data); }
+  void add_dataType(int32_t dataType) { fbb_.AddElement<int32_t>(4, dataType, 0); }
+  void add_name(flatbuffers::Offset<flatbuffers::String> name) { fbb_.AddOffset(6, name); }
+  void add_inputName(flatbuffers::Offset<flatbuffers::String> inputName) { fbb_.AddOffset(8, inputName); }
+  void add_data(flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<PolyfaceAuxChannelData>>> data) { fbb_.AddOffset(10, data); }
   PolyfaceAuxChannelBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   PolyfaceAuxChannelBuilder &operator=(const PolyfaceAuxChannelBuilder &);
   flatbuffers::Offset<PolyfaceAuxChannel> Finish() {
-    auto o = flatbuffers::Offset<PolyfaceAuxChannel>(fbb_.EndTable(start_, 5));
+    auto o = flatbuffers::Offset<PolyfaceAuxChannel>(fbb_.EndTable(start_, 4));
     return o;
   }
 };
 
 inline flatbuffers::Offset<PolyfaceAuxChannel> CreatePolyfaceAuxChannel(flatbuffers::FlatBufferBuilder &_fbb,
-   int32_t blockSize = 0,
-   int32_t transformType = 0,
+   int32_t dataType = 0,
    flatbuffers::Offset<flatbuffers::String> name = 0,
    flatbuffers::Offset<flatbuffers::String> inputName = 0,
    flatbuffers::Offset<flatbuffers::Vector<flatbuffers::Offset<PolyfaceAuxChannelData>>> data = 0) {
@@ -1429,8 +1424,7 @@ inline flatbuffers::Offset<PolyfaceAuxChannel> CreatePolyfaceAuxChannel(flatbuff
   builder_.add_data(data);
   builder_.add_inputName(inputName);
   builder_.add_name(name);
-  builder_.add_transformType(transformType);
-  builder_.add_blockSize(blockSize);
+  builder_.add_dataType(dataType);
   return builder_.Finish();
 }
 

@@ -32,6 +32,7 @@ int32_t const*                      PolyfaceVisitor::GetClientParamIndexCP() con
 int32_t const*                      PolyfaceVisitor::GetClientNormalIndexCP() const     { return m_normalIndex.GetCP(); }
 int32_t const*                      PolyfaceVisitor::GetClientColorIndexCP() const      { return m_colorIndex.GetCP(); }
 int32_t const*                      PolyfaceVisitor::GetClientFaceIndexCP() const       { return m_faceIndex.GetCP(); }
+int32_t const*                      PolyfaceVisitor::GetClientAuxIndexCP() const        { return m_auxData.IsValid() ? m_auxData->GetIndices().data() : nullptr; }
 
 bool                                PolyfaceVisitor::GetTwoSided() const                { return m_twoSided; }
 

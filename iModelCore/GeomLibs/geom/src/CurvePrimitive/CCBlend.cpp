@@ -938,10 +938,10 @@ double offsetB
     double abstol = reltol * bignum;
     NewtonIterationsRRToRR newton (abstol, reltol);
     TaperFilletTaperBlendConstructionObject blendBuilder (setbackA, taperA, filletRadius, setbackB, taperB, offsetA, offsetB);
-    CompoundBlendFunction F (blendBuilder,
-        ParameterToPointEvaluator::CurveVectorWithDistanceIndexEvaluator(curveA),
-        ParameterToPointEvaluator::CurveVectorWithDistanceIndexEvaluator(curveB)
-        );
+    ParameterToPointEvaluator::CurveVectorWithDistanceIndexEvaluator evaluatorA (curveA);
+    ParameterToPointEvaluator::CurveVectorWithDistanceIndexEvaluator evaluatorB (curveB);
+    CompoundBlendFunction F (blendBuilder, evaluatorA, evaluatorB);
+    
     double dA = distanceA, dB = distanceB;
     double eA, eB;
     if (newton.RunApproximateNewton (dA, dB, F, maxStep, maxStep)

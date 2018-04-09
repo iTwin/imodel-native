@@ -10,13 +10,10 @@ USING_NAMESPACE_BENTLEY_GEOMETRY_INTERNAL
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PseudoSpiral,Serialize)
     {
-    double spiralLength = 100.0;
     double dyShift = 40.0;
-    double dxShift = 250.0;
-    bvector<double> radiusMeters {1000, 400, 200 };
+    double dxShift = 500.0;
     //bvector<double> pseudoLengthMeters {100.02506262460328, 100.15873011778872, 100.66666663992606};
     //bvector<double> edgeCount {15, 25, 35};
-    double yShift = 0.0;
     for (int spiralType : {
                 DSpiral2dBase::TransitionType_Clothoid,
 #ifdef doAll
@@ -36,32 +33,36 @@ TEST(PseudoSpiral,Serialize)
                 })
         {
         double xShift = -dxShift;
-        for (double radius1 : {1000.0, 400.0, 200.0})
+        double yShift = 50.0;
+        for (double spiralLength : {100.0, 200.0})
             {
-            xShift += dxShift;
-            yShift = 50.0;  // start up to avoid reference data placed at (0,0), (0,10), (0,20)
-            for (double fraction0 : {0.0, 0.6})
+            yShift += 3.0 * dyShift;
+            for (double radius1 : {800.0, 400.0, 200.0})
                 {
-                auto frame = Transform::From (xShift, yShift, 0);
-                yShift += dyShift;
-                for (double bearing0 : {0.0,  Angle::DegreesToRadians (10), Angle::DegreesToRadians (135)})
+                xShift += dxShift;
+                for (double fraction0 : {0.0, 0.6})
                     {
-                    for (double radiusFactor : {-1.0, 1.0})
+                    auto frame = Transform::From (xShift, yShift, 0);
+                    yShift += dyShift;
+                    for (double bearing0 : {0.0,  Angle::DegreesToRadians (10), Angle::DegreesToRadians (135)})
                         {
-                        auto spiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (
-                                spiralType,
-                                bearing0, 0.0, spiralLength, radiusFactor / radius1,
-                                frame,
-                                fraction0, 1.0
-                                );
-                        if (spiral.IsValid ())
+                        for (double radiusFactor : {-1.0, 1.0})
                             {
-                            Check::SaveTransformed (*spiral);
-                            auto bcurve = spiral->GetProxyBsplineCurvePtr ();
-                            if (bcurve.IsValid ())
+                            auto spiral = ICurvePrimitive::CreateSpiralBearingCurvatureLengthCurvature (
+                                    spiralType,
+                                    bearing0, 0.0, spiralLength, radiusFactor / radius1,
+                                    frame,
+                                    fraction0, 1.0
+                                    );
+                            if (spiral.IsValid ())
                                 {
-                                auto bprim = ICurvePrimitive::CreateBsplineCurve (bcurve);
-                                Check::SaveTransformed (*bprim);
+                                Check::SaveTransformed (*spiral);
+                                auto bcurve = spiral->GetProxyBsplineCurvePtr ();
+                                if (bcurve.IsValid ())
+                                    {
+                                    auto bprim = ICurvePrimitive::CreateBsplineCurve (bcurve);
+                                    Check::SaveTransformed (*bprim);
+                                    }
                                 }
                             }
                         }
@@ -356,3 +357,107 @@ TEST(Spiral,ClothoidCosineApproximation)
 
     Check::ClearGeometry ("Spiral.ClothoidCosineApproximation");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Spiral,DocCheck)
+    {
+    double R1 = 800.0;
+    double R0 = 0.0;
+    double L = 200.0;
+    double expectedTurnDegrees = 
+        // 9.0 + 51.0/60.0 + 23.9/3600.0;
+        8.0964973;
+    double startRadians = 0.0;
+    for (auto spiralType :
+        {
+        DSpiral2dBase::TransitionType_Clothoid,
+        DSpiral2dBase::TransitionType_NewSouthWales,
+        DSpiral2dBase::TransitionType_MXCubic
+        })
+        {
+        ICurvePrimitivePtr curve1 = nullptr;
+        if (spiralType > 20)
+            curve1 = ICurvePrimitive::CreatePseudoSpiralPointBearingRadiusLengthRadius (
+                    spiralType,
+                    DPoint3d::From (0,0,0),
+                    startRadians,
+                    R0,
+                    L,
+                    R1
+                    );
+        else
+            curve1 = ICurvePrimitive::CreateSpiralBearingRadiusLengthRadius (
+                    spiralType,
+                    startRadians,
+                    R0,
+                    L,
+                    R1,
+                    Transform::FromIdentity (),
+                    0.0, 1.0
+                    );
+        Utf8String typeName;
+        DSpiral2dBase::TransitionTypeToString (spiralType, typeName);
+        double stationStep = 10.0;
+        DPoint3d xyz;
+        DVec3d   tangent;
+        printf ("\n\n **** SPIRAL TYPE %d (%s) *********\n", spiralType, typeName.c_str ());
+
+        for (double stationDistance = 0.0; stationDistance < 1.001 * L; stationDistance += stationStep)
+            {
+            double f = stationDistance / L;
+            curve1->FractionToPoint (f, xyz, tangent);
+            printf ("    %10.4lf     %20.4f   %20.4lf    %20.5lf\n", stationDistance, xyz.x, xyz.y,
+                Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x)));
+            }
+         curve1->FractionToPoint (1.0, xyz, tangent);
+         auto degrees1 = Angle::RadiansToDegrees (atan2 (tangent.y, tangent.x));
+         printf ("Final angles (expected %20.6lf) (actual %20.6lf)\n", expectedTurnDegrees, degrees1);
+         }
+    }
+#ifdef TestLangham
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Spiral,SignedDistanceLangham)
+    {
+    double beta1 = Angle::DegreesToRadians (14.323944878270584);
+    Transform frame = Transform::FromIdentity ();
+    double r1 = 100.0;
+    RotMatrix worldToLocal = RotMatrix::FromIdentity ();
+    for (ICurvePrimitivePtr spiral : {
+            ICurvePrimitive::CreateSpiralBearingRadiusBearingRadius (
+                        DSpiral2dBase::TransitionType_Clothoid,
+                        0.0, 0.0,
+                        beta1, r1,
+                        frame,
+                        0.0, 1.0),
+            ICurvePrimitive::CreateSpiralBearingRadiusBearingRadius (
+                        DSpiral2dBase::TransitionType_Clothoid,
+                        0.0, r1,
+                        beta1, 0.0,
+                        frame,
+                        0.0, 1.0)}
+            )
+        {
+        Check::SaveTransformed (*spiral);
+        double spiralLength;
+        spiral->Length (spiralLength);
+        for (auto s : {-1.0, 1.0})
+            {
+            double startFraction = 0.5 * (1.0 + s);
+            for (double stepFraction : {0.1, 0.5})
+                {
+                CurveLocationDetail detail;
+                double signedDistance = stepFraction * spiralLength;
+                if (Check::True (spiral->PointAtSignedDistanceFromFraction (&worldToLocal, startFraction, signedDistance, true, detail)))
+                    {
+                    Check::SaveTransformedMarker (detail.point);
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("Spiral.SignedDistanceAlongLangham");
+    }
+#endif

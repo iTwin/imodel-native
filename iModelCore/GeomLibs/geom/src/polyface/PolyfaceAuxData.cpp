@@ -37,29 +37,24 @@ void PolyfaceAuxData::AdvanceVisitorToNextFace(PolyfaceAuxData const& parent, ui
 
     for (auto& channel : m_channels)
         for (auto& data : channel->GetData())
-            data->m_values.clear();
+            data->GetValues().clear();
 
     for (numOut = 0; numOut < numIndex && i0 + numOut < maxIndex; numOut++)
         {
         int k1 = oneBasedIndices[i0 + numOut];
         if (k1 == 0)
             break;
+
         uint32_t k0 = abs (k1) - 1;
         m_indices.push_back (k0);
-
-        for (size_t i=0; i<m_channels.size(); i++)
-            for (size_t j=0; j<m_channels[i]->GetData().size(); j++)
-                m_channels[i]->GetData()[j]->m_values.push_back(parent.GetChannels()[i]->GetData()[j]->GetValues().at(k0));
+        m_channels.AppendDataByIndex(parent.GetChannels(), k0);
         }
     if (numOut > 0)
         {
         for (uint32_t i = 0; i < numWrap; i++)
             {
             m_indices.push_back (m_indices[i]);
-
-            for (auto& channel : m_channels)
-                for (auto& data : channel->GetData())
-                    data->m_values.push_back(data->m_values[i]);
+            m_channels.AppendDataByIndex(m_channels, i);
             }
         }
     }
@@ -77,41 +72,46 @@ void PolyfaceAuxData::Transform(TransformCR transform)
         {
         for (auto& channelData :  channel->GetData())
             {
-            float*      pData = const_cast<float*> (channelData->GetValues().data());
+            double*     pData = const_cast<double*> (channelData->GetValues().data());
             size_t      dataSize = channelData->GetValues().size();
 
-            if (3 == channel->GetBlockSize())
+            switch (channel->GetDataType())
                 {
-                for (size_t i=0; i<dataSize; i += 3)
+                case PolyfaceAuxChannel::DataType::Vector:
+                case PolyfaceAuxChannel::DataType::Covector:
+                case PolyfaceAuxChannel::DataType::Point:
                     {
-                    DPoint3d    point = DPoint3d::From(pData[i], pData[i+1], pData[i+2]);
-
-                    switch(channel->GetTransformType())
+                    for (size_t i=0; i<dataSize; i += 3)
                         {
-                        case TransformType::Vector:
-                            rMatrix.Multiply(point);
-                            break;
+                        DPoint3dP    point = reinterpret_cast <DPoint3dP> (pData + i);
 
-                        case TransformType::Convector:
-                            inverseRMatrix.MultiplyTranspose(point);
-                            break;
+                        switch(channel->GetDataType())
+                            {
+                            case PolyfaceAuxChannel::DataType::Vector:
+                                rMatrix.Multiply(*point);
+                                break;
 
-                        case TransformType::Point:
-                            transform.Multiply(point);
-                            break;
+                            case PolyfaceAuxChannel::DataType::Covector:
+                                inverseRMatrix.MultiplyTranspose(*point);
+                                break;
+
+                            case PolyfaceAuxChannel::DataType::Point:
+                                transform.Multiply(*point);
+                                break;
+                            }
                         }
-                    pData[i]   = static_cast<float> (point.x);
-                    pData[i+1] = static_cast<float> (point.y);
-                    pData[i+2] = static_cast<float> (point.z);
+                    break;
+                    }
+                case PolyfaceAuxChannel::DataType::Distance:
+                    {
+                    double transformScale = static_cast<double> (pow (fabs (determinant), 1.0 / 3.0) * (determinant >= 0.0 ? 1.0 : -1.0));
+
+                    for (size_t i=0; i<dataSize; i++)
+                        pData[i] *= transformScale;
+
+                    break;
                     }
                 }
-            else if (TransformType::Distance == channel->GetTransformType())
-                {
-                float transformScale = static_cast<float> (pow (fabs (determinant), 1.0 / 3.0) * (determinant >= 0.0 ? 1.0 : -1.0));
-
-                for (size_t i=0; i<dataSize; i++)
-                    pData[i] *= transformScale;
-                }
             }
         }
     }
@@ -119,28 +119,18 @@ void PolyfaceAuxData::Transform(TransformCR transform)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      03/2018
 +--------------------------------------------------------------------------------------*/
-void PolyfaceAuxData::Channels::Init(PolyfaceAuxData::ChannelsCR input)
+void PolyfaceAuxData::Channels::Init(ChannelsCR input)
     {
     for (auto& channel : input)
-        {
-        bvector<DataPtr>    dataVector;
-
-        for (auto& data : channel->GetData())
-            {
-            bvector<float>     values;
-            dataVector.push_back (new Data(data->GetInput(), std::move(values)));
-            }
-
-        this->push_back(new Channel(channel->GetBlockSize(), channel->GetTransformType(), channel->GetName().c_str(), channel->GetInputName().c_str(), std::move(dataVector)));
-        }
+        this->push_back(channel->CloneWithoutData());
     }
 
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      03/2018
 +--------------------------------------------------------------------------------------*/
-void PolyfaceAuxData::Channels::AppendDataByIndex(PolyfaceAuxData::ChannelsCR input, size_t index)
+void PolyfaceAuxData::Channels::AppendDataByIndex(ChannelsCR input, size_t index)
     {
-    if (this->empty())
+    if (empty())
         Init(input);
 
     for (size_t i=0; i<this->size(); i++)
@@ -150,12 +140,27 @@ void PolyfaceAuxData::Channels::AppendDataByIndex(PolyfaceAuxData::ChannelsCR in
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley      03/2018
 +--------------------------------------------------------------------------------------*/
-void PolyfaceAuxData::Channel::AppendDataByIndex(PolyfaceAuxData::ChannelCR input, size_t index)
+void PolyfaceAuxData::Channels::AppendInterpolatedData(ChannelsCR input, size_t index, size_t nextIndex, double t)
     {
-    for (size_t i=0; i<this->m_data.size(); i++)    
-        this->m_data.at(i)->m_values.push_back(input.m_data.at(i)->m_values.at(index));
+    if (empty())
+        Init(input);
+
+    for (size_t i=0; i<this->size(); i++)
+        this->at(i)->AppendInterpolatedData(*input.at(i), index, nextIndex, t);
     }
 
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      03/2018
++--------------------------------------------------------------------------------------*/
+PolyfaceAuxChannelCPtr PolyfaceAuxData::GetChannel(Utf8CP name) const
+    {
+    for (auto& channel : m_channels)
+        if (channel->GetName().Equals(name))
+            return channel;
+
+    return nullptr;
+    }
 
 
 END_BENTLEY_GEOMETRY_NAMESPACE

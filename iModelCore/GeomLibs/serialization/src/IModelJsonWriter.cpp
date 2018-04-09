@@ -495,6 +495,72 @@ Json::Value RotationalSweepToJson (ISolidPrimitiveCR sp)
  }
 }
 #endif
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      04/2018
++--------------------------------------------------------------------------------------*/
+static Json::Value ToJson(PolyfaceAuxChannel::DataCR in)
+    {
+    Json::Value     value(Json::objectValue), dataValues(Json::arrayValue);
+    
+    value["input"] = in.GetInput();
+
+    for (auto& dataValue : in.GetValues())
+        dataValues.append(dataValue);
+
+    value["values"] = std::move(dataValues);
+
+    return value;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      04/2018
++--------------------------------------------------------------------------------------*/
+static Json::Value ToJson(PolyfaceAuxChannelCR in)  
+    {
+    Json::Value     value(Json::objectValue), dataArray(Json::arrayValue);
+
+    value["dataType"] = (int32_t) in.GetDataType();
+    value["name"] = in.GetName();
+    value["inputName"] = in.GetInputName();
+
+    for (auto data : in.GetData())
+        dataArray.append(ToJson(*data));
+
+    value["data"] = std::move(dataArray);
+
+    return value;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      04/2018
++--------------------------------------------------------------------------------------*/
+static Json::Value ToJson(PolyfaceAuxData::ChannelsCR in) 
+    {
+    Json::Value     value(Json::arrayValue);
+
+    for (auto& channel : in)
+        value.append(ToJson(*channel));
+
+    return value;
+    }
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      04/2018
++--------------------------------------------------------------------------------------*/
+static Json::Value ToJson(PolyfaceAuxDataCR in) 
+    {
+    Json::Value value(Json::objectValue), indices(Json::arrayValue);
+
+    for (auto& index : in.GetIndices())
+        indices.append(index);
+    
+    value["indices"] = std::move(indices);
+    value["channels"] = ToJson(in.GetChannels());
+
+    return value;
+    }
+
 Json::Value IndexedPolyfaceToJson (PolyfaceHeaderCR mesh)
     {
     if (mesh.GetMeshStyle () != MESH_ELM_STYLE_INDEXED_FACE_LOOPS)
@@ -525,6 +591,10 @@ Json::Value IndexedPolyfaceToJson (PolyfaceHeaderCR mesh)
         allData["normal"] = toJson (mesh.GetNormalCP (), mesh.GetNormalCount ());
     if (mesh.GetNormalIndexCP() != nullptr)
         allData["normalIndex"] = toJson (mesh.GetNormalIndexCP (), indexCount);
+
+    if(mesh.GetAuxDataCP().IsValid())
+        allData["auxData"] = ToJson(*mesh.GetAuxDataCP());
+
     return singleton ("indexedMesh", allData);
     }
 
