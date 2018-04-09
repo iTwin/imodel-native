@@ -3579,10 +3579,10 @@
                     <KeyName>EPSG:3414</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Kertau.SingaporeGrid</KeyName>
+                    <KeyName>KertauGC.SingaporeGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:24500</KeyName>
+                    <KeyName>Kertau.SingaporeGrid</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -6197,7 +6197,7 @@
                 <Name>Czechoslovakia</Name>
                 <Members>
                   <Member>
-                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
+                    <KeyName>CzechJTSK/05.Krovak</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Czech/JTSK.Krovak</KeyName>
@@ -8720,10 +8720,13 @@
                     <KeyName>BritishNatGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:27700</KeyName>
+                    <KeyName>OSGB-7P.BritishNatGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>OrdnanceSurvey</KeyName>
+                    <KeyName>OSTN02.BritishNatGrid</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OSTN15.BritishNatGrid</KeyName>
                   </Member>
                   <Member>
                     <KeyName>LondonGrid</KeyName>
@@ -29534,6 +29537,14 @@
             </Members>
             <Groups>
               <Group>
+                <Name>Czechoslovakia</Name>
+                <Members>
+                  <Member>
+                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>South Africa</Name>
                 <Members>
                   <Member>
@@ -30327,6 +30338,14 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Singapore</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:24500</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>Sweden</Name>
                 <Members>
                   <Member>
@@ -30499,10 +30518,21 @@
                   </Member>
                 </Members>
               </Group>
-			  <Group>
-			    <Name>United States of America</Name>
-                <Groups>
-				  <Group>
+              <Group>
+                <Name>UK</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:27700</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OrdnanceSurvey</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
+                <Name>United States of America</Name>
+               <Groups>
+                  <Group>
                      <Name>Alabama</Name>
                      <Members>
                        <Member>
@@ -33237,7 +33267,7 @@
                 <Name>Czechoslovakia</Name>
                 <Members>
                   <Member>
-                    <KeyName>CzechJTSK/5b.LL</KeyName>
+                    <KeyName>CzechJTSK/05.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Czech/JTSK.LL</KeyName>
@@ -33748,6 +33778,15 @@
                 <Name>UK</Name>
                 <Members>
                   <Member>
+                    <KeyName>OSGB-7P.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OSGB/OSTN02.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OSGB/OSTN15.LL</KeyName>
+                  </Member>
+                  <Member>
                     <KeyName>LLOSGB-7P</KeyName>
                   </Member>
                   <Member>
@@ -33767,9 +33806,6 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:4173</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4277</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4278</KeyName>
@@ -35816,6 +35852,12 @@
               </Member>
               <Member>
                 <KeyName>DHDN/BeTA2010.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>CzechJTSK/5b.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4277</KeyName>
               </Member>
             </Members>
           </Group>
