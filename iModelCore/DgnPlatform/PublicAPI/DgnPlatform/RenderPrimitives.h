@@ -528,6 +528,7 @@ public:
     const_iterator end() const { return m_map.end(); }
 
     DRange3dCR GetRange() const { return m_range; }
+    void SetRange(DRange3dCR range) { BeAssert(empty()); m_range = range; }
     void SetMaxFeatures(uint32_t maxFeatures) { if (nullptr != m_featureTable) m_featureTable->SetMaxFeatures(maxFeatures); }
     FeatureTableP GetFeatureTable() { return m_featureTable; }
 };

@@ -1463,11 +1463,13 @@ void DgnCacheTileRebuilder::AddMeshEdges(MeshBuilderR builder, MeshPrimitive con
     // AddMesh() has removed any vertices belonging to features to be excluded from the reconstituted mesh;
     // and has populated a mapping from old to new indices (with -1 == removed).
     // All we need to do for edges is skip those which have been removed, and remap the indices of the rest.
-    MeshEdgesPtr edges = new MeshEdges();
+    if (builder.GetMesh()->GetEdgesR().IsNull())
+        builder.GetMesh()->GetEdgesR() = new MeshEdges();
+
+    MeshEdgesPtr edges = builder.GetMesh()->GetEdgesR();
     AddPolylineEdges(*edges, mesh, edgesJson);
     AddSilhouetteEdges(*edges, mesh, edgesJson);
     AddVisibleEdges(*edges, mesh, edgesJson);
-    builder.GetMesh()->GetEdgesR() = edges;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1603,9 +1605,10 @@ void DgnCacheTileRebuilder::AddSilhouetteEdges(MeshEdgesR edges, MeshPrimitive c
         }
 
     // m_silhouettes is a list of MeshEdge, which is a pair of indices...
+    BeAssert(0 == (numIndices & 1));
     edges.m_silhouette.resize(numIndices/2);
     edges.m_silhouette[0] = MeshEdge(newFirstIndex, mesh.RemapIndex(indexView[1]));
-    for (uint32_t i = 0; i < edges.m_silhouette.size(); i++)
+    for (uint32_t i = 1; i < edges.m_silhouette.size(); i++)
         {
         uint32_t baseIndex = i * 2;
         edges.m_silhouette[i] = MeshEdge(mesh.RemapIndex(indexView[baseIndex]), mesh.RemapIndex(indexView[baseIndex+1]));
@@ -1627,9 +1630,10 @@ void DgnCacheTileRebuilder::AddVisibleEdges(MeshEdgesR edges, MeshPrimitive cons
     if (-1 == newFirstIndex)
         return;
 
+    BeAssert(0 == (numIndices & 1));
     edges.m_visible.resize(numIndices/2);
     edges.m_visible[0] = MeshEdge(newFirstIndex, mesh.RemapIndex(indexView[1]));
-    for (uint32_t i = 0; i < edges.m_visible.size(); i++)
+    for (uint32_t i = 1; i < edges.m_visible.size(); i++)
         {
         uint32_t baseIndex = i * 2;
         edges.m_visible[i] = MeshEdge(mesh.RemapIndex(indexView[baseIndex]), mesh.RemapIndex(indexView[baseIndex+1]));
