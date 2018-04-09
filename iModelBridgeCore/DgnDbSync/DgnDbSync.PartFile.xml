@@ -379,7 +379,7 @@
         <SubPart PartName="DwgConverter" PartFile="DwgConverter"/>
     </Part>
 
-    <Part Name="TeleporterPublicApi" BentleyBuildMakeFile="BimTeleporter/BimTeleporter.prewire.mke">
+    <Part Name="TeleporterPublicApi" BentleyBuildMakeFile="BimTeleporter/BimTeleporter.prewire.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <Bindings>
             <PublicAPI Domain="BimTeleporter" />
         </Bindings>
