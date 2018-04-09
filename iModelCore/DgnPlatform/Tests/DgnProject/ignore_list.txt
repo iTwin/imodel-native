@@ -478,7 +478,6 @@ ECInstancesCompatibility.ReadInstances
     # [  FAILED  ] ECInstancesCompatibility.ReadInstances (385 ms)
 
 # Fails in Release
-MeshBuilderTest.RoundTripMeshBuilders
 DgpLiteralExpressionTests.DgnMiscSymbols
 
     # TFS#800308
