@@ -2941,6 +2941,7 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
             (BaseGCS::pcvLambertEquidistantAzimuthal == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvPolarStereographic == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvCzechKrovak == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvLambertEqualAreaAzimuthal == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvAlbersEqualArea == coordinateSystem.GetProjectionCode()) )
             {
@@ -6283,7 +6284,8 @@ WCharCP                 wellKnownText       // The Well Known Text specifying th
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorGeoTools == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_MRCAT && wktFlavorEPSG == wktFlavor) ||
                              (m_csParameters->prj_code == cs_PRJCOD_WCCSL && wktFlavorOGC == wktFlavor) ||
-                             (m_csParameters->prj_code == cs_PRJCOD_LMTAN && wktFlavorOracle == wktFlavor))
+                             (m_csParameters->prj_code == cs_PRJCOD_LMTAN && wktFlavorOracle == wktFlavor) ||
+                             (m_csParameters->prj_code == cs_PRJCOD_KROVAK))
                             
         {
         try {
@@ -9957,6 +9959,7 @@ bool tolerateEquivalentDifferencesWhenDeprecated
             (theDatumConverter1->xforms[idxXForms]->errorValue != theDatumConverter1->xforms[idxXForms]->errorValue) ||
             (theDatumConverter1->xforms[idxXForms]->accuracy != theDatumConverter1->xforms[idxXForms]->accuracy))
             datumsEquivalent = false;
+
 
         // So far so good but now we must check the specific parameters. Except for grid shift files we can assume
         // a simple compare will do the job.
@@ -15517,7 +15520,12 @@ double          CSMap::CS_cssck (const CSParameters* csprm, GeoPointCP ll) {retu
 double          CSMap::CS_csscl (const CSParameters* csprm, GeoPointCP ll) {return ::CS_csscl (csprm, (const double *)ll);}
 void            CSMap::CS_fillIn (CSDefinition* csdef) {::CS_fillIn (csdef);}
 int             CSMap::CSerpt (char *mesg,int size,int err_num) {return ::CSerpt (mesg, size, err_num);}
-int             CSMap::CS_wktToCsEx (CSDefinition *csDef, CSDatumDef *dtDef, CSEllipsoidDef *elDef, GeoCoordinates::BaseGCS::WktFlavor flavor, CharCP wellKnownText) {return ::CS_wktToCsEx (csDef, dtDef, elDef, (ErcWktFlavor)flavor, wellKnownText, 1);}
+#ifndef NDEBUG
+// In debug we desactivate the binary Fallback. For one WKT it may be fine to wait 5 seconds (that long!) but in test mode where we need to parse through all known WKT it does not do.
+int             CSMap::CS_wktToCsEx (CSDefinition *csDef, CSDatumDef *dtDef, CSEllipsoidDef *elDef, GeoCoordinates::BaseGCS::WktFlavor flavor, CharCP wellKnownText) {return ::CS_wktToCsEx (csDef, dtDef, elDef, (ErcWktFlavor)flavor, wellKnownText, 0);}
+#else
+int             CSMap::CS_wktToCsEx(CSDefinition *csDef, CSDatumDef *dtDef, CSEllipsoidDef *elDef, GeoCoordinates::BaseGCS::WktFlavor flavor, CharCP wellKnownText) { return ::CS_wktToCsEx(csDef, dtDef, elDef, (ErcWktFlavor)flavor, wellKnownText, 1); }
+#endif
 bool            CSMap::CS_prjprm (CSParamInfo *info, int projectionCode, int paramNum) {return 0 < ::CS_prjprm (info, (short)projectionCode, paramNum);}
 CSEllipsoidDef* CSMap::CS_eldef (const char * keyName) {return ::CS_eldef (keyName);}
 CSDatumDef*     CSMap::CS_dtdef (const char * keyName) {return ::CS_dtdef (keyName);}

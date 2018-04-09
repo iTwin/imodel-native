@@ -1,11 +1,11 @@
 //:>--------------------------------------------------------------------------------------+
 //:>
-//:>     $Source: Tests/NonPublished/DictionaryTests/GCSUnaryTester.h $
+//:>     $Source: Tests/NonPublished/DictionaryTests/GCSSpecificWKTTester.h $
 //:>
 //:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
-// Class : GCSUnaryTester
+// Class : GCSSpecificTransformTester
 //-----------------------------------------------------------------------------
 
 #pragma once
@@ -13,15 +13,13 @@
 
  
 // Preparation of required environment
-class GCSUnaryTester : public ::testing::TestWithParam< WString >
+class GCSSpecificWKTTester : public ::testing::TestWithParam< WString >
     {   
 
 public:
   virtual void SetUp() {  };
   virtual void TearDown() {};
 
-    GCSUnaryTester();
-    ~GCSUnaryTester() {};
-
-    GeoCoordinates::BaseGCSPtr m_LL84GCS;
+    GCSSpecificWKTTester();
+    ~GCSSpecificWKTTester() {};
     };

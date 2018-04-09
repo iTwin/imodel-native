@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/DictionaryTests/GCSSpecificTransformTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -396,6 +396,26 @@ TEST_F (GCSSpecificTransformTester, SpecificWKT10)
     EXPECT_TRUE(currentGCS->IsValid());
 
     }
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, SpecificWKT11)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    // This WKT originates from a client for a 3MX
+    WString wellKnownText = L"PROJCS[\"Czech/JTSK.Krovak\",GEOGCS[\"Czech/JTSK.LL\",DATUM[\"Czech/JTSK\",SPHEROID[\"BESSEL\",6377397.155,299.15281283],TOWGS84[570.6934,85.6936,462.8393,-4.998250,-1.586630,-5.261140,3.54301550]],PRIMEM[\"Ferro\", -17.6666666666667],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Krovak Oblique Conformal Conic\"],PARAMETER[\"Central Meridian\",-17.66666666666667],PARAMETER[\"Origin Latitude\",49.50000000000000],PARAMETER[\"Oblique Pole Longitude\",42.50000000000000],PARAMETER[\"Oblique Pole Latitude\",59.75759855555555],PARAMETER[\"Oblique Cone Standard Parallel\",78.50000000000000],PARAMETER[\"False Easting\",0.000],PARAMETER[\"False Northing\",0.000],PARAMETER[\"Scale Reduction\",0.999900000000],UNIT[\"Meter\",1.00000000000000]]";
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromWellKnownText(NULL, NULL, GeoCoordinates::BaseGCS::wktFlavorOGC, wellKnownText.c_str()));
+
+    EXPECT_TRUE(currentGCS->IsValid());
+
+    }
+
 
 //==================================================================================
 // Domain
