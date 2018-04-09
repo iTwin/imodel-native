@@ -1787,4 +1787,88 @@ TEST_F(SchemaValidatorTests, DiamondPatternInheritedProperty)
     ASSERT_TRUE(validator.Validate(*schema)) << "Mixin property is not overridden so validation should succeed";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, EntityClassesMayNotHaveTheSameDisplayLabel)
+    {
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0;
+    ECEntityClassP entity1;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "E0"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "E1"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisEntity));
+
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as no display labels are defined";
+
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->SetDisplayLabel("E0"));
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as defined display label conflicts with a class name without a defined display label";
+
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->SetDisplayLabel("Entity0"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->SetDisplayLabel("Entity1"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Should succeed validation as defined display labels are different";
+
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->SetDisplayLabel("DuplicateLabel"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->SetDisplayLabel("DuplicateLabel"));
+    ASSERT_FALSE(validator.Validate(*schema)) << "Should fail validation as defined display labels are the same";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, PropertiesMayNotHaveTheSameDisplayLabelAndCategory)
+    {
+    // Test that an entity class may not inherit a property from multiple mixins
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity;
+    ECSchemaPtr schema;
+    ECEntityClassP entity;
+    PrimitiveECPropertyP prop1;
+    PrimitiveECPropertyP prop2;
+    PropertyCategoryP cat1;
+    PropertyCategoryP cat2;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity, "Entity"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(cat1, "category1"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreatePropertyCategory(cat2, "category2"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity->AddBaseClass(*bisEntity));
+
+    ASSERT_EQ(ECObjectsStatus::Success, entity->CreatePrimitiveProperty(prop1, "P1"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity->CreatePrimitiveProperty(prop2, "P2"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with different names so validation should succeed";
+
+    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetDisplayLabel("P1"));
+    ASSERT_FALSE(validator.Validate(*schema)) << "Entity class has two properties with the same display label and no defined category so validation should fail";
+
+    ASSERT_EQ(ECObjectsStatus::Success, prop1->SetDisplayLabel("Property1"));
+    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetDisplayLabel("Property2"));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with different display labels so validation should succeed";
+
+    ASSERT_EQ(ECObjectsStatus::Success, prop1->SetDisplayLabel("DuplicateLabel"));
+    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetDisplayLabel("DuplicateLabel"));
+    ASSERT_FALSE(validator.Validate(*schema)) << "Entity class has two properties with the same display label and no defined category so validation should fail";
+
+    ASSERT_EQ(ECObjectsStatus::Success, prop1->SetCategory(cat1));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label but different categories so validation should succeed";
+
+    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetCategory(cat1));
+    ASSERT_FALSE(validator.Validate(*schema)) << "Entity class has two properties with the same display label and category so validation should fail";
+
+    ASSERT_EQ(ECObjectsStatus::Success, prop2->SetCategory(cat2));
+    ASSERT_TRUE(validator.Validate(*schema)) << "Entity class has two properties with the same display label but different categories so validation should succeed";
+    }
+
+
 END_BENTLEY_ECN_TEST_NAMESPACE

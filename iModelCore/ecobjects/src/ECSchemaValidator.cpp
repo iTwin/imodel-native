@@ -237,6 +237,25 @@ ECObjectsStatus ECSchemaValidator::BaseECValidator(ECSchemaCR schema)
             }
         }
 
+    // RULE: Entity classes within the same schema should not have the same display label
+    bvector<ECClassCP> entityClasses;
+    for (ECClassCP ecClass : schema.GetClasses())
+        {
+        if (ecClass->IsEntityClass() && !ecClass->GetEntityClassCP()->IsMixin())
+            {
+            for (ECClassCP prevClass : entityClasses)
+                {
+                if (ecClass->GetDisplayLabel().EqualsIAscii(prevClass->GetDisplayLabel()))
+                    {
+                    LOG.errorv("Failed to validate '%s'. Entity classes '%s' and '%s' have the same display label '%s'",
+                               schema.GetFullSchemaName().c_str(), prevClass->GetFullName(), ecClass->GetFullName(), ecClass->GetDisplayLabel().c_str());
+                    status = ECObjectsStatus::Error;
+                    }
+                }
+            entityClasses.push_back(ecClass);
+            }
+        }
+
     return status;
     }
 
@@ -257,6 +276,38 @@ ECObjectsStatus ECSchemaValidator::AllClassValidator(ECClassCR ecClass)
                 ecClass.GetFullName(), prop->GetName().c_str());
             status = ECObjectsStatus::Error;
             }
+        }
+
+    // RULE: No properties can have the same display label and category
+    bvector<ECPropertyP> propertiesList;
+    for (ECPropertyP prop : ecClass.GetProperties(true))
+        {
+        Utf8StringCR displayLabel = prop->GetDisplayLabel();
+        PropertyCategoryCP category = prop->GetCategory();
+
+        for (ECPropertyP prevProp : propertiesList)
+            {
+            if (prevProp->GetDisplayLabel().EqualsIAscii(displayLabel))
+                {
+                PropertyCategoryCP prevCategory = prevProp->GetCategory();
+                if (prevCategory == nullptr && category == nullptr) // neither have defined category
+                    {
+                    LOG.errorv("Class '%s' has properties '%s' and '%s' with the same display label '%s'",
+                               ecClass.GetFullName(), prevProp->GetName().c_str(), prop->GetName().c_str(), displayLabel.c_str());
+                    status = ECObjectsStatus::Error;
+                    }
+
+                if (prevCategory == nullptr || category == nullptr)
+                    continue;
+                if (prevCategory->GetFullName().EqualsIAscii(category->GetFullName()))
+                    {
+                    LOG.errorv("Class '%s' has properties '%s' and '%s' with the same display label '%s' and category '%s'",
+                               ecClass.GetFullName(), prop->GetName().c_str(), prevProp->GetName().c_str(), displayLabel.c_str(), category->GetFullName().c_str());
+                    status = ECObjectsStatus::Error;
+                    }
+                }
+            }
+        propertiesList.push_back(prop);
         }
 
     return status;
