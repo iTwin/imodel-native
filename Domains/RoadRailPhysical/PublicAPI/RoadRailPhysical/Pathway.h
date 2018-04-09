@@ -230,12 +230,8 @@ public:
 struct ILinearElementUtilities : NonCopyableClass
 {
 public:
-    static Dgn::DgnClassId QueryILinearElementSourceRefersToGeneratedILinearElementsRelClassId(Dgn::DgnDbCR dgnDb)
-        { return dgnDb.Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_ILinearElementSourceRefersToGeneratedILinearElements); }
-
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetAssociatedSignificantPointDef(LinearReferencing::ILinearElementCR linearElement, SignificantPointDefinitionCP significantPointDef);
-
-}; // GeneratedILinearElementHelper
+}; // ILinearElementUtilities
 
 
 //=================================================================================

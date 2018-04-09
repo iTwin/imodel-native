@@ -130,15 +130,6 @@
             <Class class="TravelPortionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ILinearElementSourceRefersToGeneratedILinearElements" strength="referencing" modifier="Sealed">
-        <BaseClass>lr:ILinearElementSourceProvidesILinearElements</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
-            <Class class="lr:ILinearElementSource"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
-            <Class class="lr:ILinearElement"/>
-        </Target>
-    </ECRelationshipClass>
     <ECEnumeration typeName="SignificantPointDefinition_ExpectedAtSurface" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="Internal"/>
         <ECEnumerator value="1" displayLabel="Top"/>

@@ -75,7 +75,6 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_REL_GeometricElementBoundsContentForSheet              "GeometricElementBoundsContentForSheet"
 #define BRRP_REL_GraphicalElement3dRepresentsPathway                "GraphicalElement3dRepresentsPathway"
 #define BRRP_REL_ILinearElementAssociatedWithSignificantPointDef    "ILinearElementAssociatedWithSignificantPointDefinition"
-#define BRRP_REL_ILinearElementSourceRefersToGeneratedILinearElements "ILinearElementSourceRefersToGeneratedILinearElements"
 #define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
 #define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
 #define BRRP_REL_PathwayRefersToLeftTravelPortion                   "PathwayRefersToLeftTravelPortion"

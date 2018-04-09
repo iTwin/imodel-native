@@ -53,8 +53,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     ASSERT_TRUE(roadwayCPtr.IsValid());    
     ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->GetMainLinearElementId());
 
-    alignmentPtr->SetILinearElementSource(roadwayPtr.get(), 
-        ILinearElementUtilities::QueryILinearElementSourceRefersToGeneratedILinearElementsRelClassId(*projectPtr));
+    alignmentPtr->SetILinearElementSource(roadwayPtr.get());
     ASSERT_TRUE(alignmentPtr->Update().IsValid());
 
     auto linearElements = roadwayPtr->QueryLinearElements();
