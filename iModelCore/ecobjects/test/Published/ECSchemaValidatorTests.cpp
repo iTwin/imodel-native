@@ -14,7 +14,18 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 static Utf8CP bisSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="BisCore" alias="bis" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-        <ECEntityClass typeName="IParentElement" modifier="Abstract" description="IParentElement Description"/>
+        <ECSchemaReference name="CoreCustomAttributes" version="1.0" alias="CoreCA"/>
+
+        <ECEntityClass typeName="IParentElement" modifier="Abstract" description="IParentElement Description">
+            <ECCustomAttributes>
+                <IsMixin xmlns="CoreCustomAttributes.1.0">
+                    <AppliesToEntityClass>Element</AppliesToEntityClass>
+                </IsMixin>
+            </ECCustomAttributes>
+        </ECEntityClass>
+
+    <ECEntityClass typeName="Element" modifier="Abstract" description="Element description"/>
+
     </ECSchema>)xml";
 
 struct SchemaValidatorTests : ECTestFixture
@@ -83,7 +94,7 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
         <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="BisCore" version="1.0" prefix="bis"/>
             <ECClass typeName="TestClass" isDomainClass="true">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECClass>
             <ECRelationshipClass typeName="TestRelationship">
                 <Source cardinality="(1,1)" polymorphic="true">
@@ -102,10 +113,10 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
         <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="BisCore" version="1.0" prefix="bis"/>
             <ECClass typeName="TestClass" isDomainClass="true">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECClass>
             <ECClass typeName="A" isDomainClass="true">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECClass>
             <ECRelationshipClass typeName="ARelB">
                 <Source cardinality="(1,1)" polymorphic="true">
@@ -127,10 +138,10 @@ TEST_F(SchemaValidatorTests, TestLatestSchemaVersionValidation)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="A">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ARelB" modifier="None">
                 <Source multiplicity="(1..1)" polymorphic="true" roleLabel="Source">
@@ -169,7 +180,7 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
         <ECSchema schemaName="StandardSchemaReferenced" alias="ssr" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
         </ECSchema>)xml";
 
@@ -198,13 +209,97 @@ TEST_F(SchemaValidatorTests, TestSchemaStandardReferences)
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ref"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
         </ECSchema>)xml";
     ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
     ASSERT_TRUE(schema.IsValid());
     EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
     EXPECT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the referenced schema is the latest version of ECDbMap";
+    }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, TestSchemaReferenceVersion)
+    {
+    
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="SchemaReferencedVersion" alias="srv" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:Element</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
+            <ECSchemaReference name="RefSchema" version="01.00" alias="ref"/>
+            <ECEntityClass typeName="TestClass">
+                <BaseClass>bis:Element</BaseClass>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    // Test successful validation of EC 3.1 reference
+    {
+    InitBisContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+
+    // Use an EC 3.1 schema as a reference
+    Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="TestClass"/>
+        </ECSchema>)xml";
+    ECSchemaPtr refSchema;
+    ECSchema::ReadFromXmlString(refSchema, refXml, *context);
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the referenced schema uses EC 3.1";
+    }
+
+    // Test unsuccessful validation of EC 3.0 reference
+    {
+    InitBisContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+
+    // Use an EC 3.0 schema as a reference
+    Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+            <ECEntityClass typeName="TestClass"/>
+        </ECSchema>)xml";
+    ECSchemaPtr refSchema;
+    ECSchema::ReadFromXmlString(refSchema, refXml, *context);
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the referenced schema uses EC 3.0";
+    }
+
+    // Test unsuccessful validation of EC 2.0 reference
+    {
+    InitBisContextWithSchemaXml(schemaXml);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+
+    // Use an EC 2.0 schema as a reference
+    Utf8CP refXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="RefSchema" alias="ref" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECEntityClass typeName="TestClass"/>
+        </ECSchema>)xml";
+    ECSchemaPtr refSchema;
+    ECSchema::ReadFromXmlString(refSchema, refXml, *context);
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context);
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_TRUE(schema->IsECVersion(ECVersion::Latest));
+    EXPECT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the referenced schema uses EC 2.0";
     }
     }
 
@@ -299,7 +394,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="GoodTestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
         </ECSchema>)xml";
     InitBisContextWithSchemaXml(goodSchemaXml);
@@ -313,7 +408,7 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="BaseTestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="DerivedTestClass">
                 <BaseClass>BaseTestClass</BaseClass>
@@ -376,14 +471,13 @@ TEST_F(SchemaValidatorTests, RootEntityClassesMustDeriveFromBisHierarchy)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Dan.Perlman                          04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
+TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedMixinProperty)
     {
-    // Test that a mixin class may not override an inherited property
+    // Test that a mixin class may not override an inherited property from a mixin class
     ECSchemaPtr bisSchema;
     ECEntityClassP bisEntity;
     ECSchemaPtr schema;
     ECEntityClassP entity0;
-    ECEntityClassP entity1;
     ECEntityClassP mixin0;
     ECEntityClassP mixin1;
     PrimitiveECPropertyP prop;
@@ -394,8 +488,6 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
     ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "Entity0"));
     ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "Entity1"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*bisEntity));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity0));
     ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin1, "Mixin1", *entity0));
     ASSERT_EQ(ECObjectsStatus::Success, mixin0->CreatePrimitiveProperty(prop, "P1"));
@@ -403,7 +495,38 @@ TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedProperty)
 
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin property does not override anything so validation should succeed";
     ASSERT_EQ(ECObjectsStatus::Success, mixin1->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin overrides an inherited property so validation should fail";
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin overrides an inherited mixin property so validation should fail";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, MixinClassMayNotOverrideInheritedEntityProperty)
+    {
+    // Test that a mixin class may not override an inherited property from an entity class
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0;
+    ECEntityClassP entity1;
+    ECEntityClassP mixin0;
+    PrimitiveECPropertyP prop;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "Entity0"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->CreatePrimitiveProperty(prop, "P1"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "Entity1"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*entity0));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity1));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*mixin0));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin property does not override anything so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, mixin0->CreatePrimitiveProperty(prop, "P1"));
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Mixin overrides an inherited entity property so validation should fail";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -515,13 +638,13 @@ TEST_F(SchemaValidatorTests, BisCoreAspectTests)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="ElementMultiAspect" modifier="Abstract" description="ElementMultiAspect Description">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="ElementAspect" modifier="Abstract" displayLabel="Element Aspect" description="Element Aspect Description">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="MultiAspect" modifier="Abstract" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
                 <BaseClass>bis:IParentElement</BaseClass>
@@ -708,13 +831,13 @@ TEST_F(SchemaValidatorTests, BisCoreAspectTests)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="Element" modifier="Abstract" description="Element Description">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="ElementUniqueAspect" modifier="Abstract" description="ElementUniqueAspect Description">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="ElementAspect" modifier="None" displayLabel="Element Aspect" description="Element Aspect Description">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="MultiAspect" modifier="None" displayLabel="Element Multi-Aspect" description="An Element Multi-Aspect Description">
                 <BaseClass>bis:IParentElement</BaseClass>
@@ -808,8 +931,25 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
     // Class may not implement both bis:IParentElement and bis:ISubModeledElement
     Utf8CP bisSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="BisCore" alias="bis" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECEntityClass typeName="ISubModeledElement" modifier="Abstract" description="ISubModeledElement Description"/>
-            <ECEntityClass typeName="IParentElement" modifier="Abstract" description="IParentElement Description"/>
+            <ECSchemaReference name="CoreCustomAttributes" version="1.0" alias="CoreCA"/>
+
+            <ECEntityClass typeName="IParentElement" modifier="Abstract" description="IParentElement Description">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.1.0">
+                        <AppliesToEntityClass>Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+
+            <ECEntityClass typeName="ISubModeledElement" modifier="Abstract" description="IParentElement Description">
+                <ECCustomAttributes>
+                    <IsMixin xmlns="CoreCustomAttributes.1.0">
+                        <AppliesToEntityClass>Element</AppliesToEntityClass>
+                    </IsMixin>
+                </ECCustomAttributes>
+            </ECEntityClass>
+
+            <ECEntityClass typeName="Element" modifier="Abstract" description="Element description"/>
         </ECSchema>)xml";
     ECSchemaPtr bisSchema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
@@ -821,6 +961,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
         <ECSchema schemaName="BadSchemaThatUsesBis" alias="bis" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="BadClass" modifier="Abstract" description="BadClass Description">
+                <BaseClass>bis:Element</BaseClass>
                 <BaseClass>bis:IParentElement</BaseClass>
                 <BaseClass>bis:ISubModeledElement</BaseClass>
             </ECEntityClass>
@@ -834,6 +975,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
         <ECSchema schemaName="GoodSchemaThatUsesBis1" alias="bis" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="BadClass" modifier="Abstract" description="BadClass Description">
+                <BaseClass>bis:Element</BaseClass>
                 <BaseClass>bis:IParentElement</BaseClass>
             </ECEntityClass>
         </ECSchema>)xml";
@@ -846,6 +988,7 @@ TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromCertainBisClasses)
         <ECSchema schemaName="GoodSchemaThatUsesBis2" alias="bis" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="BadClass" modifier="Abstract" description="BadClass Description">
+                <BaseClass>bis:Element</BaseClass>
                 <BaseClass>bis:ISubModeledElement</BaseClass>
             </ECEntityClass>
         </ECSchema>)xml";
@@ -865,7 +1008,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClassBad">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
                 <ECProperty propertyName="PropNameId" typeName="long">
                 </ECProperty>
             </ECEntityClass>
@@ -879,10 +1022,10 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="SourceClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="TargetClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="TestRelationshipBad" strength="embedding" modifier="None">
                 <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -903,7 +1046,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClassGood1">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
                 <ECProperty propertyName="PropName" typeName="long">
                 </ECProperty>
             </ECEntityClass>
@@ -917,7 +1060,7 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClassGood2">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
                 <ECProperty propertyName="PropNameId" typeName="double">
                 </ECProperty>
             </ECEntityClass>
@@ -931,10 +1074,10 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="SourceClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="TargetClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
                 <ECNavigationProperty propertyName="NavProp" relationshipName="TestRelationshipGood" direction="backward" />
             </ECEntityClass>
             <ECRelationshipClass typeName="TestRelationshipGood" strength="embedding" modifier="None">
@@ -956,10 +1099,10 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="SourceClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="TargetClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="TestRelationshipGood" strength="embedding" modifier="None">
                 <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
@@ -989,69 +1132,6 @@ TEST_F(SchemaValidatorTests, DoNotAllowPropertiesOfTypeLong)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Dan.Perlman                          04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleBaseClasses)
-    {
-    // Test that an entity class may not inherit a property from multiple base classes
-    ECSchemaPtr bisSchema;
-    ECEntityClassP bisEntity;
-    ECSchemaPtr schema;
-    ECEntityClassP derivedEntity;
-    ECEntityClassP baseEntity1;
-    ECEntityClassP baseEntity2;
-    PrimitiveECPropertyP prop;
-
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(derivedEntity, "DerivedEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(baseEntity1, "BaseEntity1"));
-    ASSERT_EQ(ECObjectsStatus::Success, baseEntity1->AddBaseClass(*bisEntity));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(baseEntity2, "BaseEntity2"));
-    ASSERT_EQ(ECObjectsStatus::Success, baseEntity2->AddBaseClass(*bisEntity));
-
-    ASSERT_EQ(ECObjectsStatus::Success, derivedEntity->AddBaseClass(*baseEntity1));
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class and its base classes have no properties yet so validation should succeed";
-    ASSERT_EQ(ECObjectsStatus::Success, baseEntity1->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_EQ(ECObjectsStatus::Success, derivedEntity->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class may inherit a property from just one base class so validation should succeed";
-    ASSERT_EQ(ECObjectsStatus::Success, derivedEntity->AddBaseClass(*baseEntity2));
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class may have multiple base classes so validation should succeed";
-    ASSERT_EQ(ECObjectsStatus::Success, baseEntity2->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class may not inherit a property from more than one base class so validation should fail";
-    }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Dan.Perlman                          04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaValidatorTests, EntityClassMayNotOverrideInheritedMixinProperty)
-    {
-    // Test that an entity class may not override a property inherited from mixin class
-    ECSchemaPtr bisSchema;
-    ECEntityClassP bisEntity;
-    ECSchemaPtr schema;
-    ECEntityClassP entity;
-    ECEntityClassP mixin;
-    PrimitiveECPropertyP prop;
-
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
-    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity, "Entity0"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity->AddBaseClass(*bisEntity));
-    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin, "Mixin0", *entity));
-    ASSERT_EQ(ECObjectsStatus::Success, mixin->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_EQ(ECObjectsStatus::Success, entity->AddBaseClass(*mixin));
-
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class inherits a property from mixin class so validation should succeed";
-    ASSERT_EQ(ECObjectsStatus::Success, entity->CreatePrimitiveProperty(prop, "P1"));
-    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class overrides a property inherited from mixin class so validation should fail";
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Carole.MacDonald                    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOneConcreteConstraint)
@@ -1061,7 +1141,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOn
         <ECSchema schemaName="ConstraintTestSchemaFail" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
 
             <ECRelationshipClass typeName="Base" strength="referencing" modifier="Abstract">
@@ -1092,7 +1172,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOn
         <ECSchema schemaName="AbstractTestSchemaSucceed" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="BaseClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECEntityClass typeName="TestClass">
                 <BaseClass>BaseClass</BaseClass>
@@ -1140,7 +1220,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="holding" modifier="Sealed">
                 <Source multiplicity="(1..1)" roleLabel="read from source to target" polymorphic="true">
@@ -1160,7 +1240,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassMayNotHaveHoldingStrength)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" modifier="Sealed">
                 <Source multiplicity="(1..1)" roleLabel="read from source to target" polymorphic="true">
@@ -1189,7 +1269,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="forward" modifier="Sealed">
                 <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
@@ -1210,7 +1290,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="forward" modifier="Sealed">
                 <Source multiplicity="(1..*)" roleLabel="read from source to target" polymorphic="true">
@@ -1231,7 +1311,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="forward" modifier="Sealed">
                 <Source multiplicity="(0..1)" roleLabel="read from source to target" polymorphic="true">
@@ -1252,7 +1332,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="forward" modifier="Sealed">
                 <Source multiplicity="(1..1)" roleLabel="read from source to target" polymorphic="true">
@@ -1274,7 +1354,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="backward" modifier="Sealed">
                 <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
@@ -1295,7 +1375,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="backward" modifier="Sealed">
                 <Source multiplicity="(1..*)" roleLabel="read from source to target" polymorphic="true">
@@ -1316,7 +1396,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="backward" modifier="Sealed">
                 <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
@@ -1337,7 +1417,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" strengthDirection="backward" modifier="Sealed">
                 <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
@@ -1359,7 +1439,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" modifier="Sealed">
                 <Source multiplicity="(0..*)" roleLabel="read from source to target" polymorphic="true">
@@ -1380,7 +1460,7 @@ TEST_F(SchemaValidatorTests, RelationshipClassEmbeddingStrengthTests)
         <ECSchema schemaName="StandardSchemaReferenced" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
                 <ECRelationshipClass typeName="ExampleRelationship" strength="embedding" modifier="Sealed">
                 <Source multiplicity="(0..1)" roleLabel="read from source to target" polymorphic="true">
@@ -1407,7 +1487,7 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
         <ECSchema schemaName="BadSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="RelationshipHasBadString" strength="embedding" modifier="Sealed">
                 <Source multiplicity="(0..1)" roleLabel="read from source to target" polymorphic="true">
@@ -1427,7 +1507,7 @@ TEST_F(SchemaValidatorTests, EmbeddingRelationshipsShouldNotContainHasInClassNam
         <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <ECRelationshipClass typeName="RelationshipHasPotentiallyBadString" strength="referencing" modifier="Sealed">
                 <Source multiplicity="(0..1)" roleLabel="read from source to target" polymorphic="true">
@@ -1454,7 +1534,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         <ECSchema schemaName="BadSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <KindOfQuantity typeName="BadKOQ" displayLabel="OFFSET" persistenceUnit="IN" relativeError="1e-2" />
         </ECSchema>)xml";
@@ -1467,7 +1547,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         <ECSchema schemaName="BadSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <KindOfQuantity typeName="BadKOQ2" displayLabel="LENGTH" persistenceUnit="US_SURVEY_IN" relativeError="1e-3" />
         </ECSchema>)xml";
@@ -1480,7 +1560,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         <ECSchema schemaName="BadSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <KindOfQuantity typeName="BadKOQ3" displayLabel="DEPTH" persistenceUnit="NAUT_MILE" relativeError="1e-3" />
         </ECSchema>)xml";
@@ -1493,7 +1573,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <KindOfQuantity typeName="GoodKOQ" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-1" />
         </ECSchema>)xml";
@@ -1506,7 +1586,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
         <ECSchema schemaName="GoodSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="TestClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
             </ECEntityClass>
             <KindOfQuantity typeName="GoodKOQ2" displayLabel="OFFSET" persistenceUnit="CM" relativeError="1e-4" />
         </ECSchema>)xml";
@@ -1526,11 +1606,11 @@ TEST_F(SchemaValidatorTests, PropertyOverridesCannotChangePersistenceUnit)
         <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="BaseClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="Length" />
             </ECEntityClass>
             <ECEntityClass typeName="DerivedClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="OtherLength" />
             </ECEntityClass>
             <KindOfQuantity typeName="Length" persistenceUnit="M" relativeError="1e-1" />
@@ -1545,7 +1625,7 @@ TEST_F(SchemaValidatorTests, PropertyOverridesCannotChangePersistenceUnit)
         <ECSchema schemaName="GoodSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="BisCore" version="1.0" alias="bis"/>
             <ECEntityClass typeName="BaseClass">
-                <BaseClass>bis:IParentElement</BaseClass>
+                <BaseClass>bis:Element</BaseClass>
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="Length" />
             </ECEntityClass>
             <ECEntityClass typeName="DerivedClass">
@@ -1632,4 +1712,126 @@ TEST_F(SchemaValidatorTests, CustomAttributesShouldNotHaveBaseClasses)
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation because custom attributes have base classes";
     }
 }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                       04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, EntityClassMayOverrideInheritedMixinProperty)
+    {
+    // Test that an entity class may not override a property inherited from mixin class
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity;
+    ECSchemaPtr schema;
+    ECEntityClassP entity;
+    ECEntityClassP mixin;
+    PrimitiveECPropertyP prop;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity, "Entity0"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity->AddBaseClass(*bisEntity));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin, "Mixin0", *entity));
+    ASSERT_EQ(ECObjectsStatus::Success, mixin->CreatePrimitiveProperty(prop, "P1"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity->AddBaseClass(*mixin));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class inherits a property from mixin class so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, entity->CreatePrimitiveProperty(prop, "P1"));
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class overrides a property inherited from mixin class, but validation should still succeed";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, EntityClassMayNotInheritFromMultipleEntityBaseClasses)
+    {
+    // Test that an entity class may not derive from multiple base entity classes
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity;
+    ECSchemaPtr schema;
+    ECEntityClassP derivedEntity;
+    ECEntityClassP baseEntity1;
+    ECEntityClassP baseEntity2;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(derivedEntity, "DerivedEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(baseEntity1, "BaseEntity1"));
+    ASSERT_EQ(ECObjectsStatus::Success, baseEntity1->AddBaseClass(*bisEntity));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(baseEntity2, "BaseEntity2"));
+    ASSERT_EQ(ECObjectsStatus::Success, baseEntity2->AddBaseClass(*bisEntity));
+
+    ASSERT_EQ(ECObjectsStatus::Success, derivedEntity->AddBaseClass(*baseEntity1));
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class derives from one base entity class so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, derivedEntity->AddBaseClass(*baseEntity2));
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class derives from multiple base entity classes so validation should fail";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, EntityClassMayNotInheritPropertyFromMultipleMixinClasses)
+    {
+    // Test that an entity class may not inherit a property from multiple mixins
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0;
+    ECEntityClassP mixin0;
+    ECEntityClassP mixin1;
+    PrimitiveECPropertyP prop;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "Entity0"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity0));
+    ASSERT_EQ(ECObjectsStatus::Success, mixin0->CreatePrimitiveProperty(prop, "P1"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*mixin0));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin1, "Mixin1", *entity0));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*mixin1));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Entity class inherits property from one mixin class so validation should succeed";
+    ASSERT_EQ(ECObjectsStatus::Success, mixin1->CreatePrimitiveProperty(prop, "P1"));
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Entity class inherits property from multiple mixin classes so validation should fail";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                             Joseph.Urbano                        04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaValidatorTests, DiamondPatternInheritedProperty)
+    {
+    // Test the diamond pattern, mixin class with a property is inherited by an entity class and a mixin class, which are both inherited by an entity class
+    ECSchemaPtr bisSchema;
+    ECEntityClassP bisEntity;
+    ECSchemaPtr schema;
+    ECEntityClassP entity0;
+    ECEntityClassP entity1;
+    ECEntityClassP mixin0;
+    ECEntityClassP mixin1;
+    PrimitiveECPropertyP prop;
+
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(bisSchema, "BisCore", "bis", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, bisSchema->CreateEntityClass(bisEntity, "BisEntity"));
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "NoMixinMixing", "NMM", 1, 1, 1));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*bisSchema));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity0, "Entity0"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*bisEntity));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin0, "Mixin0", *entity0));
+    ASSERT_EQ(ECObjectsStatus::Success, mixin0->CreatePrimitiveProperty(prop, "P1"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity0->AddBaseClass(*mixin0));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(entity1, "Entity1"));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*entity0));
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateMixinClass(mixin1, "Mixin1", *entity1));
+    ASSERT_EQ(ECObjectsStatus::Success, mixin1->AddBaseClass(*mixin0));
+    ASSERT_EQ(ECObjectsStatus::Success, entity1->AddBaseClass(*mixin1));
+
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Mixin property is not overridden so validation should succeed";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
