@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/ConnectTokenProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConnectTokenProviderTests.h"
@@ -121,7 +121,7 @@ TEST_F(ConnectTokenProviderTests, UpdateToken_CredentialsSetAndTokenRecieved_Set
     EXPECT_CALL(*client, RequestToken(creds, _, _))
         .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(newToken))));
 
-    SamlTokenPtr updatedToken = provider.UpdateToken()->GetResult();
+    auto updatedToken = provider.UpdateToken()->GetResult();
     EXPECT_EQ(newToken->AsString(), updatedToken->AsString());
     }
 #endif

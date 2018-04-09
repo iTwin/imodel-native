@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectAuthenticationHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -76,7 +76,9 @@ AsyncTaskPtr<AuthenticationHandler::AuthorizationResult> ConnectAuthenticationHa
             return;
             }
 
-        SamlTokenPtr token = m_tokenProvider->GetToken();
+        //TODO: Update ConnectAuthenticationHandler to handle various diffrent Tokens (ToSAMLAuthorizationString)
+        SamlTokenPtr token = dynamic_pointer_cast<SamlToken>(m_tokenProvider->GetToken());
+
         if (!IsTokenAuthorization(previousAttempt.GetAuthorization()) &&
             nullptr != token)
             {
@@ -84,14 +86,15 @@ AsyncTaskPtr<AuthenticationHandler::AuthorizationResult> ConnectAuthenticationHa
             return;
             }
 
-        m_tokenProvider->UpdateToken()->Then(m_thread, [=]  (SamlTokenPtr token)
+        m_tokenProvider->UpdateToken()->Then(m_thread, [=]  (ISecurityTokenPtr token)
             {
-            if (nullptr == token)
+            SamlTokenPtr samlToken = dynamic_pointer_cast<SamlToken>(token);
+            if (nullptr == samlToken)
                 {
                 finalResult->SetError(AsyncError("Failed to get new token"));
                 return;
                 }
-            finalResult->SetSuccess(m_shouldUseSAMLAuthorization ? token->ToSAMLAuthorizationString() : token->ToAuthorizationString());
+            finalResult->SetSuccess(m_shouldUseSAMLAuthorization ? samlToken->ToSAMLAuthorizationString() : samlToken->ToAuthorizationString());
             });
         })->Then<AuthenticationHandler::AuthorizationResult>([=]
             {
