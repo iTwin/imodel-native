@@ -26,6 +26,7 @@
 #include    <Teigha/Drawing/Include/DbObjectContextInterface.h>
 #include    <Teigha/Drawing/Include/OdFileDepMgr.h>
 #include    <Teigha/Drawing/Include/DbSymUtl.h>
+#include    <Teigha/Drawing/Include/XRefMan.h>
 
 #include    <Teigha/Kernel/Include/Ge/GeCircArc2d.h>
 #include    <Teigha/Kernel/Include/Ge/GeCircArc3d.h>

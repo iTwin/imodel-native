@@ -897,3 +897,51 @@ DwgResBufIterator DwgDbXrecord::GetRbChain (DwgDbDatabaseP dwg, DwgDbStatus* sta
     return  DwgResBufIterator::CreateFromAndFree(resbuf);
 #endif
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbXrefGraphNode::DwgDbXrefGraphNode (WCharCP name, DwgDbObjectIdCR id, DwgDbDatabaseP dwg, DwgDbXrefStatus status) { DWGDB_CALLSDKMETHOD(, T_Super(name, id, dwg, DWGDB_CASTTOENUM_DB(XrefStatus)(status))); }
+DwgString      DwgDbXrefGraphNode::GetName () const { return T_Super::name(); }
+DwgDbObjectId  DwgDbXrefGraphNode::GetBlockId () const { return DWGDB_CALLSDKMETHOD(T_Super::blockId(), T_Super::btrId()); }
+DwgDbDatabaseP DwgDbXrefGraphNode::GetDatabase () const { return static_cast<DwgDbDatabaseP>(T_Super::database()); }
+bool    DwgDbXrefGraphNode::IsNested () const { return T_Super::isNested(); }
+void    DwgDbXrefGraphNode::SetName (DwgStringCR name) { T_Super::setName(name.c_str()); }
+void    DwgDbXrefGraphNode::SetBlockId (DwgDbObjectIdCR id) { DWGDB_CALLSDKMETHOD(T_Super::setBlockId(id),T_Super::setBtrId(id)); }
+void    DwgDbXrefGraphNode::SetDatabase (DwgDbDatabaseP dwg) { T_Super::setDatabase(dwg); }
+int     DwgDbXrefGraphNode::GetNumIncoming () const { return T_Super::numIn(); }
+int     DwgDbXrefGraphNode::GetNumOutgoing () const { return T_Super::numOut(); }
+int     DwgDbXrefGraphNode::GetNumCycleIn () const { return T_Super::numCycleIn(); }
+int     DwgDbXrefGraphNode::GetNumCycleOut () const { return T_Super::numCycleOut(); }
+bool    DwgDbXrefGraphNode::IsCycleNode () const { return T_Super::isCycleNode(); }
+DwgDbXrefStatus     DwgDbXrefGraphNode::GetXrefStatus () const { return DWGDB_UPWARDCAST(XrefStatus)(T_Super::xrefStatus()); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetIncomingNode (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::in(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetOutgoingNode (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::out(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetCycleIn (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::cycleIn(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetCycleOut (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::cycleOut(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraphNode::GetNextCycleNode () const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::nextCycleNode()); }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbStatus DwgDbXrefGraph::Build (DwgDbXrefGraphR graphOut, DwgDbDatabaseP hostDwg, bool includeGhosts)
+    {
+    DwgDbStatus status = DwgDbStatus::Success;
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbXrefGraph::getFrom (hostDwg, graphOut, includeGhosts);
+#elif DWGTOOLKIT_RealDwg
+    Acad::ErrorStatus   es = acdbGetHostDwgXrefGraph (hostDwg, graphOut, includeGhosts);
+    status = ToDwgDbStatus (es);
+#endif
+    return  status;
+    }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetXrefNode (DwgStringCR name) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::xrefNode(name.c_str())); }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetXrefNode (DwgDbObjectIdCR blockId) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::xrefNode(blockId)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetXrefNode (DwgDbDatabaseP dwg) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::xrefNode(dwg)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetXrefNode (int index) const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::xrefNode(index)); }
+DwgDbXrefGraphNodeP DwgDbXrefGraph::GetHostDwg () const { return static_cast<DwgDbXrefGraphNodeP>(T_Super::hostDwg()); }
+bool    DwgDbXrefGraph::IsEmpty () const { return T_Super::isEmpty(); }
+size_t  DwgDbXrefGraph::GetNodeCount () const { return T_Super::numNodes(); }
+bool    DwgDbXrefGraph::MarkUnresolvedTrees () { return T_Super::markUnresolvedTrees(); }
+bool    DwgDbXrefGraph::FindCycles (DwgDbXrefGraphNodeP start) { return T_Super::findCycles(start); }
+void    DwgDbXrefGraph::Reset () { T_Super::reset(); }

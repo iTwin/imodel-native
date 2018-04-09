@@ -86,7 +86,7 @@ public:
     //! @private
     static int AssignMain(int argc, WCharCP argv[]);
     //! @private
-    static RefCountedPtr<iModelBridgeRegistry> OpenForFwk(BeFileNameCR stagingDir, Utf8StringCR iModelName);
+    static RefCountedPtr<iModelBridgeRegistry> OpenForFwk(BeSQLite::DbResult&, BeFileNameCR stagingDir, Utf8StringCR iModelName);
 
 };
 
