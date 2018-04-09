@@ -62,7 +62,7 @@ protected:
     IConnectionCR GetConnection() const {return m_connection;}
 
 protected:
-    virtual void _Reset();
+    ECPRESENTATION_EXPORT virtual void _Reset();
     virtual void _ReadRecord(ECSqlStatement&) = 0;
 
 public:
