@@ -1157,8 +1157,8 @@ private:
         BufferData32        m_indices;
         QPoint3dCP          m_vertices;
         Features            m_features;
-        uint16_t const*     m_normals;
-        FPoint2d const*     m_params;
+        uint16_t const*     m_normals = nullptr;
+        FPoint2d const*     m_params = nullptr;
         bvector<uint32_t>   m_colorsByIndex;
         BufferData16        m_colorIndices;
         IndexMap            m_indexMap;
@@ -1732,8 +1732,8 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
     contentRange = header.contentRange;
     isLeaf = DgnTile::Flags::None != (header.flags & DgnTile::Flags::IsLeaf);
 
-    Render::FeatureTable features(model.GetModelId(), 100000);
-    Render::Primitives::MeshBuilderMap builders(0.0, &features, DRange3d::NullRange(), false);
+    geometry.Meshes().FeatureTable() = FeatureTable(model.GetModelId(), 100000); // maxFeatures will be read + updated in ReadFeatureTable()...
+    Render::Primitives::MeshBuilderMap builders(0.0, &geometry.Meshes().FeatureTable(), DRange3d::NullRange(), false);
     DgnTile::Flags flags;
     auto status = ReadDgnTile(builders, streamBuffer, model, renderSystem, flags, DgnElementIdSet());
     if (ReadStatus::Success != status)
