@@ -68,6 +68,7 @@ protected:
 public:
     ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR, ECSqlStatementCache const&);
     ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR, ECSqlStatementCache const&, PresentationQueryBase const& query);
+    virtual ~QueryExecutor() {}
     ECPRESENTATION_EXPORT void SetQuery(PresentationQueryBase const& query);
     ECPRESENTATION_EXPORT PresentationQueryBase const* GetQuery() const;
     ECPRESENTATION_EXPORT void ReadRecords(ICancelationTokenCP = nullptr);
