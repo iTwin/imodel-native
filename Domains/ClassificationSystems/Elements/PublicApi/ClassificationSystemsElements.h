@@ -42,7 +42,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinition : Dgn::Defini
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinitionGroup : Dgn::GroupInformationElement
     {
-    DEFINE_T_SUPER(Dgn::GroupInformationElement);
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinitionGroup, Dgn::GroupInformationElement);
     private:
         BE_PROP_NAME(Name)
     protected:
