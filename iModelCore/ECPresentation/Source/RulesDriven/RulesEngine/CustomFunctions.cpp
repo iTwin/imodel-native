@@ -265,7 +265,7 @@ struct GetNavigationPropertyLabelScalar : CachingScalarFunction<bmap<ECInstanceK
                 if (!instanceLabelOverrides.empty())
                     {
                     IECInstancePtr instance;
-                    DbResult loadResult = ECInstancesHelper::LoadInstance(instance, GetContext().GetSchemaHelper().GetConnection(), key);
+                    /* unused - DbResult loadResult = */ECInstancesHelper::LoadInstance(instance, GetContext().GetSchemaHelper().GetConnection(), key);
                     if (instance.IsValid())
                         ProcessIntanceLabelOverrides(label, *ecClass, instanceLabelOverrides, *instance);
                     }
