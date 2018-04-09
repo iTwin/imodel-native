@@ -779,22 +779,34 @@ public:
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProvider::ContentProvider(ContentProviderContextR context)
-    : m_context(&context), m_executor(context.GetConnection(), context.GetStatementCache()), m_initialized(false), 
+    : m_context(&context), m_executor(nullptr), m_initialized(false), 
     m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
     {
-    if (GetContext().IsPropertyFormattingContext())
-        m_executor.SetPropertyFormatter(GetContext().GetECPropertyFormatter());
+    if (GetContext().IsQueryContext())
+        m_executor = new ContentQueryExecutor(context.GetConnection(), context.GetStatementCache());
+    if (nullptr != m_executor && GetContext().IsPropertyFormattingContext())
+        m_executor->SetPropertyFormatter(GetContext().GetECPropertyFormatter());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProvider::ContentProvider(ContentProviderCR other)
-    : m_context(other.m_context), m_executor(m_context->GetConnection(), m_context->GetStatementCache()), m_initialized(false), 
+    : m_context(other.m_context), m_executor(nullptr), m_initialized(false), 
     m_contentSetSize(0), m_fullContentSetSizeDetermined(false)
     {
-    if (GetContext().IsPropertyFormattingContext())
-        m_executor.SetPropertyFormatter(GetContext().GetECPropertyFormatter());
+    if (GetContext().IsQueryContext())
+        m_executor = new ContentQueryExecutor(m_context->GetConnection(), m_context->GetStatementCache());
+    if (nullptr != m_executor && GetContext().IsPropertyFormattingContext())
+        m_executor->SetPropertyFormatter(GetContext().GetECPropertyFormatter());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentProvider::~ContentProvider()
+    {
+    DELETE_AND_CLEAR(m_executor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -909,8 +921,11 @@ void ContentProvider::Initialize()
     if (m_initialized)
         return;
 
+    if (nullptr == m_executor)
+        return;
+
     m_initialized = true;
-    m_executor.SetQuery(*_GetQuery());
+    m_executor->SetQuery(*_GetQuery());
         
     CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), 
         GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
@@ -919,15 +934,15 @@ void ContentProvider::Initialize()
     if (GetContext().IsLocalizationContext())
         fnContext.SetLocalizationProvider(GetContext().GetLocalizationProvider());
     
-    m_executor.SetQuery(*_GetQuery());
-    m_executor.ReadRecords(&GetContext().GetCancelationToken());
+    m_executor->SetQuery(*_GetQuery());
+    m_executor->ReadRecords(&GetContext().GetCancelationToken());
 
     if (GetContext().GetCancelationToken().IsCanceled())
         return;
 
     size_t index = 0;
     ContentSetItemPtr item;
-    while ((item = m_executor.GetRecord(index++)).IsValid())
+    while ((item = m_executor->GetRecord(index++)).IsValid())
         {
         LoadNestedContent(*item);
         m_records.push_back(item);
@@ -947,8 +962,8 @@ size_t ContentProvider::GetFullContentSetSize() const
             {
             m_contentSetSize = 1;
             }
-        else
-            {            
+        else if (GetContext().IsQueryContext())
+            {
             CustomFunctionsContext fnContext(GetContext().GetSchemaHelper(), GetContext().GetConnections(), GetContext().GetConnection(), 
                 GetContext().GetRuleset(), GetContext().GetUserSettings(), &GetContext().GetUsedSettingsListener(), 
                 GetContext().GetECExpressionsCache(), GetContext().GetNodesFactory(), nullptr, nullptr, nullptr, 
@@ -1011,7 +1026,7 @@ bool ContentProvider::GetContentSetItem(ContentSetItemPtr& item, size_t index) c
 void ContentProvider::InvalidateContent()
     {
     _Reset();
-    m_executor.Reset();
+    m_executor->Reset();
     }
 
 /*---------------------------------------------------------------------------------**//**

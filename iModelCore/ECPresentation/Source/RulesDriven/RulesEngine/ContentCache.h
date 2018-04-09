@@ -27,17 +27,18 @@ private:
     SelectionInfo const* m_selectionInfo;
 public:
     ContentProviderKey() : m_selectionInfo(nullptr) {}
-    ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo);
-    ContentProviderKey(ContentProviderKey const& other);
-    ContentProviderKey(ContentProviderKey&& other);
-    ContentProviderKey& operator=(ContentProviderKey const& other);
-    ContentProviderKey& operator=(ContentProviderKey&& other);
+    ECPRESENTATION_EXPORT ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo);
+    ECPRESENTATION_EXPORT ContentProviderKey(ContentProviderKey const& other);
+    ECPRESENTATION_EXPORT ContentProviderKey(ContentProviderKey&& other);
+    ECPRESENTATION_EXPORT ContentProviderKey& operator=(ContentProviderKey const& other);
+    ECPRESENTATION_EXPORT ContentProviderKey& operator=(ContentProviderKey&& other);
+    ECPRESENTATION_EXPORT bool operator<(ContentProviderKey const& other) const;
     ~ContentProviderKey() {DELETE_AND_CLEAR(m_selectionInfo);}
 
-    bool operator<(ContentProviderKey const& other) const;
     Utf8StringCR GetPreferredDisplayType() const {return m_preferredDisplayType;}
     Utf8StringCR GetRulesetId() const {return m_rulesetId;}
     Utf8StringCR GetConnectionId() const {return m_connectionId;}
+    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}
 };
 
 /*=================================================================================**//**
@@ -50,12 +51,12 @@ private:
 
 public:
     void ClearCache() {m_providers.clear();}
-    void ClearCache(IConnectionCR connection);
-    void ClearCache(Utf8StringCR rulesetId);
-    SpecificationContentProviderPtr GetProvider(ContentProviderKey const& key) const;
-    bvector<SpecificationContentProviderPtr> GetProviders(IConnectionCR) const;
-    bvector<SpecificationContentProviderPtr> GetProviders(Utf8CP rulesetId, Utf8CP settingId) const;
-    void CacheProvider(ContentProviderKey key, SpecificationContentProviderR provider);
+    ECPRESENTATION_EXPORT void ClearCache(IConnectionCR connection);
+    ECPRESENTATION_EXPORT void ClearCache(Utf8StringCR rulesetId);
+    ECPRESENTATION_EXPORT SpecificationContentProviderPtr GetProvider(ContentProviderKey const& key) const;
+    ECPRESENTATION_EXPORT bvector<SpecificationContentProviderPtr> GetProviders(IConnectionCR) const;
+    ECPRESENTATION_EXPORT bvector<SpecificationContentProviderPtr> GetProviders(Utf8CP rulesetId, Utf8CP settingId) const;
+    ECPRESENTATION_EXPORT void CacheProvider(ContentProviderKey key, SpecificationContentProviderR provider);
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE
