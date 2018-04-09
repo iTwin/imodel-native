@@ -1033,7 +1033,7 @@ BentleyStatus Loader::_LoadTile()
         {
         if (!m_tileBytes.empty())
             {
-            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache))
+            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache, tile.GetRange()))
                 {
                 BeAssert(false);
                 return ERROR;

@@ -1723,7 +1723,7 @@ ReadStatus DgnCacheTileRebuilder::ReadTile(DgnTile::Flags& flags, DgnElementIdSe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf)
+ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange)
     {
 #if defined(TEST_TILE_REBUILDER)
     DgnTile::Header header;
@@ -1733,7 +1733,7 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
     isLeaf = DgnTile::Flags::None != (header.flags & DgnTile::Flags::IsLeaf);
 
     geometry.Meshes().FeatureTable() = FeatureTable(model.GetModelId(), 100000); // maxFeatures will be read + updated in ReadFeatureTable()...
-    Render::Primitives::MeshBuilderMap builders(0.0, &geometry.Meshes().FeatureTable(), DRange3d::NullRange(), false);
+    Render::Primitives::MeshBuilderMap builders(0.0, &geometry.Meshes().FeatureTable(), tileRange, false);
     DgnTile::Flags flags;
     auto status = ReadDgnTile(builders, streamBuffer, model, renderSystem, flags, DgnElementIdSet());
     if (ReadStatus::Success != status)
@@ -1763,6 +1763,7 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
 +---------------+---------------+---------------+---------------+---------------+------*/
 ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR builders, StreamBufferR buffer, GeometricModelR model, Render::System& system, DgnTile::Flags& flags, DgnElementIdSet const& skipElems)
     {
+    BeAssert(!builders.GetRange().IsNull());
     return DgnCacheTileRebuilder(buffer, model, system, builders).ReadTile(flags, skipElems);
     }
 
