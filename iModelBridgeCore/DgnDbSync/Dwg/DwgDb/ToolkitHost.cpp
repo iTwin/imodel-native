@@ -746,6 +746,34 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
         LinkerReactor*      linkReactor = new LinkerReactor (*this);
         if (nullptr != dynamicLinker && nullptr != linkReactor)
             dynamicLinker->addReactor (linkReactor);
+
+        // track xref events
+        class XrefEventReactor : public AcRxEventReactor
+        {
+        private:
+            IDwgDbHost&     m_host;
+        public:
+            explicit XrefEventReactor (IDwgDbHost& h) : m_host(h) {}
+            virtual void beginRestore (AcDbDatabase* to, const ACHAR* name, AcDbDatabase* from) override
+                {
+                m_host._DebugPrintf (L"Restoring AcDbDatabase[%ls] from 0x%x to 0x%x", nullptr == name ? L"null" : name, from, to);
+                }
+            virtual void databaseConstructed (AcDbDatabase* db) override
+                { 
+                m_host._DebugPrintf (L"Created an xRef AcDbDatabase 0x%x", db);
+                }
+            virtual void databaseToBeDestroyed (AcDbDatabase* db) override
+                {
+                const ACHAR* name = nullptr;
+                if (Acad::eOk != db->getFilename(name))
+                    name = nullptr;
+                m_host._DebugPrintf (L"Destroying AcDbDatabase 0x%x [%ls]", db, nullptr == name ? L"null" : name);
+                }
+        };  // XrefEventReactor
+
+        AcRxEvent* arxEvent = AcRxEvent::cast (acrxSysRegistry()->at(ACRX_EVENT_OBJ));
+        XrefEventReactor* xrefReactor = new XrefEventReactor (*this);
+        arxEvent->addReactor (xrefReactor);
 #endif  // NDEBUG
 
         if (IDwgDbHost::IsDxfFile(filename))
@@ -774,6 +802,10 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
             dynamicLinker->removeReactor (linkReactor);
         if (nullptr != linkReactor)
             delete linkReactor;
+        if (nullptr != arxEvent && nullptr != xrefReactor)
+            arxEvent->removeReactor (xrefReactor);
+        if (nullptr != xrefReactor)
+            delete xrefReactor;
 #endif  // NDEBUG
 
         if (Acad::eOk == status)
