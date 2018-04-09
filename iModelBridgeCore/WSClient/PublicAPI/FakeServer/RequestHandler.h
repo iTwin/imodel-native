@@ -15,7 +15,7 @@ USING_NAMESPACE_BENTLEY_HTTP
 
 class RequestHandler
     {
-    Utf8String serverPath; 
+    Utf8String serverPath;
     public:
         FAKESERVER_EXPORT RequestHandler();
         FAKESERVER_EXPORT ~RequestHandler();
@@ -33,7 +33,8 @@ class RequestHandler
         FAKESERVER_EXPORT Response UploadSeedFile(Request req);
         FAKESERVER_EXPORT Response FileCreationConfirmation(Request req);
         FAKESERVER_EXPORT Response GetInitializationState(Request req);
-        FAKESERVER_EXPORT Response GetBriefcaseId(Request req);
+
+        FAKESERVER_EXPORT Response CreateBriefcaseInstance(Request req);
         FAKESERVER_EXPORT Response DownloadiModel(Request req);
         FAKESERVER_EXPORT Response UploadNewSeedFile(Request req);
         FAKESERVER_EXPORT Response CreateFileInstance(Request req);
