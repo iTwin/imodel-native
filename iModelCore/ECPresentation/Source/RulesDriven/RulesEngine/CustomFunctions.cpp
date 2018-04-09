@@ -794,7 +794,8 @@ public:
                         output.append(GetPaddedNumber(numberBegin, (int)(input - numberBegin)));
                         numberBegin = nullptr;
                         }
-                    output.append(input, 1);
+                    Utf8Char c = *input;
+                    output.append(1, (Utf8Char)std::tolower(c));
                     }
                 input++;
                 }

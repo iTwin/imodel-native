@@ -399,7 +399,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsInteger)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(1, 1));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("0000000001", stmt.GetValueText(0));
@@ -413,7 +413,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsDouble)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(1, 1.11));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("0000000001.0000000011", stmt.GetValueText(0));
@@ -427,7 +427,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsText)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "1", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("0000000001", stmt.GetValueText(0));
@@ -441,10 +441,24 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsComplexText)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "a*123-b^45_c6d", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("a*0000000123-b^0000000045_c0000000006d", stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, GetSortingValue_LowerCasesText)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "ABC1 abc2 Abc3 aBC4", IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("abc0000000001 abc0000000002 abc0000000003 abc0000000004", stmt.GetValueText(0));
     }
 
 /*=================================================================================**//**

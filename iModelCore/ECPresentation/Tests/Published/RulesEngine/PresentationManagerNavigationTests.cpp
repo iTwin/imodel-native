@@ -2793,7 +2793,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscending)
     {
     // insert some widget instances
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget3"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
     
@@ -2817,7 +2817,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
     // make sure we have 3 nodes sorted ascending
     ASSERT_EQ(3, nodes.GetSize());
     ASSERT_STREQ("Widget1", nodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("Widget2", nodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("widget2", nodes[1]->GetLabel().c_str());
     ASSERT_STREQ("Widget3", nodes[2]->GetLabel().c_str());
     }
 
@@ -2827,7 +2827,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingAscen
 TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDescending)
     {
     // insert some widget instances
-    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget2"));});
+    RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("widget2"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget3"));});
     RulesEngineTestHelpers::InsertInstance(s_project->GetECDb(), *m_widgetClass, [](IECInstanceR instance){instance.SetValue("MyID", ECValue("Widget1"));});
     
@@ -2851,7 +2851,7 @@ TEST_F(RulesDrivenECPresentationManagerNavigationTests, SortingRule_SortingDesce
     // make sure we have 1 node sorted descending
     ASSERT_EQ(3, nodes.GetSize());
     ASSERT_STREQ("Widget3", nodes[0]->GetLabel().c_str());
-    ASSERT_STREQ("Widget2", nodes[1]->GetLabel().c_str());
+    ASSERT_STREQ("widget2", nodes[1]->GetLabel().c_str());
     ASSERT_STREQ("Widget1", nodes[2]->GetLabel().c_str());
     }
 
