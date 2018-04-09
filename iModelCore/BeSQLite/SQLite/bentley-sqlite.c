@@ -18,7 +18,7 @@
 #define SQLITE_ENABLE_NULL_TRIM 1 // trim null columns from end of rows. Experimental for now, per DRH
 #define SQLITE_MAX_VARIABLE_NUMBER 20000 // this is the maximum number of variables in an SQL statement
 #define SQLITE_HAS_CODEC 1
-#define SQLITE_TEMP_STORE 3 // always use memory for temporary files see https://www.sqlite.org/tempfiles.html#tempstore
+// #define SQLITE_TEMP_STORE 3 // always use memory for temporary files see https://www.sqlite.org/tempfiles.html#tempstore
 #define SQLITE_OMIT_COMPLETE 1
 #define SQLITE_OMIT_PROGRESS_CALLBACK 1
 #define SQLITE_HAS_CODEC 1

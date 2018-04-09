@@ -293,7 +293,7 @@ static int filterTableCallback(void *pCtx, Utf8CP tableName) {return (int) ((Cha
 DbResult ChangeSet::_ApplyChanges(DbR db, Rebase* rebase)
     {
     return (DbResult) sqlite3changeset_apply_v2(db.GetSqlDb(), m_size, m_changeset, filterTableCallback, conflictCallback, this, 
-        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr);
+        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -839,7 +839,7 @@ DbResult ChangeStream::ToChangeSet(ChangeSet& changeSet, bool invert /*=false*/)
 DbResult ChangeStream::_ApplyChanges(DbR db, Rebase* rebase)
     {
     DbResult result = (DbResult) sqlite3changeset_apply_v2_strm(db.GetSqlDb(), InputCallback, (void*) this, FilterTableCallback, ConflictCallback, (void*) this,
-        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr);
+        rebase ? &rebase->m_data : nullptr, rebase ? &rebase->m_size : nullptr, SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
     _Reset();
     return result;
     }
