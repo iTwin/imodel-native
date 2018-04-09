@@ -1510,13 +1510,13 @@ static CachedECSqlStatementPtr GetPreparedStatement(IConnectionCR connection, Ut
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr ECInstancesHelper::LoadInstance(IConnectionCR connection, ECInstanceKeyCR key)
+DbResult ECInstancesHelper::LoadInstance(IECInstancePtr& instance, IConnectionCR connection, ECInstanceKeyCR key)
     {
     ECClassCP selectClass = connection.GetECDb().Schemas().GetClass(key.GetClassId());
     if (nullptr == selectClass || !selectClass->IsEntityClass())
         {
         BeAssert(false);
-        return nullptr;
+        return BE_SQLITE_ERROR;
         }
 
     Utf8String ecsql("SELECT * FROM ONLY ");
@@ -1525,21 +1525,22 @@ IECInstancePtr ECInstancesHelper::LoadInstance(IConnectionCR connection, ECInsta
     if (stmt.IsNull())
         {
         BeAssert(false);
-        return nullptr;
+        return BE_SQLITE_ERROR;
         }
 
     if (ECSqlStatus::Success != stmt->BindId(1, key.GetInstanceId()))
         {
         BeAssert(false);
-        return nullptr;
+        return BE_SQLITE_ERROR;
         }
 
     ECInstanceECSqlSelectAdapter adapter(*stmt);
     DbResult result = stmt->Step();
-    if (DbResult::BE_SQLITE_ROW != result)
-        return nullptr;
-
-    return adapter.GetInstance();
+    if (DbResult::BE_SQLITE_ROW == result)
+        instance = adapter.GetInstance();
+    
+    BeAssert(BE_SQLITE_ROW == result || BE_SQLITE_DONE == result || BE_SQLITE_INTERRUPT == result);
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**

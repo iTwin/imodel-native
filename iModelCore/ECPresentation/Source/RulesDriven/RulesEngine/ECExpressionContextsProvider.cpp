@@ -126,7 +126,7 @@ public:
         if (m_key.IsValid())
             {
             // load the instance 
-            instance = ECInstancesHelper::LoadInstance(m_connection, m_key);
+            ECInstancesHelper::LoadInstance(instance, m_connection, m_key);
             }
         else if (m_key.GetClassId().IsValid())
             {
@@ -165,7 +165,8 @@ public:
             return nullptr;
 
         InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
-        IECInstancePtr instance = ECInstancesHelper::LoadInstance(m_connection, key->GetInstanceKey());
+        IECInstancePtr instance;
+        ECInstancesHelper::LoadInstance(instance, m_connection, key->GetInstanceKey());
         if (instance.IsValid())
             instanceContext->SetInstance(*instance);
         return instanceContext;
