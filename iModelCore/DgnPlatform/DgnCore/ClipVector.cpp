@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ClipVector.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -102,6 +102,7 @@ ClipVectorPtr ClipVector::CreateFromCurveVector(CurveVectorCR curveVector, doubl
 ClipVectorPtr ClipVector::CreateCopy(ClipVectorCR inputVector)
     {
     ClipVectorP clipVector = new ClipVector();
+    clipVector->m_boundingRange = inputVector.m_boundingRange;
     clipVector->AppendCopy(inputVector);
     return clipVector;
     }
@@ -182,6 +183,10 @@ bool ClipVector::GetRange(DRange3dR range, TransformCP pTransform) const
                 range.IntersectionOf(range, thisRange);
             }
         }
+
+    if (!m_boundingRange.IsNull())
+        range.IntersectionOf(m_boundingRange, range);
+
     return !range.IsEmpty();
     }
 
@@ -190,6 +195,9 @@ bool ClipVector::GetRange(DRange3dR range, TransformCP pTransform) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ClipVector::PointInside(DPoint3dCR point, double onTolerance) const
     {
+    if (!m_boundingRange.IsNull() && !m_boundingRange.IsContained(point))
+        return false;
+
     for (ClipPrimitivePtr const& primitive: *this)
         if (!primitive->PointInside(point, onTolerance))
             return false;
@@ -205,6 +213,9 @@ BentleyStatus ClipVector::TransformInPlace(TransformCR transform)
     for (ClipPrimitivePtr& primitive: *this)
         if (SUCCESS != primitive->TransformInPlace(transform))
             return ERROR;
+
+    if (!m_boundingRange.IsNull())
+        transform.Multiply(m_boundingRange, m_boundingRange);
 
     return SUCCESS;
     }

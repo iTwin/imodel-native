@@ -853,12 +853,12 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
         featureTableData.m_json["NORMAL_RIGHT"]["byteOffset"] = featureTableData.BinaryDataSize();
         featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
+        }
 
-        if (scaleRequired)
-            {
-            featureTableData.m_json["SCALE"]["byteOffset"] = featureTableData.BinaryDataSize();
-            featureTableData.AddBinaryData(scales.data(), scales.size()*sizeof(float));
-            }
+    if (scaleRequired)
+        {
+        featureTableData.m_json["SCALE"]["byteOffset"] = featureTableData.BinaryDataSize();
+        featureTableData.AddBinaryData(scales.data(), scales.size()*sizeof(float));
         }
 
     BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d(), m_context);
@@ -3460,7 +3460,7 @@ TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetViewAttachmentsJson(Sheet::ModelCR sheet, DgnModelIdSet& attachedModels)
     {
-    bvector<DgnElementId> attachmentIds; // = sheet.GetSheetAttachmentIds();
+    bvector<DgnElementId> attachmentIds = sheet.GetSheetAttachmentIds();
     Json::Value attachmentsJson(Json::arrayValue);
     for (DgnElementId attachmentId : attachmentIds)
         {
@@ -3654,7 +3654,6 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     if (!rootRange.IsNull())
         m_modelRanges[rootTile.GetModel().GetModelId()] = ModelRange(rootRange, false);
 
-
     val[JSON_Root] = std::move(modelRoot);
 
     if (rootTile.GetModel().IsSpatialModel())
@@ -3777,8 +3776,9 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels;
 
+    bool includeAttachments = T_HOST._IsFeatureEnabled("TilePublisher.PublishViewAttachments");
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId, /*includeAttachments=*/ /*true*/ false);
+        GetViewedModelsFromView (viewedModels, viewId, includeAttachments);
 
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)
@@ -3792,6 +3792,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         if (model->IsSpatialModel())
             rootRange.Extend(kvp.second.m_range);
         }
+
+    if (rootRange.IsNull())
+        return ConvertStatus(TileGeneratorStatus::NoGeometry);
+
     return PublishClassifiers(viewedModels, generator, toleranceInMeters, progressMeter);
     }
 
@@ -3805,12 +3809,10 @@ PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet c
 
     for (auto& modelId : viewedModels)
         {
-        auto const&                 foundRange = m_modelRanges.find(modelId);
-
-        if (foundRange == m_modelRanges.end())
+        ModelRange const* modelRange = FindModelRange(modelId);
+        if (nullptr == modelRange)
             continue;
 
-        
         auto                        model = GetDgnDb().Models().GetModel(modelId).get();
         ModelSpatialClassifiers     classifiers;
 
@@ -3824,16 +3826,18 @@ PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet c
             for (auto& classifier : classifiers)
                 {
                 Status                  thisStatus;
-                ClassifierInfo          classifierInfo(classifier, foundRange->second, index++);
+                ClassifierInfo          classifierInfo(classifier, *modelRange, index++);
 
                 if (Status::Success != (thisStatus = PublishClassifier (classifierInfo,  generator, toleranceInMeters, progressMeter)))
                     status = thisStatus;
 
                 classifierInfos.push_back(classifierInfo);
                 }
+
             m_classifierMap[modelId] = classifierInfos;
             }
         }
+
     return status;
     }
 
@@ -3937,6 +3941,23 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PublisherContext::IsAnyModelPublished(DgnElementId modelSelectorId) const
+    {
+    auto selector = GetDgnDb().Elements().Get<ModelSelector>(modelSelectorId);
+    if (selector.IsNull())
+        return false;
+
+    auto models = selector->GetModels();
+    for (auto const& modelId : models)
+        if (IsModelPublished(modelId))
+            return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::AddModelJson(Json::Value& modelsJson, DgnModelId modelId, DgnModelIdSet const& modelIds)
@@ -3952,11 +3973,11 @@ void PublisherContext::AddModelJson(Json::Value& modelsJson, DgnModelId modelId,
             return;
             }
 
-        auto modelRangeIter = m_modelRanges.find(modelId);
-        if (m_modelRanges.end() == modelRangeIter)
+        ModelRange const* pModelRange = FindModelRange(modelId);
+        if (nullptr == pModelRange)
             return; // this model produced no tiles. ignore it.
 
-        ModelRange modelRange = modelRangeIter->second;
+        ModelRange modelRange = *pModelRange;
         if (modelRange.m_range.IsNull())
             {
             BeAssert(false && "Null model range");
@@ -4040,7 +4061,7 @@ bool PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
              nullptr != (view2d = view.ToSheetView()))
         {
         auto modelId = view2d->GetBaseModelId();
-        if (m_modelRanges.end() == m_modelRanges.find(modelId))
+        if (!IsModelPublished(modelId))
             return false; // model produced no tiles
 
         auto fakeModelSelectorId = modelId.ToString();
@@ -4106,44 +4127,72 @@ bool PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
 +---------------+---------------+---------------+---------------+---------------+------*/
 void    PublisherContext::ExtractViewSelectors(DgnViewId& defaultViewId, DgnElementIdSet& allModelSelectors, T_CategorySelectorMap& allCategorySelectors, DgnElementIdSet& allDisplayStyles, DgnModelIdSet&   all2dModelIds)
     {
-    for (auto const& viewId : m_viewIds)
+    // Do not publish views if no tiles were produced for their model(s)
+    for (auto iter = m_viewIds.begin(); iter != m_viewIds.end(); /**/)
         {
+        auto viewId = *iter;
         auto viewDefinition = ViewDefinition::Get(GetDgnDb(), viewId);
-        if (!viewDefinition.IsValid())
+        if (viewDefinition.IsNull())
+            {
+            iter = m_viewIds.erase(iter);
             continue;
+            }
 
-        auto                        spatialView = viewDefinition->ToSpatialView();
-        DrawingViewDefinitionCP     drawingView;
-        SheetViewDefinitionCP       sheetView;
+        auto spatialView = viewDefinition->ToSpatialView();
+        auto drawingView = nullptr == spatialView ? viewDefinition->ToDrawingView() : nullptr;
+        auto sheetView = nullptr == spatialView && nullptr == drawingView ? viewDefinition->ToSheetView() : nullptr;
 
+        bool omitThisView = true;
         if (nullptr != spatialView)
             {
-            allModelSelectors.insert(spatialView->GetModelSelectorId());
-            }
-        else if (nullptr != (drawingView = viewDefinition->ToDrawingView()))    
-            {
-            all2dModelIds.insert(drawingView->GetBaseModelId());
-            }
-        else if (nullptr != (sheetView = viewDefinition->ToSheetView()))
-            {
-            all2dModelIds.insert(sheetView->GetBaseModelId());
-
-            auto const&  model = GetDgnDb().Models().GetModel (sheetView->GetBaseModelId());
-
-            if (model.IsValid() && nullptr != model->ToSheetModel())
+            if (IsAnyModelPublished(spatialView->GetModelSelectorId()))
                 {
-                auto   attachedViews = model->ToSheetModel()->GetSheetAttachmentViews(GetDgnDb());
-                for (auto& attachedView : attachedViews)
-                    {
-                    auto    insertPair = allCategorySelectors.Insert(attachedView->GetCategorySelectorId(), T_ViewDefs());
-                    insertPair.first->second.push_back(attachedView);
+                allModelSelectors.insert(spatialView->GetModelSelectorId());
+                omitThisView = false;
+                }
+            }
+        else if (nullptr != drawingView)
+            {
+            if (IsModelPublished(drawingView->GetBaseModelId()))
+                {
+                all2dModelIds.insert(drawingView->GetBaseModelId());
+                omitThisView = false;
+                }
+            }
+        else if (nullptr != sheetView)
+            {
+            if (IsModelPublished(sheetView->GetBaseModelId()))
+                {
+                all2dModelIds.insert(sheetView->GetBaseModelId());
+                omitThisView = false;
 
-                    allDisplayStyles.insert(attachedView->GetDisplayStyleId());
-                    if (nullptr != attachedView->ToView2d())
-                        all2dModelIds.insert(attachedView->ToView2d()->GetBaseModelId());
+                if (T_HOST._IsFeatureEnabled("TilePublisher.PublishViewAttachments"))
+                    {
+                    auto const&  model = GetDgnDb().Models().GetModel (sheetView->GetBaseModelId());
+                    if (model.IsValid() && nullptr != model->ToSheetModel())
+                        {
+                        auto   attachedViews = model->ToSheetModel()->GetSheetAttachmentViews(GetDgnDb());
+                        for (auto& attachedView : attachedViews)
+                            {
+                            auto    insertPair = allCategorySelectors.Insert(attachedView->GetCategorySelectorId(), T_ViewDefs());
+                            insertPair.first->second.push_back(attachedView);
+
+                            allDisplayStyles.insert(attachedView->GetDisplayStyleId());
+                            if (nullptr != attachedView->ToView2d())
+                                all2dModelIds.insert(attachedView->ToView2d()->GetBaseModelId());
+                            }
+                        }
                     }
                 }
             }
+
+        if (omitThisView)
+            {
+            iter = m_viewIds.erase(iter);
+            continue;
+            }
+
+        ++iter;
 
         Json::Value entry(Json::objectValue);
  
@@ -4152,10 +4201,15 @@ void    PublisherContext::ExtractViewSelectors(DgnViewId& defaultViewId, DgnElem
         insertPair.first->second.push_back(viewDefinition);
 
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
+        }
 
-        // If for some reason the default view is not in the published set, we'll use the first view as the default
-        if (!defaultViewId.IsValid())
-            defaultViewId = viewId;
+    // If default view does not point to a published view, choose a different default view.
+    if (!defaultViewId.IsValid() || m_viewIds.end() == m_viewIds.find(defaultViewId))
+        {
+        if (m_viewIds.empty())
+            defaultViewId.Invalidate();
+        else
+            defaultViewId = *m_viewIds.begin();
         }
     }
 
@@ -4184,7 +4238,7 @@ Json::Value PublisherContext::GetViewDefinitionsJson()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId, GlobeMode globeMode)
+PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId& defaultViewId, GlobeMode globeMode)
     {
     Utf8String rootNameUtf8(m_rootName.c_str());
     json["name"] = rootNameUtf8;
@@ -4245,14 +4299,23 @@ void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const&
         if (selector.IsValid())
             {
             auto models = selector->GetModels();
-            selectorsJson[selectorId.ToString()] = IdSetToJson(models);
-            allModels.insert(models.begin(), models.end());
+            bset<DgnModelId> publishedModels;
+            for (auto const& modelId : models)
+                if (IsModelPublished(modelId))
+                    publishedModels.insert(modelId);
+
+            if (!publishedModels.empty())
+                {
+                selectorsJson[selectorId.ToString()] = IdSetToJson(publishedModels);
+                allModels.insert(publishedModels.begin(), publishedModels.end());
+                }
             }
         }
 
     // create a fake model selector for each 2d model
     for (auto const& modelId : all2dModels)
         {
+        BeAssert(IsModelPublished(modelId));
         DgnModelIdSet modelIdSet;
         modelIdSet.insert(modelId);
         selectorsJson[modelId.ToString()+"_2d"] = IdSetToJson(modelIdSet);

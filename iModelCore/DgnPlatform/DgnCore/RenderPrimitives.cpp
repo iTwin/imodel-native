@@ -672,16 +672,27 @@ DisplayParamsCPtr DisplayParams::Clone() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureR texture) const
+DisplayParamsCPtr DisplayParams::CloneForRasterText(TextureCR texture) const
     {
     BeAssert(Type::Text == GetType());
-    auto clone = new DisplayParams(*this);
 
     TextureMapping::Trans2x3 tf(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
     TextureMapping::Params params;
     params.SetWeight(0.0);
     params.SetTransform(&tf);
-    clone->m_textureMapping = TextureMapping(texture, params);
+
+    return CloneWithTextureOverride(TextureMapping(texture, params));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DisplayParamsCPtr DisplayParams::CloneWithTextureOverride(TextureMappingCR textureMapping) const
+    {
+    auto clone = new DisplayParams(*this);
+    clone->m_textureMapping = textureMapping;
+    clone->m_material = nullptr;
+
     return clone;
     }
 
@@ -954,14 +965,13 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    Mesh::AddAuxChannels(PolyfaceAuxData::ChannelsCR channels, size_t index)
+void    Mesh::AddAuxChannel(PolyfaceAuxChannelCR channel, size_t index)
     {
-    if (m_auxChannels.empty())
-        m_auxChannels.Init(channels);
+    if (!m_auxChannel.IsValid())
+        m_auxChannel = channel.CloneWithoutData();
 
-    m_auxChannels.AppendDataByIndex(channels, index);
+    m_auxChannel->AppendDataByIndex(channel, index);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/17
@@ -1179,7 +1189,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, Utf8CP auxChannelName)
     {
     if (visitor.Point().size() < 3)
         return;
@@ -1187,7 +1197,12 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
     size_t          nTriangles = points.size() - 2;
+
+    PolyfaceAuxChannelCPtr auxChannel;
     
+    if (nullptr != auxChannelName && visitor.GetAuxDataCP().IsValid())
+        auxChannel = visitor.GetAuxDataCP()->GetChannel(auxChannelName);
+
     if (requireNormals && visitor.Normal().size() < points.size())
         return; // TFS#790263: Degenerate triangle - no normals.
 
@@ -1221,20 +1236,20 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
         for (size_t i = 0; i < 3; i++)
             {
             size_t      index = (0 == i) ? 0 : iTriangle + i; 
-
             VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
 
-            if (visitor.GetAuxDataCP().IsValid())
+            if (auxChannel.IsValid())
                 {
                 // No deduplication with auxData (for now...)
-                newTriangle[i] =  static_cast<uint32_t>(m_mesh->Verts().size());
-                m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
-                m_mesh->AddAuxChannels(visitor.GetAuxDataCP()->GetChannels(), index);
+                newTriangle[i] = m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
+                m_mesh->AddAuxChannel(*auxChannel, index);
                 }
             else
                 {
                 newTriangle[i] = AddVertex(vertex);
                 }
+
+
             if (m_currentPolyface.IsValid())
                 m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[index]);
             }
@@ -1960,20 +1975,28 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
     // This ensures the builder map is organized in the same order as the geometry list, and no meshes are merged.
     // This is required to make overlay decorations render correctly.
-    uint16_t order = 0;
-    for (auto const& geom : m_geometries)
+    uint16_t    order = 0;
+    Utf8CP      activeAuxChannel =  context.GetActiveAuxChannel().empty() ? nullptr : context.GetActiveAuxChannel().c_str();
+    for (auto const& geom : m_geometries)                                                                        
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
         for (auto const& tilePolyface : polyfaces)
             {
+            Utf8CP      auxChannel = nullptr;
+
             PolyfaceHeaderPtr polyface = tilePolyface.m_polyface;
             if (polyface.IsNull() || 0 == polyface->GetPointCount())
                 continue;
 
+            if (nullptr != activeAuxChannel &&
+                polyface->GetAuxDataCP().IsValid() &&
+                polyface->GetAuxDataCP()->GetChannel(activeAuxChannel).IsValid())
+                auxChannel = activeAuxChannel;
+
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
-            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
+            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar, auxChannel);
             if (options.WantPreserveOrder())
                 key.SetOrder(order++);
 
@@ -1984,7 +2007,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP());
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), auxChannel);
 
             meshBuilder.EndPolyface();
             }
@@ -2225,7 +2248,8 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
     double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
 
-    double minAxis = std::min(textRange.XLength(), textRange.YLength());
+    // NB: Need scaled 2d range - ignore 3d transform...
+    double minAxis = std::min(textRange2d.high.x - textRange2d.low.x, textRange2d.high.y - textRange2d.low.y) * geom.GetTransform().ColumnXMagnitude();
     double textSize = minAxis * meterSize;
     constexpr double s_minToleranceRatioMultiplier = 2.0; // from ElementTileTree.cpp; used to multiply the s_minToleranceRatio
     constexpr double s_texSizeThreshold = 64.0;
@@ -2577,7 +2601,7 @@ void GeometryListBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, Geome
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip, DRange3dR rangeOut) const
+bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip) const
     {
     bvector<PolyfaceHeaderPtr> sheetTilePolys;
 
@@ -2599,7 +2623,6 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
     builder->AddTriangulation(quadPts);
     PolyfaceHeaderPtr pfHdr = builder->GetClientMeshPtr();
 
-    rangeOut.Init();
     if (nullptr != clip)
         {
         GeometryClipper::PolyfaceClipper pfClipper;
@@ -2609,23 +2632,13 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
             bvector<PolyfaceQueryCP>& clippedPolyfaceQueries = pfClipper.GetOutput();
 
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
-                {
-                DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
-                uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
                 sheetTilePolys.push_back(clippedPolyfaceQuery->Clone());
-                for (uint32_t i = 0; i < numPts; i++)
-                    {
-                    rangeOut.Extend(pts[i]);
-                    }
-                }
             }
         // else no output, so don't output any polys (empty sheetTilePolys)
         }
     else // not clipped, so return original unclipped poly in sheetTilePolys
         {
         sheetTilePolys.push_back(pfHdr);
-        for (int i = 0; i < 4; i++)
-            rangeOut.Extend(corners.m_pts[i]);
         }
 
     return sheetTilePolys;
@@ -3447,7 +3460,7 @@ MeshBuilderR MeshBuilderMap::operator[](Key const& key)
     auto found = m_map.find(key);
     if (m_map.end() == found)
         {
-        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar);
+        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar, key.m_auxChannel);
         found = m_map.Insert(key, builder).first;
         }
 

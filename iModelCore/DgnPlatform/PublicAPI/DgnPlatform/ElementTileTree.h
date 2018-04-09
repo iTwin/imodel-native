@@ -12,6 +12,7 @@
 #include <DgnPlatform/DgnModel.h>
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/RenderPrimitives.h>
+#include <DgnPlatform/ThematicDisplay.h>
 
 #define BEGIN_ELEMENT_TILETREE_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace ElementTileTree {
 #define END_ELEMENT_TILETREE_NAMESPACE } END_BENTLEY_DGN_NAMESPACE
@@ -27,11 +28,13 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Context);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Result);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPartBuilder);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileGenerator);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(ThematicMeshBuilder);
 
 DEFINE_REF_COUNTED_PTR(Tile);
 DEFINE_REF_COUNTED_PTR(Root);
 DEFINE_REF_COUNTED_PTR(Loader);
 DEFINE_REF_COUNTED_PTR(GeomPartBuilder);
+DEFINE_REF_COUNTED_PTR(ThematicMeshBuilder);
 
 typedef bvector<TilePtr>    TileList;
 typedef bvector<TileP>      TilePList;
@@ -291,6 +294,22 @@ public:
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 
     virtual bool IsCacheable() const;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     03/2018
+//=======================================================================================
+struct ThematicMeshBuilder : RefCountedBase
+{
+private:
+    Utf8String                      m_channel;
+    Render::TextureMapping          m_textureMapping;
+    Render::ThematicCookedRange     m_cookedRange;
+
+public:
+    ThematicMeshBuilder(Utf8StringCR channel, Render::SystemCR system, DgnDbR db, Render::ThematicDisplaySettingsCR settings, Render::ThematicCookedRangeCR range);
+    bool                DoThematicDisplay(PolyfaceHeaderR mesh, Render::TextureMappingR textureMapping) const;
+
 };
 
 END_ELEMENT_TILETREE_NAMESPACE

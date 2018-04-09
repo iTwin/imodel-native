@@ -433,6 +433,7 @@ BEGIN_BENTLEY_RENDER_NAMESPACE
     DEFINE_REF_COUNTED_PTR(Window)
     DEFINE_REF_COUNTED_PTR(MeshEdges);
     DEFINE_REF_COUNTED_PTR(IPixelDataBuffer);
+    DEFINE_REF_COUNTED_PTR(FeatureSymbologyOverrides);
 END_BENTLEY_RENDER_NAMESPACE
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -1001,6 +1002,7 @@ public:
     ColorDef() {m_intVal = 0;}
     explicit ColorDef(uint32_t intval) {m_intVal=intval;}
     ColorDef(Byte red, Byte green, Byte blue, Byte alpha=0) {SetColors(red,green,blue,alpha);}
+    ColorDef(ColorDef colorOnly, Byte alpha){SetColorNoAlpha(colorOnly); SetAlpha(alpha);}
 
     static ColorDef Black()       {return ColorDef(0,0,0);}
     static ColorDef White()       {return ColorDef(0xff,0xff,0xff);}

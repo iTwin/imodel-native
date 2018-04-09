@@ -908,8 +908,8 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
 
     // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
     Frustum box(range);
-    box = box.TransformBy(args.GetLocation());
-    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box);
+    Frustum worldBox = box.TransformBy(args.GetLocation());
+    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(worldBox);
     bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
     return isOutside || clipped;
     }
@@ -967,13 +967,21 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::DrawInView(SceneContextR context)
     {
+    DrawArgs args = CreateDrawArgs(context);
+    DrawInView(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   03/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::DrawInView(DrawArgsR args)
+    {
     if (!GetRootTile().IsValid())
         {
         BeAssert(false);
         return;
         }
 
-    DrawArgs args = CreateDrawArgs(context);
     bvector<TileCPtr> selectedTiles = SelectTiles(args);
 
     for (auto const& selectedTile : selectedTiles)
@@ -1179,7 +1187,7 @@ ViewFlagsOverrides Root::_GetViewFlagsOverrides() const
 void DrawArgs::DrawGraphics()
     {
     // Allow the tile tree to specify how view flags should be overridden
-    DrawBranch(m_root._GetViewFlagsOverrides(), m_graphics);
+    DrawBranch(m_viewFlagsOverrides, m_graphics);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1776,7 +1784,8 @@ double TileArgs::GetTileRadius(TileCR tile) const
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTimePoint now, BeTimePoint purgeOlderThan, ClipVectorCP clip)
-    : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan)
+    : TileArgs(location, root, clip), m_context(context), m_missing(context.m_requests.GetMissing(root)), m_now(now), m_purgeOlderThan(purgeOlderThan),
+    m_viewFlagsOverrides(root._GetViewFlagsOverrides())
     {
     //
     }
