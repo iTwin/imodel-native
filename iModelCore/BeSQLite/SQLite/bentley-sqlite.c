@@ -22,6 +22,8 @@
 #define SQLITE_OMIT_COMPLETE 1
 #define SQLITE_OMIT_PROGRESS_CALLBACK 1
 #define SQLITE_HAS_CODEC 1
+//Alocate around 16Mb instead of 2Mb for page cache
+#define SQLITE_DEFAULT_CACHE_SIZE 4000
 
 // # Alloc 4000 pages allocated in advance  (default 20)
 // cDefs + -DSQLITE_DEFAULT_PCACHE_INITSZ=4000
