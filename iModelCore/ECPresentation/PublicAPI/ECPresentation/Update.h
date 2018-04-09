@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <ECPresentation/ECPresentation.h>
-#include <ECpresentation/SelectionManager.h>
+#include <ECPresentation/SelectionManager.h>
 #include <ECPresentation/NavNode.h>
 
 //__PUBLISH_SECTION_END__
