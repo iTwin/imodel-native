@@ -691,9 +691,9 @@ public:
     //! Returns whether this key set contains supplied instance key.
     ECPRESENTATION_EXPORT bool Contains(ECClassId classId, ECInstanceId instanceId) const;
     //! Returns whether this key set contains supplied instance key.
-    bool Contains(ECInstanceKey instanceKey) const {return Contains(instanceKey.GetClassId(), instanceKey.GetInstanceId());}
+    bool Contains(ECInstanceKeyCR instanceKey) const {return Contains(instanceKey.GetClassId(), instanceKey.GetInstanceId());}
     //! Return whether this key set contains supplied NavNode key.
-    bool Contains(NavNodeKeyCPtr nodeKey) const {return m_nodes.end() != m_nodes.find(nodeKey);}
+    bool Contains(NavNodeKeyCR nodeKey) const {return m_nodes.end() != m_nodes.find(&nodeKey);}
     //! Clears this key set.
     void Clear() {InvalidateNodesContainer(); m_instances.clear(); m_nodes.clear();}
     //! Returns whether this key set is empty.

@@ -120,7 +120,7 @@ TEST_F(SelectionTests, AddToSelection)
 
     // verify the selection is valid in the selection manager
     ASSERT_EQ(1, m_manager->GetSelection(s_project->GetECDb())->size());
-    ASSERT_TRUE(m_manager->GetSelection(s_project->GetECDb())->Contains(key));
+    ASSERT_TRUE(m_manager->GetSelection(s_project->GetECDb())->Contains(*key));
 
     // verify listeners were notified
     ASSERT_STREQ("TestSource", m_listener.m_sourceName.c_str());
@@ -160,7 +160,7 @@ TEST_F(SelectionTests, ChangeSelection)
     
     // verify the selection is valid in the selection manager
     ASSERT_EQ(1, m_manager->GetSelection(s_project->GetECDb())->size());
-    ASSERT_TRUE(m_manager->GetSelection(s_project->GetECDb())->Contains(key2));
+    ASSERT_TRUE(m_manager->GetSelection(s_project->GetECDb())->Contains(*key2));
     
     // verify listeners were notified
     ASSERT_STREQ("TestSource2", m_listener.m_sourceName.c_str());
@@ -263,17 +263,17 @@ TEST_F(MultipleECDbSelectionTest, AddToSelection)
 
     // verify the selection is valid in the selection manager for s_project1 and s_project2
     ASSERT_EQ(1, m_manager->GetSelection(s_project1->GetECDb())->size());
-    ASSERT_TRUE(m_manager->GetSelection(s_project1->GetECDb())->Contains(key));
+    ASSERT_TRUE(m_manager->GetSelection(s_project1->GetECDb())->Contains(*key));
 
     ASSERT_EQ(0, m_manager->GetSelection(s_project2->GetECDb())->size());
 
     m_manager->AddToSelection(s_project2->GetECDb(), "TestSource", false, *key, CreateExtendedData());
 
     ASSERT_EQ(1, m_manager->GetSelection(s_project1->GetECDb())->size());
-    ASSERT_TRUE(m_manager->GetSelection(s_project1->GetECDb())->Contains(key));
+    ASSERT_TRUE(m_manager->GetSelection(s_project1->GetECDb())->Contains(*key));
 
     ASSERT_EQ(1, m_manager->GetSelection(s_project2->GetECDb())->size());
-    ASSERT_TRUE(m_manager->GetSelection(s_project2->GetECDb())->Contains(key));
+    ASSERT_TRUE(m_manager->GetSelection(s_project2->GetECDb())->Contains(*key));
     }
 
 //---------------------------------------------------------------------------------------
@@ -307,8 +307,8 @@ TEST_F(MultipleECDbSelectionTest, ChangeSelection)
     NavNodeKeyPtr key2 = TestNodeKey::Create("2");
     m_manager->ChangeSelection(s_project1->GetECDb(), "TestSource2", false, *key2, CreateExtendedData());
 
-    ASSERT_TRUE(m_manager->GetSelection(s_project1->GetECDb())->Contains(key2));
-    ASSERT_FALSE(m_manager->GetSelection(s_project2->GetECDb())->Contains(key2));
+    ASSERT_TRUE(m_manager->GetSelection(s_project1->GetECDb())->Contains(*key2));
+    ASSERT_FALSE(m_manager->GetSelection(s_project2->GetECDb())->Contains(*key2));
     }
 
 //---------------------------------------------------------------------------------------

@@ -5703,7 +5703,7 @@ TEST_F(SelectionUpdateTests, RemovesECInstanceNodeKeyFromSelection)
 
     // add the node to selection
     m_selectionManager.AddToSelection(m_db, "", false, *key);
-    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(*key));
 
     // send update notification
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
@@ -5711,7 +5711,7 @@ TEST_F(SelectionUpdateTests, RemovesECInstanceNodeKeyFromSelection)
     Sync();
 
     // expect the key to *not* be found in the selection
-    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(*key));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5740,7 +5740,7 @@ TEST_F(SelectionUpdateTests, RemovesECClassGroupingNodeKeyFromSelection)
 
     // add the node to selection
     m_selectionManager.AddToSelection(m_db, "", false, *key);
-    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(*key));
 
     // send update notification
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
@@ -5748,7 +5748,7 @@ TEST_F(SelectionUpdateTests, RemovesECClassGroupingNodeKeyFromSelection)
     Sync();
 
     // expect the key to *not* be found in the selection
-    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(*key));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5782,7 +5782,7 @@ TEST_F(SelectionUpdateTests, RemovesECPropertyGroupingNodeKeyFromSelection)
 
     // add the node to selection
     m_selectionManager.AddToSelection(m_db, "", false, *key);
-    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(*key));
 
     // send update notification
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
@@ -5790,7 +5790,7 @@ TEST_F(SelectionUpdateTests, RemovesECPropertyGroupingNodeKeyFromSelection)
     Sync();
 
     // expect the key to be found in the selection
-    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(*key));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5823,7 +5823,7 @@ TEST_F(SelectionUpdateTests, RemovesDisplayLabelGroupingNodeKeyFromSelection)
 
     // add the node to selection
     m_selectionManager.AddToSelection(m_db, "", false, *key);
-    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(*key));
 
     // send update notification
     RulesEngineTestHelpers::DeleteInstance(m_db, *widget, true);
@@ -5831,7 +5831,7 @@ TEST_F(SelectionUpdateTests, RemovesDisplayLabelGroupingNodeKeyFromSelection)
     Sync();
 
     // expect the key to be found in the selection
-    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_FALSE(m_selectionManager.GetSelection(m_db)->Contains(*key));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5864,7 +5864,7 @@ TEST_F(SelectionUpdateTests, RefreshesSelectionWhenAffectedECInstanceNodeChanges
 
     // add node to selection
     m_selectionManager.AddToSelection(m_db, "", false, *key);
-    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(*key));
     selectionChangeEvents.clear();
 
     // update instance
@@ -5875,7 +5875,7 @@ TEST_F(SelectionUpdateTests, RefreshesSelectionWhenAffectedECInstanceNodeChanges
     ASSERT_EQ(1, selectionChangeEvents.size());
     EXPECT_EQ(SelectionChangeType::Replace, selectionChangeEvents[0]->GetChangeType());
     EXPECT_EQ(1, selectionChangeEvents[0]->GetSelectedKeys().size());
-    EXPECT_TRUE(selectionChangeEvents[0]->GetSelectedKeys().Contains(key));
+    EXPECT_TRUE(selectionChangeEvents[0]->GetSelectedKeys().Contains(*key));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -5923,7 +5923,7 @@ TEST_F(SelectionUpdateTests, DoesntRefreshSelectionWhenUnaffectedECInstanceNodeC
 
     // add node to selection
     m_selectionManager.AddToSelection(m_db, "", false, *key);
-    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(*key));
     selectionChangeEvents.clear();
 
     // update instance
@@ -5969,7 +5969,7 @@ TEST_F(SelectionUpdateTests, RefreshesSelectionWhenAffectedGroupingNodeChanges)
 
     // add node to selection
     m_selectionManager.AddToSelection(m_db, "", false, *key);
-    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(*key));
     selectionChangeEvents.clear();
 
     // insert new instance
@@ -5981,7 +5981,7 @@ TEST_F(SelectionUpdateTests, RefreshesSelectionWhenAffectedGroupingNodeChanges)
     ASSERT_EQ(1, selectionChangeEvents.size());
     EXPECT_EQ(SelectionChangeType::Replace, selectionChangeEvents[0]->GetChangeType());
     EXPECT_EQ(1, selectionChangeEvents[0]->GetSelectedKeys().size());
-    EXPECT_TRUE(selectionChangeEvents[0]->GetSelectedKeys().Contains(key));
+    EXPECT_TRUE(selectionChangeEvents[0]->GetSelectedKeys().Contains(*key));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -6029,7 +6029,7 @@ TEST_F(SelectionUpdateTests, DoesntRefreshSelectionWhenUnaffectedGroupingNodeCha
 
     // add node to selection
     m_selectionManager.AddToSelection(m_db, "", false, *key);
-    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(key));
+    EXPECT_TRUE(m_selectionManager.GetSelection(m_db)->Contains(*key));
     selectionChangeEvents.clear();
 
     // insert a new gadget

@@ -31,7 +31,7 @@ void SelectionUpdateRecordsHandler::_Accept(UpdateRecord const& record)
         }
 
     KeySetCPtr selection = m_selectionManager.GetSelection(connection->GetECDb());
-    if (selection->Contains(node.GetKey()))
+    if (selection->Contains(*node.GetKey()))
         {
         if (ChangeType::Delete == record.GetChangeType())
             {
