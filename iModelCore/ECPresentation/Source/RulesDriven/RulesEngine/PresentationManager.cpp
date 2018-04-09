@@ -123,7 +123,10 @@ public:
                 && task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId());
             });
         if (didCancel)
+            {
+            LoggingHelper::LogMessage(Log::Default, "Interrupting connection requests due to canceled tasks");
             connection.InterruptRequests();
+            }
         }
     void CancelConnectionRequests(IConnectionCR connection)
         {
@@ -132,7 +135,10 @@ public:
             return task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId());
             });
         if (didCancel)
+            {
+            LoggingHelper::LogMessage(Log::Default, "Interrupting connection requests due to canceled tasks");
             connection.InterruptRequests();
+            }
         }
     void CancelByRulesetId(Utf8StringCR rulesetId)
         {

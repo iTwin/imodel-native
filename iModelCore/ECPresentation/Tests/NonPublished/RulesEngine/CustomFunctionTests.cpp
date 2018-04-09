@@ -1247,7 +1247,7 @@ TEST_F(CustomFunctionTests, AreDoublesEqualByValue_ReturnsFalse)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesInstanceLabelOverride)
+TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesInstanceLabelOverride)
     {
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -1258,7 +1258,7 @@ TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesInstanceLa
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetNavigationPropertyLabel(?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetNavigationPropertyLabel "(?, ?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
@@ -1268,12 +1268,12 @@ TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesInstanceLa
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesClassDisplayLabelAsDefault)
+TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesClassDisplayLabelAsDefault)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetNavigationPropertyLabel(?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetNavigationPropertyLabel "(?, ?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
