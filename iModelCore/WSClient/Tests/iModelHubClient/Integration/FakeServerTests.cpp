@@ -66,6 +66,7 @@ class FakeServerFixture : public testing::Test
             }
     };
 
+BEGIN_UNNAMED_NAMESPACE
 Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description)
     {
     Json::Value iModelCreation(Json::objectValue);
@@ -77,6 +78,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     properties[ServerSchema::Property::iModelDescription] = description;
     return iModelCreation;
     }
+END_UNNAMED_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    12/2017
