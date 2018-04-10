@@ -13,3 +13,27 @@ NavigationQueryBuilder_MultiLevelGroupingTests.RootNodesQueryReturnsRelationship
 
 # TFS#819769:InstanceLabelOverride is not applied for child in hierarchy
 RulesDrivenECPresentationManagerNavigationTests.AllInstanceNodesSpecification_LabelOverridesAppliedForSpecifiedClass
+
+RulesDrivenECPresentationManagerRequestCancelationTests.CancelsContentRequestWhenConnectionIsClosed
+
+    # TFS#874091
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/10/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\NonPublished\RulesEngine\PresentationManagerMultithreadingTests.cpp(635): error: Value of: BlockingState::Blocking <= m_blockingState.load()
+    # Actual: false
+    # Expected: true
+
+RulesDrivenECPresentationManagerRequestCancelationTests.CancelsContentRequestWhenRulesetIsDisposed
+
+    # TFS#874091
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/10/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\NonPublished\RulesEngine\PresentationManagerMultithreadingTests.cpp(635): error: Value of: BlockingState::Blocking <= m_blockingState.load()
+    # Actual: false
+    # Expected: true
+
+RulesDrivenECPresentationManagerRequestCancelationTests.CancelsContentSetSizeRequestWhenRulesetIsDisposed
+
+    # TFS#874091
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/10/2018
+    # c:\build\src\mds06t\ECPresentation\Tests\NonPublished\RulesEngine\PresentationManagerMultithreadingTests.cpp(635): error: Value of: BlockingState::Blocking <= m_blockingState.load()
+    # Actual: false
+    # Expected: true
