@@ -36,7 +36,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinition : Dgn::Defini
 
         //! Sets ClassificationSystemClassDefinition group Id
         //! @param[in] groupId to set
-        void SetGroupId(Dgn::DgnElementId groupId)
+        void SetGroupId(Dgn::DgnElementId groupId);
 
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)

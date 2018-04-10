@@ -23,11 +23,10 @@
     </ECEntityClass>
         
     <ECRelationshipClass typeName="ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup" modifier="None" strength="referencing" description="a relationship to map classificationSystemClassDefinition to its' group">
-      <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="is grouped in" polymorphic="true">
             <Class class="ClassificationSystemClassDefinition"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="groups" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="groups" polymorphic="true">
             <Class class="ClassificationSystemClassDefinitionGroup"/>
         </Target>
     </ECRelationshipClass>
