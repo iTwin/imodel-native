@@ -28,12 +28,12 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middle
     , m_explicitlyDefinedSubLabel(false)
     , m_spacer(FormatConstant::DefaultSpacer())
     , m_ratio {0}
-    , m_inputUnit(nullptr)
     {
     size_t unitCount = (nullptr != majorUnit)
         + (nullptr != middleUnit)
         + (nullptr != minorUnit)
         + (nullptr != subUnit);
+    m_proxys.reserve(4);
     m_proxys.resize(unitCount);
 
     if (nullptr != majorUnit)
@@ -98,8 +98,8 @@ CompositeValueSpec::CompositeValueSpec(bvector<BEU::UnitCP> const& units)
     , m_explicitlyDefinedSubLabel(false)
     , m_spacer(FormatConstant::DefaultSpacer())
     , m_ratio {0}
-    , m_inputUnit(nullptr)
     {
+    m_proxys.reserve(4);
     m_proxys.resize(units.size());
 
     int i = 0;
@@ -128,7 +128,6 @@ CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     , m_spacer(other.m_spacer)
     , m_problem(other.m_problem)
     , m_proxys(other.m_proxys)
-    , m_inputUnit(other.m_inputUnit)
     {
     memcpy(m_ratio, other.m_ratio, sizeof(m_ratio));
     }
@@ -186,18 +185,6 @@ void CompositeValueSpec::CalculateUnitRatios()
         }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Kyle.Abramowitz     02/17
-//---------------------------------------------------------------------------------------
-void CompositeValueSpec::SetInputUnit(BEU::UnitCP unit)
-    {
-    if (nullptr != GetMajorUnit() && !BEU::Unit::AreCompatible(unit, GetMajorUnit()))
-        m_problem.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
-
-    if (FormatProblemCode::NotInitialized == m_problem.GetProblemCode())
-        m_problem.Reset();
-    m_inputUnit = unit;
-    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 02/17
 //---------------------------------------------------------------------------------------
@@ -273,6 +260,42 @@ Utf8CP CompositeValueSpec::GetUnitName(size_t indx, Utf8CP substitute) const
 
     Utf8CP name = proxy->GetName();
     return Utf8String::IsNullOrEmpty(name) ? substitute : name;
+    }
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+bool CompositeValueSpec::SetUnit(BEU::UnitCP unit, int indx)
+    {
+    if (!IsIndexValid(indx))
+        return false;
+    auto p = GetProxyP(indx);
+    if (m_problem.GetProblemCode() == FormatProblemCode::NotInitialized)
+        m_problem.Reset();
+    return p->SetUnit(unit);
+    }
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+bool CompositeValueSpec::SetUnitLabel(Utf8StringCR label, int indx)
+    {
+    if (!IsIndexValid(indx))
+        return false;
+    switch (indx)
+        {
+        case indxMajor:
+            SetMajorLabel(label);
+            break;
+        case indxMiddle:
+            SetMiddleLabel(label);
+            break;
+        case indxMinor:
+            SetMinorLabel(label);
+            break;
+        case indxSub:
+            SetSubLabel(label);
+            break;
+        }
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -501,7 +524,7 @@ void UnitProxy::LoadJson(Json::Value jval, BEU::IUnitsContextCP context)
 Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist, BEU::UnitCP outputUnit, FormatCR inputFormat, FormatProblemCode* problemCode)
     {
     *problemCode = Formatting::FormatProblemCode::NoProblems;
-    BEU::Quantity qty = Formatting::FormatParsingSet(input, inputFormat.GetCompositeInputUnit()).GetQuantity(problemCode, &inputFormat);
+    BEU::Quantity qty = Formatting::FormatParsingSet(input, inputFormat.GetCompositeMajorUnit()).GetQuantity(problemCode, &inputFormat);
     if (*problemCode == Formatting::FormatProblemCode::NoProblems)
         {
         if (nullptr != persist)
@@ -522,7 +545,7 @@ Units::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, double* persist
 // static
 BEU::Quantity QuantityFormatting::CreateQuantity(Utf8CP input, FormatCR inputFormat, FormatProblemCode* problemCode)
     {
-    return Formatting::FormatParsingSet(input, inputFormat.GetCompositeInputUnit()).GetQuantity(problemCode, &inputFormat);
+    return Formatting::FormatParsingSet(input, inputFormat.GetCompositeMajorUnit()).GetQuantity(problemCode, &inputFormat);
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

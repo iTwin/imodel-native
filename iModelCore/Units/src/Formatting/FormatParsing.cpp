@@ -1797,8 +1797,8 @@ BEU::Quantity FormatParsingSet::GetQuantity(FormatProblemCode* probCode, FormatC
 
     BEU::UnitCP inputUnit;
     
-    if (nullptr != format && nullptr != format->GetCompositeInputUnit())
-        inputUnit = format->GetCompositeInputUnit();
+    if (nullptr != format && nullptr != format->GetCompositeMajorUnit())
+        inputUnit = format->GetCompositeMajorUnit();
     else
         inputUnit = m_unit;
 

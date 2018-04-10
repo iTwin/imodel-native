@@ -166,6 +166,10 @@ TEST_F(FormatTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
     EXPECT_STREQ("1'500.0 31'680.0", Format::StdFormatQuantity(Format, quantity).c_str());
     }
 
+//===================================================
+// FormatStringTest
+//===================================================
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -177,9 +181,9 @@ TEST_F(FormatStringTest, FailUnknownFormatName)
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasic, nullMapper));
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicTrailingComma, nullMapper));
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverrides, nullMapper));
-    // EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicUnitOverrideNoLabel, nullMapper, s_unitsContext));
-    // EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicUnitOverrideEmptyLabel, nullMapper, s_unitsContext));
-    // EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicUnitOverrideWithLabel, nullMapper, s_unitsContext));
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicUnitOverrideNoLabel, nullMapper, s_unitsContext));
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicUnitOverrideEmptyLabel, nullMapper, s_unitsContext));
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicUnitOverrideWithLabel, nullMapper, s_unitsContext));
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAddition, nullMapper));
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, nullMapper));
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, nullMapper));
@@ -213,17 +217,17 @@ TEST_F(FormatStringTest, SuccessfullyParseKnownFormat)
     ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverrides, mapper));
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAddition, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+    //ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAddition, mapper));
+    //EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
 
-    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+    //EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, mapper));
+    //EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+    //ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, mapper));
+    //EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, mapper));
-    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+    //ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, mapper));
+    //EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
     }
 
 //---------------------------------------------------------------------------------------
@@ -306,9 +310,36 @@ TEST_F(FormatStringTest, ParseFormatString)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-//TEST_F(FormatStringTest, InvalidUnitOverrides)
-//    {
-//    
-//    }
+TEST_F(FormatStringTest, InvalidUnitOverrides)
+    {
+    Format const exampleNamedFmtSpec;
+    auto const mapper = [exampleNamedFmtSpec](Utf8StringCR name) -> FormatCP
+        {
+        return name == "ExampleFmt" ? &exampleNamedFmtSpec : nullptr;
+        };
+
+    Format parsedNfs;
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrWithEmptySqBrackets, mapper, s_unitsContext));
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrWithOnlyEmptySqBrackets, mapper, s_unitsContext));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(FormatStringTest, UnitAndLabelOverride)
+    {
+    Format const exampleNamedFmtSpec;
+    auto const mapper = [exampleNamedFmtSpec](Utf8StringCR name) -> FormatCP
+        {
+        return name == "ExampleFmt" ? &exampleNamedFmtSpec : nullptr;
+        };
+
+    Utf8String fmtStrWithMeter("ExampleFmt[M]");
+    Utf8String fmtStrWithMeterNoLabel("ExampleFmt[M|]");
+    Utf8String fmtStrWithMeterWithLabelOverride("ExampleFmt[M|meter(s)]");
+
+    Format parsedNfs;
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrWithMeter, mapper, s_unitsContext));
+    }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

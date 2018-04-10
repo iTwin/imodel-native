@@ -11,6 +11,7 @@
 #include <Formatting/FormattingDefinitions.h>
 #include <Formatting/FormattingEnum.h>
 #include <Formatting/AliasMappings.h>
+#include <Bentley/Nullable.h>
 
 namespace BEU = BentleyApi::Units;
 
@@ -472,7 +473,6 @@ private:
     Utf8String m_labelOverride;
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
-    BEU::UnitCP m_inputUnit;
 
     //! Returns the unit ratio of upper/lower.
     //! Lower may be set to nullptr, indicating the lower unit is not set on the CVS.
@@ -500,7 +500,7 @@ private:
         }
     bool IsIndexValid(size_t indx) const { return indx < m_proxys.size(); }
 
-    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
+
     UNITS_EXPORT void SetUnitLabel(size_t index, Utf8CP label);
 public:
     // TODO: Attempt to remove these methods from the public API================
@@ -512,6 +512,7 @@ public:
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit, BEU::UnitCR minorUnit, BEU::UnitCR subUnit);
+    UNITS_EXPORT CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit);
     UNITS_EXPORT CompositeValueSpec(bvector<BEU::UnitCP> const& units);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
 
@@ -519,14 +520,11 @@ public:
 
     size_t GetUnitCount() const {return m_proxys.size();}
 
+    UNITS_EXPORT bool SetUnit(BEU::UnitCP unit, int indx);
     BEU::UnitCP GetMajorUnit()  const {return GetUnit(indxMajor);}
     BEU::UnitCP GetMiddleUnit() const {return GetUnit(indxMiddle);}
     BEU::UnitCP GetMinorUnit()  const {return GetUnit(indxMinor);}
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
-    BEU::UnitCP GetInputUnit()  const {return m_inputUnit;}
-    UNITS_EXPORT void SetInputUnit(BEU::UnitCP unit);
-    void SetInputUnitLabel(Utf8CP label) {m_labelOverride = label;}
-    bool HasInputUnit()  const {return nullptr != m_inputUnit;}
     bool HasMajorUnit()  const {return nullptr != GetUnit(indxMajor);}
     bool HasMiddleUnit() const {return nullptr != GetUnit(indxMiddle);}
     bool HasMinorUnit()  const {return nullptr != GetUnit(indxMinor);}
@@ -542,6 +540,7 @@ public:
     void SetMiddleLabel(Utf8StringCR label) {m_explicitlyDefinedMiddleLabel = true; SetUnitLabel(indxMiddle, label.c_str());}
     void SetMinorLabel(Utf8StringCR label) {m_explicitlyDefinedMinorLabel = true; SetUnitLabel(indxMinor, label.c_str());}
     void SetSubLabel(Utf8StringCR label) {m_explicitlyDefinedSubLabel = true; SetUnitLabel(indxSub, label.c_str());}
+    UNITS_EXPORT bool SetUnitLabel(Utf8StringCR label, int indx);
 
     bool HasMajorLabel()    const {return m_explicitlyDefinedMajorLabel;}
     bool HasMiddleLabel()   const {return m_explicitlyDefinedMiddleLabel;}
@@ -682,14 +681,10 @@ public:
     //! Returns a const pointer to the sub unit of this Format's CompositeValueSpec.
     //! Returns nullptr if no CompositeValueSpec is defined.
     BEU::UnitCP GetCompositeSubUnit() const { return HasComposite() ? m_compositeSpec.GetSubUnit() : nullptr; }
-    //! Returns a const pointer to the input unit of this Format's CompositeValueSpec.
-    //! Returns nullptr if no CompositeValueSpec is defined.
-    BEU::UnitCP GetCompositeInputUnit() const {return m_compositeSpec.GetInputUnit();}
     bool HasCompositeMajorUnit() const {return nullptr != GetCompositeMajorUnit();}
     bool HasCompositeMiddleUnit() const {return nullptr != GetCompositeMiddleUnit();}
     bool HasCompositeMinorUnit() const {return nullptr != GetCompositeMinorUnit();}
     bool HasCompositeSubUnit() const {return nullptr != GetCompositeSubUnit();}
-    bool HasCompositeInputUnit() const {return nullptr != GetCompositeInputUnit();}
     bool HasCompositeSpacer() const {return GetCompositeSpec()->HasSpacer();}
 
     void SetSuppressUnitLabel() { m_numericSpec.SetShowUnitLabel(false); }
@@ -700,32 +695,38 @@ public:
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
 
     UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
-    Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const {return Format::StdFormatQuantity(*this, qty.ConvertTo(m_compositeSpec.GetInputUnit()), nullptr, space);}
+    Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const {return Format::StdFormatQuantity(*this, qty.ConvertTo(m_compositeSpec.GetMajorUnit()), nullptr, space);}
     UNITS_EXPORT static Utf8String StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
 
-    //! Parse a Format from the provided format string. A format string takes the form
+    //! Parse a Format from the provided format string. A format string takes the form,
     //! <code>
-    //! FORMAT_NAME<PRECISION_OVERRIDE>
+    //! FORMAT_NAME<PRECISION_OVERRIDE>[INPUT_UNIT_NAME|UNIT_LABEL]
     //! </code>
-    //! where FORMAT_NAME is a defined named format that will be located using the defaultFormatMapper parameter and PRECISION_OVERRIDE is
-    //! a decimal/fractional precision override for the Format.
+    //! FORMAT_NAME is a defined named format that will be located using the defaultFormatMapper parameter.
+    //! PRECISION_OVERRIDE is a decimal/fractional precision override for the Format.
+    //! INPUT_UNIT_NAME is a defined BEU::Unit that overrides the input unit defined in the Format
+    //! UNIT_LABEL is a string that overrides the unit label defined on the override input unit.
     //! Examples:
     //! <code>
     //! "Real<2>"
     //! "Fractional<64>"
     //! "Scientific<12>"
+    //! "Real<2>[u:M|m]"
     //! </code>
-    //! @param[out] nfs                          Format to be populated with the settings parsed from the format string.
-    //! @param[in]  formatString                 String to be parsed.
+    //! @param[out] nfs                 Format to be populated with the settings parsed from the format string.
+    //! @param[in]  formatString        String to be parsed.
     //! @param[in]  defaultFormatMapper Functor that maps a format name to a NumericformatSpec containing default settings for the parsed,
-    //!                                          NumericFormatSpec, overrides specified within the format string will override these defaults.
-    //!                                          defaultFormatMapper should return a pointer to some Format if any such mapping
-    //!                                          exists or nullptr if no such mapping exists. For example the mapping "Real" --> <default real spec>
-    //!                                          is a supported within EC, so an EC mapping function should map "Real" to the DefaultReal format
-    //!                                          spec. However the mapping "BlaBlaBla" does not exist within EC by default, so the mapping function
-    //!                                          would return nullptr for a format string with name "BlaBlaBla".
+    //!                                     NumericFormatSpec, overrides specified within the format string will override these defaults.
+    //!                                     defaultFormatMapper should return a pointer to some Format if any such mapping
+    //!                                     exists or nullptr if no such mapping exists. For example the mapping "Real" --> <default real spec>
+    //!                                     is a supported within EC, so an EC mapping function should map "Real" to the DefaultReal format
+    //!                                     spec. However the mapping "BlaBlaBla" does not exist within EC by default, so the mapping function
+    //!                                     would return nullptr for a format string with name "BlaBlaBla".
+    //! @param[in]  unitContext         Units contex to be used to resolve 
     //! @returns BentleyStatus::SUCCESS if the string was successfully parsed.
-    UNITS_EXPORT static BentleyStatus ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper);
+    UNITS_EXPORT static BentleyStatus ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper, BEU::IUnitsContextCP unitContext = nullptr);
+
+    UNITS_EXPORT static BentleyStatus ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Nullable<Utf8String>>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString);
 
     // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);

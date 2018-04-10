@@ -81,9 +81,6 @@
     <None Include="Units.mke" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PrivateAPI\Formatting\AliasMappings.h">
-      <Filter>Header Files\Formatting</Filter>
-    </ClInclude>
     <ClInclude Include="PrivateAPI\Formatting\FormattingParsing.h">
       <Filter>Header Files\Formatting</Filter>
     </ClInclude>
@@ -131,6 +128,9 @@
     </ClInclude>
     <ClInclude Include="PublicAPI\Units\UnitsContext.h">
       <Filter>Header Files\Units</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Formatting\AliasMappings.h">
+      <Filter>Header Files\Formatting</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
