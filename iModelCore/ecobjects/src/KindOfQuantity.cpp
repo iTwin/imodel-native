@@ -552,10 +552,15 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
                 return ECObjectsStatus::Error;
                 }
             }
-
+        Nullable<unsigned> precision = nullptr;
         if (!Utf8String::IsNullOrEmpty(mappedName))
             {
-            format = GetSchema().LookupFormat(mappedName);
+            Utf8String localformatName;
+
+            bvector<Utf8String> localUnitNames;
+            bvector<Nullable<Utf8String>> localUnitLabels;
+            Formatting::Format::ParseFormatString(localformatName, precision, localUnitNames, localUnitLabels, mappedName);
+            format = GetSchema().LookupFormat(localformatName.c_str());
             if (nullptr == format)
                 {
                 LOG.errorv("FormatString '%s' on KindOfQuantity '%s' has an invalid format, '%s'.", descriptor, GetFullName().c_str(), mappedName);
@@ -610,7 +615,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             LOG.errorv("On KOQ '%s' presentation unit '%s' is incompatible with persistence unit '%s'", GetFullName().c_str(), unit->GetFullName().c_str(), m_persistenceUnit->GetFullName().c_str());
             return ECObjectsStatus::Error;
             }
-        AddPresentationFormatSingleUnitOverride(*format);
+        AddPresentationFormatSingleUnitOverride(*format, precision);
         }
     else // >= 3.2
         {
