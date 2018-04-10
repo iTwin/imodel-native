@@ -11,6 +11,7 @@
 
     <ECEntityClass typeName="ClassificationSystemClassDefinition" modifier="Abstract" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
         <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECNavigationProperty propertyName="Group" relationshipName="ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup" direction="Forward" description="Group this definition belong to" />
     </ECEntityClass>
     
     <ECEntityClass typeName="ClassificationSystemClassDefinitionGroup" displayLabel="ClassificationSystem ClassDefinition group" description="The ClassDefinition group element">
