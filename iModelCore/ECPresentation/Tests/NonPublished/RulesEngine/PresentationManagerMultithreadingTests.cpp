@@ -597,6 +597,17 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
         : m_result(folly::makeFuture()), m_connectionInterrupted(false)
         {}
 
+    virtual void SetUp() override
+        {
+        RulesDrivenECPresentationManagerCustomImplMultithreadingTests::SetUp();
+
+        m_locater = TestRuleSetLocater::Create();
+        m_manager->GetLocaters().RegisterLocater(*m_locater);
+        m_locater->AddRuleSet(*PresentationRuleSet::CreateInstance(s_rulesetId, 1, 0, false, "", "", "", false));
+
+        static_cast<TestConnection*>(m_connection)->SetInterruptHandler([&](){m_connectionInterrupted = true;});
+        }
+
     void BlockECPresentationThread()
         {
         // add a blocking task to the ECPresentation thread
@@ -611,15 +622,13 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
             });
         }
 
-    virtual void SetUp() override
+    void EnsureBlocked()
         {
-        RulesDrivenECPresentationManagerCustomImplMultithreadingTests::SetUp();
-
-        m_locater = TestRuleSetLocater::Create();
-        m_manager->GetLocaters().RegisterLocater(*m_locater);
-        m_locater->AddRuleSet(*PresentationRuleSet::CreateInstance(s_rulesetId, 1, 0, false, "", "", "", false));
-
-        static_cast<TestConnection*>(m_connection)->SetInterruptHandler([&](){m_connectionInterrupted = true;});
+        while (m_blockingState < BlockingState::Blocking)
+            {
+            // wait for the handler to block
+            BeThreadUtilities::BeSleep(1);
+            }
         }
 
     template<typename TCallback>
@@ -632,7 +641,7 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
             callback = callback.ensure([&]()
                 {
                 // this WILL be called before the blocking task completes if the cancelation worked
-                EXPECT_TRUE(BlockingState::Blocking <= m_blockingState.load());
+                EXPECT_LE(BlockingState::Blocking, m_blockingState.load());
                 // set the blocking flag to false to unblock the ECPresentation thread
                 m_blockingState.store(BlockingState::Aborted);
                 });
@@ -664,18 +673,21 @@ struct RulesDrivenECPresentationManagerRequestCancelationTests : RulesDrivenECPr
 
     void TerminateAndVerifyResult()
         {
+        EnsureBlocked();
         DELETE_AND_CLEAR(m_manager);
         VerifyCancelation(true, false, 0);
         }
 
     void CloseConnectionAndVerifyResult()
         {
+        EnsureBlocked();
         static_cast<TestConnectionManager*>(m_connections)->NotifyConnectionClosed(*m_connections->GetConnection(s_project->GetECDb()));
         VerifyCancelation(true, true, 0);
         }
     
     void DisposeRulesetAndVerifyResult()
         {
+        EnsureBlocked();
         m_locater->Clear();
         VerifyCancelation(true, false, 0);
         }
@@ -1206,6 +1218,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
     DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo, options.GetJson()));
+    EnsureBlocked();
 
     // make second request
     m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo, options.GetJson()).wait();
@@ -1237,8 +1250,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo2, options.GetJson());
 
     // wait until first request gets blocked and abort blocking
-    while (BlockingState::Waiting == m_blockingState.load())
-        BeThreadUtilities::BeSleep(1);
+    EnsureBlocked();
     m_blockingState.store(BlockingState::Aborted);
 
     // let the second request finish
@@ -1274,8 +1286,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     auto req = m_manager->GetContentDescriptor(connection2->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo, options.GetJson());
 
     // wait until first request gets blocked and abort blocking
-    while (BlockingState::Waiting == m_blockingState.load())
-        BeThreadUtilities::BeSleep(1);
+    EnsureBlocked();
     m_blockingState.store(BlockingState::Aborted);
 
     // let the second request finish
@@ -1365,6 +1376,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestCa
     descriptor->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false));
     BlockECPresentationThread();
     DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
+    EnsureBlocked();
     
     // make second request
     m_manager->GetContent(*descriptor, PageOptions()).wait();
@@ -1398,8 +1410,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     auto req = m_manager->GetContent(*descriptor2, PageOptions());
 
     // wait until first request gets blocked and abort blocking
-    while (BlockingState::Waiting == m_blockingState.load())
-        BeThreadUtilities::BeSleep(1);
+    EnsureBlocked();
     m_blockingState.store(BlockingState::Aborted);
 
     // let the second request finish
@@ -1437,8 +1448,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     auto req = m_manager->GetContent(*descriptor2, PageOptions());
 
     // wait until first request gets blocked and abort blocking
-    while (BlockingState::Waiting == m_blockingState.load())
-        BeThreadUtilities::BeSleep(1);
+    EnsureBlocked();
     m_blockingState.store(BlockingState::Aborted);
 
     // let the second request finish
@@ -1528,6 +1538,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     descriptor->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false));
     BlockECPresentationThread();
     DoRequest(m_manager->GetContentSetSize(*descriptor));
+    EnsureBlocked();
 
     // make second request
     m_manager->GetContentSetSize(*descriptor).wait();
@@ -1561,8 +1572,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     auto req = m_manager->GetContentSetSize(*descriptor2);
 
     // wait until first request gets blocked and abort blocking
-    while (BlockingState::Waiting == m_blockingState.load())
-        BeThreadUtilities::BeSleep(1);
+    EnsureBlocked();
     m_blockingState.store(BlockingState::Aborted);
 
     // let the second request finish
@@ -1600,8 +1610,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     auto req = m_manager->GetContentSetSize(*descriptor2);
 
     // wait until first request gets blocked and abort blocking
-    while (BlockingState::Waiting == m_blockingState.load())
-        BeThreadUtilities::BeSleep(1);
+    EnsureBlocked();
     m_blockingState.store(BlockingState::Aborted);
 
     // let the second request finish
