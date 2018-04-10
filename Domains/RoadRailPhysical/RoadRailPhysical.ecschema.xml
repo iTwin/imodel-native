@@ -144,12 +144,21 @@
         <ECProperty propertyName="GenerateLinearElement" typeName="boolean" />
         <ECProperty propertyName="ExpectedAtSurface" typeName="SignificantPointDefinition_ExpectedAtSurface" />
     </ECEntityClass>
-    <ECRelationshipClass typeName="ILinearElementAssociatedWithSignificantPointDefinition" strength="referencing" modifier="Sealed">
+    <ECRelationshipClass typeName="ILinearElementRelatesToPathwayPortion" strength="referencing" modifier="Sealed">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="is associated with" polymorphic="true">
             <Class class="lr:ILinearElement"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
+            <Class class="PathwayPortionElement"/>
+        </Target>
+        <ECNavigationProperty propertyName="SignificantPointDef" relationshipName="ILinearElementRelatesToSignificantPointDef" direction="Forward"/>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ILinearElementRelatesToSignificantPointDef" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to">
+            <Class class="ILinearElementRelatesToPathwayPortion"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referenced by">
             <Class class="SignificantPointDefinition"/>
         </Target>
     </ECRelationshipClass>

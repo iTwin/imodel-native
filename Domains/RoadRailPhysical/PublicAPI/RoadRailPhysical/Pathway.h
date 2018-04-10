@@ -61,6 +61,9 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayElement)
 
+    ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::PhysicalModelCR scope, Utf8StringCR value);
+    ROADRAILPHYSICAL_EXPORT static PathwayElementCPtr QueryByCode(Dgn::PhysicalModelCR model, Utf8StringCR code);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(PathwayElementCR pathway, Dgn::DgnElementCR representedBy);
 
     ROADRAILPHYSICAL_EXPORT Dgn::DgnElementIdSet QueryPortionIds() const;
@@ -129,6 +132,10 @@ protected:
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(PathwayPortionElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(PathwayPortionElement)
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::PhysicalModelCR scope, Utf8StringCR value);
+    ROADRAILPHYSICAL_EXPORT static PathwayPortionElementCPtr QueryByCode(Dgn::PhysicalModelCR model, Utf8StringCR code);
 
     TravelPortionElementCP ToTravelPortionElement() const { return _ToTravelPortionElement(); }
     TravelSeparationPortionElementCP ToTravelSeparationPortionElement() const { return _ToTravelSeparationPortionElement(); }
@@ -230,7 +237,8 @@ public:
 struct ILinearElementUtilities : NonCopyableClass
 {
 public:
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetAssociatedSignificantPointDef(LinearReferencing::ILinearElementCR linearElement, SignificantPointDefinitionCP significantPointDef);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetRelatedPathwayPortion(LinearReferencing::ILinearElementCR linearElement, 
+        PathwayPortionElementCR pathwayPortion, SignificantPointDefinitionCR significantPointDef);
 }; // ILinearElementUtilities
 
 

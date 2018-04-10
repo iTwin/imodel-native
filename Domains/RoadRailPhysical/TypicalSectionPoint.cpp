@@ -36,7 +36,7 @@ CodeSpecId SignificantPointDefinition::QueryCodeSpecId(DgnDbCR dgndb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SignificantPointDefinition::CreateCode(DgnModelCR scope, Utf8StringCR value)
+DgnCode SignificantPointDefinition::CreateCode(DefinitionModelCR scope, Utf8StringCR value)
     {
     return CodeSpec::CreateCode(BRRP_CODESPEC_SignificantPointDefinition, scope, value);
     }

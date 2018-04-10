@@ -31,6 +31,36 @@ DgnDbStatus IMainLinearElementSource::SetMainLinearElement(ILinearElementCP line
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeSpecId PathwayElement::QueryCodeSpecId(DgnDbCR dgndb)
+    {
+    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BRRP_CODESPEC_Pathway);
+    BeAssert(codeSpecId.IsValid());
+    return codeSpecId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PathwayElement::CreateCode(PhysicalModelCR scope, Utf8StringCR value)
+    {
+    return CodeSpec::CreateCode(BRRP_CODESPEC_Pathway, scope, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PathwayElementCPtr PathwayElement::QueryByCode(PhysicalModelCR model, Utf8StringCR code)
+    {
+    auto id = model.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(model, code));
+    if (!id.IsValid())
+        return nullptr;
+
+    return PathwayElement::Get(model.GetDgnDb(), id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus PathwayElement::AddRepresentedBy(PathwayElementCR pathway, DgnElementCR representedBy)
@@ -190,6 +220,36 @@ RailwayPtr Railway::Create(PhysicalModelR model)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeSpecId PathwayPortionElement::QueryCodeSpecId(DgnDbCR dgndb)
+    {
+    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BRRP_CODESPEC_PathwayPortion);
+    BeAssert(codeSpecId.IsValid());
+    return codeSpecId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode PathwayPortionElement::CreateCode(PhysicalModelCR scope, Utf8StringCR value)
+    {
+    return CodeSpec::CreateCode(BRRP_CODESPEC_PathwayPortion, scope, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PathwayPortionElementCPtr PathwayPortionElement::QueryByCode(PhysicalModelCR model, Utf8StringCR code)
+    {
+    auto id = model.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(model, code));
+    if (!id.IsValid())
+        return nullptr;
+
+    return PathwayPortionElement::Get(model.GetDgnDb(), id);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 PathwayElement::TravelSide TravelPortionElement::QueryTravelSide() const
@@ -272,26 +332,32 @@ ThruwaySeparationPortionPtr ThruwaySeparationPortion::Create(PathwayElementCR pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ILinearElementUtilities::SetAssociatedSignificantPointDef(ILinearElementCR linearElement, SignificantPointDefinitionCP significantPointDef)
+DgnDbStatus ILinearElementUtilities::SetRelatedPathwayPortion(ILinearElementCR linearElement, PathwayPortionElementCR pathwayPortion,
+    SignificantPointDefinitionCR significantPointDef)
     {
-    if (!linearElement.ToElement().GetElementId().IsValid() || (significantPointDef && !significantPointDef->GetElementId().IsValid()))
+    if (!linearElement.ToElement().GetElementId().IsValid() || 
+        !pathwayPortion.GetElementId().IsValid() ||
+        !significantPointDef.GetElementId().IsValid())
         return DgnDbStatus::BadArg;
 
     auto& linearElementCR = linearElement.ToElement();
 
     auto stmtPtr = linearElementCR.GetDgnDb().GetPreparedECSqlStatement("SELECT ECClassId, ECInstanceId FROM "
-        BRRP_SCHEMA(BRRP_REL_ILinearElementAssociatedWithSignificantPointDef) " WHERE SourceECInstanceId = ?;");
+        BRRP_SCHEMA(BRRP_REL_ILinearElementRelatesToPathwayPortion) " WHERE SourceECInstanceId = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, linearElementCR.GetElementId());
     if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
         linearElementCR.GetDgnDb().DeleteLinkTableRelationship(ECInstanceKey(stmtPtr->GetValueId<ECClassId>(0), stmtPtr->GetValueId<ECInstanceId>(1)));
 
-    auto relClassCP = linearElementCR.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_ILinearElementAssociatedWithSignificantPointDef)->GetRelationshipClassCP();
+    auto relClassCP = linearElementCR.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, BRRP_REL_ILinearElementRelatesToPathwayPortion)->GetRelationshipClassCP();
+    auto relEnablerPtr = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*relClassCP);
+    auto instancePtr = relEnablerPtr->CreateRelationshipInstance();
+    instancePtr->SetValue("SignificantPointDef", ECValue(significantPointDef.GetElementId()));
 
     ECInstanceKey key;
     if (DbResult::BE_SQLITE_OK != linearElementCR.GetDgnDb().InsertLinkTableRelationship(key,
-        *relClassCP, linearElementCR.GetElementId(), significantPointDef->GetElementId()))
+        *relClassCP, linearElementCR.GetElementId(), pathwayPortion.GetElementId(), instancePtr.get()))
             return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;

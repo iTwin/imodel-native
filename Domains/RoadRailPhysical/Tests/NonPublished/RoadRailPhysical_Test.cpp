@@ -22,8 +22,6 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
 
-    ILinearElementUtilities::SetAssociatedSignificantPointDef(*alignmentPtr, clPointDefPtr.get());
-
     // Create Horizontal 
     DPoint2d pntsHoriz2d[]{ { 0, 0 },{ 50, 0 },{ 100, 0 },{ 150, 0 } };
     CurveVectorPtr horizAlignVecPtr = CurveVector::CreateLinear(pntsHoriz2d, 4);
@@ -63,11 +61,15 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     auto leftThruPortionPtr = ThruwayPortion::Create(*roadwayPtr, *alignmentPtr);
     ASSERT_TRUE(leftThruPortionPtr->Insert(PathwayElement::TravelSide::Left).IsValid());
 
+    ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedPathwayPortion(*alignmentPtr, *leftThruPortionPtr, *clPointDefPtr));
+
     auto thruSepPortionPtr = ThruwaySeparationPortion::Create(*roadwayPtr, *alignmentPtr);
     ASSERT_TRUE(thruSepPortionPtr->Insert().IsValid());
 
     auto rightThruPortionPtr = ThruwayPortion::Create(*roadwayPtr, *alignmentPtr);
     ASSERT_TRUE(rightThruPortionPtr->Insert(PathwayElement::TravelSide::Right).IsValid());
+
+    ASSERT_EQ(DgnDbStatus::Success, ILinearElementUtilities::SetRelatedPathwayPortion(*alignmentPtr, *rightThruPortionPtr, *clPointDefPtr));
 
     ASSERT_EQ(3, roadwayCPtr->QueryPortionIds().size());
     ASSERT_EQ(2, roadwayCPtr->QueryTravelPortionInfos().size());

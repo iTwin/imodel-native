@@ -74,7 +74,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_REL_DrawingGraphicRepresentsPathway                    "DrawingGraphicRepresentsPathway"
 #define BRRP_REL_GeometricElementBoundsContentForSheet              "GeometricElementBoundsContentForSheet"
 #define BRRP_REL_GraphicalElement3dRepresentsPathway                "GraphicalElement3dRepresentsPathway"
-#define BRRP_REL_ILinearElementAssociatedWithSignificantPointDef    "ILinearElementAssociatedWithSignificantPointDefinition"
+#define BRRP_REL_ILinearElementRelatesToPathwayPortion              "ILinearElementRelatesToPathwayPortion"
 #define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
 #define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
 #define BRRP_REL_PathwayRefersToLeftTravelPortion                   "PathwayRefersToLeftTravelPortion"
@@ -97,7 +97,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // CodeSpec names
 //-----------------------------------------------------------------------------------------
-#define BRRP_CODESPEC_RoadTravelway                                "RoadTravelway"
+#define BRRP_CODESPEC_Pathway                                      "Pathway"
+#define BRRP_CODESPEC_PathwayPortion                               "PathwayPortion"
 #define BRRP_CODESPEC_SignificantPointDefinition                   "SignificantPointDefinition"
 
 
