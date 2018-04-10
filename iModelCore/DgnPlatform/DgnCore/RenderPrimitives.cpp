@@ -2248,7 +2248,8 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
     double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
 
-    double minAxis = std::min(textRange.XLength(), textRange.YLength());
+    // NB: Need scaled 2d range - ignore 3d transform...
+    double minAxis = std::min(textRange2d.high.x - textRange2d.low.x, textRange2d.high.y - textRange2d.low.y) * geom.GetTransform().ColumnXMagnitude();
     double textSize = minAxis * meterSize;
     constexpr double s_minToleranceRatioMultiplier = 2.0; // from ElementTileTree.cpp; used to multiply the s_minToleranceRatio
     constexpr double s_texSizeThreshold = 64.0;
@@ -2631,11 +2632,7 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
             bvector<PolyfaceQueryCP>& clippedPolyfaceQueries = pfClipper.GetOutput();
 
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
-                {
-                DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
-                uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
                 sheetTilePolys.push_back(clippedPolyfaceQuery->Clone());
-                }
             }
         // else no output, so don't output any polys (empty sheetTilePolys)
         }

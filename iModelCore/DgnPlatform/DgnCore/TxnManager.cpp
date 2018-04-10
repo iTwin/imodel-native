@@ -36,7 +36,7 @@ TxnManager::UndoChangeSet::ConflictResolution TxnManager::UndoChangeSet::_OnConf
 
     if (cause == ConflictCause::NotFound)
         {
-        if (opcode == DbOpcode::Delete)      // a delete that is already gone. 
+        if (opcode == DbOpcode::Delete)      // a delete that is already gone.
             return ConflictResolution::Skip; // This is caused by propagate delete on a foreign key. It is not a problem.
         if (opcode == DbOpcode::Update)
             return ConflictResolution::Skip; // caused by inserting row and then updating it in the same txn and then undoing the txn. It's not a problem.
@@ -66,20 +66,20 @@ CachedStatementPtr TxnManager::GetTxnStatement(Utf8CP sql) const
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::DbResult TxnManager::SaveSchemaChanges(BeSQLite::DbSchemaChangeSetCR schemaChangeSet, Utf8CP operation)
-    { 
-    return SaveChanges(schemaChangeSet, operation, true /*=isSchemaChange*/); 
+    {
+    return SaveChanges(schemaChangeSet, operation, true /*=isSchemaChange*/);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::DbResult TxnManager::SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation) 
-    { 
-    return SaveChanges(changeSet, operation, false /*=isSchemaChange*/); 
+BeSQLite::DbResult TxnManager::SaveDataChanges(BeSQLite::ChangeSetCR changeSet, Utf8CP operation)
+    {
+    return SaveChanges(changeSet, operation, false /*=isSchemaChange*/);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Save an array of bytes representing a change for the current Txn into the DGN_TABLE_Txns table 
+* Save an array of bytes representing a change for the current Txn into the DGN_TABLE_Txns table
 * in the DgnDb. This also compresses the changes.
 * @bsimethod                                    Keith.Bentley                   07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -275,7 +275,7 @@ DbResult TxnManager::InitializeTableHandlers()
 
     for (auto table : m_tables)
         table->_Initialize();
-    
+
     DbResult result = m_dgndb.SaveChanges(); // "Commit" the creation of temp tables, so that a subsequent call to AbandonChanges will not un-create them.
     if (result != BE_SQLITE_OK)
         {
@@ -319,7 +319,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
 
         //  An RLT is tracking this table
         auto unirlt = dynamic_cast<dgn_TxnTable::UniqueRelationshipLinkTable*>(rlt);
-        if (nullptr != unirlt)                  // If this table holds only one relationship, that means that 
+        if (nullptr != unirlt)                  // If this table holds only one relationship, that means that
             {
             //BeAssert(unirlt->m_ecclass == &relClass);
             return DgnDbStatus::DuplicateName;  // this RLT must be tracking this relationship class
@@ -335,7 +335,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
         }
 
     // Nobody is tracking this table.
-    // *** TBD: 
+    // *** TBD:
     // if (isTablePerHierarchy)
     //  {
     //  auto multi = new dgn_TxnTable::MultiRelationshipLinkTable(*this);
@@ -451,7 +451,7 @@ TxnManager::TxnId TxnManager::GetLastUndoableTxnId(AllowCrossSessions allowCross
     stmt->BindInt64(2, (allowCrossSessions == AllowCrossSessions::Yes) ? 0 : GetSessionStartId().GetValue());
 
     DbResult rc = stmt->Step();
-    
+
     TxnId lastUndoableId;
     if (rc == BE_SQLITE_ROW)
         lastUndoableId = QueryNextTxnId(TxnId(stmt->GetValueInt64(0)));
@@ -516,7 +516,7 @@ DgnDbStatus TxnManager::EndMultiTxnOperation()
 TxnManager::TxnId TxnManager::GetMultiTxnOperationStart()
     {
     return m_multiTxnOp.empty() ? GetSessionStartId() : m_multiTxnOp.back();
-    }                       
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -751,7 +751,7 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
             return CancelChanges(dataChangeSet); // roll back entire txn
             }
         }
-    
+
     if (!schemaChanges.IsEmpty())
         {
         DbResult result = SaveSchemaChanges(schemaChanges, operation);
@@ -775,6 +775,16 @@ ChangeTracker::OnCommitStatus TxnManager::_OnCommit(bool isCommit, Utf8CP operat
     m_dgndb.Revisions().UpdateInitialParentRevisionId(); // All new revisions are now based on the latest parent revision id
 
     return OnCommitStatus::Continue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* called after the commit or cancel operation is complete
+* @bsimethod                                    Keith.Bentley                   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void TxnManager::_OnCommitted(bool isCommit, Utf8CP)
+    {
+    if (isCommit && m_enableNotifyTxnMonitors) // only notify on commit, not cancel
+        T_HOST.GetTxnAdmin()._OnCommitted(*this); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -859,7 +869,7 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
                     {
                     BeAssert(false);
                     status = RevisionStatus::SQLiteError;
-                    }                
+                    }
                 }
             }
 
@@ -884,9 +894,9 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
         if (status == RevisionStatus::Success)
             {
             result = m_dgndb.SaveChanges();
-            // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one. 
+            // Note: All that the above operation does is to COMMIT the current Txn and BEGIN a new one.
             // The user should NOT be able to revert the revision id by a call to AbandonChanges() anymore, since
-            // the merged changes are lost after this routine and cannot be used for change propagation anymore. 
+            // the merged changes are lost after this routine and cannot be used for change propagation anymore.
             if (BE_SQLITE_OK != result)
                 {
                 LOG.errorv("MergeRevision failed with SQLite error %s", m_dgndb.GetLastError().c_str());
@@ -902,10 +912,10 @@ RevisionStatus TxnManager::MergeDataChangesInRevision(DgnRevisionCR revision, Re
         // appropriately revert their in-memory state.
         LOG.errorv("Could not propagate changes after merge due to validation errors.");
 
-        // Note: CancelChanges() requires an iterator over the inverse of the changes notified through AddChanges(). 
-        // The change stream can be inverted only by holding the inverse either in memory, or as a new file on disk. 
-        // Since this is an unlikely error condition, and it's just a single revision, we just hold the changes in memory 
-        // and not worry about the memory overhead. 
+        // Note: CancelChanges() requires an iterator over the inverse of the changes notified through AddChanges().
+        // The change stream can be inverted only by holding the inverse either in memory, or as a new file on disk.
+        // Since this is an unlikely error condition, and it's just a single revision, we just hold the changes in memory
+        // and not worry about the memory overhead.
         ChangeGroup undoChangeGroup;
         changeStream.ToChangeGroup(undoChangeGroup);
         if (indirectChanges.IsValid())
@@ -950,7 +960,7 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
         status = revMgr.SaveReversedRevisionId(revision.GetParentId());
     else
         status = (revision.GetId() == revMgr.GetParentRevisionId()) ? revMgr.DeleteReversedRevisionId() : revMgr.SaveReversedRevisionId(revision.GetId());
-        
+
     if (status == RevisionStatus::Success)
         {
         DbResult result = m_dgndb.SaveChanges();
@@ -981,16 +991,16 @@ RevisionStatus TxnManager::ApplyRevision(DgnRevisionCR revision, bool reverse)
 RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
     {
     BeAssert(!InDynamicTxn());
-    
+
     BeFileNameCR revisionChangesFile = revision.GetRevisionChangesFile();
     RevisionChangesFileReader changeStream(revisionChangesFile, m_dgndb);
 
-    bool containsSchemaChanges = revision.ContainsSchemaChanges(m_dgndb); 
+    bool containsSchemaChanges = revision.ContainsSchemaChanges(m_dgndb);
 
     RevisionStatus status;
     if (containsSchemaChanges)
         {
-        // Note: Schema changes may not necessary imply db-schema changes. They could just be 'minor' ecschema/mapping changes. 
+        // Note: Schema changes may not necessary imply db-schema changes. They could just be 'minor' ecschema/mapping changes.
         status = MergeDbSchemaChangesInRevision(revision, changeStream);
         if (RevisionStatus::Success != status)
             return status;
@@ -1089,10 +1099,10 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
     m_action = action;
 
     // Note: Keeping existing behavior of not calling begin-end notifications when changes
-    // are abandoned. 
+    // are abandoned.
     if (!IsInAbandon())
         OnBeginApplyChanges();
-    
+
 
     bool wasTracking = EnableTracking(false);
     DbResult result = changeset.ApplyChanges(m_dgndb, rebase); // this actually updates the database with the changes
@@ -1100,12 +1110,12 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
 
     if (containsSchemaChanges)
         {
-        /* Note: All caches that hold ec-classes and handler-associations in memory have to be cleared. 
-         * The calls below replicate a similar clearing that happens when ImportSchemas() are called. 
-         * Additionally, we force merging of revisions containing schema changes to happen right when the 
-         * DgnDb is opened, and the Element caches haven't had a chance to get initialized. 
+        /* Note: All caches that hold ec-classes and handler-associations in memory have to be cleared.
+         * The calls below replicate a similar clearing that happens when ImportSchemas() are called.
+         * Additionally, we force merging of revisions containing schema changes to happen right when the
+         * DgnDb is opened, and the Element caches haven't had a chance to get initialized.
          */
-        m_dgndb.FireAfterSchemaImportEvent(); 
+        m_dgndb.FireAfterSchemaImportEvent();
 
         m_dgndb.ClearECDbCache();
         m_dgndb.Schemas().RepopulateCacheTables();
@@ -1119,7 +1129,7 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
         if (!IsInAbandon())
             T_HOST.GetTxnAdmin()._OnAppliedChanges(*this);
         }
-        
+
     if (!IsInAbandon())
         OnEndApplyChanges();
 
@@ -1136,7 +1146,7 @@ DbResult TxnManager::ApplyDbSchemaChangeSet(DbSchemaChangeSetCR dbSchemaChanges)
     bool wasTracking = EnableTracking(false);
 
     DbResult result = m_dgndb.ExecuteSql(dbSchemaChanges.ToString().c_str());
-    
+
     EnableTracking(wasTracking);
     return result;
     }
@@ -1349,7 +1359,7 @@ DgnDbStatus TxnManager::ReverseTxns(int numActions, AllowCrossSessions allowCros
 
     TxnId lastId = GetCurrentTxnId();
     TxnId lastUndoableId = GetLastUndoableTxnId(allowCrossSessions);
-    
+
     TxnId firstId = lastId;
     while (numActions > 0 && firstId > lastUndoableId)
         {
@@ -1500,7 +1510,7 @@ void TxnManager::DeleteReversedTxns()
 
 /*---------------------------------------------------------------------------------**//**
 * Delete transactions from the start of the table to (but not including) the specified
-* last transaction. 
+* last transaction.
 * @bsimethod                                                  Ramanujam.Raman   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::DeleteFromStartTo(TxnId lastId)
@@ -1538,7 +1548,7 @@ BentleyStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId s
         }
 
     DbResult result;
-    
+
     TxnId nextTxnId;
     ChangeGroup changeGroup;
     for (TxnId currTxnId = startTxnId; currTxnId < endTxnId; currTxnId = QueryNextTxnId(currTxnId))
@@ -1670,7 +1680,7 @@ void dgn_TxnTable::Model::AddChange(Changes::Change const& change, ChangeType ch
 
     DgnModelId modelId = DgnModelId(change.GetValue(0, stage).GetValueUInt64());
     BeAssert(modelId.IsValid());
-    
+
     DgnClassId classId;
     if (ChangeType::Update == changeType)
         {
@@ -1824,7 +1834,7 @@ void dgn_TxnTable::ElementDep::_OnValidated()
 void dgn_TxnTable::ElementDep::UpdateSummary(Changes::Change change, ChangeType changeType)
     {
     m_changes = true;
-    
+
     if (ChangeType::Delete == changeType)
         {
         ECInstanceId relid = change.GetOldValue(0).GetValueId<ECInstanceId>();
@@ -1956,9 +1966,9 @@ dgn_TxnTable::Element::Iterator::Entry dgn_TxnTable::Element::Iterator::begin() 
     }
 
 DgnElementId dgn_TxnTable::Element::Iterator::Entry::GetElementId() const {return m_sql->GetValueId<DgnElementId>(0);}
-DgnModelId dgn_TxnTable::Element::Iterator::Entry::GetModelId() const { return m_sql->GetValueId<DgnModelId>(1); }
+DgnModelId dgn_TxnTable::Element::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(1);}
 TxnTable::ChangeType dgn_TxnTable::Element::Iterator::Entry::GetChangeType() const {return (TxnTable::ChangeType) m_sql->GetValueInt(2);}
-DgnClassId dgn_TxnTable::Element::Iterator::Entry::GetECClassId() const { return m_sql->GetValueId<DgnClassId>(3); }
+DgnClassId dgn_TxnTable::Element::Iterator::Entry::GetECClassId() const {return m_sql->GetValueId<DgnClassId>(3);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
@@ -2036,10 +2046,10 @@ BeSQLite::DbResult TxnRelationshipLinkTables::Insert(BeSQLite::EC::ECInstanceId 
         m_stmt = m_txnMgr.GetTxnStatement(sql.c_str());
         }
 
-    m_stmt->BindId(1, relid);           
-    m_stmt->BindId(2, relclsid);        
-    m_stmt->BindId(3, srcelemid);       
-    m_stmt->BindId(4, tgtelemid);       
+    m_stmt->BindId(1, relid);
+    m_stmt->BindId(2, relclsid);
+    m_stmt->BindId(3, srcelemid);
+    m_stmt->BindId(4, tgtelemid);
     m_stmt->BindInt(5, (int)changeType);
 
     auto rc = m_stmt->Step();
@@ -2081,14 +2091,14 @@ BeSQLite::DbResult dgn_TxnTable::RelationshipLinkTable::QueryTargets(DgnElementI
 void dgn_TxnTable::UniqueRelationshipLinkTable::_UpdateSummary(Changes::Change change, ChangeType changeType)
     {
     m_changes = true;
-    
+
     Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
 
-    //  Every table-per-class relationship link table is laid out like this: 
+    //  Every table-per-class relationship link table is laid out like this:
     //      [0] Relationship instance ID
     //      [1] Relationship class ID
     //      [2] Source instance ID
-    //      [3] Target instance ID 
+    //      [3] Target instance ID
     //      [4...] relationship instance properties ...     which we DO NOT TRACK
     int const ECInstanceId_LTColId = 0;
     int const ECClassId_LTColId = 1;
@@ -2121,26 +2131,26 @@ void dgn_TxnTable::UniqueRelationshipLinkTable::_UpdateSummary(Changes::Change c
 void dgn_TxnTable::MultiRelationshipLinkTable::_UpdateSummary(Changes::Change change, ChangeType changeType)
     {
     m_changes = true;
-    
+
     Changes::Change::Stage stage = (ChangeType::Insert == changeType) ? Changes::Change::Stage::New : Changes::Change::Stage::Old;
 
-    //  Every table-per-hierarchy relationship link table is laid out like this: 
-    //      [0]ECInstanceId 
-    //      [1]ECClassId 
-    //      [2]SourceECInstanceId 
-    //      [3]TargetECInstanceId 
+    //  Every table-per-hierarchy relationship link table is laid out like this:
+    //      [0]ECInstanceId
+    //      [1]ECClassId
+    //      [2]SourceECInstanceId
+    //      [3]TargetECInstanceId
     //      [4...] relationship instance properties ...     which we DO NOT TRACK
     int const ECInstanceId_LTColId = 0;
     int const ECClassId_LTColId = 1;
     int const SourceECInstanceId_LTColId = 2;
     int const TargetECInstanceId_LTColId = 3;
-    
+
     ECClassId relclsid = change.GetValue(ECClassId_LTColId, stage).GetValueId<ECClassId>();
     ECN::ECClassCP relcls = m_txnMgr.GetDgnDb().Schemas().GetClass(relclsid);
 
     if (m_ecclasses.find(relcls) == m_ecclasses.end())  // while this class (among others) is mapped into this table,
         return;                                         // I am not actually tracking this class.
-    
+
     ECInstanceId relid = change.GetValue(ECInstanceId_LTColId, stage).GetValueId<ECInstanceId>();
 
     DgnElementId srcelemid, tgtelemid;
@@ -2234,6 +2244,16 @@ struct TxnCommitCaller
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   07/13
+//=======================================================================================
+struct TxnCommittedCaller
+{
+    TxnManagerR m_mgr;
+    TxnCommittedCaller(TxnManagerR mgr) : m_mgr(mgr) {}
+    void operator()(TxnMonitorR monitor) const {monitor._OnCommitted(m_mgr);}
+};
+
+//=======================================================================================
 // @bsiclass                                                Karolis.Zukauskas   11/17
 //=======================================================================================
 struct PrepareForUndoRedoCaller
@@ -2261,6 +2281,14 @@ void DgnPlatformLib::Host::TxnAdmin::_OnCommit(TxnManagerR mgr)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnPlatformLib::Host::TxnAdmin::_OnCommitted(TxnManagerR mgr)
+    {
+    CallMonitors(TxnCommittedCaller(mgr));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR summary)
@@ -2273,7 +2301,7 @@ void DgnPlatformLib::Host::TxnAdmin::_OnAppliedChanges(TxnManagerR summary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo()
     {
-    CallMonitors (PrepareForUndoRedoCaller());
+    CallMonitors(PrepareForUndoRedoCaller());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2282,22 +2310,6 @@ void DgnPlatformLib::Host::TxnAdmin::_OnPrepareForUndoRedo()
 void DgnPlatformLib::Host::TxnAdmin::_OnUndoRedo(TxnManager& mgr, TxnAction action)
     {
     CallMonitors(UndoRedoFinishedCaller(mgr, action));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DynamicChangeTracker::DynamicChangeTracker(TxnManager& mgr) : m_txnMgr(mgr)
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DynamicChangeTracker::~DynamicChangeTracker()
-    {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2422,4 +2434,4 @@ dgn_TxnTable::Model::Iterator::Entry dgn_TxnTable::Model::Iterator::begin() cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelId dgn_TxnTable::Model::Iterator::Entry::GetModelId() const {return m_sql->GetValueId<DgnModelId>(0);}
 TxnTable::ChangeType dgn_TxnTable::Model::Iterator::Entry::GetChangeType() const {return (TxnTable::ChangeType) m_sql->GetValueInt(1);}
-DgnClassId dgn_TxnTable::Model::Iterator::Entry::GetECClassId() const { return m_sql->GetValueId<DgnClassId>(2); }
+DgnClassId dgn_TxnTable::Model::Iterator::Entry::GetECClassId() const {return m_sql->GetValueId<DgnClassId>(2);}
