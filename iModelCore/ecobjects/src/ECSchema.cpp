@@ -1638,7 +1638,7 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
             else
                 newFormat.SetParentFormat(parentFormat);
 
-            targetKOQ->AddPresentationFormat(newFormat);
+            targetKOQ->AddPresentationFormatInternal(newFormat);
             }
         }
     

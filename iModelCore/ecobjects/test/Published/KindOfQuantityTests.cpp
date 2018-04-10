@@ -733,7 +733,8 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPresentationFormat)
 Utf8CP KindOfQuantitySerializationTest::s_testSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="Units" version="01.00" alias="u"/>
-        <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="u:THOUSAND_SQ_FT" presentationFormats="u:THOUSAND_SQ_FT" />
+        <ECSchemaReference name="Formats" version="01.00" alias="f"/>
+        <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="u:M" presentationFormats="f:InchesU" />
     </ECSchema>)xml";
 
 //---------------------------------------------------------------------------------------
@@ -844,10 +845,11 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationFormats="TestUnit;u:FT;u:IN" />
+                        presentationFormats="f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
