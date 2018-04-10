@@ -49,6 +49,29 @@ Utf8CP name
     return group;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void                            ClassificationSystemClassDefinition::SetGroupId
+(
+Dgn::DgnElementId groupId
+)
+    {
+    SetPropertyValue(prop_Group(), groupId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup));
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jonas.Valiunas                  04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnElementId               ClassificationSystemClassDefinition::GetGroupId
+(
+) const
+    {
+    return GetPropertyValueId<Dgn::DgnElementId>(prop_Group());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
