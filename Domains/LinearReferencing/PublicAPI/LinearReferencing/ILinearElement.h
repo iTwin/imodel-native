@@ -30,7 +30,7 @@ public:
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearElementToDgnElement()); }
 
     Dgn::DgnElementId GetILinearElementSource() const { return ToElement().GetPropertyValueId<Dgn::DgnElementId>("ILinearElementSource"); }
-    LINEARREFERENCING_EXPORT void SetILinearElementSource(ILinearElementSourceCP);
+    LINEARREFERENCING_EXPORT void SetILinearElementSource(ILinearElementSourceCP, Dgn::DgnClassId relClassId = Dgn::DgnClassId());
 
     LINEARREFERENCING_EXPORT double GetLength() const { return _GetLength(); }
     double GetStartValue() const { return ToElement().GetPropertyValueDouble("StartValue"); }
@@ -65,7 +65,7 @@ protected:
 public:
     Dgn::DgnElementCR ToElement() const { return _ILinearElementSourceToDgnElement(); }
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearElementSourceToDgnElement()); }
-    LINEARREFERENCING_EXPORT bset<Dgn::DgnElementId> QueryLinearElements() const;
+    LINEARREFERENCING_EXPORT bset<Dgn::DgnElementId> QueryLinearElements(ECN::ECRelationshipClassCP relClass = nullptr) const;
 }; // ILinearElementSource
 
 typedef BeSQLite::EC::ECInstanceId LinearlyReferencedLocationId;

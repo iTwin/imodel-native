@@ -11,11 +11,15 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ILinearElement::SetILinearElementSource(ILinearElementSourceCP linearElementSource)
+void ILinearElement::SetILinearElementSource(ILinearElementSourceCP linearElementSource, DgnClassId relClassId)
     {
     if (linearElementSource)
-        ToElementR().SetPropertyValue("ILinearElementSource", linearElementSource->ToElement().GetElementId(),
-            ToElement().GetDgnDb().Schemas().GetClassId(BLR_SCHEMA_NAME, BLR_REL_ILinearElementSourceProvidesILinearElements));
+        {
+        if (!relClassId.IsValid())
+            relClassId = ToElement().GetDgnDb().Schemas().GetClassId(BLR_SCHEMA_NAME, BLR_REL_ILinearElementSourceProvidesILinearElements);
+
+        ToElementR().SetPropertyValue("ILinearElementSource", linearElementSource->ToElement().GetElementId(), relClassId);
+        }
     else
         ToElementR().SetPropertyValue("ILinearElementSource", DgnElementId());
     }
@@ -23,11 +27,22 @@ void ILinearElement::SetILinearElementSource(ILinearElementSourceCP linearElemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bset<DgnElementId> ILinearElementSource::QueryLinearElements() const
+bset<DgnElementId> ILinearElementSource::QueryLinearElements(ECRelationshipClassCP relClass) const
     {
+    Utf8String relClassName;
+    if (relClass)
+        {
+        relClassName = relClass->GetSchema().GetName();
+        relClassName.append(".");
+        relClassName.append(relClass->GetName());
+        }
+    else
+        relClassName = BLR_SCHEMA(BLR_REL_ILinearElementSourceProvidesILinearElements);
+
+    auto ecsql = Utf8PrintfString("SELECT TargetECInstanceId FROM %s WHERE SourceECInstanceId = ?", relClassName.c_str());
+
     ECSqlStatement stmt;
-    stmt.Prepare(ToElement().GetDgnDb(), "SELECT TargetECInstanceId FROM " BLR_SCHEMA(BLR_REL_ILinearElementSourceProvidesILinearElements) 
-        " WHERE SourceECInstanceId = ?");
+    stmt.Prepare(ToElement().GetDgnDb(), ecsql.c_str());
     BeAssert(stmt.IsPrepared());
 
     stmt.BindId(1, ToElement().GetElementId());
