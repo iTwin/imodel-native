@@ -267,12 +267,28 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                     LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
                     continue;
                     }
-
+                SchemaKey key("Formats", 1, 0, 0);
+                if (!format.GetParentFormat()->GetSchema().GetSchemaKey().Matches(key, SchemaMatchType::Latest))
+                    {
+                    LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it is not a standard format", GetFullName().c_str());
+                    continue;
+                    }
+                bvector<Utf8String> tokens;
+                BeStringUtilities::Split(format.GetName().c_str(), "[", tokens);
+                BeAssert(tokens.size() > 0);
+                Utf8String split = tokens[0]; // Need to drop unit and label overrides
+                Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(split.c_str());
+                mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
+                if (nullptr == mapped)
+                    {
+                    LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetName().c_str(), GetFullName().c_str());
+                    continue;
+                    }
                 if (!first)
                     presentationUnitString += ";";
                 presentationUnitString += presUnit;
                 presentationUnitString += "(";
-                presentationUnitString += format.GetParentFormat()->GetQualifiedName(GetSchema());
+                presentationUnitString += mapped;
                 presentationUnitString += ")";
                 first = false;
                 }
@@ -522,7 +538,10 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
         if (Utf8String::IsNullOrEmpty(formatName.c_str()))
             mappedName = formatName.c_str();
         else
-            mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(formatName.c_str());
+            {
+            mappedName = Formatting::AliasMappings::TryGetAliasFromName(formatName.c_str());
+            mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(mappedName);
+            }
         if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
             { 
             LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve format '%s'.",
@@ -581,7 +600,17 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
                 descriptor, GetFullName().c_str(), unitName.c_str());
             return ECObjectsStatus::Error;
             }
-        AddPresentationFormatSingleUnitOverride(*format, nullptr, unit);
+        if (format->HasCompositeMajorUnit() && !Units::Unit::AreEqual(unit, format->GetCompositeMajorUnit()))
+            {
+            LOG.errorv("On KOQ '%s' presentation unit '%s' must be compatible with parent format '%s' major unit", GetFullName().c_str(), unit->GetFullName().c_str(), format->GetParentFormat()->GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
+        if (!Units::Unit::AreCompatible(unit, m_persistenceUnit))
+            {
+            LOG.errorv("On KOQ '%s' presentation unit '%s' is incompatible with persistence unit '%s'", GetFullName().c_str(), unit->GetFullName().c_str(), m_persistenceUnit->GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
+        AddPresentationFormatSingleUnitOverride(*format);
         }
     else // >= 3.2
         {

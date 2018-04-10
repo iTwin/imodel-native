@@ -759,14 +759,12 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     ECSchemaPtr secondSchema;
     ECSchemaReadContextPtr secondContext = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(secondSchema, serializedSchemaXml.c_str(), *secondContext));
-    EXPECT_EQ(1, secondSchema->GetReferencedSchemas().size());
+    EXPECT_EQ(2, secondSchema->GetReferencedSchemas().size());
     auto koq = secondSchema->GetKindOfQuantityCP("TestKoQ");
     auto persist = koq->GetPersistenceUnit();
-   // auto pres = koq->GetDefaultPresentationUnit();
-    EXPECT_STRCASEEQ("THOUSAND_SQ_FT", persist->GetName().c_str());
-    //EXPECT_STRCASEEQ("THOUSAND_SQ_FT", pres.GetUnit()->GetName().c_str());
-    //EXPECT_STRCASEEQ("DefaultRealU", persist.GetFormat()->GetName().c_str());
-    //EXPECT_STRCASEEQ("DefaultRealU", pres.GetFormat()->GetName().c_str());
+    auto pres = koq->GetDefaultPresentationFormat();
+    EXPECT_STRCASEEQ("M", persist->GetName().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", pres->GetName().c_str());
     }
 
     // EC3.1
@@ -777,14 +775,12 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     ECSchemaPtr secondSchema;
     ECSchemaReadContextPtr secondContext = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(secondSchema, serializedSchemaXml.c_str(), *secondContext));
-    EXPECT_EQ(1, secondSchema->GetReferencedSchemas().size());
+    EXPECT_EQ(2, secondSchema->GetReferencedSchemas().size());
     auto koq = secondSchema->GetKindOfQuantityCP("TestKoQ");
     auto persist = koq->GetPersistenceUnit();
-    //auto pres = koq->GetDefaultPresentationUnit();
-    EXPECT_STRCASEEQ("THOUSAND_SQ_FT", persist->GetName().c_str());
-    //EXPECT_STRCASEEQ("THOUSAND_SQ_FT", pres.GetUnit()->GetName().c_str());
-    //EXPECT_STRCASEEQ("DefaultRealU", persist.GetFormat()->GetName().c_str());
-    //EXPECT_STRCASEEQ("DefaultRealU", pres.GetFormat()->GetName().c_str());
+    auto pres = koq->GetDefaultPresentationFormat();
+    EXPECT_STRCASEEQ("M", persist->GetName().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", pres->GetName().c_str());
     }
 
     // EC3.2
@@ -798,18 +794,10 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(secondSchema, outSchemaXmlString.c_str(), *secondContext));
     auto koq = secondSchema->GetKindOfQuantityCP("TestKoQ");
     auto persist = koq->GetPersistenceUnit();
-    //auto pres = koq->GetDefaultPresentationUnit();
-    EXPECT_STRCASEEQ("THOUSAND_SQ_FT", persist->GetName().c_str());
+    auto pres = koq->GetDefaultPresentationFormat();
+    EXPECT_STRCASEEQ("M", persist->GetName().c_str());
     ASSERT_NE(nullptr, persist);
-
-    //EXPECT_STRCASEEQ("THOUSAND_SQ_FT", pres.GetUnit()->GetName().c_str());
-    //ECUnitCP presUnit = (ECUnitCP)pres.GetUnit();
-    //EXPECT_NE(nullptr, presUnit);
-
-    //EXPECT_EQ(presUnit, persist);
-
-    //EXPECT_STRCASEEQ("DefaultRealU", persist.GetFormat()->GetName().c_str());
-    //EXPECT_STRCASEEQ("DefaultRealU", pres.GetFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", pres->GetName().c_str());
     }
 
     // Latest EC Version
@@ -817,9 +805,11 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     ECSchemaPtr origSchema;
     ECSchema::CreateSchema(origSchema, "ExampleSchema", "ex", 5, 0, 5, ECVersion::Latest);
     EC_EXPECT_SUCCESS(origSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    EC_EXPECT_SUCCESS(origSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(origSchema->CreateKindOfQuantity(koq, "ExampleKoQ"));
     EXPECT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+    EXPECT_EQ(ECObjectsStatus::Success, koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU")));
 
     Utf8String xmlString;
     ASSERT_EQ(SchemaWriteStatus::Success, origSchema->WriteToXmlString(xmlString, ECVersion::Latest));
@@ -829,11 +819,10 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(readSchema, xmlString.c_str(), *context));
     auto koq2 = readSchema->GetKindOfQuantityCP("ExampleKoQ");
     auto persist = koq2->GetPersistenceUnit();
-   // auto pres = koq2->GetDefaultPresentationUnit();
+    auto pres = koq2->GetDefaultPresentationFormat();
     EXPECT_STRCASEEQ("M", persist->GetName().c_str());
-    //EXPECT_STRCASEEQ("M", pres.GetUnit()->GetName().c_str());
-    //EXPECT_STRCASEEQ("DefaultRealU", persist.GetFormat()->GetName().c_str());
-    //EXPECT_STRCASEEQ("DefaultRealU", pres.GetFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", pres->GetName().c_str());
+    EXPECT_STRCASEEQ("IN", pres->GetCompositeMajorUnit()->GetName().c_str());
     }
     }
 
