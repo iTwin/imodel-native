@@ -787,7 +787,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         loadFlagsPtr->SetSaveToCache(true); 
         loadFlagsPtr->SetClipsToShow(m_3smModel->m_activeClips, m_3smModel->m_smPtr->ShouldInvertClips());
         if (!m_scalableMeshNodePtr->IsDataUpToDate()) m_scalableMeshNodePtr->UpdateData();
-        m_scalableMeshNodePtr->ApplyAllExistingClips(scene.m_smPtr->GetReprojectionTransform());
+        m_scalableMeshNodePtr->RefreshMergedClip(scene.m_smPtr->GetReprojectionTransform());
         smMeshPtr = m_scalableMeshNodePtr->GetMesh(loadFlagsPtr);
         }
         
