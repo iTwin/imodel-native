@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -78,11 +78,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
     private:  
 
-    protected:                                        
-
-        virtual BentleyStatus _ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr) = 0;
-
-        virtual BentleyStatus _ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr) = 0;
+    protected:                                                
 
         virtual BentleyStatus _StartQuery(int                                                                      queryId, 
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
@@ -114,11 +110,7 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         virtual void _InitScalableMesh(IScalableMeshPtr& scalableMeshPtr) = 0;
         
     /*__PUBLISH_SECTION_START__*/
-    public:
-
-        BENTLEY_SM_EXPORT BentleyStatus ClearCaching(const bvector<DRange2d>* clearRanges, const IScalableMeshPtr& scalableMeshPtr);
-
-        BENTLEY_SM_EXPORT BentleyStatus ClearCaching(const bvector<uint64_t>& clipIds, const IScalableMeshPtr& scalableMeshPtr);
+    public:        
                                 
         BENTLEY_SM_EXPORT BentleyStatus StartQuery(int                                                                      queryId, 
                                                    IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
