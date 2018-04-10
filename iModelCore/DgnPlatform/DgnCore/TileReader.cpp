@@ -1446,7 +1446,7 @@ void DgnCacheTileRebuilder::AddMesh(MeshPrimitive& mesh, Json::Value const& json
     MeshBuilderR builder = m_builders[key];
     for (uint32_t i = 0; i < mesh.m_numIndices; i += 3)
         {
-        uint32_t i0, i1, i2;
+        // unused - uint32_t i0, i1, i2;
         uint32_t index = mesh.m_indices[i];
         uint32_t featureId = mesh.m_features.GetFeatureId(index);
         FeatureCP feature = m_featureList.GetFeature(featureId);
