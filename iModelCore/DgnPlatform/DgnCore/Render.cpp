@@ -47,7 +47,6 @@ BSIRect Render::Target::SetAspectRatio(BSIRectCR requestedRect, double targetAsp
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::AddTask(Task& task)
     {
-    DgnDb::VerifyClientThread();
     BeMutexHolder mux(m_cv.GetMutex());
 
     // see whether the new task should replace any existing tasks
@@ -85,7 +84,6 @@ void Render::Queue::AddTask(Task& task)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Render::Queue::IsIdle() const
     {
-    DgnDb::VerifyClientThread();
     BeMutexHolder holder(m_cv.GetMutex());
     return m_tasks.empty() && !m_currTask.IsValid();
     }
@@ -95,8 +93,6 @@ bool Render::Queue::IsIdle() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Render::Queue::HasPending(Task::Operation op) const
     {
-    DgnDb::VerifyClientThread();
-
     BeMutexHolder holder(m_cv.GetMutex());
     for (auto entry : m_tasks)
         {
@@ -111,8 +107,6 @@ bool Render::Queue::HasPending(Task::Operation op) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Render::Queue::HasActiveOrPending(Task::Operation op, Target* target) const
     {
-    DgnDb::VerifyClientThread();
-
     BeMutexHolder holder(m_cv.GetMutex());
     if (m_currTask.IsValid() && m_currTask->GetOperation()==op && (nullptr == target || m_currTask->GetTarget()==target))
         return true;
@@ -131,8 +125,6 @@ bool Render::Queue::HasActiveOrPending(Task::Operation op, Target* target) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Queue::WaitForIdle()
     {
-    DgnDb::VerifyClientThread();
-
     BeMutexHolder holder(m_cv.GetMutex());
     while (m_currTask.IsValid() || !m_tasks.empty())
         m_cv.InfiniteWait(holder);
@@ -244,7 +236,9 @@ void Render::Target::DestroyNow()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::SetRenderTarget(Target* newTarget)
     {
-    DgnDb::VerifyClientThread();
+    // ###TODO: Relax this constraint when publishing view attachments to Cesium...This is called from ctor so dynamic_cast will fail...
+    // BeAssert(nullptr != dynamic_cast<OffscreenViewport*>(this) || DgnDb::ThreadId::Client == DgnDb::GetThreadId()); 
+
     if (m_renderTarget.IsValid())
         m_renderTarget->DestroyNow();
 
@@ -611,7 +605,7 @@ bool Feature::operator<(FeatureCR rhs) const
 FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_alwaysDrawn(view.GetAlwaysDrawn()),
     m_neverDrawn(view.GetNeverDrawn())
     {
-    DgnDb::VerifyClientThread();
+    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
 
     m_alwaysDrawnExclusive = view.IsAlwaysDrawnExclusive();
     auto const& undisplayed = view.GetDgnDb().Elements().GetUndisplayedSet();

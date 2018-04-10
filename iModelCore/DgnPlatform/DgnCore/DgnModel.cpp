@@ -1624,7 +1624,7 @@ TileTree::RootPtr GeometricModel::_GetTileTree(RenderContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
     {
-    DgnDb::VerifyClientThread();
+    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
 
     // NB: Reality models sometimes need to load the root outside of the context of a render system.
     if (m_root.IsNull() || (nullptr != system && m_root->GetRenderSystemP() != system))

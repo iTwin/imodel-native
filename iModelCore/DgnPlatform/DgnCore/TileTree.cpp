@@ -1629,7 +1629,7 @@ void Root::OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnEleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::InvalidateDamagedTiles()
     {
-    DgnDb::VerifyClientThread();
+    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
     BeAssert(m_rootTile.IsValid());
 
     BeMutexHolder lock(m_cv.GetMutex());

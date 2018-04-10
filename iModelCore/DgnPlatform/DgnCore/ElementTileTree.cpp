@@ -1238,7 +1238,7 @@ static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
 +---------------+---------------+---------------+---------------+---------------+------*/
 RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     {
-    DgnDb::VerifyClientThread();
+    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
 
     if (DgnDbStatus::Success != model.FillRangeIndex())
         return nullptr;
@@ -2656,7 +2656,7 @@ Transform Root::GetLocationForTileGeneration() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args, uint32_t numSkipped) const
     {
-    DgnDb::VerifyClientThread();
+    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
 
     _ValidateChildren();
 
