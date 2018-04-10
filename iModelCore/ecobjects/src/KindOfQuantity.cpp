@@ -539,18 +539,17 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             format = GetSchema().LookupFormat(mappedName);
             if (nullptr == format)
                 {
-                    LOG.errorv("FormatString '%s' on KindOfQuantity '%s' has an invalid format, '%s'.",
-                        descriptor, GetFullName().c_str(), mappedName);
-                    return ECObjectsStatus::Error;
+                LOG.errorv("FormatString '%s' on KindOfQuantity '%s' has an invalid format, '%s'.", descriptor, GetFullName().c_str(), mappedName);
+                return ECObjectsStatus::Error;
                 }
             }
-            else
-                {
-                // Assuming since there was previously a format that it should contain the Unit with it.
-                format = formatsSchema->LookupFormat(Formatting::FormatConstant::DefaultFormatName());
-                BeAssert(nullptr != format);
-                LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.", descriptor, GetFullName().c_str());
-                }
+        else
+            {
+            // Assuming since there was previously a format that it should contain the Unit with it.
+            format = formatsSchema->LookupFormat(Formatting::FormatConstant::DefaultFormatName());
+            BeAssert(nullptr != format);
+            LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.", descriptor, GetFullName().c_str());
+            }
 
         unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
 
@@ -597,22 +596,26 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             LOG.errorv("Failed to lookup format '%s' on koq '%s'", formatName.c_str(), GetFullName().c_str());
             return ECObjectsStatus::Error;
             }
-        bvector<ECUnitCP> units;
-        bvector<Utf8String> labels;
+        bvector<std::pair<ECUnitCP, Utf8CP>> unitsAndLabels;
         int i = 0;
         for (const auto& name : names)
             {
             ECUnitCP lookedUpUnit = GetSchema().GetUnitsContext().LookupUnit(name.c_str());
             if (nullptr != lookedUpUnit)
                 {
+                Utf8CP localLabel = nullptr;
                 // Check to see if it has a label override;
                 if (i < unitLabels.size() && unitLabels[i].IsValid())
-                    {
-
-                    }
+                    localLabel = unitLabels[i].ValueR().c_str();
+                unitsAndLabels.push_back(std::make_pair(lookedUpUnit, localLabel));
+                }
+            else
+                {
+                LOG.errorv("On KOQ '%s' could not find unit '%s' being added as a presentation unit override", GetFullName().c_str(), name.c_str());
+                return ECObjectsStatus::Error;
                 }
             }
-        AddPresentationFormat(*format, precision, nullptr);
+        AddPresentationFormat(*format, precision, unitsAndLabels);
         }
 
     return ECObjectsStatus::Success;
