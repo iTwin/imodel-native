@@ -3,20 +3,20 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
     {
     ASSERT_TRUE(RunTestApp("Geometry.dgn", "ORDGeometryTest.bim", false));
     VerifyConvertedElements("ORDGeometryTest.bim", 1, 0);
-    }*/
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldCorridorConversionTest)
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldCorridorConversionTest)
     {
     ASSERT_TRUE(RunTestApp("Corridor.dgn", "ORDCorridorTest.bim", false));
     VerifyConvertedElements("ORDCorridorTest.bim", 16, 1);
-    }*/
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
@@ -39,7 +39,7 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDIHLConversionTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-/*TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDIntersectionWithEditsTest)
     {
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Original.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp("NewIntersection.dgn", "ORDIntersectionTest.bim", false));
@@ -48,4 +48,4 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDIHLConversionTest)
     ASSERT_TRUE(CopyTestFile("Intersection\\NewIntersection-Edits.dgn", "NewIntersection.dgn"));
     ASSERT_TRUE(RunTestApp("NewIntersection.dgn", "ORDIntersectionTest.bim", true));
     VerifyConvertedElements("ORDIntersectionTest.bim", 43, 4);
-    }*/
+    }
