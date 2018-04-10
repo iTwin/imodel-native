@@ -384,7 +384,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
 // @bsimethod                                    Kyle.Abramowitz                  04/18
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Nullable<Utf8String>>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
+BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
     {
     static std::regex const rgx(R"REGEX(([\w,:]+)(<([0-9, ^>]*)>)?(\[([^\|\]]*)\|?([^\]|]*)?\])?(\[([^\|\]]*)\|?([^\]|]*)?\])?(\[([^\|\]]*)\|?([^\]|]*)?\])?(\[([^\|\]]*)\|?([^\]|]*)?\])?)REGEX", std::regex::optimize);
     std::cmatch match;
@@ -427,7 +427,7 @@ BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigne
         // Unit override: required;
         if (!match[i+1].matched)
             return ERROR;
-        unitNames.push_back(Nullable<Utf8String>(match[i+1].str().c_str()));
+        unitNames.push_back(match[i+1].str().c_str());
         // Label override; optional
         if (match[i+2].matched)
             labels.push_back(Nullable<Utf8String>(match[i+2].str().c_str()));

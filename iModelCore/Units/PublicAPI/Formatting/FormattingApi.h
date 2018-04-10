@@ -726,7 +726,7 @@ public:
     //! @returns BentleyStatus::SUCCESS if the string was successfully parsed.
     UNITS_EXPORT static BentleyStatus ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper, BEU::IUnitsContextCP unitContext = nullptr);
 
-    UNITS_EXPORT static BentleyStatus ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Nullable<Utf8String>>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString);
+    UNITS_EXPORT static BentleyStatus ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString);
 
     // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
