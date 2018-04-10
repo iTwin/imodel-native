@@ -276,7 +276,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                 bvector<Utf8String> tokens;
                 BeStringUtilities::Split(format.GetName().c_str(), "[", tokens);
                 BeAssert(tokens.size() > 0);
-                Utf8String split = tokens[0]; // Need to drop unit and label overrides
+                Utf8String split = tokens[0]; // Need to drop unit and label overrides // TODO: Should drop or throw error when serializing to old format with overrides?
                 Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(split.c_str());
                 mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
                 if (nullptr == mapped)
@@ -539,7 +539,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             mappedName = formatName.c_str();
         else
             {
-            mappedName = Formatting::AliasMappings::TryGetAliasFromName(formatName.c_str());
+            mappedName = Formatting::AliasMappings::TryGetNameFromAlias(formatName.c_str());
             mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(mappedName);
             }
         if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))

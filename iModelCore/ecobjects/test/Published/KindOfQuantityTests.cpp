@@ -629,6 +629,7 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
     ASSERT_TRUE(schema.IsValid());
     EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
 
     KindOfQuantityP kindOfQuantity;
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
@@ -636,9 +637,9 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     kindOfQuantity->SetDisplayLabel("DL");
     kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
     kindOfQuantity->SetRelativeError(10e-3);
-    //kindOfQuantity->SetDefaultPresentationUnit("u:FT");
-    //kindOfQuantity->AddPresentationUnit("u:IN");
-    //kindOfQuantity->AddPresentationUnit("u:MILLIINCH");
+    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     ECEntityClassP entityClass;
     ASSERT_TRUE(schema->CreateEntityClass(entityClass, "EntityClass") == ECObjectsStatus::Success);
@@ -666,11 +667,11 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     EXPECT_STREQ("CM", deserializedKindOfQuantity->GetPersistenceUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, deserializedKindOfQuantity->GetRelativeError());
 
-    //EXPECT_STREQ("FT", deserializedKindOfQuantity->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
-    //auto& resultAltUnits = deserializedKindOfQuantity->GetPresentationUnitList();
-    //EXPECT_EQ(3, resultAltUnits.size()); // Default presentation unit is included in list of presentation units
-    //EXPECT_STREQ("IN", resultAltUnits[1].GetUnit()->GetName().c_str());
-    //EXPECT_STREQ("MILLIINCH", resultAltUnits[2].GetUnit()->GetName().c_str());
+    EXPECT_STREQ("f:Feet4U", deserializedKindOfQuantity->GetDefaultPresentationFormat()->GetName().c_str());
+    auto& resultAltUnits = deserializedKindOfQuantity->GetPresentationFormatList();
+    EXPECT_EQ(3, resultAltUnits.size()); // Default presentation unit is included in list of presentation units
+    EXPECT_STREQ("f:InchesU", resultAltUnits[1].GetName().c_str());
+    EXPECT_STREQ("f:AmerFI", resultAltUnits[2].GetName().c_str());
 
     ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
     ECPropertyP deserializedProperty = deserializedClass->GetPropertyP("QuantifiedProperty");
@@ -842,7 +843,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationFormats="f:InchesU" />
+                        presentationFormats="f:InchesU&lt;9&gt;[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -865,10 +866,11 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTripShouldDropUnknownPresentationF
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="TestUnit;u:FT;u:IN" />
+                        presentationFormats="f:InchesU&lt;9&gt;[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -881,7 +883,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTripShouldDropUnknownPresentationF
     ECSchemaPtr schema;
     RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should succeed to round trip a 3.1 schema with KoQ using EC3.2 unit defined in schema as presentation unit");
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_EQ(2, schema->GetKindOfQuantityCP("MyKindOfQuantity")->GetPresentationFormatList().size());
+    ASSERT_EQ(1, schema->GetKindOfQuantityCP("MyKindOfQuantity")->GetPresentationFormatList().size());
     }
 
 //--------------------------------------------------------------------------------------
@@ -892,10 +894,11 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec30_roundTrip)
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationFormats="u:FT;u:IN" />
+                        presentationFormats="f:InchesU&lt;9&gt;[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -918,10 +921,11 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTripShouldDropUnknownPresentationF
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="TestUnit;u:FT;u:IN" />
+                        presentationFormats="f:InchesU&lt;9&gt;[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -934,7 +938,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTripShouldDropUnknownPresentationF
     ECSchemaPtr schema;
     RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should succeed to round trip a 3.0 schema with KoQ using EC3.2 unit defined in schema as presentation unit");
     ASSERT_TRUE(schema.IsValid());
-    ASSERT_EQ(2, schema->GetKindOfQuantityCP("MyKindOfQuantity")->GetPresentationFormatList().size());
+    ASSERT_EQ(1, schema->GetKindOfQuantityCP("MyKindOfQuantity")->GetPresentationFormatList().size());
     }
 
 //--------------------------------------------------------------------------------------
@@ -945,9 +949,10 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTrip)
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="u:FT;u:IN" />
+                        presentationFormats="f:AmerFI;f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -961,8 +966,8 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTrip)
     RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_1, SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.1 -> 3.2");
     auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_EQ(2, koq->GetPresentationFormatList().size());
-    //EXPECT_STRCASEEQ("FT", koq->GetPresentationFormatList()[0].GetUnit()->GetName().c_str());
-    //EXPECT_STRCASEEQ("IN", koq->GetPresentationFormatList()[1].GetUnit()->GetName().c_str());
+    EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormatList()[0].GetName().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", koq->GetPresentationFormatList()[1].GetName().c_str());
     EXPECT_DOUBLE_EQ(0.5, koq->GetRelativeError());
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDescription().c_str());
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
@@ -976,9 +981,10 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="u:FT;u:IN" />
+                        presentationFormats="f:AmerFI;f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -992,8 +998,8 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
     RoundTripSchemaToVersionAndBack(schema, schemaItem, ECVersion::V3_0,  SchemaReadStatus::Success, SchemaWriteStatus::Success, "Should be able to round trip a schema from 3.2 -> 3.0 -> 3.2");
     auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_EQ(2, koq->GetPresentationFormatList().size());
-    //EXPECT_STRCASEEQ("FT", koq->GetPresentationFormatList()[0].GetUnit()->GetName().c_str());
-    //EXPECT_STRCASEEQ("IN", koq->GetPresentationFormatList()[1].GetUnit()->GetName().c_str());
+    EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormatList()[0].GetName().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", koq->GetPresentationFormatList()[1].GetName().c_str());
     EXPECT_DOUBLE_EQ(0.5, koq->GetRelativeError());
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDescription().c_str());
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
