@@ -1417,7 +1417,7 @@ void DgnCacheTileRebuilder::AddTriangle(MeshBuilderR builder, MeshPrimitive& mes
 
     if (nullptr == feature)
         {
-        newIndices[0] = newIndices[1] = newIndices[2];
+        newIndices[0] = newIndices[1] = newIndices[2] = -1;
         }
     else
         {
