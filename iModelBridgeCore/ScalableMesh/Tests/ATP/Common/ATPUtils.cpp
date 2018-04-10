@@ -102,8 +102,32 @@ bool OpenResultFile(BeXmlNodeP pRootNode, FILE*& pResultFile)
     {
     WString        resultFileName;
     StatusInt status = pRootNode->GetAttributeStringValue(resultFileName, "resultFileName");
+    
     if (status == BEXML_Success)
-        {
+        {        
+        WString timestampVal;
+        status = pRootNode->GetAttributeStringValue(timestampVal, "timestampResultFile");
+
+        if (status == BEXML_Success && timestampVal.CompareTo(L"yes") == 0)
+            {            
+            WString dev;
+            WString dir; 
+            WString name; 
+            WString ext;
+            BeFileName::ParseName(&dev, &dir, &name, &ext, resultFileName.c_str());
+
+            std::time_t t = std::time(nullptr);
+            wchar_t timeStamp[1000];
+            std::wcsftime(timeStamp, sizeof(timeStamp), L"_%Hh%Mm%Ss__%dd%mm%yy.", std::localtime(&t));
+            
+            if (dev.length() != 0)
+                resultFileName = dev + WString(L":");
+            else
+                resultFileName = WString(L"");
+                                
+            resultFileName += dir + name + WString(timeStamp) + ext;
+            }
+
         pResultFile = _wfopen(resultFileName.c_str(), L"w+");
         }
 

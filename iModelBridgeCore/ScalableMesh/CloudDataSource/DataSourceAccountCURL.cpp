@@ -174,6 +174,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
 
     CURL* curl = curl_handle->get();
     curl_easy_setopt(curl, CURLOPT_URL, utf8URL.c_str());
+    curl_easy_setopt(curl, CURLOPT_UPLOAD, 0L); // Make sure the upload flag is set to false
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLWriteDataCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
     curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);

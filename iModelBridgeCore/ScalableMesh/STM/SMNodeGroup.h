@@ -176,9 +176,9 @@ public:
         }
     template<typename Function>
     SMNodeDistributor(Function function
-                      , unsigned int concurrency 
+                      , unsigned int concurrency = std::thread::hardware_concurrency()
                       //, unsigned int concurrency = 2
-                      , typename Queue::size_type max_items_per_thread
+                      , typename Queue::size_type max_items_per_thread = 5000
     )
         : capacity{ concurrency * max_items_per_thread }
         {
@@ -198,9 +198,9 @@ public:
 template<typename Function, typename PredicateFunc>
 SMNodeDistributor(Function function
 	, PredicateFunc can_run_function
-	, unsigned int concurrency
+	, unsigned int concurrency = std::thread::hardware_concurrency()
 	//, unsigned int concurrency = 2
-	, typename Queue::size_type max_items_per_thread
+	, typename Queue::size_type max_items_per_thread = 5000
 )
 	: capacity{ concurrency * max_items_per_thread }
 {
@@ -1194,10 +1194,9 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
             halfAxesX.DifferenceOf(lx, center);
             halfAxesY.DifferenceOf(ly, center);
             halfAxesZ.DifferenceOf(lz, center);
-            DMatrix3d halfAxes;
-            halfAxes.initFromRowValues(halfAxesX.x, halfAxesX.y, halfAxesX.z,
-                                       halfAxesY.x, halfAxesY.y, halfAxesY.z,
-                                       halfAxesZ.x, halfAxesZ.y, halfAxesZ.z);
+            RotMatrix halfAxes = RotMatrix::FromRowValues(halfAxesX.x, halfAxesX.y, halfAxesX.z,
+                                                          halfAxesY.x, halfAxesY.y, halfAxesY.z,
+                                                          halfAxesZ.x, halfAxesZ.y, halfAxesZ.z);
             TilePublisher::WriteBoundingVolume(tile, center, halfAxes);
             //DPoint3d delta = DPoint3d::From(center.x - lx.x, center.y - ly.y, center.z - lz.z);
             //range.low = DPoint3d::From(lx.x, ly.y, lz.z);
