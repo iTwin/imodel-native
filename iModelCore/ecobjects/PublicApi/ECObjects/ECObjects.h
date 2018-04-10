@@ -594,4 +594,13 @@ struct UnitId : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(UnitId, BeInt64Id)
     };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct FormatId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(FormatId, BeInt64Id)
+    };
+
 END_BENTLEY_ECOBJECT_NAMESPACE

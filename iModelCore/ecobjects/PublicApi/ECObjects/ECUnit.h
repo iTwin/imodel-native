@@ -266,6 +266,7 @@ private:
     mutable Utf8String m_fullName;
     Utf8String m_displayLabel;
     Utf8String m_description;
+    mutable FormatId m_formatId;
 
     ECObjectsStatus SetSchema(ECSchemaCR schema);
 
@@ -306,6 +307,12 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = false) const;
+
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system).
+    FormatId GetId() const {BeAssert(HasId()); return m_formatId;}
+    //! Intended to be called by ECDb or a similar system.
+    void SetId(FormatId id) {BeAssert(!m_formatId.IsValid()); m_formatId = id;}
+    bool HasId() const {return m_formatId.IsValid();}
 };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

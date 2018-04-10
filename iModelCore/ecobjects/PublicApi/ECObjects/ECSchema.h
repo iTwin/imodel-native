@@ -1509,6 +1509,7 @@ public:
     //! it must be compatible with the persistence unit.
     //! @param[in] format  The format to add
     //! @return ECObjectsStatus::Succcess if format is successfully added as a presentation format. Otherwise, ECObjectsStatus::Error.
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormats(ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, Nullable<bvector<ECUnitCP>> inputUnitOverride = nullptr, Nullable<bvector<Utf8CP>> labelOverride = nullptr, bool isDefault = false);
     ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr, bool isDefault = false);
 
     //! Removes the specified presentation format.
@@ -1565,7 +1566,7 @@ public:
     //! @param[in] descriptor  The descriptor that is of the format for the old FUS descriptor, format: {unitName}({formatName}), where the format part is optional.
     //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
     ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptor(Utf8String& updatedDescriptor, Utf8CP descriptor);
-    ECOBJECTS_EXPORT ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, Nullable<bvector<ECUnitCP>> unitOverrides = nullptr, Nullable<bvector<Utf8CP>> labelOverride = nullptr);
 };
 
 //=======================================================================================

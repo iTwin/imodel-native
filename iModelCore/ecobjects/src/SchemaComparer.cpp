@@ -1435,12 +1435,12 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     std::vector<Utf8String> oldPresUnits, newPresUnits;
     for (NamedFormat const& format : oldVal.GetPresentationFormatList())
         {
-        oldPresUnits.push_back(format.GetParentFormat()->GetFullName());
+        oldPresUnits.push_back(format.GetName());
         }
 
     for (NamedFormat const& format : newVal.GetPresentationFormatList())
         {
-        newPresUnits.push_back(format.GetParentFormat()->GetFullName());
+        newPresUnits.push_back(format.GetName());
         }
 
     const size_t oldPresUnitCount = oldPresUnits.size();
@@ -1740,13 +1740,6 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         {
         auto oldComp = oldVal.GetCompositeSpec();
         auto newComp = oldVal.GetCompositeSpec();
-
-        if (oldComp->HasInputUnit() && newComp->HasInputUnit() && oldComp->GetInputUnit()->GetName() != newComp->GetInputUnit()->GetName())
-            change.GetCompositeInputUnit().SetValue(oldComp->GetInputUnit()->GetName(), newVal.GetCompositeInputUnit()->GetName());
-        else if (!oldComp->HasInputUnit() && newComp->HasInputUnit())
-            change.GetCompositeInputUnit().SetValue(ValueId::New, newComp->GetInputUnit()->GetName());
-        else if (oldComp->HasInputUnit() && !newComp->HasInputUnit())
-            change.GetCompositeInputUnit().SetValue(ValueId::Deleted, oldComp->GetInputUnit()->GetName());
 
         if (oldComp->HasSpacer() && newComp->HasSpacer() && oldComp->GetSpacer() != newComp->GetSpacer())
             change.GetCompositeSpacer().SetValue(oldComp->GetSpacer(), newComp->GetSpacer());
@@ -2199,9 +2192,6 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChanges& changes, ECFormatCR fo
 
     if (!format.HasComposite())
         return SUCCESS; // If there's no composite spec we're done.
-
-    if (format.HasCompositeInputUnit())
-        change.GetCompositeInputUnit().SetValue(appendType, format.GetCompositeInputUnit()->GetName());
 
     if (format.HasCompositeSpacer())
         change.GetCompositeSpacer().SetValue(appendType, format.GetCompositeSpec()->GetSpacer());

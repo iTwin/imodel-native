@@ -35,8 +35,7 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
         namedFormat = new NamedFormat(format->GetName() + "[" + unit->GetName().c_str() + "]", format);
         if (!namedFormat->HasComposite())
             {
-            Formatting::CompositeValueSpec compositeSpec;
-            compositeSpec.SetInputUnit(unit);
+            Formatting::CompositeValueSpec compositeSpec = Formatting::CompositeValueSpec(*unit);
             EXPECT_FALSE(compositeSpec.IsProblem()) << "Composite spec of " << formatName << " has problem " << compositeSpec.GetProblemDescription().c_str();
             if (compositeSpec.IsProblem())
                 return;
@@ -51,8 +50,7 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
         real4uFormat->GetNumericSpecP()->SetDecimalPrecision(Formatting::DecimalPrecision::Precision4);
         if (!real4uFormat->HasComposite())
             {
-            Formatting::CompositeValueSpec compositeSpec;
-            compositeSpec.SetInputUnit(unit);
+            Formatting::CompositeValueSpec compositeSpec(*unit);
             EXPECT_FALSE(compositeSpec.IsProblem()) << "Composite spec of " << formatName << " has problem " << compositeSpec.GetProblemDescription().c_str();
             if (compositeSpec.IsProblem())
                 return;

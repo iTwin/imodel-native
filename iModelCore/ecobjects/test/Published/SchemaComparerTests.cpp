@@ -182,11 +182,13 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchema)
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    m_firstSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
     koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    m_secondSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
     koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
 
@@ -225,6 +227,7 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    m_firstSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
     koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
 
@@ -255,10 +258,10 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
     ASSERT_EQ(1, pres.Count());
 
     EXPECT_FALSE(pres.At(0).GetOld().IsNull());
-    EXPECT_STRCASEEQ("Formats:Feet4U", pres.At(0).GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("f:Feet4U", pres.At(0).GetOld().Value().c_str());
 
     EXPECT_FALSE(pres.At(0).GetNew().IsNull());
-    EXPECT_STRCASEEQ("Ref:Feet4U", pres.At(0).GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("r:Feet4U", pres.At(0).GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -272,13 +275,14 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success,koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
-    ECTestFixture::GetFormatsSchema();
     EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU")));
     ASSERT_EQ(1, koq->GetPresentationFormatList().size());
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
     EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U")));
     ASSERT_EQ(1, koq->GetPresentationFormatList().size());
@@ -304,10 +308,10 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     ASSERT_EQ(1, pres.Count());
 
     ASSERT_FALSE(pres.At(0).GetOld().IsNull());
-    EXPECT_STRCASEEQ("Formats:InchesU", pres.At(0).GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", pres.At(0).GetOld().Value().c_str());
 
     ASSERT_FALSE(pres.At(0).GetNew().IsNull());
-    EXPECT_STRCASEEQ("Formats:Feet4U", pres.At(0).GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("f:Feet4U", pres.At(0).GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -318,7 +322,7 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     CreateFirstSchema();
     CreateSecondSchema();
     auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
-    comp.SetInputUnit(ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    comp.SetUnit(ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), 0);
     comp.SetMajorLabel("Apple");
     comp.SetMiddleLabel("Bannana");
     comp.SetMinorLabel("Carrot");

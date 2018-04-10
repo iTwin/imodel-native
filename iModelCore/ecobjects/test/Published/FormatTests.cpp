@@ -90,7 +90,6 @@ TEST_F(FormatTest, BasicRoundTripTest)
         ASSERT_NE(nullptr, std::find(traits.begin(), traits.end(), "prependUnitName"));
         ASSERT_TRUE(ufmt->HasComposite());
         ASSERT_EQ(4, ufmt->GetCompositeSpec()->GetUnitCount());
-        ASSERT_STRCASEEQ("M", ufmt->GetCompositeSpec()->GetInputUnit()->GetName().c_str());
         ASSERT_STRCASEEQ("MILE", ufmt->GetCompositeMajorUnit()->GetName().c_str());
         ASSERT_STRCASEEQ("mile(s)", ufmt->GetCompositeSpec()->GetMajorLabel().c_str());
         ASSERT_STRCASEEQ("YRD", ufmt->GetCompositeMiddleUnit()->GetName().c_str());
@@ -144,7 +143,6 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     ufmt->SetNumericSpec(numeric);
     CompositeValueSpec comp = CompositeValueSpec(*schema->GetUnitsContext().LookupUnit("u:MILE"), *schema->GetUnitsContext().LookupUnit("u:YRD"), *schema->GetUnitsContext().LookupUnit("u:FT"), *schema->GetUnitsContext().LookupUnit("u:IN"));
     comp.SetSpacer("-");
-    comp.SetInputUnit(schema->GetUnitsContext().LookupUnit("u:M"));
     comp.SetMajorLabel("mile(s)");
     comp.SetMiddleLabel("yrd(s)");
     comp.SetMinorLabel("'");
@@ -767,31 +765,6 @@ TEST_F(CompositeTests, DuplicateUnits)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Kyle.Abramowitz                     03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, InvalidInputUnit)
-    {
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-            <Format typeName="AmerMYFI4" type="decimal" precision="4">
-                <Composite inputUnit="u:BANANA">
-                    <Unit>u:MILE</Unit>
-                </Composite>
-            </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid input unit");
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-            <Format typeName="AmerMYFI4" type="decimal" precision="4">
-                <Composite inputUnit="M">
-                    <Unit>u:MILE</Unit>
-                </Composite>
-            </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unqualified input unit");
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Kyle.Abramowitz                     03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeTests, InvalidUnits)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -890,42 +863,6 @@ TEST_F(CompositeTests, UnqualifiedUnits)
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Kyle.Abramowitz                     03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, UseLocallyDefinedInputUnit)
-    {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-            <Unit typeName="SMOOT" definition="u:M" phenomenon="u:LENGTH" unitSystem="u:SI"/>
-            <Format typeName="AmerMYFI4" type="decimal" precision="4">
-                <Composite inputUnit="SMOOT">
-                    <Unit>u:FT</Unit>
-                </Composite>
-            </Format>
-        </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    auto format = schema->GetFormatCP("AmerMYFI4");
-    ASSERT_TRUE(format->HasComposite());
-    auto cfs = format->GetCompositeSpec();
-    ASSERT_EQ(1, cfs->GetUnitCount());
-    EXPECT_FALSE(cfs->HasSpacer());
-    EXPECT_STRCASEEQ(" ", cfs->GetSpacer().c_str());
-    EXPECT_NE(nullptr, cfs->GetMajorUnit());
-    EXPECT_FALSE(cfs->HasMajorLabel());
-    EXPECT_STRCASEEQ("FT", cfs->GetMajorLabel().c_str());
-    EXPECT_FALSE(cfs->HasMiddleLabel());
-    EXPECT_FALSE(cfs->HasMinorLabel());
-    EXPECT_FALSE(cfs->HasSubLabel());
-    EXPECT_EQ(nullptr, cfs->GetMiddleUnit());
-    EXPECT_EQ(nullptr, cfs->GetMinorUnit());
-    EXPECT_EQ(nullptr, cfs->GetSubUnit());
-    EXPECT_STRCASEEQ("SMOOT", cfs->GetInputUnit()->GetName().c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Kyle.Abramowitz                     03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CompositeTests, UseLocallyDefinedUnits)
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -963,23 +900,6 @@ TEST_F(CompositeTests, UseLocallyDefinedUnits)
     EXPECT_NE(nullptr, schema->GetUnitCP(cfs->GetMinorUnit()->GetName().c_str()));
     EXPECT_NE(nullptr, cfs->GetSubUnit());
     EXPECT_NE(nullptr, schema->GetUnitCP(cfs->GetSubUnit()->GetName().c_str()));
-    EXPECT_STRCASEEQ("M", cfs->GetInputUnit()->GetName().c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Kyle.Abramowitz                     03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(CompositeTests, IncompatibleInputAndUnit)
-    {
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <ECSchemaReference name="Units" version="01.00" alias="u"/>
-            <Format typeName="AmerMYFI4" type="decimal" precision="4">
-                <Composite inputUnit="u:M">
-                    <Unit>u:ACRE</Unit>
-                </Composite>
-            </Format>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with incompaitlbe input unit and major unit");
     }
 
 //---------------------------------------------------------------------------------------

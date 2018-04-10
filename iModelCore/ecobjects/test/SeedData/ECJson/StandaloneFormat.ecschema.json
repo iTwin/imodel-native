@@ -15,7 +15,6 @@
   "uomSeparator": " ",
   "composite": {
     "spacer": "-",
-    "inputUnit": "u:M",
     "units": [
       {
         "name": "u:MILE",

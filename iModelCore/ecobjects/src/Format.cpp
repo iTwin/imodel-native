@@ -304,18 +304,6 @@ SchemaReadStatus ECFormat::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSche
     if (labels.size() > 3 && labels[3].IsValid())
         comp.SetSubLabel(labels[3].Value());
 
-    Utf8String inputUnit;
-    if (BEXML_Success == compositeNode.GetAttributeStringValue(inputUnit, COMPOSITE_INPUT_UNIT_ATTRIBUTE))
-        {
-        ECUnitCP unit = GetSchema().GetUnitsContext().LookupUnit(inputUnit.c_str());
-        if (nullptr == unit)
-            {
-            LOG.errorv("%s node's %s on %s could not be found", FORMAT_COMPOSITE_ELEMENT, COMPOSITE_INPUT_UNIT_ATTRIBUTE, GetFullName().c_str());
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-        comp.SetInputUnit(unit);
-        }
-
     Utf8String spacer;
     if (BEXML_Success == compositeNode.GetAttributeStringValue(spacer, COMPOSITE_SPACER_ATTRIBUTE))
         comp.SetSpacer(spacer.c_str());
@@ -410,8 +398,6 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
         xmlWriter.WriteElementStart(FORMAT_COMPOSITE_ELEMENT);
         if (comp->HasSpacer())
             xmlWriter.WriteAttribute(COMPOSITE_SPACER_ATTRIBUTE, comp->GetSpacer().c_str());
-        if (comp->HasInputUnit())
-            xmlWriter.WriteAttribute(COMPOSITE_INPUT_UNIT_ATTRIBUTE, ((ECUnitCP)comp->GetInputUnit())->GetQualifiedName(GetSchema()).c_str());
         auto writeUnit = [&](Nullable<Utf8String> label, Units::UnitCP unit)
             {
             xmlWriter.WriteElementStart(FORMAT_COMPOSITE_UNIT_ELEMENT);
@@ -490,8 +476,6 @@ SchemaWriteStatus ECFormat::WriteJson(Json::Value & outValue, bool standalone, b
         auto& compElement = outValue[FORMAT_JSON_COMPOSITE_ELEMENT];
         if (comp->HasSpacer())
             compElement[COMPOSITE_SPACER_ATTRIBUTE] = comp->GetSpacer().c_str();
-        if (comp->HasInputUnit())
-            compElement[COMPOSITE_INPUT_UNIT_ATTRIBUTE] = ((ECUnitCP)comp->GetInputUnit())->GetQualifiedName(GetSchema()).c_str();
         auto writeUnit = [&](Nullable<Utf8String> label, Units::UnitCP unit, Json::Value& unitsArray)
             {
             auto& unitElement = unitsArray.append(Json::Value(Json::objectValue));

@@ -50,8 +50,8 @@ bool KindOfQuantity::Verify() const
             isValid = false;
             }
         else if (nullptr != m_persistenceUnit && 
-                format.HasCompositeInputUnit() &&
-                !Units::Unit::AreCompatible(format.GetCompositeInputUnit(), m_persistenceUnit))
+                format.HasCompositeMajorUnit() &&
+                !Units::Unit::AreCompatible(format.GetCompositeMajorUnit(), m_persistenceUnit))
             {
             LOG.errorv("Validation Error - KindOfQuantity '%s' presentation format input unit conflicts with the persistence unit %s.",
                 GetFullName().c_str(), m_persistenceUnit->GetName().c_str());
@@ -154,7 +154,7 @@ ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
         {
         for (auto const& format : m_presentationFormats)
             {
-            if (format.HasCompositeInputUnit() && !ECUnit::AreCompatible(&unit, format.GetCompositeInputUnit()))
+            if (format.HasCompositeMajorUnit() && !ECUnit::AreCompatible(&unit, format.GetCompositeMajorUnit()))
                 return ECObjectsStatus::Error;
             }
         }
@@ -256,12 +256,12 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
 
             if(ecXmlVersion < ECVersion::V3_2)
                 {
-                if (!format.HasComposite() || !format.GetCompositeSpec()->HasInputUnit())
+                if (!format.HasComposite() || !format.GetCompositeSpec()->HasMajorLabel())
                     {
                     LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
                     continue;
                     }
-                auto hasValidName = getUnitNameFromVersion((ECUnitCP)format.GetCompositeSpec()->GetInputUnit(), presUnit);
+                auto hasValidName = getUnitNameFromVersion((ECUnitCP)format.GetCompositeSpec()->GetMajorUnit(), presUnit);
                 if(!hasValidName)
                     {
                     LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
@@ -748,12 +748,12 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptor(Utf8String& updatedDescripto
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride)
+ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride, Nullable<bvector<ECUnitCP>> inputUnitOverride, Nullable<bvector<Utf8CP>> labelOverride)
     {
     if (parent.IsOverride())
         return ECObjectsStatus::Error;
 
-    out += parent.GetName();
+    out += parent.GetQualifiedName(GetSchema());
     
     if (precisionOverride.IsValid())
         {
@@ -762,21 +762,30 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
         out += ">";
         }
 
-    if (nullptr != inputUnitOverride || nullptr != labelOverride)
+    if (inputUnitOverride.IsNull() && labelOverride.IsValid())
+        return ECObjectsStatus::Error;
+    bool hasLabels = labelOverride.IsValid();
+
+    if (inputUnitOverride.IsValid())
         {
-        out += "[";
+        if (inputUnitOverride.Value().size() > 4)
+            return ECObjectsStatus::Error;
 
-        if (nullptr != inputUnitOverride)
-            {
-            out += inputUnitOverride->GetQualifiedName(GetSchema());
+        for(int i = 0; i < inputUnitOverride.Value().size(); i++)
+            { 
+            auto& unit = inputUnitOverride.Value()[i];
+            if (nullptr == unit)
+                return ECObjectsStatus::Error;
+
+            out += "[";
+            out += unit->GetQualifiedName(GetSchema());
+            out += "|";
+
+            if (hasLabels && i < labelOverride.Value().size())
+                out += labelOverride.Value()[i];
+
+            out += "]";
             }
-
-        out += "|";
-
-        if (nullptr != labelOverride)
-            out += labelOverride;
-
-        out += "]";
         }
     return ECObjectsStatus::Success;
     }
@@ -795,29 +804,26 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(NamedFormat format)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
+ECObjectsStatus KindOfQuantity::AddPresentationFormats(ECFormatCR parent, Nullable<uint32_t> precisionOverride, Nullable<bvector<ECUnitCP>> inputUnitOverride, Nullable<bvector<Utf8CP>> labelOverride, bool isDefault)
     {
     // TODO logging
     if (parent.IsOverride())
         return ECObjectsStatus::Error;
 
-    if (parent.HasCompositeInputUnit() && nullptr != m_persistenceUnit && !ECUnit::AreCompatible(parent.GetCompositeInputUnit(), m_persistenceUnit))
+    if (parent.HasCompositeMajorUnit() && nullptr != m_persistenceUnit && !ECUnit::AreCompatible(parent.GetCompositeMajorUnit(), m_persistenceUnit))
         return ECObjectsStatus::Error;
 
-    if (parent.HasCompositeInputUnit() && HasPresentationFormats())
+    if (parent.HasCompositeMajorUnit() && HasPresentationFormats())
         {
         for (auto const& format : m_presentationFormats)
             {
-            if (format.HasCompositeInputUnit() && !ECUnit::AreCompatible(parent.GetCompositeInputUnit(), format.GetCompositeInputUnit()))
+            if (format.HasCompositeMajorUnit() && !ECUnit::AreCompatible(parent.GetCompositeMajorUnit(), format.GetCompositeMajorUnit()))
                 return ECObjectsStatus::Error;
             }
         }
 
     Utf8String out;
     CreateOverrideString(out, parent, precisionOverride, inputUnitOverride, labelOverride);
-
-    if (nullptr != inputUnitOverride && parent.HasCompositeInputUnit() && !ECUnit::AreCompatible(inputUnitOverride, parent.GetCompositeInputUnit()))
-        return ECObjectsStatus::Error;
 
     if (isDefault)
         m_presentationFormats.emplace(m_presentationFormats.begin(), out, &parent);
@@ -842,32 +848,66 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
             nfp->GetNumericSpecP()->SetDecimalPrecision(prec);
             }
         }
-
-    if (nullptr != inputUnitOverride)
+    bool hasLabels = labelOverride.IsValid();
+    if (!inputUnitOverride.IsValid())
         {
-        if (nfp->HasComposite())
-            nfp->GetCompositeSpecP()->SetInputUnit(inputUnitOverride);
-        else
-            {
-            auto comp = Formatting::CompositeValueSpec();
-            comp.SetInputUnit(inputUnitOverride);
-            nfp->SetCompositeSpec(comp);
-            }
+        if (hasLabels) // Should not have labels without specifying units that they go with
+            return ECObjectsStatus::Error;
+        return ECObjectsStatus::Success;
         }
-
-    if (nullptr != labelOverride)
+    auto const& input = inputUnitOverride.Value();
+    auto comp = nfp->GetCompositeSpecP();
+    bvector<Units::UnitCP> compUnits; // C++11 initializer list doesn't work?
+    if (nullptr != comp)
+        {
+        if (comp->HasMajorUnit())
+            compUnits.push_back(comp->GetMajorUnit());
+        if (comp->HasMiddleUnit())
+            compUnits.push_back(comp->GetMiddleUnit());
+        if (comp->HasMinorUnit())
+            compUnits.push_back(comp->GetMinorUnit());
+        if (comp->HasSubUnit())
+            compUnits.push_back(comp->GetSubUnit());
+        }
+    else
         { 
-        if (nfp->HasComposite())
-            nfp->GetCompositeSpecP()->SetInputUnitLabel(labelOverride);
-        else
+        nfp->SetCompositeSpec(Formatting::CompositeValueSpec());
+        comp = nfp->GetCompositeSpecP();
+        }
+    for (int i = 0; i < input.size(); ++i)
+        {
+        auto& unit = input[i];
+        if (0 == compUnits.size())
             {
-            auto comp = Formatting::CompositeValueSpec();
-            comp.SetInputUnitLabel(labelOverride);
-            nfp->SetCompositeSpec(comp);
+            // No units defined so we can define up to 4 in our override
+            if (!comp->SetUnit(unit, i))
+                return ECObjectsStatus::Error;
             }
+        else if (i < compUnits.size() && ECUnit::AreEqual(compUnits[i], unit))
+            {
+            comp->SetUnit(unit, i);
+            if (hasLabels && i < labelOverride.Value().size() && nullptr != labelOverride.Value()[i])
+                nfp->GetCompositeSpecP()->SetUnitLabel(labelOverride.Value()[i], i);
+            }
+        else // Has units and we're trying to redefine them
+            return ECObjectsStatus::Error;
         }
 
     return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
+    {
+    Nullable<bvector<ECUnitCP>> unit;
+    Nullable<bvector<Utf8CP>> label;
+    if (nullptr != inputUnitOverride)
+        unit = bvector<ECUnitCP>(1, inputUnitOverride);
+    if (nullptr != labelOverride)
+        label = bvector<Utf8CP>(1, labelOverride);
+    return AddPresentationFormats(parent, precisionOverride, unit, label, isDefault);
     }
 
 //---------------------------------------------------------------------------------------

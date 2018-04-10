@@ -1796,27 +1796,28 @@ ECObjectsStatus ECSchema::CopyFormat(ECFormatP& targetFormat, ECFormatCR sourceF
     if (sourceFormat.HasComposite())
         {
         auto sourceComp = sourceFormat.GetCompositeSpec();
-        const auto copyIfNecessary = [&](Units::UnitCP source)
+        const auto copyIfNecessary = [&](Units::UnitCP source) -> Units::UnitCP
             {
+            if (nullptr == source)
+                return nullptr;
             if (((ECUnitCP)source)->GetSchema().GetSchemaKey().Matches(GetSchemaKey(), SchemaMatchType::Exact))
                 {
                 ECUnitP copiedUnit = nullptr;
                 status = CopyUnit(copiedUnit, *(ECUnitCP)source);
                 ECUnitCP constCopied = copiedUnit;
-                return constCopied;
+                return (Units::UnitCP)constCopied;
                 }
-            return (ECUnitCP)source;
+            return source;
             };
-        auto comp = Formatting::CompositeValueSpec(*copyIfNecessary(sourceComp->GetMajorUnit()),
-                                                    *copyIfNecessary(sourceComp->GetMiddleUnit()),
-                                                    *copyIfNecessary(sourceComp->GetMinorUnit()),
-                                                    *copyIfNecessary(sourceComp->GetSubUnit()));
+        auto comp = Formatting::CompositeValueSpec(copyIfNecessary(sourceComp->GetMajorUnit()),
+                                                    copyIfNecessary(sourceComp->GetMiddleUnit()),
+                                                    copyIfNecessary(sourceComp->GetMinorUnit()),
+                                                    copyIfNecessary(sourceComp->GetSubUnit()));
         if (ECObjectsStatus::Success != status)
             return status;
 
         comp.SetSpacer(sourceComp->GetSpacer().c_str());
         comp.SetIncludeZero(sourceComp->IsIncludeZero());
-        comp.SetInputUnit(copyIfNecessary(sourceComp->GetInputUnit()));
         if (sourceComp->HasMajorLabel())
             comp.SetMajorLabel(sourceComp->GetMajorLabel());
         if (sourceComp->HasMiddleLabel())
