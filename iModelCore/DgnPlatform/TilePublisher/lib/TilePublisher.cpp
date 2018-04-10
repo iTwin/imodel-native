@@ -1885,7 +1885,6 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     auto&   techniqueStates = technique["states"];
     techniqueStates["enable"] = Json::arrayValue;
     techniqueStates["enable"].append(Gltf::DepthTest);
-    techniqueStates["disable"].append(Gltf::CullFace);
 
     auto& techniqueAttributes = technique["attributes"];
     techniqueAttributes["a_pos"] = "pos";
