@@ -337,10 +337,6 @@
         - @ref BentleyApi::ECN::ECProperty::GetMinimumLength "MinimumLength"
         - @ref BentleyApi::ECN::ECProperty::GetMaximumLength "MaximumLength"
         - @ref BentleyApi::ECN::ECProperty::GetKindOfQuantity "KindOfQuantity"
-            - It is possible to 
-                - assign a KindOfQuantity to an ECProperty that didn't have one before
-                - change the KindOfQuantity of an ECProperty to another KindOfQuantity
-                - remove the KindOfQuantity from the ECProperty
 
     - @b CustomAttributes on the ECProperty
         - @b Add, @b delete, @b modify

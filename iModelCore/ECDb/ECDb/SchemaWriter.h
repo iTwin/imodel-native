@@ -67,6 +67,8 @@ struct SchemaWriter final
         static BentleyStatus ImportUnitSystem(Context&, ECN::UnitSystemCR);
         static BentleyStatus ImportPhenomenon(Context&, ECN::PhenomenonCR);
         static BentleyStatus ImportUnit(Context&, ECN::ECUnitCR);
+        static BentleyStatus ImportFormat(Context&, ECN::ECFormatCR);
+        static BentleyStatus ImportFormatComposite(Context&, ECN::ECFormatCR, ECN::FormatId);
         static BentleyStatus ImportKindOfQuantity(Context&, ECN::KindOfQuantityCR);
         static BentleyStatus ImportPropertyCategory(Context&, ECN::PropertyCategoryCR);
         static BentleyStatus ImportProperty(Context&, ECN::ECPropertyCR, int ordinal);

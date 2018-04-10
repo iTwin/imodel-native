@@ -37,20 +37,49 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
                        "Name TEXT NOT NULL COLLATE NOCASE," \
                        "DisplayLabel TEXT," \
                        "Description TEXT," \
-                       "PhenomenonId INTEGER NOT NULL REFERENCES " TABLE_Phenomenon "(Id) ON DELETE CASCADE," \
+                       "PhenomenonId INTEGER NOT NULL REFERENCES " TABLE_Phenomenon "(Id) ON DELETE NO ACTION," \
                        "UnitSystemId INTEGER REFERENCES " TABLE_UnitSystem "(Id) ON DELETE NO ACTION," \
                        "Definition TEXT COLLATE NOCASE," \
                        "Numerator REAL," \
                        "Denominator REAL," \
                        "Offset REAL," \
                        "IsConstant BOOLEAN NOT NULL," \
-                       "InvertingUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE SET NULL);" \
+                       "InvertingUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE NO ACTION);" \
                        "CREATE INDEX ix_ec_Unit_SchemaId ON " TABLE_Unit "(SchemaId);" \
                        "CREATE INDEX ix_ec_Unit_Name ON " TABLE_Unit "(Name);" \
                        "CREATE INDEX ix_ec_Unit_PhenomenonId ON " TABLE_Unit "(PhenomenonId);" \
                        "CREATE INDEX ix_ec_Unit_UnitSystemId ON " TABLE_Unit "(UnitSystemId);" \
                        "CREATE INDEX ix_ec_Unit_InvertingUnitId ON " TABLE_Unit "(InvertingUnitId);"
 
+#define TABLEDDL_Format "CREATE TABLE " TABLE_Format \
+                       "(Id INTEGER PRIMARY KEY," \
+                       "SchemaId INTEGER NOT NULL REFERENCES " TABLE_Schema "(Id) ON DELETE CASCADE," \
+                       "Name TEXT NOT NULL COLLATE NOCASE," \
+                       "DisplayLabel TEXT," \
+                       "Description TEXT," \
+                       "RoundFactor REAL," \
+                       "Type TEXT NOT NULL COLLATE NOCASE," \
+                       "Precision INTEGER NOT NULL," \
+                       "ScientificType TEXT COLLATE NOCASE," \
+                       "SignOption TEXT COLLATE NOCASE," \
+                       "FormatTraits TEXT COLLATE NOCASE," \
+                       "DecimalSeparator TEXT," \
+                       "ThousandsSeparator TEXT," \
+                       "UOMSeparator TEXT," \
+                       "StationSeparator TEXT," \
+                       "StationOffsetSize INTEGER," \
+                       "CompositeSpacer TEXT);" \
+                       "CREATE INDEX ix_ec_Format_SchemaId ON " TABLE_Format "(SchemaId);" \
+                       "CREATE INDEX ix_ec_Format_Name ON " TABLE_Format "(Name);"
+
+#define TABLEDDL_FormatCompositeUnit "CREATE TABLE " TABLE_FormatCompositeUnit \
+                       "(Id INTEGER PRIMARY KEY," \
+                       "FormatId INTEGER NOT NULL REFERENCES " TABLE_Format "(Id) ON DELETE CASCADE," \
+                       "Label TEXT COLLATE NOCASE," \
+                       "UnitId INTEGER REFERECES " TABLE_Unit "(Id) ON DELETE NO ACTION," \
+                       "Ordinal INTEGER NOT NULL);" \
+                       "CREATE UNIQUE INDEX uix_ec_FormatCompositeUnit_FormatId_Ordinal ON " TABLE_FormatCompositeUnit "(FormatId,Ordinal);" \
+                       "CREATE INDEX ix_ec_FormatCompositeUnit_UnitId ON " TABLE_FormatCompositeUnit "(UnitId);"
 
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      07/2013
@@ -75,21 +104,22 @@ struct ProfileUpgrader_4002 final : ProfileUpgrader
     {
 //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
 private:
-    struct UpgradeFusSqlFunction final : ScalarFunction
+    struct UpgradeKoqSqlFunction final : ScalarFunction
         {
         private:
             ECDbCR m_ecdb;
             bset<ECN::ECSchemaId>& m_schemasWithKoqs;
+            bset<ECN::ECSchemaId>& m_schemasWithKoqsWithPresentationFormats;
 
             void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
         public:
-            UpgradeFusSqlFunction(ECDbCR ecdb, bset<ECN::ECSchemaId>& schemaWithKoqs) : ScalarFunction("UPGRADEFUS", 3, DbValueType::TextVal), m_ecdb(ecdb), m_schemasWithKoqs(schemaWithKoqs)
+            UpgradeKoqSqlFunction(ECDbCR ecdb, bset<ECN::ECSchemaId>& schemaWithKoqs, bset<ECN::ECSchemaId>& schemaWithKoqsWithPresentationFormats) : ScalarFunction("UPGRADEKOQ", 3, DbValueType::TextVal), m_ecdb(ecdb), m_schemasWithKoqs(schemaWithKoqs), m_schemasWithKoqsWithPresentationFormats(schemaWithKoqsWithPresentationFormats)
                 {
                 m_ecdb.AddFunction(*this);
                 }
 
-            ~UpgradeFusSqlFunction()
+            ~UpgradeKoqSqlFunction()
                 {
                 m_ecdb.RemoveFunction(*this);
                 }
@@ -100,6 +130,7 @@ private:
     static DbResult UpgradeECEnums(ECDbCR);
     static void UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, int64_t enumId, Utf8CP enumName);
     static DbResult UpgradeKoqs(ECDbCR);
+    static DbResult FixMetaSchemaClassMapCAXml(ECDbCR);
     };
 
 //=======================================================================================

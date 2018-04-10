@@ -264,9 +264,7 @@
     <ECRelationshipClass typeName="ClassHasAllBaseClasses" strength="referencing" modifier="Sealed" description="Relates a given ECClassId (Source) to all its base classes (recursively) (Target). For optimization reasons this ECRelationshipClass also holds a row for each ECClass that points to itself. Base class id order: class itself, then base classes in breadth first manner.">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
-                <MapStrategy>
-                    <Strategy>ExistingTable</Strategy>
-                </MapStrategy>
+                <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>ec_cache_ClassHierarchy</TableName>
             </ClassMap>
             <LinkTableRelationshipMap xmlns="ECDbMap.02.00">

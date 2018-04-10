@@ -40,28 +40,46 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteSql(TABLEDDL_UnitSystem);
+    stat = ecdb.ExecuteDdl(TABLEDDL_UnitSystem);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_UnitSystem " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
     
-    stat = ecdb.ExecuteSql(TABLEDDL_Phenomenon);
+    stat = ecdb.ExecuteDdl(TABLEDDL_Phenomenon);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Phenomenon " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    stat = ecdb.ExecuteSql(TABLEDDL_Unit);
+    stat = ecdb.ExecuteDdl(TABLEDDL_Unit);
     if (BE_SQLITE_OK != stat)
         {
         LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Unit " and indexes: %s.", ecdb.GetLastError().c_str());
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    LOG.debug("ECDb profile upgrade: Added columns ECVersion, OriginalECXmlVersionMajor and OriginalECXmlVersionMinor to table " TABLE_Schema ". Added tables " TABLE_Unit ", " TABLE_Phenomenon ", and " TABLE_UnitSystem ".");
+    stat = ecdb.ExecuteDdl(TABLEDDL_Format);
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_Format " and indexes: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    stat = ecdb.ExecuteDdl(TABLEDDL_FormatCompositeUnit);
+    if (BE_SQLITE_OK != stat)
+        {
+        LOG.errorv("ECDb profile upgrade failed: Could not create table " TABLE_FormatCompositeUnit " and indexes: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Added columns ECVersion, OriginalECXmlVersionMajor and OriginalECXmlVersionMinor to table " TABLE_Schema ". Added tables " TABLE_Unit ", " TABLE_Phenomenon ", " TABLE_UnitSystem ", " TABLE_Format ", and " TABLE_FormatCompositeUnit ".");
+
+    stat = FixMetaSchemaClassMapCAXml(ecdb);
+    if (BE_SQLITE_OK != stat)
+        return stat;
 
     stat = UpgradeECEnums(ecdb);
     if (BE_SQLITE_OK != stat)
@@ -70,6 +88,8 @@ DbResult ProfileUpgrader_4002::_Upgrade(ECDbCR ecdb) const
     stat = UpgradeKoqs(ecdb);
     if (BE_SQLITE_OK != stat)
         return stat;
+
+    LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
 
     //Set ECVersion of all schemas to EC3.2
     if (BE_SQLITE_OK != ecdb.ExecuteSql("UPDATE main." TABLE_Schema " SET ECVersion=" SQLVAL_ECVersion_V3_2))
@@ -315,26 +335,27 @@ void ProfileUpgrader_4002::UpgradeECDbEnum(bmap<int64_t, Utf8String>& enumMap, i
 //static
 DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     {
-    bset<ECSchemaId> affectedSchemas;
-        {
-        UpgradeFusSqlFunction upgradeFusSqlFnc(ecdb, affectedSchemas);
-        ecdb.AddFunction(upgradeFusSqlFnc);
+    bset<ECSchemaId> schemasThatNeedUnitsReference;
+    bset<ECSchemaId> schemasThatNeedFormatsReference;
+    {
+        UpgradeKoqSqlFunction upgradeKoqSqlFnc(ecdb, schemasThatNeedUnitsReference, schemasThatNeedFormatsReference);
+        ecdb.AddFunction(upgradeKoqSqlFnc);
 
         Statement stmt;
-        if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE " TABLE_KindOfQuantity " SET PersistenceUnit=UPGRADEFUS(SchemaId,PersistenceUnit,0), PresentationUnits=UPGRADEFUS(SchemaId,PresentationUnits,1)"))
+        if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE " TABLE_KindOfQuantity " SET PersistenceUnit=UPGRADEKOQ(SchemaId,PersistenceUnit,0), PresentationUnits=UPGRADEKOQ(SchemaId,PresentationUnits,1)"))
             {
-            LOG.errorv("ECDb profile upgrade failed: Upgrading FUS descriptor strings in ec_KindOfQuantities to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantities to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
 
         if (BE_SQLITE_DONE != stmt.Step())
             {
-            LOG.errorv("ECDb profile upgrade failed: Upgrading FUS descriptor strings in ec_KindOfQuantities to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantities to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
             return BE_SQLITE_ERROR_ProfileUpgradeFailed;
             }
         }
 
-    if (affectedSchemas.empty())
+    if (schemasThatNeedUnitsReference.empty())
         return BE_SQLITE_OK;
 
     ECSchemaId unitSchemaId;
@@ -365,9 +386,9 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    for (ECSchemaId schemaWithKoq : affectedSchemas)
+    for (ECSchemaId schemaThatNeedUnitsReference : schemasThatNeedUnitsReference)
         {
-        if (BE_SQLITE_OK != stmt.BindId(1, schemaWithKoq) ||
+        if (BE_SQLITE_OK != stmt.BindId(1, schemaThatNeedUnitsReference) ||
             BE_SQLITE_OK != stmt.BindId(2, unitSchemaId) ||
             BE_SQLITE_DONE != stmt.Step())
             {
@@ -379,19 +400,97 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
         stmt.ClearBindings();
         }
 
-    LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
+    if (schemasThatNeedFormatsReference.empty())
+        return BE_SQLITE_OK;
+
+    ECSchemaId formatSchemaId;
+    {
+    ECSchemaReadContextPtr readCtx = ECSchemaReadContext::CreateContext();
+    readCtx->AddSchemaLocater(ecdb.GetSchemaLocater());
+    SchemaKey key("Formats", 1, 0, 0);
+    ECSchemaPtr formatSchema = ECSchema::LocateSchema(key, *readCtx);
+    if (formatSchema == nullptr)
+        {
+        LOG.error("ECDb profile upgrade failed: Could not deserialize the standard Formats ECSchema.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    if (SUCCESS != SchemaWriter::InsertSchemaEntry(ecdb, *formatSchema))
+        {
+        LOG.error("ECDb profile upgrade failed: Importing the Formats schema stub failed.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    formatSchemaId = formatSchema->GetId();
+    }
+
+    for (ECSchemaId schemaThatNeedFormatsReference : schemasThatNeedFormatsReference)
+        {
+        if (BE_SQLITE_OK != stmt.BindId(1, schemaThatNeedFormatsReference) ||
+            BE_SQLITE_OK != stmt.BindId(2, formatSchemaId) ||
+            BE_SQLITE_DONE != stmt.Step())
+            {
+            LOG.error("ECDb profile upgrade failed: Failed to insert references to standard Formats schema.");
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle    04/2018
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static
+DbResult ProfileUpgrader_4002::FixMetaSchemaClassMapCAXml(ECDbCR ecdb)
+    {
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT ca.Id, ca.Instance FROM main." TABLE_CustomAttribute " ca "
+                                     "JOIN main." TABLE_Class " caClass ON caClass.Id = ca.ClassId "
+                                     "JOIN main." TABLE_Schema " caSchema ON caSchema.Id = caClass.SchemaId "
+                                     "JOIN main." TABLE_Class " containerClass ON containerClass.id = ca.ContainerId "
+                                     "JOIN main." TABLE_Schema " containerSchema ON containerSchema.Id = containerClass.SchemaId "
+                                     "WHERE containerSchema.Name='ECDbMeta' AND containerClass.Name='ClassHasAllBaseClasses' AND "
+                                     "caSchema.Name='ECDbMap' AND caClass.Name='ClassMap'") ||
+        BE_SQLITE_ROW != stmt.Step())
+        {
+        LOG.error("ECDb profile upgrade failed: Failed to execute SQL to find malformed ClassMap CA XML on ECDbMeta.ClassHasAllBaseClasses.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+    
+    BeInt64Id caId = stmt.GetValueId<BeInt64Id>(0);
+    Utf8String caXml(stmt.GetValueText(1));
+    stmt.Finalize();
+
+    const size_t mapStrategyStartPos = caXml.find("<MapStrategy>");
+    const size_t mapStrategyEndPos = caXml.find("</MapStrategy>");
+    caXml.replace(mapStrategyStartPos, mapStrategyEndPos - mapStrategyStartPos, "<MapStrategy>ExistingTable");
+    BeAssert(caXml.Contains("<MapStrategy>ExistingTable</MapStrategy>"));
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE main." TABLE_CustomAttribute " SET Instance=? WHERE Id=?") ||
+        BE_SQLITE_OK != stmt.BindText(1, caXml, Statement::MakeCopy::No) ||
+        BE_SQLITE_OK != stmt.BindId(2, caId) ||
+        BE_SQLITE_DONE != stmt.Step())
+        {
+        LOG.error("ECDb profile upgrade failed: Failed to execute SQL to fix malformed ClassMap CA XML on ECDbMeta.ClassHasAllBaseClasses.");
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    LOG.debug("ECDb profile upgrade: Fixed ClassMap custom attribute ECXML of MetaSchema.ClassHasAllBaseClasses.");
     return BE_SQLITE_OK;
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    03/2018
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ProfileUpgrader_4002::UpgradeFusSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
+void ProfileUpgrader_4002::UpgradeKoqSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
     {
     DbValue const& schemaIdVal = args[0];
     if (schemaIdVal.GetValueType() != DbValueType::IntegerVal)
         {
-        ctx.SetResultError("UPGRADEFUS SQL: Argument 0 is expected to be the SchemaId of the ec_KindOfQuantity row.");
+        ctx.SetResultError("UPGRADEKOQ SQL: Argument 0 is expected to be the SchemaId of the ec_KindOfQuantity row.");
         return;
         }
 
@@ -400,7 +499,7 @@ void ProfileUpgrader_4002::UpgradeFusSqlFunction::_ComputeScalar(Context& ctx, i
     DbValue const& oldFusValue = args[1];
     if (oldFusValue.GetValueType() != DbValueType::NullVal && oldFusValue.GetValueType() != DbValueType::TextVal)
         {
-        ctx.SetResultError("UPGRADEFUS SQL: Argument 1 is expected to be the pre-EC3.2 FUS descriptor.");
+        ctx.SetResultError("UPGRADEKOQ SQL: Argument 1 is expected to be the pre-EC3.2 FUS descriptor.");
         return;
         }
 
@@ -410,48 +509,50 @@ void ProfileUpgrader_4002::UpgradeFusSqlFunction::_ComputeScalar(Context& ctx, i
         return;
         }
 
-    DbValue const& isArrayValue = args[2];
-    if (isArrayValue.GetValueType() != DbValueType::IntegerVal)
+    DbValue const& isPresentationFormatValue = args[2];
+    if (isPresentationFormatValue.GetValueType() != DbValueType::IntegerVal)
         {
-        ctx.SetResultError("UPGRADEFUS SQL: Argument 2 is expected to be a bool.");
+        ctx.SetResultError("UPGRADEKOQ SQL: Argument 2 is expected to be a bool.");
         return;
         }
 
     Utf8CP oldFus = oldFusValue.GetValueText();
-    const bool isFusArray = isArrayValue.GetValueInt() != 0;
-    if (!isFusArray)
+    const bool isPresentationFormatList = isPresentationFormatValue.GetValueInt() != 0;
+    if (!isPresentationFormatList)
         {
-        Utf8String newFus;
-        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptor(newFus, oldFus))
+        Utf8String newPersUnitStr;
+        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptor(newPersUnitStr, oldFus))
             {
-            ctx.SetResultError(Utf8PrintfString("UPGRADEFUS SQL: Could not upgrade FUS descriptor '%s' to EC3.2 format.", oldFus).c_str());
+            ctx.SetResultError(Utf8PrintfString("UPGRADEKOQ SQL: Could not upgrade FUS descriptor '%s' to EC3.2 format.", oldFus).c_str());
             return;
             }
 
-        ctx.SetResultText(newFus.c_str(), (int) newFus.size(), DbFunction::Context::CopyData::Yes);
+        ctx.SetResultText(newPersUnitStr.c_str(), (int) newPersUnitStr.size(), DbFunction::Context::CopyData::Yes);
         return;
         }
 
-    Json::Value fusArrayJson;
-    if (!Json::Reader::Parse(oldFus, fusArrayJson))
+    m_schemasWithKoqsWithPresentationFormats.insert(schemaIdVal.GetValueId<ECSchemaId>());
+
+    Json::Value presentationFormatArrayJson;
+    if (!Json::Reader::Parse(oldFus, presentationFormatArrayJson))
         {
-        ctx.SetResultError(Utf8PrintfString("UPGRADEFUS SQL: Could not parse presentation units '%s' as JSON.", oldFus).c_str());
+        ctx.SetResultError(Utf8PrintfString("UPGRADEKOQ SQL: Could not parse presentation units '%s' as JSON.", oldFus).c_str());
         return;
         }
 
-    for (Json::Value& fusJson : fusArrayJson)
+    for (Json::Value& presentationFormatJson : presentationFormatArrayJson)
         {
-        Utf8String newFus;
-        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptor(newFus, fusJson.asCString()))
+        Utf8String newFormat;
+        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptor(newFormat, presentationFormatJson.asCString()))
             {
-            ctx.SetResultError(Utf8PrintfString("UPGRADEFUS SQL: Could not upgrade FUS descriptor '%s' to EC3.2 format.", fusJson.asCString()).c_str());
+            ctx.SetResultError(Utf8PrintfString("UPGRADEKOQ SQL: Could not upgrade FUS descriptor '%s' to EC3.2 format.", presentationFormatJson.asCString()).c_str());
             return;
             }
 
-        fusJson = newFus;
+        presentationFormatJson = newFormat;
         }
 
-    Utf8String newFusArray = fusArrayJson.ToString();
+    Utf8String newFusArray = presentationFormatArrayJson.ToString();
     ctx.SetResultText(newFusArray.c_str(), (int) newFusArray.size(), DbFunction::Context::CopyData::Yes);
     }
 

@@ -94,6 +94,7 @@ struct SchemaReader final
                 mutable std::map<ECN::UnitSystemId, ECN::UnitSystemCP> m_unitSystemCache;
                 mutable std::map<ECN::PhenomenonId, ECN::PhenomenonCP> m_phenomenonCache;
                 mutable std::map<ECN::UnitId, ECN::ECUnitCP> m_unitCache;
+                mutable std::map<ECN::FormatId, ECN::ECFormatCP> m_formatCache;
                 mutable bool m_unitsAreLoaded = false;
                 mutable bmap<Utf8String, bmap<Utf8String, ECN::ECClassId, CompareIUtf8Ascii>, CompareIUtf8Ascii> m_classIdCache;
             public:
@@ -150,6 +151,8 @@ struct SchemaReader final
         BentleyStatus ReadUnitSystems(Context&) const;
         BentleyStatus ReadPhenomena(Context&) const;
         BentleyStatus ReadUnits(Context&) const;
+        BentleyStatus ReadFormats(Context&) const;
+        BentleyStatus ReadFormatComposite(ECN::ECFormat&, ECN::FormatId, Utf8CP compositeSpacer) const;
         BentleyStatus ReadPropertyCategory(ECN::PropertyCategoryCP&, Context&, ECN::PropertyCategoryId) const;
 
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
@@ -190,6 +193,7 @@ struct SchemaReader final
         ECN::UnitSystemId GetUnitSystemId(ECN::UnitSystemCR) const;
         ECN::PhenomenonId GetPhenomenonId(ECN::PhenomenonCR) const;
         ECN::UnitId GetUnitId(ECN::ECUnitCR) const;
+        ECN::FormatId GetFormatId(ECN::ECFormatCR) const;
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;
 

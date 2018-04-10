@@ -595,6 +595,29 @@ UnitId SchemaReader::GetUnitId(ECUnitCR unit) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   04/2018
+//---------------------------------------------------------------------------------------
+FormatId SchemaReader::GetFormatId(ECFormatCR format) const
+    {
+    if (format.HasId()) //This is unsafe but since we do not delete Format any class that hasId does exist in db
+        {
+        BeAssert(format.GetId() == SchemaPersistenceHelper::GetFormatId(GetECDb(), GetTableSpace(), format.GetSchema().GetName().c_str(), format.GetName().c_str(), SchemaLookupMode::ByName));
+        return format.GetId();
+        }
+
+    const FormatId id = SchemaPersistenceHelper::GetFormatId(GetECDb(), GetTableSpace(), format.GetSchema().GetName().c_str(), format.GetName().c_str(), SchemaLookupMode::ByName);
+    if (id.IsValid())
+        {
+        //it is possible that the Format was already imported before, but the given C++ object comes from another source.
+        //in that case we assign it here on the fly.
+        const_cast<ECFormatR>(format).SetId(id);
+        }
+
+    return id;
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   06/2016
 //---------------------------------------------------------------------------------------
 ECPropertyId SchemaReader::GetPropertyId(ECPropertyCR prop) const
@@ -756,7 +779,10 @@ BentleyStatus SchemaReader::LoadUnits(Context& ctx) const
 
     if (SUCCESS != ReadUnits(ctx))
         return ERROR;
-    
+
+    if (SUCCESS != ReadFormats(ctx))
+        return ERROR;
+
     PERFLOG_FINISH("ECDb", "LoadUnits");
     return SUCCESS;
     }
@@ -964,6 +990,220 @@ BentleyStatus SchemaReader::ReadUnits(Context& ctx) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReader::ReadFormats(Context& ctx) const
+    {
+    const int idIx = 0;
+    const int schemaIdIx = 1;
+    const int nameIx = 2;
+    const int displayLabelColIx = 3;
+    const int descriptionColIx = 4;
+    const int roundFactorColIx = 5;
+    const int typeColIx = 6;
+    const int precColIx = 7;
+    const int scientificTypeColIx = 8;
+    const int signOptionColIx = 9;
+    const int formatTraitsColIx = 10;
+    const int decimalSepColIx = 11;
+    const int thousandsSepColIx = 12;
+    const int uomSepColIx = 13;
+    const int stationSepColIx = 14;
+    const int stationOffsetSizeColIx = 15;
+    const int compositeSpacerColIx = 16;
+
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,RoundFactor,Type,Precision,ScientificType,SignOption,FormatTraits,DecimalSeparator,ThousandsSeparator,UOMSeparator,StationSeparator,StationOffsetSize,CompositeSpacer FROM [%s]." TABLE_Format, GetTableSpace().GetName().c_str()).c_str());
+    if (stmt == nullptr)
+        return ERROR;
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        const FormatId id = stmt->GetValueId<FormatId>(idIx);
+
+        const ECSchemaId schemaId = stmt->GetValueId<ECSchemaId>(schemaIdIx);
+        SchemaDbEntry* schemaKey = nullptr;
+        if (SUCCESS != ReadSchema(schemaKey, ctx, schemaId, false))
+            return ERROR;
+
+        Utf8CP name = stmt->GetValueText(nameIx);
+        Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
+        Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
+
+        Nullable<double> roundFactor;
+        if (!stmt->IsColumnNull(roundFactorColIx))
+            roundFactor = stmt->GetValueDouble(roundFactorColIx);
+
+        BeAssert(!stmt->IsColumnNull(typeColIx));
+        Utf8CP type = stmt->GetValueText(typeColIx);
+
+        BeAssert(!stmt->IsColumnNull(precColIx));
+        const int precision = stmt->GetValueInt(precColIx);
+
+        Utf8CP scientType = stmt->IsColumnNull(scientificTypeColIx) ? nullptr : stmt->GetValueText(scientificTypeColIx);
+        Utf8CP signOption = stmt->IsColumnNull(signOptionColIx) ? nullptr : stmt->GetValueText(signOptionColIx);
+        Utf8CP formatTraits = stmt->IsColumnNull(formatTraitsColIx) ? nullptr : stmt->GetValueText(formatTraitsColIx);
+        Utf8CP decSeparator = stmt->IsColumnNull(decimalSepColIx) ? nullptr : stmt->GetValueText(decimalSepColIx);
+        Utf8CP thousandsSeparator = stmt->IsColumnNull(thousandsSepColIx) ? nullptr : stmt->GetValueText(thousandsSepColIx);
+        Utf8CP uomSeparator = stmt->IsColumnNull(uomSepColIx) ? nullptr : stmt->GetValueText(uomSepColIx);
+        Utf8CP stationSeparator = stmt->IsColumnNull(stationSepColIx) ? nullptr : stmt->GetValueText(stationSepColIx);
+        Nullable<int> stationOffsizeSize;
+        if (!stmt->IsColumnNull(stationOffsetSizeColIx))
+            stationOffsizeSize = stmt->GetValueInt(stationOffsetSizeColIx);
+        
+        Utf8CP compositeSpacer = stmt->IsColumnNull(compositeSpacerColIx) ? nullptr : stmt->GetValueText(compositeSpacerColIx);
+
+        Formatting::NumericFormatSpec numericFormatSpec;
+        if (roundFactor != nullptr)
+            numericFormatSpec.SetRoundingFactor(roundFactor.Value());
+
+        Formatting::PresentationType specType;
+        if (!Formatting::Utils::NameToPresentationType(specType, type))
+            return ERROR;
+
+        numericFormatSpec.SetPresentationType(specType);
+
+        if (Formatting::PresentationType::Scientific == specType)
+            {
+            Formatting::ScientificType unitsScientificType;
+            if (!Formatting::Utils::NameToScientificType(unitsScientificType, scientType))
+                return ERROR;
+
+            numericFormatSpec.SetScientificType(unitsScientificType);
+            }
+
+        if (Formatting::PresentationType::Station == specType)
+            numericFormatSpec.SetStationOffsetSize(stationOffsizeSize.Value());
+
+        if (!Utf8String::IsNullOrEmpty(signOption))
+            {
+            Formatting::ShowSignOption showSign;
+            if (!Formatting::Utils::NameToSignOption(showSign, signOption))
+                return ERROR;
+
+            numericFormatSpec.SetSignOption(showSign);
+            }
+
+        if (!Utf8String::IsNullOrEmpty(formatTraits))
+            {
+            if (!numericFormatSpec.SetFormatTraitsFromString(formatTraits))
+                return ERROR;
+            }
+
+        if (specType == Formatting::PresentationType::Fractional)
+            {
+            Formatting::FractionalPrecision unitsFractionalPrecision;
+            if (!Formatting::Utils::FractionalPrecisionByDenominator(unitsFractionalPrecision, precision))
+                return ERROR;
+
+            numericFormatSpec.SetFractionalPrecision(unitsFractionalPrecision);
+            }
+        else
+            {
+            Formatting::DecimalPrecision unitsDecimalPrecision;
+            if (!Formatting::Utils::DecimalPrecisionByIndex(unitsDecimalPrecision, precision))
+                return ERROR;
+
+            numericFormatSpec.SetDecimalPrecision(unitsDecimalPrecision);
+            }
+
+        if (!Utf8String::IsNullOrEmpty(decSeparator))
+            {
+            if (strlen(decSeparator) > 1)
+                return ERROR;
+
+            numericFormatSpec.SetDecimalSeparator(decSeparator[0]);
+            }
+
+        if (!Utf8String::IsNullOrEmpty(thousandsSeparator))
+            {
+            if (strlen(thousandsSeparator) > 1)
+                return ERROR;
+
+            numericFormatSpec.SetThousandSeparator(thousandsSeparator[0]);
+            }
+
+        if (!Utf8String::IsNullOrEmpty(uomSeparator))
+            numericFormatSpec.SetUomSeparator(uomSeparator);
+
+        if (!Utf8String::IsNullOrEmpty(stationSeparator))
+            {
+            if (strlen(stationSeparator) > 1)
+                return ERROR;
+
+            numericFormatSpec.SetStationSeparator(stationSeparator[0]);
+            }
+
+        ECSchemaR schema = *schemaKey->m_cachedSchema;
+        ECFormatP format = nullptr;
+        if (ECObjectsStatus::Success != schema.CreateFormat(format, name, displayLabel, description, &numericFormatSpec))
+            return ERROR;
+
+        if (SUCCESS != ReadFormatComposite(*format, id, compositeSpacer))
+            return ERROR;
+
+        if (format->IsProblem())
+            return ERROR;
+
+        format->SetId(id);
+        schemaKey->m_loadedTypeCount++;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle   04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaReader::ReadFormatComposite(ECFormat& format, FormatId formatId, Utf8CP compositeSpacer) const
+    {
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Label,UnitId FROM [%s]." TABLE_FormatCompositeUnit " WHERE FormatId=? ORDER BY Ordinal", GetTableSpace().GetName().c_str()).c_str());
+    if (stmt == nullptr)
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindId(1, formatId))
+        return ERROR;
+
+    bvector<Utf8String> labels;
+    bvector<Units::UnitCP> units;
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        Utf8CP label = stmt->GetValueText(0);
+        labels.push_back(label);
+
+        UnitId unitId = stmt->GetValueId<UnitId>(1);
+        ECUnitCP unit = m_cache.Find(unitId);
+        if (unit == nullptr)
+            return ERROR;
+        units.push_back(unit);
+        }
+    stmt = nullptr;
+
+    const size_t labelCount = labels.size();
+
+    BeAssert(labelCount <= 4 && units.size() <= 4);
+
+    Formatting::CompositeValueSpec spec(units);
+    if (!Utf8String::IsNullOrEmpty(compositeSpacer))
+        spec.SetSpacer(compositeSpacer);
+
+    if (labelCount == 1 && !labels[0].empty())
+        spec.SetMajorLabel(labels[0]);
+
+    if (labelCount == 2 && !labels[1].empty())
+        spec.SetMiddleLabel(labels[1]);
+
+    if (labelCount == 3 && !labels[2].empty())
+        spec.SetMinorLabel(labels[2]);
+
+    if (labelCount == 4 && !labels[3].empty())
+        spec.SetSubLabel(labels[3]);
+
+    if (spec.IsProblem())
+        return ERROR;
+
+    return format.SetCompositeSpec(spec) ? SUCCESS : ERROR;
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& ctx, KindOfQuantityId koqId) const
@@ -982,7 +1222,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     const int descriptionColIx = 3;
     const int relErrorColIx = 4;
     const int persUnitColIx = 5;
-    const int presUnitColIx = 6;
+    const int presFormatsColIx = 6;
 
     CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT SchemaId,Name,DisplayLabel,Description,RelativeError,PersistenceUnit,PresentationUnits FROM [%s]." TABLE_KindOfQuantity " WHERE Id=?", GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
@@ -1005,7 +1245,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
     BeAssert(!stmt->IsColumnNull(persUnitColIx));
     const double relError = stmt->GetValueDouble(relErrorColIx);
     Utf8CP persUnitStr = stmt->GetValueText(persUnitColIx);
-    Utf8CP presUnitsStr = stmt->IsColumnNull(presUnitColIx) ? nullptr : stmt->GetValueText(presUnitColIx);
+    Utf8CP presFormatsStr = stmt->IsColumnNull(presFormatsColIx) ? nullptr : stmt->GetValueText(presFormatsColIx);
 
     KindOfQuantityP newKoq = nullptr;
     if (ECObjectsStatus::Success != schemaKey->m_cachedSchema->CreateKindOfQuantity(newKoq, koqName))
@@ -1021,20 +1261,21 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
 
     BeAssert(!Utf8String::IsNullOrEmpty(persUnitStr));
 
+    // WIP_FORMAT 
     ECUnitCP unit = nullptr;
-    Formatting::NamedFormatSpecCP format = nullptr;
-    if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(unit, format, persUnitStr, *newKoq) ||
-        !newKoq->SetPersistenceUnit(*unit, format))
+    ECFormatCP format = nullptr;
+    if (ECObjectsStatus::Success != newKoq->ParsePersistenceUnit(unit, format, persUnitStr, nullptr, 3, 2) ||
+        ECObjectsStatus::Success != newKoq->SetPersistenceUnit(*unit))
         {
-        LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit's FormatUnitSet descriptor '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitStr);
+        LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitStr);
         return ERROR;
         }
 
-    if (!Utf8String::IsNullOrEmpty(presUnitsStr))
+    if (!Utf8String::IsNullOrEmpty(presFormatsStr))
         {
-        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationUnits(*newKoq, presUnitsStr))
+        if (SUCCESS != SchemaPersistenceHelper::DeserializeKoqPresentationFormats(*newKoq, presFormatsStr))
             {
-            LOG.errorv("Failed to read KindOfQuantity '%s'. One of its presentation units' FormatUnitSet descriptors could not be parsed: %s.", koq->GetFullName().c_str(), presUnitsStr);
+            LOG.errorv("Failed to read KindOfQuantity '%s'. One of its presentation formats could not be parsed: %s.", koq->GetFullName().c_str(), presFormatsStr);
             return ERROR;
             }
         }
@@ -1306,8 +1547,9 @@ BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSche
                                                         "(SELECT COUNT(*) FROM [%s]." TABLE_PropertyCategory " cat WHERE s.Id = cat.SchemaId) + "
                                                         "(SELECT COUNT(*) FROM [%s]." TABLE_UnitSystem " us WHERE s.Id = us.SchemaId) + "
                                                         "(SELECT COUNT(*) FROM [%s]." TABLE_Phenomenon " ph WHERE s.Id = ph.SchemaId) + "
-                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Unit " u WHERE s.Id = u.SchemaId) "
-                                                         "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
+                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Unit " u WHERE s.Id = u.SchemaId) + "
+                                                        "(SELECT COUNT(*) FROM [%s]." TABLE_Format " f WHERE s.Id = f.SchemaId) "
+                                                         "FROM [%s]." TABLE_Schema " s WHERE s.Id=?", tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace, tableSpace).c_str());
     if (stmt == nullptr)
         return ERROR;
 

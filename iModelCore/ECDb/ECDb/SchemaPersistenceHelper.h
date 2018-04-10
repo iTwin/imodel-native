@@ -68,6 +68,7 @@ public:
     static ECN::UnitSystemId GetUnitSystemId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP unitSystemName, SchemaLookupMode);
     static ECN::PhenomenonId GetPhenomenonId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP phenomenonName, SchemaLookupMode);
     static ECN::UnitId GetUnitId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP unitName, SchemaLookupMode);
+    static ECN::FormatId GetFormatId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP formatName, SchemaLookupMode);
     static ECN::ECPropertyId GetPropertyId(ECDbCR, DbTableSpace const&, ECN::ECClassId, Utf8CP propertyName);
     static ECN::ECPropertyId GetPropertyId(ECDbCR, DbTableSpace const&, Utf8CP schemaNameOrAlias, Utf8CP className, Utf8CP propertyName, SchemaLookupMode);
 
@@ -76,8 +77,8 @@ public:
     static BentleyStatus SerializeEnumerationValues(Utf8StringR jsonStr, ECN::ECEnumerationCR);
     static BentleyStatus DeserializeEnumerationValues(ECN::ECEnumerationR, Utf8CP jsonStr);
 
-    static BentleyStatus SerializeKoqPresentationUnits(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR);
-    static BentleyStatus DeserializeKoqPresentationUnits(ECN::KindOfQuantityR, Utf8CP jsonStr);
+    static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR);
+    static BentleyStatus DeserializeKoqPresentationFormats(ECN::KindOfQuantityR, Utf8CP jsonStr);
 
     //!Safe method to cast an integer value to the ECClassType enum.
     //!It makes sure the integer is a valid value for the enum.

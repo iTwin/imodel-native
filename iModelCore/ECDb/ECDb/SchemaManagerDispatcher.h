@@ -68,6 +68,7 @@ public:
     ECN::UnitSystemId GetUnitSystemId(ECN::UnitSystemCR us) const { return m_reader.GetUnitSystemId(us); }
     ECN::PhenomenonId GetPhenomenonId(ECN::PhenomenonCR ph) const { return m_reader.GetPhenomenonId(ph); }
     ECN::UnitId GetUnitId(ECN::ECUnitCR unit) const { return m_reader.GetUnitId(unit); }
+    ECN::FormatId GetFormatId(ECN::ECFormatCR format) const { return m_reader.GetFormatId(format); }
 
     ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode mode = SchemaLookupMode::ByName) const { return m_reader.GetKindOfQuantity(schemaNameOrAlias, koqName, mode); }
     ECN::KindOfQuantityId GetKindOfQuantityId(ECN::KindOfQuantityCR koq) const { return m_reader.GetKindOfQuantityId(koq); }

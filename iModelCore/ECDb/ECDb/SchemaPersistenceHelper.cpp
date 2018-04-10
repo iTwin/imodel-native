@@ -435,6 +435,46 @@ UnitId SchemaPersistenceHelper::GetUnitId(ECDbCR ecdb, DbTableSpace const& table
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 04/2018
+//---------------------------------------------------------------------------------------
+//static
+FormatId SchemaPersistenceHelper::GetFormatId(ECDbCR ecdb, DbTableSpace const& tableSpace, Utf8CP schemaNameOrAlias, Utf8CP formatName, SchemaLookupMode lookupMode)
+    {
+    Utf8String sql;
+    if (tableSpace.IsMain())
+        sql.assign("SELECT f.Id FROM main." TABLE_Format " f, main." TABLE_Schema " s");
+    else
+        sql.Sprintf("SELECT f.Id FROM [%s]." TABLE_Format " f, [%s]." TABLE_Schema " s", tableSpace.GetName().c_str(), tableSpace.GetName().c_str());
+
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql.append(" WHERE f.SchemaId=s.Id AND s.Name=?1 AND f.Name=?2");
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql.append(" WHERE f.SchemaId=s.Id AND s.Alias=?1 AND f.Name=?2");
+                break;
+
+            default:
+                sql.append(" WHERE f.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND f.Name=?2");
+                break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
+    if (stmt == nullptr)
+        return FormatId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, formatName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return FormatId();
+
+    return stmt->GetValueId<FormatId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
 ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR ecdb, DbTableSpace const& tableSpace, ECClassId ecClassId, Utf8CP propertyName)
@@ -629,33 +669,34 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR jsonStr, ECDbCR ecdb, KindOfQuantityCR koq)
+BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR ecdb, KindOfQuantityCR koq)
     {
-    BeAssert(!koq.GetPresentationUnitList().empty());
-    rapidjson::Document presUnitsJson(rapidjson::kArrayType);
-    rapidjson::MemoryPoolAllocator<>& jsonAllocator = presUnitsJson.GetAllocator();
+    BeAssert(!koq.GetPresentationFormatList().empty());
+    rapidjson::Document presFormatsJson(rapidjson::kArrayType);
+    rapidjson::MemoryPoolAllocator<>& jsonAllocator = presFormatsJson.GetAllocator();
 
-    for (Formatting::FormatUnitSet const& presUnit : koq.GetPresentationUnitList())
+    for (NamedFormat const& format : koq.GetPresentationFormatList())
         {
-        if (presUnit.HasProblem())
+        if (format.IsProblem())
             {
-            ecdb.GetImpl().Issues().ReportV("Failed to import KindOfQuantity '%s'. One of its presentation units is invalid: %s.", koq.GetFullName().c_str(), presUnit.GetProblemDescription().c_str());
+            ecdb.GetImpl().Issues().ReportV("Failed to import KindOfQuantity '%s'. One of its presentation formats is invalid: %s.", koq.GetFullName().c_str(), format.GetProblemDescription().c_str());
             return ERROR;
             }
 
-        Utf8String presUnitStr = KindOfQuantity::GetFUSDescriptor(presUnit, koq.GetSchema());
-        if (presUnitStr.empty())
+        // WIP_FORMAT Is this the right way to serialize a presentation format?
+        Utf8String formatStr = format.GetName();
+        if (formatStr.empty())
             {
-            BeAssert(!presUnitStr.empty());
+            BeAssert(!formatStr.empty());
             return ERROR;
             }
 
-        presUnitsJson.PushBack(rapidjson::Value(presUnitStr.c_str(), (rapidjson::SizeType) presUnitStr.size(), jsonAllocator).Move(), jsonAllocator);
+        presFormatsJson.PushBack(rapidjson::Value(formatStr.c_str(), (rapidjson::SizeType) formatStr.size(), jsonAllocator).Move(), jsonAllocator);
         }
 
     rapidjson::StringBuffer jsonStrBuf;
     rapidjson::Writer<rapidjson::StringBuffer> writer(jsonStrBuf);
-    presUnitsJson.Accept(writer);
+    presFormatsJson.Accept(writer);
     jsonStr.assign(jsonStrBuf.GetString());
     return SUCCESS;
     }
@@ -664,29 +705,30 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQuantityR koq, Utf8CP jsonStr)
+BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQuantityR koq, Utf8CP jsonStr)
     {
-    rapidjson::Document presUnitsJson;
-    if (presUnitsJson.Parse<0>(jsonStr).HasParseError())
+    rapidjson::Document presFormatsJson;
+    if (presFormatsJson.Parse<0>(jsonStr).HasParseError())
         {
-        BeAssert(false && "Could not parse KindOfQuantity PresentationUnits values JSON string.");
+        BeAssert(false && "Could not parse KindOfQuantity Presentation Formats values JSON string.");
         return ERROR;
         }
 
-    BeAssert(presUnitsJson.IsArray());
+    BeAssert(presFormatsJson.IsArray());
 
-    for (rapidjson::Value const& presUnitJson : presUnitsJson.GetArray())
+    for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray())
         {
-        BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
+        BeAssert(presFormatJson.IsString() && presFormatJson.GetStringLength() > 0);
 
+        /* WIP_FORMAT
         ECUnitCP unit = nullptr;
-        Formatting::NamedFormatSpecCP format = nullptr;
-        if (ECObjectsStatus::Success != KindOfQuantity::ParseFUSDescriptor(unit, format, presUnitJson.GetString(), koq) ||
-            ECObjectsStatus::Success != koq.AddPresentationUnit(*unit, format))
+        if (ECObjectsStatus::Success != KindOfQuantity::ParsePresentationUnit(unit, format, presFormatJson.GetString(), koq, 3, 2) ||
+            ECObjectsStatus::Success != koq.AddPresentationFormat(*unit, format))
             {
             LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), presUnitJson.GetString());
             return ERROR;
             }
+            */
         }
 
     return SUCCESS;

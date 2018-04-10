@@ -151,6 +151,15 @@ BentleyStatus SchemaWriter::ImportSchema(Context& ctx, ECN::ECSchemaCR ecSchema)
             }
         }
 
+    for (ECFormatCP format : ecSchema.GetFormats())
+        {
+        if (SUCCESS != ImportFormat(ctx, *format))
+            {
+            ctx.Issues().ReportV("Failed to import Format '%s'.", format->GetFullName().c_str());
+            return ERROR;
+            }
+        }
+
     //KOQs must be imported before ECClasses as properties reference KOQs
     for (KindOfQuantityCP koq : ecSchema.GetKindOfQuantities())
         {
@@ -629,6 +638,229 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
+    {
+    if (ctx.GetSchemaManager().GetFormatId(format).IsValid())
+        return SUCCESS;
+
+    if (!ctx.GetSchemaManager().GetSchemaId(format.GetSchema()).IsValid())
+        {
+        ctx.Issues().ReportV("Failed to import Format '%s'. Its ECSchema '%s' hasn't been imported yet. Check the list of ECSchemas passed to ImportSchema for missing schema references.", format.GetName().c_str(), format.GetSchema().GetFullSchemaName().c_str());
+        BeAssert(false && "Failed to import Format because its ECSchema hasn't been imported yet. The schema references of the ECSchema objects passed to ImportSchema might be corrupted.");
+        return ERROR;
+        }
+
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Format "(SchemaId,Name,DisplayLabel,Description,RoundFactor,Type,Precision,ScientificType,SignOption,FormatTraits,DecimalSeparator,ThousandsSeparator,UOMSeparator,StationSeparator,StationOffsizeSize,CompositeSpacer) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    const int schemaIdParamIx = 1;
+    const int nameParamIx = 2;
+    const int labelParamIx = 3;
+    const int descParamIx = 4;
+    const int roundFactorParamIx = 5;
+    const int typeParamIx = 6;
+    const int precParamIx = 7;
+    const int scientificPrecParamIx = 8;
+    const int signOptionParamIx = 9;
+    const int formatTraitsParamIx = 10;
+    const int decSeparatorParamIx = 11;
+    const int thousandsSepParamIx = 12;
+    const int uomSepParamIx = 13;
+    const int stationSepParamIx = 14;
+    const int stationOffsetSizeParamIx = 15;
+    const int compositeSpacerParamIx = 16;
+
+    if (BE_SQLITE_OK != stmt->BindId(schemaIdParamIx, format.GetSchema().GetId()))
+        return ERROR;
+
+    if (BE_SQLITE_OK != stmt->BindText(nameParamIx, format.GetName(), Statement::MakeCopy::No))
+        return ERROR;
+
+    if (format.GetIsDisplayLabelDefined())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(labelParamIx, format.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (!format.GetInvariantDescription().empty())
+        {
+        if (BE_SQLITE_OK != stmt->BindText(descParamIx, format.GetInvariantDescription(), Statement::MakeCopy::No))
+            return ERROR;
+        }
+
+    if (format.HasNumeric())
+        {
+        Formatting::NumericFormatSpec const& spec = *format.GetNumericSpec();
+        if (spec.HasRoundingFactor())
+            {
+            if (BE_SQLITE_OK != stmt->BindDouble(roundFactorParamIx, spec.GetRoundingFactor()))
+                return ERROR;
+            }
+
+        if (BE_SQLITE_OK != stmt->BindText(typeParamIx, Formatting::Utils::PresentationTypeName(spec.GetPresentationType()), Statement::MakeCopy::Yes))
+            return ERROR;
+
+        if (spec.HasSignOption())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(signOptionParamIx, Formatting::Utils::SignOptionName(spec.GetSignOption()), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        if (spec.HasFormatTraits())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(signOptionParamIx, spec.GetFormatTraitsString(), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        const int64_t prec = spec.GetPresentationType() == Formatting::PresentationType::Fractional ?
+            (int64_t) pow(INT64_C(2), (int64_t) spec.GetFractionalPrecision()) :
+            (int64_t) spec.GetDecimalPrecision();
+
+        if (BE_SQLITE_OK != stmt->BindInt64(precParamIx, prec))
+            return ERROR;
+
+        if (Formatting::PresentationType::Scientific == spec.GetPresentationType())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(scientificPrecParamIx, Formatting::Utils::ScientificTypeName(spec.GetScientificType()), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        if (spec.HasDecimalSeparator())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(decSeparatorParamIx, Utf8String(1, spec.GetDecimalSeparator()), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        if (spec.HasThousandsSeparator())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(thousandsSepParamIx, Utf8String(1, spec.GetThousandSeparator()), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        if (spec.HasUomSeparator())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(uomSepParamIx, spec.GetUomSeparator(), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        if (spec.HasStationSeparator())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(stationSepParamIx, Utf8String(1, spec.GetStationSeparator()), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        if (Formatting::PresentationType::Station == spec.GetPresentationType())
+            {
+            if (BE_SQLITE_OK != stmt->BindInt64(stationOffsetSizeParamIx, (int64_t) spec.GetStationOffsetSize()))
+                return ERROR;
+            }
+        }
+
+    if (format.HasComposite())
+        {
+        Formatting::CompositeValueSpecCR spec = *format.GetCompositeSpec();
+
+        if (spec.HasSpacer())
+            {
+            if (BE_SQLITE_OK != stmt->BindText(compositeSpacerParamIx, spec.GetSpacer(), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+        }
+
+    if (BE_SQLITE_DONE != stmt->Step())
+        return ERROR;
+
+    stmt = nullptr;
+
+    const FormatId formatId = DbUtilities::GetLastInsertedId<FormatId>(ctx.GetECDb());
+    if (!formatId.IsValid())
+        return ERROR;
+
+    const_cast<ECFormatR>(format).SetId(formatId);
+
+    if (format.HasComposite())
+        return ImportFormatComposite(ctx, format, formatId);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR format, FormatId formatId)
+    {
+    if (!format.HasComposite())
+        return SUCCESS;
+
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_FormatCompositeUnit "(FormatId,Label,UnitId,Ordinal) VALUES(?,?,?,?)");
+    if (stmt == nullptr)
+        return ERROR;
+
+    Formatting::CompositeValueSpecCR spec = *format.GetCompositeSpec();
+
+    auto insertUnit = [] (CachedStatement& stmt, FormatId formatId, Nullable<Utf8String> label, ECUnitCR unit, int ordinal)
+        {
+        if (BE_SQLITE_OK != stmt.BindId(1, formatId))
+            return ERROR;
+
+        if (!label.IsNull())
+            {
+            if (BE_SQLITE_OK != stmt.BindText(2, label.Value(), Statement::MakeCopy::Yes))
+                return ERROR;
+            }
+
+        if (BE_SQLITE_OK != stmt.BindId(3, unit.GetId()))
+            return ERROR;
+
+        if (BE_SQLITE_OK != stmt.BindInt(4, ordinal))
+            return ERROR;
+
+        if (BE_SQLITE_DONE != stmt.Step())
+            return ERROR;
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        return SUCCESS;
+        };
+
+    int ordinal = 0;
+    if (spec.HasMajorUnit())
+        {
+        Nullable<Utf8String> label = spec.HasMajorLabel() ? spec.GetMajorLabel() : nullptr;
+        if (SUCCESS != insertUnit(*stmt, formatId, label, (ECUnitCR) *spec.GetMajorUnit(), ordinal))
+            return ERROR;
+        }
+    ordinal++;
+    if (spec.HasMiddleUnit())
+        {
+        Nullable<Utf8String> label = spec.HasMiddleLabel() ? spec.GetMiddleLabel() : nullptr;
+        if (SUCCESS != insertUnit(*stmt, formatId, label, (ECUnitCR) *spec.GetMiddleUnit(), ordinal))
+            return ERROR;
+        }
+
+    ordinal++;
+    if (spec.HasMinorUnit())
+        {
+        Nullable<Utf8String> label = spec.HasMinorLabel() ? spec.GetMinorLabel() : nullptr;
+        if (SUCCESS != insertUnit(*stmt, formatId, label, (ECUnitCR) *spec.GetMinorUnit(), ordinal))
+            return ERROR;
+        }
+
+    ordinal++;
+    if (spec.HasSubUnit())
+        {
+        Nullable<Utf8String> label = spec.HasSubLabel() ? spec.GetSubLabel() : nullptr;
+        if (SUCCESS != insertUnit(*stmt, formatId, label, (ECUnitCR) *spec.GetSubUnit(), ordinal))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR koq)
@@ -668,21 +900,21 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
     if (BE_SQLITE_OK != stmt->BindDouble(5, koq.GetRelativeError()))
         return ERROR;
 
-    if (koq.GetPersistenceUnit().HasProblem())
+    if (koq.GetPersistenceUnit() == nullptr)
         {
-        ctx.Issues().ReportV("Failed to import KindOfQuantity '%s'. Its persistence unit is invalid: %s.", koq.GetFullName().c_str(), koq.GetPersistenceUnit().GetProblemDescription().c_str());
+        ctx.Issues().ReportV("Failed to import KindOfQuantity '%s'. It must have a persistence unit.", koq.GetFullName().c_str());
         return ERROR;
         }
 
-    Utf8String persistenceUnitStr = koq.GetPersistenceUnitDescriptor();
+    Utf8String persistenceUnitStr = koq.GetPersistenceUnit()->GetQualifiedName(koq.GetSchema());
     BeAssert(!persistenceUnitStr.empty());
     if (BE_SQLITE_OK != stmt->BindText(6, persistenceUnitStr, Statement::MakeCopy::No))
         return ERROR;
 
     Utf8String presUnitsJsonStr;
-    if (!koq.GetPresentationUnitList().empty())
+    if (!koq.GetPresentationFormatList().empty())
         {
-        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJsonStr, ctx.GetECDb(), koq))
+        if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presUnitsJsonStr, ctx.GetECDb(), koq))
             return ERROR;
 
         if (BE_SQLITE_OK != stmt->BindText(7, presUnitsJsonStr, Statement::MakeCopy::No))
@@ -2850,21 +3082,21 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
         {
         actualChanges++;
 
-        if (newKoq.GetPresentationUnitList().empty())
+        if (newKoq.GetPresentationFormatList().empty())
             sqlUpdateBuilder.AddSetToNull("PresentationUnits");
         else
             {
-            Utf8String presUnitsJson;
-            if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationUnits(presUnitsJson, ctx.GetECDb(), newKoq))
+            Utf8String presFormatsJson;
+            if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presFormatsJson, ctx.GetECDb(), newKoq))
                 return ERROR;
 
-            sqlUpdateBuilder.AddSetExp("PresentationUnits", presUnitsJson.c_str());
+            sqlUpdateBuilder.AddSetExp("PresentationUnits", presFormatsJson.c_str());
             }
         }
 
     if (change.ChangesCount() > actualChanges)
         {
-        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of KindOfQuantity '%s' is not supported except for RelativeError, PresentationUnits, DisplayLabel and Description.",
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing properties of KindOfQuantity '%s' is not supported except for RelativeError, PresentationFormats, DisplayLabel and Description.",
                          oldKoq.GetFullName().c_str());
         return ERROR;
         }
