@@ -85,7 +85,7 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
     ASSERT_TRUE(schema.IsValid());
     EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema(true)));
-
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema(true)));
     {
     KindOfQuantityP kindOfQuantity;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
@@ -102,12 +102,12 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
     {
     KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
-    EXPECT_STREQ("InchesU", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("f:InchesU", koq->GetDefaultPresentationFormat()->GetName().c_str());
     auto const& presUnitList = koq->GetPresentationFormatList();
 
     EXPECT_EQ(2, presUnitList.size());
-    EXPECT_STREQ("InchesU", presUnitList.at(0).GetName().c_str());
-    EXPECT_STREQ("Feet4U", presUnitList.at(1).GetName().c_str());
+    EXPECT_STREQ("f:InchesU", presUnitList.at(0).GetName().c_str());
+    EXPECT_STREQ("f:Feet4U", presUnitList.at(1).GetName().c_str());
     }
 
     {
@@ -117,7 +117,7 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
 
     koq->RemovePresentationFormat(presUnitList.at(1));
     EXPECT_EQ(1, presUnitList.size());
-    EXPECT_STRCASEEQ("Feet4U", presUnitList.at(0).GetName().c_str());
+    EXPECT_STRCASEEQ("f:Feet4U", presUnitList.at(0).GetName().c_str());
 
     koq->RemovePresentationFormat(presUnitList.at(0));
     EXPECT_EQ(0, presUnitList.size());
@@ -133,6 +133,7 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationFormats)
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
     ASSERT_TRUE(schema.IsValid());
     EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     
     KindOfQuantityP kindOfQuantity;
 
@@ -166,6 +167,7 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationFormats)
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
     ASSERT_TRUE(schema.IsValid());
     EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
 
     ECUnitCP meterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
     ECUnitCP centimeterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("CM");
@@ -202,46 +204,48 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
 
     // already added as a reference schema
     auto unitSchema = ECTestFixture::GetUnitsSchema();
+    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
-    //auto inchUnit = unitSchema->GetUnitCP("IN");
     auto ftUnit = unitSchema->GetUnitCP("FT");
 
     ECUnitP smoot;
     m_schema->CreateUnit(smoot, "Smoot", "M", *unitSchema->GetPhenomenonCP("Length"), *unitSchema->GetUnitSystemCP("SI"), 1.7018);
-
-    //auto defaultFormat = m_stdFmtSet.FindFormat("DefaultRealU");
+    ECFormatP format;
+    Formatting::NumericFormatSpec spec = Formatting::NumericFormatSpec();
+    m_schema->CreateFormat(format, "SmootFormat", nullptr, nullptr, &spec);
 
     {
     KindOfQuantityP koq;
     m_schema->CreateKindOfQuantity(koq, "Inch_In_RefSchema_Without_Format");
     koq->SetPersistenceUnit(*ftUnit);
-    //koq->AddPresentationUnit(*inchUnit);
 
-    EXPECT_STREQ("u:IN(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name";
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+
+    EXPECT_STREQ("f:InchesU", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name";
     }
     {
     KindOfQuantityP koq;
     m_schema->CreateKindOfQuantity(koq, "Inch_In_RefSchema_With_Format");
     koq->SetPersistenceUnit(*ftUnit);
-    //koq->AddPresentationUnit(*inchUnit, defaultFormat);
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"), 8, unitSchema->GetUnitCP("IN"), "banana");
 
-    EXPECT_STREQ("u:IN(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
+    EXPECT_STREQ("f:InchesU<8>[u:IN|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name and the format name";
     }
     {
     KindOfQuantityP koq;
     m_schema->CreateKindOfQuantity(koq, "Smoot_In_Schema_Without_Format");
     koq->SetPersistenceUnit(*ftUnit);
-    //koq->AddPresentationUnit(*smoot);
+    koq->AddPresentationFormatSingleUnitOverride(*format);
 
-    EXPECT_STREQ("Smoot(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name";
+    EXPECT_STREQ("SmootFormat", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name";
     }
     {
     KindOfQuantityP koq;
     m_schema->CreateKindOfQuantity(koq, "Smoot_In_Schema_With_Format");
     koq->SetPersistenceUnit(*ftUnit);
-   // koq->AddPresentationUnit(*smoot, defaultFormat);
+    koq->AddPresentationFormatSingleUnitOverride(*format, nullptr, smoot, "banana");;
 
-    EXPECT_STREQ("Smoot(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
+    EXPECT_STREQ("SmootFormat[Smoot|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name and the format name";
     }
     {
     KindOfQuantityP koq;
@@ -253,10 +257,10 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
     KindOfQuantityP koq;
     m_schema->CreateKindOfQuantity(koq, "Multiple_Units_and_Format");
     koq->SetPersistenceUnit(*ftUnit);
-   // koq->AddPresentationUnit(*smoot, defaultFormat);
-   // koq->AddPresentationUnit(*inchUnit, defaultFormat);
+    koq->AddPresentationFormatSingleUnitOverride(*format, nullptr, smoot, "banana");
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"), 8, unitSchema->GetUnitCP("IN"), "banana");
 
-    EXPECT_STREQ("Smoot(DefaultRealU);u:IN(DefaultRealU)", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
+    EXPECT_STREQ("SmootFormat[Smoot|banana];f:InchesU<8>[u:IN|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
     }
     }
 

@@ -798,7 +798,8 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
         for(const auto& i : input)
             { 
             auto& unit = i.first;
-
+            if (nullptr == unit)
+                return ECObjectsStatus::Error;
             out += "[";
             out += unit->GetQualifiedName(GetSchema());
             out += "|";
@@ -839,9 +840,9 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
         const auto& maj = unitsAndLabels.ValueR()[0].first;
         for (const auto& u: unitsAndLabels.ValueR())
             {
-            if(!Units::Unit::AreCompatible(maj, u.first))
+            if(nullptr == maj || nullptr == u.first || !Units::Unit::AreCompatible(maj, u.first))
                 {
-                LOG.errorv("On KOQ '%s' all unit overrides must be compatible with each other", GetFullName().c_str());
+                LOG.errorv("On KOQ '%s' all unit overrides must be compatible with each other and must exist", GetFullName().c_str());
                 return ECObjectsStatus::Error;
                 }
             }
@@ -962,8 +963,13 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
 //--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<uint32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
     {
-    Nullable<bvector<std::pair<ECUnitCP, Utf8CP>>> units = bvector<std::pair<ECUnitCP, Utf8CP>>();
-    units.ValueR().push_back(std::make_pair(inputUnitOverride, labelOverride));
+    Nullable<bvector<std::pair<ECUnitCP, Utf8CP>>> units = nullptr;
+    if (nullptr != inputUnitOverride)
+        { 
+        units= bvector<std::pair<ECUnitCP, Utf8CP>>();
+        units.ValueR().push_back(std::make_pair(inputUnitOverride, labelOverride));
+        }
+
     return AddPresentationFormat(parent, precisionOverride, units, isDefault);
     }
 
