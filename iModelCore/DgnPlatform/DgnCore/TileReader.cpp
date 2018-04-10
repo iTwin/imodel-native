@@ -1216,6 +1216,7 @@ private:
     uint16_t const* ReadNormals(Json::Value const&);
     void AddMesh(MeshPrimitive& mesh, Json::Value const&);
     uint32_t AddMeshVertex(MeshBuilderR, MeshPrimitive const&, uint32_t index, FeatureCR feature);
+    void AddTriangle(MeshBuilderR, MeshPrimitive&, uint32_t indexOfFirstIndex, FeatureCP feature);
 
     void AddPolylines(MeshPrimitive const&, Json::Value const& json);
     Polyline ReadPolyline(void const*& pData, bool useShortIndices); // increments pData past the end of the polyline
@@ -1407,6 +1408,32 @@ uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitiv
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCacheTileRebuilder::AddTriangle(MeshBuilderR builder, MeshPrimitive& mesh, uint32_t indexOfFirstIndex, FeatureCP feature)
+    {
+    uint32_t oldIndices[3] = { mesh.m_indices[indexOfFirstIndex], mesh.m_indices[indexOfFirstIndex+1], mesh.m_indices[indexOfFirstIndex+2] };
+    uint32_t newIndices[3];
+
+    if (nullptr == feature)
+        {
+        newIndices[0] = newIndices[1] = newIndices[2];
+        }
+    else
+        {
+        newIndices[0] = AddMeshVertex(builder, mesh, indexOfFirstIndex, *feature);
+        newIndices[1] = AddMeshVertex(builder, mesh, indexOfFirstIndex+1, *feature);
+        newIndices[2] = AddMeshVertex(builder, mesh, indexOfFirstIndex+2, *feature);
+        builder.AddTriangle(Triangle(newIndices[0], newIndices[1], newIndices[2], false));
+        }
+
+    // If indices changed, map old to new index so we can remap edge indices later
+    for (size_t i = 0; i < 3; i++)
+        if (oldIndices[i] != newIndices[i])
+            mesh.m_indexMap.Insert(oldIndices[i], newIndices[i]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCacheTileRebuilder::AddMesh(MeshPrimitive& mesh, Json::Value const& json)
@@ -1423,26 +1450,7 @@ void DgnCacheTileRebuilder::AddMesh(MeshPrimitive& mesh, Json::Value const& json
         uint32_t index = mesh.m_indices[i];
         uint32_t featureId = mesh.m_features.GetFeatureId(index);
         FeatureCP feature = m_featureList.GetFeature(featureId);
-        if (nullptr == feature)
-            {
-            // -1 indicates this vertex no longer exists.
-            i0 = i1 = i2 = -1;
-            }
-        else
-            {
-            i0 = AddMeshVertex(builder, mesh, i, *feature);
-            i1 = AddMeshVertex(builder, mesh, i+1, *feature);
-            i2 = AddMeshVertex(builder, mesh, i+2, *feature);
-            builder.AddTriangle(Triangle(i0, i1, i2, false));
-            }
-        
-        if (i0 != index)
-            {
-            // If indices changed, map old to new index so we can remap edge indices later
-            mesh.m_indexMap.Insert(index, i0);
-            mesh.m_indexMap.Insert(mesh.m_indices[1], i1);
-            mesh.m_indexMap.Insert(mesh.m_indices[2], i2);
-            }
+        AddTriangle(builder, mesh, i, feature);
         }
 
     AddMeshEdges(builder, mesh, json);
@@ -1467,9 +1475,9 @@ void DgnCacheTileRebuilder::AddMeshEdges(MeshBuilderR builder, MeshPrimitive con
         builder.GetMesh()->GetEdgesR() = new MeshEdges();
 
     MeshEdgesPtr edges = builder.GetMesh()->GetEdgesR();
+    AddVisibleEdges(*edges, mesh, edgesJson);
     AddPolylineEdges(*edges, mesh, edgesJson);
     AddSilhouetteEdges(*edges, mesh, edgesJson);
-    AddVisibleEdges(*edges, mesh, edgesJson);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1724,6 +1732,107 @@ ReadStatus DgnCacheTileRebuilder::ReadTile(DgnTile::Flags& flags, DgnElementIdSe
     return ReadGltf();
     }
 
+#if defined(TEST_TILE_REBUILDER)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
+    {
+    bool asserted = false;
+    auto const& lhe = lhm.GetEdges()->m_visible, rhe = rhm.GetEdges()->m_visible;
+    BeAssert(lhe.size() == rhe.size());
+    auto const& lhv = lhm.Verts();
+    auto const& rhv = rhm.Verts();
+    for (size_t i = 0; i < lhe.size(); i++)
+        {
+        auto const& lh = lhe[i];
+        auto const& rh = rhe[i];
+
+        auto lhp0 = lhv[lh.m_indices[0]],
+             lhp1 = lhv[lh.m_indices[1]],
+             rhp0 = rhv[rh.m_indices[0]],
+             rhp1 = rhv[rh.m_indices[1]];
+         if (!asserted)
+             {
+             BeAssert(lhp0 == rhp0);
+             BeAssert(lhp1 == rhp1);
+             if (lhp0 != rhp0 || lhp1 != rhp1)
+                 asserted = true;
+             }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareSilhouettes(MeshCR lhm, MeshCR rhm)
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void comparePolylineEdges(MeshCR lhm, MeshCR rhm)
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareEdges(MeshCR lhm, MeshCR rhm)
+    {
+    compareVisibleEdges(lhm, rhm);
+    compareSilhouettes(lhm, rhm);
+    comparePolylineEdges(lhm, rhm);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareTriangles(MeshCR lhs, MeshCR rhs)
+    {
+    auto const& lhv = lhs.Verts();
+    auto const& rhv = rhs.Verts();
+    auto const& lht = lhs.Triangles().Indices();
+    auto const& rht = rhs.Triangles().Indices();
+    BeAssert(lht.size() == rht.size());
+    BeAssert(lhv.size() == rhv.size());
+    BeAssert(lhv.GetParams().GetOrigin().AlmostEqual(rhv.GetParams().GetOrigin()));
+    BeAssert(lhv.GetParams().GetScale().AlmostEqual(rhv.GetParams().GetScale()));
+
+    for (size_t i = 0; i < lht.size(); i++)
+        {
+        auto lhp = lhv[lht[i]];
+        auto rhp = rhv[rht[i]];
+        BeAssert(lhp == rhp);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareMeshes(MeshCR lhs, MeshCR rhs)
+    {
+    compareTriangles(lhs, rhs);
+    BeAssert(lhs.GetEdges().IsValid() == rhs.GetEdges().IsValid());
+    if (lhs.GetEdges().IsValid() && rhs.GetEdges().IsValid())
+        compareEdges(lhs, rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareMeshLists(MeshList const& lhs, MeshList const& rhs)
+    {
+    for (size_t i = 0; i < lhs.size(); i++)
+        compareMeshes(*lhs[i], *rhs[i]);
+    }
+
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1755,6 +1864,20 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
 
     if (DgnTile::Flags::None != (flags & DgnTile::Flags::Incomplete))
         geometry.MarkIncomplete();
+
+    // Compare with ordinary deserialization path...
+    ElementAlignedBox3d testContentRange;
+    bool testIsLeaf;
+    Render::Primitives::GeometryCollection testGeometry;
+    streamBuffer.SetPos(0);
+    ReadStatus testStatus = DgnTileReader(streamBuffer, model, renderSystem).ReadTile(testContentRange, testGeometry, testIsLeaf);
+
+    BeAssert(ReadStatus::Success == testStatus);
+    BeAssert(testContentRange.low.AlmostEqual(contentRange.low) && testContentRange.high.AlmostEqual(contentRange.high));
+    BeAssert(testIsLeaf == isLeaf);
+    BeAssert(testGeometry.Meshes().size() == geometry.Meshes().size());
+
+    compareMeshLists(testGeometry.Meshes(), geometry.Meshes());
 
     return ReadStatus::Success;
 #else
