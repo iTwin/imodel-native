@@ -467,7 +467,7 @@ struct MeshBuilderMap
         friend struct MeshBuilderMap;
     private:
         DisplayParamsCPtr   m_params;
-        uint16_t            m_order;
+        uint16_t            m_order = 0;
         Mesh::PrimitiveType m_type;
         bool                m_hasNormals;
         bool                m_isPlanar;
