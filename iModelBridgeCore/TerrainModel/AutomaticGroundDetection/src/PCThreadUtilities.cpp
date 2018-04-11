@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/PCThreadUtilities.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
@@ -262,7 +262,11 @@ PointCloudThread::~PointCloudThread()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudThread::Start()
     {
-    BeThreadUtilities::StartNewThread(PlatformThreadRunner, this, 1024*1024);
+#ifdef BUILDTMFORDGNDB
+    BeThreadUtilities::StartNewThread(PlatformThreadRunner, this, 1024 * 1024);
+#else
+    BeThreadUtilities::StartNewThread(1024 * 1024, PlatformThreadRunner, this);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

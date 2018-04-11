@@ -395,7 +395,7 @@ struct GeoTiffKeysList : GEOCOORDINATESNAMESPACE IGeoTiffKeysList
         m_index = 0;
         return GetNextKey (po_Key);
         }
-    virtual bool            GetNextKey (GeoCoordinates::IGeoTiffKeysList::GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
+    virtual bool            GetNextKey (GEOCOORDINATESNAMESPACE IGeoTiffKeysList::GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
         {
         if (m_index < (int)m_keys.size())
             {
@@ -411,7 +411,7 @@ struct GeoTiffKeysList : GEOCOORDINATESNAMESPACE IGeoTiffKeysList
 
     // Apparently this implementation of IGeoTiffKeyList does not support addition of keys so none can be
     // extracted from a BaseGCS using SetGeoKeys
-    virtual void            AddKey (const GeoCoordinates::IGeoTiffKeysList::GeoKeyItem& key) {};
+    virtual void            AddKey (const GEOCOORDINATESNAMESPACE IGeoTiffKeysList::GeoKeyItem& key) {};
     };
 
 DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASPublicHeaderBlock& pPHB, BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSPtr& gcs)
