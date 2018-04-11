@@ -173,6 +173,7 @@ private:
     RevisionStatus DeleteReversedRevisionId();
 
     Utf8String QueryInitialParentRevisionId() const;
+    RevisionStatus SaveInitialParentRevisionId(Utf8StringCR revisionId);
     RevisionStatus UpdateInitialParentRevisionId();
 
     RevisionStatus GroupChanges(BeSQLite::DbSchemaChangeSetR schemaChangeSet, BeSQLite::ChangeGroupR dataChangeGroup, TxnManager::TxnId endTxnId) const;
