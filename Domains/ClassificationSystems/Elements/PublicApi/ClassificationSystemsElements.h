@@ -29,13 +29,22 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinition : Dgn::Defini
     {
     DEFINE_T_SUPER(Dgn::DefinitionElement);
     private:
+        BE_PROP_NAME(Group)
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystemClassDefinition(CreateParams const& params) : T_Super(params) {}
 
+        //! Sets ClassificationSystemClassDefinition group Id
+        //! @param[in] groupId to set
+        void SetGroupId(Dgn::DgnElementId groupId);
+
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
-        
+
+        //!Returns id of group that has this ClassificationSystemClassDefinition
+        //! @return group id of the ClassificationSystemClassDefinition
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetGroupId() const;
+
     };
 //=======================================================================================
 //! A ClassificationSystem Class Definition Group element
@@ -303,7 +312,7 @@ struct EXPORT_VTABLE_ATTRIBUTE UniFormatClassDefinition : ClassificationSystemCl
     DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition, ClassificationSystemClassDefinition);
     private:
         BE_PROP_NAME(Name)
-            BE_PROP_NAME(Description)
+        BE_PROP_NAME(Description)
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT UniFormatClassDefinition(CreateParams const& params) : T_Super(params) {}

@@ -67,11 +67,6 @@
 #endif
 
 //-----------------------------------------------------------------------------------------
-// ECClass names (combine with CLASSIFICATIONSYSTEMS_TOOLS_UI_ECSCHEMA_NAME macro for use in ECSql)
-//-----------------------------------------------------------------------------------------
-#define CLASSIFICATIONSYSTEMS_VIEW_CATEGORY_SELECTOR_NAME "ClassificationSystemsPathCategories"
-
-//-----------------------------------------------------------------------------------------
 // ECClass names (combine with CLASSIFICATIONSYSTEMS_ECCHEMA_NAME macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinition                     "ClassificationSystemClassDefinition"
@@ -84,14 +79,4 @@
 #define CLASSIFICATIONSYSTEMS_CLASS_MasterFormatClassDefinition                             "MasterFormatClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition                                "UniFormatClassDefinition"
 
-#define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemsSectionConnectsElements                            "ClassificationSystemsSectionConnectsElements"
-#define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemsPathHasSections                                    "ClassificationSystemsPathHasSections"
-
-#define CLASSIFICATIONSYSTEMS_CATEGORY_CODE_ClassificationSystemsPath                   "ClassificationSystemsPath"
-#define CLASSIFICATIONSYSTEMS_CATEGORY_CODE_ClassificationSystemsPathSection            "ClassificationSystemsPathSection"
-#define CLASSIFICATIONSYSTEMS_SUBCATEGORY_CODE_MainClassificationSystemsPath            "Main"
-#define CLASSIFICATIONSYSTEMS_SUBCATEGORY_CODE_AlternativeClassificationSystemsPath     "Alternative"
-
-
-#define MAIN_CLASSIFICATIONSYSTEMS_PATH_COLOR 13, 155, 25 
-#define ALTERNATIVE_CLASSIFICATIONSYSTEMS_PATH_COLOR 66, 134, 244
+#define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup                            "ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup"
