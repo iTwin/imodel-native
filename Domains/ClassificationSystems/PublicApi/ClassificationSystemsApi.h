@@ -9,9 +9,9 @@
 
 #include <DgnPlatform/DgnPlatformApi.h>
 #include "Domain/ClassificationSystemsMacros.h"
-#include "Domain/ClassificationSystemsDomain.h"
 #include "Elements/ClassificationSystemsElements.h"
 #include "Handlers/ClassificationSystemsHandlers.h"
+#include "Domain/ClassificationSystemsDomain.h"
 //#include "Handlers/ClassificationSystemsPathHandler.h"
 
 

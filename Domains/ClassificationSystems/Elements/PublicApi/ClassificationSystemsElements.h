@@ -93,7 +93,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT CIBSEClassDefinition(CreateParams const& params) : T_Super(params) {}
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT CIBSEClassDefinition(CreateParams const& params, Utf8CP name, Utf8CP Category);
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT CIBSEClassDefinition(CreateParams const& params, Utf8CP name, ClassificationSystemClassDefinitionGroupCR group);
         friend struct CIBSEClassDefinitionHandler;
         friend struct ClassificationSystemsDomain;
 
@@ -105,7 +105,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         //! @param[in]  name        name of the CIBSE Class definition
         //! @param[in]  Category    Category of the CIBSE Class definition
         //! @return     a ptr to created CIBSEClassDefinition
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static CIBSEClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, Utf8CP Category);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static CIBSEClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, ClassificationSystemClassDefinitionGroupCR group);
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(CIBSEClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 

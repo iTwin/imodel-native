@@ -62,11 +62,13 @@ ClassificationSystemClassDefinitionGroupPtr ClassificationSystemsDomain::InsertG
     {
 
     //TODO
-    ClassificationSystemClassDefinitionGroupPtr classDefinition = CIBSEClassDefinition::Create(db, name, group);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinition.get(), BeSQLite::DbOpcode::Insert, "CIBSEClassDefinition : Insertion"))
+    ClassificationSystemClassDefinitionGroupPtr classDefinitionGroup = ClassificationSystemClassDefinitionGroup::Create(db, name);
+    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinitionGroup.get(), BeSQLite::DbOpcode::Insert, "CIBSEClassDefinition : Insertion"))
         {
-        classDefinition->Insert();
+        classDefinitionGroup->Insert();
+        return classDefinitionGroup;
         }
+    return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -75,7 +77,7 @@ ClassificationSystemClassDefinitionGroupPtr ClassificationSystemsDomain::InsertG
 void ClassificationSystemsDomain::InsertCIBSE 
 (
     Dgn::DgnDbR db,
-    ClassificationSystemClassDefinitionGroupPtr group,
+    ClassificationSystemClassDefinitionGroupCR group,
     Utf8CP name
 ) const
     {
@@ -91,8 +93,8 @@ void ClassificationSystemsDomain::InsertCIBSE
 void ClassificationSystemsDomain::InsertASHRAE2004 
 (
     Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP Category
+    ClassificationSystemClassDefinitionGroupCR group,
+    Utf8CP name
 ) const
     {
     }
@@ -102,8 +104,8 @@ void ClassificationSystemsDomain::InsertASHRAE2004
 void ClassificationSystemsDomain::InsertASHRAE2007 
 (
     Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP Category
+    ClassificationSystemClassDefinitionGroupCR group,
+    Utf8CP name
 ) const
     {
     }
@@ -113,8 +115,8 @@ void ClassificationSystemsDomain::InsertASHRAE2007
 void ClassificationSystemsDomain::InsertASHRAE2010 
 (
     Dgn::DgnDbR db,
-    Utf8CP name,
-    Utf8CP Category
+    ClassificationSystemClassDefinitionGroupCR group,
+    Utf8CP name
 ) const
     {
     }

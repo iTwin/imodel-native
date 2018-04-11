@@ -79,11 +79,11 @@ CIBSEClassDefinition::CIBSEClassDefinition
 (
 CreateParams const& params,
 Utf8CP name,
-Utf8CP Category
+ClassificationSystemClassDefinitionGroupCR group
 ) : T_Super(params)
     {
     SetName(name);
-    //SetCategory(Category);  
+    SetGroupId(group.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -93,12 +93,12 @@ CIBSEClassDefinitionPtr CIBSEClassDefinition::Create
 (
 Dgn::DgnDbR db,
 Utf8CP name,
-Utf8CP Category
+ClassificationSystemClassDefinitionGroupCR group
 )
     {
     Dgn::DgnClassId classId = QueryClassId(db);
     Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
-    CIBSEClassDefinitionPtr definition = new CIBSEClassDefinition(params, name, Category);
+    CIBSEClassDefinitionPtr definition = new CIBSEClassDefinition(params, name, group);
     return definition;
     }
 
