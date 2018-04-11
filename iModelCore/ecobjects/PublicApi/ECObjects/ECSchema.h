@@ -1538,7 +1538,7 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
-    ECOBJECTS_EXPORT ECObjectsStatus ParsePersistenceUnit(ECUnitCP& unit, ECFormatCP& format, Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
+    ECOBJECTS_EXPORT ECObjectsStatus ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
     ECOBJECTS_EXPORT ECObjectsStatus ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
     //! Given a FUS descriptor string, with format {unitName}({formatName}), it will be parsed and used to populate the unit and format.
     //!

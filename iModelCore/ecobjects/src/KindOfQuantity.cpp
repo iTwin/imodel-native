@@ -389,93 +389,35 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    ECUnitCP persUnit = nullptr;
-    ECFormatCP persFormat = nullptr;
-    if (ECObjectsStatus::Success != ParsePersistenceUnit(persUnit, persFormat, value.c_str(), &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
-        {
-        LOG.errorv("Failed to parse persistence unit '%s'", value.c_str());
+    if (ECObjectsStatus::Success != ParsePersistenceUnit(value.c_str(), &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
         return SchemaReadStatus::InvalidECSchemaXml;
-        }
 
-    BeAssert(nullptr != persUnit);
-    if (persUnit->IsConstant())
-        { 
-        LOG.errorv("Persistence FormatUnitSet: '%s' on KindOfQuanity '%s' has a Constant as a persistence unit", value.c_str(), GetName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    m_persistenceUnit = persUnit;
-
-    auto presAttr = GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_2) ? PRESENTATION_FORMATS_ATTRIBUTE : PRESENTATION_UNITS_ATTRIBUTE;
     // Read Presentation Formats
-    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, presAttr))
+    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_2) ? PRESENTATION_FORMATS_ATTRIBUTE : PRESENTATION_UNITS_ATTRIBUTE))
         {
         bvector<Utf8String> presentationUnits;
         BeStringUtilities::Split(value.c_str(), ";", presentationUnits);
         for(auto const& presValue : presentationUnits)
             {
             if (ECObjectsStatus::Success != ParsePresentationUnit(presValue.c_str(), context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
-                {
-                LOG.errorv("Failed to parse presentation format '%s' on KindOfQuantity '%s'", presValue.c_str(), GetName().c_str());
                 return SchemaReadStatus::InvalidECSchemaXml;
-                }
             }
         }
-    if (nullptr != persFormat)
-        AddPresentationFormatInternal(*persFormat);
     return SchemaReadStatus::Success;
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(ECUnitCP& unit, ECFormatCP& format, Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion)
+ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion)
     {
-    unit = nullptr;
-    format = nullptr;
     bool xmlLessThan32 = (3 == ecXmlMajorVersion && 2 > ecXmlMinorVersion) && (nullptr != context);
-
+    ECUnitCP unit = nullptr;
     if (xmlLessThan32)
         {
         Utf8String unitName;
         Utf8String formatName;
         Formatting::Format::ParseUnitFormatDescriptor(unitName, formatName, descriptor);
-
-        Utf8CP mappedName;
-        if (Utf8String::IsNullOrEmpty(formatName.c_str()))
-            mappedName = formatName.c_str();
-        else
-            mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(formatName.c_str());
-
-        if (nullptr == mappedName)
-            {
-            LOG.errorv("Failed to find format mapping with name '%s' in legacy format mappings", mappedName);
-                return ECObjectsStatus::Error;
-            }
-        if (!Utf8String::IsNullOrEmpty(mappedName))
-            {
-            SchemaKey key = SchemaKey("Formats", 1, 0, 0);
-            auto formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
-
-            if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
-                { 
-                LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve format '%s'.",
-                    formatsSchema->GetName().c_str(), GetSchema().GetName().c_str(), mappedName);
-                if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
-                    {
-                    LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-                    return ECObjectsStatus::Error;
-                    }
-                }
-
-            format = GetSchema().LookupFormat(mappedName);
-            if (nullptr == format)
-                {
-                LOG.errorv("Failed to find format with name '%s' in standard formats schema", mappedName);
-                return ECObjectsStatus::Error;
-                }
-            }
-
         unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
         if (unitName.empty())
             {
@@ -505,6 +447,55 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(ECUnitCP& unit, ECFormatCP&
                 descriptor, GetFullName().c_str(), unitName.c_str());
             return ECObjectsStatus::Error;
             }
+
+        Utf8CP mappedName;
+        if (Utf8String::IsNullOrEmpty(formatName.c_str()))
+            mappedName = formatName.c_str();
+        else
+            {
+            mappedName = Formatting::AliasMappings::TryGetNameFromAlias(formatName.c_str());
+            mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(mappedName);
+            }
+
+        if (nullptr == mappedName)
+            {
+            LOG.errorv("Failed to find format mapping with name '%s' in legacy format mappings", mappedName);
+            return ECObjectsStatus::Error;
+            }
+
+        Nullable<unsigned> prec = nullptr;
+        ECFormatCP persistenceFormat = nullptr;
+        if (!Utf8String::IsNullOrEmpty(mappedName))
+            {
+            SchemaKey key = SchemaKey("Formats", 1, 0, 0);
+            auto formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+
+            if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
+                { 
+                LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve format '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str(), mappedName);
+                if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
+                    {
+                    LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+                    return ECObjectsStatus::Error;
+                    }
+                }
+
+            bvector<Utf8String> unitNames;
+            bvector<Nullable<Utf8String>> unitLabels; // TODO make these optional since we don't care about them here
+            Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, mappedName);
+            persistenceFormat = GetSchema().LookupFormat(formatName.c_str());
+            if (nullptr == persistenceFormat)
+                {
+                LOG.errorv("Failed to find format with name '%s' in standard formats schema", mappedName);
+                return ECObjectsStatus::Error;
+                }
+            }
+
+        if (nullptr != persistenceFormat && ECObjectsStatus::Success != AddPresentationFormatSingleUnitOverride(*persistenceFormat, prec, unit))
+            {
+            LOG.errorv("On KOQ '%s' failed to set presentation format with name '%s'", GetFullName().c_str(), persistenceFormat->GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
         }
     else
         unit = GetSchema().GetUnitsContext().LookupUnit(descriptor);
@@ -513,6 +504,19 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(ECUnitCP& unit, ECFormatCP&
         {
         LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located",
             descriptor, GetFullName().c_str(), descriptor);
+        return ECObjectsStatus::Error;
+        }
+
+    BeAssert(nullptr != unit);
+    if (unit->IsConstant())
+        { 
+        LOG.errorv("Persistence FormatUnitSet: '%s' on KindOfQuanity '%s' has a Constant as a persistence unit", descriptor, GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    if (ECObjectsStatus::Success != SetPersistenceUnit(*unit))
+        {
+        LOG.errorv("On KOQ '%s' failed to set persistence unit with name '%s'", GetFullName().c_str(), unit->GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
@@ -583,6 +587,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
                 descriptor, GetFullName().c_str(), unitName.c_str());
             return ECObjectsStatus::Error;
             }
+
         Utf8String alias;
         ECClass::ParseClassName(alias, unitName, unitName);
         SchemaKey unitsKey("Units", 1, 0, 0);
@@ -598,23 +603,28 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
                 return ECObjectsStatus::Error;
                 }
             }
+
         ECUnitCP unit = unitsSchema->GetUnitsContext().LookupUnit(unitName.c_str());
+
         if (nullptr == unit)
             {
             LOG.errorv("FormatString '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located in the standard Units schema.",
                 descriptor, GetFullName().c_str(), unitName.c_str());
             return ECObjectsStatus::Error;
             }
+
         if (format->HasCompositeMajorUnit() && !Units::Unit::AreEqual(unit, format->GetCompositeMajorUnit()))
             {
             LOG.errorv("On KOQ '%s' presentation unit '%s' must be compatible with parent format '%s' major unit", GetFullName().c_str(), unit->GetFullName().c_str(), format->GetParentFormat()->GetFullName().c_str());
             return ECObjectsStatus::Error;
             }
+
         if (!Units::Unit::AreCompatible(unit, m_persistenceUnit))
             {
             LOG.errorv("On KOQ '%s' presentation unit '%s' is incompatible with persistence unit '%s'", GetFullName().c_str(), unit->GetFullName().c_str(), m_persistenceUnit->GetFullName().c_str());
             return ECObjectsStatus::Error;
             }
+
         AddPresentationFormatSingleUnitOverride(*format, precision, format->HasCompositeMajorUnit() ? nullptr : unit);
         }
     else // >= 3.2
@@ -651,7 +661,6 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             }
         AddPresentationFormat(*format, precision, unitsAndLabels);
         }
-
     return ECObjectsStatus::Success;
     }
 

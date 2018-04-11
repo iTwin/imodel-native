@@ -1582,6 +1582,7 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
     ECSchemaPtr ecSchema;
     ECSchema::CreateSchema(ecSchema, "TestSchema", "ts", 1, 0, 0);
     ecSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    ecSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     ECEntityClassP a;
     ECEntityClassP b;
@@ -1605,20 +1606,17 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
 
     // Phenomenon Length
     feet->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
-    // TODO
-    //feet->SetDefaultPresentationUnit("u:FT");
+    feet->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
     feet->SetRelativeError(10e-3);
 
     // Phenomenon Length
     inch->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    // TODO
-    //inch->SetDefaultPresentationUnit("u:IN");
+    inch->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Meters4U"));
     inch->SetRelativeError(10e-4);
     
     // Phenomenon Temperature
-    temperature->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CELCIUS"));
-    // TODO
-    //temperature->SetDefaultPresentationUnit("u:FAHRENHEIT");
+    temperature->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CELSIUS"));
+    temperature->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
     temperature->SetRelativeError(10e-3);
 
     // Test PrimitiveECProperty
