@@ -1156,8 +1156,10 @@ bool VertexKey::operator<(VertexKeyCR rhs) const
     static_assert(0x2C == offsetof(VertexKey, m_class), "unexpected offset");
     static_assert(0x2D == offsetof(VertexKey, m_normalValid), "unexpected offset");
 
-    size_t offset = offsetof(VertexKey, m_normalAndPos) + m_normalValid ? 0 : sizeof(uint16_t);
-    size_t size = offsetof(VertexKey, m_normalValid) - offset;
+    // TFS#874608: This used to add 2 bytes to `offset` if m_normalValid=false to avoid unnecessarily comparing normals.
+    // But invalid normals are initialized to 0 so they will not affect memcmp(), and optimizer was producing incorrect comparisons here.
+    static constexpr size_t offset = offsetof(VertexKey, m_normalAndPos);
+    static constexpr size_t size = offsetof(VertexKey, m_normalValid) - offset;
     auto cmp = memcmp(reinterpret_cast<uint8_t const*>(this)+offset, reinterpret_cast<uint8_t const*>(&rhs)+offset, size);
     if (0 != cmp)
         return cmp < 0;

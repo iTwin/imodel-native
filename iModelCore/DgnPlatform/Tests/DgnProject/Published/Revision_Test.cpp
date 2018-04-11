@@ -1854,6 +1854,166 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     }
 
 #ifdef DEBUG_REVISION_TEST_MANUAL
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, TestMemoryLeak)
+{
+    BeFileName seedFile("D:\\temp\\Defects\\MemoryLeak\\ReadOnlyTest.bim", true);
+    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(L"ReadOnlyTest.bim");
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedFile.c_str(), copyFile.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+    Utf8CP changeSetIds[] =
+    {
+        "dbe4b3824129f99e4eb485fb7cd9d2fea2354be1",
+        "20f94790e4a67782c2bafb93fa9b3955311c3fdb",
+        "eb5075bd61a77c773b4a1e82c89087ba28b31aec",
+        "1b186c485d182c46c02b99aff4fb12637263438f"
+    };
+
+    const int changeSetSize = sizeof(changeSetIds) / sizeof(Utf8CP);
+
+    bvector<BeFileName> csPathnames;
+    BeFileName basePath(L"D:\\temp\\Defects\\MemoryLeak\\csets\\");
+    for (int ii = 0; ii < changeSetSize; ii++)
+    {
+        BeFileName csFileName(changeSetIds[ii], true);
+        csFileName.AppendExtension(L"cs");
+
+        BeFileName csPathname = basePath;
+        csPathname.AppendToPath(csFileName);
+        csPathnames.push_back(csPathname);
+    }
+
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+
+    Utf8String dbGuid = m_db->GetDbGuid().ToString();
+    bvector<DgnRevisionPtr> revisionPtrs;
+    bvector<DgnRevisionCP> revisions;
+
+    Utf8String parentChangeSetId = m_db->Revisions().GetParentRevisionId();
+
+    for (int ii = 0; ii < changeSetSize; ii++)
+    {
+        Utf8String changeSetId = changeSetIds[ii];
+        if (ii > 0)
+            parentChangeSetId = changeSetIds[ii - 1];
+
+        DgnRevisionPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
+
+        fileStatus = BeFileName::BeCopyFile(csPathnames[ii].c_str(), rev->GetRevisionChangesFile().c_str());
+        ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+        //if (ii == 3)
+        //    rev->Dump(*m_db);
+
+        revisionPtrs.push_back(rev);
+        revisions.push_back(rev.get());
+    }
+
+    m_db->CloseDb();
+
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
+    openParams.SetStartDefaultTxn(DefaultTxn::No);
+
+    printf("Before opening Db pre-upgrade");
+    getchar();
+
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    m_db->CloseDb();
+    m_db = nullptr;
+
+    printf("After closing Db post-upgrade");
+    getchar();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MergeMemoryIssue)
+{
+    BeFileName seedFile("D:\\temp\\Defects\\MemoryIssue\\119c3a62-d08a-4102-83e5-ff0902251740.bim", true);
+    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(L"119c3a62-d08a-4102-83e5-ff0902251740.bim");
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedFile.c_str(), copyFile.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+    Utf8CP changeSetIds[1] =
+    {
+        "d532b16cb2b21ca76d17170041df58df578044ec"
+    };
+
+    const int changeSetSize = sizeof(changeSetIds) / sizeof(Utf8CP);
+
+    bvector<BeFileName> csPathnames;
+    BeFileName basePath(L"D:\\temp\\Defects\\MemoryIssue\\");
+    for (int ii = 0; ii < changeSetSize; ii++)
+    {
+        BeFileName csFileName(changeSetIds[ii], true);
+        csFileName.AppendExtension(L"cs");
+
+        BeFileName csPathname = basePath;
+        csPathname.AppendToPath(csFileName);
+        csPathnames.push_back(csPathname);
+    }
+
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+
+    Utf8String dbGuid = m_db->GetDbGuid().ToString();
+    bvector<DgnRevisionPtr> revisionPtrs;
+    bvector<DgnRevisionCP> revisions;
+
+    Utf8String parentChangeSetId = m_db->Revisions().GetParentRevisionId();
+
+    for (int ii = 0; ii < changeSetSize; ii++)
+    {
+        Utf8String changeSetId = changeSetIds[ii];
+        if (ii > 0)
+            parentChangeSetId = changeSetIds[ii - 1];
+
+        DgnRevisionPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
+
+        fileStatus = BeFileName::BeCopyFile(csPathnames[ii].c_str(), rev->GetRevisionChangesFile().c_str());
+        ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+        //if (ii == 3)
+        //    rev->Dump(*m_db);
+
+        revisionPtrs.push_back(rev);
+        revisions.push_back(rev.get());
+    }
+
+    m_db->CloseDb();
+
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
+    openParams.SetStartDefaultTxn(DefaultTxn::No);
+
+    printf("Before opening Db pre-upgrade");
+    getchar();
+
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    m_db->CloseDb();
+    m_db = nullptr;
+
+    printf("After closing Db post-upgrade");
+    getchar();
+}
+
 // Tests that are useful for one off testing and performance. These aren't included
 // as part of the build, but used whenever necessary
 
