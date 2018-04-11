@@ -2,7 +2,7 @@
 |
 |     $Source: comparedgnjs/comparedgnjs.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Geom\GeomApi.h>
@@ -13,10 +13,11 @@
 #include <Bentley\BeDirectoryIterator.h>
 #include <json/writer.h>
 #include "compareJson.h"
+#include "compareGeometry.h"
 
 static const char * s_messagePrefix = "comparedgnjs";
 static double compareTol = 1.0e-12;
-
+static int s_echoErrorGeometry = 0;
 void messagePrefix (const char* content = nullptr)
     {
     printf ("comparedgnjs: ");
@@ -123,6 +124,7 @@ bool findProperty(Json::Value const &source, CharCP targetName, Json::Value &val
 // <li> -t<n> is a setting that changes the tolerance for numeric compares
 // <li> -j forces JSON string compare
 // <li> -g forces geometric compare
+// <li> -e echo error geometry
 // <li>Anything not beginning with a dash is loaded as the filename in a JsonData structure.
 // <li> If given two files, compares them normally. If given two directories, compares the directories. If given a file and directory, check if file exists in directory.
 // </ul>
@@ -130,6 +132,7 @@ bool parseCommandLine (int argc, char **argv,
 int &verbose,   // numeric value from -v0, -v1, -v2.  Assumed initialized by caller.
 int &userType,		// numeric value assigned from -js. Assumed to be 1 by caller (compare geometries), otherwise, compares json
 int &dif,
+int &echoError, // 1==> echo error (mismatch)
 bvector<JsonData> &data
 )
     {
@@ -164,6 +167,10 @@ bvector<JsonData> &data
 				{
 				userType = 1;
 				}
+            else if (s[1] == 'e' && s[2] == '\0')
+                {
+                echoError = 1;
+                }
             else
                 {
                 messagePrefix (); printf ("Unrecognized arg (%s)\n", argv[i]);
@@ -186,8 +193,12 @@ bvector<JsonData> &data
         }
     return errors == 0;
     }
+
+
+
 bool compareGeometry(bvector<JsonData> allData, int verbose)
 	{
+    EvolvingComparison stats;
 	size_t n0 = allData[0].m_geometry.size();
 	size_t n1 = allData[1].m_geometry.size();
 	if (verbose > 1)
@@ -201,29 +212,66 @@ bool compareGeometry(bvector<JsonData> allData, int verbose)
 	}
 
 	for (size_t i = 0; i < n0; i++)
-	{
+	    {
 		int numNull = 0;
 		for (size_t k = 0; k < 2; k++)
-		{
-			if (!allData[k].m_geometry[i].IsValid())
-			{
-				messagePrefix(); printf("geometry[%d] in file %d is null\n", (int)i, (int)k);
-				numNull++;
-			}
-		}
+		    {
+			    if (!allData[k].m_geometry[i].IsValid())
+			    {
+				    messagePrefix(); printf("geometry[%d] in file %d is null\n", (int)i, (int)k);
+				    numNull++;
+			    }
+		    }
 		// single null is error ..
 		if (numNull == 1)
 			return false;
 		// 2 nulls is implied ok
 		// 0 nulls needs comparison
-		if (numNull == 0 && !allData[0].m_geometry[i]->IsSameStructureAndGeometry(*allData[1].m_geometry[i], compareTol))
-		{
-			messagePrefix(); printf("     GEOMETRY COMPARE FAIL: Mismatched geometry at index %d\n", (int)i);
-			return false;
-		}
-	}
+		if (numNull == 0)
+		    {
+            if (allData[0].m_geometry[i]->IsSameStructureAndGeometry (*allData[1].m_geometry[i], compareTol))
+                {
+                if (!stats.isCompatibleEqual ())
+                    return false;
+                }
+            else if (secondaryCompare (allData[0].m_geometry[i], allData[1].m_geometry[i], stats, compareTol))
+                {
+                // compatible translations so far . . ..
+                }
+            else
+                {
+			    messagePrefix(); printf("     GEOMETRY COMPARE FAIL: Mismatched geometry at index %d\n", (int)i);
+                if (s_echoErrorGeometry)
+                    {
+                    Utf8String s0, s1;
+                    if (BentleyGeometryJson::TryGeometryToJsonString (s0, *allData[0].m_geometry[i], true))
+                        BentleyGeometryJson::DumpJson (s0);
+                    if (BentleyGeometryJson::TryGeometryToJsonString (s1, *allData[1].m_geometry[i], true))
+                        BentleyGeometryJson::DumpJson (s1);
+                    }
+                return false;
+                }
+		    }
+	    }
 
-	messagePrefix(); printf("     GEOMETRY COMPARE SUCCESS: Files are equal!\n");
+    // Fall through if all equal or all translated ...
+    if (stats.numMatchedMoments > 0)
+        {
+        messagePrefix ();
+        printf ("     GEOMETRY COMPARE WARNING: %d geoemtry objects have some difference but matched moments\n",
+                (int)stats.numMatchedMoments);
+        }
+    if (stats.numMatchingFirstTranslate > 0)
+        {
+        auto vector = stats.firstTranslate.Value ();
+        messagePrefix (); printf ("     GEOMETRY COMPARE SUCCESS: Files are equal except for translation (%g,%g,%g)\n",
+                vector.x, vector.y, vector.z
+                );
+        }
+    else
+        {
+    	messagePrefix(); printf("     GEOMETRY COMPARE SUCCESS: Files are equal!\n");
+        }
 	return true;
 	}
 // Function that iterates through an ARRAY and appends to errorTracker
@@ -547,7 +595,7 @@ int main(int argc, char **argv)
 	int userType = 0;	// user-declared type of comparison (0 for default... 1 for geometric compare... 2 for json property compare)
 	int dif = 0;
 	bool canUseGeometry = true;
-    if (!parseCommandLine (argc, argv, verbose, userType, dif, allData) || allData.size () != 2)
+    if (!parseCommandLine (argc, argv, verbose, userType, dif, s_echoErrorGeometry, allData) || allData.size () != 2)
         {
         messagePrefix (); printf ("exe name:   %s\n", argv[0]);
         messagePrefix ("	Usage:  comparedgnjs [-g || -j] [-vNN] [-nNN] [-tNN] <fileA || directoryA> <fileB || directoryB>\n");
@@ -562,6 +610,7 @@ int main(int argc, char **argv)
 		messagePrefix("    -v11         all of above plus echo complete file contents (packed strings; geometry compare only)\n");
 		messagePrefix ("    -t<N>		  sets the tolerance to <N> when comparing numeric values (default is 1.0e-12)\n");
 		messagePrefix ("    -n<N>		  allows <N> number of differences when comparing numeric values (JSON string compare mode only)\n");
+        messagePrefix ("    -e         echo geometry with errors.\n");
 		messagePrefix ("    -j         force a JSON string compare, rather than the determined default\n");
 		messagePrefix ("    -g         force a geometric compare, rather than the determined default\n");
         return 1;

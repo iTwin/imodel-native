@@ -138,12 +138,14 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &inpoints
     bvector <size_t> outPointToPolyfaceParam;
     FindOrAddPoints (outPoints, outPoints.size (), 0, outPointToPolyfacePoint);
     localToWorld.GetMatrixColumn (polygonNormal, 2);
-
+    // EDL April 10 2018 -- points arrive with a disconnect.  It goes into the params.  But maybe it's never referenced.  When did this appear?  dgnjs regression says it's newish.
     if (NeedParams())
         {
         for (size_t i = 0, n = outPoints.size (); i < n; i++)
             {
             DPoint3d workPoint = outPoints[i];
+            if (workPoint.IsDisconnect ())
+                continue;
             worldToLocal.Multiply (workPoint);
             DPoint2d param;
             param.x = workPoint.x;
