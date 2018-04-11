@@ -8,6 +8,7 @@
 #include "DgnPlatformInternal.h"
 #include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
+#include <DgnPlatform/ElementTileTree.h>
 
 #ifndef NDEBUG
 #define CHECK_NON_NAVIGATION_PROPERTY_API
@@ -55,12 +56,10 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityData::CachePtr DgnDb::ElementTileCache() const
     {
-    if (!m_elementTileCache.IsValid())
+    if (m_elementTileCache.IsNull())
         {
-        BeFileName cacheName = T_HOST.GetTileAdmin()._GetElementCacheFileName(*this);
-        m_elementTileCache = new TileTree::TileCache(1024*1024*1024);
-        if (SUCCESS != m_elementTileCache->OpenAndPrepare(cacheName))
-            m_elementTileCache = nullptr;
+        m_elementTileCache = ElementTileTree::TileCache::Create(*this);
+        BeAssert(m_elementTileCache.IsValid());
         }
 
     return m_elementTileCache;

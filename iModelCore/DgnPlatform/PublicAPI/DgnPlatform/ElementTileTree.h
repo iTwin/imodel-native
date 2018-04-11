@@ -297,6 +297,26 @@ public:
 };
 
 //=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/18
+//=======================================================================================
+struct TileCache : TileTree::TileCache
+{
+    DEFINE_T_SUPER(TileTree::TileCache);
+private:
+    explicit TileCache(uint64_t maxSize) : T_Super(maxSize) { }
+
+    BentleyStatus _Initialize() const final;
+    bool _ValidateData() const final;
+
+    static BeSQLite::PropertySpec GetVersionSpec() { return BeSQLite::PropertySpec("binaryFormatVersion", "elementTileCache"); }
+    static Utf8CP GetCurrentVersion();
+
+    bool WriteCurrentVersion() const;
+public:
+    static RealityData::CachePtr Create(DgnDbCR db);
+};
+
+//=======================================================================================
 // @bsistruct                                                   Ray.Bentley     03/2018
 //=======================================================================================
 struct ThematicMeshBuilder : RefCountedBase

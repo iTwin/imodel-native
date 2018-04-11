@@ -505,6 +505,24 @@ BentleyStatus TileCache::_Prepare() const
     if (m_db.TableExists(TABLE_NAME_TileTreeCreateTime))
         {
         BeAssert(m_db.TableExists(TABLE_NAME_TileTree));
+
+        if (!_ValidateData())
+            {
+            // The db schema is current, but the binary data format is not. Discard it.
+            CachedStatementPtr stmt;
+            m_db.GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime);
+            if (BE_SQLITE_DONE != stmt->Step())
+                {
+                BeAssert(false && "Failed to delete contents of TileTreeCreateTime table");
+                }
+
+            m_db.GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree);
+            if (BE_SQLITE_DONE != stmt->Step())
+                {
+                BeAssert(false && "Failed to delete contents of TileTree table");
+                }
+            }
+
         return SUCCESS;
         }
         
