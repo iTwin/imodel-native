@@ -380,7 +380,9 @@ public:
     //! @param[in] db the database to which the changes are applied.
     //! @param[in] rebase a Rebase object to record conflict resolutions
     //! @return BE_SQLITE_OK if successful. Error status otherwise. 
-    //! @remarks If using a ChangeStream, implement _InputPage to send the stream
+    //! @remarks If using a ChangeStream, implement _InputPage to send the stream. 
+    //! If the apply fails, it's upto the caller to call AbandonChanges() to abandon the 
+    //! transaction containing partially applied changes. 
     DbResult ApplyChanges(DbR db, Rebase* rebase=nullptr) {return _ApplyChanges(db, rebase);}
 
     //! Returns a Changes object for iterating over the changes contained within this IChangeSet
