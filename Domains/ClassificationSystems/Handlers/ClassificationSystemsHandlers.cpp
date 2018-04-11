@@ -11,6 +11,7 @@
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
+HANDLER_DEFINE_MEMBERS(ClassificationSystemHandler)
 HANDLER_DEFINE_MEMBERS(ClassificationSystemClassDefinitionGroupHandler)
 HANDLER_DEFINE_MEMBERS(CIBSEClassDefinitionHandler)
 HANDLER_DEFINE_MEMBERS(OmniClassClassDefinitionHandler)

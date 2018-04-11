@@ -11,6 +11,7 @@
 
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
+DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinitionGroup)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(CIBSEClassDefinition)
@@ -20,6 +21,33 @@ DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAE2004ClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAE2010ClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(MasterFormatClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(UniFormatClassDefinition)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationSystem::ClassificationSystem
+    (
+        CreateParams const& params,
+        Utf8CP name
+    ) : T_Super(params)
+    {
+    SetName(name);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+ClassificationSystemPtr ClassificationSystem::Create
+(
+    Dgn::DgnDbR db,
+    Utf8CP name
+)
+    {
+    Dgn::DgnClassId classId = QueryClassId(db);
+    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    ClassificationSystemPtr system = new ClassificationSystem(params, name);
+    return system;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018

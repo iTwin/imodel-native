@@ -9,6 +9,11 @@
 <ECSchema schemaName="ClassificationSystems" alias="clsf" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
 
+    <ECEntityClass typeName="ClassificationSystem" displayLabel="ClassificationSystem">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
+    </ECEntityClass>
+  
     <ECEntityClass typeName="ClassificationSystemClassDefinition" modifier="Abstract" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECNavigationProperty propertyName="Group" relationshipName="ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup" direction="Forward" description="Group this definition belong to" />
