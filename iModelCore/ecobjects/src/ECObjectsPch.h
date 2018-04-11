@@ -13,6 +13,7 @@
 #include <Bentley/BeStringUtilities.h>
 #include "../PrivateApi/ECObjects/SchemaParseUtils.h"
 #include "../PrivateApi/ECObjects/StandardUnitsHelper.h"
+#include "../PrivateApi/ECObjects/StandardFormatsHelper.h"
 #include "DateTimeInfoAccessor.h"
 #include "ECObjectsNativeLog.h"
 #include <Bentley/BeTimeUtilities.h>

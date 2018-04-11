@@ -413,6 +413,8 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
     {
     bool xmlLessThan32 = (3 == ecXmlMajorVersion && 2 > ecXmlMinorVersion) && (nullptr != context);
     ECUnitCP unit = nullptr;
+    Nullable<unsigned> prec = nullptr;
+    ECFormatCP persistenceFormat = nullptr;
     if (xmlLessThan32)
         {
         Utf8String unitName;
@@ -463,8 +465,6 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
             return ECObjectsStatus::Error;
             }
 
-        Nullable<unsigned> prec = nullptr;
-        ECFormatCP persistenceFormat = nullptr;
         if (!Utf8String::IsNullOrEmpty(mappedName))
             {
             SchemaKey key = SchemaKey("Formats", 1, 0, 0);
@@ -490,12 +490,6 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
                 return ECObjectsStatus::Error;
                 }
             }
-
-        if (nullptr != persistenceFormat && ECObjectsStatus::Success != AddPresentationFormatSingleUnitOverride(*persistenceFormat, prec, unit))
-            {
-            LOG.errorv("On KOQ '%s' failed to set presentation format with name '%s'", GetFullName().c_str(), persistenceFormat->GetFullName().c_str());
-            return ECObjectsStatus::Error;
-            }
         }
     else
         unit = GetSchema().GetUnitsContext().LookupUnit(descriptor);
@@ -517,6 +511,12 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
     if (ECObjectsStatus::Success != SetPersistenceUnit(*unit))
         {
         LOG.errorv("On KOQ '%s' failed to set persistence unit with name '%s'", GetFullName().c_str(), unit->GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    if (nullptr != persistenceFormat && ECObjectsStatus::Success != AddPresentationFormatSingleUnitOverride(*persistenceFormat, prec, unit))
+        {
+        LOG.errorv("On KOQ '%s' failed to set presentation format with name '%s'", GetFullName().c_str(), persistenceFormat->GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
 
@@ -878,9 +878,9 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
         return ECObjectsStatus::Error;
         }
 
-    if (unitsAndLabels.IsValid() && unitsAndLabels.ValueR().size() > 1)
+    if (unitsAndLabels.IsValid() && unitsAndLabels.ValueR().size() > 0)
         {
-        const auto& maj = unitsAndLabels.ValueR()[0].first;
+        const auto maj = GetPersistenceUnit();
         for (const auto& u: unitsAndLabels.ValueR())
             {
             if(nullptr == maj || nullptr == u.first || !Units::Unit::AreCompatible(maj, u.first))

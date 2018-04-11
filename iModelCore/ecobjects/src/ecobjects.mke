@@ -154,7 +154,9 @@ $(o)ECUnit$(oext)                                          : $(baseDir)ECUnit.cp
 
 $(o)StandardUnitsHelper$(oext)                             : $(baseDir)StandardUnitsHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)Format$(oext)                                           : $(baseDir)Format.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+$(o)StandardFormatsHelper$(oext)                           : $(baseDir)StandardFormatsHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)Format$(oext)                                          : $(baseDir)Format.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECUnits
 

@@ -990,12 +990,9 @@ bool kindOfQuantityHasMatchingPersitenceUnit(KindOfQuantityCP koq, Units::UnitCP
 
 bool kindOfQuantityHasMatchingPresentationUnit(KindOfQuantityCP koq, Units::UnitCP displayUnit, Units::UnitCP persistenceUnit)
     {
-    // TODO
-    //if (nullptr == displayUnit)
-    //    ; // Without explicit format we will use the default format
-    //if (koq->GetDefaultPresentationFormat().HasComposite())
-    //    return Units::Unit::AreEqual(koq->GetDefaultPresentationFormat().GetCompositeSpec()->GetInputUnit(), displayUnit);
-    return true; // TODO ask about this method. Not sure what correct behaviour is
+    if (koq->HasPresentationFormats() && koq->GetDefaultPresentationFormat()->HasCompositeMajorUnit())
+        return Units::Unit::AreEqual(koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit(), (nullptr == displayUnit) ? persistenceUnit : displayUnit);
+    return false; 
     }
 
 bool unitIsAcceptable (Units::UnitCP unit)
@@ -1037,11 +1034,17 @@ ECObjectsStatus createNewKindOfQuantity(ECSchemaR schema, KindOfQuantityP& newKO
         newKOQ->SetRelativeError(baseKOQ->GetRelativeError());
         persistenceUnitChanged = true;
         }
-    // TODO add static default formats
-    //if (nullptr != newDisplayUnit)
-    //    newKOQ->AddPresentationFormat(s_stdFmtSet.FindFormat("DefaultRealU"));
-    //else if (persistenceUnitChanged)
-    //    newKOQ->AddPresentationFormat(s_stdFmtSet.FindFormat("DefaultRealU"));
+
+    if (nullptr != newDisplayUnit)
+        {
+        if (ECObjectsStatus::Success != newKOQ->AddPresentationFormatSingleUnitOverride(*schema.LookupFormat("f:DefaultRealU"), nullptr, newDisplayUnit))
+            LOG.warningv("During conversion on KOQ '%s' failed to add unit '%s' as a presentation format override", newKOQ->GetFullName().c_str(), newDisplayUnit->GetFullName().c_str());
+        }
+    else if (persistenceUnitChanged)
+        { 
+        if (ECObjectsStatus::Success != newKOQ->AddPresentationFormatSingleUnitOverride(*schema.LookupFormat("f:DefaultRealU"), nullptr, originalUnit))
+            LOG.warningv("During conversion on KOQ '%s' failed to add unit '%s' as a presentation format override", newKOQ->GetFullName().c_str(), originalUnit->GetFullName().c_str());
+        }
 
     return ECObjectsStatus::Success;
     }
@@ -1153,6 +1156,12 @@ ECObjectsStatus UnitSpecificationConverter::Convert(ECSchemaR schema, IECCustomA
     if (!ECSchema::IsSchemaReferenced(schema, *StandardUnitsHelper::GetSchema()) && ECObjectsStatus::Success != schema.AddReferencedSchema(*StandardUnitsHelper::GetSchema()))
         {
         LOG.errorv("Unable to add the %s schema as a reference to %s.", StandardUnitsHelper::GetSchema()->GetFullSchemaName().c_str(), schema.GetName().c_str());
+        return ECObjectsStatus::SchemaNotFound;
+        }
+
+    if (!ECSchema::IsSchemaReferenced(schema, *StandardFormatsHelper::GetSchema()) && ECObjectsStatus::Success != schema.AddReferencedSchema(*StandardFormatsHelper::GetSchema()))
+        {
+        LOG.errorv("Unable to add the %s schema as a reference to %s.", StandardFormatsHelper::GetSchema()->GetFullSchemaName().c_str(), schema.GetName().c_str());
         return ECObjectsStatus::SchemaNotFound;
         }
 

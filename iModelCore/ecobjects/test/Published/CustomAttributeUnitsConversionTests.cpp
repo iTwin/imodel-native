@@ -447,10 +447,9 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
     EXPECT_NE(lengthKOQ, specialLengthKOQ); 
 
     EXPECT_STREQ(lengthKOQ->GetPersistenceUnit()->GetName().c_str(), specialLengthKOQ->GetPersistenceUnit()->GetName().c_str());
-    // TODO
-    //EXPECT_STRNE(lengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName().c_str(), specialLengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
-    //EXPECT_STREQ("DM", lengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
-    //EXPECT_STREQ("FT", specialLengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
+    EXPECT_STRNE(lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str(), specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("f:DefaultRealU[u:DM|]", lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("f:DefaultRealU[u:FT|]", specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
 
     auto oldPersistenceUnit = specialPipeLength->GetCustomAttributeLocal("OldPersistenceUnit");
     ECValue oldUnitName;
@@ -518,22 +517,21 @@ TEST_F(UnitSpecificationConversionTest, SameKOQMultiplePersistenceUnits)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     ASSERT_TRUE(schema.IsValid());
-    // TODO
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
     EXPECT_STREQ("M", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
-    //EXPECT_STREQ("DM", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
+    EXPECT_STREQ("f:DefaultRealU[u:DM|]", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("LENGTH", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_TRUE(schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
     EXPECT_STREQ("M", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
-    //EXPECT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
+    EXPECT_STREQ("f:DefaultRealU[u:FT|]", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
     EXPECT_STREQ("M", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
-    //EXPECT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
+    EXPECT_STREQ("f:DefaultRealU[u:FT|]", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
     EXPECT_STREQ("M", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
-    //EXPECT_STREQ("FT", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
+    EXPECT_STREQ("f:DefaultRealU[u:FT|]", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
     EXPECT_EQ(2, schema->GetKindOfQuantityCount());
@@ -618,12 +616,11 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     EXPECT_NE(lengthKOQ, specialLengthKOQ); 
 
     EXPECT_STREQ(lengthKOQ->GetPersistenceUnit()->GetName().c_str(), specialLengthKOQ->GetPersistenceUnit()->GetName().c_str());
-    // TODO
-    //EXPECT_STRNE(lengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName().c_str(), specialLengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
-    //EXPECT_STREQ("KM", lengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
-    //EXPECT_STREQ("CM", specialLengthKOQ->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
-    //EXPECT_EQ(1, lengthKOQ->GetPresentationUnitList().size());
-    //EXPECT_EQ(1, specialLengthKOQ->GetPresentationUnitList().size());
+    EXPECT_STRNE(lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str(), specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("f:DefaultRealU[u:KM|]", lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("f:DefaultRealU[u:CM|]", specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_EQ(1, lengthKOQ->GetPresentationFormatList().size());
+    EXPECT_EQ(1, specialLengthKOQ->GetPresentationFormatList().size());
 
     auto oldPersistenceUnit = specialPipeLength->GetCustomAttributeLocal("OldPersistenceUnit");
     ECValue oldUnitName;
@@ -1013,6 +1010,7 @@ TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveRe
         <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.2'>
             <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" alias="V2ToV3" />
             <ECSchemaReference name="Units" version="01.00.00" alias="u" />
+            <ECSchemaReference name="Formats" version="01.00.00" alias="f" />
             <ECEntityClass typeName='A' modifier='abstract'>
                 <ECProperty propertyName='PropA' typeName='double' kindOfQuantity='MyKindOfQuantity'>
                     <ECCustomAttributes>
@@ -1037,10 +1035,10 @@ TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveRe
             </ECEntityClass>
             <KindOfQuantity typeName='MyKindOfQuantity' description='Kind of a Description here'
                 displayLabel='best quantity of all times' persistenceUnit='u:CM' relativeError='10e-3'
-                presentationUnits='u:FT;u:IN;u:MILLIINCH'/>
+                presentationFormats='f:Feet4U;f:InchesU'/>
             <KindOfQuantity typeName='SecondKindOfQuantity' persistenceUnit='u:N' relativeError='10e-3' />
             <KindOfQuantity typeName='AnotherKindOfQuantity' persistenceUnit='u:PA' relativeError='10e-3'
-                presentationUnits='u:PSI'/>
+                presentationFormats='f:AmerFI'/>
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -1053,6 +1051,7 @@ TEST_F(UnitsCustomAttributesConversionTests, EC32SchemasWithKoQsProperlyRemoveRe
 
     ASSERT_TRUE(ECSchemaDownConverter::Convert(*schema));
     ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetUnitsSchema()));
+    ASSERT_FALSE(schema->IsSchemaReferenced(*schema, *ECTestFixture::GetFormatsSchema()));
     }
 //=======================================================================================
 //! UnitInstanceConversionTest
