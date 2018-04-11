@@ -1049,8 +1049,8 @@ TEST_F(KindOfQuantityUpgradeTest, ec31_ValidKindOfQuantityInReferencedSchema)
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
     EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str());
     ASSERT_EQ(2, koq->GetPresentationFormatList().size());
-    //EXPECT_STRCASEEQ("FT", koq->GetDefaultPresentationFormat().GetUnitName().c_str());
-    //EXPECT_STRCASEEQ("IN", koq->GetPresentationFormatList()[1].GetUnitName().c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU[u:FT|]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU[u:IN|]", koq->GetPresentationFormatList()[1].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
@@ -1072,15 +1072,18 @@ TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownUnit)
     // Persistence FUS
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-           <KindOfQuantity typeName="KoQWithPers" description="Kind of a Description here"
-               displayLabel="best quantity of all time" persistenceUnit="SILLYMETER" relativeError="10e-3" />
+            <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <KindOfQuantity typeName="KoQWithPers" description="Kind of a Description here"
+                displayLabel="best quantity of all time" persistenceUnit="SILLYMETER" relativeError="10e-3" />
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an unknown perisistence unit in a newer (3.3) version");
     // Presentation FUS
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
-               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationFormats="u:MM;ANOTHERSILLYMETER" relativeError="10e-3" />
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an unknown presentation unit in a newer (3.3) version");
+               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationFormats="f:InchesU;ANOTHERSILLYMETER" relativeError="10e-3" />
+        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an unknown presentation format in a newer (3.3) version");
     }
 
 //--------------------------------------------------------------------------------------
@@ -1088,19 +1091,13 @@ TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownUnit)
 //--------------------------------------------------------------------------------------
 TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownFormat)
     {
-    // Persistence Units
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <ECSchemaReference name="Units" version="1.0" alias="u"/>
-            <KindOfQuantity typeName="KoQWithPers" description="Kind of a Description here"
-               displayLabel="best quantity of all time" persistenceUnit="u:M(SILLYFORMAT)" relativeError="10e-3" />
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with unknown persistence format in EC 3.3");
     // Presentation Units
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
-                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationFormats="u:MM(DefaultReal);u:CM(SILLYFORMAT)" relativeError="10e-3" />
+                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationFormats="f:InchesU;SILLYFORMAT" relativeError="10e-3" />
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid presentation format in EC 3.3");
     }
 
@@ -1112,9 +1109,10 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
     SchemaItem refSchemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema1" alias="s1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                        presentationFormats="u:FT;u:IN" />
+                        presentationFormats="f:AmerFI;f:InchesU" />
         </ECSchema>)xml");
 
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1145,8 +1143,8 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
     EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str());
     ASSERT_EQ(2, koq->GetPresentationFormatList().size());
-    //EXPECT_STRCASEEQ("FT", koq->GetDefaultPresentationFormat().GetUnitName().c_str());
-    //EXPECT_STRCASEEQ("IN", koq->GetPresentationFormatList()[1].GetUnitName().c_str());
+    EXPECT_STRCASEEQ("f:AmerFI", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", koq->GetPresentationFormatList()[1].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
@@ -1188,8 +1186,8 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInSchema)
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
     EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str());
     ASSERT_EQ(2, koq->GetPresentationFormatList().size());
-    EXPECT_STRCASEEQ("InchesU", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STRCASEEQ("Feet4U", koq->GetPresentationFormatList()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("f:Feet4U", koq->GetPresentationFormatList()[1].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
@@ -1207,10 +1205,11 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityWithUnitsInSchem
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
         <ECSchema schemaName="Schema2" alias="s2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
+            <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationFormats="TestUnit;u:FT;u:IN" />
+                        presentationFormats="f:DefaultRealU[TestUnit|];f:AmerFI;f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1231,9 +1230,9 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityWithUnitsInSchem
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
     EXPECT_STRCASEEQ("TestUnit", koq->GetPersistenceUnit()->GetName().c_str());
     ASSERT_EQ(3, koq->GetPresentationFormatList().size());
-    //EXPECT_STRCASEEQ("TestUnit", koq->GetDefaultPresentationFormat().GetUnitName().c_str());
-    //EXPECT_STRCASEEQ("FT", koq->GetPresentationFormatList()[1].GetUnitName().c_str());
-    //EXPECT_STRCASEEQ("IN", koq->GetPresentationFormatList()[2].GetUnitName().c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU[TestUnit|]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("f:AmerFI", koq->GetPresentationFormatList()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("f:InchesU", koq->GetPresentationFormatList()[2].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
@@ -1242,7 +1241,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityWithUnitsInSchem
     ASSERT_EQ(propKoq, koq);
     ASSERT_EQ(propKoq, arrayPropKoq);
     EXPECT_EQ(schema->GetUnitCP("TestUnit"), koq->GetPersistenceUnit());
-    //EXPECT_EQ(schema->GetUnitCP("TestUnit"), koq->GetDefaultPresentationUnit().GetUnit());
+    EXPECT_EQ(schema->GetUnitCP("TestUnit"), koq->GetDefaultPresentationFormat()->GetCompositeMajorUnit());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

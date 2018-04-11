@@ -615,7 +615,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             LOG.errorv("On KOQ '%s' presentation unit '%s' is incompatible with persistence unit '%s'", GetFullName().c_str(), unit->GetFullName().c_str(), m_persistenceUnit->GetFullName().c_str());
             return ECObjectsStatus::Error;
             }
-        AddPresentationFormatSingleUnitOverride(*format, precision);
+        AddPresentationFormatSingleUnitOverride(*format, precision, format->HasCompositeMajorUnit() ? nullptr : unit);
         }
     else // >= 3.2
         {
