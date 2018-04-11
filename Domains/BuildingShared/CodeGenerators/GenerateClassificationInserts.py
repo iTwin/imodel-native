@@ -34,23 +34,32 @@ f.write('''/*-------------------------------------------------------------------
 //===========================================================================================\n''')
 f.write('void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const\n')
 f.write('    {\n')
+f.write('    ClassificationSystemClassDefinitionGroupPtr group;\n')
 
 roomDict = {}
 
 for standardRoom in root.find('List').findall('StandardRoom'):
-    output = '    '
+    #output = '    '
     name = standardRoom.find('Name').text
     category = standardRoom.find('Category').text
     calcStandard = standardRoom.find('CalculationStandard').text
     if calcStandard == 'eCIBSE':
         Insert(roomDict, 'CIBSE', name, category)
-        output+= "InsertCIBSE"
     elif calcStandard == 'eASHRAE':
         catalogue = standardRoom.find('Catalogue').text
         Insert(roomDict, ('ASHRAE'+catalogue), name, category)
-        output+= "InsertASHRAE"+catalogue
-    output+="(db, \""+name+"\", \""+category+"\");\n"
-    f.write(output)
+    #output+="(db, \""+name+"\", \""+category+"\");\n"
+    #f.write(output)
+for standard in roomDict:
+    for category in roomDict[standard]:
+        output = "    group = InsertGroup(db, \""+category+"\");\n"
+        f.write(output);
+        for name in roomDict[standard][category]:
+            output = "    Insert"+standard+"(db, group, \""+name+"\");\n"
+            f.write(output);
 f.write('    }\n')
 f.close()
-print(roomDict)
+for standard in roomDict:
+    print(standard + "\n")
+    print(roomDict[standard])
+    print("\n--------------------------------\n")
