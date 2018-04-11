@@ -14,7 +14,7 @@
 #include <Bentley/BeFile.h>
 #ifdef BUILDTMFORDGNDB
 #include <ImagePP/h/ImageppAPI.h>
-typedef UTF8String STRING;
+typedef Utf8String STRING;
 #else
 #include <ImagePP/h/hstdcpp.h>
 typedef WString STRING;
@@ -2376,7 +2376,7 @@ WCharCP    projectionKeyP
     /*
     ** Set Image File Name
     */
-    STRING DEMRasterFilePath = STRING(L"file://") + imageFileNameP;
+    STRING DEMRasterFilePath = STRING(L"file://") + STRING(imageFileNameP);
     /*
     **   Instanciate
     */
@@ -2615,7 +2615,7 @@ void ImagePPConverter::GetImageProperties ()
         */
         try
             {
-            STRING DEMRasterFilePath = STRING(L"file://") + m_filename;
+            STRING DEMRasterFilePath = STRING(L"file://") + STRING(m_filename);
             HFCPtr<HFCURLFile> pDEMRasterFilePathURL = new HFCURLFile(DEMRasterFilePath);
 
             HUTDEMRasterXYZPointsExtractor RasterPointExtractor(DEMRasterFilePath, pPool);
