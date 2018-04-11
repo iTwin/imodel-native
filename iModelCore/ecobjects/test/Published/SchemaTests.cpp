@@ -1827,7 +1827,7 @@ TEST_F(SchemaCacheTest, DropSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SchemaChecksumTest, ComputeSchemaXmlStringCheckSum)
     {
-    Utf8Char schemaXml[] =
+    Utf8String schemaXml =
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
         "    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
@@ -1835,7 +1835,7 @@ TEST_F(SchemaChecksumTest, ComputeSchemaXmlStringCheckSum)
         "    </ECClass>"
         "</ECSchema>";
 
-    EXPECT_EQ(ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, sizeof(schemaXml)), 682119251);
+    EXPECT_TRUE(ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), schemaXml.length()).EqualsIAscii("FE5F221C4D0349739454F47C18C4F7BC6A56E255"));
     }
 
 //=======================================================================================
