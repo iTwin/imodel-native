@@ -84,6 +84,32 @@ BeSQLite::EC::ECInstanceKey RelationshipUtils::InsertRelationship
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+Dgn::DgnDbStatus RelationshipUtils::DeleteRelationships
+(
+    Dgn::DgnDbR db,
+    ECN::ECRelationshipClassCR relationshipClass,
+    Dgn::DgnElementId sourceId,
+    Dgn::DgnElementId targetId
+)
+    {
+    if (!sourceId.IsValid())
+        {
+        BeAssert(sourceId.IsValid());
+        return Dgn::DgnDbStatus::BadElement;
+        }
+    if (!targetId.IsValid())
+        {
+        BeAssert(targetId.IsValid());
+        return Dgn::DgnDbStatus::BadElement;
+        }
+
+    BeSQLite::DbResult result = db.DeleteLinkTableRelationships(relationshipClass.GetECSqlName().c_str(), sourceId, targetId);
+    return BeSQLite::DbResult::BE_SQLITE_OK == result ? Dgn::DgnDbStatus::Success : Dgn::DgnDbStatus::SQLiteError;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                03/2018
 //---------------+---------------+---------------+---------------+---------------+------
 bool RelationshipUtils::RelationshipExists
