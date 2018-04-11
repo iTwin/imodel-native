@@ -55,7 +55,7 @@ for standard in roomDict:
         output = "    group = InsertGroup(db, \""+category+"\");\n"
         f.write(output);
         for name in roomDict[standard][category]:
-            output = "    Insert"+standard+"(db, group, \""+name+"\");\n"
+            output = "    Insert"+standard+"(db, *group, \""+name+"\");\n"
             f.write(output);
 f.write('    }\n')
 f.close()
