@@ -7,6 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "BeSQLitePublishedTests.h"
 #include <BeSQLite/ChangeSet.h>
+#include <Bentley/BeDirectoryIterator.h>
+#define MEM_THRESHOLD 100 * 1024 * 1024
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   06/16
 //=======================================================================================
@@ -72,6 +74,7 @@ struct TestChangeTracker : BeSQLite::ChangeTracker
     TestChangeTracker(BeSQLite::DbR db) { SetDb(&db); }
 
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { return OnCommitStatus::Continue; }
+
     };
 
 //=======================================================================================
@@ -177,6 +180,7 @@ struct BeSQliteTestFixture : public ::testing::Test
             BeSQLiteLib::Initialize(tempDir);
             }
     };
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                             1/18
 //---------------------------------------------------------------------------------------
@@ -248,4 +252,238 @@ TEST_F(BeSQliteTestFixture, variable_limit)
     ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql("SELECT ?19999")) << db1->GetLastError();
     BeTest::SetFailOnAssert(true);
 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                             4/18
+//---------------------------------------------------------------------------------------
+void SqliteMemoryTest(bool stmtjournalInMemory, bool useNestedTransaction, const int threadshold, bool testMustPass)
+    {
+    std::function<std::unique_ptr<Db>(Utf8CP)> create
+        = [] (Utf8CP fileName)
+        {
+        BeFileName outputPath;
+        BeTest::GetHost().GetOutputRoot(outputPath);
+        outputPath.AppendUtf8(fileName);
+        if (outputPath.DoesPathExist())
+            outputPath.BeDeleteFile();
+
+        std::unique_ptr<Db> db = std::unique_ptr<Db>(new Db());
+        if (db->CreateNewDb(outputPath) != BE_SQLITE_OK)
+            db = nullptr;
+
+        return db;
+        };
+
+    std::function<std::unique_ptr< BeSQLite::ChangeSet>(DbR db, std::function<bool(DbR)>)> captureChangeset
+        = [] (DbR db, std::function<bool(DbR db)> task)
+        {
+        struct MemmoryTestChangeTracker : BeSQLite::ChangeTracker
+            {
+            MemmoryTestChangeTracker(BeSQLite::DbR db) { SetDb(&db); }
+            OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override { return OnCommitStatus::Continue; }
+            TrackChangesForTable _FilterTable(Utf8CP tableName) override
+                {
+                if (BeStringUtilities::StricmpAscii(tableName, "t1") == 0)
+                    return TrackChangesForTable::No;
+
+                if (BeStringUtilities::StricmpAscii(tableName, "t2") == 0)
+                    return TrackChangesForTable::No;
+
+                if (BeStringUtilities::StricmpAscii(tableName, "t3") == 0)
+                    return TrackChangesForTable::No;
+
+                return TrackChangesForTable::Yes;
+                }
+            };
+
+        std::unique_ptr< BeSQLite::ChangeSet> changeset;
+        MemmoryTestChangeTracker tracker(db);
+        tracker.EnableTracking(true);
+        if (!task(db))
+            {
+            tracker.EnableTracking(false);
+            return changeset;
+            }
+
+        if (!tracker.HasChanges())
+            return changeset;
+
+        changeset = std::unique_ptr< BeSQLite::ChangeSet>(new TestChangeSet());
+        if (BE_SQLITE_OK != changeset->FromChangeTrack(tracker))
+            changeset = nullptr;
+
+        return changeset;
+        };
+
+    Utf8CP schemaDb = R"(
+        create table if not exists T0(Id integer primary key, c0, c1, c2, c3);
+        create table if not exists T1(Id integer primary key, c0, c1, c2, c3);
+        create table if not exists T2(Id integer primary key, c0, c1, c2, c3);
+        create table if not exists T3(Id integer primary key, c0, c1, c2, c3);
+        --
+        create trigger if not exists t0_i after insert on t0
+               when cast(new.c0 as real) between 0.0 and 0.8
+        begin
+             insert into t1
+                    values(null, new.c0, new.c1, new.c2, new.c3);
+        end; 
+        --
+        create trigger if not exists t1_i after insert on t1
+               when cast(new.c0 as real) between 0.0 and 0.6
+        begin
+             insert into t2
+                    values(null, new.c0, new.c1, new.c2, new.c3);
+        end; 
+        --
+        create trigger if not exists t2_i after insert on t2
+               when cast(new.c0 as real) between 0.0 and 0.4
+        begin
+             insert into t3
+                    values(null, new.c0, new.c1, new.c2, new.c3);
+        end; )";
+
+
+    BeFileName changesetFile;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(changesetFile);
+    changesetFile.AppendUtf8("BeSQLiteTestData\\mem_test.changeset");
+
+    if (!changesetFile.DoesPathExist())
+        {
+        auto db1 = create("mem_check.db");
+        ASSERT_EQ(BE_SQLITE_OK, db1->ExecuteSql(schemaDb));
+        ASSERT_EQ(BE_SQLITE_OK, db1->SaveChanges());
+        std::unique_ptr< BeSQLite::ChangeSet> cs = captureChangeset(*db1, [] (DbR db)
+            {
+            Statement stmt;
+            EXPECT_EQ(BE_SQLITE_OK, stmt.Prepare(db, "insert into t0 values(null, ?1, ?2, ?3, ?4)"));
+            const int max = 10000;
+            for (int i = 0; i < max; i++)
+                {
+                stmt.Reset();
+                stmt.ClearBindings();
+                stmt.BindDouble(1, (rand() / (RAND_MAX*1.0f)));
+                stmt.BindDouble(2, (rand() / (RAND_MAX*1.0f)));
+                stmt.BindDouble(3, (rand() / (RAND_MAX*1.0f)));
+                stmt.BindDouble(4, (rand() / (RAND_MAX*1.0f)));
+                EXPECT_EQ(BE_SQLITE_DONE, stmt.Step());
+                }
+
+            return true;
+            });
+
+        db1->CloseDb();
+        LOG.debugv("Writing Changeset ... %s [size=%d bytes]", changesetFile.GetNameUtf8().c_str(), cs->GetSize());
+
+        BeFile file;
+        ASSERT_EQ(BeFileStatus::Success, file.Create(changesetFile.GetName()));
+        ASSERT_EQ(BeFileStatus::Success, file.Write(nullptr, cs->GetData(), cs->GetSize()));
+        ASSERT_EQ(BeFileStatus::Success, file.Flush());
+        ASSERT_EQ(BeFileStatus::Success, file.Close());
+        }
+
+    int64_t currentMemBefore, highMemBefore;
+    BeSQLiteLib::GetMemoryUsed(currentMemBefore, highMemBefore);
+    LOG.debugv("Before  Current=%lld, High= %lld\n", currentMemBefore, highMemBefore);
+
+    TestChangeSet cs;
+    if (true)
+        {
+        BeFile file;
+        ASSERT_EQ(BeFileStatus::Success, file.Open(changesetFile.GetName(), BeFileAccess::Read));
+        ByteStream stream;
+        ASSERT_EQ(BeFileStatus::Success, file.ReadEntireFile(stream));
+        ASSERT_EQ(BE_SQLITE_OK, cs.FromData(stream.GetSize(), stream.GetData(), false));
+        LOG.debugv("Reading Changeset ... %s [size=%d bytes]", changesetFile.GetNameUtf8().c_str(), cs.GetSize());
+        }
+
+    auto db2 = create("mem_check2.db");
+
+    if (stmtjournalInMemory)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, db2->ExecuteSql("PRAGMA temp_store=2;"));
+        }
+
+    ASSERT_EQ(BE_SQLITE_OK, db2->ExecuteSql(schemaDb));
+    ASSERT_EQ(BE_SQLITE_OK, db2->SaveChanges());
+    std::unique_ptr<Savepoint> sp;
+    if (useNestedTransaction)
+        {
+        sp = std::unique_ptr<Savepoint>(new Savepoint(*db2, "foo"));
+        }
+
+    ASSERT_EQ(BE_SQLITE_OK, cs.ApplyChanges(*db2));
+    if (useNestedTransaction)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, sp->Commit());
+        }
+
+    int64_t currentMemAfter, highMemAfter;
+    BeSQLiteLib::GetMemoryUsed(currentMemAfter, highMemAfter);
+    LOG.debugv("After  Current=%lld, High= %lld\n", currentMemAfter - currentMemBefore, highMemAfter - highMemBefore, true /* reset stats*/);
+
+    if (!stmtjournalInMemory && useNestedTransaction)
+        {
+        BeFileName tempDir;
+        BeTest::GetHost().GetTempDir(tempDir);
+        bvector<BeFileName> tempFiles;
+        BeDirectoryIterator::WalkDirsAndMatch(tempFiles, tempDir, L"etilqs_*", false);
+        ASSERT_EQ(tempFiles.size(), 1) << "We expect only one file in the temp folder";
+        uint64_t fsz;
+        ASSERT_EQ(BeFileNameStatus::Success, tempFiles.front().GetFileSize(fsz));
+        LOG.debugv("Best Guess at 'Statement Journal File' : %s (%lld Bytes)", tempFiles.front().GetNameUtf8().c_str(), fsz);
+
+        if (testMustPass)
+            {
+            ASSERT_GT(fsz, threadshold);
+            ASSERT_LT(highMemAfter - highMemBefore, threadshold);
+            }
+        else
+            {
+            ASSERT_LT(fsz, threadshold);
+            ASSERT_GT(highMemAfter - highMemBefore, threadshold);
+            }
+        }
+    else
+        {
+        if (testMustPass)
+            ASSERT_LT(highMemAfter - highMemBefore, threadshold);
+        else
+            ASSERT_GT(highMemAfter - highMemBefore, threadshold);
+        }
+
+    ASSERT_EQ(BE_SQLITE_OK, db2->SaveChanges());
+ 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                             4/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseDiskJournal_NoNestedTransaction)
+    {
+    SqliteMemoryTest(false, false, MEM_THRESHOLD, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                             4/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInMemoryJournal_NoNestedTransaction)
+    {
+    SqliteMemoryTest(true, false, MEM_THRESHOLD, true);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                             4/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInMemoryJournal_UseNestedTransaction)
+    {
+    SqliteMemoryTest(true, true, MEM_THRESHOLD, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                             4/18
+//---------------------------------------------------------------------------------------
+TEST_F(BeSQliteTestFixture, SQLiteMemCheck_UseInDiskJournal_UseNestedTransaction)
+    {
+    SqliteMemoryTest(false, true, MEM_THRESHOLD, true);
     }
