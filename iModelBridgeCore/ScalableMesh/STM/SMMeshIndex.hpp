@@ -3990,7 +3990,7 @@ struct RasterTexturingWorkItem : RefCounted<WorkItem>
             m_lambda();
             }
         
-    public:
+    public: 
 
         static RasterTexturingWorkItemPtr Create(std::function<void()>& workingFnc)
             {
@@ -5122,7 +5122,8 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
     unitTransform.Multiply(contentExtent.low, contentExtent.low);
     unitTransform.Multiply(contentExtent.high, contentExtent.high);
 
-    if (contentExtent.IntersectionOf(rasterBox, contentExtent))
+	DRange2d interExtent;
+    if (interExtent.IntersectionOf(rasterBox, contentExtent))
     {
         //we compute an approximation of the number of extra nodes that will be created to obtain a more reliable progress on datasets with more texture
         DPoint2d pixSize = sourceRasterP->GetMinPixelSize();
@@ -5132,18 +5133,31 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
         {
             dimensionSize = 256.0;
         }
-        double neededResolutions = log2(std::max(contentExtent.XLength()/pixSize.x, contentExtent.YLength()/pixSize.y) / dimensionSize);
-        int finalDepth = (int)ceil(neededResolutions);
-        int countNodes = (int)m_countsOfNodesAtLevel[m_indexHeader.m_terrainDepth];
-        if (finalDepth <= m_indexHeader.m_terrainDepth)
-        {
-            m_precomputedCountNodes = true;
-        }
-        else
-        {
-            m_precomputedCountNodes = true;
-            m_countsOfNodesTotal += countNodes * pow(4, finalDepth - (int)m_indexHeader.m_terrainDepth);
-        }
+
+		double neededResolutions = log2(std::max(contentExtent.XLength() / pixSize.x, contentExtent.YLength() / pixSize.y) / dimensionSize);
+		int finalDepth = (int)ceil(neededResolutions);
+		if (finalDepth > m_indexHeader.m_terrainDepth)
+		{
+			m_precomputedCountNodes = true;
+			
+
+			IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+			DRange3d queryExtent = DRange3d::From(DPoint3d::From(interExtent.low.x, interExtent.low.y, ext.low.z), DPoint3d::From(interExtent.high.x, interExtent.high.y, ext.high.z));
+			DPoint3d box[8];
+			queryExtent.Get8Corners(box);
+			ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>* meshQueryP(new ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, Extent3dType>(queryExtent, GetDepth(), box, params->GetTargetPixelTolerance()));
+			std::vector<typename SMPointIndexNode<POINT, Extent3dType>::QueriedNode> returnedMeshNodes;
+			if (Query(meshQueryP, returnedMeshNodes))
+			{
+				for (auto&node : returnedMeshNodes)
+				{
+					neededResolutions = log2(std::max(node.m_indexNode->m_nodeHeader.m_nodeExtent.XLength() / pixSize.x, node.m_indexNode->m_nodeHeader.m_nodeExtent.YLength() / pixSize.y) / dimensionSize);
+					finalDepth = (int)ceil(neededResolutions);
+					if(finalDepth > 1)
+					   m_countsOfNodesTotal += pow(4, finalDepth);
+				}
+			}
+		}
     }
 
     if (m_pRootNode != NULL)
