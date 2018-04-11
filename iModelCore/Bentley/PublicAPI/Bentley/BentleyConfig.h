@@ -64,6 +64,7 @@
         #define BENTLEYCONFIG_DISPLAY_METRO
         // getenv is NOT available
     #else
+        #define BENTLEYCONFIG_OS_WINDOWS_DESKTOP
         #define BENTLEYCONFIG_GRAPHICS_SUPPORT_QV_THREAD
         #define BENTLEYCONFIG_SUPPORT_PRELOADING_DISK_CACHE
         #define BENTLEYCONFIG_PARASOLID
