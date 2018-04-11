@@ -20,16 +20,6 @@ LiteralExpressionTests.MiscSymbols
     # To be equal to: result.GetECValue ()->GetDateTime ().GetYear ()
     # Which is: 2018
 
-#PropertyOverrideTests.TestKOQOverride
-#SchemaCompareTest.CompareSchemaWithUnitsSame
-#SchemaCompareTest.CompareKindOfQuantitiesWithUnitsInReferencedSchema
-#SchemaCompareTest.CompareKindOfQuantitiesWithUnitsWithSameNameInDifferentReferencedSchemas
-#SchemaCompareTest.CompareKindOfQuantitiesWithUnitsInReferencedSchemaWithDifferences
-#SchemaXmlSerializationTest.SerializeComprehensiveSchema
-#SchemaXmlSerializationTest.ExpectSuccessWithInheritedKindOfQuantities
-#SchemaJsonSerializationTest.SchemaWithItems
-#PropertyOverrideTests.TestKOQOverride
+
 #UnitSpecificationConversionTest.SameKOQMultiplePersistenceUnits
 #UnitSpecificationConversionTest.PersistenceUnitChange_WithPresentationUnits
-#SchemaCopyTest.TestKindOfQuantity
-#SchemaCopyTest.TestKindOfQuantity_PresentationUnitDefinedInSchema

@@ -52,27 +52,34 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
     unitSpecCA->SetValue(UNIT_NAME, oldName);
     ecProperty->SetCustomAttribute(*unitSpecCA);
 
-    // TODO fix
-    //if (ecProperty->GetKindOfQuantity()->HasPresentationUnits())
-    //    {
-    //    Utf8CP presUnitName = ((ECUnitCP)ecProperty->GetKindOfQuantity()->GetDefaultPresentationUnit()))->GetFullName().c_str();
-    //    Utf8CP oldPresUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(presUnitName);
-    //    if (nullptr == oldPresUnitName)
-    //        {
-    //        LOG.warningv("Failed to find old  unit name for the presentation unit '%s' used on property '%s.%s.%s'",
-    //                     presUnitName, schema.GetName().c_str(), ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
-    //        return true;
-    //        }
-    //    
-    //    IECInstancePtr displayUnitSpecCA;
-    //    if (!tryCreateCA(unitAttributesSchema, DISPLAY_UNIT_SPECIFICATION_ORIG, DISPLAY_UNIT_SPECIFICATION, displayUnitSpecCA))
-    //        return false;
-    //    ECValue oldPresName(oldPresUnitName);
-    //    displayUnitSpecCA->SetValue(DISPLAY_UNIT_NAME, oldPresName);
-    //    ECValue formatString(DEFAULT_FORMATTER);
-    //    displayUnitSpecCA->SetValue(DISPLAY_FORMAT_STRING, formatString);
-    //    ecProperty->SetCustomAttribute(*displayUnitSpecCA);
-    //    }
+    if (ecProperty->GetKindOfQuantity()->HasPresentationFormats())
+        {
+        ECUnitCP unit = static_cast<ECUnitCP>(ecProperty->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetCompositeMajorUnit());
+        if (nullptr == unit)
+            {
+            LOG.warningv("Presentation format '%s' does not have a major unit used on property '%s.%s.%s'. Dropping", 
+                ecProperty->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str(), schema.GetName().c_str(), 
+                ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
+            return true;
+            }
+        Utf8CP presUnitName = unit->GetFullName().c_str();
+        Utf8CP oldPresUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(presUnitName);
+        if (nullptr == oldPresUnitName) // TODO: should we drop this or set the display unit to the persistence unit?
+            {
+            LOG.warningv("Failed to find old unit name for the presentation unit '%s' used on property '%s.%s.%s'",
+                         presUnitName, schema.GetName().c_str(), ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());
+            return true;
+            }
+        
+        IECInstancePtr displayUnitSpecCA;
+        if (!tryCreateCA(unitAttributesSchema, DISPLAY_UNIT_SPECIFICATION_ORIG, DISPLAY_UNIT_SPECIFICATION, displayUnitSpecCA))
+            return false;
+        ECValue oldPresName(oldPresUnitName);
+        displayUnitSpecCA->SetValue(DISPLAY_UNIT_NAME, oldPresName);
+        ECValue formatString(DEFAULT_FORMATTER);
+        displayUnitSpecCA->SetValue(DISPLAY_FORMAT_STRING, formatString);
+        ecProperty->SetCustomAttribute(*displayUnitSpecCA);
+        }
     return true;
     }
 
@@ -118,12 +125,12 @@ bool ECSchemaDownConverter::Convert(ECSchemaR schema)
 
     if(schema.IsSchemaReferenced(schema, *StandardUnitsHelper::GetSchema()))
         {
-        for (auto ref : schema.GetReferencedSchemas())
+        for (auto ref = schema.GetReferencedSchemas().rbegin(); ref != schema.GetReferencedSchemas().rend(); ++ref)
             {
-            if(3 == ref.second->GetOriginalECXmlVersionMajor() && 2 == ref.second->GetOriginalECXmlVersionMinor())
+            if(3 == ref->second->GetOriginalECXmlVersionMajor() && 2 == ref->second->GetOriginalECXmlVersionMinor())
                 {
-                LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", ref.first.GetFullSchemaName().c_str());
-                schema.m_refSchemaList.erase(schema.m_refSchemaList.find(ref.first));
+                LOG.warningv("Force removing reference to schema %s even though it may be used by KoQs. They are not available in EC2", ref->first.GetFullSchemaName().c_str());
+                schema.m_refSchemaList.erase(schema.m_refSchemaList.find(ref->first));
                 }
             }
         }

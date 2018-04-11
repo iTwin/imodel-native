@@ -153,6 +153,7 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     schema->SetDisplayLabel("Comprehensive Schema");
     schema->AddReferencedSchema(*standardCASchema);
     schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     ECEntityClassP baseEntityClass;
     ECEntityClassP entityClass;
@@ -271,10 +272,9 @@ TEST_F(SchemaXmlSerializationTest, SerializeComprehensiveSchema)
     kindOfQuantity->SetDisplayLabel("best quantity of all times");
     kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
     kindOfQuantity->SetRelativeError(10e-3);
-    // TODO
-    //kindOfQuantity->SetDefaultPresentationUnit("u:FT");
-    //kindOfQuantity->AddPresentationUnit("u:IN");
-    //kindOfQuantity->AddPresentationUnit("u:MILLIINCH");
+    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     WString fullSchemaName;
     fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
@@ -305,6 +305,7 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     schema->SetDescription("Schema to test Kind of Quantity Inheritance serialization.");
     schema->SetDisplayLabel("KOQ Inheritance Test Schema");
     schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
     ECEntityClassP parentEntityClass;
     ECEntityClassP derivedEntityClass1;
@@ -318,20 +319,18 @@ TEST_F(SchemaXmlSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     kindOfQuantity->SetDisplayLabel("best quantity of all times");
     kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
     kindOfQuantity->SetRelativeError(10e-3);
-    // TODO
-    //kindOfQuantity->SetDefaultPresentationUnit("u:FT");
-    //kindOfQuantity->AddPresentationUnit("u:IN");
-    //kindOfQuantity->AddPresentationUnit("u:MILLIINCH");
+    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity2, "OverrideKindOfQuantity"));
     kindOfQuantity2->SetDescription("Kind of a Description here");
     kindOfQuantity2->SetDisplayLabel("best quantity of all times");
     kindOfQuantity2->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
     kindOfQuantity2->SetRelativeError(10e-4);
-    // TODO
-    //kindOfQuantity2->SetDefaultPresentationUnit("u:FT");
-    //kindOfQuantity2->AddPresentationUnit("u:IN");
-    //kindOfQuantity2->AddPresentationUnit("u:MILLIINCH");
+    kindOfQuantity2->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
+    kindOfQuantity2->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+    kindOfQuantity2->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     schema->CreateEntityClass(parentEntityClass, "ParentEntity");
     parentEntityClass->SetClassModifier(ECClassModifier::Abstract);

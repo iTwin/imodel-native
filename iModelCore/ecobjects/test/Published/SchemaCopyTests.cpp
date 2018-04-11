@@ -148,12 +148,12 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
     m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    m_sourceSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     koq->SetDisplayLabel("Test KoQ");
     koq->SetDescription("Test Description");
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    //
-    //koq->AddPresentationUnit("u:CM");
-    //koq->AddPresentationUnit("u:MM");
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
     koq->SetRelativeError(10e-3);
 
     CopySchema();
@@ -164,10 +164,9 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     ASSERT_TRUE(nullptr != targetKoq);
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
-    // TODO
-    //EXPECT_STREQ("CM", targetKoq->GetDefaultPresentationUnit().GetUnitName().c_str());
-    //EXPECT_EQ(2, targetKoq->GetPresentationUnitList().size());
-    //EXPECT_STREQ("MM", targetKoq->GetPresentationUnitList().at(1).GetUnitName().c_str());
+    EXPECT_STREQ("f:AmerFI", targetKoq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_EQ(2, targetKoq->GetPresentationFormatList().size());
+    EXPECT_STREQ("f:InchesU", targetKoq->GetPresentationFormatList().at(1).GetName().c_str());
     EXPECT_STREQ("M", targetKoq->GetPersistenceUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }
@@ -244,16 +243,17 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_PresentationUnitDefinedInSchema)
     ECUnitP unit;
     UnitSystemP system;
     PhenomenonP phenom;
+    ECFormatP format;
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnitSystem(system, "SMOOT_SYSTEM", "SMOOT_SYSTEM_LABEL", "SMOOT_SYSTEM_DESCRIPTION"));
     EC_ASSERT_SUCCESS(m_sourceSchema->CreatePhenomenon(phenom, "SMOOT_PHENOM", "SMOOT", "SMOOT_PHENOM_LABEL", "SMOOT_PHENOM_DESCRIPTION"));
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateUnit(unit, "SMOOT_SQUARED", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
+    EC_ASSERT_SUCCESS(m_sourceSchema->CreateFormat(format, "SMOOT_FORMAT"));
     EC_ASSERT_SUCCESS(m_sourceSchema->CreateKindOfQuantity(koq, "TestKoQ"));
     koq->SetDisplayLabel("Test KoQ");
     koq->SetDescription("Test Description");
     koq->SetPersistenceUnit(*m_sourceSchema->GetUnitCP("SMOOT"));
-    // TODO
-    //koq->SetDefaultPresentationUnit("SMOOT_SQUARED");
+    koq->SetDefaultPresentationFormat(*format, nullptr, unit);
     koq->SetRelativeError(10e-3);
 
     CopySchema();
@@ -265,9 +265,8 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_PresentationUnitDefinedInSchema)
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
     EXPECT_STREQ("SMOOT", targetKoq->GetPersistenceUnit()->GetName().c_str());
-    // TODO
-    //EXPECT_STREQ("SMOOT_SQUARED", targetKoq->GetDefaultPresentationUnit().GetUnit()->GetName().c_str());
-    //EXPECT_TRUE(targetKoq->HasPresentationUnits());
+    EXPECT_STREQ("SMOOT_FORMAT[SMOOT_SQUARED|]", targetKoq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_TRUE(targetKoq->HasPresentationFormats());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }
 
