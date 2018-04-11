@@ -1117,6 +1117,9 @@ protected:
 public:
     DGNPLATFORM_EXPORT static DefinitionModelPtr Create(DefinitionPartitionCR modeledElement);
     DGNPLATFORM_EXPORT static DefinitionModelPtr CreateAndInsert(DefinitionPartitionCR modeledElement);
+
+    DGNPLATFORM_EXPORT static DefinitionModelPtr Create(DefinitionElementCR modeledElement);
+    DGNPLATFORM_EXPORT static DefinitionModelPtr CreateAndInsert(DefinitionElementCR modeledElement);
 };
 
 //=======================================================================================

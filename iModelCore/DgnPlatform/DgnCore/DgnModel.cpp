@@ -536,6 +536,33 @@ DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionPartitionCR modele
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Jonas.Valiunas     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr DefinitionModel::Create(DefinitionElementCR modeledElement)
+    {
+    DgnDbR db = modeledElement.GetDgnDb();
+    ModelHandlerR handler = dgn_ModelHandler::Definition::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    if (!classId.IsValid() || !model.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return dynamic_cast<DefinitionModelP>(model.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Jonas.Valiunas     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionElementCR modeledElement)
+    {
+    DefinitionModelPtr model = Create(modeledElement);
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DefinitionModel::_OnInsertElement(DgnElementR el)
