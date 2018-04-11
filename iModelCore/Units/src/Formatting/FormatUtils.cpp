@@ -1654,7 +1654,8 @@ void FormatUnitSet::ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR 
                 unit = curs.ExtractSegment(0, curs.GetTotalLength());
                 }
             }
-        // dividers are not found - we assume a Unit name only
+        else if (fdi.BracketsMatched())// There are parentheses but they are not at the end. ex. (N*M)/DEG
+            unit = curs.ExtractSegment(0, curs.GetTotalLength());
         }
     formatString = fnam.GetText();
     unitName = unit.GetText();

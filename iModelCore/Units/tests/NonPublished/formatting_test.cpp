@@ -34,7 +34,6 @@ BE_JSON_NAME(yaw)
 BE_JSON_NAME(pitch)
 BE_JSON_NAME(roll)
 
-
 //static void SetUpL10N() 
 //    {
 //    BeFileName sqlangFile;
@@ -1269,6 +1268,58 @@ TEST(FormattingTest, PhenomenaTest)
 	LOG.infov("================  Formatting Log (completed) ===========================\n\n\n");
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                            Kyle.Abramowitz                         04/18
+//--------------------------------------------------------------------------------------
+TEST(FormattingTest, TestParseUnitFormatDescriptor) 
+    {
+    FormattingTestFixture::SetUpL10N();
+    Utf8String unitName;
+    Utf8String formatString;
+
+    Utf8String input = "(N*M)/DEG";
+    Utf8String input2 = "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)";
+    Utf8String input3 = "(N*M)/DEG(real)";
+    Utf8String input4 = "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)(real)";
+    Utf8String input5 = "W/(SQ.M*K)";
+    Utf8String input6 = "W/(SQ.M*K)(real)";
+
+    FormatUnitSet::ParseUnitFormatDescriptor(unitName, formatString, input.c_str());
+    auto fus = FormatUnitSet::FormatUnitSet(input.c_str());
+    EXPECT_STREQ(fus.GetUnitName().c_str(), "(N*M)/DEG");
+    EXPECT_STREQ("(N*M)/DEG", unitName.c_str());
+    EXPECT_TRUE(formatString.empty());
+
+    FormatUnitSet::ParseUnitFormatDescriptor(unitName, formatString, input2.c_str());
+    fus = FormatUnitSet::FormatUnitSet(input2.c_str());
+    EXPECT_STREQ(fus.GetUnitName().c_str(), "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)");
+    EXPECT_STREQ("(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", unitName.c_str());
+    EXPECT_TRUE(formatString.empty());
+
+    FormatUnitSet::ParseUnitFormatDescriptor(unitName, formatString, input3.c_str());
+    fus = FormatUnitSet::FormatUnitSet(input3.c_str());
+    EXPECT_STREQ(fus.GetUnitName().c_str(), "(N*M)/DEG");
+    EXPECT_STREQ("(N*M)/DEG", unitName.c_str());
+    EXPECT_STREQ("real", formatString.c_str());
+
+    FormatUnitSet::ParseUnitFormatDescriptor(unitName, formatString, input4.c_str());
+    fus = FormatUnitSet::FormatUnitSet(input4.c_str());
+    EXPECT_STREQ(fus.GetUnitName().c_str(), "(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)");
+    EXPECT_STREQ("(BTU*IN)/(SQ.FT*HR*FAHRENHEIT)", unitName.c_str());
+    EXPECT_STREQ("real", formatString.c_str());
+
+    FormatUnitSet::ParseUnitFormatDescriptor(unitName, formatString, input5.c_str());
+    fus = FormatUnitSet::FormatUnitSet(input5.c_str());
+    EXPECT_STREQ(fus.GetUnitName().c_str(), "W/(SQ.M*K)");
+    EXPECT_STREQ("W/(SQ.M*K)", unitName.c_str());
+    EXPECT_TRUE(formatString.empty());
+
+    FormatUnitSet::ParseUnitFormatDescriptor(unitName, formatString, input6.c_str());
+    fus = FormatUnitSet::FormatUnitSet(input6.c_str());
+    EXPECT_STREQ(fus.GetUnitName().c_str(), "W/(SQ.M*K)");
+    EXPECT_STREQ("W/(SQ.M*K)", unitName.c_str());
+    EXPECT_STREQ("real", formatString.c_str());
+    }
 
 #endif    //BENTLEYCONFIG_OS_WINDOWS
 
