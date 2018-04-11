@@ -1106,6 +1106,8 @@ DbResult TxnManager::ApplyChanges(IChangeSet& changeset, TxnAction action, bool 
 
     bool wasTracking = EnableTracking(false);
     DbResult result = changeset.ApplyChanges(m_dgndb, rebase); // this actually updates the database with the changes
+    if (result != BE_SQLITE_OK)
+        m_dgndb.AbandonChanges();
     EnableTracking(wasTracking);
 
     if (containsSchemaChanges)
