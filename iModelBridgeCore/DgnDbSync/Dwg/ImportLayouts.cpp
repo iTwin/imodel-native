@@ -63,6 +63,29 @@ BentleyStatus   LayoutFactory::CalculateSheetSize (DPoint2dR sheetSize) const
 
     return  BSISUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId   LayoutFactory::FindOverallViewport (DwgDbBlockTableRecordCR block)
+    {
+    // an inactive layout does not have viewport, so we have to iterate through layout block and find the first viewport:
+    DwgDbObjectId   firstViewportId;
+    auto iter = block.GetBlockChildIterator ();
+    if (iter.IsValid())
+        {
+        for (iter.Start(); !iter.Done(); iter.Step())
+            {
+            auto id = iter.GetEntityId ();
+            if (id.IsValid() && id.GetDwgClass() == DwgDbViewport::SuperDesc())
+                {
+                firstViewportId = id;
+                break;
+                }
+            }
+        }
+    return  firstViewportId;
+    }
     
 
 
@@ -80,7 +103,7 @@ BentleyStatus   DwgImporter::_ImportLayout (ResolvedModelMapping& modelMap, DwgD
     if (layout.GetViewports(viewports) > 0)
         overallViewportId = viewports.front ();
     else
-        overallViewportId.SetNull ();
+        overallViewportId = LayoutFactory::FindOverallViewport (block);
 
     // update current viewportID for geometry drawing:
     currOptions.SetViewportId (overallViewportId);
@@ -183,6 +206,11 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
     DwgDbObjectId   savedviewportId = this->_GetCurrentGeometryOptions().GetViewportId ();
     IDwgChangeDetector& changeDetector = this->_GetChangeDetector ();
 
+    DwgDbObjectId   savedLayoutId;
+    auto layoutManager = DwgImportHost::GetHost().GetLayoutManager ();
+    if (layoutManager.IsValid())
+        savedLayoutId =layoutManager->FindActiveLayout (m_dwgdb.get());
+
     // begin processing DwgModelMap - do not add layout's xref models into m_dwgModelMap, add them in m_paperspaceXrefs!
     m_isProcessingDwgModelMap = true;
 
@@ -209,8 +237,26 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
 
         if (block->IsLayout() && !block->IsExternalReference())
             {
+            // activate the layout such that its viewports etc can work correctly (specifically DwgDbLayout::GetViewports() fails otherwise):
+            if (layoutManager.IsValid())
+                {
+                // must close & re-open block as otherwise RealDWG will fail:
+                auto layoutId = block->GetLayoutId ();
+                block.CloseObject ();
+                layoutManager->ActivateLayout (layoutId);
+                block.OpenObject (modelId, DwgDbOpenMode::ForRead);
+                BeAssert (block.OpenStatus() == DwgDbStatus::Success);
+                }
+
             if (changeDetector._ShouldSkipModel(*this, entry))
+                {
+                // before we skip this layout, record its viewport as seen:
+                DwgDbObjectIdArray  ids;
+                DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);
+                if (layout.OpenStatus() == DwgDbStatus::Success && layout->GetViewports(ids) > 0)
+                    changeDetector._OnViewSeen (*this, this->GetSyncInfo().FindView(ids.front(), DwgSyncInfo::View::Type::PaperspaceViewport));
                 continue;
+                }
 
             // don't import an empty layout:
             auto iter = block->GetBlockChildIterator ();
@@ -234,6 +280,9 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
     // restore current model/layout information
     m_currentspaceId = savedspaceId;
     this->_GetCurrentGeometryOptions().SetViewportId (savedviewportId);
+
+    if (layoutManager.IsValid() && savedLayoutId.IsValid())
+        layoutManager->ActivateLayout (savedLayoutId);
 
     m_isProcessingDwgModelMap = false;
 

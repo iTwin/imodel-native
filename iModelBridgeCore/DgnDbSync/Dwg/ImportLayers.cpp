@@ -259,6 +259,8 @@ BentleyStatus   DwgImporter::_ImportLayer (DwgDbLayerTableRecordCR layer, DwgStr
         }
 
     m_syncInfo.InsertLayer (DgnCategory::GetDefaultSubCategoryId(categoryId), modelSource, layer);
+
+    m_layersImported++;
     
     return  BSISUCCESS;
     }

@@ -263,6 +263,7 @@ private:
     Transform           m_transform;
     CategorySelectorPtr m_categories;
     DwgImporter&        m_importer;
+    DwgSyncInfo::View::Type m_viewportType;
 
     void ComputeSpatialView (SpatialViewDefinitionR dgnView);
     void ComputeSheetView (SheetViewDefinitionR dgnView);
@@ -271,7 +272,7 @@ private:
     bool ComputeViewAttachment (Placement2dR placement);
     bool ComposeLayoutTransform (TransformR trans, DwgDbObjectIdCR blockId);
     void TransformDataToBim ();
-    void AddSpatialCategories (DgnDbR dgndb, Utf8StringCR viewName);
+    void AddSpatialCategories (Utf8StringCR viewName);
     void ApplyViewportClipping (SpatialViewDefinitionR dgnView, double frontClip, double backClip);
     bool ComputeClipperTransformation (TransformR toClipper, RotMatrixCR viewRotation);
     void ComputeEnvironment (DisplayStyle3dR displayStyle);
@@ -291,7 +292,9 @@ public:
     DgnElementPtr   CreateViewAttachment (DgnModelCR sheetModel, DgnViewId viewId);
     // Corresponding Update methods
     BentleyStatus   UpdateSpatialView (DgnViewId viewId);
+    BentleyStatus   UpdateSheetView (DgnViewId viewId);
     DgnElementPtr   UpdateViewAttachment (DgnElementId attachId, DgnViewId viewId);
+    void            UpdateSpatialCategories (DgnCategoryIdSet& categoryIds) const;
 
     bool    ValidateViewName (Utf8StringR viewNameInOut, DgnViewId& viewIdOut);
     void    SetBackgroundColor (ColorDefCR color) { m_backgroundColor = color; }
@@ -311,6 +314,7 @@ public:
     bool            IsValid () const { return m_isValid; }
     double          GetUserScale () const;
     BentleyStatus   CalculateSheetSize (DPoint2dR sheetSize) const;
+    static DwgDbObjectId FindOverallViewport (DwgDbBlockTableRecordCR block);
     };  // LayoutFactory
 
 END_DGNDBSYNC_DWG_NAMESPACE
