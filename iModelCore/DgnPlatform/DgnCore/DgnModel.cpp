@@ -508,15 +508,15 @@ DgnDbStatus InformationModel::_OnInsertElement(DgnElementR element)
     return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   01/17
+* @bsimethod                                                    Jonas.Valiunas  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
+DefinitionModelPtr DefinitionModel::Create(DgnDbR db, DgnElementId modeledElementId)
     {
-    DgnDbR db = modeledElement.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Definition::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElementId));
     if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
@@ -524,6 +524,13 @@ DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
         }
 
     return dynamic_cast<DefinitionModelP>(model.get());
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
+    {
+    return DefinitionModel::Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -540,17 +547,7 @@ DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionPartitionCR modele
 +---------------+---------------+---------------+---------------+---------------+------*/
 DefinitionModelPtr DefinitionModel::Create(DefinitionElementCR modeledElement)
     {
-    DgnDbR db = modeledElement.GetDgnDb();
-    ModelHandlerR handler = dgn_ModelHandler::Definition::GetHandler();
-    DgnClassId classId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
-    if (!classId.IsValid() || !model.IsValid())
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return dynamic_cast<DefinitionModelP>(model.get());
+    return DefinitionModel::Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
     }
 
 /*---------------------------------------------------------------------------------**//**
