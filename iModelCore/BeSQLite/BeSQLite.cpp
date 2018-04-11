@@ -1470,20 +1470,30 @@ void Db::ChangeDbGuid(BeGuid guid)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::SetAsMaster(BeGuid guid /*= BeGuid()*/)
     {
-    if (GetBriefcaseId().IsMasterId())
+    BeBriefcaseId currentId = GetBriefcaseId();
+    if (currentId.IsMasterId())
         {
         BeAssert(false && "Db is already a master copy");
         return BE_SQLITE_ERROR;
         }
 
-    DbResult result = AssignBriefcaseId(BeBriefcaseId(BeBriefcaseId::Master()));
+    if (!guid.IsValid())
+        guid.Create();
+
+    DbResult result = _OnBeforeSetAsMaster(guid);
     if (result == BE_SQLITE_OK)
         {
-        if (!guid.IsValid())
-            guid.Create();
-        ChangeDbGuid(guid);
+        BeBriefcaseId masterBriefcaseId(BeBriefcaseId::Master());
+        result = AssignBriefcaseId(masterBriefcaseId);
+        
+        if (result == BE_SQLITE_OK)
+            result = _OnAfterSetAsMaster(guid);
+
+        if (result == BE_SQLITE_OK)
+            ChangeDbGuid(guid);
         }
 
+    (result == BE_SQLITE_OK) ? SaveChanges() : AbandonChanges();
     return result;
     }
 
@@ -1492,13 +1502,36 @@ DbResult Db::SetAsMaster(BeGuid guid /*= BeGuid()*/)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::SetAsBriefcase(BeBriefcaseId briefcaseId)
     {
-    if (!GetBriefcaseId().IsMasterId() || briefcaseId.IsMasterId())
+    if (!briefcaseId.IsValid())
+        {
+        BeAssert(false && "Cannot set invalid BriefcaseId");
+        return BE_SQLITE_ERROR;
+        }
+
+    BeBriefcaseId currentId = GetBriefcaseId();
+    if (currentId.IsValid() && currentId == briefcaseId)
+        {
+        BeAssert(false && "BriefcaseId must be changed");
+        return BE_SQLITE_ERROR;
+        }
+
+    if (!currentId.IsMasterId() || briefcaseId.IsMasterId())
         {
         BeAssert(false && "Can only change Master -> Briefcase");
         return BE_SQLITE_ERROR;
         }
 
-    return AssignBriefcaseId(briefcaseId);
+    DbResult result = _OnBeforeSetAsBriefcase(briefcaseId);
+    if (result == BE_SQLITE_OK)
+        {
+        result = AssignBriefcaseId(briefcaseId);
+
+        if (result == BE_SQLITE_OK)
+            result = _OnAfterSetAsBriefcase(briefcaseId);
+        }
+
+    (result == BE_SQLITE_OK) ? SaveChanges() : AbandonChanges();
+    return result;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1509,38 +1542,12 @@ DbResult Db::AssignBriefcaseId(BeBriefcaseId id)
     if (IsReadonly())
         return BE_SQLITE_READONLY;
 
-    BeBriefcaseId currentId = GetBriefcaseId();
-
-    //If the passed id is the same as the existing one, we must not do anything. The call ClearBriefcaseLocalValues 
-    //deletes all briefcase local values, which is fine if the briefcase id really changes. If it doesn't change
-    //it would mean though to destroy the current state of those values.
-    if (!id.IsValid() || (currentId.IsValid() && currentId == id))
-        return BE_SQLITE_ERROR;
-
-    // changing the BeBriefcaseId invalidates all BriefcaseLocalValues. Delete them.
-    DbResult stat = ClearBriefcaseLocalValues();
-    if (stat != BE_SQLITE_OK)
-        {
-        AbandonChanges();
-        return stat;
-        }
+    DbResult result = ClearBriefcaseLocalValues();
+    if (result != BE_SQLITE_OK)
+        return result;
 
     m_dbFile->m_briefcaseId = id;
-    stat = SaveBriefcaseId();
-    if (stat != BE_SQLITE_OK)
-        {
-        AbandonChanges();
-        return stat;
-        }
-
-    stat =_OnBriefcaseIdAssigned(id);
-    if (stat != BE_SQLITE_OK)
-        {
-        AbandonChanges();
-        return stat;
-        }
-
-    return SaveChanges();
+    return SaveBriefcaseId();
     }
 
 /*---------------------------------------------------------------------------------**//**
