@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #     $Source: comparedgnjs/comparedgnjs.mke $
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 
 %include mdl.mki
@@ -19,7 +19,7 @@ always:
 # Compile comparedgnjs.cpp. It contains "main"
 # -----------------------------------------------------
 
-$(o)comparedgnjs$(oext) : $(baseDir)comparedgnjs.cpp $(baseDir)compareJson.h
+$(o)comparedgnjs$(oext) : $(baseDir)comparedgnjs.cpp $(baseDir)compareJson.h $(baseDir)compareGeometry.h
 
 # -----------------------------------------------------
 # Create comparedgnjs.exe
