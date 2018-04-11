@@ -1100,11 +1100,11 @@ Utf8String RevisionManager::GetReversedRevisionId() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
+// @bsimethod                                Ramanujam.Raman                    04/2018
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
+RevisionStatus RevisionManager::SaveInitialParentRevisionId(Utf8StringCR revisionId)
     {
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(INITIAL_PARENT_CS_ID, GetParentRevisionId());
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(INITIAL_PARENT_CS_ID, revisionId);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1112,6 +1112,14 @@ RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
         }
 
     return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    10/2015
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
+    {
+    return SaveInitialParentRevisionId(GetParentRevisionId());
     }
 
 //---------------------------------------------------------------------------------------
