@@ -508,15 +508,15 @@ DgnDbStatus InformationModel::_OnInsertElement(DgnElementR element)
     return element.IsInformationContentElement() ? T_Super::_OnInsertElement(element) : DgnDbStatus::WrongModel;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   01/17
+* @bsimethod                                                    Jonas.Valiunas  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
+DefinitionModelPtr DefinitionModel::Create(DgnDbR db, DgnElementId modeledElementId)
     {
-    DgnDbR db = modeledElement.GetDgnDb();
     ModelHandlerR handler = dgn_ModelHandler::Definition::GetHandler();
     DgnClassId classId = db.Domains().GetClassId(handler);
-    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElement.GetElementId()));
+    DgnModelPtr model = handler.Create(DgnModel::CreateParams(db, classId, modeledElementId));
     if (!classId.IsValid() || !model.IsValid())
         {
         BeAssert(false);
@@ -525,11 +525,35 @@ DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
 
     return dynamic_cast<DefinitionModelP>(model.get());
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Ramanujam.Raman   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr DefinitionModel::Create(DefinitionPartitionCR modeledElement)
+    {
+    return DefinitionModel::Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                 Ramanujam.Raman   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionPartitionCR modeledElement)
+    {
+    DefinitionModelPtr model = Create(modeledElement);
+    return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Jonas.Valiunas     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr DefinitionModel::Create(DefinitionElementCR modeledElement)
+    {
+    return DefinitionModel::Create(modeledElement.GetDgnDb(), modeledElement.GetElementId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Jonas.Valiunas     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+DefinitionModelPtr DefinitionModel::CreateAndInsert(DefinitionElementCR modeledElement)
     {
     DefinitionModelPtr model = Create(modeledElement);
     return (model.IsValid() && (DgnDbStatus::Success == model->Insert())) ? model : nullptr;
@@ -1624,7 +1648,7 @@ TileTree::RootPtr GeometricModel::_GetTileTree(RenderContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::RootP GeometricModel::GetTileTree(Render::SystemP system)
     {
-    DgnDb::VerifyClientThread();
+    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
 
     // NB: Reality models sometimes need to load the root outside of the context of a render system.
     if (m_root.IsNull() || (nullptr != system && m_root->GetRenderSystemP() != system))
