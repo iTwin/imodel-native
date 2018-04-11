@@ -2532,23 +2532,23 @@ struct SchemaKey
     uint32_t      m_versionRead;
     uint32_t      m_versionWrite;
     uint32_t      m_versionMinor;
-    uint32_t      m_checkSum;
+    Utf8String      m_checkSum;
 
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
     //! @param[in]  read    The read portion of the version
     //! @param[in]  minor   The minor portion of the version
-    SchemaKey (Utf8CP name, uint32_t read, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(minor), m_checkSum(0){}
+    SchemaKey (Utf8CP name, uint32_t read, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(minor), m_checkSum(""){}
 
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
     //! @param[in]  read    The read portion of the version
     //! @param[in]  write   The write portion of the version
     //! @param[in]  minor   The minor portion of the version
-    SchemaKey(Utf8CP name, uint32_t read, uint32_t write, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(write), m_versionMinor(minor), m_checkSum(0) {}
+    SchemaKey(Utf8CP name, uint32_t read, uint32_t write, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(write), m_versionMinor(minor), m_checkSum("") {}
 
     //! Default constructor
-    SchemaKey () : m_versionRead(DEFAULT_VERSION_READ), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum(0) {}
+    SchemaKey () : m_versionRead(DEFAULT_VERSION_READ), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum("") {}
 
     Utf8StringCR GetName() const {return m_schemaName;}
 
@@ -3978,7 +3978,7 @@ public:
     // ************************************  STATIC METHODS *******************************************************************
     // ************************************************************************************************************************
     //! Given a str containing SchemaXml, will compute the CheckSum
-    ECOBJECTS_EXPORT static uint32_t ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len);
+    ECOBJECTS_EXPORT static Utf8String ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len);
 
     //! Generate a schema version string given the read, write and minor version values.
     //! @param[in] versionRead     The read version number

@@ -24,7 +24,7 @@ private:
 
 public:
     SchemaXmlReader(ECSchemaReadContextR context, BeXmlDomR xmlDom) : m_schemaContext(context), m_xmlDom(xmlDom) {}
-    SchemaReadStatus Deserialize(ECSchemaPtr& ecSchema, uint32_t checkSum);
+    SchemaReadStatus Deserialize(ECSchemaPtr& ecSchema, Utf8String checkSum);
 
     static void SetErrorHandling(bool doAssert);
 
