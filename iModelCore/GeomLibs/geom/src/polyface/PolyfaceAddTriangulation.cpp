@@ -48,8 +48,13 @@ void IPolyfaceConstruction::AddEdgeChainZeroBased (CurveTopologyId::Type type, u
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &inpoints)
+bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &originalInPoints)
     {
+    // work with a local duplicate free copy of the points, eliminating trailing disconnects ...
+    auto inpoints = originalInPoints;
+    while (inpoints.size () > 0 && inpoints.back ().IsDisconnect ())
+        inpoints.pop_back ();
+
     // work with a local duplicate free copy of the points....
     if (inpoints.size () < 3)
         return false;
@@ -77,7 +82,6 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &inpoints
 
     size_t numFacet = 0;
     int maxPerFace = 3;                     // should be GetFacetOptionsR ().GetMaxPerFace (); convexifier problems
-
     bool buildSimpleIndices = false;
    
     if (destMaxPerFace >= numPoints  && DPoint3dOps::CountDisconnects (points) == 0)
@@ -139,14 +143,29 @@ bool IPolyfaceConstruction::AddTriangulation (bvector <DPoint3d> const &inpoints
     FindOrAddPoints (outPoints, outPoints.size (), 0, outPointToPolyfacePoint);
     localToWorld.GetMatrixColumn (polygonNormal, 2);
     // EDL April 10 2018 -- points arrive with a disconnect.  It goes into the params.  But maybe it's never referenced.  When did this appear?  dgnjs regression says it's newish.
+    static int s_disconnectHandling = 0;    // 1==> include the disconnect directly (old behavior). 2==>skip (this may cause index errors), other==>insert a local 000
     if (NeedParams())
         {
         for (size_t i = 0, n = outPoints.size (); i < n; i++)
             {
             DPoint3d workPoint = outPoints[i];
             if (workPoint.IsDisconnect ())
-                continue;
-            worldToLocal.Multiply (workPoint);
+                {
+                if (s_disconnectHandling == 1)
+                    {
+                    worldToLocal.Multiply (workPoint);
+                    }
+                else if (s_disconnectHandling == 2)
+                    {
+                    continue;
+                    }
+                else
+                    // this ensures there is a point and the indexing does not change.
+                    workPoint.Zero ();
+                }
+            else
+                worldToLocal.Multiply (workPoint);
+
             DPoint2d param;
             param.x = workPoint.x;
             param.y = workPoint.y;
