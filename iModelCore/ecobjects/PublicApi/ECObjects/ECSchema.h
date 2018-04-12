@@ -1436,12 +1436,13 @@ private:
     double m_relativeError;
     //! Formats which can be used for presentation. First format is default.
     bvector<NamedFormat> m_presentationFormats;
+    mutable Nullable<NamedFormat> m_persFormatCache;
 
     mutable KindOfQuantityId m_kindOfQuantityId;
 
     //  Lifecycle management:  The schema implementation will
     //  serve as a factory for kind of quantities and will manage their lifecycle.
-    explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_persistenceUnit(nullptr), m_relativeError(1.0) {};
+    explicit KindOfQuantity(ECSchemaCR schema) : m_schema(schema), m_persistenceUnit(nullptr), m_persFormatCache(nullptr), m_relativeError(1.0) {};
 
     ~KindOfQuantity() {};
 
@@ -1456,6 +1457,7 @@ private:
 
     ECSchemaR GetSchemaR() const {return const_cast<ECSchemaR>(m_schema);}
     ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatInternal(NamedFormat format);
+    ECOBJECTS_EXPORT NamedFormatCP GetOrCreateCachedPersistenceFormat() const;
 
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
@@ -1501,7 +1503,7 @@ public:
     ECObjectsStatus SetDefaultPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr)
         {return AddPresentationFormatSingleUnitOverride(parent, precisionOverride, inputUnitOverride, labelOverride, true);}
     //! Gets the default presentation format of this KindOfQuantity.
-    NamedFormatCP GetDefaultPresentationFormat() const {return HasPresentationFormats() ? &m_presentationFormats[0] : nullptr;}
+    NamedFormatCP GetDefaultPresentationFormat() const {return HasPresentationFormats() ? &m_presentationFormats[0] : GetOrCreateCachedPersistenceFormat();}
 
     ECOBJECTS_EXPORT Utf8String GetPresentationUnitDescriptor() const;
 
@@ -1566,7 +1568,7 @@ public:
     //! @param[in] descriptor  The descriptor that is of the format for the old FUS descriptor, format: {unitName}({formatName}), where the format part is optional.
     //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
     ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptor(Utf8String& updatedDescriptor, Utf8CP descriptor);
-    ECOBJECTS_EXPORT ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr,  Nullable<bvector<std::pair<ECUnitCP, Utf8CP>>> unitsAndLabels = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr,  Nullable<bvector<std::pair<ECUnitCP, Utf8CP>>> unitsAndLabels = nullptr) const;
 };
 
 //=======================================================================================

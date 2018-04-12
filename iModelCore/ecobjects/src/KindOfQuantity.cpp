@@ -812,7 +812,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptor(Utf8String& updatedDescripto
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride,  Nullable<bvector<std::pair<ECUnitCP, Utf8CP>>> unitsAndLabels)
+ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride,  Nullable<bvector<std::pair<ECUnitCP, Utf8CP>>> unitsAndLabels) const
     {
     if (parent.IsOverride())
         {
@@ -865,6 +865,24 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatInternal(NamedFormat format
     // part of another kind of quanity already and has gone through error checking, but still should add it here.
     m_presentationFormats.emplace_back(format);
     return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+NamedFormatCP KindOfQuantity::GetOrCreateCachedPersistenceFormat() const
+    {
+    if (m_persFormatCache.IsValid())
+        {
+        if (Units::Unit::AreEqual(m_persFormatCache.Value().GetCompositeMajorUnit(), m_persistenceUnit))
+            return &m_persFormatCache.Value();
+        }
+    m_persFormatCache = NamedFormat(Formatting::FormatConstant::DefaultFormatName());
+    m_persFormatCache.ValueR().SetNumericSpec(Formatting::NumericFormatSpec::DefaultFormat());
+    auto comp = Formatting::CompositeValueSpec(*m_persistenceUnit);
+    comp.SetMajorLabel(m_persistenceUnit->GetDisplayLabel().c_str());
+    m_persFormatCache.ValueR().SetCompositeSpec(comp);
+    return &m_persFormatCache.Value();
     }
 
 //--------------------------------------------------------------------------------------
