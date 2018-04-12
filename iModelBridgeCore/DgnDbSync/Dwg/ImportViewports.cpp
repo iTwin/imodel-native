@@ -48,6 +48,7 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportTableRecor
     m_isPrivate = false;
     m_transform = importer.GetRootTransform ();
     m_inputViewport = DwgDbObject::Cast (&viewportRecord);
+    m_viewportType = DwgSyncInfo::View::Type::ModelspaceViewport;
     // modelspace viewports do not have clipping entity
     m_clipEntityId.SetNull ();
 
@@ -93,6 +94,7 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportCR viewpor
         // we are creating a sheet - transform view data to sheet coordinates:
         m_transform.InitIdentity ();
         this->ComposeLayoutTransform (m_transform, layout->GetBlockTableRecordId());
+        m_viewportType = DwgSyncInfo::View::Type::PaperspaceViewport;
         }
     else
         {
@@ -103,6 +105,7 @@ ViewportFactory::ViewportFactory (DwgImporter& importer, DwgDbViewportCR viewpor
 
         m_height = viewportEntity.GetViewHeight ();
         m_width = m_height * aspectRatio;
+        m_viewportType = DwgSyncInfo::View::Type::ViewportEntity;
         }
 
     this->TransformDataToBim ();
@@ -590,7 +593,26 @@ void            ViewportFactory::ComputeSheetDisplayStyle (DisplayStyleR display
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            ViewportFactory::AddSpatialCategories (DgnDbR dgndb, Utf8StringCR viewName)
+void            ViewportFactory::AddSpatialCategories (Utf8StringCR viewName)
+    {
+    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
+    if (nullptr == model)
+        {
+        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "CategorySelector");
+        model = &m_importer.GetDgnDb().GetDictionaryModel ();
+        }
+
+    m_categories = new CategorySelector (*model, viewName.c_str());
+
+    DgnCategoryIdSet&   categoryIdSet = m_categories->GetCategoriesR ();
+
+    this->UpdateSpatialCategories (categoryIdSet);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void            ViewportFactory::UpdateSpatialCategories (DgnCategoryIdSet& categoryIdSet) const
     {
     // add all spatial categories to the modelspace view, but only add displayed ones to a viewport view:
     DwgDbObjectIdArray  frozenLayers;
@@ -606,19 +628,8 @@ void            ViewportFactory::AddSpatialCategories (DgnDbR dgndb, Utf8StringC
     DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (dwg);
     DwgSyncInfo&            syncInfo = m_importer.GetSyncInfo ();
 
-    DefinitionModelP model = m_importer.GetOrCreateJobDefinitionModel().get ();
-    if (nullptr == model)
-        {
-        m_importer.ReportError (DwgImporter::IssueCategory::Unknown(), DwgImporter::Issue::MissingJobDefinitionModel(), "CategorySelector");
-        model = &dgndb.GetDictionaryModel ();
-        }
-
-    m_categories = new CategorySelector (*model, viewName.c_str());
-
-    DgnCategoryIdSet&   categoryIdSet = m_categories->GetCategoriesR ();
-
-    // add all spatail categories to the view:
-    for (ElementIteratorEntry entry : SpatialCategory::MakeIterator(dgndb))
+    // add all displayed spatial categories to the view:
+    for (ElementIteratorEntry entry : SpatialCategory::MakeIterator(m_importer.GetDgnDb()))
         {
         DgnCategoryId   categoryId = entry.GetId <DgnCategoryId> ();
 
@@ -742,7 +753,7 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
     models->AddModel (modelId);
 
     // add all spatial categories to the view, with viewport frozen layers applied:
-    this->AddSpatialCategories (dgndb, viewName);
+    this->AddSpatialCategories (viewName);
 
     // create a display style:
     DisplayStyle3dPtr   displayStyle = new DisplayStyle3d (*model, viewName.c_str());
@@ -769,6 +780,13 @@ DgnViewId       ViewportFactory::CreateSpatialView (DgnModelId modelId, Utf8Stri
 
     viewId = view->GetViewId ();
 
+    // insert viewport into syncInfo and update the change detector
+    if (viewId.IsValid())
+        {
+        m_importer.GetSyncInfo().InsertView (viewId, m_inputViewport->GetObjectId(), m_viewportType, viewName);
+        m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
+        }
+
     return  viewId;
     }
 
@@ -786,6 +804,11 @@ BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId)
     if (nullptr == cameraView)
         return  BSIERROR;
   
+    // update categories
+    auto& categorySelector = spatialView->GetCategorySelector ();
+    this->UpdateSpatialCategories (categorySelector.GetCategoriesR());
+    categorySelector.Update ();
+
     // update display style:
     auto& displayStyle = spatialView->GetDisplayStyle3d ();
     this->ComputeSpatialDisplayStyle (displayStyle);
@@ -793,8 +816,10 @@ BentleyStatus   ViewportFactory::UpdateSpatialView (DgnViewId viewId)
 
     // re-compute the view
     this->ComputeSpatialView (*spatialView);
-
     spatialView->Update ();
+
+    m_importer.GetSyncInfo().UpdateView (viewId, m_inputViewport->GetObjectId(), m_viewportType, spatialView->GetName());
+    m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
 
     return BSISUCCESS;
     }
@@ -849,7 +874,41 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
 
     viewId = view->GetViewId ();
 
+    // insert viewport into syncInfo and update the change detector:
+    if (viewId.IsValid())
+        {
+        m_importer.GetSyncInfo().InsertView (viewId, m_inputViewport->GetObjectId(), m_viewportType, viewName);
+        m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
+        }
+
     return  viewId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   ViewportFactory::UpdateSheetView (DgnViewId viewId)
+    {
+    auto sheetView = m_importer.GetDgnDb().Elements().GetForEdit<SheetViewDefinition> (viewId);
+    if (!sheetView.IsValid())
+        return  static_cast<BentleyStatus>(DgnDbStatus::ViewNotFound);
+
+    // categories will be updated in post process
+
+    // update display style:
+    auto& displayStyle = sheetView->GetDisplayStyle ();
+    this->ComputeSheetDisplayStyle (displayStyle);
+    displayStyle.Update ();
+
+    // re-compute the sheet view
+    this->ComputeSheetView (*sheetView.get());
+    sheetView->SetIsPrivate (m_isPrivate);
+    sheetView->Update ();
+
+    m_importer.GetSyncInfo().UpdateView (viewId, m_inputViewport->GetObjectId(), m_viewportType, sheetView->GetName());
+    m_importer._GetChangeDetector()._OnViewSeen (m_importer, viewId);
+
+    return BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1010,7 +1069,7 @@ BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, Dw
         {
         // delete the view and re-import it anew:
         importer.GetDgnDb().Elements().Delete (modelViewId);
-        importer.GetSyncInfo().DeleteElement (modelViewId);
+        importer.GetSyncInfo().DeleteView (modelViewId);
 
         Utf8PrintfString    viewName ("%s Viewport-%llx", sheetModel.GetName().c_str(), viewport->GetObjectId().ToUInt64());
 
@@ -1026,8 +1085,6 @@ BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, Dw
     if (nullptr == obj)
         return  BSIERROR;
 
-    DwgSyncInfo::DwgObjectProvenance    newProv (*obj, importer.GetSyncInfo(), importer.GetCurrentIdPolicy(), false);
-
     // update the view attachment and the syninfo
     DgnElementPtr   newViewAttachment = factory.UpdateViewAttachment (oldId, modelViewId);
     if (!newViewAttachment.IsValid())
@@ -1042,7 +1099,8 @@ BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, Dw
             status = BSIERROR;
         }
 
-     // the ViewAttachment is the pivotal element in syncinfo - let the caller insert it in bim as well as in syncinfo
+    // the ViewAttachment is the pivotal element in syncinfo - let the caller insert it in bim as well as in syncinfo
+    // SpatialView & SheetView are tracked separately in syncInfo.
     if (newViewAttachment.IsValid())
         context.GetElementResultsR().SetImportedElement (newViewAttachment.get());
 
@@ -1071,22 +1129,35 @@ void            DwgImporter::SaveViewDefinition (ViewControllerR viewController)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR dwgVport)
+DgnViewId   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecordCR dwgVport)
     {
+    DgnViewId       viewId;
     DwgDbDatabaseP  dwg = dwgVport.GetDatabase().get ();
     if (nullptr == dwg)
         {
         BeAssert(false);
-        return BSIERROR;
+        return viewId;
         }
     DgnModelP   rootModel = nullptr;
     ResolvedModelMapping    modelMap = this->FindModel (this->GetModelSpaceId(), this->GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelSpace);
     if (!modelMap.IsValid() || (rootModel = modelMap.GetModel()) == nullptr)
         {
         BeAssert(false && L"root model has not been imported yet!");
-        return BSIERROR;
+        return viewId;
         }
         
+    ViewportFactory factory(*this, dwgVport);
+
+    if (this->IsUpdating())
+        {
+        viewId = m_syncInfo.FindView (dwgVport.GetObjectId(), DwgSyncInfo::View::Type::ModelspaceViewport);
+        if (viewId.IsValid())
+            {
+            factory.UpdateSpatialView (viewId);
+            return  viewId;
+            }
+        }
+
     Utf8String                  layoutName;
     DwgDbBlockTableRecordPtr    modelspace (m_modelspaceId, DwgDbOpenMode::ForRead);
     if (!modelspace.IsNull())
@@ -1105,11 +1176,10 @@ BentleyStatus   DwgImporter::_ImportModelspaceViewport (DwgDbViewportTableRecord
         vportName.erase (0, 1);
 
     Utf8PrintfString    viewName ("%s - %s", layoutName, vportName);
-    ViewportFactory     factory(*this, dwgVport);
 
-    m_defaultViewId = factory.CreateSpatialView (rootModel->GetModelId(), viewName);
+    viewId = factory.CreateSpatialView (rootModel->GetModelId(), viewName);
 
-    return m_defaultViewId.IsValid() ? BSISUCCESS : BSIERROR;
+    return viewId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1122,7 +1192,6 @@ BentleyStatus   DwgImporter::_ImportModelspaceViewports ()
         return  BSIERROR;
 
     DwgDbSymbolTableIterator    iter = viewportTable->NewIterator ();
-
     if (!iter.IsValid())
         return  BSIERROR;
 
@@ -1135,8 +1204,17 @@ BentleyStatus   DwgImporter::_ImportModelspaceViewports ()
             continue;
             }
 
-        if (BSISUCCESS != this->_ImportModelspaceViewport(*viewport.get()))
+        auto viewId = this->_ImportModelspaceViewport (*viewport.get());
+        if (viewId.IsValid())
+            {
+            // do not let the default view unset; override it if active viewport exists:
+            if (m_activeViewportId == viewport->GetObjectId() || !m_defaultViewId.IsValid())
+                m_defaultViewId = viewId;
+            }
+        else
+            {
             this->ReportIssue (IssueSeverity::Warning, IssueCategory::MissingData(), Issue::ImportFailure(), Utf8String(viewport->GetName().c_str()).c_str(), "ViewportTableRecord");
+            }
         }
     
     return  BSISUCCESS;
@@ -1153,47 +1231,42 @@ BentleyStatus   DwgImporter::_ImportPaperspaceViewport (DgnModelR model, Transfo
         return  BSIERROR;
     
     // the first in the list is the paperspace viewport
-    DwgDbEntityCP       entity = nullptr;
-    DwgDbViewportPtr    viewport;
     if (layout.GetViewports(viewports) == 0)
         {
-        // no viewport initialized for this layout(or initialized but still returned none, a likely RealDWG bug), create a default viewport:
-        viewport = DwgDbViewport::Create ();
-        if (!viewport.IsNull())
-            {
-            DRange3d    range = layout.GetExtents ();
-            if (range.IsPoint())
-                return  BSIERROR;
-
-            DPoint2d    center = DPoint2d::From (0.5 * (range.low.x + range.high.x), 0.5 * (range.low.y + range.high.y));
-
-            viewport->SetViewCenter (center);
-            viewport->SetViewHeight (range.YLength());
-            viewport->SetWidth (range.XLength());
-            }
-        }
-    else
-        {
-        // the layout has at least one viewport - use the first one as the layout/overall viewport
-        viewport.OpenObject (viewports.front(), DwgDbOpenMode::ForRead);
+        /*-------------------------------------------------------------------------------
+        Above call can fail if the layout is not initialized. But now we choose to activate 
+        each layout before processing its viewports. So we expect the call to succeed.
+        But we still keep below code as a fallback anyway just in case.
+        -------------------------------------------------------------------------------*/
+        DwgDbBlockTableRecordPtr    block(layout.GetBlockTableRecordId(), DwgDbOpenMode::ForRead);
+        if (block.OpenStatus() == DwgDbStatus::Success)
+            viewports.push_back (LayoutFactory::FindOverallViewport(*block.get()));
         }
 
     Utf8String  layoutName (layout.GetName().c_str());
     if (layoutName.empty())
         layoutName.assign ("Layout");
-   
-    if (viewport.IsNull() || nullptr == (entity = DwgDbEntity::Cast(viewport.get())))
+
+    DwgDbViewportPtr viewport (viewports.front(), DwgDbOpenMode::ForRead);
+    if (viewport.OpenStatus() != DwgDbStatus::Success || nullptr == DwgDbEntity::Cast(viewport.get()))
         {
         this->ReportIssue (IssueSeverity::Info, IssueCategory::InconsistentData(), Issue::CantOpenObject(), "the paperspace viewport", layoutName.c_str());
         return  BSIERROR;
         }
-
+   
     // set sheet view name as "LayoutName - View"
     Utf8PrintfString    viewName ("%s - View", layoutName);
     ViewportFactory     factory (*this, *viewport.get(), &layout);
 
-    DgnViewId   sheetViewId = factory.CreateSheetView (model.GetModelId(), viewName);
+    DgnViewId   sheetViewId;
+    if (this->IsUpdating())
+        {
+        sheetViewId = m_syncInfo.FindView (viewport->GetObjectId(), DwgSyncInfo::View::Type::PaperspaceViewport);
+        if (sheetViewId.IsValid())
+            return factory.UpdateSheetView (sheetViewId);
+        }
 
+    sheetViewId = factory.CreateSheetView (model.GetModelId(), viewName);
     if (!sheetViewId.IsValid())
         return  BSIERROR;
 
@@ -1201,7 +1274,8 @@ BentleyStatus   DwgImporter::_ImportPaperspaceViewport (DgnModelR model, Transfo
     DwgDbObjectId       viewportId = viewport->GetObjectId ();
     m_paperspaceViews.insert (T_PaperspaceView(sheetViewId, viewportId));
 
-    if (!m_defaultViewId.IsValid())
+    // do not let the default view unset; override it if a valid active layout exists:
+    if (viewportId == m_activeViewportId || !m_defaultViewId.IsValid())
         m_defaultViewId = sheetViewId;
 
     return  BSISUCCESS;
@@ -1310,12 +1384,15 @@ void            DwgImporter::_PostProcessViewports ()
     Render::RenderMode mode = thumbnailConfig.GetOverriddenRenderMode ();
     Point2d size = {thumbnailConfig.GetResolution(), thumbnailConfig.GetResolution()};
 
+    auto jobModelId = this->GetOrCreateJobDefinitionModel()->GetModelId ();
+
     // update each view with models or categories we have added since the creation of the view:
     for (auto const& entry : ViewDefinition::MakeIterator(*m_dgndb))
         {
         auto viewId = entry.GetId ();
         auto view = ViewDefinition::Get (*m_dgndb, viewId);
-        if (!view.IsValid())
+        // skip views not created by us:
+        if (!view.IsValid() || view->GetModel()->GetModelId() != jobModelId)
             continue;
 
         // get an editable view
@@ -1330,13 +1407,32 @@ void            DwgImporter::_PostProcessViewports ()
             {
             // a modelpace view or a spatial view for a viewport entity
             auto spatialView = viewController->ToSpatialViewP ();
-            if (nullptr != spatialView && !m_modelspaceXrefs.empty())
+            if (nullptr != spatialView)
                 {
-                // add xref models into the modelspace viewport:
-                auto&   modelSelector = spatialView->GetSpatialViewDefinition().GetModelSelector ();
-                modelSelector.GetModelsR().insert (m_modelspaceXrefs.begin(), m_modelspaceXrefs.end());
-                modelSelector.Update ();
-                changed = true;
+                if (!m_modelspaceXrefs.empty())
+                    {
+                    // add xref models into the modelspace viewport:
+                    auto&   modelSelector = spatialView->GetSpatialViewDefinition().GetModelSelector ();
+                    modelSelector.GetModelsR().insert (m_modelspaceXrefs.begin(), m_modelspaceXrefs.end());
+                    modelSelector.Update ();
+                    changed = true;
+                    }
+                if (this->IsUpdating() && m_layersImported > 0)
+                    {
+                    // new layers are imported - update spatial categories from a viewport entity:
+                    auto handle = this->GetSyncInfo().FindViewportHandle (viewId);
+                    DwgDbObjectId   objId;
+                    if (!handle.IsNull() && (objId = m_dwgdb->GetObjectId(handle)).IsValid())
+                        {
+                        DwgDbViewportPtr    viewport(objId, DwgDbOpenMode::ForRead);
+                        if (viewport.OpenStatus() == DwgDbStatus::Success)
+                            {
+                            ViewportFactory factory (*this, *viewport.get());
+                            factory.UpdateSpatialCategories (spatialView->GetSpatialViewDefinition().GetCategorySelector().GetCategoriesR());
+                            changed = true;
+                            }
+                        }
+                    }
                 }
 
             if (wantThumbnails && thumbnailConfig.WantPhysicalThumbnail() && nullptr != spatialView && !view->GetName().Contains("Viewport"))
