@@ -272,7 +272,7 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
     return SchemaReadStatus::Success;
     }
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Kyle.Abramowitz                   02/2018
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaReadStatus ECFormat::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSchemaReadContextR context)
     {
@@ -323,7 +323,7 @@ SchemaReadStatus ECFormat::ReadCompositeSpecXml(BeXmlNodeR compositeNode, ECSche
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  02/2018
+// @bsimethod                                  Kyle.Abramowitz                  03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaReadStatus ECFormat::ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaReadContextR context, bvector<ECUnitCP>& units, bvector<Nullable<Utf8String>>& labels)
     {
@@ -352,7 +352,7 @@ SchemaReadStatus ECFormat::ReadCompositeUnitXml(BeXmlNodeR unitNode, ECSchemaRea
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman                  02/2018
+// @bsimethod                                  Kyle.Abramowitz                   03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
     {
@@ -424,7 +424,7 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman                  02/2018
+// @bsimethod                                  Kyle.Abramowitz                  03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus ECFormat::WriteJson(Json::Value & outValue, bool standalone, bool includeSchemaVersion) const
     {
@@ -501,7 +501,7 @@ SchemaWriteStatus ECFormat::WriteJson(Json::Value & outValue, bool standalone, b
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman                  02/2018
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 Utf8StringCR ECFormat::GetDisplayLabel() const
     {
@@ -509,7 +509,7 @@ Utf8StringCR ECFormat::GetDisplayLabel() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman                  02/2018
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 Utf8StringCR ECFormat::GetDescription() const
     {
@@ -517,7 +517,7 @@ Utf8StringCR ECFormat::GetDescription() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Victor.Cushman                  02/2018
+// @bsimethod                                 Kyle.Abramowitz                   03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaWriteStatus ECFormat::WriteJson(Json::Value& outValue, bool includeSchemaVersion) const
     {

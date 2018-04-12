@@ -149,13 +149,19 @@ Utf8StringCR KindOfQuantity::GetDescription() const
 ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
     {
     if (unit.IsConstant())
+        {
+        LOG.errorv("On KoQ '%s' cannot set unit '%s' as the persistence unit because it is a constant", GetFullName().c_str(), unit.GetFullName());
         return ECObjectsStatus::Error;
+        }
     if (HasPresentationFormats())
         {
         for (auto const& format : m_presentationFormats)
             {
             if (format.HasCompositeMajorUnit() && !ECUnit::AreCompatible(&unit, format.GetCompositeMajorUnit()))
+                {
+                LOG.errorv("On KoQ '%s' cannot set unit '%s' as the persistence unit because it is not compatible with format '%s'", GetFullName().c_str(), unit.GetFullName(), format.GetName());
                 return ECObjectsStatus::Error;
+                }
             }
         }
     m_persistenceUnit = &unit;
@@ -390,17 +396,17 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         }
 
     if (ECObjectsStatus::Success != ParsePersistenceUnit(value.c_str(), &context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
-        return SchemaReadStatus::InvalidECSchemaXml;
+        return SchemaReadStatus::InvalidECSchemaXml; // Logging in ParsePersistenceUnit
 
     // Read Presentation Formats
     if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_2) ? PRESENTATION_FORMATS_ATTRIBUTE : PRESENTATION_UNITS_ATTRIBUTE))
         {
-        bvector<Utf8String> presentationUnits;
-        BeStringUtilities::Split(value.c_str(), ";", presentationUnits);
-        for(auto const& presValue : presentationUnits)
+        bvector<Utf8String> presentationFormats;
+        BeStringUtilities::Split(value.c_str(), ";", presentationFormats);
+        for(auto const& presValue : presentationFormats)
             {
             if (ECObjectsStatus::Success != ParsePresentationUnit(presValue.c_str(), context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
-                return SchemaReadStatus::InvalidECSchemaXml;
+                return SchemaReadStatus::InvalidECSchemaXml; // Logging in ParsePresentationUnit
             }
         }
     return SchemaReadStatus::Success;
@@ -524,7 +530,7 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                  Kyle.Abramowitz                  02/2018
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion)
     {
@@ -640,7 +646,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             LOG.errorv("Failed to lookup format '%s' on koq '%s'", formatName.c_str(), GetFullName().c_str());
             return ECObjectsStatus::Error;
             }
-        bvector<std::pair<ECUnitCP, Utf8CP>> unitsAndLabels;
+        bvector<bpair<ECUnitCP, Utf8CP>> unitsAndLabels;
         int i = 0;
         for (const auto& name : names)
             {
@@ -651,7 +657,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
                 // Check to see if it has a label override;
                 if (i < unitLabels.size() && unitLabels[i].IsValid())
                     localLabel = unitLabels[i].ValueR().c_str();
-                unitsAndLabels.push_back(std::make_pair(lookedUpUnit, localLabel));
+                unitsAndLabels.push_back(make_bpair(lookedUpUnit, localLabel));
                 }
             else
                 {
@@ -812,7 +818,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptor(Utf8String& updatedDescripto
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride,  Nullable<bvector<std::pair<ECUnitCP, Utf8CP>>> unitsAndLabels) const
+ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride,  Nullable<bvector<bpair<ECUnitCP, Utf8CP>>> unitsAndLabels) const
     {
     if (parent.IsOverride())
         {
@@ -861,8 +867,11 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
 //--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::AddPresentationFormatInternal(NamedFormat format)
     {
-    // TODO error checking. Using this for copyKindOFQuantity right now so it is guaranteed to be valid there since its
-    // part of another kind of quanity already and has gone through error checking, but still should add it here.
+    if (format.HasCompositeMajorUnit() && !Units::Unit::AreCompatible(format.GetCompositeMajorUnit(), GetPersistenceUnit()))
+        {
+        LOG.errorv("On KoQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName());
+        return ECObjectsStatus::Error;
+        }
     m_presentationFormats.emplace_back(format);
     return ECObjectsStatus::Success;
     }
@@ -888,7 +897,7 @@ NamedFormatCP KindOfQuantity::GetOrCreateCachedPersistenceFormat() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride, Nullable<bvector<std::pair<ECUnitCP, Utf8CP>>> unitsAndLabels, bool isDefault)
+ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride, Nullable<bvector<bpair<ECUnitCP, Utf8CP>>> unitsAndLabels, bool isDefault)
     {
     if (parent.IsOverride())
         {
@@ -969,7 +978,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
     for (int i = 0; i < input.size(); ++i)
         newUnits.push_back(input[i].first);
 
-    bvector<Units::UnitCP> compUnits; // C++11 initializer list doesn't work?
+    bvector<Units::UnitCP> compUnits;
     if (nullptr != comp)
         {
         if (comp->HasMajorUnit())
@@ -1024,11 +1033,11 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
 //--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<uint32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
     {
-    Nullable<bvector<std::pair<ECUnitCP, Utf8CP>>> units = nullptr;
+    Nullable<bvector<bpair<ECUnitCP, Utf8CP>>> units = nullptr;
     if (nullptr != inputUnitOverride)
         { 
-        units= bvector<std::pair<ECUnitCP, Utf8CP>>();
-        units.ValueR().push_back(std::make_pair(inputUnitOverride, labelOverride));
+        units= bvector<bpair<ECUnitCP, Utf8CP>>();
+        units.ValueR().push_back(make_bpair(inputUnitOverride, labelOverride));
         }
 
     return AddPresentationFormat(parent, precisionOverride, units, isDefault);
