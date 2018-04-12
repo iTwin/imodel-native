@@ -125,6 +125,9 @@ private:
                 }
         };
 
+    static constexpr Utf8CP UnitsSchemaName = "Units";
+    static constexpr Utf8CP FormatsSchemaName = "Formats";
+
     DbResult _Upgrade(ECDbCR) const override;
 
     static DbResult UpgradeECEnums(ECDbCR);
