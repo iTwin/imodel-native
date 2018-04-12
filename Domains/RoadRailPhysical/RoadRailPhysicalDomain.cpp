@@ -241,9 +241,16 @@ DisplayStyle3dPtr getDisplayStyle3d(DefinitionModelR model)
         return stylePtr;
 
     stylePtr = new DisplayStyle3d(model, "Default 3D Style - Road/Rail");
-    stylePtr->SetBackgroundColor(ColorDef::White());
+    stylePtr->SetBackgroundColor(ColorDef::Black());
+    stylePtr->SetSkyBoxEnabled(false);
+    stylePtr->SetGroundPlaneEnabled(false);
     Render::ViewFlags viewFlags = stylePtr->GetViewFlags();
     viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
+    viewFlags.SetMonochrome(false);
+    viewFlags.SetShowFill(true);
+    viewFlags.SetShowMaterials(true);
+    viewFlags.SetShowPatterns(true);
+    viewFlags.SetShowShadows(true);
     stylePtr->SetViewFlags(viewFlags);
     return stylePtr;
     }
