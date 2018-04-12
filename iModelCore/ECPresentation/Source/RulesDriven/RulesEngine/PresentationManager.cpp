@@ -463,6 +463,8 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes
         });
     return promise->GetFuture().then([](INavNodesDataSourcePtr ds)
         {
+        if (ds.IsNull())
+            return DataContainer<NavNodeCPtr>();
         return DataContainer<NavNodeCPtr>(*ds);
         });
     }
@@ -506,6 +508,8 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(
         });
     return promise->GetFuture().then([](INavNodesDataSourcePtr ds)
         {
+        if (ds.IsNull())
+            return DataContainer<NavNodeCPtr>();
         return DataContainer<NavNodeCPtr>(*ds);
         });
     }
