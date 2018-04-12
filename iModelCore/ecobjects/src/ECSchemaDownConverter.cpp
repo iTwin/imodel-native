@@ -64,7 +64,7 @@ bool addUnitSpecificationsToProperty(ECSchemaR schema, ECPropertyP ecProperty, E
             }
         Utf8CP presUnitName = unit->GetFullName().c_str();
         Utf8CP oldPresUnitName = Units::UnitNameMappings::TryGetOldNameFromECName(presUnitName);
-        if (nullptr == oldPresUnitName) // TODO: should we drop this or set the display unit to the persistence unit?
+        if (nullptr == oldPresUnitName)
             {
             LOG.warningv("Failed to find old unit name for the presentation unit '%s' used on property '%s.%s.%s'",
                          presUnitName, schema.GetName().c_str(), ecProperty->GetClass().GetName().c_str(), ecProperty->GetName().c_str());

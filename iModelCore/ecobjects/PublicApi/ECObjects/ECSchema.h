@@ -1464,6 +1464,7 @@ private:
     ECObjectsStatus ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
     ECObjectsStatus ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
     ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
+    ECObjectsStatus ParseDescriptorAndAddRefs(Utf8StringR unitName, Utf8StringR formatName, ECUnitCP& unit, Utf8CP descriptor, ECSchemaReadContextP context);
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 
@@ -1558,32 +1559,12 @@ public:
     //! @param[out] outValue                Json object containing the schema child Json if successfully written.
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
-    //! Given a FUS descriptor string, with format {unitName}({formatName}), it will be parsed and used to populate the unit and format.
-    //!
-    //! The Unit is populated within the context of the kind of quantity's schema. If the EC xml version is,
-    //! - less than EC3.2, it will attempt to locate the unit within the standard Units schema. If found the Units schema will be added as a reference schema of the KindOfQuantity's schema.
-    //! - greater than or equal to EC3.2, it will attempt to be located within the kind of quantity's schema or one of its referenced schemas. 
-    //!
-    //! The format is populated using the StdFormatSet. Sice the format is an optional part of the FUS descriptor, if formatName is empty the format "DefaultRealU" will be used. 
-    //! If a format is provided and not found within the StdFormatSet then if the EC xml version is,
-    //! - less than or equal to EC3.2, will return an error and both unit and format will be nullptr.
-    //! - greater than EC3.2, will be set to the default, "DefaultRealU".
-    //! 
-    //! @param[out] unit The Unit found from the given descriptor.
-    //! @param[out] format The Format found from the given descriptor.
-    //! @param[in] descriptor String describing the FUS. @see Formatting::FormatUnitSet for more information.
-    //! @param[in] koq The KoQ to use as context for locating the unit and format.
-    //! @param[in] context The Context used to locate the units schema
-    //! @param[in] ecXmlMajorVersion The major version of ECXml to parse the descriptor in the context of.
-    //! @param[in] ecXmlMinorVersion The minor version of ECXml to parse the descriptor in the context of.
-    //! @return ECObjectsStatus::Success if the FUS is successfully created; otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT static ECObjectsStatus ParseFUSDescriptor(ECUnitCP& unit, Formatting::FormatCP& format, Utf8CP descriptor, KindOfQuantityR koq, ECSchemaReadContextP context = nullptr, Nullable<uint32_t> ecXmlMajorVersion = nullptr, Nullable<uint32_t> ecXmlMinorVersion = nullptr);
    
     //! Given an old EC3.1 FUS descriptor, {unitName}({formatName}), it will convert it into the new format.
     //! @param[out] updatedDescriptor  The updated descriptor if it is able to be updated. If not it will be an empty string.
     //! @param[in] descriptor  The descriptor that is of the format for the old FUS descriptor, format: {unitName}({formatName}), where the format part is optional.
     //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
-    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptor(Utf8String& updatedDescriptor, Utf8CP descriptor);
+    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptor(Utf8StringR updatedDescriptor, Utf8CP descriptor);
 };
 
 //=======================================================================================

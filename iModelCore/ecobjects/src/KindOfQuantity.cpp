@@ -282,7 +282,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                 bvector<Utf8String> tokens;
                 BeStringUtilities::Split(format.GetName().c_str(), "[", tokens);
                 BeAssert(tokens.size() > 0);
-                Utf8String split = tokens[0]; // Need to drop unit and label overrides // TODO: Should drop or throw error when serializing to old format with overrides?
+                Utf8String split = tokens[0];
                 Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(split.c_str());
                 mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
                 if (nullptr == mapped)
@@ -415,6 +415,83 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
+static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR formatName, Utf8CP descriptor, KindOfQuantityCR koq)
+    {
+    Formatting::Format::ParseUnitFormatDescriptor(unitName, formatName, descriptor);
+    unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
+    if (unitName.empty())
+        {
+        LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
+            descriptor, koq.GetFullName().c_str(), unitName.c_str());
+        return ECObjectsStatus::Error;
+        }
+    Utf8CP mappedName;
+    if (Utf8String::IsNullOrEmpty(formatName.c_str()))
+        mappedName = formatName.c_str();
+    else
+        {
+        mappedName = Formatting::AliasMappings::TryGetNameFromAlias(formatName.c_str());
+        mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName((nullptr == mappedName) ? formatName.c_str() : mappedName);
+        }
+
+    if (nullptr == mappedName)
+        {
+        LOG.errorv("Failed to find format mapping with name '%s' in legacy format mappings", mappedName);
+        return ECObjectsStatus::Error;
+        }
+
+    formatName = mappedName;
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::ParseDescriptorAndAddRefs(Utf8StringR unitName, Utf8StringR formatName, ECUnitCP& unit, Utf8CP descriptor, ECSchemaReadContextP context)
+    {
+    ExtractUnitFormatAndMap(unitName, formatName, descriptor, *this);
+    Utf8String alias;
+    ECClass::ParseClassName(alias, unitName, unitName);
+    SchemaKey key("Units", 1, 0, 0);
+    auto unitsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+
+    if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
+        { 
+        LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve unit '%s'.",
+            unitsSchema->GetName().c_str(), GetSchema().GetName().c_str(), unitName.c_str());
+        if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*unitsSchema))
+            {
+            LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+            return ECObjectsStatus::Error;
+            }
+        }
+
+    unit = unitsSchema->GetUnitsContext().LookupUnit(unitName.c_str());
+    if (nullptr == unit)
+        {
+        LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located in the standard Units schema.",
+            descriptor, GetFullName().c_str(), unitName.c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    key = SchemaKey("Formats", 1, 0, 0);
+    auto formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
+
+    if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
+        { 
+        LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve format '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str(), formatName.c_str());
+        if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
+            {
+            LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
+            return ECObjectsStatus::Error;
+            }
+        }
+
+    return ECObjectsStatus::Success;
+    }
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion)
     {
     bool xmlLessThan32 = (3 == ecXmlMajorVersion && 2 > ecXmlMinorVersion) && (nullptr != context);
@@ -425,74 +502,17 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
         {
         Utf8String unitName;
         Utf8String formatName;
-        Formatting::Format::ParseUnitFormatDescriptor(unitName, formatName, descriptor);
-        unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
-        if (unitName.empty())
-            {
-            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
-                descriptor, GetFullName().c_str(), unitName.c_str());
+        if (ECObjectsStatus::Success != ParseDescriptorAndAddRefs(unitName, formatName, unit, descriptor, context))
             return ECObjectsStatus::Error;
-            }
-        Utf8String alias;
-        ECClass::ParseClassName(alias, unitName, unitName);
-        SchemaKey key("Units", 1, 0, 0);
-        auto unitsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
-
-        if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
-            { 
-            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve unit '%s'.",
-                unitsSchema->GetName().c_str(), GetSchema().GetName().c_str(), unitName.c_str());
-            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*unitsSchema))
-                {
-                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-                return ECObjectsStatus::Error;
-                }
-            }
-        unit = unitsSchema->GetUnitsContext().LookupUnit(unitName.c_str());
-        if (nullptr == unit)
+        if (!Utf8String::IsNullOrEmpty(formatName.c_str()))
             {
-            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located in the standard Units schema.",
-                descriptor, GetFullName().c_str(), unitName.c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        Utf8CP mappedName;
-        if (Utf8String::IsNullOrEmpty(formatName.c_str()))
-            mappedName = formatName.c_str();
-        else
-            {
-            mappedName = Formatting::AliasMappings::TryGetNameFromAlias(formatName.c_str());
-            mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(mappedName);
-            }
-
-        if (nullptr == mappedName)
-            {
-            LOG.errorv("Failed to find format mapping with name '%s' in legacy format mappings", mappedName);
-            return ECObjectsStatus::Error;
-            }
-
-        if (!Utf8String::IsNullOrEmpty(mappedName))
-            {
-            SchemaKey key = SchemaKey("Formats", 1, 0, 0);
-            auto formatsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
-
-            if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
-                { 
-                LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve format '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str(), mappedName);
-                if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
-                    {
-                    LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-                    return ECObjectsStatus::Error;
-                    }
-                }
-
             bvector<Utf8String> unitNames;
             bvector<Nullable<Utf8String>> unitLabels; // TODO make these optional since we don't care about them here
-            Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, mappedName);
+            Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, formatName);
             persistenceFormat = GetSchema().LookupFormat(formatName.c_str());
             if (nullptr == persistenceFormat)
                 {
-                LOG.errorv("Failed to find format with name '%s' in standard formats schema", mappedName);
+                LOG.errorv("Failed to find format with name '%s' in standard formats schema", formatName.c_str());
                 return ECObjectsStatus::Error;
                 }
             }
@@ -538,79 +558,35 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
 
     if (xmlLessThan32)
         {
+        ECUnitCP unit;
         ECFormatCP format;
         Utf8String unitName;
         Utf8String formatName;
-        Formatting::Format::ParseUnitFormatDescriptor(unitName, formatName, descriptor);
-        SchemaKey key = SchemaKey("Formats", 1, 0, 0);
-        auto formatsSchema = context.LocateSchema(key, SchemaMatchType::Latest);
-        Utf8CP mappedName;
-        if (Utf8String::IsNullOrEmpty(formatName.c_str()))
-            mappedName = formatName.c_str();
-        else
-            {
-            mappedName = Formatting::AliasMappings::TryGetNameFromAlias(formatName.c_str());
-            mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(mappedName);
-            }
-        if (!ECSchema::IsSchemaReferenced(GetSchema(), *formatsSchema))
-            { 
-            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve format '%s'.",
-                formatsSchema->GetName().c_str(), GetSchema().GetName().c_str(), mappedName);
-            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*formatsSchema))
-                {
-                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", formatsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-                return ECObjectsStatus::Error;
-                }
-            }
+        if (ECObjectsStatus::Success != ParseDescriptorAndAddRefs(unitName, formatName, unit, descriptor, &context))
+            return ECObjectsStatus::Error;
+
         Nullable<unsigned> precision = nullptr;
-        if (!Utf8String::IsNullOrEmpty(mappedName))
+        if (!Utf8String::IsNullOrEmpty(formatName.c_str()))
             {
             Utf8String localformatName;
 
             bvector<Utf8String> localUnitNames;
             bvector<Nullable<Utf8String>> localUnitLabels;
-            Formatting::Format::ParseFormatString(localformatName, precision, localUnitNames, localUnitLabels, mappedName);
+            Formatting::Format::ParseFormatString(localformatName, precision, localUnitNames, localUnitLabels, formatName);
             format = GetSchema().LookupFormat(localformatName.c_str());
             if (nullptr == format)
                 {
-                LOG.errorv("FormatString '%s' on KindOfQuantity '%s' has an invalid format, '%s'.", descriptor, GetFullName().c_str(), mappedName);
+                LOG.errorv("FormatString '%s' on KindOfQuantity '%s' has an invalid format, '%s'.", descriptor, GetFullName().c_str(), formatName.c_str());
                 return ECObjectsStatus::Error;
                 }
             }
         else
             {
             // Assuming since there was previously a format that it should contain the Unit with it.
-            format = formatsSchema->LookupFormat(Formatting::FormatConstant::DefaultFormatName());
+            format = GetSchema().LookupFormat(Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(Formatting::FormatConstant::DefaultFormatName()));
             BeAssert(nullptr != format);
             LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.", descriptor, GetFullName().c_str());
             }
-
-        unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
-
-        if (unitName.empty())
-            {
-            LOG.errorv("FormatString '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
-                descriptor, GetFullName().c_str(), unitName.c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        Utf8String alias;
-        ECClass::ParseClassName(alias, unitName, unitName);
-        SchemaKey unitsKey("Units", 1, 0, 0);
-        auto unitsSchema = context.LocateSchema(unitsKey, SchemaMatchType::Latest);
-
-        if (!ECSchema::IsSchemaReferenced(GetSchema(), *unitsSchema))
-            { 
-            LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve unit '%s'.",
-                unitsSchema->GetName().c_str(), GetSchema().GetName().c_str(), unitName.c_str());
-            if (ECObjectsStatus::Success != GetSchemaR().AddReferencedSchema(*unitsSchema))
-                {
-                LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), GetSchema().GetName().c_str());
-                return ECObjectsStatus::Error;
-                }
-            }
-
-        ECUnitCP unit = unitsSchema->GetUnitsContext().LookupUnit(unitName.c_str());
 
         if (nullptr == unit)
             {
@@ -674,108 +650,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(ECUnitCP& unit, Formatting::FormatCP& nfs, Utf8CP descriptor, KindOfQuantityR koq, ECSchemaReadContextP context, Nullable<uint32_t> ecXmlMajorVersion, Nullable<uint32_t> ecXmlMinorVersion)
-    {
-    if (ecXmlMajorVersion.IsNull())
-        ecXmlMajorVersion = 3;
-
-    if (ecXmlMinorVersion.IsNull())
-        ecXmlMinorVersion = 2;
-
-    bool xmlLessThan32 = (3 == ecXmlMajorVersion.Value() && 2 > ecXmlMinorVersion.Value()) && (nullptr != context);
-    bool xmlLessThanOrEqual32 = (3 == ecXmlMajorVersion.Value() && 2 <= ecXmlMinorVersion.Value());
-
-    Utf8String unitName;
-    Utf8String format;
-    Formatting::Format::ParseUnitFormatDescriptor(unitName, format, descriptor);
-
-    // TODO: Needs work...
-
-    nfs = nullptr;
-    if (Utf8String::IsNullOrEmpty(format.c_str()))
-        // Need to keep the default without a Unit for backwards compatibility.
-        // nfs = formatSchema->GetFormatCP("DefaultRealU");
-        return ECObjectsStatus::Error;
-    else
-        {
-        // nfs = s_stdFmtSet.FindFormat(format.c_str());
-        if (nullptr == nfs)
-            {
-            if (xmlLessThanOrEqual32)
-                {
-                LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid format, '%s'.",
-                    descriptor, koq.GetFullName().c_str(), format.c_str());
-                return ECObjectsStatus::Error;
-                }
-            
-            // Assuming since there was previously a format that it should contain the Unit with it.
-            // nfs = s_stdFmtSet.FindFormat("DefaultRealU");
-            LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.",
-                descriptor, koq.GetFullName().c_str());
-            }
-        }
-
-    unit = nullptr;
-    if (xmlLessThan32)
-        {
-        // unitName should be a newName at this point. Update it to ecName.
-        unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
-        if (unitName.empty())
-            {
-            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
-                descriptor, koq.GetFullName().c_str(), unitName.c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        Utf8String alias;
-        Utf8String name;
-        ECClass::ParseClassName(alias, name, unitName);
-
-        SchemaKey key("Units", 1, 0, 0);
-        auto unitsSchema = context->LocateSchema(key, SchemaMatchType::Latest);
-        // The alias should be the Units schema name from the ECName Mappings
-        BeAssert(unitsSchema->GetName().EqualsI(alias));
-
-        unit = unitsSchema->GetUnitCP(name.c_str());
-        if (nullptr == unit)
-            {
-            LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a Unit '%s' that could not be located in the standard Units schema.",
-                descriptor, koq.GetFullName().c_str(), unitName.c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        if (ECSchema::IsSchemaReferenced(koq.GetSchema(), *unitsSchema))
-            return ECObjectsStatus::Success;
-
-        LOG.warningv("Adding '%s' as a reference schema to '%s', in order to resolve unit '%s'.",
-            unitsSchema->GetName().c_str(), koq.GetSchema().GetName().c_str(), unitName.c_str());
-        
-        if (ECObjectsStatus::Success != koq.GetSchemaR().AddReferencedSchema(*unitsSchema))
-            {
-            LOG.errorv("Failed to add '%s' as a reference schema of '%s'.", unitsSchema->GetName().c_str(), koq.GetSchema().GetName().c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        return ECObjectsStatus::Success;
-        }
-
-    unit = koq.GetSchema().GetUnitsContext().LookupUnit(unitName.c_str());
-
-    if (nullptr == unit)
-        {
-        LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has an invalid Unit, '%s'.",
-            descriptor, koq.GetFullName().c_str(), unitName.c_str());
-        return ECObjectsStatus::Error;
-        }
-
-    return ECObjectsStatus::Success;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    02/2018
-//--------------------------------------------------------------------------------------
-// static
-ECObjectsStatus KindOfQuantity::UpdateFUSDescriptor(Utf8String& updatedDescriptor, Utf8CP descriptor)
+ECObjectsStatus KindOfQuantity::UpdateFUSDescriptor(Utf8StringR updatedDescriptor, Utf8CP descriptor)
     {
     updatedDescriptor.clear();
 
