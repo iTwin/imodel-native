@@ -1424,6 +1424,7 @@ friend struct SchemaXmlWriter;
 friend struct SchemaXmlReaderImpl;
 friend struct SchemaJsonWriter;
 
+typedef bvector<bpair<ECUnitCP, Utf8CP>> UnitAndLabelPairs;
 private:
     ECSchemaCR m_schema;
     mutable Utf8String m_fullName; //cached nsprefix:name representation
@@ -1462,7 +1463,7 @@ private:
     ECOBJECTS_EXPORT NamedFormatCP GetOrCreateCachedPersistenceFormat() const;
     ECObjectsStatus ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
     ECObjectsStatus ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
-     ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr,  Nullable<bvector<bpair<ECUnitCP, Utf8CP>>> unitsAndLabels = nullptr) const;
+    ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
 
@@ -1519,7 +1520,7 @@ public:
     //! @param[in]  unitsAndLabels      Optionally override units and labels for the composite
     //! @param[in]  isDefault           Optionally set the created override as the default presentation unit
     //! @return ECObjectsStatus::Succcess if format is successfully added as a presentation format. Otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, Nullable<bvector<bpair<ECUnitCP, Utf8CP>>> unitsAndLabels = nullptr, bool isDefault = false);
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr, bool isDefault = false);
 
     //! Adds NamedFormat to this KoQ's list of presentation formats. If the format has any units,
     //! they must be compatible with the persistence unit and each other. This is a convenience method to handle
