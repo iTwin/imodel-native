@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbSchema.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -637,7 +637,7 @@ public:
     //!This function save or update table as required. It skip if a table is not loaded
     BentleyStatus SaveOrUpdateTables() const;
     BentleyStatus LoadIndexDefs() const;
-    BentleyStatus PersistIndexDef(DbIndex const&) const;
+    BentleyStatus PersistIndexDef(DbIndex const&, BeInt64Id& maxIndexId, BeInt64Id& maxIndexColumnId) const;
 
     void ClearCache() const;
     };

@@ -79,14 +79,28 @@ DbResult ECDb::_OnDbCreated(CreateParams const& params)
 // @bsimethod                                Krischan.Eberle                12/2012
 //---------------+---------------+---------------+---------------+---------------+------
 //override
-DbResult ECDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
+DbResult ECDb::_OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId)
     {
-    DbResult stat = Db::_OnBriefcaseIdAssigned(newBriefcaseId);
+    DbResult stat = Db::_OnAfterSetAsBriefcase(newBriefcaseId);
     if (stat != BE_SQLITE_OK)
         return stat;
 
     return m_pimpl->OnBriefcaseIdAssigned(newBriefcaseId);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                12/2012
+//---------------+---------------+---------------+---------------+---------------+------
+//override
+DbResult ECDb::_OnAfterSetAsMaster(BeGuid guid)
+{
+    DbResult stat = Db::_OnAfterSetAsMaster(guid);
+    if (stat != BE_SQLITE_OK)
+        return stat;
+
+    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::Master());
+    return m_pimpl->OnBriefcaseIdAssigned(masterBriefcaseId);
+}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2012

@@ -192,7 +192,8 @@ protected:
 
     ECDB_EXPORT DbResult _OnDbOpening() override;
     ECDB_EXPORT DbResult _OnDbCreated(CreateParams const&) override;
-    ECDB_EXPORT DbResult _OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId) override;
+    ECDB_EXPORT DbResult _OnAfterSetAsMaster(BeGuid guid) override;
+    ECDB_EXPORT DbResult _OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId) override;
     ECDB_EXPORT void _OnDbClose() override;
     ECDB_EXPORT void _OnDbChangedByOtherConnection() override;
     ECDB_EXPORT DbResult _VerifyProfileVersion(Db::OpenParams const&) override;

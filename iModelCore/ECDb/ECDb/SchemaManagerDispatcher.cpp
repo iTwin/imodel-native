@@ -986,7 +986,41 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
     {
     if (SUCCESS != m_dbSchema.LoadIndexDefs())
         return ERROR;
+    
+    //Delete from index table on all schema import can create a changset that if inorder applied cause fk errros.
+    BeInt64Id maxIndexId, maxIndexColumnId;
+    if (true)//make sure we are not looking any tables
+        {
+        Statement stmt;
+        stmt.Prepare(m_ecdb, "SELECT MAX(Id) + 1 FROM main." TABLE_Index);
+        if (stmt.Step() != BE_SQLITE_ROW)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
 
+        if (stmt.IsColumnNull(0))
+            maxIndexId = BeInt64Id(1);
+        else
+            maxIndexId = stmt.GetValueId<BeInt64Id>(0);
+
+        stmt.Finalize();
+        stmt.Prepare(m_ecdb, "SELECT MAX(Id) + 1 FROM main." TABLE_IndexColumn);
+        if (stmt.Step() != BE_SQLITE_ROW)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        if (stmt.IsColumnNull(0))
+            maxIndexColumnId = BeInt64Id(1);
+        else
+            maxIndexColumnId = stmt.GetValueId<BeInt64Id>(0);
+
+        stmt.Finalize();
+        }
+
+    //Now go ahead and delete it.
     if (BE_SQLITE_OK != m_ecdb.ExecuteSql("DELETE FROM main." TABLE_Index))
         return ERROR;
 
@@ -1105,14 +1139,13 @@ BentleyStatus MainSchemaManager::CreateOrUpdateIndexesInDb(SchemaImportContext& 
                 }
 
             comparableIndexDefs[comparableIndexDef] = &index;
-
             if (SUCCESS != DbSchemaPersistenceManager::CreateIndex(m_ecdb, index, ddl))
                 return ERROR;
             }
 
         //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
         //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
-        if (SUCCESS != m_dbSchema.PersistIndexDef(index))
+        if (SUCCESS != m_dbSchema.PersistIndexDef(index, maxIndexId, maxIndexColumnId))
             return ERROR;
         }
 

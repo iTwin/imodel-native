@@ -174,36 +174,19 @@ void ExecuteECSQL(ECDbCR ecdb, Utf8CP ecsql, DbResult stepStatus, ECSqlStatus pr
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, UpdateECSchemaAttributes)
     {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("UpdateECSchemaAttributes.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "</ECSchema>")));
 
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                           "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='New Test Schema' description='This is a New Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                           "</ECSchema>"))) << "Modifying display label and description is expected to be supported";
 
-    //Upgrade with some attributes and import schema
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    ASSERT_EQ(JsonValue(R"json([{"DisplayLabel":"New Test Schema", "Description":"This is a New Test Schema", "Alias":"ts"}])json"), GetHelper().ExecuteSelectECSql("SELECT DisplayLabel, Description, Alias FROM meta.ECSchemaDef WHERE Name='TestSchema'")) << "After modifying display label and description";
 
-    //Verify Schema attributes upgraded successfully
-    ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
-    ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
-    ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
-
-    CloseReOpenECDb();
-
-    //Verify attributes via ECSql using MataSchema
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description, Alias FROM meta.ECSchemaDef WHERE Name='TestSchema'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
-    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                           "<ECSchema schemaName='TestSchema' alias='ts2' displayLabel='New Test Schema' description='This is a New Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                           "</ECSchema>"))) << "Modifying alias is not supported";
     }
 
 //---------------------------------------------------------------------------------------
@@ -313,54 +296,17 @@ TEST_F(SchemaUpgradeTestFixture, ECVersions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, UpdateECClassAttributes)
     {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
-        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("UpdateECClassAttributes.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                             "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                            "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='Test Class' modifier='None' />"
+                                                                             "</ECSchema>")));
 
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                           "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='New Test Schema' description='This is a New Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                           "   <ECEntityClass typeName='TestClass' displayLabel='My Test Class' description='My Test Class' modifier='None' />"
+                                                           "</ECSchema>"))) << "Modifying ECClass display label and description is expected to be supported";
 
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' />"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-
-    //Verify Schema and Class attributes upgraded successfully
-    ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
-    ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
-    ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
-
-    ECClassCP testClass = testSchema->GetClassCP("TestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
-    ASSERT_TRUE(testClass->GetDescription() == "modified test class");
-
-    CloseReOpenECDb();
-
-    //Verify attributes via ECSql using MataSchema
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description, Alias FROM meta.ECSchemaDef WHERE Name='TestSchema'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
-    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
-    ASSERT_STREQ("modified test class", statement.GetValueText(1));
-
-    //verify class is accessible using new ECSchemaPrefix
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts_modified.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_EQ(JsonValue(R"json([{"DisplayLabel":"My Test Class", "Description":"My Test Class"}])json"), GetHelper().ExecuteSelectECSql("SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'")) << "After modifying display label and description";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1105,69 +1051,21 @@ TEST_F(SchemaUpgradeTestFixture, TryRemoveMixinCustomAttribute_Complex) //TFS#91
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, UpdateECPropertyAttributes)
     {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' >"
-        "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='this is property' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
+    ASSERT_EQ(SUCCESS, SetupECDb("UpdateECClassAttributes.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                            "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                            "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' >"
+                                                                            "       <ECProperty propertyName='TestProperty' displayLabel='Test Property' description='Test Property' typeName='string' />"
+                                                                            "   </ECEntityClass>"
+                                                                            "</ECSchema>")));
 
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                           "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='New Test Schema' description='This is a New Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                           "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' >"
+                                                           "       <ECProperty propertyName='TestProperty' displayLabel='My Test Property' description='My Test Property' typeName='string' />"
+                                                           "   </ECEntityClass>"
+                                                           "</ECSchema>"))) << "Modifying ECProperty display label and description is expected to be supported";
 
-    //import edited schema with some changes.
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
-        "       <ECProperty propertyName='TestProperty' displayLabel='Modified Test Property' description='this is modified property' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
-
-    //Verify Schema, Class and property attributes upgraded successfully
-    ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
-    ASSERT_TRUE(testSchema != nullptr);
-    ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
-    ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
-    ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
-
-    ECClassCP testClass = testSchema->GetClassCP("TestClass");
-    ASSERT_TRUE(testClass != nullptr);
-    ASSERT_TRUE(testClass->GetDisplayLabel() == "Modified Test Class");
-    ASSERT_TRUE(testClass->GetDescription() == "modified test class");
-
-    ECPropertyCP testProperty = testClass->GetPropertyP("TestProperty");
-    ASSERT_TRUE(testProperty != nullptr);
-    ASSERT_TRUE(testProperty->GetDisplayLabel() == "Modified Test Property");
-    ASSERT_TRUE(testProperty->GetDescription() == "this is modified property");
-
-    CloseReOpenECDb();
-
-    //Verify attributes via ECSql using MataSchema
-    ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description, Alias FROM meta.ECSchemaDef WHERE Name='TestSchema'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
-    ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-    ASSERT_STREQ("ts_modified", statement.GetValueText(2));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Class", statement.GetValueText(0));
-    ASSERT_STREQ("modified test class", statement.GetValueText(1));
-
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECPropertyDef WHERE Name='TestProperty'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Modified Test Property", statement.GetValueText(0));
-    ASSERT_STREQ("this is modified property", statement.GetValueText(1));
-
-    //Verify class and Property accessible using new ECSchemaPrefix
-    statement.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty FROM ts_modified.TestClass"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
+    ASSERT_EQ(JsonValue(R"json([{"DisplayLabel":"My Test Property", "Description":"My Test Property"}])json"), GetHelper().ExecuteSelectECSql("SELECT DisplayLabel, Description FROM meta.ECPropertyDef WHERE Name='TestProperty'")) << "After modifying display label and description";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1889,7 +1787,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateCAProperties)
     //import edited schema with some changes.
     Utf8CP editedCAProperties =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
         "       <ECProperty propertyName = 'ColumnName' typeName = 'string' description = 'If not specified, the ECProperty name is used. It must follow EC Identifier specification.' />"
         "       <ECProperty propertyName = 'IsNullable' typeName = 'boolean' description = 'If false, values must not be unset for this property.' />"
@@ -1917,7 +1815,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateCAProperties)
         //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
         ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -1937,7 +1835,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateCAProperties)
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+        ASSERT_STREQ("ts", statement.GetValueText(2));
 
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
@@ -1952,8 +1850,8 @@ TEST_F(SchemaUpgradeTestFixture, UpdateCAProperties)
         ASSERT_STREQ("this is modified property", statement.GetValueText(1));
         statement.Finalize();
 
-        //Verify class and Property accessible using new ECSchemaPrefix
-        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT TestProperty FROM ts_modified.TestClass");
+        //Verify class and Property accessible
+        ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT TestProperty FROM ts.TestClass");
 
         //verify CA changes
         testProperty = m_ecdb.Schemas().GetSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("TestProperty");
@@ -1986,7 +1884,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewEntityClass)
     //Upgrade with some attributes and import schema
     Utf8CP addNewEntityClass =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
         "</ECSchema>";
 
@@ -1999,7 +1897,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewEntityClass)
 
         //verify tables
         //new class should be added with new namespace prefix
-        ASSERT_TRUE(GetHelper().TableExists("ts_modified_TestClass"));
+        ASSERT_TRUE(GetHelper().TableExists("ts_TestClass"));
 
         //Verify Schema attributes upgraded successfully
         ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -2020,7 +1918,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewEntityClass)
 
         //Query newly added Entity Class
         statement.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts_modified.TestClass"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
         statement.Finalize();
         m_ecdb.CloseDb();
@@ -2415,7 +2313,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewClassModifyAllExistingAttributes)
     //import edited schema with some changes.
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
         "       <ECProperty propertyName='TestProperty' displayLabel='Modified Test Property' description='this is modified property' typeName='string' >"
         "       </ECProperty>"
@@ -2433,7 +2331,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewClassModifyAllExistingAttributes)
         //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
         ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -2459,7 +2357,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewClassModifyAllExistingAttributes)
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+        ASSERT_STREQ("ts", statement.GetValueText(2));
 
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
@@ -2481,11 +2379,11 @@ TEST_F(SchemaUpgradeTestFixture, AddNewClassModifyAllExistingAttributes)
 
         //Query existing and newly added Entity Classes
         statement.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty FROM ts_modified.TestClass"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty FROM ts.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
 
         statement.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts_modified.NewTestClass"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts.NewTestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
         statement.Finalize();
 
@@ -2564,7 +2462,7 @@ TEST_F(SchemaUpgradeTestFixture, AppendNewCA)
     //Add new CA
     Utf8CP addCAOnClass =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />"
         "   <ECCustomAttributeClass typeName = 'UserCA1' appliesTo = 'Any' />"
         "   <ECCustomAttributeClass typeName = 'UserCA2' appliesTo = 'Any' />"
@@ -2592,7 +2490,7 @@ TEST_F(SchemaUpgradeTestFixture, AppendNewCA)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
         ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -2610,7 +2508,7 @@ TEST_F(SchemaUpgradeTestFixture, AppendNewCA)
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+        ASSERT_STREQ("ts", statement.GetValueText(2));
 
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
@@ -2619,7 +2517,7 @@ TEST_F(SchemaUpgradeTestFixture, AppendNewCA)
         ASSERT_STREQ("modified test class", statement.GetValueText(1));
 
         statement.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts_modified.TestClass"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
         statement.Finalize();
 
@@ -2656,7 +2554,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCA)
     //Add new CA
     Utf8CP addCAOnClass =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />"
         "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
         "        <ECCustomAttributes>"
@@ -2676,7 +2574,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCA)
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
         ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -2694,7 +2592,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCA)
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+        ASSERT_STREQ("ts", statement.GetValueText(2));
 
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
@@ -2703,7 +2601,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCA)
         ASSERT_STREQ("modified test class", statement.GetValueText(1));
 
         statement.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts_modified.TestClass"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT * FROM ts.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
         statement.Finalize();
 
@@ -2960,7 +2858,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewPropertyModifyAllExistingAttributes)
     //import edited schema with some changes.
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
         "       <ECProperty propertyName='TestProperty' displayLabel='Modified Test Property' description='this is modified property' typeName='string' >"
         "       </ECProperty>"
@@ -2978,7 +2876,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewPropertyModifyAllExistingAttributes)
         //Verify Schema, Class, property and CAClassProperties attributes upgraded successfully
         ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -3004,7 +2902,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewPropertyModifyAllExistingAttributes)
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+        ASSERT_STREQ("ts", statement.GetValueText(2));
 
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
@@ -3026,7 +2924,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewPropertyModifyAllExistingAttributes)
 
         //Query existing and newly added Entity Classes
         statement.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty, NewTestProperty FROM ts_modified.TestClass"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty, NewTestProperty FROM ts.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
         statement.Finalize();
 
@@ -3055,7 +2953,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCAOnProperty)
     //import edited schema with some changes.
     Utf8CP editedSchemaXml =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty'>"
         "       <ECProperty propertyName = 'IsUnique' typeName = 'boolean' description = 'Only allow unique values for this property.' />"
         "       <ECProperty propertyName = 'Collation' typeName = 'string' description = 'Specifies how string comparisons should work for this property. Possible values: Binary (default): bit to bit matching. NoCase: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before comparing. Note that it only folds ASCII characters. RTrim: The same as binary, except that trailing space characters are ignored.' />"
@@ -3081,7 +2979,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCAOnProperty)
         //Verify Schema, Class and property attributes upgraded successfully
         ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
         ASSERT_TRUE(testSchema != nullptr);
-        ASSERT_TRUE(testSchema->GetAlias() == "ts_modified");
+        ASSERT_TRUE(testSchema->GetAlias() == "ts");
         ASSERT_TRUE(testSchema->GetDisplayLabel() == "Modified Test Schema");
         ASSERT_TRUE(testSchema->GetDescription() == "modified test schema");
 
@@ -3101,7 +2999,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCAOnProperty)
         ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
         ASSERT_STREQ("Modified Test Schema", statement.GetValueText(0));
         ASSERT_STREQ("modified test schema", statement.GetValueText(1));
-        ASSERT_STREQ("ts_modified", statement.GetValueText(2));
+        ASSERT_STREQ("ts", statement.GetValueText(2));
 
         statement.Finalize();
         ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT DisplayLabel, Description FROM meta.ECClassDef WHERE Name='TestClass'"));
@@ -3117,7 +3015,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCAOnProperty)
 
         //Query Property
         statement.Finalize();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty FROM ts_modified.TestClass"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT TestProperty FROM ts.TestClass"));
         ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
 
         //verify newly added CA on Property
@@ -7300,8 +7198,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteCAInstanceWithoutProperty)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
     {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, SetupECDb("AddKoQAndUpdatePropertiesWithKoQ.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECEntityClass typeName='Foo' >"
         "    <ECProperty propertyName='Length' typeName='double' />"
@@ -7309,9 +7206,7 @@ TEST_F(SchemaUpgradeTestFixture, AddKoQAndUpdatePropertiesWithKoQ)
         "    <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' />"
         "    <ECArrayProperty propertyName='Favorites' typeName='string'  minOccurs='0' maxOccurs='unbounded' />"
         "  </ECEntityClass>"
-        "</ECSchema>");
-
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+        "</ECSchema>")));
 
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
@@ -7450,10 +7345,9 @@ TEST_F(SchemaUpgradeTestFixture, ModifyPropertyType_PrimitiveToStrictEnum)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, UpdateKindOfQuantity)
+TEST_F(SchemaUpgradeTestFixture, ReplaceKindOfQuantityWithSamePersistenceUnit)
     {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, SetupECDb("ReplaceKindOfQuantityWithSamePersistenceUnit.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
         "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
@@ -7462,9 +7356,61 @@ TEST_F(SchemaUpgradeTestFixture, UpdateKindOfQuantity)
         "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='KindOfQuantity1' />"
         "        <ECProperty propertyName='Homepage' typeName='string' />"
         "    </ECEntityClass>"
-        "</ECSchema>");
+        "</ECSchema>")));
 
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
+        "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
+        "                    presentationUnits='FT;IN' />"
+        "    <KindOfQuantity typeName='KindOfQuantity2' description='KindOfQuantity2'"
+        "                    displayLabel='KindOfQuantity2' persistenceUnit='CM' relativeError='.2'"
+        "                    presentationUnits='FT;IN' />"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Length' typeName='double' kindOfQuantity='KindOfQuantity2' />"
+        "    <ECProperty propertyName='Homepage' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Changing the KindOfQuantity of an ECProperty to another KindOfQuantity with same persistence unit");
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        KindOfQuantityCP KindOfQuantity2 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "KindOfQuantity2");
+        ASSERT_TRUE(KindOfQuantity2 != nullptr);
+        ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+
+        PrimitiveECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
+        ASSERT_TRUE(foo_length != nullptr);
+        ASSERT_TRUE(foo_length->GetKindOfQuantity() == KindOfQuantity2);
+
+        m_ecdb.CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                 04/18
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, ReplaceKindOfQuantityWithDifferentPersistenceUnit)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ReplaceKindOfQuantityWithDifferentPersistenceUnit.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                                                 "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
+                                                                 "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
+                                                                 "                    presentationUnits='FT;IN' />"
+                                                                 "    <ECEntityClass typeName='Foo' >"
+                                                                 "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='KindOfQuantity1' />"
+                                                                 "        <ECProperty propertyName='Homepage' typeName='string' />"
+                                                                 "    </ECEntityClass>"
+                                                                 "</ECSchema>")));
 
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
@@ -7485,23 +7431,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateKindOfQuantity)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Changing the KindOfQuantity of an ECProperty to another KindOfQuantity");
-
-    for (Utf8StringCR dbPath : m_updatedDbs)
-        {
-        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-
-        KindOfQuantityCP KindOfQuantity2 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "KindOfQuantity2");
-        ASSERT_TRUE(KindOfQuantity2 != nullptr);
-        ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
-        ASSERT_TRUE(foo != nullptr);
-
-        PrimitiveECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
-        ASSERT_TRUE(foo_length != nullptr);
-        ASSERT_TRUE(foo_length->GetKindOfQuantity() == KindOfQuantity2);
-
-        m_ecdb.CloseDb();
-        }
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Changing the KindOfQuantity of an ECProperty to another KindOfQuantity with different persistence unit");
     }
 
 //---------------------------------------------------------------------------------------
@@ -7551,7 +7481,9 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECArrayProperty_KOQToKOQ)
         "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
         "    <KindOfQuantity typeName='KindOfQuantity2' description='KindOfQuantity2'"
-        "                    displayLabel='KindOfQuantity2' persistenceUnit='M' relativeError='.2'"
+        "                    displayLabel='KindOfQuantity2' persistenceUnit='CM' relativeError='.2'"
+        "                    presentationUnits='FT;IN' />"
+        "    <KindOfQuantity typeName='KindOfQuantity3' persistenceUnit='M' relativeError='.1'"
         "                    presentationUnits='FT;IN' />"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity1'/>"
@@ -7564,23 +7496,24 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECArrayProperty_KOQToKOQ)
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
 
-    Utf8CP editedSchemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
+
+    m_updatedDbs.clear();
+    AssertSchemaUpdate("<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
         "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
         "                    presentationUnits='FT;IN' />"
         "    <KindOfQuantity typeName='KindOfQuantity2' description='KindOfQuantity2'"
-        "                    displayLabel='KindOfQuantity2' persistenceUnit='M' relativeError='.2'"
+        "                    displayLabel='KindOfQuantity2' persistenceUnit='CM' relativeError='.2'"
+        "                    presentationUnits='FT;IN' />"
+        "    <KindOfQuantity typeName='KindOfQuantity3' persistenceUnit='M' relativeError='.1'"
         "                    presentationUnits='FT;IN' />"
         "    <ECEntityClass typeName='Foo' >"
         "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity2'/>"
         "        <ECArrayProperty propertyName='Width' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity1'/>"
         "    </ECEntityClass>"
-        "</ECSchema>";
-
-    m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity");
+                       "</ECSchema>", filePath, 
+                       {true, true}, "Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity with same persistence unit");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -7603,6 +7536,23 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECArrayProperty_KOQToKOQ)
 
         m_ecdb.CloseDb();
         }
+
+    AssertSchemaUpdate("<?xml version='1.0' encoding='utf-8'?>"
+                       "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                       "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
+                       "                    displayLabel='KindOfQuantity1' persistenceUnit='CM' relativeError='.5'"
+                       "                    presentationUnits='FT;IN' />"
+                       "    <KindOfQuantity typeName='KindOfQuantity2' description='KindOfQuantity2'"
+                       "                    displayLabel='KindOfQuantity2' persistenceUnit='CM' relativeError='.2'"
+                       "                    presentationUnits='FT;IN' />"
+                       "    <KindOfQuantity typeName='KindOfQuantity3' persistenceUnit='M' relativeError='.1'"
+                       "                    presentationUnits='FT;IN' />"
+                       "    <ECEntityClass typeName='Foo' >"
+                       "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity2'/>"
+                       "        <ECArrayProperty propertyName='Width' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity3'/>"
+                       "    </ECEntityClass>"
+                       "</ECSchema>", filePath,
+                       {false, false}, "Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity with different persistence unit");
     }
 
 //---------------------------------------------------------------------------------------
@@ -7647,13 +7597,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECArrayProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Removing KindOfQuantity from an ECArrayProperty");
-
-    //Verifying the property no longer has KOQ
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(m_updatedDbs[0].c_str(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-    ECPropertyCP foo_length = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length");
-    ASSERT_EQ("Length", foo_length->GetName());
-    ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Removing KindOfQuantity from an ECArrayProperty is not supported");
     }
 
 //---------------------------------------------------------------------------------------
@@ -7698,120 +7642,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Removing KindOfQuantity from an ECProperty");
-
-    //Verifying the property no longer has KOQ
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(m_updatedDbs[0].c_str(), ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
-    ECPropertyCP foo_length = m_ecdb.Schemas().GetClass("TestSchema", "Foo")->GetPropertyP("Length");
-    ASSERT_EQ("Length", foo_length->GetName());
-    ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                     12/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, KindOfQuantityAddUpdateDelete)
-    {
-    SchemaItem schemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
-        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
-            <KindOfQuantity typeName='K1' description='K1' displayLabel='K1' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K2' description='K2' displayLabel='K2' persistenceUnit='CM' relativeError='.2' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K3' description='K3' displayLabel='K3' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K4' description='K4' displayLabel='K4' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
-            <ECEntityClass typeName='Foo' >
-                <ECProperty propertyName='L1' typeName='double' kindOfQuantity='K1'/>
-                <ECProperty propertyName='L2' typeName='double' kindOfQuantity='K2'/>
-                <ECProperty propertyName='L3' typeName='double' kindOfQuantity='K3'/>
-            </ECEntityClass>
-        </ECSchema>)xml");
-
-    ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
-    
-        {
-        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
-        KindOfQuantityCP k1 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K1");
-        ASSERT_TRUE(k1 != nullptr);
-
-        KindOfQuantityCP k2 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K2");
-        ASSERT_TRUE(k2 != nullptr);
-
-        KindOfQuantityCP k3 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K3");
-        ASSERT_TRUE(k3 != nullptr);
-
-        KindOfQuantityCP k4 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K4");
-        ASSERT_TRUE(k4 != nullptr);
-
-        ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
-        ASSERT_TRUE(foo != nullptr);
-
-        ASSERT_TRUE(foo->GetPropertyP("L1") != nullptr);
-        ASSERT_TRUE(foo->GetPropertyP("L2") != nullptr);
-        ASSERT_TRUE(foo->GetPropertyP("L3") != nullptr);
-
-        ASSERT_EQ(k1, foo->GetPropertyP("L1")->GetKindOfQuantity());
-        ASSERT_EQ(k2, foo->GetPropertyP("L2")->GetKindOfQuantity());
-        ASSERT_EQ(k3, foo->GetPropertyP("L3")->GetKindOfQuantity());
-        }
-
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
-            <KindOfQuantity typeName='K1' description='K1' displayLabel='K1' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K2' description='K2' displayLabel='K2' persistenceUnit='CM' relativeError='.2' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K3' description='K3' displayLabel='K3' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K4' description='K4' displayLabel='K4' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K5' description='K5' displayLabel='K5' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
-            <ECEntityClass typeName='Foo' >
-                <ECProperty propertyName='L1' typeName='double' kindOfQuantity='K5'/>
-                <ECProperty propertyName='L2' typeName='double' kindOfQuantity='K2'/>
-                <ECProperty propertyName='L3' typeName='double' />
-            </ECEntityClass>
-        </ECSchema>)xml")));
-
-    
-        {
-        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
-
-        KindOfQuantityCP k1 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K1");
-        ASSERT_TRUE(k1 != nullptr);
-
-        KindOfQuantityCP k2 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K2");
-        ASSERT_TRUE(k2 != nullptr);
-
-        KindOfQuantityCP k3 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K3");
-        ASSERT_TRUE(k3 != nullptr);
-
-        KindOfQuantityCP k4 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K4");
-        ASSERT_TRUE(k4 != nullptr);
-
-        KindOfQuantityCP k5 = m_ecdb.Schemas().GetKindOfQuantity("TestSchema", "K5");
-        ASSERT_TRUE(k5 != nullptr);
-
-
-        ECClassCP foo = m_ecdb.Schemas().GetClass("TestSchema", "Foo");
-        ASSERT_TRUE(foo != nullptr);
-
-        ASSERT_TRUE(foo->GetPropertyP("L1") != nullptr);
-        ASSERT_TRUE(foo->GetPropertyP("L2") != nullptr);
-        ASSERT_TRUE(foo->GetPropertyP("L3") != nullptr);
-
-        ASSERT_EQ(k5, foo->GetPropertyP("L1")->GetKindOfQuantity());
-        ASSERT_EQ(k2, foo->GetPropertyP("L2")->GetKindOfQuantity());
-        ASSERT_EQ(nullptr, foo->GetPropertyP("L3")->GetKindOfQuantity());
-        }
-
-    //Delete KoQ
-    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
-            <KindOfQuantity typeName='K1' description='K1' displayLabel='K1' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K2' description='K2' displayLabel='K2' persistenceUnit='CM' relativeError='.2' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K3' description='K3' displayLabel='K3' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
-            <KindOfQuantity typeName='K5' description='K5' displayLabel='K5' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
-            <ECEntityClass typeName='Foo' >
-                <ECProperty propertyName='L1' typeName='double' kindOfQuantity='K5'/>
-                <ECProperty propertyName='L2' typeName='double' kindOfQuantity='K2'/>
-                <ECProperty propertyName='L3' typeName='double' />
-            </ECEntityClass>
-        </ECSchema>)xml")));
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Removing KindOfQuantity from an ECProperty is not supported");
     }
 
 //---------------------------------------------------------------------------------------
