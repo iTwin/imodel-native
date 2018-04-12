@@ -1731,15 +1731,16 @@ ReadStatus DgnCacheTileRebuilder::ReadTile(DgnTile::Flags& flags, DgnElementIdSe
     return ReadGltf();
     }
 
+// Uncomment to turn on validation of logic for tile cache => MeshBuilderMap => GeometryCollection for debugging.
+// #define TEST_TILE_REBUILDER
 #if defined(TEST_TILE_REBUILDER)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
+static void compareMeshEdges(MeshCR lhm, MeshCR rhm, bvector<MeshEdge> const& lhe, bvector<MeshEdge> const& rhe)
     {
     bool asserted = false;
-    auto const& lhe = lhm.GetEdges()->m_visible, rhe = rhm.GetEdges()->m_visible;
     BeAssert(lhe.size() == rhe.size());
     auto const& lhv = lhm.Verts();
     auto const& rhv = rhm.Verts();
@@ -1752,14 +1753,27 @@ static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
              lhp1 = lhv[lh.m_indices[1]],
              rhp0 = rhv[rh.m_indices[0]],
              rhp1 = rhv[rh.m_indices[1]];
-         if (!asserted)
-             {
-             BeAssert(lhp0 == rhp0);
-             BeAssert(lhp1 == rhp1);
-             if (lhp0 != rhp0 || lhp1 != rhp1)
-                 asserted = true;
-             }
+
+        // possibly order of indices reversed due to index remapping...
+        if (lhp0 != rhp0)
+            std::swap(lhp0, lhp1);
+
+        if (!asserted)
+            {
+            BeAssert(lhp0 == rhp0);
+            BeAssert(lhp1 == rhp1);
+            if (lhp0 != rhp0 || lhp1 != rhp1)
+                asserted = true;
+            }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
+    {
+    compareMeshEdges(lhm, rhm, lhm.GetEdges()->m_visible, rhm.GetEdges()->m_visible);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1767,7 +1781,26 @@ static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void compareSilhouettes(MeshCR lhm, MeshCR rhm)
     {
+    compareMeshEdges(lhm, rhm, lhm.GetEdges()->m_silhouette, rhm.GetEdges()->m_silhouette);
 
+    auto const& lhn = lhm.GetEdges()->m_silhouetteNormals;
+    auto const& rhn = rhm.GetEdges()->m_silhouetteNormals;
+    BeAssert(lhn.size() == rhn.size());
+
+    bool asserted = false;
+    for (size_t i = 0; i < lhn.size(); i++)
+        {
+        auto const& lhp = lhn[i];
+        auto const& rhp = rhn[i];
+
+        if (!asserted)
+            {
+            BeAssert(lhp.first == rhp.first);
+            BeAssert(lhp.second == rhp.second);
+            if (lhp.first != rhp.first || lhp.second != rhp.second)
+                asserted = true;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
