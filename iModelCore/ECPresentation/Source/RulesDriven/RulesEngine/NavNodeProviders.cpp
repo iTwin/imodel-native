@@ -61,18 +61,18 @@ struct DataSourceRelatedSettingsUpdater
     {
     DataSourceInfo const& m_datasourceInfo;
     NavNodesProviderContextCR m_context;
-    size_t m_relatedSettingIdsCountBefore;
+    size_t m_relatedSettingsCountBefore;
 
     DataSourceRelatedSettingsUpdater(DataSourceInfo const& info, NavNodesProviderContextCR context)
         : m_datasourceInfo(info), m_context(context)
         {
-        m_relatedSettingIdsCountBefore = m_context.GetRelatedSettingIds().size();
+        m_relatedSettingsCountBefore = m_context.GetRelatedSettings().size();
         }
     ~DataSourceRelatedSettingsUpdater()
         {
-        bvector<Utf8String> settingIds = m_context.GetRelatedSettingIds();
-        if (settingIds.size() != m_relatedSettingIdsCountBefore)
-            m_context.GetNodesCache().Update(m_datasourceInfo, nullptr, nullptr, &settingIds);
+        bvector<UserSettingEntry> settings = m_context.GetRelatedSettings();
+        if (settings.size() != m_relatedSettingsCountBefore)
+            m_context.GetNodesCache().Update(m_datasourceInfo, nullptr, nullptr, &settings);
         }
     };
 END_BENTLEY_ECPRESENTATION_NAMESPACE
@@ -168,27 +168,34 @@ IUsedUserSettingsListener& NavNodesProviderContext::GetUsedSettingsListener() co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<Utf8String> NavNodesProviderContext::GetRelatedSettingIds() const
+bvector<UserSettingEntry> NavNodesProviderContext::GetRelatedSettings() const
     {
     NavNodesProviderContextCP rootBaseProviderContext = this;
     while (nullptr != rootBaseProviderContext->GetBaseProvider())
         rootBaseProviderContext = &rootBaseProviderContext->GetBaseProvider()->GetContext();
 
     if (rootBaseProviderContext != this)
-        return rootBaseProviderContext->GetRelatedSettingIds();
+        return rootBaseProviderContext->GetRelatedSettings();
 
     bvector<Utf8String> ids = RulesDrivenProviderContext::GetRelatedSettingIds();
+    bvector<UserSettingEntry> idsWithValues;
+    for (Utf8StringCR id : ids)
+        idsWithValues.push_back(UserSettingEntry(id, GetUserSettings().GetSettingValueAsJson(id.c_str())));
+
     NavNodeCPtr physicalParentNode = GetPhysicalParentNode();
     if (physicalParentNode.IsValid() && NavNodesHelper::IsGroupingNode(*physicalParentNode))
         {
-        // note: if parent node is a grouping node, we want to append all its related setting ids 
+        // note: if parent node is a grouping node, we want to append all its related settings
         // because it may have derived them from it's virtual parent
-        NavNodesProviderPtr provider = GetNodesCache().GetDataSource(physicalParentNode->GetNodeId());
-        bvector<Utf8String> parentSettingIds = provider->GetContext().GetRelatedSettingIds();
-        std::move(parentSettingIds.begin(), parentSettingIds.end(), std::back_inserter(ids));
+        NavNodesProviderPtr provider = GetNodesCache().GetDataSource(physicalParentNode->GetNodeId(), false);
+        if (provider.IsValid())
+            {
+            bvector<UserSettingEntry> parentSettings = provider->GetContext().GetRelatedSettings();
+            std::move(parentSettings.begin(), parentSettings.end(), std::inserter(idsWithValues, idsWithValues.end()));
+            }
         }
 
-    return ids;
+    return idsWithValues;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -423,7 +430,7 @@ EmptyNavNodesProvider::EmptyNavNodesProvider(NavNodesProviderContextCR context)
     {
     SetDataSourceInfo(CreateDataSourceInfo(context));
     context.GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), 
-        context.GetRelatedSettingIds(), context.IsUpdatesDisabled());
+        context.GetRelatedSettings(), context.IsUpdatesDisabled());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -574,7 +581,7 @@ void CustomNodesProvider::Initialize()
     if (!GetDataSourceInfo().IsValid())
         {
         SetDataSourceInfo(CreateDataSourceInfo(GetContext()));
-        GetContext().GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), GetContext().GetRelatedSettingIds(), GetContext().IsUpdatesDisabled());
+        GetContext().GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), GetContext().GetRelatedSettings(), GetContext().IsUpdatesDisabled());
 
         if (m_specification.GetNodeType().empty() || m_specification.GetLabel().empty() || m_specification.GetImageId().empty())
             {
@@ -913,7 +920,7 @@ void QueryBasedNodesProvider::Initialize()
     // cache data source before getting the nodes
     SetDataSourceInfo(CreateDataSourceInfo(GetContext()));
     DataSourceFilter dsFilter(GetSpecificationFilter(GetContext().GetNodesCache(), virtualParent.get(), *m_query));
-    GetContext().GetNodesCache().Cache(GetDataSourceInfo(), dsFilter, m_usedClassIds, GetContext().GetRelatedSettingIds(), GetContext().IsUpdatesDisabled());
+    GetContext().GetNodesCache().Cache(GetDataSourceInfo(), dsFilter, m_usedClassIds, GetContext().GetRelatedSettings(), GetContext().IsUpdatesDisabled());
     DataSourceRelatedSettingsUpdater updater(GetDataSourceInfo(), GetContext());
 
     // set up the custom functions context
@@ -1124,7 +1131,7 @@ MultiSpecificationNodesProvider::MultiSpecificationNodesProvider(NavNodesProvide
     : MultiNavNodesProvider(context)
     {
     SetDataSourceInfo(CreateDataSourceInfo(context));
-    GetContext().GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), context.GetRelatedSettingIds(), context.IsUpdatesDisabled());
+    GetContext().GetNodesCache().Cache(GetDataSourceInfo(), DataSourceFilter(), bmap<ECClassId, bool>(), context.GetRelatedSettings(), context.IsUpdatesDisabled());
 
     SpecificationsVisitor visitor;
     for (RootNodeRuleSpecification const& specification : specs)
@@ -1322,7 +1329,7 @@ void SQLiteCacheNodesProvider::InitializeUsedSettings()
     {
     Utf8String query = "SELECT [us].[SettingId] "
                        "  FROM [" NODESCACHE_TABLENAME_DataSources "] ds "
-                       "  LEFT JOIN [" NODESCACHE_TABLENAME_DataSourceSettings "] us ON [us].[DataSourceId] = [ds].[Id]"
+                       "  JOIN [" NODESCACHE_TABLENAME_DataSourceSettings "] us ON [us].[DataSourceId] = [ds].[Id]"
                        " WHERE [ds].[VirtualParentNodeId] ";
     if (0 == GetContext().GetVirtualParentNodeId())
         query.append("IS NULL");

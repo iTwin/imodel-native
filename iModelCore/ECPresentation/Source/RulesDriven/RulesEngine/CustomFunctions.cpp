@@ -264,8 +264,10 @@ struct GetNavigationPropertyLabelScalar : CachingScalarFunction<bmap<ECInstanceK
                 bmap<ECClassCP, bvector<ECPropertyCP>> instanceLabelOverrides = QueryBuilderHelpers::GetMappedLabelOverridingProperties(GetContext().GetSchemaHelper(), GetContext().GetRuleset().GetInstanceLabelOverrides());
                 if (!instanceLabelOverrides.empty())
                     {
-                    IECInstancePtr instance = ECInstancesHelper::LoadInstance(GetContext().GetSchemaHelper().GetConnection(), key);
-                    ProcessIntanceLabelOverrides(label, *ecClass, instanceLabelOverrides, *instance);
+                    IECInstancePtr instance;
+                    /* unused - DbResult loadResult = */ECInstancesHelper::LoadInstance(instance, GetContext().GetSchemaHelper().GetConnection(), key);
+                    if (instance.IsValid())
+                        ProcessIntanceLabelOverrides(label, *ecClass, instanceLabelOverrides, *instance);
                     }
 
                 if (label.empty() && !GetContext().GetRuleset().GetLabelOverrides().empty())
@@ -794,7 +796,8 @@ public:
                         output.append(GetPaddedNumber(numberBegin, (int)(input - numberBegin)));
                         numberBegin = nullptr;
                         }
-                    output.append(input, 1);
+                    Utf8Char c = *input;
+                    output.append(1, (Utf8Char)std::tolower(c));
                     }
                 input++;
                 }

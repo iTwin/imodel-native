@@ -471,6 +471,8 @@ EmbeddedRuleSetLocater::EmbeddedRuleSetLocater(IConnectionCR connection)
 void EmbeddedRuleSetLocater::LoadRuleSets() const
     {
     Savepoint txn(m_connection.GetDb(), "EmbeddedRuleSetLocater::LoadRuleSets");
+    BeAssert(txn.IsActive());
+
     DbEmbeddedFileTable& embeddedFiles = m_connection.GetDb().EmbeddedFiles();
     for (auto const& file : embeddedFiles.MakeIterator())
         {

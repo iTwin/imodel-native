@@ -69,7 +69,7 @@ public:
     PresentationRuleSetCR GetRuleset() const {return m_ruleset;}
     JsonNavNodesFactory const& GetNodesFactory() const {return m_nodesFactory;}
     IUserSettings const& GetUserSettings() const {return m_userSettings;}
-    IUsedUserSettingsListener& GetUsedSettingsListener() const;
+    ECPRESENTATION_EXPORT IUsedUserSettingsListener& GetUsedSettingsListener() const;
     bvector<Utf8String> GetRelatedSettingIds() const;
     ECExpressionsCache& GetECExpressionsCache() const {return m_ecexpressionsCache;}
     IJsonLocalState const* GetLocalState() const {return m_localState;}

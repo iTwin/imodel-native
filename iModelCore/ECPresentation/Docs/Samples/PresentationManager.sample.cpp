@@ -2,7 +2,7 @@
 |
 |     $Source: Docs/Samples/PresentationManager.sample.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__PUBLISH_EXTRACT_START__ PresentationManagerSample_Include.sampleCode
@@ -56,11 +56,6 @@ static IUpdateRecordsHandler* GetUpdateRecordsHandler() {return nullptr;}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Grigas.Petraitis                08/2017
 //---------------------------------------------------------------------------------------
-static SelectionManager* GetUnifiedSelectionManager() {return nullptr;}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Grigas.Petraitis                08/2017
-//---------------------------------------------------------------------------------------
 void setup()
     {
     //__PUBLISH_EXTRACT_START__ PresentationManagerSample_SetUp.sampleCode
@@ -88,10 +83,6 @@ void setup()
     m_manager->GetLocaters().RegisterLocater(*DirectoryRuleSetLocater::Create(RULESETS_DIRECTORY));
     //__PUBLISH_EXTRACT_END__
     
-    //__PUBLISH_EXTRACT_START__ PresentationManagerSample_SetUp_SelectionRelated.sampleCode
-    m_manager->SetSelectionManager(GetUnifiedSelectionManager());
-    //__PUBLISH_EXTRACT_END__
-    
     //__PUBLISH_EXTRACT_START__ PresentationManagerSample_SetUp_UpdateRelated.sampleCode
     // Register change handlers which are responsible for making ECInstance changes
     m_manager->RegisterECInstanceChangeHandler(*CreateECInstanceChangeHandler());
@@ -100,7 +91,7 @@ void setup()
     m_manager->RegisterECInstanceChangeEventSource(*CreateECInstanceChangeEventSource());
 
     // Set update records handler which applies view model changes to the UI
-    m_manager->SetUpdateRecordsHandler(GetUpdateRecordsHandler());
+    m_manager->RegisterUpdateRecordsHandler(*GetUpdateRecordsHandler());
     //__PUBLISH_EXTRACT_END__
     }
 

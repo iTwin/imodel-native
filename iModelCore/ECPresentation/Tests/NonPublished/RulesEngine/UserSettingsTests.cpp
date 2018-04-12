@@ -488,3 +488,27 @@ TEST_F(UserSettingsRoundtripTests, IntValues)
     GetSettings().SetSettingIntValues("int_values", {123, 456, 789});
     EXPECT_EQ(bvector<int64_t>({123, 456, 789}), GetSettings().GetSettingIntValues("int_values")); // verify
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(UserSettingsRoundtripTests, ValueAsJson)
+    {
+    EXPECT_EQ(Json::Value(Json::nullValue), GetSettings().GetSettingValueAsJson("int_values")); // No value found
+
+    GetSettings().SetSettingBoolValue("bool_value", true);
+    EXPECT_EQ(Json::Value(true), GetSettings().GetSettingValueAsJson("bool_value")); // verify
+
+    GetSettings().SetSettingValue("string_value", "test");
+    EXPECT_EQ(Json::Value("test"), GetSettings().GetSettingValueAsJson("string_value")); // verify
+
+    GetSettings().SetSettingIntValue("int_value", 123);
+    EXPECT_EQ(Json::Value(123), GetSettings().GetSettingValueAsJson("int_value")); // verify
+
+    Json::Value json(Json::arrayValue);
+    json.append(123);
+    json.append(456);
+    json.append(789);
+    GetSettings().SetSettingIntValues("int_values", {123, 456, 789});
+    EXPECT_EQ(json, GetSettings().GetSettingValueAsJson("int_values")); // verify
+    }

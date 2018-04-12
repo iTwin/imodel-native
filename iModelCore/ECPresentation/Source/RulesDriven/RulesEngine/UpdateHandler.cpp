@@ -273,61 +273,6 @@ public:
         {}
 };
 
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                02/2016
-+===============+===============+===============+===============+===============+======*/
-struct RefreshSelectionTask : IUpdateTask
-{
-private:
-    ISelectionManager& m_selectionManager;
-    bmap<Utf8String, ChangeType>& m_changedNodes;
-    IConnectionCR m_connection;
-
-private:
-    KeySetCPtr GetRemovedNodeKeys(KeySetCR selection, bool& shouldUpdate)
-        {
-        NavNodeKeySet removedKeys;
-        shouldUpdate = false;
-        for (NavNodeKeyCPtr key : selection.GetNavNodeKeys())
-            {
-            Utf8String nodeHash = key->GetNodeHash();
-
-            auto iter = m_changedNodes.find(nodeHash);
-            if (m_changedNodes.end() != iter)
-                {
-                shouldUpdate = true;
-                if (ChangeType::Delete == iter->second)
-                    removedKeys.insert(key);
-                }
-            }
-        return KeySet::Create(removedKeys);
-        }
-protected:
-    uint32_t _GetPriority() const override {return TASK_PRIORITY_RefreshSelection;}
-    bvector<IUpdateTaskPtr> _Perform() override 
-        {
-        if (m_changedNodes.empty())
-            return bvector<IUpdateTaskPtr>();
-
-        bool shouldUpdate;
-        KeySetCPtr toRemove = GetRemovedNodeKeys(*m_selectionManager.GetSelection(m_connection.GetECDb()), shouldUpdate);
-        if (!shouldUpdate)
-            return bvector<IUpdateTaskPtr>();
-
-        if (!toRemove->empty())
-            m_selectionManager.RemoveFromSelection(m_connection.GetECDb(), "RefreshSelectionTask", false, *toRemove);
-        else if (shouldUpdate)
-            m_selectionManager.RefreshSelection(m_connection.GetECDb(), "RefreshSelectionTask", false);
-
-        return bvector<IUpdateTaskPtr>();
-        }
-    Utf8String _GetPrintStr() const override {return "[RefreshSelectionTask]";}
-public:
-    RefreshSelectionTask(ISelectionManager& manager, IConnectionCR connection, bmap<Utf8String, ChangeType>& changedNodes)
-        : m_selectionManager(manager), m_changedNodes(changedNodes), m_connection(connection)
-        {}
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -396,23 +341,12 @@ IUpdateTaskPtr UpdateTasksFactory::CreateReportTask(FullUpdateRecord record) con
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Saulius.Skliutas                11/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-IUpdateTaskPtr UpdateTasksFactory::CreateRefreshSelectionTask(IConnectionCR connection, bmap<Utf8String, ChangeType>& changedNodes) const
-    {
-    if (nullptr == m_selectionManager)
-        return nullptr;
-
-    return new RefreshSelectionTask(*m_selectionManager, connection, changedNodes);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 UpdateHandler::UpdateHandler(NodesCache* nodesCache, ContentCache* contentCache, IConnectionManagerCR connections, INodesProviderContextFactoryCR contextFactory, 
     INodesProviderFactoryCR providerFactory, IECExpressionsCacheProvider& ecexpressionsCacheProvider) 
     : m_nodesCache(nodesCache), m_contentCache(contentCache), m_connections(connections), m_tasksFactory(nodesCache, contentCache, nullptr), 
-    m_ecexpressionsCacheProvider(ecexpressionsCacheProvider), m_hierarchyUpdater(nullptr), m_selectionManager(nullptr)
+    m_ecexpressionsCacheProvider(ecexpressionsCacheProvider), m_hierarchyUpdater(nullptr)
     {
     if (nullptr != nodesCache)
         m_hierarchyUpdater = new HierarchyUpdater(m_tasksFactory, *nodesCache, contextFactory, providerFactory);
@@ -491,26 +425,13 @@ bvector<IUpdateTaskPtr> UpdateHandler::CreateUpdateTasks(UpdateContext& updateCo
 void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& tasks, UpdateContext& updateContext,
     bvector<HierarchyLevelInfo> const& affectedHierarchies) const
     {
-    bset<IConnectionCP> affectedConnections;
     for (HierarchyLevelInfo const& info : affectedHierarchies)
         {
         IConnectionCP connection = m_connections.GetConnection(info.GetConnectionId().c_str());
         if (nullptr == connection)
-            {
-            // WIP TFS#866883: for hierarchies that use user settings we need some special handling - we can't expect
-            // user setting values to be the same across sessions so cached hierarchies might be invalid.
-            // The assertion failure below says that a user setting was changed and it affects a hierarchy
-            // whose dataset is closed - just ignore that condition until the issue is fully fixed.
-            // BeAssert(false);
             continue;
-            }
         AddTask(tasks, *m_tasksFactory.CreateRefreshHierarchyTask(*m_hierarchyUpdater, updateContext, *connection, info));
-        if (nullptr != m_selectionManager)
-            affectedConnections.insert(connection);
         }
-
-    for (IConnectionCP connection : affectedConnections)
-        AddTask(tasks, *m_tasksFactory.CreateRefreshSelectionTask(*connection, updateContext.GetChangedNodesInfo()));
 
     AddTask(tasks, *m_tasksFactory.CreateRemapNodeIdsTask(updateContext.GetRemapInfo()));
     }
@@ -723,7 +644,6 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
             NavNodePtr node = oldDs->GetNode(i);
             subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(*node)));
             context.GetRemovedNodeIds().insert(node->GetNodeId());
-            context.GetChangedNodesInfo()[node->GetKey()->GetNodeHash()] = ChangeType::Delete;
             }
 
         // insert added nodes
@@ -751,7 +671,6 @@ void HierarchyUpdater::CompareDataSources(bvector<IUpdateTaskPtr>& subTasks, Upd
         NavNodePtr node = oldDs->GetNode(i);
         subTasks.push_back(m_tasksFactory.CreateReportTask(UpdateRecord(*node)));
         context.GetRemovedNodeIds().insert(node->GetNodeId());
-        context.GetChangedNodesInfo()[node->GetKey()->GetNodeHash()] = ChangeType::Delete;
         }
 
     // insert added nodes
@@ -773,7 +692,6 @@ void HierarchyUpdater::CompareNodes(bvector<IUpdateTaskPtr>& subTasks, UpdateCon
     if (oldNode.GetNodeId() != newNode.GetNodeId())
         {
         context.GetRemapInfo()[oldNode.GetNodeId()] = newNode.GetNodeId();
-        context.GetChangedNodesInfo()[newNode.GetKey()->GetNodeHash()] = ChangeType::Update;
         }
     
     bvector<JsonChange> changes = NavNodesHelper::GetChanges(oldNode, newNode);
@@ -801,7 +719,7 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
         return;
         }
 
-    NavNodesProviderCPtr parentProvider = newProvider.GetContext().GetNodesCache().GetDataSource(*newProvider.GetContext().GetPhysicalParentNodeId());
+    NavNodesProviderCPtr parentProvider = newProvider.GetContext().GetNodesCache().GetDataSource(*newProvider.GetContext().GetPhysicalParentNodeId(), false);
     if (parentProvider.IsValid())
         {
         NavNodesProviderContextCR parentProviderContext = parentProvider->GetContext();
@@ -873,6 +791,7 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
     context.GetHandledHierarchies().insert(newInfo);
 
     Savepoint txn(connection.GetDb(), "Update");
+    BeAssert(txn.IsActive());
 
     if (IsHierarchyRemoved(context, oldInfo))
         {
@@ -881,7 +800,7 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
         return;
         }
 
-    NavNodesProviderPtr oldProvider = m_nodesCache.GetDataSource(oldInfo);
+    NavNodesProviderPtr oldProvider = m_nodesCache.GetDataSource(oldInfo, false);
     if (oldProvider.IsNull())
         {
         BeAssert(false);

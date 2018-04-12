@@ -24,6 +24,7 @@
     <ClCompile Include="BackDoor\SelectionManager.cpp" />
     <ClCompile Include="NonPublished\PresentationRulesetTesterTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\CheckboxRuleTests.cpp" />
+    <ClCompile Include="NonPublished\RulesEngine\ContentCacheTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentFieldEditorParamsTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentProviderTests.cpp" />
     <ClCompile Include="NonPublished\RulesEngine\ContentQueryBuilderTests.cpp" />

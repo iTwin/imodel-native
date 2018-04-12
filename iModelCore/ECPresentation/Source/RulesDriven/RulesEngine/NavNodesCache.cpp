@@ -18,7 +18,7 @@
 USING_NAMESPACE_BENTLEY_LOGGING
 
 #define NAVNODES_CACHE_DB_NAME          L"HierarchyCache.db"
-#define NAVNODES_CACHE_DB_VERSION_MAJOR 7
+#define NAVNODES_CACHE_DB_VERSION_MAJOR 8
 #define NAVNODES_CACHE_DB_VERSION_MINOR 0
 //#define NAVNODES_CACHE_DEBUG
 
@@ -321,6 +321,7 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
         {
         Utf8CP ddl = "[DataSourceId] INTEGER NOT NULL REFERENCES " NODESCACHE_TABLENAME_DataSources "([Id]) ON DELETE CASCADE ON UPDATE CASCADE, "
                      "[SettingId] TEXT NOT NULL, "
+                     "[SettingValue] TEXT NOT NULL, "
                      "PRIMARY KEY([SettingId],[DataSourceId])";
         m_db.CreateTable(NODESCACHE_TABLENAME_DataSourceSettings, ddl);
         m_db.ExecuteSql("CREATE INDEX [IX_DataSourceSettings] ON [" NODESCACHE_TABLENAME_DataSourceSettings "]([DataSourceId])");
@@ -388,8 +389,8 @@ void NodesCache::Initialize(BeFileNameCR tempDirectory)
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodesCache::NodesCache(BeFileNameCR tempDirectory, JsonNavNodesFactoryCR nodesFactory, INodesProviderContextFactoryCR contextFactory, IConnectionManagerCR connections,
-    IECSqlStatementCacheProvider& ecsqlStatements, NodesCacheType type)
-    : m_nodesFactory(nodesFactory), m_contextFactory(contextFactory), m_connections(connections), m_statements(50), m_type(type), m_tempCache(false), m_ecsqlStamementCache(ecsqlStatements)
+    IUserSettingsManager const& userSettings, IECSqlStatementCacheProvider& ecsqlStatements, NodesCacheType type)
+    : m_nodesFactory(nodesFactory), m_contextFactory(contextFactory), m_connections(connections), m_userSettings(userSettings), m_statements(50), m_type(type), m_tempCache(false), m_ecsqlStamementCache(ecsqlStatements)
     {
     m_sizeLimit = NAVNODES_CACHE_DB_SIZE_LIMIT;
     Initialize(tempDirectory);
@@ -590,7 +591,11 @@ void NodesCache::OnRulesetCreated(PresentationRuleSetCR ruleset)
 struct SqliteSavepoint : IHierarchyCache::Savepoint
     {
     BeSQLite::Savepoint m_sqliteSavepoint;
-    SqliteSavepoint(BeSQLite::Db& db) : m_sqliteSavepoint(db, BeGuid(true).ToString().c_str()){}
+    SqliteSavepoint(BeSQLite::Db& db) 
+        : m_sqliteSavepoint(db, BeGuid(true).ToString().c_str())
+        {
+        BeAssert(m_sqliteSavepoint.IsActive());
+        }
     void _Cancel() override {m_sqliteSavepoint.Cancel();}
     };
 
@@ -1028,9 +1033,9 @@ void NodesCache::CacheRelatedClassIds(uint64_t datasourceId, bmap<ECClassId, boo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::CacheRelatedSettingIds(uint64_t datasourceId, bvector<Utf8String> const& settingIds)
+void NodesCache::CacheRelatedSettings(uint64_t datasourceId, bvector<UserSettingEntry> const& settings)
     {
-    Utf8String query = "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceSettings "] ([DataSourceId], [SettingId]) VALUES (?, ?)";
+    Utf8String query = "INSERT INTO [" NODESCACHE_TABLENAME_DataSourceSettings "] ([DataSourceId], [SettingId], [SettingValue]) VALUES (?, ?, ?)";
 
     CachedStatementPtr stmt;
     if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query.c_str()))
@@ -1039,11 +1044,13 @@ void NodesCache::CacheRelatedSettingIds(uint64_t datasourceId, bvector<Utf8Strin
         return;
         }
 
-    for (Utf8StringCR settingId : settingIds)
+    for (UserSettingEntry const& setting : settings)
         {
         stmt->Reset();
         stmt->BindUInt64(1, datasourceId);
-        stmt->BindText(2, settingId.c_str(), Statement::MakeCopy::No);
+        stmt->BindText(2, setting.GetId().c_str(), Statement::MakeCopy::No);
+        Utf8String valueAsString = setting.GetValue().ToString();
+        stmt->BindText(3, valueAsString, Statement::MakeCopy::No);
         stmt->Step();
         }
     }
@@ -1092,24 +1099,6 @@ DataSourceInfo NodesCache::GetDataSourceInfo(Utf8StringCP connectionId, Utf8CP r
     return DataSourceInfo(stmt->GetValueUInt64(0), stmt->GetValueText(1), stmt->GetValueText(2), 
         stmt->IsColumnNull(3) ? nullptr : &physicalParentNodeId, 
         stmt->IsColumnNull(4) ? nullptr : &virtualParentNodeId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCache::HasDataSource(HierarchyLevelInfo const& levelInfo) const
-    {
-    DataSourceInfo dsInfo = GetDataSourceInfo(&levelInfo.GetConnectionId(), levelInfo.GetRulesetId().c_str(), levelInfo.GetPhysicalParentNodeId(), true);
-    return dsInfo.IsValid();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                03/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool NodesCache::HasDataSource(DataSourceInfo const& info) const
-    {
-    DataSourceInfo dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetVirtualParentNodeId(), true);
-    return dsInfo.IsValid();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1208,18 +1197,55 @@ bool NodesCache::IsUpdatesDisabled(HierarchyLevelInfo const& info) const
 
     return stmt->GetValueBoolean(0);
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool NodesCache::HasRelatedSettingsChanged(uint64_t datasourceId, Utf8StringCR rulesetId) const
+    {
+    Utf8CP query = "SELECT [dss].[SettingId], [dss].[SettingValue] "
+                    "  FROM [" NODESCACHE_TABLENAME_DataSourceSettings "] dss "
+                    " WHERE [dss].[DataSourceId] = ? ";
+
+    CachedStatementPtr stmt;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
+        {
+        BeAssert(false);
+        return true;
+        }
+
+    stmt->BindUInt64(1, datasourceId);
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        Utf8CP settingId = stmt->GetValueText(0);
+        Utf8String cachedValue = stmt->GetValueText(1);
+        if (cachedValue != m_userSettings.GetSettings(rulesetId).GetSettingValueAsJson(settingId).ToString())
+            return true;
+        }
+
+    return false;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCache::_GetDataSource(HierarchyLevelInfo const& info) const
+NavNodesProviderPtr NodesCache::_GetDataSource(HierarchyLevelInfo const& info, bool removeIfInvalid) const
     {
     NavNodesProviderPtr source = GetQuick(info);
     if (source.IsValid())
         return source;
     
-    if (!HasDataSource(info))
+    // Check if datasource exists
+    DataSourceInfo dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetPhysicalParentNodeId(), true);
+    if (!dsInfo.IsValid())
         return nullptr;
+
+    if (removeIfInvalid && HasRelatedSettingsChanged(dsInfo.GetDataSourceId(), dsInfo.GetRulesetId()))
+        {
+        const_cast<NodesCache*>(this)->RemoveDataSource(dsInfo.GetDataSourceId());
+        return nullptr;
+        }
 
     IConnectionCP connection = m_connections.GetConnection(info.GetConnectionId().c_str());
     if (nullptr == connection)
@@ -1236,10 +1262,18 @@ NavNodesProviderPtr NodesCache::_GetDataSource(HierarchyLevelInfo const& info) c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                03/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCache::_GetDataSource(DataSourceInfo const& info) const
+NavNodesProviderPtr NodesCache::_GetDataSource(DataSourceInfo const& info, bool removeIfInvalid) const
     {
-    if (!HasDataSource(info))
+    // Check if datasource exists
+    DataSourceInfo dsInfo = GetDataSourceInfo(&info.GetConnectionId(), info.GetRulesetId().c_str(), info.GetVirtualParentNodeId(), true);
+    if (!dsInfo.IsValid())
         return nullptr;
+
+    if (removeIfInvalid && HasRelatedSettingsChanged(dsInfo.GetDataSourceId(), dsInfo.GetRulesetId()))
+        {
+        const_cast<NodesCache*>(this)->RemoveDataSource(dsInfo.GetDataSourceId());
+        return nullptr;
+        }
 
     IConnectionCP connection = m_connections.GetConnection(info.GetConnectionId().c_str());
     if (nullptr == connection)
@@ -1256,11 +1290,17 @@ NavNodesProviderPtr NodesCache::_GetDataSource(DataSourceInfo const& info) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NavNodesProviderPtr NodesCache::_GetDataSource(uint64_t nodeId) const
+NavNodesProviderPtr NodesCache::_GetDataSource(uint64_t nodeId, bool removeIfInvalid) const
     {
     DataSourceInfo info = GetDataSourceInfo(nodeId);
     if (!info.IsValid())
         return nullptr;
+
+    if (removeIfInvalid && HasRelatedSettingsChanged(info.GetDataSourceId(), info.GetRulesetId()))
+        {
+        const_cast<NodesCache*>(this)->RemoveDataSource(info.GetDataSourceId());
+        return nullptr;
+        }
     
     IConnectionCP connection = m_connections.GetConnection(info.GetConnectionId().c_str());
     if (nullptr == connection)
@@ -1298,7 +1338,7 @@ void NodesCache::_Cache(JsonNavNodeR node, bool isVirtual)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::_Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<Utf8String> const& relatedSettingIds,
+void NodesCache::_Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<UserSettingEntry> const& relatedSettings,
     bool disableUpdates)
     {
     CacheEmptyDataSource(info, filter, disableUpdates);
@@ -1306,7 +1346,7 @@ void NodesCache::_Cache(DataSourceInfo& info, DataSourceFilter const& filter, bm
     if (info.IsValid())
         {
         CacheRelatedClassIds(info.GetDataSourceId(), relatedClassIds);
-        CacheRelatedSettingIds(info.GetDataSourceId(), relatedSettingIds);
+        CacheRelatedSettings(info.GetDataSourceId(), relatedSettings);
         }
 
 #ifdef NAVNODES_CACHE_DEBUG
@@ -1364,7 +1404,7 @@ void NodesCache::_Update(uint64_t nodeId, JsonNavNodeCR node)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void NodesCache::_Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds)
+void NodesCache::_Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<UserSettingEntry> const* relatedSettings)
     {
     if (nullptr != filter)
         {
@@ -1387,8 +1427,8 @@ void NodesCache::_Update(DataSourceInfo const& info, DataSourceFilter const* fil
     if (nullptr != relatedClassIds)
         CacheRelatedClassIds(info.GetDataSourceId(), *relatedClassIds);
 
-    if (nullptr != relatedSettingIds)
-        CacheRelatedSettingIds(info.GetDataSourceId(), *relatedSettingIds);
+    if (nullptr != relatedSettings)
+        CacheRelatedSettings(info.GetDataSourceId(), *relatedSettings);
 
 #ifdef NAVNODES_CACHE_DEBUG
     Persist();
@@ -1493,6 +1533,28 @@ void NodesCache::RemoveDataSource(BeGuidCR removalId)
         return;
         }
     stmt->BindGuid(1, removalId);
+    stmt->Step();
+
+#ifdef NAVNODES_CACHE_DEBUG
+    Persist();
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void NodesCache::RemoveDataSource(uint64_t datasourceId)
+    {
+    Utf8CP query = "DELETE FROM [" NODESCACHE_TABLENAME_DataSources "] "
+                   " WHERE [Id] = ?";
+    
+    CachedStatementPtr stmt;
+    if (BE_SQLITE_OK != m_statements.GetPreparedStatement(stmt, *m_db.GetDbFile(), query))
+        {
+        BeAssert(false);
+        return;
+        }
+    stmt->BindUInt64(1, datasourceId);
     stmt->Step();
 
 #ifdef NAVNODES_CACHE_DEBUG
@@ -1709,7 +1771,9 @@ static bool AreRelated(IConnectionCR connection, DataSourceFilter::RelatedInstan
             }
         }
 
-    Savepoint txn(connection.GetDb(), "NodesCache/AreRelated"); 
+    Savepoint txn(connection.GetDb(), "NodesCache/AreRelated");
+    BeAssert(txn.IsActive());
+
     CachedECSqlStatementPtr stmt = statements.GetPreparedStatement(connection.GetECDb().Schemas(), connection.GetDb(), query.c_str());
     if (!stmt.IsValid())
         {

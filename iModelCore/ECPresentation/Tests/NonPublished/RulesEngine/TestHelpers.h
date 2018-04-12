@@ -16,6 +16,7 @@
 #include "../../BackDoor/PublicAPI/BackDoor/ECPresentation/Localization.h"
 #include "../../BackDoor/PublicAPI/BackDoor/ECPresentation/StubLocalState.h"
 #include <UnitTests/BackDoor/ECPresentation/TestConnectionCache.h>
+#include <UnitTests/BackDoor/ECPresentation/TestUserSettings.h>
 #include "ECDbTestProject.h"
 #include "TestNavNode.h"
 #include "TestNodesProvider.h"
@@ -193,12 +194,12 @@ struct TestNodesCache : IHierarchyCache, INavNodeLocater
     typedef std::function<NavNodesProviderPtr(HierarchyLevelInfo const&)> GetHierarchyDataSourceHandler;
     typedef std::function<NavNodesProviderPtr(DataSourceInfo const&)> GetVirtualDataSourceHandler;
     typedef std::function<NavNodesProviderPtr(uint64_t)> GetParentNodeDataSourceHandler;
-    typedef std::function<void(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<Utf8String> const&, bool)> CacheDataSourceHandler;
+    typedef std::function<void(DataSourceInfo&, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool)> CacheDataSourceHandler;
     typedef std::function<void(JsonNavNodeR, bool)> CacheNodeHandler;
     typedef std::function<void(JsonNavNodeCR)> MakePhysicalHandler;
     typedef std::function<void(JsonNavNodeCR)> MakeVirtualHandler;
     typedef std::function<void(uint64_t, JsonNavNodeCR)> UpdateNodeHandler;
-    typedef std::function<void(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<Utf8String> const*)> UpdateDataSourceHandler;
+    typedef std::function<void(DataSourceInfo const&, DataSourceFilter const*, bmap<ECClassId, bool> const*, bvector<UserSettingEntry> const*)> UpdateDataSourceHandler;
     typedef std::function<JsonNavNodeCPtr(IConnectionCR, NavNodeKeyCR)> LocateNodeHandler;
 
     /*=================================================================================**//**
@@ -270,7 +271,7 @@ protected:
         auto iter = m_nodes.find(nodeId);
         return (m_nodes.end() != iter) ? iter->second : nullptr;
         }
-    NavNodesProviderPtr _GetDataSource(HierarchyLevelInfo const& info) const override
+    NavNodesProviderPtr _GetDataSource(HierarchyLevelInfo const& info, bool removeIfInvalid) const override
         {
         if (m_getHierarchyDataSourceHandler)
             return m_getHierarchyDataSourceHandler(info);
@@ -289,7 +290,7 @@ protected:
         auto iter = m_physicalHierarchy.find(info);
         return (m_physicalHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, iter->second) : nullptr;
         }
-    NavNodesProviderPtr _GetDataSource(DataSourceInfo const& info) const override
+    NavNodesProviderPtr _GetDataSource(DataSourceInfo const& info, bool removeIfInvalid) const override
         {
         if (m_getVirtualDataSourceHandler)
             return m_getVirtualDataSourceHandler(info);
@@ -308,24 +309,24 @@ protected:
         auto iter = m_virtualHierarchy.find(info);
         return (m_virtualHierarchy.end() != iter) ? BVectorNodesProvider::Create(*context, iter->second) : nullptr;
         }
-    NavNodesProviderPtr _GetDataSource(uint64_t nodeId) const override
+    NavNodesProviderPtr _GetDataSource(uint64_t nodeId, bool removeIfInvalid) const override
         {
         if (m_getParentNodeDataSourceHandler)
             return m_getParentNodeDataSourceHandler(nodeId);
 
         JsonNavNodePtr node = GetNode(nodeId);
         DataSourceInfo info = GetDataSourceInfo(*node);
-        return GetDataSource(info);
+        return GetDataSource(info, removeIfInvalid);
         }
     
-    void _Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<Utf8String> const& relatedSettingIds, bool updatesDisabled) override
+    void _Cache(DataSourceInfo& info, DataSourceFilter const& filter, bmap<ECClassId, bool> const& relatedClassIds, bvector<UserSettingEntry> const& relatedSettings, bool updatesDisabled) override
         {
         info.SetDataSourceId(++m_datasourceIds);
         m_physicalHierarchy[info] = bvector<JsonNavNode*>();
         m_virtualHierarchy[info] = bvector<JsonNavNode*>();
 
         if (m_cacheDataSourceHandler)
-            m_cacheDataSourceHandler(info, filter, relatedClassIds, relatedSettingIds, updatesDisabled);
+            m_cacheDataSourceHandler(info, filter, relatedClassIds, relatedSettings, updatesDisabled);
         }
     void _Cache(JsonNavNodeR node, bool isVirtual) override
         {
@@ -360,10 +361,10 @@ protected:
         if (m_updateNodeHandler)
             return m_updateNodeHandler(id, node);
         }
-    void _Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<Utf8String> const* relatedSettingIds) override
+    void _Update(DataSourceInfo const& info, DataSourceFilter const* filter, bmap<ECClassId, bool> const* relatedClassIds, bvector<UserSettingEntry> const* relatedSettings) override
         {
         if (m_updateDataSourceHandler)
-            return m_updateDataSourceHandler(info, filter, relatedClassIds, relatedSettingIds);
+            return m_updateDataSourceHandler(info, filter, relatedClassIds, relatedSettings);
         }
 
     JsonNavNodeCPtr _LocateNode(IConnectionCR connection, NavNodeKeyCR key) const override
@@ -497,57 +498,6 @@ struct TestECDbUsedClassesListener : IECDbUsedClassesListener
         m_usedClasses[&ecClass] = polymorphically;
         }
     bmap<ECClassCP, bool> const& GetUsedClasses() const {return m_usedClasses;}
-    };
-
-/*=================================================================================**//**
-* @bsiclass                                     Grigas.Petraitis                03/2017
-+===============+===============+===============+===============+===============+======*/
-struct TestUserSettings : IUserSettings
-{
-private:
-    Json::Value m_values;
-    IUserSettingsChangeListener* m_changesListener;
-
-    void NotifySettingChanged(Utf8CP settingId)
-        {
-        if (nullptr != m_changesListener)
-            m_changesListener->_OnSettingChanged("", settingId);
-        }
-    
-protected:
-    Json::Value _GetPresentationInfo() const override {return Json::Value();}
-
-    bool _HasSetting(Utf8CP id) const override {return m_values.isMember(id);}
-
-    void _InitFrom(UserSettingsGroupList const&) override {}
-    void _SetSettingValue(Utf8CP id, Utf8CP value) override {m_values[id] = value; NotifySettingChanged(id);}
-    void _SetSettingBoolValue(Utf8CP id, bool value) override {m_values[id] = value; NotifySettingChanged(id);}
-    void _SetSettingIntValue(Utf8CP id, int64_t value) override {m_values[id] = value; NotifySettingChanged(id);}
-    void _SetSettingIntValues(Utf8CP id, bvector<int64_t> const& values) override
-        {
-        for (int64_t v : values)
-            m_values[id].append(v);
-        NotifySettingChanged(id);
-        }    
-
-    Utf8String _GetSettingValue(Utf8CP id) const override {return m_values.isMember(id) ? m_values[id].asCString() : "";}
-    bool _GetSettingBoolValue(Utf8CP id) const override {return m_values.isMember(id) ? m_values[id].asBool() : false;}
-    int64_t _GetSettingIntValue(Utf8CP id) const override {return m_values.isMember(id) ? m_values[id].asInt64() : 0;}
-    bvector<int64_t> _GetSettingIntValues(Utf8CP id) const override
-        {
-        bvector<int64_t> values;
-        if (m_values.isMember(id))
-            {
-            JsonValueCR jsonArr = m_values[id];
-            for (Json::ArrayIndex i = 0; i < jsonArr.size(); ++i)
-                values.push_back(jsonArr[i].asInt64());
-            }
-        return values;
-        }    
-
-public:
-    TestUserSettings() : m_changesListener(nullptr) {}
-    void SetChangesListener(IUserSettingsChangeListener* listener) {m_changesListener = listener;}
     };
 
 /*=================================================================================**//**

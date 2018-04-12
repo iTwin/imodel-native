@@ -90,7 +90,7 @@ struct ContentProvider : RefCountedBase
 private:
     ContentProviderContextPtr m_context;
     PageOptions m_pageOptions;
-    ContentQueryExecutor m_executor;
+    ContentQueryExecutor* m_executor;
     bvector<ContentSetItemPtr> m_records;
     bool m_initialized;
     mutable size_t m_contentSetSize;
@@ -106,7 +106,7 @@ private:
 protected:
     ECPRESENTATION_EXPORT ContentProvider(ContentProviderContextR);
     ECPRESENTATION_EXPORT ContentProvider(ContentProviderCR);
-    ContentQueryExecutor& GetExecutor() {return m_executor;}
+    ECPRESENTATION_EXPORT ~ContentProvider();
     virtual ContentDescriptorCP _GetContentDescriptor() const = 0;
     virtual ContentQueryCPtr _GetQuery() const = 0;
     virtual ContentProviderPtr _Clone() const = 0;

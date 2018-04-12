@@ -73,7 +73,6 @@ struct IProxyConnectionsTracker
     virtual void OnProxyConnectionRelease(struct ProxyConnection const&) = 0;
     };
 
-#define MULTIPLE_CONNECTIONS
 //=======================================================================================
 //! A thread-local connection that's based on the supplied primary connection. It notifies
 //! supplied IProxyConnectionsTracker so it can track when ProxyConnections are/aren't
@@ -82,12 +81,20 @@ struct IProxyConnectionsTracker
 //=======================================================================================
 struct ProxyConnection : IConnection
 {
+    struct BusyRetry : BeSQLite::BusyRetry
+        {
+        int _OnBusy(int count) const override
+            {
+            // just repeat indefinitely...
+            BeThreadUtilities::BeSleep(1);
+            return 1;
+            }
+        };
+
 private:
     IProxyConnectionsTracker* m_tracker;
     PrimaryConnection const& m_primaryConnection;
-#ifdef MULTIPLE_CONNECTIONS
     mutable BeSQLite::Db m_db;
-#endif
     mutable BeAtomic<uint32_t> m_refCount;
 
 private:
@@ -97,9 +104,7 @@ private:
     ProxyConnection(IProxyConnectionsTracker* tracker, PrimaryConnection const& primaryConnection)
         : m_tracker(tracker), m_primaryConnection(primaryConnection)
         {
-#ifdef MULTIPLE_CONNECTIONS
-        m_db.OpenBeSQLiteDb(m_primaryConnection.GetDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No));
-#endif
+        m_db.OpenBeSQLiteDb(m_primaryConnection.GetDb().GetDbFileName(), Db::OpenParams(Db::OpenMode::Readonly, DefaultTxn::No, new BusyRetry()));
         LOG_CONNECTIONS.infov("%p ProxyConnection[%s] created on thread %d.", this, m_primaryConnection.GetId().c_str(), (int)BeThreadUtilities::GetCurrentThreadId());
         }
 
@@ -149,9 +154,7 @@ public:
     +---------------+---------------+---------------+---------------+-----------+------*/
     ~ProxyConnection()
         {
-#ifdef MULTIPLE_CONNECTIONS
         m_db.CloseDb();
-#endif
         LOG_CONNECTIONS.infov("%p ProxyConnection[%s] closed on thread %d", this, GetId().c_str(), (int)BeThreadUtilities::GetCurrentThreadId());
         }
 
@@ -294,7 +297,7 @@ public:
         SetValueAsPointer(nullptr);
 
         // we get here when ThreadLocalConnectionStore is the only holder of
-        // m_proxyConnections - need to unset stop tracking their release before
+        // m_proxyConnections - need to stop tracking their release before
         // finishing store desctruction
         for (RefCountedPtr<ProxyConnection> const& proxy : m_proxyConnections)
             proxy->SetTracker(nullptr);

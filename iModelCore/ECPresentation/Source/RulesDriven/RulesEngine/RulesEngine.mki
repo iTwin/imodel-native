@@ -93,6 +93,8 @@ $(o)SingleThreadQueueExecutor$(oext):    $(RulesEngineSourceDirectory)SingleThre
 
 $(o)PresentationManagerImpl$(oext):      $(RulesEngineSourceDirectory)PresentationManagerImpl.cpp $(RulesEngineDependencies)
 
+$(o)SelectionUpdateRecordsHandler$(oext):$(RulesEngineSourceDirectory)SelectionUpdateRecordsHandler.cpp $(RulesEngineDependencies)
+
 %include MultiCppCompileGo.mki
 
 RulesEngineObjs =

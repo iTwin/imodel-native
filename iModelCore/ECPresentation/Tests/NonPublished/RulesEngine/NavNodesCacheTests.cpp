@@ -50,6 +50,7 @@ struct NodesCacheTests : ECPresentationTest
     static ECDbTestProject* s_project;
     
     TestConnectionManager m_connections;
+    TestUserSettingsManager m_userSettings;
     JsonNavNodesFactory m_nodesFactory;
     TestNodesProviderContextFactory m_nodesProviderContextFactory;
     IConnectionPtr m_connection;
@@ -108,7 +109,7 @@ struct NodesCacheTests : ECPresentationTest
 
     virtual NodesCache* _CreateNodesCache(BeFileName tempDir)
         {
-        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Memory);
+        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Memory);
         }
 
     bvector<JsonNavNodeCPtr> FillWithNodes(DataSourceInfo const&, size_t count, bool createChildDataSources = false);
@@ -138,7 +139,7 @@ bvector<JsonNavNodeCPtr> NodesCacheTests::FillWithNodes(DataSourceInfo const& in
             {
             uint64_t nodeId = node->GetNodeId();
             DataSourceInfo childInfo(info.GetConnectionId(), info.GetRulesetId(), &nodeId, &nodeId);
-            m_cache->Cache(childInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+            m_cache->Cache(childInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
             }
         }
     return nodes;
@@ -151,7 +152,7 @@ TEST_F(NodesCacheTests, Clear_Full)
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
@@ -163,7 +164,7 @@ TEST_F(NodesCacheTests, Clear_Full)
     
     // cache child data source
     DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache child node
     TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
@@ -179,12 +180,12 @@ TEST_F(NodesCacheTests, Clear_Full)
     project2.Create("test2");
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
     DataSourceInfo rootInfo2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     
     // cache root data source for a different ruleset
     m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
     DataSourceInfo rootInfo3(m_connection->GetId(), "ruleset_id2", nullptr, nullptr);
-    m_cache->Cache(rootInfo3, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo3, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // make sure everything's cached
     EXPECT_TRUE(m_cache->IsDataSourceCached(connection2->GetId(), "ruleset_id"));
@@ -215,7 +216,7 @@ TEST_F(NodesCacheTests, Clear_ByConnection)
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
@@ -227,7 +228,7 @@ TEST_F(NodesCacheTests, Clear_ByConnection)
     
     // cache child data source
     DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache child node
     TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
@@ -243,7 +244,7 @@ TEST_F(NodesCacheTests, Clear_ByConnection)
     project2.Create("test2");
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project2.GetECDb());
     DataSourceInfo rootInfo2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // make sure everything's cached
     EXPECT_TRUE(m_cache->IsDataSourceCached(connection2->GetId(), "ruleset_id"));
@@ -272,7 +273,7 @@ TEST_F(NodesCacheTests, Clear_ByRulesetId)
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
@@ -284,7 +285,7 @@ TEST_F(NodesCacheTests, Clear_ByRulesetId)
     
     // cache child data source
     DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache child node
     TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
@@ -298,7 +299,7 @@ TEST_F(NodesCacheTests, Clear_ByRulesetId)
     // cache root data source for a different ruleset
     m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
     DataSourceInfo rootInfo3(m_connection->GetId(), "ruleset_id2", nullptr, nullptr);
-    m_cache->Cache(rootInfo3, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo3, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // make sure everything's cached
     EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id2"));
@@ -325,7 +326,7 @@ TEST_F(NodesCacheTests, RemovesRootDataSource)
     {
     // cache data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     
     // verify it got cached
     EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), info.GetRulesetId().c_str()));
@@ -346,7 +347,7 @@ TEST_F(NodesCacheTests, RemovesChildDataSource)
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -358,7 +359,7 @@ TEST_F(NodesCacheTests, RemovesChildDataSource)
 
     // cache child data source
     DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify child data source is cached
     EXPECT_TRUE(m_cache->IsDataSourceCached(nodeId));
@@ -378,7 +379,7 @@ TEST_F(NodesCacheTests, RemovesChildNodesWhenParentDataSourceIsRemoved)
     {
     // cache data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     
     // cache node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -405,7 +406,7 @@ TEST_F(NodesCacheTests, RemovesChildDataSourcesWhenParentDataSourceIsRemoved)
     {
     // cache data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     
     // cache node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -417,7 +418,7 @@ TEST_F(NodesCacheTests, RemovesChildDataSourcesWhenParentDataSourceIsRemoved)
     
     // cache child data source
     DataSourceInfo childrenInfo(m_connection->GetId(), info.GetRulesetId(), &parentNodeId, &parentNodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify child data source is cached
     EXPECT_TRUE(m_cache->IsDataSourceCached(parentNodeId));
@@ -437,7 +438,7 @@ TEST_F(NodesCacheTests, MakePhysical)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -465,7 +466,7 @@ TEST_F(NodesCacheTests, MakeVirtual)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -493,7 +494,7 @@ TEST_F(NodesCacheTests, UpdateNode)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -526,7 +527,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesFilter)
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
-    m_cache->Cache(info, DataSourceFilter(), usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), usedClassIds, bvector<UserSettingEntry>());
 
     // verify the filter is not applied and we find related hierarchy level
     bset<ECInstanceKey> keys;
@@ -555,7 +556,7 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
 
     // cache the data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
         
     // verify we don't find related hierarchy level as the key is not related to the data source
     bset<ECInstanceKey> keys;
@@ -577,21 +578,21 @@ TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedClassIds)
 * note: the test uses GetRelatedHierarchyLevels function to test the Update
 * @bsitest                                      Grigas.Petraitis                04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedSettingIds)
+TEST_F(NodesCacheTests, UpdateDataSource_UpdatesRelatedSettings)
     {
     // unused - ECClassCP widgetHasGadgetRelationship = GetDb().Schemas().GetClass("RulesEngineTest", "WidgetHasGadget");
 
     // cache the data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
         
     // verify we don't find related hierarchy level as data source is not related to any setting ids
     bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.GetRulesetId().c_str(), "setting_id");
     EXPECT_EQ(0, related.size());
 
-    // update the datasource related setting ids
-    bvector<Utf8String> relatedSettingIds = {"setting_id"};
-    m_cache->Update(info, nullptr, nullptr, &relatedSettingIds);
+    // update the datasource related settings
+    bvector<UserSettingEntry> settings = {UserSettingEntry("setting_id", Json::Value("value0"))};
+    m_cache->Update(info, nullptr, nullptr, &settings);
     
     // verify we do find related hierarchy level this time as the data source is now related to the setting id
     related = m_cache->GetRelatedHierarchyLevels(info.GetRulesetId().c_str(), "setting_id");
@@ -605,7 +606,7 @@ TEST_F(NodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache 2 root nodes
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(info, 2, false);
@@ -613,7 +614,7 @@ TEST_F(NodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsPhysical)
     // create a data source for root node 0
     uint64_t rootNodeId0 = rootNodes[0]->GetNodeId();
     DataSourceInfo childInfo(info.GetConnectionId(), info.GetRulesetId(), &rootNodeId0, &rootNodeId0);
-    m_cache->Cache(childInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify rootNodes[0] has a datasource and rootNodes[1] doesnt
     EXPECT_TRUE(m_cache->IsDataSourceCached(rootNodes[0]->GetNodeId()));
@@ -636,7 +637,7 @@ TEST_F(NodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache 2 root nodes
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(info, 2, false);
@@ -645,7 +646,7 @@ TEST_F(NodesCacheTests, RemapNodeIds_RemapsDataSourcesWhenParentIsVirtual)
     // create a data source for root node 0
     uint64_t rootNodeId0 = rootNodes[0]->GetNodeId();
     DataSourceInfo childInfo(info.GetConnectionId(), info.GetRulesetId(), nullptr, &rootNodeId0);
-    m_cache->Cache(childInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify rootNodes[0] has a datasource and rootNodes[1] doesnt
     EXPECT_TRUE(m_cache->IsDataSourceCached(rootNodes[0]->GetNodeId()));
@@ -679,7 +680,7 @@ TEST_F(NodesCacheTests, GetFilteredNodes)
 
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache nodes
     m_cache->Cache(*node1, false);
@@ -697,7 +698,7 @@ TEST_F(NodesCacheTests, GetFilteredNodes)
 TEST_F(NodesCacheTests, Updates_IsExpandedFlag)
     {
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -740,7 +741,7 @@ TEST_F(NodesCacheTests, ResetIsExpandedFlag)
 
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache nodes
     m_cache->Cache(*node1, false);
@@ -759,7 +760,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_ReturnsNodeThatIsNotYetKnow
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create node
     TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
@@ -790,7 +791,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChi
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create node
     TestNavNodePtr node = TestNodesHelper::CreateCustomNode("test type", "test label", "test descr");
@@ -805,7 +806,7 @@ TEST_F(NodesCacheTests, GetUndeterminedNodesProvider_DoesNotReturnNodeThatHasChi
     // cache child data source
     uint64_t nodeId = node->GetNodeId();
     DataSourceInfo childrenInfo(m_connection->GetId(), info.GetRulesetId(), &nodeId, &nodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // expect provider to be empty, because all nodes are data sources
     NavNodesProviderPtr provider = m_cache->GetUndeterminedNodesProvider(*m_connection, info.GetRulesetId().c_str(), false);
@@ -835,7 +836,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootDataSource)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify the data source is cached
     EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), info.GetRulesetId().c_str()));
@@ -850,7 +851,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNode)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create the root node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -883,7 +884,7 @@ TEST_F(NodesCacheTests, ReturnsCachedRootNodeDataSource)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create the root node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -910,7 +911,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildDataSource)
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -926,7 +927,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildDataSource)
 
     // cache child data source
     DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify the data source exists now
     EXPECT_TRUE(m_cache->IsDataSourceCached(nodeId));
@@ -941,7 +942,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNode)
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
@@ -953,7 +954,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNode)
     
     // cache child data source
     DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // the data source should be empty
     NavNodesProviderPtr cachedProvider = m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), rootInfo.GetRulesetId(), nodeId));
@@ -985,7 +986,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNodeDataSource)
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     TestNavNodePtr rootNode = TestNavNode::Create(m_connection.get());
@@ -997,7 +998,7 @@ TEST_F(NodesCacheTests, ReturnsCachedChildNodeDataSource)
     
     // cache child data source
     DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create child node
     TestNavNodePtr childNode = TestNavNode::Create(m_connection.get());
@@ -1025,7 +1026,7 @@ TEST_F(NodesCacheTests, ReturnsRequestedNodeTypeWhenNodeIsPhysical)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create the node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -1049,7 +1050,7 @@ TEST_F(NodesCacheTests, ReturnsRequestedNodeTypeWhenNodeIsVirtual)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // create the node
     TestNavNodePtr node = TestNavNode::Create(m_connection.get());
@@ -1073,10 +1074,10 @@ TEST_F(NodesCacheTests, ReturnsPreviouslyCachedDataSourceWhenCachingForTheSamePa
     {
     // cache the data source
     DataSourceInfo info1(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     DataSourceInfo info2(info1.GetConnectionId(), info1.GetRulesetId(), info1.GetPhysicalParentNodeId(), info1.GetVirtualParentNodeId());
-    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify the data source ids are valid and match
     EXPECT_NE(0, info1.GetDataSourceId());
@@ -1095,11 +1096,11 @@ TEST_F(NodesCacheTests, ReturnsDataSourcesFromValidConnections)
     
     // cache root data source for the first connection
     DataSourceInfo rootInfo1(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     
     // cache root data source for the second connection
     DataSourceInfo rootInfo2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify correct sources are returned
     NavNodesProviderPtr cached1 = m_cache->GetDataSource(rootInfo1);
@@ -1121,12 +1122,12 @@ TEST_F(NodesCacheTests, ReturnsDataSourcesWithValidRulesetIds)
     // cache root data source for the first ruleset
     m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id1", 1, 0, false, "", "", "", false));
     DataSourceInfo rootInfo1(m_connection->GetId(), "ruleset_id1", nullptr, nullptr);
-    m_cache->Cache(rootInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     
     // cache root data source for the second ruleset
     m_cache->OnRulesetCreated(*PresentationRuleSet::CreateInstance("ruleset_id2", 1, 0, false, "", "", "", false));
     DataSourceInfo rootInfo2(m_connection->GetId(), "ruleset_id2", nullptr, nullptr);
-    m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify correct sources are returned
     NavNodesProviderPtr cached1 = m_cache->GetDataSource(rootInfo1);
@@ -1145,7 +1146,7 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsFalseForEmptySet)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 1);
@@ -1162,7 +1163,7 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsFalseForRootNode)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root node
     bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 1);
@@ -1180,7 +1181,7 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsFalseIfListDoesntContainParentNodeI
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root nodes
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(info, 2, true);
@@ -1201,7 +1202,7 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsTrueIfListContainsImmediateParentNo
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root nodes
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(info, 2, true);
@@ -1222,7 +1223,7 @@ TEST_F(NodesCacheTests, HasParentNode_ReturnsTrueIfListContainsGrandParentNodeId
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root nodes
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(info, 1, true);
@@ -1251,7 +1252,7 @@ static void CacheNode(NodesCache& cache, IConnectionCR connection, JsonNavNodeR 
     
     // cache root data source
     DataSourceInfo info(connection.GetId(), "ruleset_id", nullptr, nullptr);
-    cache.Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    cache.Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache the node
     cache.Cache(node, false);
@@ -1453,21 +1454,21 @@ TEST_F(NodesCacheTests, Quick_AddsToQuickCacheWhenDataSourceReachesRequiredSize)
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(rootInfo, 2);
     bvector<uint64_t> rootNodeIds;
     std::transform(rootNodes.begin(), rootNodes.end(), std::back_inserter(rootNodeIds), [](NavNodeCPtr node){return node->GetNodeId();});
 
     // cache child data source 1 (less than required size to add to quick cache)
     DataSourceInfo childrenInfo1(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeIds[0], &rootNodeIds[0]);
-    m_cache->Cache(childrenInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     FillWithNodes(childrenInfo1, NODESCACHE_QUICK_Boundary);
     NavNodesProviderPtr datasource1 = m_cache->GetDataSource(HierarchyLevelInfo(childrenInfo1));
     EXPECT_EQ(NODESCACHE_QUICK_Boundary, datasource1->GetNodesCount());
 
     // cache child data source 2 (of required size to add to quick cache)
     DataSourceInfo childrenInfo2(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeIds[1], &rootNodeIds[1]);
-    m_cache->Cache(childrenInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     FillWithNodes(childrenInfo2, NODESCACHE_QUICK_Boundary + 1);
     NavNodesProviderPtr datasource2 = m_cache->GetDataSource(HierarchyLevelInfo(childrenInfo2));
     EXPECT_EQ(NODESCACHE_QUICK_Boundary + 1, datasource2->GetNodesCount());
@@ -1488,13 +1489,13 @@ TEST_F(NodesCacheTests, Quick_RemovesPreviousDataSourceIfNewOneIsAddedForTheSame
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(rootInfo, 1);
     uint64_t rootNodeId = rootNodes[0]->GetNodeId();
 
     // cache child data source
     DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeId, &rootNodeId);
-    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     FillWithNodes(childrenInfo, NODESCACHE_QUICK_Boundary + 1);
 
     // both datasources point to the same data, but they're different instances
@@ -1523,7 +1524,7 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
     {
     // cache root data source
     DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(rootInfo, NODESCACHE_QUICK_Size + 1);
     bvector<uint64_t> rootNodeIds;
     std::transform(rootNodes.begin(), rootNodes.end(), std::back_inserter(rootNodeIds), [](NavNodeCPtr node){return node->GetNodeId();});
@@ -1533,7 +1534,7 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
     for (size_t i = 0; i < NODESCACHE_QUICK_Size; ++i)
         {
         DataSourceInfo info(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeIds[i], &rootNodeIds[i]);
-        m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+        m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
         FillWithNodes(info, NODESCACHE_QUICK_Boundary + 1);
         NavNodesProviderPtr provider = m_cache->GetDataSource(HierarchyLevelInfo(info));
         m_cache->CacheHierarchyLevel(HierarchyLevelInfo(info), *provider);
@@ -1546,7 +1547,7 @@ TEST_F(NodesCacheTests, Quick_RemovesLastUsedProvidersWhenMaxSizeIsReached)
 
     // add a new provider
     DataSourceInfo info(m_connection->GetId(), rootInfo.GetRulesetId(), &rootNodeIds[NODESCACHE_QUICK_Size], &rootNodeIds[NODESCACHE_QUICK_Size]);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     FillWithNodes(info, NODESCACHE_QUICK_Boundary + 1);
     NavNodesProviderPtr provider = m_cache->GetDataSource(HierarchyLevelInfo(info));
     m_cache->CacheHierarchyLevel(HierarchyLevelInfo(info), *provider);
@@ -1565,7 +1566,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Settings_ReturnsEmptyListWhenR
     {
     // cache the data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels("invalid", "any");
@@ -1579,18 +1580,20 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Settings_ReturnsOnlyRelatedDat
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     bvector<JsonNavNodeCPtr> rootNodes = FillWithNodes(info, 2);
 
     // cache unrelated datasource
     uint64_t rootNodeId0 = rootNodes[0]->GetNodeId();
     DataSourceInfo childInfo0(m_connection->GetId(), "ruleset_id", &rootNodeId0, &rootNodeId0);
-    m_cache->Cache(childInfo0, DataSourceFilter(), bmap<ECClassId, bool>(), {"setting_0"});
+    bvector<UserSettingEntry> settings0 = {UserSettingEntry("setting_0", Json::Value("value0"))};
+    m_cache->Cache(childInfo0, DataSourceFilter(), bmap<ECClassId, bool>(), settings0);
     
     // cache related datasource
     uint64_t rootNodeId1 = rootNodes[1]->GetNodeId();
     DataSourceInfo childInfo1(m_connection->GetId(), "ruleset_id", &rootNodeId1, &rootNodeId1);
-    m_cache->Cache(childInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), {"setting_1"});
+    bvector<UserSettingEntry> settings1 = {UserSettingEntry("setting_1", Json::Value("value1")) };
+    m_cache->Cache(childInfo1, DataSourceFilter(), bmap<ECClassId, bool>(), settings1);
 
     // verify the correct datasource is found
     bvector<HierarchyLevelInfo> related = m_cache->GetRelatedHierarchyLevels(info.GetRulesetId().c_str(), "setting_1");
@@ -1606,7 +1609,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     {
     // cache the data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bset<ECInstanceKey> keys;
@@ -1624,7 +1627,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
-    m_cache->Cache(info, DataSourceFilter(), usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bset<ECInstanceKey> keys;
@@ -1642,7 +1645,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
-    m_cache->Cache(info, DataSourceFilter(), usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bset<ECInstanceKey> keys;
@@ -1666,7 +1669,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, ECInstanceId((uint64_t)123)), nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
-    m_cache->Cache(info, filter, usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, filter, usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bset<ECInstanceKey> keys;
@@ -1692,7 +1695,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
-    m_cache->Cache(info, filter, usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, filter, usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bset<ECInstanceKey> keys;
@@ -1728,7 +1731,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
-    m_cache->Cache(info, filter, usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, filter, usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bset<ECInstanceKey> keys;
@@ -1764,7 +1767,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
-    m_cache->Cache(info, filter, usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, filter, usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bset<ECInstanceKey> keys;
@@ -1800,7 +1803,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
-    m_cache->Cache(info, filter, usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, filter, usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bset<ECInstanceKey> keys;
@@ -1838,7 +1841,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[widgetClass->GetId()] = false;
     usedClassIds[gadgetClass->GetId()] = false;
-    m_cache->Cache(info, filter, usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, filter, usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     bset<ECInstanceKey> keys;
@@ -1855,7 +1858,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     {
     // cache the data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
     
     // create a node
@@ -1878,7 +1881,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsEmptyListWhen
     {
     // cache the data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
     
     // create a node
@@ -1901,7 +1904,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     {
     // cache the data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
     
     // create a node
@@ -1933,7 +1936,7 @@ TEST_F(NodesCacheTests, GetRelatedHierarchyLevels_Instances_ReturnsDataSourceWhe
     DataSourceFilter filter(DataSourceFilter::RelatedInstanceInfo(relationshipIds, RequiredRelationDirection_Backward, ECInstanceId((uint64_t)123)), nullptr);
     bmap<ECClassId, bool> usedClassIds;
     usedClassIds[ECClassId((uint64_t)1)] = false;
-    m_cache->Cache(info, filter, usedClassIds, bvector<Utf8String>());
+    m_cache->Cache(info, filter, usedClassIds, bvector<UserSettingEntry>());
     EXPECT_TRUE(m_cache->IsDataSourceCached(info.GetConnectionId(), info.GetRulesetId().c_str()));
 
     // create a node
@@ -1974,17 +1977,91 @@ TEST_F(NodesCacheTests, AllowsUsingMultipleConnectionsToTheSameDbAtDifferentPath
 
     // cache root data source for the first connection
     DataSourceInfo info1(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info1, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache root data source for the second connection
     DataSourceInfo info2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // verify both data sources got cached
     EXPECT_TRUE(m_cache->IsDataSourceCached(m_connection->GetId(), "ruleset_id"));
     EXPECT_TRUE(m_cache->IsDataSourceCached(connection2->GetId(), "ruleset_id"));
 
     m_connections.NotifyConnectionClosed(*connection2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, ClearRootDatasourceCacheIfRelatedSettingsValuesHasChanged)
+    {
+    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value("value0"))};
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), settingsValues);
+
+    // verify the data source exists now
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(rootInfo.GetConnectionId(), rootInfo.GetRulesetId(), nullptr), false).IsValid());
+    
+    // verify what valid datasource is not returned with different user settings
+    m_userSettings.GetSettings("ruleset_id").SetSettingValue("setting_id", "value1");
+    NavNodesProviderPtr cachedValidDatasource = m_cache->GetDataSource(HierarchyLevelInfo(rootInfo.GetConnectionId(), rootInfo.GetRulesetId(), nullptr));
+    EXPECT_TRUE(cachedValidDatasource.IsNull());
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(rootInfo.GetConnectionId(), rootInfo.GetRulesetId(), nullptr), false).IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, DoesntClearRootDatasourceCacheIfRelatedSettingsValuesHasNotChanged)
+    {
+    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value(10))};
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), settingsValues);
+
+    // verify the data source exists now
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(rootInfo.GetConnectionId(), rootInfo.GetRulesetId(), nullptr), false).IsValid());
+    
+    // verify what valid datasource is returned with same user settings
+    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 10);
+    NavNodesProviderPtr cachedValidDatasource = m_cache->GetDataSource(HierarchyLevelInfo(rootInfo.GetConnectionId(), rootInfo.GetRulesetId(), nullptr));
+    EXPECT_TRUE(cachedValidDatasource.IsValid());
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(rootInfo.GetConnectionId(), rootInfo.GetRulesetId(), nullptr), false).IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(NodesCacheTests, ClearChildDatasourceCacheIfRelatedSettingsValuesHasChanged)
+    {
+    // cache root data source
+    DataSourceInfo rootInfo(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
+    m_cache->Cache(rootInfo, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
+
+    // cache root node
+    TestNavNodePtr node = TestNavNode::Create(m_connection.get());
+    NavNodeExtendedData extendedData(*node);
+    extendedData.SetConnectionId(m_connection->GetId());
+    extendedData.SetRulesetId(rootInfo.GetRulesetId().c_str());
+    m_cache->Cache(*node, false);
+    uint64_t nodeId = node->GetNodeId();
+
+    // cache child data source
+    bvector<UserSettingEntry> settingsValues = {UserSettingEntry("setting_id", Json::Value(1))};
+    DataSourceInfo childrenInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId);
+    m_cache->Cache(childrenInfo, DataSourceFilter(), bmap<ECClassId, bool>(), settingsValues);
+
+    // verify the data source exists now
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), rootInfo.GetRulesetId(), nullptr), false).IsValid());
+    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId), false).IsValid());
+
+    // verify what valid datasource is not returned with different user settings
+    m_userSettings.GetSettings("ruleset_id").SetSettingIntValue("setting_id", 10);
+    NavNodesProviderPtr cachedValidDatasource = m_cache->GetDataSource(HierarchyLevelInfo(m_connection->GetId(), rootInfo.GetRulesetId(), nullptr));
+    NavNodesProviderPtr cachedValidChildDatasource = m_cache->GetDataSource(DataSourceInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId));
+    EXPECT_TRUE(cachedValidDatasource.IsValid());
+    EXPECT_TRUE(cachedValidChildDatasource.IsNull());
+    EXPECT_TRUE(m_cache->GetDataSource(HierarchyLevelInfo(rootInfo.GetConnectionId(), rootInfo.GetRulesetId(), nullptr), false).IsValid());
+    EXPECT_TRUE(m_cache->GetDataSource(DataSourceInfo(m_connection->GetId(), rootInfo.GetRulesetId(), &nodeId, &nodeId), false).IsNull());
     }
     
 /*=================================================================================**//**
@@ -2002,7 +2079,7 @@ struct DiskNodesCacheTests : NodesCacheTests
 
     NodesCache* _CreateNodesCache(BeFileName tempDir) override
         {
-        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
+        return new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
         }
     };
 
@@ -2013,7 +2090,7 @@ TEST_F(DiskNodesCacheTests, CreatesNewDbFileIfCacheIsAlreadyInUse)
     {
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    NodesCache secondCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
+    NodesCache secondCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
 
     Utf8CP firstCacheName = m_cache->GetDb().GetDbFileName();
     Utf8CP secondCacheName = secondCache.GetDb().GetDbFileName();
@@ -2028,7 +2105,7 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 2, true);
     EXPECT_FALSE(m_cache->GetDataSource(info).IsNull());
@@ -2043,7 +2120,7 @@ TEST_F(DiskNodesCacheTests, ShareCachedHierarchiesBetweenSessions)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
     
     // mock connection re-opening
     ReCreateProject();
@@ -2062,7 +2139,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfHierarchyWasModified)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache some nodes
     bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 2, true);
@@ -2085,7 +2162,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfHierarchyWasModified)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
 
     // mock connection re-opening
     ReCreateProject();
@@ -2111,7 +2188,7 @@ TEST_F(DiskNodesCacheTests, ClearSharedCacheIfRulesetWasModified)
 
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), ruleset->GetRuleSetId(), nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache some nodes
     bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 2, true);
@@ -2136,7 +2213,7 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache some nodes
     bvector<JsonNavNodeCPtr> nodes = FillWithNodes(info, 2, true);
@@ -2153,7 +2230,7 @@ TEST_F(DiskNodesCacheTests, ClearsCacheIfCacheFileSizeExceedsLimit)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
 
     // verify cache is cleared
     EXPECT_TRUE(m_cache->GetDataSource(info).IsNull());
@@ -2168,7 +2245,7 @@ TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsL
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache some nodes
     FillWithNodes(info, 30, true);
@@ -2181,7 +2258,7 @@ TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsL
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
 
     DataSourceInfo info2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache some nodes
     FillWithNodes(info2, 40, true);
@@ -2201,7 +2278,7 @@ TEST_F(DiskNodesCacheTests, ClearsOldestConnectionCacheWhenCacheFileSizeExceedsL
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
 
     // verify first connection cache was deleted
     m_connection = m_connections.NotifyConnectionOpened(GetDb());
@@ -2223,7 +2300,7 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     {
     // cache root data source
     DataSourceInfo info(m_connection->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache some nodes
     FillWithNodes(info, 30, true);
@@ -2236,7 +2313,7 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     IConnectionPtr connection2 = m_connections.NotifyConnectionOpened(project.GetECDb());
 
     DataSourceInfo info2(connection2->GetId(), "ruleset_id", nullptr, nullptr);
-    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<Utf8String>());
+    m_cache->Cache(info2, DataSourceFilter(), bmap<ECClassId, bool>(), bvector<UserSettingEntry>());
 
     // cache some nodes
     FillWithNodes(info2, 40, true);
@@ -2256,7 +2333,7 @@ TEST_F(DiskNodesCacheTests, DoesntClearCacheWhenCacheFileSizeAndLimitAreEqual)
     // open cache
     BeFileName tempDir;
     BeTest::GetHost().GetTempDir(tempDir);
-    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_ecsqlStatements, NodesCacheType::Disk);
+    m_cache = new NodesCache(tempDir, m_nodesFactory, m_nodesProviderContextFactory, m_connections, m_userSettings, m_ecsqlStatements, NodesCacheType::Disk);
 
     // verify first connection cache was deleted
     m_connection = m_connections.NotifyConnectionOpened(GetDb());

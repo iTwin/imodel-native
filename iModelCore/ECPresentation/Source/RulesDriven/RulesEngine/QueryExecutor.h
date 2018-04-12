@@ -62,12 +62,13 @@ protected:
     IConnectionCR GetConnection() const {return m_connection;}
 
 protected:
-    virtual void _Reset();
+    ECPRESENTATION_EXPORT virtual void _Reset();
     virtual void _ReadRecord(ECSqlStatement&) = 0;
 
 public:
     ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR, ECSqlStatementCache const&);
     ECPRESENTATION_EXPORT QueryExecutor(IConnectionCR, ECSqlStatementCache const&, PresentationQueryBase const& query);
+    virtual ~QueryExecutor() {}
     ECPRESENTATION_EXPORT void SetQuery(PresentationQueryBase const& query);
     ECPRESENTATION_EXPORT PresentationQueryBase const* GetQuery() const;
     ECPRESENTATION_EXPORT void ReadRecords(ICancelationTokenCP = nullptr);

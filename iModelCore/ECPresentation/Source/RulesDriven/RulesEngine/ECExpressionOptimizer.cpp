@@ -598,15 +598,17 @@ public:
 +---------------+---------------+---------------+---------------+---------------+--*/
 OptimizedExpressionPtr ECExpressionOptimizer::GetOptimizedExpression(Utf8CP expression)
     {
-    if (m_expressionsCache.HasOptimizedExpression(expression))
-        return m_expressionsCache.GetOptimized(expression);
+    OptimizedExpressionPtr optimizedExp;
+    if (SUCCESS == m_expressionsCache.Get(optimizedExp, expression))
+        return optimizedExp;
 
     NodePtr node = ECExpressionsHelper(m_expressionsCache).GetNodeFromExpression(expression);
-    if (node.IsNull())
-        return nullptr;
+    if (node.IsValid())
+        {
+        ECExpressionToOptimizedExpressionConverter converter(*node);
+        optimizedExp = converter.ConvertToOptimizedExpression();
+        }
 
-    ECExpressionToOptimizedExpressionConverter converter(*node);
-    OptimizedExpressionPtr optimizedExp = converter.ConvertToOptimizedExpression();
-    m_expressionsCache.Add(expression, *optimizedExp);
+    m_expressionsCache.Add(expression, optimizedExp);
     return optimizedExp;
     }

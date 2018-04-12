@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <ECPresentation/ECPresentation.h>
+#include <ECPresentation/SelectionManager.h>
 #include <ECPresentation/NavNode.h>
 
 //__PUBLISH_SECTION_END__
@@ -235,6 +236,35 @@ public:
 
     //! Finishes the report.
     void Finish() {_Finish();}
+};
+
+//=======================================================================================
+//! Takes care of updating selection when hierarchies change (e.g. removes deleted nodes
+//! from selection set).
+//! @ingroup GROUP_RulesDrivenPresentation
+// @bsiclass                                    Grigas.Petraitis                04/2018
+//=======================================================================================
+struct SelectionUpdateRecordsHandler : IUpdateRecordsHandler
+{
+private:
+    IConnectionCache const& m_connections;
+    ISelectionManager& m_selectionManager;
+    bmap<IConnectionCP, NavNodeKeyList> m_toRemove;
+    bset<IConnectionCP> m_toRefresh;
+private:
+    SelectionUpdateRecordsHandler(IConnectionCache const& connections, ISelectionManager& selectionManager)
+        : m_connections(connections), m_selectionManager(selectionManager)
+        {}
+protected:
+    ECPRESENTATION_EXPORT void _Start() override;
+    ECPRESENTATION_EXPORT void _Accept(UpdateRecord const& record) override;
+    ECPRESENTATION_EXPORT void _Accept(FullUpdateRecord const& record) override;
+    ECPRESENTATION_EXPORT void _Finish() override;
+public:
+    static RefCountedPtr<SelectionUpdateRecordsHandler> Create(IConnectionCache const& connections, ISelectionManager& selectionManager)
+        {
+        return new SelectionUpdateRecordsHandler(connections, selectionManager);
+        }
 };
 
 END_BENTLEY_ECPRESENTATION_NAMESPACE

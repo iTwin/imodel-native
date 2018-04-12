@@ -100,7 +100,13 @@ protected:
         else
             SetSelection(db, *KeySet::Create());
         }
-    void _RefreshSelection(ECDbCR, Utf8CP, bool, RapidJsonValueCR) override {}
+    void _RefreshSelection(ECDbCR db, Utf8CP name, bool isSub, RapidJsonValueCR extendedData) override
+        {
+        KeySetPtr curr = isSub ? m_subSelections[&db] : m_selections[&db];
+        if (curr.IsNull())
+            curr = KeySet::Create();
+        ChangeSelection(db, name, isSub, *curr, extendedData);
+        }
 public:
     TestSelectionManager(IConnectionCacheCR connections) : m_connections(connections) {}
     void SetSelection(ECDbCR ecdb, KeySetCR selection)
@@ -134,6 +140,7 @@ protected:
             m_callback(evt);
         }
 public:
+    TestSelectionChangesListener(std::function<void(SelectionChangedEventCR)> callback = nullptr) : m_callback(callback) {}
     void SetCallback(std::function<void(SelectionChangedEventCR)> callback) {m_callback = callback;}
 };
 

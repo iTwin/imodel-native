@@ -399,7 +399,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsInteger)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindInt(1, 1));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("0000000001", stmt.GetValueText(0));
@@ -413,7 +413,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsDouble)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindDouble(1, 1.11));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("0000000001.0000000011", stmt.GetValueText(0));
@@ -427,7 +427,7 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsText)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "1", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("0000000001", stmt.GetValueText(0));
@@ -441,10 +441,24 @@ TEST_F(CustomFunctionTests, GetSortingValue_PadsComplexText)
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetSortingValue(?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "a*123-b^45_c6d", IECSqlBinder::MakeCopy::No));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
     ASSERT_STREQ("a*0000000123-b^0000000045_c0000000006d", stmt.GetValueText(0));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsitest                                      Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CustomFunctionTests, GetSortingValue_LowerCasesText)
+    {
+    CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetSortingValue " (?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.BindText(1, "ABC1 abc2 Abc3 aBC4", IECSqlBinder::MakeCopy::No));
+    ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
+    ASSERT_STREQ("abc0000000001 abc0000000002 abc0000000003 abc0000000004", stmt.GetValueText(0));
     }
 
 /*=================================================================================**//**
@@ -1233,7 +1247,7 @@ TEST_F(CustomFunctionTests, AreDoublesEqualByValue_ReturnsFalse)
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesInstanceLabelOverride)
+TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesInstanceLabelOverride)
     {
     m_ruleset->AddPresentationRule(*new InstanceLabelOverride(1, true, "RulesEngineTest:Widget", "MyID"));
 
@@ -1244,7 +1258,7 @@ TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesInstanceLa
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetNavigationPropertyLabel(?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetNavigationPropertyLabel "(?, ?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, widgetInstanceID));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());
@@ -1254,12 +1268,12 @@ TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesInstanceLa
 /*---------------------------------------------------------------------------------**//**
 * @bsitest                                      Aidas.Vaiksnoras                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CustomFunctionTests, GetDisplayLabelForInstanceInHierarchy_UsesClassDisplayLabelAsDefault)
+TEST_F(CustomFunctionTests, GetNavigationPropertyLabel_UsesClassDisplayLabelAsDefault)
     {
     CustomFunctionsContext ctx(*m_schemaHelper, m_connections, *m_connection, *m_ruleset, m_userSettings, nullptr, m_schemaHelper->GetECExpressionsCache(), m_nodesFactory, nullptr, nullptr, nullptr);
 
     ECSqlStatement stmt;
-    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT GetNavigationPropertyLabel(?, ?) FROM RET.Widget"));
+    ASSERT_TRUE(ECSqlStatus::Success == stmt.Prepare(GetDb(), "SELECT " FUNCTION_NAME_GetNavigationPropertyLabel "(?, ?) FROM RET.Widget"));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(1, s_widgetClass->GetId()));
     ASSERT_TRUE(ECSqlStatus::Success == stmt.BindId(2, m_widgetInstanceId));
     ASSERT_TRUE(DbResult::BE_SQLITE_ROW == stmt.Step());

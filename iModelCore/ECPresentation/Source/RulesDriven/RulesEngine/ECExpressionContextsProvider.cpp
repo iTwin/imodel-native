@@ -126,7 +126,7 @@ public:
         if (m_key.IsValid())
             {
             // load the instance 
-            instance = ECInstancesHelper::LoadInstance(m_connection, m_key);
+            ECInstancesHelper::LoadInstance(instance, m_connection, m_key);
             }
         else if (m_key.GetClassId().IsValid())
             {
@@ -165,7 +165,8 @@ public:
             return nullptr;
 
         InstanceExpressionContextPtr instanceContext = InstanceExpressionContext::Create(nullptr);
-        IECInstancePtr instance = ECInstancesHelper::LoadInstance(m_connection, key->GetInstanceKey());
+        IECInstancePtr instance;
+        ECInstancesHelper::LoadInstance(instance, m_connection, key->GetInstanceKey());
         if (instance.IsValid())
             instanceContext->SetInstance(*instance);
         return instanceContext;
@@ -1459,8 +1460,8 @@ bvector<Utf8String> const& ECExpressionsHelper::GetUsedClasses(Utf8StringCR expr
 +---------------+---------------+---------------+---------------+---------------+------*/
 NodePtr ECExpressionsHelper::GetNodeFromExpression(Utf8CP expr)
     {
-    NodePtr node = m_cache.Get(expr);
-    if (node.IsValid())
+    NodePtr node;
+    if (SUCCESS == m_cache.Get(node, expr))
         return node;
 
     Utf8String expression = expr;
@@ -1474,30 +1475,32 @@ NodePtr ECExpressionsHelper::GetNodeFromExpression(Utf8CP expr)
     expression.ReplaceAll("~", " LIKE ");
 
     node = ECEvaluator::ParseValueExpressionAndCreateTree(expression.c_str());
-    m_cache.Add(expr, *node);
+    m_cache.Add(expr, node);
     return node;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-NodePtr ECExpressionsCache::Get(Utf8CP expression) const
+BentleyStatus ECExpressionsCache::Get(NodePtr& node, Utf8CP expression) const
     {
     auto iter = m_cache.find(expression);
     if (m_cache.end() == iter)
-        return nullptr;
-    return iter->second;
+        return ERROR;
+    node = iter->second;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-OptimizedExpressionPtr ECExpressionsCache::GetOptimized(Utf8CP expression) const
+BentleyStatus ECExpressionsCache::Get(OptimizedExpressionPtr& optimizedExpr, Utf8CP expression) const
     {
     auto iter = m_optimizedCache.find(expression);
     if (m_optimizedCache.end() == iter)
-        return nullptr;
-    return iter->second;
+        return ERROR;
+    optimizedExpr = iter->second;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1519,12 +1522,12 @@ bool ECExpressionsCache::HasOptimizedExpression(Utf8CP expression) const {return
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Add(Utf8CP expression, Node& node) {m_cache.Insert(expression, &node);}
+void ECExpressionsCache::Add(Utf8CP expression, NodePtr node) {m_cache.Insert(expression, node);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpression& node) {m_optimizedCache.Insert(expression, &node);}
+void ECExpressionsCache::Add(Utf8CP expression, OptimizedExpressionPtr node) {m_optimizedCache.Insert(expression, node);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                08/2017

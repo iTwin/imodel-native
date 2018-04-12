@@ -197,9 +197,36 @@ bvector<SpecificationContentProviderPtr> ContentCache::GetProviders(Utf8CP rules
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static void RemoveSimilarProviders(bmap<ContentProviderKey, SpecificationContentProviderPtr>& providers, ContentProviderKey const& rhs)
+    {
+    if (nullptr == rhs.GetSelectionInfo())
+        return;
+
+    for (auto entry : providers)
+        {
+        ContentProviderKey const& lhs = entry.first;
+        if (nullptr == lhs.GetSelectionInfo())
+            continue;
+        if (!lhs.GetConnectionId().Equals(rhs.GetConnectionId()))
+            continue;        
+        if (!lhs.GetRulesetId().Equals(rhs.GetRulesetId()))
+            continue;
+        if (!lhs.GetPreferredDisplayType().Equals(rhs.GetPreferredDisplayType()))
+            continue;
+        if ((*lhs.GetSelectionInfo()) == (*rhs.GetSelectionInfo()))
+            continue;
+        providers.erase(lhs);
+        return;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ContentCache::CacheProvider(ContentProviderKey key, SpecificationContentProviderR provider)
     {
+    RemoveSimilarProviders(m_providers, key);
     m_providers[key] = &provider;
     }

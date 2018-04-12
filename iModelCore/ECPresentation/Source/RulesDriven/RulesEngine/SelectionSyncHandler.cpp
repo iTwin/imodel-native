@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
-#include <ECPresentation/RulesDriven/PresentationManager.h>
+#include <ECPresentation/RulesDriven/SelectionSyncHandler.h>
 
 const Utf8CP RulesDrivenSelectionSyncHandler::SelectionExtendedData::OPTION_NAME_RulesetId = "RulesetId";
 const Utf8CP RulesDrivenSelectionSyncHandler::SelectionExtendedData::OPTION_NAME_UseSelectionScope = "UseSelectionScope";
