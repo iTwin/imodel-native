@@ -1462,7 +1462,7 @@ private:
     //! Gets the cached persistence format. Creates one based on Formatting::NumericFormatSpec::DefaultFormat() if it does not exist.
     ECOBJECTS_EXPORT NamedFormatCP GetOrCreateCachedPersistenceFormat() const;
     ECObjectsStatus ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
-    ECObjectsStatus ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
+    ECObjectsStatus ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion, bool shouldBeDefault);
     ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
     ECObjectsStatus ParseDescriptorAndAddRefs(Utf8StringR unitName, Utf8StringR formatName, ECUnitCP& unit, Utf8CP descriptor, ECSchemaReadContextP context);
 public:
@@ -1564,7 +1564,7 @@ public:
     //! @param[out] updatedDescriptor  The updated descriptor if it is able to be updated. If not it will be an empty string.
     //! @param[in] descriptor  The descriptor that is of the format for the old FUS descriptor, format: {unitName}({formatName}), where the format part is optional.
     //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
-    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptor(Utf8StringR updatedDescriptor, Utf8CP descriptor);
+    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR unitName, Utf8StringR formatString, Utf8CP persFus, Utf8CP presFuses);
 };
 
 //=======================================================================================

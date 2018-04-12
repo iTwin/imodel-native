@@ -269,36 +269,86 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
 //--------------------------------------------------------------------------------------
 TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     {
-    Utf8String descriptor;
+    Utf8String persUnit;
+    Utf8String presString;
     {
-    descriptor.clear();
-    EXPECT_EQ(ECObjectsStatus::NullPointerValue, KindOfQuantity::UpdateFUSDescriptor(descriptor, nullptr));
-    EXPECT_TRUE(descriptor.empty());
+    persUnit.clear();
+    presString.clear();
+    EXPECT_EQ(ECObjectsStatus::NullPointerValue, KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, nullptr, nullptr));
+    EXPECT_EQ(ECObjectsStatus::NullPointerValue, KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, nullptr, ""));
+    EXPECT_EQ(ECObjectsStatus::NullPointerValue, KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "", ""));
+    EXPECT_EQ(ECObjectsStatus::NullPointerValue, KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "", presString.c_str()));
+    EXPECT_TRUE(persUnit.empty());
+    EXPECT_TRUE(presString.empty());
     }
     {
-    descriptor.clear();
-    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, KindOfQuantity::UpdateFUSDescriptor(descriptor, "badDescriptor"));
-    EXPECT_TRUE(descriptor.empty());
+    persUnit.clear();
+    presString.clear();
+    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "badUnit", "MM"));
+    EXPECT_TRUE(persUnit.empty());
+    EXPECT_TRUE(presString.empty());
     }
     {
-    descriptor.clear();
-    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptor(descriptor, "CM"));
-    EXPECT_STREQ("u:CM", descriptor.c_str());
+    persUnit.clear();
+    presString.clear();
+    EXPECT_EQ(ECObjectsStatus::InvalidUnitName, KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM", "badUnit"));
+    EXPECT_TRUE(persUnit.empty());
+    EXPECT_TRUE(presString.empty());
     }
     {
-    descriptor.clear();
-    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptor(descriptor, "DEG/HR"));
-    EXPECT_STREQ("u:DEG_PER_HR", descriptor.c_str());
+    persUnit.clear();
+    presString.clear();
+    EXPECT_EQ(ECObjectsStatus::InvalidFormat, KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM", "MM(KindOfFormat)"));
+    EXPECT_TRUE(persUnit.empty());
+    EXPECT_TRUE(presString.empty());
     }
     {
-    descriptor.clear();
-    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptor(descriptor, "CM(DefaultReal)"));
-    EXPECT_STREQ("u:CM(DefaultReal)", descriptor.c_str());
+    persUnit.clear();
+    presString.clear();
+    EXPECT_EQ(ECObjectsStatus::InvalidFormat, KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM(KindOfFormat)", "MM"));
+    EXPECT_TRUE(persUnit.empty());
+    EXPECT_TRUE(presString.empty());
     }
     {
-    descriptor.clear();
-    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptor(descriptor, "CM(InvalidFormat)"));
-    EXPECT_STREQ("u:CM(InvalidFormat)", descriptor.c_str());
+    persUnit.clear();
+    presString.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM", nullptr));
+    EXPECT_STRCASEEQ("u:MM", persUnit.c_str());
+    }
+    {
+    persUnit.clear();
+    presString.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM(real)", nullptr));
+    EXPECT_STRCASEEQ("u:MM", persUnit.c_str());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:MM|]", presString.c_str());
+    }
+    {
+    persUnit.clear();
+    presString.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM(real)", "CM"));
+    EXPECT_STRCASEEQ("u:MM", persUnit.c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU[u:CM|];f:DefaultReal[u:MM|]", presString.c_str());
+    }
+    {
+    persUnit.clear();
+    presString.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM(real)", "CM(real4u)"));
+    EXPECT_STRCASEEQ("u:MM", persUnit.c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU<4>[u:CM|];f:DefaultReal[u:MM|]", presString.c_str());
+    }
+    {
+    persUnit.clear();
+    presString.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM", "CM(real4u)"));
+    EXPECT_STRCASEEQ("u:MM", persUnit.c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU<4>[u:CM|];f:DefaultRealU[u:MM|]", presString.c_str());
+    }
+    {
+    persUnit.clear();
+    presString.clear();
+    EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM(real)", "DM(real);CM(real4u)"));
+    EXPECT_STRCASEEQ("u:MM", persUnit.c_str());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:DM|];f:DefaultRealU<4>[u:CM|];f:DefaultReal[u:MM|]", presString.c_str());
     }
     }
 

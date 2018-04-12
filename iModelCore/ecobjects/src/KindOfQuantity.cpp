@@ -403,10 +403,12 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         {
         bvector<Utf8String> presentationFormats;
         BeStringUtilities::Split(value.c_str(), ";", presentationFormats);
+        bool first = true;
         for(auto const& presValue : presentationFormats)
             {
-            if (ECObjectsStatus::Success != ParsePresentationUnit(presValue.c_str(), context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor()))
+            if (ECObjectsStatus::Success != ParsePresentationUnit(presValue.c_str(), context, GetSchema().GetOriginalECXmlVersionMajor(), GetSchema().GetOriginalECXmlVersionMinor(), first))
                 return SchemaReadStatus::InvalidECSchemaXml; // Logging in ParsePresentationUnit
+            first = false;
             }
         }
     return SchemaReadStatus::Success;
@@ -415,16 +417,10 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR formatName, Utf8CP descriptor, KindOfQuantityCR koq)
+static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR formatName, Utf8CP descriptor)
     {
     Formatting::Format::ParseUnitFormatDescriptor(unitName, formatName, descriptor);
     unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
-    if (unitName.empty())
-        {
-        LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
-            descriptor, koq.GetFullName().c_str(), unitName.c_str());
-        return ECObjectsStatus::Error;
-        }
     Utf8CP mappedName;
     if (Utf8String::IsNullOrEmpty(formatName.c_str()))
         mappedName = formatName.c_str();
@@ -449,7 +445,13 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
 //--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::ParseDescriptorAndAddRefs(Utf8StringR unitName, Utf8StringR formatName, ECUnitCP& unit, Utf8CP descriptor, ECSchemaReadContextP context)
     {
-    ExtractUnitFormatAndMap(unitName, formatName, descriptor, *this);
+    ExtractUnitFormatAndMap(unitName, formatName, descriptor);
+    if (unitName.empty())
+        {
+        LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
+            descriptor, GetFullName().c_str(), unitName.c_str());
+        return ECObjectsStatus::Error;
+        }
     Utf8String alias;
     ECClass::ParseClassName(alias, unitName, unitName);
     SchemaKey key("Units", 1, 0, 0);
@@ -552,7 +554,7 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion)
+ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion, bool shouldBeDefault)
     {
     bool xmlLessThan32 = (3 == ecXmlMajorVersion && 2 > ecXmlMinorVersion);
 
@@ -607,7 +609,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             return ECObjectsStatus::Error;
             }
 
-        AddPresentationFormatSingleUnitOverride(*format, precision, format->HasCompositeMajorUnit() ? nullptr : unit);
+        AddPresentationFormatSingleUnitOverride(*format, precision, format->HasCompositeMajorUnit() ? nullptr : unit, nullptr, shouldBeDefault);
         }
     else // >= 3.2
         {
@@ -641,7 +643,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
                 return ECObjectsStatus::Error;
                 }
             }
-        AddPresentationFormat(*format, precision, &unitsAndLabels);
+        AddPresentationFormat(*format, precision, &unitsAndLabels, shouldBeDefault);
         }
     return ECObjectsStatus::Success;
     }
@@ -650,43 +652,96 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus KindOfQuantity::UpdateFUSDescriptor(Utf8StringR updatedDescriptor, Utf8CP descriptor)
+ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8StringR formatString, Utf8CP persFus, Utf8CP presFuses)
     {
-    updatedDescriptor.clear();
-
-    if (nullptr == descriptor)
+    unitName.clear();
+    formatString.clear();
+    if (Utf8String::IsNullOrEmpty(persFus))
         return ECObjectsStatus::NullPointerValue;
 
-    Utf8String unitName;
-    Utf8String format;
-    Formatting::Format::ParseUnitFormatDescriptor(unitName, format, descriptor);
+    //Persistence
+    Utf8String persistenceUnit;
+    Utf8String persistenceFormat;
+    if (ECObjectsStatus::Success != ExtractUnitFormatAndMap(persistenceUnit, persistenceFormat, persFus))
+        return ECObjectsStatus::InvalidFormat;
 
-    if (unitName.size() <= 0)
-        return ECObjectsStatus::InvalidUnitName;
-
-    unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
-    if (unitName.empty())
-        return ECObjectsStatus::InvalidUnitName;
-
-    Utf8String alias;
-    Utf8String name;
-    ECClass::ParseClassName(alias, name, unitName);
-
-    ECUnitCP unit = StandardUnitsHelper::GetSchema()->GetUnitCP(name.c_str());
-    if (nullptr == unit)
-        return ECObjectsStatus::InvalidUnitName;
-
-    updatedDescriptor
-        .append("u:")
-        .append(unit->GetName().c_str());
-
-    if (format.size() > 0)
+    if (persistenceUnit.empty())
         {
-        updatedDescriptor.append("(")
-        .append(format.c_str())
-        .append(")");
+        LOG.errorv("In UpdateFUSDescriptors could not parse and map persistence unit in FUS '%s'", persFus);
+        return ECObjectsStatus::InvalidUnitName;
         }
 
+    if (persistenceFormat.empty())
+        persistenceFormat = Formatting::FormatConstant::DefaultFormatName();
+    Utf8String alias;
+    Utf8String unqualifiedPers;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPers, persistenceUnit))
+        return ECObjectsStatus::Error;
+
+    Utf8String outFormatString;
+    if (!Utf8String::IsNullOrEmpty(presFuses))
+        { 
+        // Presentation
+        Utf8String presentationUnit;
+        Utf8String presentationFormat;
+        bvector<Utf8String> split;
+        BeStringUtilities::Split(presFuses, ";", split);
+        bool first = true;
+
+        for (const auto& str : split)
+            {
+            if (ECObjectsStatus::Success != ExtractUnitFormatAndMap(presentationUnit, presentationFormat, str.c_str()))
+                return ECObjectsStatus::InvalidFormat;
+
+            if (presentationUnit.empty())
+                {
+                LOG.errorv("In UpdateFUSDescriptors could not parse and map presentation unit in FUS '%s'", str.c_str());
+                return ECObjectsStatus::InvalidUnitName;
+                }
+
+            if (presentationFormat.empty())
+                presentationFormat = Formatting::FormatConstant::DefaultFormatName();
+
+            Utf8String unqualifiedPres;
+            if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPres, presentationUnit))
+                return ECObjectsStatus::Error;
+
+            Utf8String unqualifiedPresFormat;
+            if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPresFormat, presentationFormat))
+                return ECObjectsStatus::Error;
+
+            if (!first)
+                outFormatString.append(";");
+            outFormatString
+                .append("f:")
+                .append(unqualifiedPresFormat);
+            outFormatString
+                .append("[")
+                .append("u:")
+                .append(unqualifiedPres)
+                .append("|]");
+            first = false;
+            }
+        }
+
+    // If we have a persistence FUS with a specified format. Put it at the end
+    if (!persistenceFormat.empty())
+        {
+        Utf8String unqualifiedPersFormat;
+        if(ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPersFormat, persistenceFormat))
+            return ECObjectsStatus::Error;
+        if (!outFormatString.empty())
+            outFormatString.append(";");
+        outFormatString
+            .append("f:")
+            .append(unqualifiedPersFormat)
+            .append("[")
+            .append("u:")
+            .append(unqualifiedPers)
+            .append("|]");
+        }
+    formatString = outFormatString;
+    unitName = "u:" + unqualifiedPers;
     return ECObjectsStatus::Success;
     }
 
