@@ -61,7 +61,7 @@ DVec3d ExtrusionManipulationStrategy::CalculateSweepDirection
     DPlane3d basePlane = m_baseShapeManipulationStrategy->GetWorkingPlane();
 
     DVec3d planeTranslation = basePlane.normal;
-    planeTranslation.ScaleToLength(m_height);
+    planeTranslation.ScaleToLength(GetHeight());
 
     DPoint3d topPlaneOrigin = basePlane.origin;
     topPlaneOrigin.Add(planeTranslation);
@@ -89,19 +89,31 @@ void ExtrusionManipulationStrategy::_AppendDynamicKeyPoint
         return;
         }
 
-    if (!m_heightSet)
+    if (!m_heightSet && !m_dynamicHeightSet)
         {
         m_dynamicHeight = CalculateHeight(newDynamicKeyPoint);
         m_dynamicHeightSet = true;
         return;
         }
 
-    if (!m_sweepDirectionSet)
+    if (!m_sweepDirectionSet && !m_dynamicSweepDirectionSet)
         {
         m_dynamicSweepDirection = CalculateSweepDirection(newDynamicKeyPoint);
         m_dynamicSweepDirectionSet = true;
         return;
         }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_AppendDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    for (DPoint3d const& newDynamicKeyPoint : newDynamicKeyPoints)
+        _AppendDynamicKeyPoint(newDynamicKeyPoint);
     }
 
 //--------------------------------------------------------------------------------------
@@ -339,6 +351,18 @@ BentleyStatus ExtrusionManipulationStrategy::_TryGetProperty
     if (0 == strcmp(key, prop_IsSweepDirectionSet()))
         {
         value = m_sweepDirectionSet;
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp(key, prop_IsDynamicHeightSet()))
+        {
+        value = m_dynamicHeightSet;
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp(key, prop_IsDynamicSweepDirectionSet()))
+        {
+        value = m_dynamicSweepDirectionSet;
         return BentleyStatus::SUCCESS;
         }
 

@@ -111,6 +111,7 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
         virtual GeometryManipulationStrategyR _GetBaseShapeManipulationStrategyForEdit() { return *m_baseShapeManipulationStrategy; }
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _PopKeyPoint() override;
@@ -140,7 +141,9 @@ struct ExtrusionManipulationStrategy : public SolidPrimitiveManipulationStrategy
         static constexpr Utf8CP prop_ContinuousBaseShapePrimitiveComplete() { return "ContinuousBaseShapePrimitiveComplete"; }
         static constexpr Utf8CP prop_Height() { return "Height"; }
         static constexpr Utf8CP prop_IsHeightSet() { return "IsHeightSet"; }
+        static constexpr Utf8CP prop_IsDynamicHeightSet() { return "IsDynamicHeightSet"; }
         static constexpr Utf8CP prop_IsSweepDirectionSet() { return "IsSweepDirectionSet"; }
+        static constexpr Utf8CP prop_IsDynamicSweepDirectionSet() { return "IsDynamicSweepDirectionSet"; }
         static constexpr Utf8CP prop_SweepDirection() { return "SweepDirection"; }
 
         static ExtrusionManipulationStrategyPtr Create() { return new ExtrusionManipulationStrategy(); }
