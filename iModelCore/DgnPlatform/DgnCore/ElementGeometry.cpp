@@ -4873,7 +4873,7 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic, Geom
     {
     DRange3d localRange = localRangeIn;
 
-    // NOTE: Expand range to include line style width. Maybe this should be removed when/if we start doing locate from mesh tiles...
+    // NOTE: Expand range to include line style width.
     if (m_elParams.GetCategoryId().IsValid())
         {
         m_elParams.Resolve(m_dgnDb);
