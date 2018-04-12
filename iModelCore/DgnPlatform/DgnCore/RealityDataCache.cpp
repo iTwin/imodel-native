@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RealityDataCache.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -111,6 +111,12 @@ BentleyStatus Cache::OpenAndPrepare(BeFileNameCR fileName)
         {
         Db::CreateParams createParams(Db::PageSize::PAGESIZE_4K, Db::Encoding::Utf8, false, DefaultTxn::Yes);
         if (BeSQLite::BE_SQLITE_OK != (result = m_db.CreateNewDb(fileName, BeSQLite::BeGuid(true), createParams)))
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        if (SUCCESS != _Initialize())
             {
             BeAssert(false);
             return ERROR;

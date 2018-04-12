@@ -505,6 +505,24 @@ BentleyStatus TileCache::_Prepare() const
     if (m_db.TableExists(TABLE_NAME_TileTreeCreateTime))
         {
         BeAssert(m_db.TableExists(TABLE_NAME_TileTree));
+
+        if (!_ValidateData())
+            {
+            // The db schema is current, but the binary data format is not. Discard it.
+            CachedStatementPtr stmt;
+            m_db.GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime);
+            if (BE_SQLITE_DONE != stmt->Step())
+                {
+                BeAssert(false && "Failed to delete contents of TileTreeCreateTime table");
+                }
+
+            m_db.GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree);
+            if (BE_SQLITE_DONE != stmt->Step())
+                {
+                BeAssert(false && "Failed to delete contents of TileTree table");
+                }
+            }
+
         return SUCCESS;
         }
         
@@ -908,8 +926,8 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
 
     // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
     Frustum box(range);
-    box = box.TransformBy(args.GetLocation());
-    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box);
+    Frustum worldBox = box.TransformBy(args.GetLocation());
+    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(worldBox);
     bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
     return isOutside || clipped;
     }
@@ -1629,7 +1647,7 @@ void Root::OnUpdateRangeIndex(DRange3dCR oldRange, DRange3dCR newRange, DgnEleme
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::InvalidateDamagedTiles()
     {
-    DgnDb::VerifyClientThread();
+    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
     BeAssert(m_rootTile.IsValid());
 
     BeMutexHolder lock(m_cv.GetMutex());

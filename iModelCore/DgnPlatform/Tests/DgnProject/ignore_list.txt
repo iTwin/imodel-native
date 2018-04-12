@@ -37,9 +37,6 @@ TransactionManagerTests.TestRelationshipLinkTableTracking
 # Waiting to hear from Krischan and Affan as to whether we expect the source's NavigationProperty value to be nulled out automatically when the target element is deleted.
 DgnElementTests.NavigationPropertyOnTargetDelete
 
-#TFS 697010
-CompatibilityTests.ModifyBaseline       #crashing with repeat
-
 PerformanceElementsTests.ElementsInsertStrategies   #it was a disable test
 DgnChangeSummaryTestFixture.CreateSampleDataSet     #it was a disable test
 DgnChangeSummaryTestFixture.ValidateChangeSummaries  #it was a disable test
@@ -481,7 +478,6 @@ ECInstancesCompatibility.ReadInstances
     # [  FAILED  ] ECInstancesCompatibility.ReadInstances (385 ms)
 
 # Fails in Release
-MeshBuilderTest.RoundTripMeshBuilders
 DgpLiteralExpressionTests.DgnMiscSymbols
 
     # TFS#800308
@@ -555,3 +551,4 @@ RevisionTestFixture.MoreWorkflow
     # 2018-03-27 23:54:22,765 ERROR [0x000029f0] BeSQLite - Cannot close database 'c:\build\outA\mds06t_2018-03-27_23-05-38\out\Winx64\Product\DgnPlatform-Gtest\run\Output\RevisionTestFixture\MoreWorkflow.bim'
     # c:\build\src\mds06t\BeGTest\gtest\BeGTestExe.cpp(263): error: Failed
     # This test called BeTest::SetFailOnAssert(false) and failed to call it again with true.
+

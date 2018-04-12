@@ -1253,7 +1253,8 @@ T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
     else
         {
         for (auto& glyphCurve : m_glyphCurves)
-            addRegion(*polyfaceBuilder, *glyphCurve);
+            if (glyphCurve->IsAnyRegionType())
+                addRegion(*polyfaceBuilder, *glyphCurve);
         }
 
     PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
@@ -1743,6 +1744,10 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
         {
         bvector<PolyfaceHeaderPtr>  polyfaces;
         bvector<FaceAttachment>     params;
+        NullContext                 nullContext;        // Needed to cook faceParams.
+
+        nullContext.SetDgnDb(m_db);
+
 
         if (!BRepUtil::FacetEntity(*m_entity, polyfaces, params, *pFacetOptions))
             return TileGeometry::T_TilePolyfaces();;
@@ -1759,12 +1764,14 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
             auto&   polyface = polyfaces[i];
 
             if (polyface->HasFacets())
-                {                                                                    
+                {
                 GeometryParams faceParams;
                 params[i].ToGeometryParams(faceParams, baseParams);
-                faceParams.Resolve(m_db);
 
-                TileDisplayParamsCPtr displayParams = TileDisplayParams::Create(GetDisplayParams().GetColor(), faceParams);
+                GraphicParams gfParams;
+                nullContext.CookGeometryParams(faceParams, gfParams);
+
+                TileDisplayParamsCPtr displayParams = TileDisplayParams::Create(gfParams.GetFillColor().GetValue(), faceParams);
                 tilePolyfaces.push_back (TileGeometry::TilePolyface (*displayParams, *polyface));
                 }
             }
@@ -1961,7 +1968,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             })
         .then([=](GenerateTileResult result)
             {
-            if (result.m_tile.IsValid())
+            if (result.m_tile.IsValid() && TileGeneratorStatus::Success == result.m_status)
                 m_totalTiles += result.m_tile->GetNodeCount();
 
             m_progressMeter._IndicateProgress(++m_completedModels, m_totalModels);

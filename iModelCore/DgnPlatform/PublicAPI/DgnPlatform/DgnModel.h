@@ -1108,6 +1108,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionModel : InformationModel
     DGNMODEL_DECLARE_MEMBERS(BIS_CLASS_DefinitionModel, InformationModel);
     friend struct dgn_ModelHandler::Definition;
 
+private:
+    static DefinitionModelPtr Create(DgnDbR db, DgnElementId modeledElementId);
+
 protected:
     DefinitionModelCP _ToDefinitionModel() const override final {return this;}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsertElement(DgnElementR element) override;
@@ -1117,6 +1120,9 @@ protected:
 public:
     DGNPLATFORM_EXPORT static DefinitionModelPtr Create(DefinitionPartitionCR modeledElement);
     DGNPLATFORM_EXPORT static DefinitionModelPtr CreateAndInsert(DefinitionPartitionCR modeledElement);
+
+    DGNPLATFORM_EXPORT static DefinitionModelPtr Create(DefinitionElementCR modeledElement);
+    DGNPLATFORM_EXPORT static DefinitionModelPtr CreateAndInsert(DefinitionElementCR modeledElement);
 };
 
 //=======================================================================================

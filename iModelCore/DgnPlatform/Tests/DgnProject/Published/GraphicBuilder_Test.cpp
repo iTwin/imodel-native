@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/GraphicBuilder_Test.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
@@ -258,6 +258,7 @@ struct MeshBuilderTest : GraphicProcessorTest
 protected:
     FeatureTable    m_features;
     MeshBuilderMap  m_builders;
+    DRange3d        m_range;
     uint64_t        m_curElemId = 0ull;
 
     MeshBuilderTest() : m_features(DgnModelId(), 100) { } // m_defaultModelId not initialized yet - we don't care about the model ID anyway.
@@ -293,6 +294,8 @@ protected:
             TestContext context(*this);
             GeometryOptions opts;
             m_test.m_builders = accum.ToMeshBuilders(opts, ComputeTolerance(accum), &m_test.m_features, context);
+            m_test.m_range = m_test.m_builders.GetRange();
+            BeAssert(!m_test.m_range.IsNull());
 
             return GetSystem()._CreateGraphicList(std::move(m_primitives), GetDgnDb());
             }
@@ -341,7 +344,7 @@ protected:
     template<typename T> void RoundTripGeometryCollection(T populateGraphic);
     template<typename T> void RoundTripMeshBuilders(T populateGraphic);
 
-    void RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, DgnElementIdSet const& skipElems, size_t nTotalElems);
+    void RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, DgnElementIdSet const& skipElems, DgnElementIdSet const& totalElems);
 
     void ExpectEqualGeometry(TileTree::StreamBufferR baseline, TileTree::StreamBufferR comparand);
     void ExpectEqualGeometry(Render::Primitives::GeometryCollectionR base, Render::Primitives::GeometryCollectionR comp);
@@ -357,6 +360,12 @@ protected:
     void ExpectEqualPolylineLists(PolylineList const&, PolylineList const&, MeshCR, MeshCR);
     void ExpectEqualVertexLists(bvector<uint32_t> const&, bvector<uint32_t> const&, MeshCR, MeshCR);
     void ExpectEqualVertices(MeshCR, MeshCR, uint32_t, uint32_t, FeatureIndex const&, FeatureIndex const&);
+
+    bool AreEqualPolylines(MeshPolyline const&, MeshPolyline const&, MeshCR, MeshCR);
+    bool AreEqualVertexLists(bvector<uint32_t> const&, bvector<uint32_t> const&, MeshCR, MeshCR);
+    bool AreEqualVertices(MeshCR, MeshCR, uint32_t, uint32_t, FeatureIndex const&, FeatureIndex const&);
+    static bool AreEqualPoints(DPoint3dCR base, DPoint3dCR comp) { return base.AlmostEqual(comp); }
+    static bool AreEqualPoints(FPoint2dCR base, FPoint2dCR comp) { DPoint2d dbase = DPoint2d::From(base.x, base.y); return dbase.AlmostEqual(DPoint2d::From(comp.x, comp.y)); }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -371,8 +380,9 @@ void MeshBuilderTest::ExpectEqualGeometry(TileTree::StreamBufferR base, TileTree
 
     base.SetPos(0);
     comp.SetPos(0);
-    EXPECT_TRUE(TileTree::IO::ReadStatus::Success == TileTree::IO::ReadDgnTile(baseRange, baseGeom, base, model, m_system, baseIsLeaf));
-    EXPECT_TRUE(TileTree::IO::ReadStatus::Success == TileTree::IO::ReadDgnTile(compRange, compGeom, comp, model, m_system, compIsLeaf));
+    DRange3d unusedRange;
+    EXPECT_TRUE(TileTree::IO::ReadStatus::Success == TileTree::IO::ReadDgnTile(baseRange, baseGeom, base, model, m_system, baseIsLeaf, unusedRange));
+    EXPECT_TRUE(TileTree::IO::ReadStatus::Success == TileTree::IO::ReadDgnTile(compRange, compGeom, comp, model, m_system, compIsLeaf, unusedRange));
 
     ExpectEqualRange(baseRange, compRange);
     EXPECT_EQ(baseIsLeaf, compIsLeaf);
@@ -484,7 +494,7 @@ void MeshBuilderTest::ExpectEqualMeshEdgeLists(bvector<MeshEdge> const& base, bv
         {
         baseIndices[0] = base[i].m_indices[0];
         baseIndices[1] = base[i].m_indices[1];
-        baseIndices[0] = base[i].m_indices[0];
+        compIndices[0] = comp[i].m_indices[0];
         compIndices[1] = comp[i].m_indices[1];
 
         ExpectEqualVertexLists(baseIndices, compIndices, baseMesh, compMesh);
@@ -544,17 +554,42 @@ void MeshBuilderTest::ExpectEqualPolylineLists(MeshCR baseMesh, MeshCR compMesh)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilderTest::ExpectEqualPolylineLists(PolylineList const& basePolylines, PolylineList const& compPolylines, MeshCR baseMesh, MeshCR compMesh)
     {
+    ASSERT_EQ(basePolylines.size(), compPolylines.size());
+
+    // NB: The order of the polylines may differ...
+    bvector<bool> matched(basePolylines.size());
     for (size_t i = 0; i < basePolylines.size(); i++)
         {
+        size_t matchIndex = basePolylines.size();
         MeshPolyline const& base = basePolylines[i];
-        MeshPolyline const& comp = compPolylines[i];
+        for (size_t j = 0; j < basePolylines.size(); j++)
+            {
+            if (matched[j])
+                continue;
 
-        ASSERT_EQ(base.GetIndices().size(), comp.GetIndices().size());
-        EXPECT_EQ(base.GetStartDistance(), comp.GetStartDistance());
-        ExpectEqualPoints(base.GetRangeCenter(), comp.GetRangeCenter());
+            MeshPolyline const& comp = compPolylines[j];
+            if (AreEqualPolylines(base, comp, baseMesh, compMesh))
+                {
+                matchIndex = j;
+                break;
+                }
+            }
 
-        ExpectEqualVertexLists(base.GetIndices(), comp.GetIndices(), baseMesh, compMesh);
+        ASSERT_TRUE(matchIndex < basePolylines.size());
+        ASSERT_FALSE(matched[matchIndex]);
+        matched[matchIndex] = true;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MeshBuilderTest::AreEqualPolylines(MeshPolyline const& base, MeshPolyline const& comp, MeshCR baseMesh, MeshCR compMesh)
+    {
+    if (base.GetStartDistance() != comp.GetStartDistance() || !AreEqualPoints(base.GetRangeCenter(), comp.GetRangeCenter()))
+        return false;
+
+    return AreEqualVertexLists(base.GetIndices(), comp.GetIndices(), baseMesh, compMesh);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -573,6 +608,28 @@ void MeshBuilderTest::ExpectEqualVertexLists(bvector<uint32_t> const& base, bvec
 
     for (size_t i = 0; i < base.size(); i++)
         ExpectEqualVertices(baseMesh, compMesh, base[i], comp[i], baseFeatureIndex, compFeatureIndex);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MeshBuilderTest::AreEqualVertexLists(bvector<uint32_t> const& base, bvector<uint32_t> const& comp, MeshCR baseMesh, MeshCR compMesh)
+    {
+    if (base.size() != comp.size())
+        return false;
+
+    FeatureIndex baseFeatureIndex, compFeatureIndex;
+    baseMesh.ToFeatureIndex(baseFeatureIndex);
+    compMesh.ToFeatureIndex(compFeatureIndex);
+
+    if (baseFeatureIndex.IsEmpty() != compFeatureIndex.IsEmpty() || baseFeatureIndex.IsUniform() != compFeatureIndex.IsUniform())
+        return false;
+
+    for (size_t i = 0; i < base.size(); i++)
+        if (!AreEqualVertices(baseMesh, compMesh, base[i], comp[i], baseFeatureIndex, compFeatureIndex))
+            return false;
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -612,6 +669,42 @@ void MeshBuilderTest::ExpectEqualVertices(MeshCR base, MeshCR comp, uint32_t bas
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MeshBuilderTest::AreEqualVertices(MeshCR base, MeshCR comp, uint32_t baseIndex, uint32_t compIndex, FeatureIndex const& baseFeatIdx, FeatureIndex const& compFeatIdx)
+    {
+    if (base.Points()[baseIndex] != comp.Points()[compIndex])
+        return false;
+
+    if (base.Normals().empty() != comp.Normals().empty() || (!base.Normals().empty() && base.Normals()[baseIndex] != comp.Normals()[compIndex]))
+        return false;
+
+    if (base.Params().empty() != comp.Params().empty() || (!base.Params().empty() && !AreEqualPoints(base.Params()[baseIndex], comp.Params()[compIndex])))
+        return false;
+
+    if (base.Colors().empty() != comp.Colors().empty() || (!base.Colors().empty() && base.Colors()[baseIndex] != comp.Colors()[compIndex]))
+        return false;
+
+    uint32_t baseFeatureId, compFeatureId;
+    if (baseFeatIdx.IsUniform())
+        {
+        baseFeatureId = baseFeatIdx.m_featureID;
+        compFeatureId = compFeatIdx.m_featureID;
+        }
+    else
+        {
+        baseFeatureId = baseFeatIdx.m_featureIDs[baseIndex];
+        compFeatureId = compFeatIdx.m_featureIDs[compIndex];
+        }
+
+    Feature baseFeat, compFeat;
+    if (!base.GetFeatureTable()->FindFeature(baseFeat, baseFeatureId) || !comp.GetFeatureTable()->FindFeature(compFeat, compFeatureId))
+        return false;
+
+    return baseFeat == compFeat;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Test that we can write a GeometryCollection to a binary+json stream, read it back,
 * and obtain an equivalent GeometryCollection.
 * @bsimethod                                                    Paul.Connelly   10/17
@@ -635,7 +728,8 @@ template<typename T> void MeshBuilderTest::RoundTripGeometryCollection(T populat
     Render::Primitives::GeometryCollection readGeom;
     bool readIsLeaf = false;
     writeBytes.SetPos(0);
-    EXPECT_TRUE(TileTree::IO::ReadStatus::Success == TileTree::IO::ReadDgnTile(readContentRange, readGeom, writeBytes, model, m_system, readIsLeaf));
+    DRange3d unusedRange;
+    EXPECT_TRUE(TileTree::IO::ReadStatus::Success == TileTree::IO::ReadDgnTile(readContentRange, readGeom, writeBytes, model, m_system, readIsLeaf, unusedRange));
 
     EXPECT_EQ(isLeaf, readIsLeaf);
     EXPECT_EQ(geom.Meshes().size(), readGeom.Meshes().size());
@@ -676,29 +770,31 @@ template<typename T> void MeshBuilderTest::RoundTripMeshBuilders(T populateGraph
     EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(writeBytes, contentRange, geom, model, centroid, true));
 
     // Round-trip, omitting no elements
-    RoundTripMeshBuilders(writeBytes, DgnElementIdSet(), nFeatures);
+    RoundTripMeshBuilders(writeBytes, DgnElementIdSet(), allElemIds);
 
     // Round-trip, omitting all elements
-    RoundTripMeshBuilders(writeBytes, allElemIds, nFeatures);
+    RoundTripMeshBuilders(writeBytes, allElemIds, allElemIds);
 
     // Round-trip, omitting one element
     DgnElementIdSet skipElems;
     skipElems.insert(*allElemIds.begin());
-    RoundTripMeshBuilders(writeBytes, skipElems, nFeatures);
+    RoundTripMeshBuilders(writeBytes, skipElems, allElemIds);
 
     // Round-trip, omitting all but one element
     skipElems = allElemIds;
     skipElems.erase(*allElemIds.begin());
-    RoundTripMeshBuilders(writeBytes, skipElems, nFeatures);
+    RoundTripMeshBuilders(writeBytes, skipElems, allElemIds);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilderTest::RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, DgnElementIdSet const& skipElems, size_t nTotalElems)
+void MeshBuilderTest::RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, DgnElementIdSet const& skipElems, DgnElementIdSet const& allElems)
     {
     // Read into mesh builder map
     m_builders.clear();
+    m_builders.SetRange(m_range);
+    BeAssert(!m_range.IsNull());
     m_features.clear();
     TileTree::IO::DgnTile::Flags flags;
     writeBytes.SetPos(0);
@@ -706,6 +802,7 @@ void MeshBuilderTest::RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, 
     EXPECT_EQ(TileTree::IO::ReadStatus::Success, TileTree::IO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, skipElems));
 
     // Confirm we really skipped the elems specified
+    size_t nTotalElems = allElems.size();
     EXPECT_EQ(nTotalElems - skipElems.size(), m_features.size());
     for (auto const& skipElem : skipElems)
         {
@@ -722,9 +819,26 @@ void MeshBuilderTest::RoundTripMeshBuilders(TileTree::StreamBufferR writeBytes, 
     TileTree::StreamBuffer roundTripBytes;
     EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(roundTripBytes, readContentRange, geom, model, readCentroid, true));
     if (skipElems.empty())
+        {
         ExpectEqualGeometry(writeBytes, roundTripBytes);
+        }
     else
+        {
         EXPECT_TRUE(roundTripBytes.size() < writeBytes.size());
+
+        // Now merge back in all the elements which were omitted and confirm same geometry produced.
+        DgnElementIdSet invSkipElems;
+        for (auto const& elemId : allElems)
+            if (skipElems.end() == skipElems.find(elemId))
+                invSkipElems.insert(elemId);
+
+        writeBytes.SetPos(0);
+        EXPECT_EQ(TileTree::IO::ReadStatus::Success, TileTree::IO::ReadDgnTile(m_builders, writeBytes, model, m_system, flags, invSkipElems));
+        auto geom = GetGeometryCollection(readContentRange, readCentroid);
+        TileTree::StreamBuffer mergeBytes;
+        EXPECT_EQ(SUCCESS, TileTree::IO::WriteDgnTile(mergeBytes, readContentRange, geom, model, readCentroid, true));
+        ExpectEqualGeometry(writeBytes, mergeBytes);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

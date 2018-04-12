@@ -8,6 +8,7 @@
 #include "DgnPlatformInternal.h"
 #include <Bentley/BeTest.h> // *** WIP_TEST_PERFORMANCE_PROJECT - this is temporary. Remove when we have cleaned up unit tests
 #include <DgnPlatform/DgnGeoCoord.h>
+#include <DgnPlatform/ElementTileTree.h>
 
 #ifndef NDEBUG
 #define CHECK_NON_NAVIGATION_PROPERTY_API
@@ -55,12 +56,10 @@ DgnDb::DgnDb() : m_profileVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_do
 +---------------+---------------+---------------+---------------+---------------+------*/
 RealityData::CachePtr DgnDb::ElementTileCache() const
     {
-    if (!m_elementTileCache.IsValid())
+    if (m_elementTileCache.IsNull())
         {
-        BeFileName cacheName = T_HOST.GetTileAdmin()._GetElementCacheFileName(*this);
-        m_elementTileCache = new TileTree::TileCache(1024*1024*1024);
-        if (SUCCESS != m_elementTileCache->OpenAndPrepare(cacheName))
-            m_elementTileCache = nullptr;
+        m_elementTileCache = ElementTileTree::TileCache::Create(*this);
+        BeAssert(m_elementTileCache.IsValid());
         }
 
     return m_elementTileCache;
@@ -212,9 +211,61 @@ DbResult DgnDb::_OnDbOpening()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/17
 //--------------------------------------------------------------------------------------
-DbResult DgnDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
+DbResult DgnDb::_OnBeforeSetAsMaster(BeSQLite::BeGuid guid)
     {
-    DbResult result = T_Super::_OnBriefcaseIdAssigned(newBriefcaseId);
+    DbResult result = T_Super::_OnBeforeSetAsMaster(guid);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    // Save and restore the parentChangeSetId and initialParentChangeSetId if a checkpoint was 
+    // created with the briefcase. Otherwise, these Ids are lost when the entire local table 
+    // are cleared.
+    if (GetDbGuid() == guid)
+        BackupParentChangeSetIds();
+    else
+        InitParentChangeSetIds();
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_OnAfterSetAsMaster(BeSQLite::BeGuid guid)
+    {
+    DbResult result = T_Super::_OnAfterSetAsMaster(guid);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    BeBriefcaseId masterBriefcaseId(BeBriefcaseId::Master());
+    result = ResetElementIdSequence(masterBriefcaseId);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    // Save and restore the parentChangeSetId and initialParentChangeSetId if a checkpoint was 
+    // created with the briefcase. Otherwise, these Ids are lost when the entire local table hg comm
+    // are cleared.
+    return RestoreParentChangeSetIds();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/18
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_OnBeforeSetAsBriefcase(BeBriefcaseId newBriefcaseId)
+    {
+    DbResult result = T_Super::_OnBeforeSetAsBriefcase(newBriefcaseId);
+    if (result != BE_SQLITE_OK)
+        return result;
+
+    BackupParentChangeSetIds();
+    return BE_SQLITE_OK;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/17
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::_OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId)
+    {
+    DbResult result = T_Super::_OnAfterSetAsBriefcase(newBriefcaseId);
     if (result != BE_SQLITE_OK)
         return result;
 
@@ -222,13 +273,45 @@ DbResult DgnDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     if (result != BE_SQLITE_OK)
         return result;
 
-    if (!newBriefcaseId.IsMasterId())
-        {
-        Txns().EnableTracking(true);
-        result = Txns().InitializeTableHandlers();
-        }
+    Txns().EnableTracking(true);
+    result = Txns().InitializeTableHandlers();
+    if (result != BE_SQLITE_OK)
+        return result;
 
-    return result;
+    return RestoreParentChangeSetIds();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/18
+//--------------------------------------------------------------------------------------
+void DgnDb::InitParentChangeSetIds()
+    {
+    m_parentChangeSetId = "";
+    m_initialParentChangeSetId = "";
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/18
+//--------------------------------------------------------------------------------------
+void DgnDb::BackupParentChangeSetIds()
+    {
+    m_parentChangeSetId = Revisions().GetParentRevisionId();
+    m_initialParentChangeSetId = Revisions().QueryInitialParentRevisionId();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    04/18
+//--------------------------------------------------------------------------------------
+DbResult DgnDb::RestoreParentChangeSetIds()
+    {
+    if (!m_parentChangeSetId.empty() && RevisionStatus::Success != Revisions().SaveParentRevisionId(m_parentChangeSetId))
+        return BE_SQLITE_ERROR;
+
+    if (!m_initialParentChangeSetId.empty() && RevisionStatus::Success != Revisions().SaveInitialParentRevisionId(m_initialParentChangeSetId))
+        return BE_SQLITE_ERROR;
+
+    InitParentChangeSetIds();
+    return BE_SQLITE_OK;
     }
 
 //--------------------------------------------------------------------------------------

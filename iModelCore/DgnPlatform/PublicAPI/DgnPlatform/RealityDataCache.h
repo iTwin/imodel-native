@@ -52,7 +52,10 @@ protected:
 
     uint32_t _GetExcessiveRefCountThreshold() const override { return 100000; } // seen data set containing > 5000 models, each has a TileTree::Root that wants a ptr to cache
 
-    //! Create the table to hold entries in this Cache
+    //! Perform any additional initialization in a newly-created cache Db.
+    virtual BentleyStatus _Initialize() const { return SUCCESS; }
+
+    //! Create or update the tables to hold entries in this Cache. The cache Db may already contain data in its tables.
     virtual BentleyStatus _Prepare() const = 0;
 
     //! Called to free space in the database, if necessary

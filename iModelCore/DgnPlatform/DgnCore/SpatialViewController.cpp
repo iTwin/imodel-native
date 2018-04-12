@@ -134,7 +134,7 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
     if (DrawPurpose::CaptureThumbnail == context.GetDrawPurpose() && context.GetUpdatePlan().WantWait())
         return CreateThumbnailScene(context);
 
-    DgnDb::VerifyClientThread();
+    BeAssert(nullptr != dynamic_cast<OffscreenViewport*>(context.GetViewport()) || DgnDb::ThreadId::Client == DgnDb::GetThreadId());
 
     StopWatch timer(true);
 
@@ -452,7 +452,8 @@ void SpatialViewController::_PickTerrain(PickContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::SceneLightsPtr ViewController3d::GetLights() const
     {
-    DgnDb::VerifyClientThread();
+    BeAssert(nullptr != dynamic_cast<OffscreenViewport*>(m_vp) || DgnDb::ThreadId::Client == DgnDb::GetThreadId());
+
     if (m_lights.IsValid())
         return m_lights;
         

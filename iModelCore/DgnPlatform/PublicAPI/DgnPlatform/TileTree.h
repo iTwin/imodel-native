@@ -100,6 +100,9 @@ DEFINE_REF_COUNTED_PTR(TileCache)
 struct TileCache : RealityData::Cache
 {
     uint64_t m_allowedSize;
+protected:
+    virtual bool _ValidateData() const { return true; }
+public:
     BentleyStatus _Prepare() const override;
     BentleyStatus _Cleanup() const override;
     TileCache(uint64_t maxSize) : m_allowedSize(maxSize) {}

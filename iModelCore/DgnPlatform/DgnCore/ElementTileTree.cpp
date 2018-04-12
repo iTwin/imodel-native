@@ -302,8 +302,8 @@ struct GeometrySelector2d
 struct TileBuilder : GeometryListBuilder
 {
 protected:
-    TileContext&        m_context;
-    double              m_rangeDiagonalSquared;
+    TileContext&                m_context;
+    double                      m_rangeDiagonalSquared;
 
     static void AddNormals(PolyfaceHeaderR, IFacetOptionsR);
     static void AddParams(PolyfaceHeaderR, IFacetOptionsR);
@@ -330,6 +330,7 @@ public:
 
     void ReInitialize(DgnElementId elemId, double rangeDiagonalSquared, TransformCR localToWorld);
     double GetRangeDiagonalSquared() const { return m_rangeDiagonalSquared; }
+
 };
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileBuilder);
@@ -1032,7 +1033,7 @@ BentleyStatus Loader::_LoadTile()
         {
         if (!m_tileBytes.empty())
             {
-            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache))
+            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache, tile.GetRange()))
                 {
                 BeAssert(false);
                 return ERROR;
@@ -1237,7 +1238,7 @@ static RefCountedPtr<PSolidThreadUtil::MainThreadMark> s_psolidMainThreadMark;
 +---------------+---------------+---------------+---------------+---------------+------*/
 RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     {
-    DgnDb::VerifyClientThread();
+    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
 
     if (DgnDbStatus::Success != model.FillRangeIndex())
         return nullptr;
@@ -1959,15 +1960,16 @@ struct TileRangeClipOutput : PolyfaceQuery::IClipToPlaneSetOutput
 struct MeshGenerator : ViewContext
 {
 private:
-    TileCR              m_tile;
-    GeometryOptions     m_options;
-    double              m_tolerance;
-    LoadContext         m_loadContext;
-    size_t              m_geometryCount = 0;
-    FeatureTable        m_featureTable;
-    MeshBuilderMap      m_builderMap;
-    DRange3d            m_contentRange = DRange3d::NullRange();
-    bool                m_maxGeometryCountExceeded = false;
+    TileCR                  m_tile;
+    GeometryOptions         m_options;
+    double                  m_tolerance;
+    LoadContext             m_loadContext;
+    size_t                  m_geometryCount = 0;
+    FeatureTable            m_featureTable;
+    MeshBuilderMap          m_builderMap;
+    DRange3d                m_contentRange = DRange3d::NullRange();
+    bool                    m_maxGeometryCountExceeded = false;
+    ThematicMeshBuilderPtr  m_thematicMeshBuilder;
 
     static constexpr size_t GetDecimatePolyfacePointCount() { return 100; }
 
@@ -2017,7 +2019,6 @@ virtual bool _AnyPointVisible(DPoint3dCP worldPoints, int nPts, double tolerance
 
     return pointRange.IntersectsWith(m_tile.GetRange());
     }
-
 };
 
 
@@ -2032,6 +2033,16 @@ MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContext
     SetDgnDb(m_tile.GetElementRoot().GetDgnDb());
     m_is3dView = m_tile.GetElementRoot().Is3d();
     SetViewFlags(TileContext::GetDefaultViewFlags());
+
+
+//#define TEST_THEMATIC_HEIGHT
+#ifdef TEST_THEMATIC_HEIGHT
+    SetActiveAuxChannel("Height");
+    ThematicDisplaySettings     heightDisplaySettings;
+    heightDisplaySettings.SetSteppedDisplay(ThematicSteppedDisplay_FastWithIsolines);
+    auto                        projectExtents = m_tile.GetElementRoot().GetDgnDb().GeoLocation().ComputeProjectExtents();
+    m_thematicMeshBuilder  = new ThematicMeshBuilder("Height", *loadContext.GetRenderSystem(), m_tile.GetElementRoot().GetDgnDb(), heightDisplaySettings, ThematicCookedRange(projectExtents.low.z, projectExtents.high.z));
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2141,6 +2152,7 @@ static Feature featureFromParams(DgnElementId elemId, DisplayParamsCR params)
     return Feature(elemId, params.GetSubCategoryId(), params.GetClass());
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2174,10 +2186,18 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     DgnElementId            elemId = GetElementId(geom);
     MeshEdgeCreationOptions edges(edgeOptions);
     bool                    isPlanar = tilePolyface.m_isPlanar;
+    TextureMapping          thematicTexture;
+    DisplayParamsCPtr       displayParams = &tilePolyface.GetDisplayParams(); 
+
+    if (m_thematicMeshBuilder.IsValid() &&
+        m_thematicMeshBuilder->DoThematicDisplay(*polyface, thematicTexture))
+        {
+        displayParams = displayParams->CloneWithTextureOverride(thematicTexture);
+        }
 
     if (isContained)
-        {
-        AddClippedPolyface(*polyface, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar);
+        {                                                                                                                                          
+        AddClippedPolyface(*polyface, elemId, *displayParams, edges, isPlanar);
         }
     else
         {
@@ -2186,7 +2206,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
         polyface->ClipToRange(m_tile.GetRange(), clipOutput, false);
 
         for (auto& clipped : clipOutput.m_output)
-            AddClippedPolyface(*clipped, elemId, tilePolyface.GetDisplayParams(), edges, isPlanar);
+            AddClippedPolyface(*clipped, elemId, *displayParams, edges, isPlanar);
         }
     }
 
@@ -2195,20 +2215,27 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
     {
-    bool hasTexture = displayParams.IsTextured();
-    bool anyContributed = false;
-    uint32_t fillColor = displayParams.GetFillColor();
-    DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
+    bool        hasTexture = displayParams.IsTextured();
+    bool        anyContributed = false;
+    uint32_t    fillColor = displayParams.GetFillColor();
+    DgnDbR      db = m_tile.GetElementRoot().GetDgnDb();
 
     MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar);
-    MeshBuilderR builder = GetMeshBuilder(key);
+    MeshBuilderR        builder = GetMeshBuilder(key);
 
     builder.BeginPolyface(polyface, edgeOptions);
+
+    Utf8CP      thisAuxChannel = nullptr, activeAuxChannel =  GetActiveAuxChannel().empty() ? nullptr : GetActiveAuxChannel().c_str();
+
+    if (nullptr != activeAuxChannel &&
+        polyface.GetAuxDataCP().IsValid() &&
+        polyface.GetAuxDataCP()->GetChannel(activeAuxChannel).IsValid())
+       thisAuxChannel = activeAuxChannel;
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP());
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP(), thisAuxChannel);
         m_contentRange.Extend(visitor->Point());
         }
 
@@ -2629,7 +2656,7 @@ Transform Root::GetLocationForTileGeneration() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::SelectParent Tile::SelectTiles(bvector<TileTree::TileCPtr>& selected, TileTree::DrawArgsR args, uint32_t numSkipped) const
     {
-    DgnDb::VerifyClientThread();
+    // DgnDb::VerifyClientThread(); ###TODO: Relax this constraint when publishing view attachments to Cesium...
 
     _ValidateChildren();
 
@@ -3000,5 +3027,68 @@ RefCountedPtr<ThumbnailRoot> ThumbnailRoot::Create(GeometricModelR model, Render
 RootPtr Root::Create(GeometricModelR model, RenderContextR context)
     {
     return ThumbnailRoot::Create(model, context).get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RealityData::CachePtr TileCache::Create(DgnDbCR db)
+    {
+    RealityData::CachePtr cache(new TileCache(1024*1024*1024));
+    BeFileName cacheName = T_HOST.GetTileAdmin()._GetElementCacheFileName(db);
+    if (SUCCESS != cache->OpenAndPrepare(cacheName))
+        cache = nullptr;
+
+    return cache;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP TileCache::GetCurrentVersion()
+    {
+    // Increment this when the binary tile format changes...
+    return "1";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileCache::WriteCurrentVersion() const
+    {
+    // NB: SavePropertyString() is non-const because modifying *cacheable* properties mutates the Db's internal state
+    // Our property is *not* cacheable
+    auto& db = const_cast<BeSQLite::Db&>(m_db);
+    if (BeSQLite::BE_SQLITE_OK != db.SavePropertyString(GetVersionSpec(), GetCurrentVersion()))
+        {
+        BeAssert(false && "Failed to save tile cache version");
+        return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TileCache::_Initialize() const
+    {
+    // We've created a brand-new cache Db. Write the current binary format version to its property table.
+    return WriteCurrentVersion() ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileCache::_ValidateData() const
+    {
+    auto spec = GetVersionSpec();
+    Utf8String storedVersion;
+    if (BE_SQLITE_ROW == m_db.QueryProperty(storedVersion, spec) && storedVersion.Equals(GetCurrentVersion()))
+        return true;
+
+    // Binary format has changed. Discard existing tile data.
+    WriteCurrentVersion();
+    return false;
     }
 
