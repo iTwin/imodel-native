@@ -7,7 +7,7 @@
 #--------------------------------------------------------------------------------------
 %include    mdl.mki
 
-%if !defined (NO_CHM)
+%if defined (FORCE_CHM)
     %include $(SharedMki)HtmlHelp.mki
 %endif
 
@@ -36,18 +36,18 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
     ~@putenv DOXYGEN_OUTPUT=$(DOXYGEN_OUTPUT)
     ~@putenv DOXYGEN_INCLUDE=$(includeDir)
     ~@putenv HHC=
-    %if defined (NO_CHM)
-        ~@putenv DOXYGEN_GENERATE_CHM=NO
-        | ************************************************
-        | *  NO_CHM is defined - not building .chm file
-        | ************************************************
-    %else
+    %if defined (FORCE_CHM)
         ~@putenv DOXYGEN_GENERATE_CHM=YES
         ~@putenv CHM_FILE=$(DOXYGEN_OUTPUT)$(OutputName)
+    %else
+        ~@putenv DOXYGEN_GENERATE_CHM=NO
+        | ************************************************
+        | *  FORCE_CHM is NOT defined - not building .chm file
+        | ************************************************
     %endif
     ~chdir $(SrcRoot)ecobjects/docs
     !$(doxygenCmd) $(DOXYGEN_OUTPUT)doxygen.cfg
-    %if !defined (NO_CHM)
+    %if defined (FORCE_CHM)
         | [== hhc $(DOXYGEN_OUTPUT)html/index.hhp ==]
         !-$(hhc) $(DOXYGEN_OUTPUT)html/index.hhp
     %else
@@ -57,7 +57,7 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
     %endif
     ~time
 
-%if !defined (NO_CHM)
+%if defined (FORCE_CHM)
 $(ContextDeliveryDir)$(OutputName).chm: $(DOXYGEN_OUTPUT)$(OutputName).chm
     $(LinkFirstDepToFirstTarget)
 %endif
