@@ -15,10 +15,13 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //---------------+---------------+---------------+---------------+---------------+-------
 NamedFormat::NamedFormat(Utf8StringCR name, ECFormatCP format) : Formatting::Format(), m_nameOrFormatString(name), m_ecFormat(format) 
     {
-    if (format->HasNumeric())
-        SetNumericSpec(*format->GetNumericSpec());
-    if (format->HasComposite())
-        SetCompositeSpec(*format->GetCompositeSpec());
+    if (nullptr != format)
+        { 
+        if (format->HasNumeric())
+            SetNumericSpec(*format->GetNumericSpec());
+        if (format->HasComposite())
+            SetCompositeSpec(*format->GetCompositeSpec());
+        }
     }
 
 //---------------------------------------------------------------------------------------

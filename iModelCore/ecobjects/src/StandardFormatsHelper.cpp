@@ -12,7 +12,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define FORMATS_SCHEMA_NAME "Formats"
 
-//*********************** StandardUnitsSchemaHolder *************************************
+//*********************** StandardFormatsSchemaHolder *************************************
 
 //--------------------------------------------------------------------------------------
 // @bsiclass
@@ -70,9 +70,9 @@ StandardFormatsSchemaHolderPtr StandardFormatsSchemaHolder::GetHolder()
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Kyle.Abramowitz                 03/2018
 //--------------------------------------------------------------------------------------
-ECUnitCP StandardFormatsHelper::GetFormat(Utf8CP unitName)
+ECFormatCP StandardFormatsHelper::GetFormat(Utf8CP formatName)
     {
-    return StandardFormatsSchemaHolder::GetSchema()->GetUnitCP(unitName);
+    return StandardFormatsSchemaHolder::GetSchema()->GetFormatCP(formatName);
     }
 
 //--------------------------------------------------------------------------------------

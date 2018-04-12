@@ -29,9 +29,9 @@ private:
 
 public:
     //! Retrieves a Format from the standard formats schema.
-    //! @param[in]  unitName Name of the format to be retrieved
+    //! @param[in]  formatName Name of the format to be retrieved
     //! @return A const pointer to an ECFormat if the named format exists in the standard Formats schema; otherwise, nullptr.
-    ECOBJECTS_EXPORT static ECUnitCP GetFormat(Utf8CP unitName);
+    ECOBJECTS_EXPORT static ECFormatCP GetFormat(Utf8CP formatName);
     //! Retrieves the held schema
     //! @return The held schema
     ECOBJECTS_EXPORT static ECSchemaPtr GetSchema();

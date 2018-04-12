@@ -242,7 +242,7 @@ private:
     ECFormatCP m_ecFormat;
 
 public:
-    ECOBJECTS_EXPORT NamedFormat(Utf8StringCR name, ECFormatCP format = nullptr);
+    ECOBJECTS_EXPORT NamedFormat(Utf8StringCR name = "", ECFormatCP format = nullptr);
     Utf8StringCR GetName() const {return m_nameOrFormatString;}
     bool IsOverride() const {return this != (NamedFormatCP)m_ecFormat; }
     ECFormatCP GetParentFormat() const {return m_ecFormat;}
