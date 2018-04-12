@@ -2,12 +2,14 @@
  |
  |     $Source: Tasks/AsyncTasksManager.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/WorkerThreadPool.h>
+#include "ThreadingLogging.h"
+
 
 USING_NAMESPACE_BENTLEY_TASKS
 
@@ -15,7 +17,7 @@ bmap<intptr_t, std::weak_ptr<struct ITaskRunner>> AsyncTasksManager::s_runners;
 BeMutex AsyncTasksManager::s_runnersMutex;
 BeConditionVariable AsyncTasksManager::s_emptyRunnersCV;
 
-std::weak_ptr<WorkerThreadPool> AsyncTasksManager::s_defaultThreadPool;
+std::weak_ptr<ITaskScheduler> AsyncTasksManager::s_defaultThreadPool;
 
 BeMutex AsyncTasksManager::s_threadingStoppingListenersMutex;
 bvector<std::function<void()>> AsyncTasksManager::s_onThreadingStoppingListeners;
@@ -85,7 +87,7 @@ std::shared_ptr<AsyncTask> AsyncTasksManager::GetCurrentThreadAsyncTask()
 std::shared_ptr<ITaskScheduler> AsyncTasksManager::GetDefaultScheduler()
     {
     BeMutexHolder lock(s_runnersMutex);
-    std::shared_ptr<WorkerThreadPool> sheduler = s_defaultThreadPool.lock ();
+    ITaskSchedulerPtr sheduler = s_defaultThreadPool.lock();
     if (sheduler == nullptr)
         {
         sheduler = WorkerThreadPool::Create (2, "Default Worker Pool");
@@ -93,6 +95,17 @@ std::shared_ptr<ITaskScheduler> AsyncTasksManager::GetDefaultScheduler()
         }
 
     return sheduler;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTasksManager::SetDefaultScheduler(ITaskSchedulerPtr scheduler)
+    {
+    BeMutexHolder lock(s_runnersMutex);
+    if (scheduler)
+        LOG.warningv("Overriding default sheduler");
+    s_defaultThreadPool = scheduler;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -158,3 +171,24 @@ void AsyncTasksManager::SetWaitForThreadsWhenStopped(bool value)
     s_waitForThreadsWhenStopped = value;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<AsyncTask> AsyncTasksManager::OnAllSchedulersEmpty()
+    {
+    bvector<std::shared_ptr<AsyncTask>> tasks;
+
+        {
+        BeMutexHolder lock(s_runnersMutex);
+        for (auto runnerWeakPtr : s_runners)
+            {
+            auto runner = runnerWeakPtr.second.lock();
+            if (!runner)
+                continue;
+            tasks.push_back(runner->GetTaskScheduler()->OnEmpty());
+            }
+        }
+
+    s_defaultThreadPool.reset(); // TODO: this is required because WhenAll() uses default scheduler and deadlocks.
+    return AsyncTask::WhenAll(tasks);
+    }

@@ -2,12 +2,12 @@
 |
 |     $Source: Tests/Published/Tasks/UniqueTasksHolderTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "UniqueTasksHolderTests.h"
-#include "TasksTestsHelper.h"
+#include "AsyncTestCheckpoint.h"
 #include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <Bentley/Tasks/WorkerThread.h>
 

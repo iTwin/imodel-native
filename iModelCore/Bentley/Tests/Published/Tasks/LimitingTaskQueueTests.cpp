@@ -2,16 +2,17 @@
 |
 |     $Source: Tests/Published/Tasks/LimitingTaskQueueTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "LimitingTaskQueueTests.h"
 #include <Bentley/Tasks/LimitingTaskQueue.h>
 #include <Bentley/Tasks/WorkerThread.h>
-#include "TasksTestsHelper.h"
+#include "AsyncTestCheckpoint.h"
+#include "StubTaskScheduler.h"
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Benediktas.Lipnickas                      03/16
+* @bsimethod                                    Benediktas.Lipnickas            03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed)
     {
@@ -48,7 +49,7 @@ TEST_F (LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPush
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Benediktas.Lipnickas                      03/16
+* @bsimethod                                    Benediktas.Lipnickas            03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfterFirstFinishes)
     {
@@ -92,7 +93,55 @@ TEST_F (LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfte
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Benediktas.Lipnickas                      03/16
+* @bsimethod                                    Benediktas.Lipnickas            03/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfterFirstFinishesAndUsesProvidedShedulerInsteadOfDefault)
+    {
+    auto thread1 = WorkerThread::Create("TestThread");
+    auto thread2 = WorkerThread::Create("TestThread");
+    AsyncTestCheckpoint a;
+
+    auto sheduler = std::make_shared<StubTaskScheduler>();
+    AsyncTasksManager::SetDefaultScheduler(sheduler);
+
+    auto queueSheduler = WorkerThread::Create("QueueSheduler");
+    LimitingTaskQueue<int> queue(queueSheduler);
+    queue.SetLimit(1);
+
+    int number = 0;
+    auto t1 = queue.Push([&] 
+        {
+        number = 1;
+        return thread1->ExecuteAsync<int>([&]
+            {
+            a.CheckinAndWait();
+            return 0;
+            });
+        }, nullptr);
+
+    EXPECT_EQ(1, number);
+
+    auto t2 = queue.Push([&]
+        {
+        number = 2;
+        return thread2->ExecuteAsync<int>([&]
+            {
+            return 0;
+            });
+        }, nullptr);
+
+    a.WaitUntilReached();
+    EXPECT_EQ(1, number);
+    a.Continue();
+
+    t1->Wait();
+    t2->Wait();
+
+    EXPECT_EQ(2, number);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas            03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LimitingTaskQueueTests, Push_TaskReturnsValue_SameValueReturned)
     {
@@ -113,7 +162,7 @@ TEST_F (LimitingTaskQueueTests, Push_TaskReturnsValue_SameValueReturned)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Benediktas.Lipnickas                      03/16
+* @bsimethod                                    Benediktas.Lipnickas            03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LimitingTaskQueueTests, Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEvent)
     {

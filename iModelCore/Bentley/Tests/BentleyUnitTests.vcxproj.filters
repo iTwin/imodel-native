@@ -131,6 +131,8 @@
     <ClCompile Include="Performance\base64utilities_performance.cpp" />
     <ClCompile Include="Published\WPrintfStringTests.cpp" />
     <ClCompile Include="Published\TimeOutSampleTest.cpp" />
+    <ClCompile Include="..\Bentley\nonport\BeTest.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTasksManagerTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />
@@ -167,6 +169,9 @@
     <ClInclude Include="Published\Tasks\UniqueTasksHolderTests.h" />
     <ClInclude Include="Published\Tasks\WorkerThreadTests.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
+    <ClInclude Include="..\PublicAPI\Bentley\BeTest.h" />
+    <ClInclude Include="Published\Tasks\StubTaskScheduler.h" />
+    <ClInclude Include="Published\Tasks\AsyncTestCheckpoint.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Published\datetimedstanalysis.logging.config.xml">

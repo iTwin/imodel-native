@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/Tasks/LimitingTaskQueue.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,9 +30,7 @@ struct LimitingTaskQueue
             std::shared_ptr<ICancellationListener> cancellationListener;
             std::function<AsyncTaskPtr<T> ()> createAsyncTask;
 
-            Task () : PackagedAsyncTask<T> (nullptr)
-                {
-                };
+            Task () : PackagedAsyncTask<T> (nullptr) {};
 
             void OnFinished (const T& result)
                 {
@@ -40,17 +38,17 @@ struct LimitingTaskQueue
                 PackagedAsyncTask<T>::Execute ();
                 };
 
-            virtual void _OnExecute ()
-                {
-                };
+            virtual void _OnExecute () {};
             };
 
         struct Impl
             {
+            Impl(ITaskSchedulerPtr sheduler) : sheduler(sheduler) {};
             BeMutex implCS;
             std::deque<std::shared_ptr<Task>> tasks;
             size_t limit = 0;
             size_t runningTasks = 0;
+            ITaskSchedulerPtr sheduler;
             };
 
     private:
@@ -81,7 +79,8 @@ struct LimitingTaskQueue
             BeMutexHolder mutex (impl->implCS);
             impl->runningTasks++;
 
-            task->createAsyncTask ()->Then ([=] (const T& result)
+            // TODO: Then() could have overload to execute in same scheduler as parent task, avoiding need for "sheduler" parameter here.
+            task->createAsyncTask()->Then(impl->sheduler, [=] (const T& result)
                 {
                 BeMutexHolder mutex (impl->implCS);
                 impl->runningTasks--;
@@ -108,9 +107,9 @@ struct LimitingTaskQueue
             };
 
     public:
-        LimitingTaskQueue () : m_impl (std::make_shared<Impl> ())
-            {
-            }
+        //! Create queue that limits tasks.
+        //! @param[in] scheduler - optional scheduler to for running async queue code. Uses default scheduler if null.
+        LimitingTaskQueue(ITaskSchedulerPtr scheduler = nullptr) : m_impl(std::make_shared<Impl>(scheduler)) {}
 
         //! Set how many tasks to run at one time. Zero will indicate no limit and all pushed tasks will be run.
         void SetLimit (size_t limit)
