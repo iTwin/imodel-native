@@ -998,6 +998,8 @@ ReadStatus DgnTileReader::ReadFeatureTable(FeatureTableR featureTable)
         featureTable.Insert(Feature(DgnElementId(elementId), DgnSubCategoryId(subCategoryId), static_cast<DgnGeometryClass>(geometryClass)), index);
         }
     
+    featureTable.SetModelId(m_model.GetModelId());
+
     m_buffer.SetPos(startPos + header.length);
 
     return ReadStatus::Success;
@@ -1732,7 +1734,7 @@ ReadStatus DgnCacheTileRebuilder::ReadTile(DgnTile::Flags& flags, DgnElementIdSe
     }
 
 // Uncomment to turn on validation of logic for tile cache => MeshBuilderMap => GeometryCollection for debugging.
-// #define TEST_TILE_REBUILDER
+//#define TEST_TILE_REBUILDER
 #if defined(TEST_TILE_REBUILDER)
 
 /*---------------------------------------------------------------------------------**//**
@@ -1821,6 +1823,93 @@ static void compareEdges(MeshCR lhm, MeshCR rhm)
     comparePolylineEdges(lhm, rhm);
     }
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/18
+//=======================================================================================
+struct MeshVertex
+{
+    QPoint3d            m_pos;
+    OctEncodedNormal    m_normal = OctEncodedNormal::From(0);
+    Feature             m_feature;
+    ColorDef            m_color = ColorDef::Magenta();
+    FPoint2d            m_param;
+
+    MeshVertex(MeshCR mesh, uint32_t index)
+        {
+        BeAssert(index < mesh.Verts().size());
+        m_pos = mesh.Verts()[index];
+
+        if (!mesh.Normals().empty())
+            m_normal = mesh.Normals()[index];
+
+        if (!mesh.Params().empty())
+            m_param = mesh.Params()[index];
+        else
+            m_param.x = m_param.y = 0.0;
+
+        if (mesh.Colors().empty())
+            {
+            BeAssert(1 == mesh.GetColorTable().size());
+            m_color = ColorDef(mesh.GetColorTable().begin()->first);
+            }
+        else
+            {
+            BeAssert(1 < mesh.GetColorTable().size());
+            auto colorIndex = mesh.Colors()[index];
+            if (!mesh.GetColorTable().FindByIndex(m_color, colorIndex))
+                BeAssert(false);
+            }
+
+        auto const& featureIndices = mesh.GetFeatureIndices();
+        uint32_t featureIndex = 0;
+        if (featureIndices.empty())
+            {
+            if (!mesh.GetUniformFeatureIndex(featureIndex))
+                BeAssert(false);
+            }
+        else
+            {
+            featureIndex = featureIndices[index];
+            }
+
+        BeAssert(nullptr != mesh.GetFeatureTable());
+        if (!mesh.GetFeatureTable()->FindFeature(m_feature, featureIndex))
+            BeAssert(false);
+        }
+
+    bool operator==(MeshVertex const& rhs) const
+        {
+        if (m_pos != rhs.m_pos || m_normal != rhs.m_normal || m_feature != rhs.m_feature || m_color != rhs.m_color)
+            return false;
+
+        static constexpr double tolerance = 0.1;
+        return abs(m_param.x - rhs.m_param.x) < tolerance && abs(m_param.y - rhs.m_param.y);
+        }
+
+    void Compare(MeshVertex const& rhs) const
+        {
+        BeAssert(m_pos == rhs.m_pos);
+        BeAssert(m_normal == rhs.m_normal);
+        BeAssert(m_feature == rhs.m_feature);
+        BeAssert(m_color == rhs.m_color);
+
+        static constexpr double tolerance = 0.1;
+        BeAssert(abs(m_param.x - rhs.m_param.x) < tolerance);
+        BeAssert(abs(m_param.y - rhs.m_param.y) < tolerance);
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareVertices(MeshCR lhm, uint32_t lhi, MeshCR rhm, uint32_t rhi)
+    {
+    MeshVertex lhv(lhm, lhi),
+               rhv(rhm, rhi);
+
+    lhv.Compare(rhv);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1831,16 +1920,9 @@ static void compareTriangles(MeshCR lhs, MeshCR rhs)
     auto const& lht = lhs.Triangles().Indices();
     auto const& rht = rhs.Triangles().Indices();
     BeAssert(lht.size() == rht.size());
-    BeAssert(lhv.size() == rhv.size());
-    BeAssert(lhv.GetParams().GetOrigin().AlmostEqual(rhv.GetParams().GetOrigin()));
-    BeAssert(lhv.GetParams().GetScale().AlmostEqual(rhv.GetParams().GetScale()));
 
     for (size_t i = 0; i < lht.size(); i++)
-        {
-        auto lhp = lhv[lht[i]];
-        auto rhp = rhv[rht[i]];
-        BeAssert(lhp == rhp);
-        }
+        compareVertices(lhs, lht[i], rhs, rht[i]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1848,7 +1930,22 @@ static void compareTriangles(MeshCR lhs, MeshCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void compareMeshes(MeshCR lhs, MeshCR rhs)
     {
+    BeAssert(lhs.GetDisplayParams().IsEqualTo(rhs.GetDisplayParams(), DisplayParams::ComparePurpose::Merge));
+
+    auto const& lhct = lhs.GetColorTable();
+    auto const& rhct = rhs.GetColorTable();
+    BeAssert(lhct.size() == rhct.size());
+    for (auto lhi = lhct.begin(), rhi = rhct.begin(); lhi != lhct.end(); ++lhi, ++rhi)
+        BeAssert(lhi->first == rhi->first);
+
+    auto const& lhv = lhs.Verts();
+    auto const& rhv = rhs.Verts();
+    BeAssert(lhv.size() == rhv.size());
+    BeAssert(lhv.GetParams().GetOrigin().AlmostEqual(rhv.GetParams().GetOrigin()));
+    BeAssert(lhv.GetParams().GetScale().AlmostEqual(rhv.GetParams().GetScale()));
+
     compareTriangles(lhs, rhs);
+
     BeAssert(lhs.GetEdges().IsValid() == rhs.GetEdges().IsValid());
     if (lhs.GetEdges().IsValid() && rhs.GetEdges().IsValid())
         compareEdges(lhs, rhs);
@@ -1859,6 +1956,12 @@ static void compareMeshes(MeshCR lhs, MeshCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void compareMeshLists(MeshList const& lhs, MeshList const& rhs)
     {
+    FeatureTable const& lhft = lhs.m_features;
+    FeatureTable const& rhft = rhs.m_features;
+    BeAssert(lhft.size() == rhft.size());
+    for (auto lhi = lhft.begin(), rhi = rhft.begin(); lhi != lhft.end(); ++lhi, ++rhi)
+        BeAssert(lhi->first == rhi->first);
+
     for (size_t i = 0; i < lhs.size(); i++)
         compareMeshes(*lhs[i], *rhs[i]);
     }

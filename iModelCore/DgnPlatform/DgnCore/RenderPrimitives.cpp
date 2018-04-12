@@ -2130,6 +2130,23 @@ void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvec
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ColorTable::FindByIndex(ColorDef& color, uint16_t index) const
+    {
+    for (auto const& kvp : *this)
+        {
+        if (kvp.second == index)
+            {
+            color = ColorDef(kvp.first);
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TextStringGeometry::DoGlyphBoxes (IFacetOptionsR facetOptions)

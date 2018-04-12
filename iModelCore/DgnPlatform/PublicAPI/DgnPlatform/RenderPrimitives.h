@@ -251,6 +251,8 @@ public:
 
     void ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvector<uint16_t> const& indices) const;
     Map const& GetMap() const { return m_map; }
+
+    bool FindByIndex(ColorDef& color, uint16_t index) const;
 };
 
 //=======================================================================================
@@ -430,6 +432,8 @@ public:
     MeshEdgesPtr                    GetEdges() const { return m_edges; }
     MeshEdgesPtr&                   GetEdgesR() { return m_edges; }
     void                            SetFeatureIndices (bvector<uint32_t>&& indices) { m_features.SetIndices(std::move(indices)); }
+    bvector<uint32_t> const&        GetFeatureIndices() const { return m_features.m_indices; }
+    bool                            GetUniformFeatureIndex(uint32_t& index) const { if (!m_features.m_initialized || !m_features.m_indices.empty()) return false; index = m_features.m_uniform; return true; }
 
     bool IsEmpty() const { return m_triangles.Empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }
