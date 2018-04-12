@@ -17,6 +17,20 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 struct ECDbUsedClassesListenerWrapper;
 
 /*=================================================================================**//**
+* @bsiclass                                     Mantas.Kontrimas                04/2018
++===============+===============+===============+===============+===============+======*/
+struct UserSettingEntry
+{
+private:
+    Utf8String m_id;
+    Json::Value m_value;
+public:
+    UserSettingEntry(Utf8String id, Json::Value value) : m_id(id), m_value(value) {}
+    Utf8StringCR GetId() const {return m_id;}
+    JsonValueCR GetValue() const {return m_value;}
+};
+
+/*=================================================================================**//**
 * Context for NavNodesProvider implementations.
 * @bsiclass                                     Grigas.Petraitis                07/2015
 +===============+===============+===============+===============+===============+======*/
@@ -82,7 +96,7 @@ public:
     void SetBaseProvider(NavNodesProviderCR provider) {m_baseProvider = &provider;}
     NavNodesProviderPtr CreateProvider(NavNodesProviderContextR, JsonNavNodeCP parentNode) const;
     IUsedUserSettingsListener& GetUsedSettingsListener() const;
-    bvector<Utf8String> GetRelatedSettingIds() const;
+    bvector<UserSettingEntry> GetRelatedSettings() const;
 
     // optimization flags
     bool IsNodesCount(bool checkBase = true) const;

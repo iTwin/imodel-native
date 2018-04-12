@@ -2,7 +2,7 @@
 |
 |     $Source: Source/RulesDriven/RulesEngine/UserSettings.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECPresentationPch.h>
@@ -221,6 +221,23 @@ bool UserSettings::_GetSettingBoolValue(Utf8CP id) const
     Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
     Json::Value value = m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
     return value.isConvertibleTo(Json::booleanValue) ? value.asBool() : s_defaultValue;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mantas.Kontrimas                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value UserSettings::_GetSettingValueAsJson(Utf8CP id) const
+    {
+    BeMutexHolder lock(m_mutex);
+
+    if (nullptr == m_localState)
+        {
+        BeAssert(false);
+        return Json::Value(Json::nullValue);
+        }
+
+    Utf8PrintfString stringId("%s:%s", m_rulesetId.c_str(), id);
+    return m_localState->GetJsonValue(USER_SETTINGS_NAMESPACE, stringId.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**

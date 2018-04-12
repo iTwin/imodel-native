@@ -429,14 +429,7 @@ void UpdateHandler::AddTasksForAffectedHierarchies(bvector<IUpdateTaskPtr>& task
         {
         IConnectionCP connection = m_connections.GetConnection(info.GetConnectionId().c_str());
         if (nullptr == connection)
-            {
-            // WIP TFS#866883: for hierarchies that use user settings we need some special handling - we can't expect
-            // user setting values to be the same across sessions so cached hierarchies might be invalid.
-            // The assertion failure below says that a user setting was changed and it affects a hierarchy
-            // whose dataset is closed - just ignore that condition until the issue is fully fixed.
-            // BeAssert(false);
             continue;
-            }
         AddTask(tasks, *m_tasksFactory.CreateRefreshHierarchyTask(*m_hierarchyUpdater, updateContext, *connection, info));
         }
 
@@ -726,7 +719,7 @@ void HierarchyUpdater::CheckIfParentNeedsUpdate(bvector<IUpdateTaskPtr>& subTask
         return;
         }
 
-    NavNodesProviderCPtr parentProvider = newProvider.GetContext().GetNodesCache().GetDataSource(*newProvider.GetContext().GetPhysicalParentNodeId());
+    NavNodesProviderCPtr parentProvider = newProvider.GetContext().GetNodesCache().GetDataSource(*newProvider.GetContext().GetPhysicalParentNodeId(), false);
     if (parentProvider.IsValid())
         {
         NavNodesProviderContextCR parentProviderContext = parentProvider->GetContext();
@@ -807,7 +800,7 @@ void HierarchyUpdater::Update(bvector<IUpdateTaskPtr>& subTasks, UpdateContext& 
         return;
         }
 
-    NavNodesProviderPtr oldProvider = m_nodesCache.GetDataSource(oldInfo);
+    NavNodesProviderPtr oldProvider = m_nodesCache.GetDataSource(oldInfo, false);
     if (oldProvider.IsNull())
         {
         BeAssert(false);

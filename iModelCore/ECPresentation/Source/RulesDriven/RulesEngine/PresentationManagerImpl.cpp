@@ -552,7 +552,7 @@ RulesDrivenECPresentationManagerImpl::RulesDrivenECPresentationManagerImpl(IRule
     m_usedClassesListener = new UsedClassesListener(*this);
     m_nodesFactory = new JsonNavNodesFactory();
     m_nodesCache = new NodesCache(paths.GetTemporaryDirectory(), *m_nodesFactory, *m_nodesProviderContextFactory,
-        connections, *m_ecdbCaches, disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
+        connections, GetUserSettingsManager(), *m_ecdbCaches, disableDiskCache ? NodesCacheType::Memory : NodesCacheType::Disk);
     m_contentCache = new ContentCache();
     m_updateHandler = new UpdateHandler(m_nodesCache, m_contentCache, connections, *m_nodesProviderContextFactory,
         *m_nodesProviderFactory, *m_rulesetECExpressionsCache);
