@@ -21,6 +21,8 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/Base64Utilities.h>
 #include <Bentley/Tasks/AsyncTask.h>
+#include <Bentley/Tasks/AsyncTasksManager.h>
+#include <Bentley/Tasks/TaskScheduler.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 #include "../../../BeHttp/Backdoor.h"
@@ -34,7 +36,10 @@
 
 using namespace ::testing;
 using namespace folly;
+
+USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
+USING_NAMESPACE_BENTLEY_TASKS
 
 struct HttpRequestTests : ::testing::Test
     {
@@ -46,6 +51,8 @@ struct HttpRequestTests : ::testing::Test
         }
     void Reset()
         {
+        AsyncTasksManager::SetDefaultScheduler(nullptr);
+        HttpClient::Reinitialize();
         Backdoor::InitStartBackgroundTask([] (Utf8CP name, std::function<void()> task, std::function<void()> onExpired) {});
         Backdoor::CallOnApplicationSentToForeground();
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_WARNING);
@@ -119,6 +126,16 @@ TEST_F(HttpRequestTests, Perform_OneRequestWithThen_ExecutesChainedTaskSuccessfu
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Perform_EmptyUrl_ErrorCouldNotConnect)
+    {
+    Request request("");
+    Response response = request.Perform().get();
+    EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
+    }
+    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -201,6 +218,19 @@ TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasCertIssuedToDiffe
 
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasBentleyInternalCertificate_SucceedsAsUsesNativeSystemSslEngineAndSystemTrustsCertificate)
+    {
+    Request request("https://mobilevm6.bentley.com/ws");
+    request.SetValidateCertificate(true);
+
+    Response response = request.Perform().get();
+
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1007,7 +1037,7 @@ TEST_P(HttpRequestTestsMethods, PerformAsync_NonRetryaleRequestAndBackgroundTime
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(HttpRequestTestsMethods, PerformAsync_RetryaleRequestAndBackgroundTimeExpiredWhenRunning_RequestRestartedWhenInForeground)
+TEST_P(HttpRequestTestsMethods, PerformAsync_RetryaleRequestAndBackgroundTimeExpiredWhenRunning_RequestRestartedWhenInForeground_FLAKYTEST)
     {
     std::function<void()> onExpired;
     Backdoor::InitStartBackgroundTask([&] (Utf8CP, std::function<void()>, std::function<void()> _onExpired)
@@ -1396,3 +1426,145 @@ TEST_F(HttpRequestTestsProxy, Perform_EnvVarProxyButDefaultOverrides_ExecutesVia
 
     EXPECT_THAT(GetLocalProxyLog().c_str(), HasSubstr("GET http://httpbin.org/ip"));
     }
+
+struct StubTaskScheduler : ITaskScheduler
+    {
+    void Push(std::shared_ptr<AsyncTask> task, AsyncTask::Priority priority)
+        {
+        ADD_FAILURE();
+        task->Execute();
+        };
+    void Push(std::shared_ptr<AsyncTask> task, std::shared_ptr<AsyncTask> parentTask, AsyncTask::Priority priority)
+        {
+        ADD_FAILURE();
+        if (parentTask)
+            parentTask->AddSubTask(task);
+        task->Execute();
+        };
+    std::shared_ptr<AsyncTask> WaitAndPop() { ADD_FAILURE(); return nullptr; };
+    std::shared_ptr<AsyncTask> TryPop() { ADD_FAILURE(); return nullptr; };
+    int GetQueueTaskCount() const { ADD_FAILURE(); return 0; };
+    bool HasRunningTasks() const { ADD_FAILURE(); return false; };
+    AsyncTaskPtr<void> OnEmpty() const { ADD_FAILURE(); return CreateCompletedAsyncTask(); };
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(HttpRequestTestsMethods, Perform_WithCustomDefaultSheduler_DoesNotUseDefaultShedulerToAvoidDeadlocks)
+    {
+    auto sheduler = std::make_shared<StubTaskScheduler>();
+    AsyncTasksManager::SetDefaultScheduler(sheduler);
+
+    Request request = GetParam().CreateRequest();
+    Response response = request.Perform().get();
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(HttpRequestTestsMethods, PerformAsync_WithCustomDefaultSheduler_DoesNotUseDefaultShedulerToAvoidDeadlocks)
+    {
+    auto sheduler = std::make_shared<StubTaskScheduler>();
+    AsyncTasksManager::SetDefaultScheduler(sheduler);
+
+    Request request = GetParam().CreateRequest();
+    Response response = request.PerformAsync()->GetResult();
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    }
+
+typedef RefCountedPtr<struct StubHttpBody> StubHttpBodyPtr;
+struct StubHttpBody : public HttpBody
+    {
+    static StubHttpBodyPtr Create() { return new StubHttpBody(); }
+    std::function<void()> onData;
+
+    virtual void Open() override {};
+    virtual void Close() override {};
+    virtual BentleyStatus SetPosition(uint64_t position) override { return SUCCESS; };
+    virtual BentleyStatus GetPosition(uint64_t& position) override { return SUCCESS; };
+    virtual BentleyStatus Reset() override { return SUCCESS; };
+
+    virtual size_t Write(const char* buffer, size_t bufferSize) override { onData(); return bufferSize; };
+    virtual size_t Read(char* bufferOut, size_t bufferSize) override { onData(); return bufferSize; };
+
+    virtual uint64_t GetLength() override { return 100; };
+
+    virtual Utf8String AsString() const override { return nullptr; };
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(HttpRequestTestsMethods, Uninitialize_BeforeRequest_EachRequestIsCancelled)
+    {
+    HttpClient::Uninitialize();
+
+    Request request = GetParam().CreateRequest();
+    Response response = request.Perform().get();
+    EXPECT_EQ(ConnectionStatus::Canceled, response.GetConnectionStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(HttpRequestTestsMethods, Uninitialize_WhileDownloading_ReturnsCancelled)
+    {
+    Request request = GetParam().CreateRequest();
+
+    AsyncTestCheckpoint cp;
+    auto body = StubHttpBody::Create();
+    body->onData = [&]
+        {
+        cp.CheckinAndWait();
+        };
+    request.SetResponseBody(body);
+
+    auto task = request.PerformAsync();
+    cp.WaitUntilReached();
+    Backdoor::UninitializeCancelAllRequests();
+    cp.Continue();
+    HttpClient::Uninitialize();
+    Response response = task->GetResult();
+    EXPECT_EQ(ConnectionStatus::Canceled, response.GetConnectionStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(HttpRequestTestsMethods, Uninitialize_WhilePerformingRequest_ReturnsCancelled_FLAKYTEST)
+    {
+    Request request = GetParam().CreateRequest();
+
+    AsyncTestCheckpoint cp;
+    request.SetDownloadProgressCallback([&] (double, double)
+        {
+        cp.CheckinAndWait();
+        });
+
+    auto task = request.PerformAsync();
+    cp.WaitUntilReached();
+    Backdoor::UninitializeCancelAllRequests();
+    cp.Continue();
+    HttpClient::Uninitialize();
+    Response response = task->GetResult();
+    EXPECT_EQ(ConnectionStatus::Canceled, response.GetConnectionStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_P(HttpRequestTestsMethods, Reinitialize_AfterUninitialize_RequestsPass)
+    {
+    HttpClient::Uninitialize();
+    HttpClient::Reinitialize();
+
+    Request request = GetParam().CreateRequest();
+    Response response = request.Perform().get();
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    }
+

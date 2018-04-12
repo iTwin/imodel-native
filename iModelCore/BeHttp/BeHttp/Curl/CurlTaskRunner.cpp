@@ -2,7 +2,7 @@
  |
  |     $Source: BeHttp/Curl/CurlTaskRunner.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -11,6 +11,7 @@
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/TaskScheduler.h>
 #include <BeHttp/HttpClient.h>
+
 #include "../SimplePackagedAsyncTask.h"
 #include "CurlHttpRequest.h"
 #include "NotificationPipe.h"
@@ -238,6 +239,9 @@ void CurlTaskRunner::_RunAsyncTasksLoop()
     BeAssert(CURLM_OK == status);
 
     LOG.tracev("WebLoop: Ended");
+
+    m_curlRunning.store(false);
+    m_curlRunningCondition.notify_all();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -396,4 +400,51 @@ void CurlTaskRunner::WaitForData(long topTimeoutMs)
         LOG.errorv("CurlTaskRunner::WaitForData: %s", GetLastNativeSocketErrorForLog().c_str());
         BeAssert(false);
         }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::WaitUntilStopped()
+    {
+    struct Predicate : IConditionVariablePredicate
+        {
+        BeAtomic<bool>* curlRunning = nullptr;
+        virtual bool _TestCondition(BeConditionVariable &cv) override
+            {
+            return !curlRunning->load();
+            }
+        };
+
+    Predicate predicate;
+    predicate.curlRunning = &this->m_curlRunning;
+    this->m_curlRunningCondition.WaitOnCondition(&predicate, BeConditionVariable::Infinite);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<ITaskRunner> CurlTaskRunner::Factory::CreateRunner()
+    {
+    auto runner = CurlTaskRunner::Create();
+    m_runners.insert(runner);
+    return runner;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::Factory::StopRunners()
+    {
+    for (auto& runner : m_runners)
+        runner->Stop();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlTaskRunner::Factory::WaitUntilRunnersStopped()
+    {
+    for (auto& runner : m_runners)
+        runner->WaitUntilStopped();
     }

@@ -2,7 +2,7 @@
  |
  |     $Source: BeHttp/Backdoor.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include "Backdoor.h"
@@ -18,8 +18,9 @@ USING_NAMESPACE_BENTLEY_HTTP
 +---------------+---------------+---------------+---------------+---------------+------*/
 ThreadCurlHttpHandler* GetCurlHttpHandler()
     {
-    IHttpHandlerPtr handler = DefaultHttpHandler::GetInstance();
+    IHttpHandlerPtr handler = DefaultHttpHandler::GetInstance()->GetInternalHandler();
     ThreadCurlHttpHandler* curlHandler = dynamic_cast<ThreadCurlHttpHandler*>(handler.get());
+    BeAssert(nullptr != curlHandler);
     return curlHandler;
     }
 
@@ -45,4 +46,12 @@ void Backdoor::CallOnApplicationSentToBackground()
 void Backdoor::CallOnApplicationSentToForeground()
     {
     GetCurlHttpHandler()->_OnApplicationSentToForeground();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void Backdoor::UninitializeCancelAllRequests()
+    {
+    GetCurlHttpHandler()->CancelAllRequests();
     }

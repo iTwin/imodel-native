@@ -2,11 +2,12 @@
  |
  |     $Source: BeHttp/HttpClient.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <BeHttp/HttpClient.h>
 
+#include <BeHttp/DefaultHttpHandler.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTimeUtilities.h>
@@ -15,6 +16,7 @@
 #include <curl/curl.h>
 #include <openssl/ssl.h>
 
+#include "WebLogging.h"
 #include "ApplicationEvents.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
@@ -116,6 +118,26 @@ bool HttpClient::IsFullLoggingEnabled()
     return s_isFullLoggingEnabled;
     }
 
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpClient::Reinitialize()
+    {
+    LOG.info("Reinitializing...");
+    DefaultHttpHandler::GetInstance()->SetEnabled(true);
+    LOG.info("Reinitialized");
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpClient::Uninitialize()
+    {
+    LOG.info("Uninitializing...");
+    DefaultHttpHandler::GetInstance()->SetEnabled(false);
+    LOG.info("Uninitialized");
+    };
+    
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/

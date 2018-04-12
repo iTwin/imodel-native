@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/ThreadCurlHttpHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -23,11 +23,20 @@ ThreadCurlHttpHandler::ThreadCurlHttpHandler()
     auto threadCount = parallelTransfers + 1; // +1 for tasks that are being canceled
 
     m_threadPool = WorkerThreadPool::Create(threadCount, "WebThreadPool");
+    m_threadQueue = LimitingTaskQueue<Response>(m_threadPool);
     m_threadQueue.SetLimit(parallelTransfers);
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ThreadCurlHttpHandler::~ThreadCurlHttpHandler ()
+    {
+    m_threadPool->OnEmpty()->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<Response> ThreadCurlHttpHandler::_PerformRequest(RequestCR request)
     {

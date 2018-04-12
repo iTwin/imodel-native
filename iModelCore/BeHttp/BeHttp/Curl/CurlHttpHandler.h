@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlHttpHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -13,6 +13,7 @@
 #include <Bentley/Tasks/WorkerThreadPool.h>
 
 #include "CurlPool.h"
+#include "CurlTaskRunner.h"
 #include "NotificationPipe.h"
 #include "../ApplicationEvents.h"
 
@@ -31,11 +32,18 @@ struct CurlHttpHandler : IHttpHandler, IApplicationEventsListener
     protected:
         // NotificationPipe for wake up from idle when request is added. Will not work for cancellation of existing requests.
         NotificationPipe                    m_notifier;
+        std::shared_ptr<CurlTaskRunner::Factory>    m_webRunnerFactory;
         std::shared_ptr<WorkerThreadPool>   m_webThreadPool;
         CurlPool                            m_curlPool;
         StartBackgroundTask                 m_startBackgroundTask;
+        SimpleCancellationTokenPtr          m_ct;
 
     public:
+        //! Prepare CURL for using, should be called once in process
+        static void ProcessInitialize();
+        //! Unload CURL, should be called when process is shutting down
+        static void ProcessUninitialize();
+    
         CurlHttpHandler();
         virtual ~CurlHttpHandler();
 
@@ -44,6 +52,8 @@ struct CurlHttpHandler : IHttpHandler, IApplicationEventsListener
         virtual void _OnApplicationSentToBackground() override;
         virtual void _OnApplicationSentToForeground() override;
         void InitStartBackgroundTask(StartBackgroundTask callback);
+
+        void CancelAllRequests();
     };
 
 END_BENTLEY_HTTP_NAMESPACE

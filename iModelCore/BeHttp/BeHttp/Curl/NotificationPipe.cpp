@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/NotificationPipe.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -38,12 +38,8 @@ void AssertLastError ()
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 NotificationPipe::NotificationPipe ()
-#if !defined (BENTLEY_WIN32) && !defined (BENTLEY_WINRT)
-: m_writeStream (nullptr), m_readStream (nullptr)
-#endif
     {
-    m_pipe[0] = 0;
-    m_pipe[1] = 0;
+    Clear();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -126,13 +122,26 @@ BentleyStatus NotificationPipe::Close ()
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
     closesocket (m_pipe[0]);
     closesocket (m_pipe[1]);
-    m_pipe[0] = 0;
-    m_pipe[1] = 0;
 #else
     fclose (m_writeStream);
     fclose (m_readStream);
 #endif
+    Clear();
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void NotificationPipe::Clear()
+    {
+#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+    m_pipe[0] = 0;
+    m_pipe[1] = 0;
+#else
+    m_writeStream = nullptr;
+    m_readStream = nullptr;
+#endif
     }
 
 /*--------------------------------------------------------------------------------------+

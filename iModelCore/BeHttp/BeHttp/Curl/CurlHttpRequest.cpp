@@ -33,6 +33,8 @@ std::function<void()>                   CurlHttpRequest::s_transfersChangeListen
 BeMutex                                 CurlHttpRequest::s_numberCS;
 uint64_t                                CurlHttpRequest::s_number = 0;
 
+ICancellationTokenPtr                   CurlHttpRequest::s_globalCt;
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -170,6 +172,14 @@ void CurlHttpRequest::SetOnActiveRequestCountChanged(std::function<void()> liste
     {
     BeMutexHolder lock(s_transfersCS);
     s_transfersChangeListener = listener;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlHttpRequest::SetGlobalCancellationToken(ICancellationTokenPtr ct)
+    {
+    s_globalCt = ct;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -454,8 +464,8 @@ BentleyStatus CurlHttpRequest::SetupCurl ()
         }
     else
         {
-        curl_easy_setopt(m_curl, CURLOPT_USERNAME, NULL);
-        curl_easy_setopt(m_curl, CURLOPT_PASSWORD, NULL);
+        curl_easy_setopt(m_curl, CURLOPT_USERNAME, nullptr);
+        curl_easy_setopt(m_curl, CURLOPT_PASSWORD, nullptr);
         }
 
     // Request method
@@ -538,17 +548,22 @@ BentleyStatus CurlHttpRequest::SetupCurl ()
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 1L);
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 2L);
 
-        BeFileName caBundlePath = HttpClient::GetAssetsDirectoryPath();
-        caBundlePath.AppendToPath(L"http").AppendToPath(L"cabundle.pem");
+        // Check if built with OpenSSL backend
+        auto info = curl_version_info(CURLVERSION_NOW);
+        if (nullptr != info && nullptr != info->ssl_version && nullptr != strstr(info->ssl_version, "OpenSSL"))
+            {
+            BeFileName caBundlePath = HttpClient::GetAssetsDirectoryPath();
+            caBundlePath.AppendToPath(L"http").AppendToPath(L"cabundle.pem");
             
-        BeAssert(caBundlePath.DoesPathExist() && "Make sure 'http/cabundle.pem' file is delivered to your application root and HttpClient::Initialize() was called.");
-        curl_easy_setopt(m_curl, CURLOPT_CAINFO, caBundlePath.GetNameUtf8().c_str());
+            BeAssert(caBundlePath.DoesPathExist() && "Make sure 'http/cabundle.pem' file is delivered to your application root and HttpClient::Initialize() was called.");
+            curl_easy_setopt(m_curl, CURLOPT_CAINFO, caBundlePath.GetNameUtf8().c_str());
+            }
         }
     else
         {
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 0L);
         curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 0L);
-        curl_easy_setopt(m_curl, CURLOPT_CAINFO, NULL);
+        curl_easy_setopt(m_curl, CURLOPT_CAINFO, nullptr);
         }
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
@@ -668,12 +683,11 @@ void CurlHttpRequest::PrepareRequest()
             }
 
         auto responseContent = HttpResponseContent::Create(responseBody);
+        auto ct = MergeCancellationToken::Create(s_globalCt, m_httpRequest.GetCancellationToken());
         m_transferInfo = std::make_shared <TransferInfo>
             (
             responseContent,
-            ProgressInfo(m_httpRequest.GetUploadProgressCallback(),
-                m_httpRequest.GetDownloadProgressCallback(),
-                m_httpRequest.GetCancellationToken())
+            ProgressInfo(m_httpRequest.GetUploadProgressCallback(), m_httpRequest.GetDownloadProgressCallback(), ct)
             );
         m_transferInfo->retriesLeft = m_httpRequest.GetMaxRetries();
         m_transferInfo->requestBody = requestBody;
@@ -688,6 +702,12 @@ void CurlHttpRequest::PrepareRequest()
 
     m_transferInfo->requestNeedsToReset.store(false);
     m_transferInfo->progressInfo.wasCanceled = false;
+
+    if (m_transferInfo->progressInfo.cancellationToken->IsCanceled())
+        {
+        SetPrematureError(ConnectionStatus::Canceled);
+        return;
+        }
 
     if (SUCCESS != SetupCurl())
         return;
@@ -854,6 +874,7 @@ ConnectionStatus CurlHttpRequest::ResolveConnectionStatus(CURLcode curlStatus)
         {
         case CURLE_OK:
             return ConnectionStatus::OK;
+        case CURLE_URL_MALFORMAT:
         case CURLE_COULDNT_CONNECT:
         case CURLE_COULDNT_RESOLVE_HOST:
             return ConnectionStatus::CouldNotConnect;

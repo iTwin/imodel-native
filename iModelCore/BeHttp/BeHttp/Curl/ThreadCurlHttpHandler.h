@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/ThreadCurlHttpHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,9 +30,10 @@ struct ThreadCurlHttpHandler : public CurlHttpHandler
 
     public:
         ThreadCurlHttpHandler();
-        virtual ~ThreadCurlHttpHandler() {}
+        virtual ~ThreadCurlHttpHandler();
 
         virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(RequestCR request) override;
+
         virtual Tasks::AsyncTaskPtr<Response> PerformThreadedRequest(RequestCR request);
     };
 

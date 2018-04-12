@@ -2,7 +2,7 @@
  |
  |     $Source: BeHttp/Backdoor.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -22,6 +22,7 @@ struct Backdoor
     BEHTTP_EXPORT static void InitStartBackgroundTask(StartBackgroundTask callback);
     BEHTTP_EXPORT static void CallOnApplicationSentToBackground();
     BEHTTP_EXPORT static void CallOnApplicationSentToForeground();
+    BEHTTP_EXPORT static void UninitializeCancelAllRequests();
     };
 
 END_BENTLEY_HTTP_NAMESPACE

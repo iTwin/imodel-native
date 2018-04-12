@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/BeHttp/HttpClient.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,6 +47,14 @@ public:
     // Initialize HttpClient before using any function related to http requests 
     BEHTTP_EXPORT static void Initialize(const Options& options);
 
+    //! Reinitialize HTTP framework with original options after uninitialization.
+    BEHTTP_EXPORT static void Reinitialize();
+
+    //! Uninitialize HTTP framework before process is shutting down to release any resources.
+    //! It is recommended to call this from main thread. Should never be called from web threads or callbacks.
+    //! New requests will fail as cancelled unless Reinitialize() is called.
+    BEHTTP_EXPORT static void Uninitialize();
+    
     BEHTTP_EXPORT static BeFileNameCR GetAssetsDirectoryPath();
 
     //! Options provided at initialization

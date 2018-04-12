@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlHttpHandler.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -24,19 +24,35 @@ USING_NAMESPACE_BENTLEY_TASKS
 #define ENABLE_BACKGROUND_TRANSFER
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlHttpHandler::ProcessInitialize()
+    {
+    curl_global_init(CURL_GLOBAL_ALL);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlHttpHandler::ProcessUninitialize()
+    {
+    // Windows specific.
+    // This needs to be called when all other threads are destroyed - generally in process shutdown.
+    // Otherwise DNS resolver thread may be still alive and try to run after CURL data is no longer here.
+    curl_global_cleanup();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurlHttpHandler::CurlHttpHandler()
     {
-    curl_global_init(CURL_GLOBAL_ALL);
-    m_curlPool.Resize(10);
+    m_ct = SimpleCancellationToken::Create();
+    CurlHttpRequest::SetGlobalCancellationToken(m_ct);
 
-    m_webThreadPool = WorkerThreadPool::Create
-        (
-        1,
-        "Curl Web",
-        std::shared_ptr<AsyncTaskRunnerFactory<CurlTaskRunner>>(new AsyncTaskRunnerFactory<CurlTaskRunner>())
-        );
+    m_curlPool.Resize(10);
+    m_webRunnerFactory = std::make_shared<CurlTaskRunner::Factory>();
+    m_webThreadPool = WorkerThreadPool::Create(1, "Curl Web", m_webRunnerFactory);
 
     InitStartBackgroundTask(nullptr);
 
@@ -50,23 +66,24 @@ CurlHttpHandler::CurlHttpHandler()
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurlHttpHandler::~CurlHttpHandler()
     {
-    // XXX: First "#if defined" is ugly hack for Windows. We don't need to clean-up anything.
-    // Here is what happens on Windows:
-    // 1. CurlHttpHandler is created as global object (see FieldApps\MobileUtils\Native\Web\Http\DefaultHttpHandler.cpp)
-    // 2. On application exit this global object is destroyed from DllMain and mutex usage is not allowed there. (See
-    //  http://stackoverflow.com/questions/14711263/c11-stdmutex-in-visual-studio-2012-deadlock-when-locked-from-dllmain
-    //  for details)
-    //
-    //  I have checked with WinDbg that all threads are already destroyed when this destructor is called. Therefore
-    //  we will be good citizens on Androis and iOS only :-)
-#if defined (BENTLEYCONFIG_OS_APPLE_IOS) || defined (BENTLEYCONFIG_OS_ANDROID)
+    CancelAllRequests();
+
+    m_webRunnerFactory->StopRunners();
+    m_webThreadPool = nullptr;
+    m_webRunnerFactory->WaitUntilRunnersStopped();
     m_curlPool.Resize(0);
-    curl_global_cleanup();
-#endif
 
 #if defined (BENTLEYCONFIG_OS_APPLE_IOS)
     ApplicationEventsManager::GetInstance().RemoveApplicationEventsListener(*this);
 #endif
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void CurlHttpHandler::CancelAllRequests()
+    {
+    m_ct->SetCanceled();
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/CurlHttpRequest.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -26,6 +26,8 @@
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
+USING_NAMESPACE_BENTLEY_TASKS
+
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -48,6 +50,8 @@ struct CurlHttpRequest
         static BeMutex s_numberCS;
         static uint64_t s_number;
 
+        static ICancellationTokenPtr s_globalCt;
+
     private:
         Request m_httpRequest;
         uint64_t m_number;
@@ -65,6 +69,7 @@ struct CurlHttpRequest
         static void UnregisterTransferInfo(TransferInfo* transfer);
 
         static uint64_t GetNextNumber();
+        static Utf8String GetDebugStatusString(ConnectionStatus status, HttpStatus httpStatus);
 
         static size_t CurlWriteHeaderCallback(void* buffer, size_t size, size_t count, CurlHttpRequest* request);
         static size_t CurlWriteDataCallback(void* buffer, size_t size, size_t count, CurlHttpRequest* request);
@@ -93,6 +98,8 @@ struct CurlHttpRequest
         static void ResetAllActiveRequests();
         static size_t GetActiveRequestCount();
         static void SetOnActiveRequestCountChanged(std::function<void()> listener);
+
+        static void SetGlobalCancellationToken(ICancellationTokenPtr ct);
 
         CurlHttpRequest(RequestCR httpRequest, CurlPool& curlPool);
         ~CurlHttpRequest();

@@ -102,8 +102,8 @@ Response::Response(HttpStatus httpStatus, Utf8String effectiveUrl, Utf8String he
                 continue;
                 }
 
-            Utf8String value = "";
-            for (int i = 1; i < header.size(); ++i)
+            Utf8String value;
+            for (size_t i = 1; i < header.size(); ++i)
                 {
                 value += header[i];
                 if (header.size() - 1 != i)

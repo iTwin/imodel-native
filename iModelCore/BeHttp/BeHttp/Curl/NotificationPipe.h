@@ -2,7 +2,7 @@
 |
 |     $Source: BeHttp/Curl/NotificationPipe.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -57,6 +57,8 @@ private:
 #endif
     BentleyStatus Send ();
     BentleyStatus Read ();
+    void Clear();
+
 public:
     //! NotificationPipe is used to notify thread that is waiting with select()
     //! All methds should be called from same thread unless specified otherwise

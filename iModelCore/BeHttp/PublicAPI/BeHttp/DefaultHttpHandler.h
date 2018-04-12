@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/BeHttp/DefaultHttpHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,9 +16,27 @@ BEGIN_BENTLEY_HTTP_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct DefaultHttpHandler
+typedef std::shared_ptr<struct DefaultHttpHandler> DefaultHttpHandlerPtr;
+struct DefaultHttpHandler : IHttpHandler
     {
-    BEHTTP_EXPORT static IHttpHandlerPtr GetInstance();
+    private:
+        BeMutex m_mutex;
+        IHttpHandlerPtr m_handler;
+
+    public:
+        DefaultHttpHandler();
+        BEHTTP_EXPORT virtual ~DefaultHttpHandler();
+
+        //! Get singleton instance. Will initialize on first call - thread safe.
+        BEHTTP_EXPORT static DefaultHttpHandlerPtr GetInstance();
+
+        //! Perform HttpRequest and receive HttpResponse
+        BEHTTP_EXPORT virtual Tasks::AsyncTaskPtr<Response> _PerformRequest(const Request& request) override;
+
+        //! Internal - use HttpClient API instead. Enable/Disable implementation. 
+        void SetEnabled(bool enabled);
+        //! Internal. Get implementation handler.
+        IHttpHandlerPtr GetInternalHandler() const;
     };
 
 END_BENTLEY_HTTP_NAMESPACE

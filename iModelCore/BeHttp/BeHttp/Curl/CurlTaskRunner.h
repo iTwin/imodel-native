@@ -2,12 +2,13 @@
  |
  |     $Source: BeHttp/Curl/CurlTaskRunner.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
 
 #include <Bentley/Tasks/AsyncTaskRunner.h>
+#include <Bentley/Tasks/AsyncTaskRunnerFactory.h>
 #include "../SimplePackagedAsyncTask.h"
 #include "CurlHttpRequest.h"
 #include "CurlPool.h"
@@ -28,6 +29,9 @@ typedef std::shared_ptr<SimplePackagedAsyncTask<std::shared_ptr<CurlHttpRequest>
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CurlTaskRunner : Tasks::AsyncTaskRunner
     {
+public:
+    struct Factory;
+
     private:
         static BeMutex s_suspendedMutex;
         static BeConditionVariable s_suspendedCondition;
@@ -37,6 +41,9 @@ struct CurlTaskRunner : Tasks::AsyncTaskRunner
     private:
         bmap<CURL*, CurlHttpRequestTaskPtr> m_curlToRequestMap;
         CURLM* m_multi;
+
+        BeAtomic<bool> m_curlRunning;
+        BeConditionVariable m_curlRunningCondition;
 
     private:
         void WaitAndPopNewRequests();
@@ -69,6 +76,23 @@ struct CurlTaskRunner : Tasks::AsyncTaskRunner
         static bool AreRequestsRunning();
         //! Prepare request while handling suspended state
         static bool PrepareRequestIfNotSuspended(CurlHttpRequest& request);
+
+        //! Wait untill completely stopped and not running a loop.
+        void WaitUntilStopped();
+    };
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass
++---------------+---------------+---------------+---------------+---------------+------*/
+struct CurlTaskRunner::Factory : IAsyncTaskRunnerFactory
+    {
+    private:
+        bset<std::shared_ptr<CurlTaskRunner>> m_runners;
+
+    public:
+        virtual std::shared_ptr<ITaskRunner> CreateRunner() override;
+        void StopRunners();
+        void WaitUntilRunnersStopped();
     };
 
 END_BENTLEY_HTTP_NAMESPACE
