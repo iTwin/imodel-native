@@ -3999,12 +3999,12 @@ struct RasterTexturingWorkItem : RefCounted<WorkItem>
     };
 
 
-static bool s_textureMultiThread = true;
+static bool s_multiThreadTexturing = true;
 
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {
 
-    if (s_textureMultiThread)
+    if (s_multiThreadTexturing && dynamic_cast<StreamTextureProvider*>(sourceRasterP.get()) != nullptr)
         {        
         assert(((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->m_texturingThreadPoolPtr.IsValid());
 
@@ -5161,19 +5161,24 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::TextureFr
     }
 
     if (m_pRootNode != NULL)
-	{
-	        if (s_textureMultiThread)
+	    {
+        //With local texture the texturing process is longer in multi-thread (because of the single thread nature of Image++) so keep it in single thread.
+        bool isStreamingTexturing = dynamic_cast<StreamTextureProvider*>(sourceRasterP.get()) != nullptr;
+
+	    if (s_multiThreadTexturing && isStreamingTexturing)
             {
             m_texturingThreadPoolPtr = WorkerThreadPool::Create(std::thread::hardware_concurrency());
             }
+
         dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->TextureFromRasterRecursive(sourceRasterP, unitTransform);
-	         if (s_textureMultiThread)
+
+        if (s_multiThreadTexturing && isStreamingTexturing)
             {
             m_texturingThreadPoolPtr->Start();
             m_texturingThreadPoolPtr->WaitAndStop();
             m_texturingThreadPoolPtr = nullptr;
             }                
-			}
+		}
    // WaitForThreadStop();
     for (auto& task : m_textureWorkerTasks) task.get();
     m_indexHeader.m_depth = (size_t)-1;
