@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/GeometryClipper.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -97,7 +97,7 @@ void GeometryClipper::ProcessLine(Strokes::PointLists& pointListsOut, const Stro
             {
             if (!clipPts.back().AlmostEqual(seg.point[0]))
                 { // submit previous pointList because points mismatch (will begin new pointList)
-                pointListsOut.push_back(Strokes::PointList(std::move(clipPts), pointListIn.m_rangeCenter));
+                pointListsOut.push_back(Strokes::PointList(std::move(clipPts)));
                 clipPts.push_back(seg.point[0]); // add first point to new pointList
                 }
             // else AlmostEqual() and will skip outputting seg.point[0] in order to continue previous line string
@@ -107,7 +107,7 @@ void GeometryClipper::ProcessLine(Strokes::PointLists& pointListsOut, const Stro
         }
     if (!clipPts.empty())
         { // submit final pointList, if available
-        pointListsOut.push_back(Strokes::PointList(std::move(clipPts), pointListIn.m_rangeCenter));
+        pointListsOut.push_back(Strokes::PointList(std::move(clipPts)));
         }
     }
 
@@ -158,7 +158,7 @@ void GeometryClipper::DoClipStrokes(StrokesList& strokesOut, StrokesCR strokesIn
 
                 if (!newPts.empty())
                     {
-                    newStrokePts.push_back(Strokes::PointList(std::move(newPts), strokePts.m_rangeCenter));
+                    newStrokePts.push_back(Strokes::PointList(std::move(newPts)));
                     newPts.clear();
                     }
                 }

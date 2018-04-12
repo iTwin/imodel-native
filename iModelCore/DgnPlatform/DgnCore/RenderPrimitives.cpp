@@ -66,8 +66,7 @@ static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR cur
             if (nullptr != transform)
                 transform->Multiply(loopStrokes, loopStrokes);
 
-            DRange3d    range = DRange3d::From(loopStrokes);
-            strokes.push_back (Strokes::PointList(std::move(loopStrokes), DPoint3d::FromInterpolate(range.low, .5, range.high)));
+            strokes.push_back(Strokes::PointList(std::move(loopStrokes)));
             }
         }
     }
@@ -1263,9 +1262,9 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
+void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, uint32_t fillColor, double startDistance)
     {
-    MeshPolyline    newPolyline(startDistance, rangeCenter);
+    MeshPolyline    newPolyline(startDistance);
 
     for (auto& point : points)
         {
@@ -1279,9 +1278,9 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter)
+void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance)
     {
-    MeshPolyline newPolyline(startDistance, rangeCenter);
+    MeshPolyline newPolyline(startDistance);
     for (auto const& point : points)
         {
         VertexKey key(point, feature, fillColor, nullptr, nullptr);
@@ -1294,13 +1293,13 @@ void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPointString(bvector<DPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter)
+void MeshBuilder::AddPointString(bvector<DPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance)
     {
     // Assume no duplicate points in point strings (or, too few to matter).
     // Why? Because drawGridDots() potentially sends us tens of thousands of points (up to 83000 on my large monitor in top view), and wants to do so every frame.
     // The resultant map lookups/inserts/rebalancing kill performance in non-optimized builds.
-    // NB: rangeCenter and startDistance unused...
-    MeshPolyline polyline(startDistance, rangeCenter);
+    // NB: startDistance currently unused - Ray claims they will be used in future for non-cosmetic line styles? If not let's jettison them...
+    MeshPolyline polyline(startDistance);
     for (auto const& point : points)
         {
         QPoint3d qpoint(point, m_mesh->Verts().GetParams());
@@ -2029,9 +2028,9 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                 for (auto& strokePoints : tileStrokes.m_strokes)
                     {
                     if (tileStrokes.m_disjoint)
-                        builder.AddPointString(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                        builder.AddPointString(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance);
                     else
-                        builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                        builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance);
                     }
                 }
             }
@@ -2324,10 +2323,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             if (!points.empty())
                 {
                 for (auto& loop : points)
-                    {
                     glyphTransform.Multiply(loop.m_points, loop.m_points);
-                    glyphTransform.Multiply(loop.m_rangeCenter);
-                    }
 
                 strokes->push_back(Strokes(geom.GetDisplayParams(), std::move(points), false, true));
                 }

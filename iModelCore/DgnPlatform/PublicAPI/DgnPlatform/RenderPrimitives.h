@@ -643,9 +643,9 @@ public:
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar, auxChannel); }
 
     DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, Utf8CP auxChannel);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
-    void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
-    void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance);
+    void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance);
+    void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
     DGNPLATFORM_EXPORT void EndPolyface();
 
@@ -685,11 +685,10 @@ struct Strokes
         {
         double              m_startDistance;
         bvector<DPoint3d>   m_points;
-        DPoint3d            m_rangeCenter;
 
-        PointList(double startDistance, DPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
-        PointList() : m_startDistance(0.0), m_rangeCenter(DPoint3d::FromZero()) { }
-        PointList(bvector<DPoint3d>&& points, DPoint3dCR rangeCenter) : m_startDistance(0.0), m_points(std::move(points)), m_rangeCenter(rangeCenter) { }
+        explicit PointList(double startDistance) : m_startDistance(startDistance) { }
+        PointList() : m_startDistance(0.0) { }
+        explicit PointList(bvector<DPoint3d>&& points) : m_startDistance(0.0), m_points(std::move(points)) { }
         };
 
     typedef bvector<PointList> PointLists;

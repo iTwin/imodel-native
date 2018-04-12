@@ -2359,18 +2359,15 @@ struct MeshPolyline
 {
 private:
     bvector<uint32_t>   m_indices;
-    DPoint3d            m_rangeCenter;
     double              m_startDistance;
-
 public:
     MeshPolyline () : m_startDistance(0.0) { }
-    MeshPolyline (double startDistance, DPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
-    MeshPolyline (double startDistance, DPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
+    explicit MeshPolyline (double startDistance) : m_startDistance(startDistance) { }
+    MeshPolyline (double startDistance, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_indices(std::move(indices)) { }
 
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
     double GetStartDistance() const { return m_startDistance; }
-    DPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
     
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }
@@ -2388,10 +2385,9 @@ struct IndexedPolylineArgs
         uint32_t const* m_vertIndex = nullptr;
         uint32_t        m_numIndices = 0;
         double          m_startDistance = 0.0;
-        DPoint3d        m_rangeCenter;
 
         Polyline() { }
-        Polyline(uint32_t const* indices, uint32_t numIndices, double startDistance, DPoint3dCR rangeCenter) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+        Polyline(uint32_t const* indices, uint32_t numIndices, double startDistance) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance) { }
 
         bool IsValid() const { return 0 < m_numIndices; }
         void Reset() { m_numIndices = 0; m_vertIndex = nullptr; m_startDistance = 0.0; }
@@ -2400,7 +2396,6 @@ struct IndexedPolylineArgs
             m_numIndices = static_cast<uint32_t>(polyline.GetIndices().size());
             m_vertIndex = 0 < m_numIndices ? polyline.GetIndices().data() : nullptr;
             m_startDistance = polyline.GetStartDistance();
-            m_rangeCenter = polyline.GetRangeCenter();
             return IsValid();
             }
     };

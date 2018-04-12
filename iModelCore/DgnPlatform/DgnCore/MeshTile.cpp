@@ -3393,9 +3393,6 @@ TileGeometry::TileStrokes clipSegments(TileGeometry::TileStrokes input, DRange3d
 
     for (auto const& points : input.m_strokes)
         {
-        // unused - DRange3d    range = DRange3d::From(points);
-        // unused - DPoint3d    rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
-
         DPoint3d prevPt = points.front();
         bool prevOutside = !tileRange.IsContained(prevPt);
         if (!prevOutside)

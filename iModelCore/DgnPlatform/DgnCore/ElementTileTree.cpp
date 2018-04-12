@@ -2279,14 +2279,11 @@ Strokes MeshGenerator::ClipSegments(StrokesCR input) const
         if (points.size() <= 1)
             continue;
 
-        DRange3d    range = DRange3d::From(points);
-        DPoint3d    rangeCenter = DPoint3d::FromInterpolate(range.low, .5, range.high);
-
         DPoint3d prevPt = points.front();
         bool prevOutside = !GetTileRange().IsContained(prevPt);
         if (!prevOutside)
             {
-            output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance, rangeCenter));
+            output.m_strokes.push_back(Strokes::PointList(inputStroke.m_startDistance));
             output.m_strokes.back().m_points.push_back(prevPt);
             }
 
@@ -2313,7 +2310,7 @@ Strokes MeshGenerator::ClipSegments(StrokesCR input) const
 
             if (prevOutside)
                 {
-                output.m_strokes.push_back(Strokes::PointList(length, rangeCenter));
+                output.m_strokes.push_back(Strokes::PointList(length));
                 output.m_strokes.back().m_points.push_back(startPt);
                 }
 
@@ -2387,7 +2384,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, double rangePix
         if (stroke.m_points.size() > (strokes.m_disjoint ?  0 : 1))
             {
             m_contentRange.Extend(stroke.m_points);
-            builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), fillColor, stroke.m_startDistance, stroke.m_rangeCenter);
+            builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), fillColor, stroke.m_startDistance);
             }
         }
     }
@@ -3048,7 +3045,10 @@ RealityData::CachePtr TileCache::Create(DgnDbCR db)
 Utf8CP TileCache::GetCurrentVersion()
     {
     // Increment this when the binary tile format changes...
-    return "1";
+    // Version history:
+    //  1: Added version to cache db property table; fixed various pre-existing serialization bugs
+    //  2: Removed rangeCenter from polylines
+    return "2";
     }
 
 /*---------------------------------------------------------------------------------**//**
