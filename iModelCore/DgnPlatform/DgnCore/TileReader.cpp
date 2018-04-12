@@ -1732,92 +1732,6 @@ ReadStatus DgnCacheTileRebuilder::ReadTile(DgnTile::Flags& flags, DgnElementIdSe
 //#define TEST_TILE_REBUILDER
 #if defined(TEST_TILE_REBUILDER)
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void compareMeshEdges(MeshCR lhm, MeshCR rhm, bvector<MeshEdge> const& lhe, bvector<MeshEdge> const& rhe)
-    {
-    bool asserted = false;
-    BeAssert(lhe.size() == rhe.size());
-    auto const& lhv = lhm.Verts();
-    auto const& rhv = rhm.Verts();
-    for (size_t i = 0; i < lhe.size(); i++)
-        {
-        auto const& lh = lhe[i];
-        auto const& rh = rhe[i];
-
-        auto lhp0 = lhv[lh.m_indices[0]],
-             lhp1 = lhv[lh.m_indices[1]],
-             rhp0 = rhv[rh.m_indices[0]],
-             rhp1 = rhv[rh.m_indices[1]];
-
-        // possibly order of indices reversed due to index remapping...
-        if (lhp0 != rhp0)
-            std::swap(lhp0, lhp1);
-
-        if (!asserted)
-            {
-            BeAssert(lhp0 == rhp0);
-            BeAssert(lhp1 == rhp1);
-            if (lhp0 != rhp0 || lhp1 != rhp1)
-                asserted = true;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
-    {
-    compareMeshEdges(lhm, rhm, lhm.GetEdges()->m_visible, rhm.GetEdges()->m_visible);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void compareSilhouettes(MeshCR lhm, MeshCR rhm)
-    {
-    compareMeshEdges(lhm, rhm, lhm.GetEdges()->m_silhouette, rhm.GetEdges()->m_silhouette);
-
-    auto const& lhn = lhm.GetEdges()->m_silhouetteNormals;
-    auto const& rhn = rhm.GetEdges()->m_silhouetteNormals;
-    BeAssert(lhn.size() == rhn.size());
-
-    bool asserted = false;
-    for (size_t i = 0; i < lhn.size(); i++)
-        {
-        auto const& lhp = lhn[i];
-        auto const& rhp = rhn[i];
-
-        if (!asserted)
-            {
-            BeAssert(lhp.first == rhp.first);
-            BeAssert(lhp.second == rhp.second);
-            if (lhp.first != rhp.first || lhp.second != rhp.second)
-                asserted = true;
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void comparePolylineEdges(MeshCR lhm, MeshCR rhm)
-    {
-
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   04/18
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void compareEdges(MeshCR lhm, MeshCR rhm)
-    {
-    compareVisibleEdges(lhm, rhm);
-    compareSilhouettes(lhm, rhm);
-    comparePolylineEdges(lhm, rhm);
-    }
-
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   04/18
 //=======================================================================================
@@ -1897,12 +1811,115 @@ struct MeshVertex
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
+static void compareMeshEdges(MeshCR lhm, MeshCR rhm, bvector<MeshEdge> const& lhe, bvector<MeshEdge> const& rhe)
+    {
+    bool asserted = false;
+    BeAssert(lhe.size() == rhe.size());
+    auto const& lhv = lhm.Verts();
+    auto const& rhv = rhm.Verts();
+    for (size_t i = 0; i < lhe.size(); i++)
+        {
+        auto const& lh = lhe[i];
+        auto const& rh = rhe[i];
+
+        auto lhp0 = lhv[lh.m_indices[0]],
+             lhp1 = lhv[lh.m_indices[1]],
+             rhp0 = rhv[rh.m_indices[0]],
+             rhp1 = rhv[rh.m_indices[1]];
+
+        // possibly order of indices reversed due to index remapping...
+        if (lhp0 != rhp0)
+            std::swap(lhp0, lhp1);
+
+        if (!asserted)
+            {
+            BeAssert(lhp0 == rhp0);
+            BeAssert(lhp1 == rhp1);
+            if (lhp0 != rhp0 || lhp1 != rhp1)
+                asserted = true;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
+    {
+    compareMeshEdges(lhm, rhm, lhm.GetEdges()->m_visible, rhm.GetEdges()->m_visible);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareSilhouettes(MeshCR lhm, MeshCR rhm)
+    {
+    compareMeshEdges(lhm, rhm, lhm.GetEdges()->m_silhouette, rhm.GetEdges()->m_silhouette);
+
+    auto const& lhn = lhm.GetEdges()->m_silhouetteNormals;
+    auto const& rhn = rhm.GetEdges()->m_silhouetteNormals;
+    BeAssert(lhn.size() == rhn.size());
+
+    bool asserted = false;
+    for (size_t i = 0; i < lhn.size(); i++)
+        {
+        auto const& lhp = lhn[i];
+        auto const& rhp = rhn[i];
+
+        if (!asserted)
+            {
+            BeAssert(lhp.first == rhp.first);
+            BeAssert(lhp.second == rhp.second);
+            if (lhp.first != rhp.first || lhp.second != rhp.second)
+                asserted = true;
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
 static void compareVertices(MeshCR lhm, uint32_t lhi, MeshCR rhm, uint32_t rhi)
     {
     MeshVertex lhv(lhm, lhi),
                rhv(rhm, rhi);
 
     lhv.Compare(rhv);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void comparePolylines(MeshPolylineCR lhl, MeshCR lhm, MeshPolylineCR rhl, MeshCR rhm)
+    {
+    BeAssert(DoubleOps::AlmostEqual(lhl.GetStartDistance(), rhl.GetStartDistance()));
+
+    auto const& lhIndices = lhl.GetIndices();
+    auto const& rhIndices = rhl.GetIndices();
+    BeAssert(lhIndices.size() == rhIndices.size());
+
+    for (size_t i = 0; i < lhIndices.size(); i++)
+        compareVertices(lhm, lhIndices[i], rhm, rhIndices[i]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void comparePolylineLists(PolylineList const& lhl, PolylineList const& rhl, MeshCR lhm, MeshCR rhm)
+    {
+    BeAssert(lhl.size() == rhl.size());
+    for (size_t i = 0; i < lhl.size(); i++)
+        comparePolylines(lhl[i], lhm, rhl[i], rhm);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareEdges(MeshCR lhm, MeshCR rhm)
+    {
+    compareVisibleEdges(lhm, rhm);
+    compareSilhouettes(lhm, rhm);
+    comparePolylineLists(lhm.GetEdges()->m_polylines, rhm.GetEdges()->m_polylines, lhm, rhm);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1940,6 +1957,7 @@ static void compareMeshes(MeshCR lhs, MeshCR rhs)
     BeAssert(lhv.GetParams().GetScale().AlmostEqual(rhv.GetParams().GetScale()));
 
     compareTriangles(lhs, rhs);
+    comparePolylineLists(lhs.Polylines(), rhs.Polylines(), lhs, rhs);
 
     BeAssert(lhs.GetEdges().IsValid() == rhs.GetEdges().IsValid());
     if (lhs.GetEdges().IsValid() && rhs.GetEdges().IsValid())

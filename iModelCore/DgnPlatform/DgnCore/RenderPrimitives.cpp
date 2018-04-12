@@ -711,6 +711,47 @@ template<> int compareValues(bool const& lhs, bool const& rhs)
     return compareValues(static_cast<uint8_t>(lhs), static_cast<uint8_t>(rhs));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* NB: We used to compare material and texture by address. When reading MeshBuilderMaps back from the tile cache data,
+* we want to preserve order - so must compare by stable identifiers instead.
+* (Materials/textures without stable identifiers are never serialized to cache, so safe to compare those by address).
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> int compareResources(T const* lhs, T const* rhs)
+    {
+    bool lhNull = nullptr == lhs, rhNull = nullptr == rhs;
+
+    if (lhNull)
+        return rhNull ? 0 : -1;
+    else if (rhNull)
+        return 1;
+
+    auto const& lhKey = lhs->GetKey();
+    auto const& rhKey = rhs->GetKey();
+    if (lhKey < rhKey)
+        return -1;
+    else if (rhKey < lhKey)
+        return 1;
+    else
+        return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> int compareValues(MaterialP const& lhs, MaterialP const& rhs)
+    {
+    return compareResources(lhs, rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> int compareValues(TextureCP const& lhs, TextureCP const& rhs)
+    {
+    return compareResources(lhs, rhs);
+    }
+
 #define TEST_LESS_THAN(MEMBER) \
     { \
     int cmp = compareValues(MEMBER, rhs.MEMBER); \
@@ -736,11 +777,11 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetType());
     TEST_LESS_THAN(IgnoresLighting());
     TEST_LESS_THAN(GetLineWidth());
-    TEST_LESS_THAN(GetMaterial());
     TEST_LESS_THAN(GetLinePixels());
     TEST_LESS_THAN(GetFillFlags());
     TEST_LESS_THAN(HasRegionOutline());
-    TEST_LESS_THAN(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
+    TEST_LESS_THAN(GetMaterial());
+    TEST_LESS_THAN(GetTextureMapping().GetTexture());
 
     if (ComparePurpose::Merge == purpose)
         {

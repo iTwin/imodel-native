@@ -3048,7 +3048,9 @@ Utf8CP TileCache::GetCurrentVersion()
     // Version history:
     //  1: Added version to cache db property table; fixed various pre-existing serialization bugs
     //  2: Removed rangeCenter from polylines
-    return "2";
+    //  3: Fixed ordering of DisplayParams::operator<() to use stable IDs of materials and textures rather than addresses,
+    //     to ensure same order when deserializing from cache data back into MeshBuilderMap.
+    return "3";
     }
 
 /*---------------------------------------------------------------------------------**//**
