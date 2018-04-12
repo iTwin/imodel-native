@@ -222,128 +222,101 @@
     @section ECDbECSchemaUpgradeSupportedFeatures ECSchema Upgrade Supported Features
     
     @note Deleting ECClasses, ECEnumerations, KindOfQuantities, ECProperties is only supported in a major schema version change, i.e. 
-    the major version of the ECSchema must be increased in this case. Otherwise the ECSchema upgrade will fail.
+    the @ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead" must be incremented and @b SchemaImportOptions::DisallowMajorSchemaUpgrade must be false false
+    (see @ref BentleyApi::BeSQLite::EC::SchemaManager::SchemaImportOptions). Otherwise the ECSchema upgrade will fail.
 
     ### ECSchema
-    - @b Modify 
-        - @ref BentleyApi::ECN::ECSchema::GetDescription "Description"
-        - @ref BentleyApi::ECN::ECSchema::GetDisplayLabel "DisplayLabel"
-        - @ref BentleyApi::ECN::ECSchema::GetAlias "Alias"
-        - Schema Version (@ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead", @ref BentleyApi::ECN::ECSchema::GetVersionWrite "VersionWrite", @ref BentleyApi::ECN::ECSchema::GetVersionMinor "VersionMinor"):
-            - Version can be incremented. Major version changes, however, can only be performed if @b SchemaImportOptions::DisallowMajorSchemaUpgrade is false
-            (see @ref BentleyApi::BeSQLite::EC::SchemaManager::SchemaImportOptions).
-    - @ref BentleyApi::ECN::ECSchema::GetReferencedSchemas "ECSchema references"
-        - @b Add, @b delete, @b modify
-    - @ref BentleyApi::ECN::ECSchema::GetClasses "ECClasses"
-        - @b Add a new @ref BentleyApi::ECN::ECClass "ECClass"
-        - @b Delete
-            - an @ref BentleyApi::ECN::ECEntityClass "ECEntityClass" which
+    - @ref BentleyApi::ECN::ECSchema::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::ECSchema::GetDisplayLabel "DisplayLabel": Modify
+    - Schema Version (@ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead", @ref BentleyApi::ECN::ECSchema::GetVersionWrite "VersionWrite", @ref BentleyApi::ECN::ECSchema::GetVersionMinor "VersionMinor"): Version can be incremented. Major version changes, however, can only be performed if @b SchemaImportOptions::DisallowMajorSchemaUpgrade is false
+    - @ref BentleyApi::ECN::ECSchema::GetReferencedSchemas "Schema references": Add, Remove
+    - @ref BentleyApi::ECN::ECSchema::GetClasses "Classes":
+        - Add
+        - Remove, if class is
+            - an @ref BentleyApi::ECN::ECEntityClass "ECEntityClass" and
                 - does not have subclasses
                 - is not used as constraint class in an @ref BentleyApi::ECN::ECRelationshipConstraint "ECRelationshipConstraint"
-            - an @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" which is mapped as <b>link table</b>
-            - @b Note: This is a major schema upgrade which can only be done if the @ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead"
-            is incremented and if @b SchemaImportOptions::DisallowMajorSchemaUpgrade is false (see @ref BentleyApi::BeSQLite::EC::SchemaManager::SchemaImportOptions).
-    - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations"
-        - @b Add a new @ref BentleyApi::ECN::ECEnumeration "ECEnumeration"
-    - @ref BentleyApi::ECN::ECSchema::GetKindOfQuantities "KindOfQuantities"
-        - @b Add a new @ref BentleyApi::ECN::KindOfQuantity "KindOfQuantity"
-    - @ref BentleyApi::ECN::ECSchema::GetPropertyCategories "PropertyCategories"
-        - @b Add a new @ref BentleyApi::ECN::PropertyCategory "PropertyCategory"
-    - @b CustomAttributes on the ECSchema
-        - @b Add, @b delete, @b modify
+            - a @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" which is mapped as <b>link table</b> 
+    - @ref BentleyApi::ECN::ECSchema::GetEnumerations "ECEnumerations": Add
+    - @ref BentleyApi::ECN::ECSchema::GetKindOfQuantities "KindOfQuantities": Add
+    - @ref BentleyApi::ECN::ECSchema::GetPropertyCategories "PropertyCategories": Add
+    - @b CustomAttributes on the ECSchema: Add, Remove, Modify
 
     ### ECClass
-    - @b Modify 
-        - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
-        - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
-        - @ref BentleyApi::ECN::ECClass::GetBaseClasses "BaseClasses"
-            - Only property-less @ref BentleyApi::ECN::ECEntityClass::IsMixin "Mixin" can be @b Added or @b Deleted from base class list
-        - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier"
-            - from @b Sealed to @b None, but only if 
-                - the class is no ECRelationshipClass 
-                - the class is mapped as 'TablePerHierarchy'
-            - from @b None to @b Sealed (for leaf classes only, of course)
-
-    - @b ECProperties
-        - @b Add a new @ref BentleyApi::ECN::ECProperty "ECProperty"
-        - @b Delete an @ref BentleyApi::ECN::ECProperty "ECProperty" which is
+    - @ref BentleyApi::ECN::ECClass::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECClass::GetBaseClasses "BaseClasses": Only property-less @ref BentleyApi::ECN::ECEntityClass::IsMixin "Mixins" can be @b Added or @b removed
+    - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier":
+        - from @b Sealed to @b None, but only if 
+            - the class is no ECRelationshipClass 
+            - the class is mapped as 'TablePerHierarchy'
+        - from @b None to @b Sealed (for leaf classes only, of course)
+    - @ref BentleyApi::ECN::ECClass::GetProperties "Properties":
+        - Add
+        - Remove, if the property is
             - mapped to a shared column (see ShareColumns custom attribute in @ref ClassMapCustomAttributeDescription)
             - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
             - not overridden
-            - @ref BentleyApi::ECN::NavigationECProperty cannot be deleted
-            - @b Note: This is a major schema upgrade which can only be done if the @ref BentleyApi::ECN::ECSchema::GetVersionRead "VersionRead"
-            is incremented and if @b SchemaImportOptions::DisallowMajorSchemaUpgrade is false (see @ref BentleyApi::BeSQLite::EC::SchemaManager::SchemaImportOptions).
-    - @b CustomAttributes on the ECClass
-        - @b Add, @b delete, @b modify
+            - not a @ref BentleyApi::ECN::NavigationECProperty
+    - @b CustomAttributes on the ECClass: Add, Remove, Modify
 
     ### PropertyCategory
-    - @b Modify 
-        - @ref BentleyApi::ECN::PropertyCategory::GetPriority "Priority"
-        - @ref BentleyApi::ECN::PropertyCategory::GetDisplayLabel "DisplayLabel"
-        - @ref BentleyApi::ECN::PropertyCategory::GetDescription "Description"
+    - @ref BentleyApi::ECN::PropertyCategory::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::PropertyCategory::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::PropertyCategory::GetPriority "Priority": Modify
 
     ### KindOfQuantity
-    - @b Modify 
-        - @ref BentleyApi::ECN::KindOfQuantity::GetRelativeError "RelativeError"
-        - @ref BentleyApi::ECN::KindOfQuantity::GetPresentationUnitList "PresentationUnit"
-        - @ref BentleyApi::ECN::KindOfQuantity::GetDisplayLabel "DisplayLabel"
-        - @ref BentleyApi::ECN::KindOfQuantity::GetDescription "Description"
+    - @ref BentleyApi::ECN::KindOfQuantity::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::KindOfQuantity::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::KindOfQuantity::GetRelativeError "RelativeError": Modify
+    - @ref BentleyApi::ECN::KindOfQuantity::GetPresentationUnitList "PresentationUnits": Add, Remove
 
     ### ECProperty
-    - @b Modify 
-        - @ref BentleyApi::ECN::ECProperty::GetDescription "Description"
-        - @ref BentleyApi::ECN::ECProperty::GetDisplayLabel "DisplayLabel"
-        - @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "IsReadOnly"
-        - @ref BentleyApi::ECN::ECProperty::GetCategory "Category"
-        - @ref BentleyApi::ECN::ECProperty::GetPriority "Priority"
-        - @ref BentleyApi::ECN::ECProperty::GetMinimumValue "MinimumValue"
-        - @ref BentleyApi::ECN::ECProperty::GetMaximumValue "MaximumValue"
-        - @ref BentleyApi::ECN::ECProperty::GetMinimumLength "MinimumLength"
-        - @ref BentleyApi::ECN::ECProperty::GetMaximumLength "MaximumLength"
-        - @ref BentleyApi::ECN::ECProperty::GetKindOfQuantity "KindOfQuantity"
-            - It is possible to 
-                - assign a KindOfQuantity to an ECProperty that didn't have one before
-                - change the KindOfQuantity of an ECProperty to another KindOfQuantity
-                - remove the KindOfQuantity from the ECProperty
-
-    - @b CustomAttributes on the ECProperty
-        - @b Add, @b delete, @b modify
+    - @ref BentleyApi::ECN::ECProperty::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "IsReadOnly": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetMinimumValue "MinimumValue": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetMaximumValue "MaximumValue": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetMinimumLength "MinimumLength": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetMaximumLength "MaximumLength": Modify
+    - @ref BentleyApi::ECN::ECProperty::GetCategory "Category": Assign, Remove
+    - @ref BentleyApi::ECN::ECProperty::GetPriority "Priority": Assign, Remove
+    - @ref BentleyApi::ECN::ECProperty::GetKindOfQuantity "KindOfQuantity":
+        - Assign
+        - Replace, only if its "PersistenceUnit" does not change
+    - @b CustomAttributes on the ECProperty: Add, Remove, Modify
 
     #### Primitive ECProperty
-    - @b Modify 
-        - @ref BentleyApi::ECN::PrimitiveECProperty::GetExtendedTypeName "ExtendedTypeName"
-        - @ref BentleyApi::ECN::PrimitiveECProperty::GetEnumeration "ECEnumeration"
-            - It is possible to 
-                - assign an ECEnumeration to an ECProperty that was an ordinary primitive property before
-                - change the ECEnumeration of an ECProperty to another ECEnumeration
-                - remove the ECEnumeration from the ECProperty, so that it becomes an ordinary primitive property
-            - This is possible only if
-                - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
-                - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
-                or if the @ref BentleyApi::ECN::PrimitiveECProperty::GetType "property type" and the ECEnumeration's underlying type is the same.
+    - @ref BentleyApi::ECN::PrimitiveECProperty::GetExtendedTypeName "ExtendedTypeName": Modify
+    - @ref BentleyApi::ECN::PrimitiveECProperty::GetEnumeration "ECEnumeration": Modify with these restrictions:
+        - It is possible to 
+            - assign an ECEnumeration to an ECProperty that was an ordinary primitive property before
+            - change the ECEnumeration of an ECProperty to another ECEnumeration
+            - remove the ECEnumeration from the ECProperty, so that it becomes an ordinary primitive property
+        - This is possible only if
+            - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
+            - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
+            or if the @ref BentleyApi::ECN::PrimitiveECProperty::GetType "property type" and the ECEnumeration's underlying type is the same.
 
     #### Primitive Array ECProperty
-    - @b Modify 
-        - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetExtendedTypeName "ExtendedTypeName"
-        - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetEnumeration "ECEnumeration"
-            - It is possible to 
-                - assign an ECEnumeration to an ECProperty that was an ordinary primitive property before
-                - change the ECEnumeration of an ECProperty to another ECEnumeration
-                - remove the ECEnumeration from the ECProperty, so that it becomes an ordinary primitive property
-            - This is possible only if
-                - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
-                - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
-                or if the @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetPrimitiveElementType "array element type" and the ECEnumeration's underlying type is the same.
+    - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetExtendedTypeName "ExtendedTypeName": Modify
+    - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetEnumeration "ECEnumeration": Modify with these restrictions:
+        - It is possible to 
+            - assign an ECEnumeration to an ECProperty that was an ordinary primitive property before
+            - change the ECEnumeration of an ECProperty to another ECEnumeration
+            - remove the ECEnumeration from the ECProperty, so that it becomes an ordinary primitive property
+        - This is possible only if
+            - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
+            - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
+            or if the @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetPrimitiveElementType "array element type" and the ECEnumeration's underlying type is the same.
 
     ### ECRelationshipConstraint
-    - @b Modify 
-        - @ref BentleyApi::ECN::ECRelationshipConstraint::GetRoleLabel "RoleLabel"
-    - @b CustomAttributes on the ECRelationshipConstraint
-        - @b Add, @b delete, @b modify
+    - @ref BentleyApi::ECN::ECRelationshipConstraint::GetRoleLabel "RoleLabel": Modify
+    - @b CustomAttributes on the ECRelationshipConstraint: Add, Remove, Modify
     
     ### ECDbMap ECSchema Custom Attributes
 
-    Generally, the Custom Attributes from the @b ECDbMap ECSchema cannot be added, deleted, or modified if they affected the mapping of the ECSchemas and 
+    Generally, the Custom Attributes from the @b ECDbMap ECSchema cannot be added, removed, or modified if they affected the mapping of the ECSchemas and 
     therefore the layout of the database schema.
         
     @see @ref ECDbOverview

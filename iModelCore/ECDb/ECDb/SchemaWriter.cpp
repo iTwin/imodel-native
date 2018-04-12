@@ -1268,10 +1268,16 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
     if (propertyChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
+    if (propertyChange.GetName().IsValid())
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of an ECProperty is not supported.");
+        return ERROR;
+        }
+
     ECPropertyId propertyId = ctx.GetSchemaManager().GetPropertyId(newProperty);
     if (!propertyId.IsValid())
         {
-        BeAssert(false && "Failed to resolve ecclass id");
+        BeAssert(false && "Failed to resolve ECPropertyId");
         return ERROR;
         }
 
@@ -1298,7 +1304,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
         ArrayChange& arrayChange = propertyChange.GetArray();
         if (arrayChange.MaxOccurs().IsValid() || arrayChange.MinOccurs().IsValid())
             {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'MinOccurs' or 'MaxOccurs' for an Array ECProperty is not supported.",
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing 'MinOccurs' or 'MaxOccurs' for an Array ECProperty is not supported.",
                                       oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
             return ERROR;
             }
@@ -1323,18 +1329,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
         }
 
     SqlUpdateBuilder sqlUpdateBuilder("ec_Property");
-    if (propertyChange.GetName().IsValid())
-        {
-        if (propertyChange.GetName().GetNew().IsNull())
-            {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: 'Name' must always be set for an ECProperty is not supported.",
-                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
-            return ERROR;
-            }
 
-        sqlUpdateBuilder.AddSetExp("Name", propertyChange.GetName().GetNew().Value().c_str());
-        }
-    //MinMaxValueChange:
     if (propertyChange.GetMinimumLength().IsValid())
         {
         constexpr Utf8CP kPrimitiveTypeMinLength = "PrimitiveTypeMinLength";
@@ -1371,7 +1366,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
                 sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMinValue, value.GetUtf8CP());
             else
                 {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'PrimitiveTypeMinValue' to a unsupported type.",
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'MinimumValue' to an unsupported type.",
                                 oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
                 return ERROR;
                 }
@@ -1396,7 +1391,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
                 sqlUpdateBuilder.AddSetExp(kPrimitiveTypeMaxValue, value.GetUtf8CP());
             else
                 {
-                ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'PrimitiveTypeMaxValue' to a unsupported type.",
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Changing the 'MaximumValue' to an unsupported type.",
                                 oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
                 return ERROR;
                 }
@@ -1431,14 +1426,10 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
         }
 
     if (propertyChange.IsReadonly().IsValid())
-        {
         sqlUpdateBuilder.AddSetExp("IsReadonly", propertyChange.IsReadonly().GetNew().Value());
-        }
 
     if (propertyChange.GetPriority().IsValid())
-        {
         sqlUpdateBuilder.AddSetExp("Priority", propertyChange.GetPriority().GetNew().Value());
-        }
 
     if (propertyChange.GetEnumeration().IsValid())
         {
@@ -1452,7 +1443,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
             {
             PrimitiveType newPrimType = newProperty.GetIsPrimitive() ? newProperty.GetAsPrimitiveProperty()->GetType() : newProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
             sqlUpdateBuilder.AddSetExp("PrimitiveType", (int) newPrimType);
-            sqlUpdateBuilder.AddSetToNull("EnumerationId"); //set to null;
+            sqlUpdateBuilder.AddSetToNull("EnumerationId");
             }
         else
             {
@@ -1480,35 +1471,53 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
     if (propertyChange.GetKindOfQuantity().IsValid())
         {
         StringChange& change = propertyChange.GetKindOfQuantity();
-        sqlUpdateBuilder.AddSetToNull("KindOfQuantityId");
+
         if (change.GetNew().IsNull())
-            sqlUpdateBuilder.AddSetToNull("KindOfQuantityId");
-        else
             {
-            KindOfQuantityCP koqCP = newProperty.GetKindOfQuantity();
-            if (koqCP == nullptr)
+            ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Removing a KindOfQuantity from a property is not supported.",
+                                 oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str());
+            return ERROR;
+            }
+
+        KindOfQuantityCP newKoq = newProperty.GetKindOfQuantity();
+        if (newKoq == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        if (!change.GetOld().IsNull())
+            {
+            KindOfQuantityCP oldKoq = oldProperty.GetKindOfQuantity();
+            if (oldKoq == nullptr)
                 {
                 BeAssert(false);
                 return ERROR;
                 }
-
-            KindOfQuantityId id = ctx.GetSchemaManager().GetKindOfQuantityId(*koqCP);
-            if (!id.IsValid())
+           
+            if (!oldKoq->GetPersistenceUnit().GetUnitName().EqualsIAscii(newKoq->GetPersistenceUnit().GetUnitName()))
                 {
-                if (ImportKindOfQuantity(ctx, *koqCP) != SUCCESS)
-                    return ERROR;
-
-                id = koqCP->GetId();
+                ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Replacing KindOfQuantity '%s' by '%s' is not supported because their persistent units differ.",
+                                     oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), oldKoq->GetFullName().c_str(), newKoq->GetFullName().c_str());
+                return ERROR;
                 }
-
-            sqlUpdateBuilder.AddSetExp("KindOfQuantityId", id.GetValue());
             }
+
+        KindOfQuantityId id = ctx.GetSchemaManager().GetKindOfQuantityId(*newKoq);
+        if (!id.IsValid())
+            {
+            if (ImportKindOfQuantity(ctx, *newKoq) != SUCCESS)
+                return ERROR;
+
+            id = newKoq->GetId();
+            }
+
+        sqlUpdateBuilder.AddSetExp("KindOfQuantityId", id.GetValue());
         }
 
     if (propertyChange.GetCategory().IsValid())
         {
         StringChange& change = propertyChange.GetCategory();
-        sqlUpdateBuilder.AddSetToNull("CategoryId");
         if (change.GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("CategoryId");
         else
@@ -1809,6 +1818,12 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
     if (classChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
+    if (classChange.GetName().IsValid())
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of an ECClass is not supported.");
+        return ERROR;
+        }
+
     ECClassId classId = ctx.GetSchemaManager().GetClassId(newClass);
     if (!classId.IsValid())
         {
@@ -1856,18 +1871,6 @@ BentleyStatus SchemaWriter::UpdateClass(Context& ctx, ClassChange& classChange, 
         ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Changing the ECClassType of an ECClass is not supported.",
                         oldClass.GetFullName());
         return ERROR;
-        }
-
-    if (classChange.GetName().IsValid())
-        {
-        if (classChange.GetName().GetNew().IsNull())
-            {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECClass %s: Name must always be set for an ECClass.",
-                            oldClass.GetFullName());
-            return ERROR;
-            }
-
-        updateBuilder.AddSetExp("Name", classChange.GetName().GetNew().Value().c_str());
         }
 
     if (classChange.GetDisplayLabel().IsValid())
@@ -2775,8 +2778,6 @@ BentleyStatus SchemaWriter::UpdateEnumeration(Context& ctx, ECEnumerationChange&
             sqlUpdateBuilder.AddSetExp("Description", enumChange.GetDescription().GetNew().Value().c_str());
         }
 
-
-
     ECEnumeratorChanges enumeratorChanges = enumChange.Enumerators();
     if (enumeratorChanges.IsValid())
         {
@@ -2889,6 +2890,12 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
     if (schemaChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
+    if (schemaChange.GetName().IsValid())
+        {
+        ctx.Issues().ReportV("ECSchema Upgrade failed. Changing the name of an ECSchema is not supported.");
+        return ERROR;
+        }
+
     ECSchemaId schemaId = ctx.GetSchemaManager().GetSchemaId(newSchema);
     if (!schemaId.IsValid())
         {
@@ -2897,17 +2904,6 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
         }
 
     SqlUpdateBuilder updateBuilder(TABLE_Schema);
-    if (schemaChange.GetName().IsValid())
-        {
-        if (schemaChange.GetName().GetNew().IsNull())
-            {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Name must always be set.",
-                                      oldSchema.GetFullSchemaName().c_str());
-            return ERROR;
-            }
-
-        updateBuilder.AddSetExp("Name", schemaChange.GetName().GetNew().Value().c_str());
-        }
 
     if (schemaChange.GetDisplayLabel().IsValid())
         {
@@ -2973,21 +2969,9 @@ BentleyStatus SchemaWriter::UpdateSchema(Context& ctx, SchemaChange& schemaChang
 
     if (schemaChange.GetAlias().IsValid())
         {
-        if (schemaChange.GetAlias().GetNew().IsNull())
-            {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias must always be set.",
-                                      oldSchema.GetFullSchemaName().c_str());
-            return ERROR;
-            }
-
-        if (ctx.GetSchemaManager().ContainsSchema(schemaChange.GetAlias().GetNew().Value(), SchemaLookupMode::ByAlias))
-            {
-            ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Alias is already used by another existing ECSchema.",
-                                      oldSchema.GetFullSchemaName().c_str());
-            return ERROR;
-            }
-
-        updateBuilder.AddSetExp("Alias", schemaChange.GetAlias().GetNew().Value().c_str());
+        ctx.Issues().ReportV("ECSchema Upgrade failed. ECSchema %s: Modifying the Alias is not supported.",
+                             oldSchema.GetFullSchemaName().c_str());
+        return ERROR;
         }
 
     updateBuilder.AddWhereExp("Id", schemaId.GetValue());//this could even be on name
