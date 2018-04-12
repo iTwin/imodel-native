@@ -1238,6 +1238,9 @@ BentleyStatus   DwgImporter::_ImportSpaces ()
     if (m_modelspaceUnits == StandardUnit::None)
         m_modelspaceUnits = m_options.GetUnspecifiedBlockUnits ();
 
+    // save off active viewport - either a modelspace viewport(timemode=1) or a layout viewport(tilemode=0):
+    m_activeViewportId = m_dwgdb->GetTILEMODE() ? m_dwgdb->GetActiveModelspaceViewportId() : m_dwgdb->GetActiveUserViewportId();
+
     return  BSISUCCESS;
     }
 
@@ -1658,16 +1661,19 @@ void            DwgImporter::_FinishImport ()
     // initialize project extents before processing views
     m_dgndb->GeoLocation().InitializeProjectExtents();
 
-    _PostProcessViewports ();
     _EmbedFonts ();
     _EmbedPresentationRules ();
 
     if (m_defaultViewId.IsValid())
         {
-        // check and add the DefaultView ID if not found in DB:
+        /*-------------------------------------------------------------------------------
+        Set the DefaultView ID property only if:
+            a) the property is not found in DB, or
+            b) m_defaultViewId was set from a valid active viewport.
+        -------------------------------------------------------------------------------*/
         PropertySpec    prop = DgnViewProperty::DefaultView ();
         DgnElementId    existingId;
-        if (m_dgndb->QueryProperty(&existingId, sizeof(existingId), prop) != DbResult::BE_SQLITE_OK || !existingId.IsValid())
+        if (m_dgndb->QueryProperty(&existingId, sizeof(existingId), prop) != DbResult::BE_SQLITE_OK || m_activeViewportId.IsValid())
             m_dgndb->SaveProperty (prop, &m_defaultViewId, sizeof(m_defaultViewId));
         }
 
@@ -1690,9 +1696,11 @@ void            DwgImporter::_FinishImport ()
                 changeDetector._DetectDeletedModelsInFile (*this, *dwg);
                 }
             }
-        // done deletion
+        // done per file deletion
         changeDetector._DetectDeletedElementsEnd (*this);
         changeDetector._DetectDeletedModelsEnd (*this);
+        changeDetector._DetectDeletedMaterials (*this);
+        changeDetector._DetectDeletedViews (*this);
 
         // update syncinfo for master DWG file
         DwgSyncInfo&    syncInfo = GetSyncInfo ();
@@ -1712,6 +1720,7 @@ void            DwgImporter::_FinishImport ()
         }
     changeDetector._Cleanup (*this);
 
+    _PostProcessViewports ();
     ValidateJob ();
 
     // WIP - thumbnails
@@ -1836,6 +1845,8 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     m_importedMaterials.clear ();
     m_sharedGeometryPartList.clear ();
     m_entitiesImported = 0;
+    m_layersImported = 0;
+    m_errorCount = 0;
     m_attributeDefinitionSchema = 0;
     m_constantBlockAttrdefList.clear ();
     m_modelspaceUnits = StandardUnit::None;

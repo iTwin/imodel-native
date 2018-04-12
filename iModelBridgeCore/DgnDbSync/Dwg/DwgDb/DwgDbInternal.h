@@ -302,7 +302,8 @@ END_DWGDB_NAMESPACE
         return (Dwg##_classSuffix_##*)rxObj->queryX(Dwg##_classSuffix_##::desc());                                  \
         }                                                                                                           \
     OdRxObject* Dwg##_classSuffix_##::QueryX (OdRxClass const* rxc) const { return this->queryX(rxc); }             \
-    OdRxObject* Dwg##_classSuffix_##::GetX (OdRxClass const* rxc) const { return this->x(rxc); }
+    OdRxObject* Dwg##_classSuffix_##::GetX (OdRxClass const* rxc) const { return this->x(rxc); }                    \
+    OdRxClass*  Dwg##_classSuffix_##::IsA () const { return this->isA(); }
 
 // use this wherever OpenDWG returns us an OdString whereas RealDWG does ACHAR*
 #define DWGDB_ToWString(_odString_)       WString(##_odString_##.c_str())
@@ -412,7 +413,8 @@ END_DWGDB_NAMESPACE
             return ((rxObj == nullptr) || !rxObj->isKindOf(Dwg##_classSuffix_##::desc())) ? nullptr : (Dwg##_classSuffix_##*)rxObj; \
             }                                                                                                                       \
         AcRxObject* Dwg##_classSuffix_##::QueryX (AcRxClass const* rxc) const { return T_Super::queryX(rxc); }                      \
-        AcRxObject* Dwg##_classSuffix_##::GetX (AcRxClass const* rxc) const { return T_Super::x(rxc); }
+        AcRxObject* Dwg##_classSuffix_##::GetX (AcRxClass const* rxc) const { return T_Super::x(rxc); }                             \
+        AcRxClass*  Dwg##_classSuffix_##::IsA () const { return this->isA(); }
 
 // use this wherever OpenDWG returns us an OdString whereas RealDWG does ACHAR*
 #define DWGDB_ToWString(_chars_)       WString(static_cast<WCharCP>(##_chars_##))

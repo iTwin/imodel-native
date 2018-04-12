@@ -69,7 +69,10 @@ DwgString       DwgDbObjectId::GetDwgClassName () const
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbObjectPtr   obj = T_Super::safeOpenObject ();
     if (obj.isNull())
+        {
+        BeAssert (false && "Null object opened from OdDbObjectId");
         return  L"NullObject";
+        }
     return obj->isA()->name();
 #elif DWGTOOLKIT_RealDwg
     const ACHAR*    className = T_Super::objectClass()->name ();
@@ -82,12 +85,33 @@ DwgString       DwgDbObjectId::GetDwgClassName () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+DWG_TypeP(RxClass) DwgDbObjectId::GetDwgClass () const
+    {
+#ifdef DWGTOOLKIT_OpenDwg
+    OdDbObjectPtr   obj = T_Super::safeOpenObject ();
+    if (obj.isNull())
+        {
+        BeAssert (false && "Null object opened from OdDbObjectId");
+        return  nullptr;
+        }
+    return obj->isA ();
+#elif DWGTOOLKIT_RealDwg
+    return T_Super::objectClass ();
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          10/15
++---------------+---------------+---------------+---------------+---------------+------*/
 bool            DwgDbObjectId::IsObjectDerivedFrom (DWG_TypeCP(RxClass) rxClass) const
     {
 #ifdef DWGTOOLKIT_OpenDwg
     OdDbObjectPtr   obj = T_Super::safeOpenObject ();
     if (obj.isNull())
+        {
+        BeAssert (false && "Null object opened from OdDbObjectId");
         return  false;
+        }
     return obj->isA()->isDerivedFrom (rxClass);
 #elif DWGTOOLKIT_RealDwg
     return T_Super::objectClass()->isDerivedFrom(rxClass);
