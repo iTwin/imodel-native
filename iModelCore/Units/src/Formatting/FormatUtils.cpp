@@ -673,6 +673,7 @@ LocaleProperties::LocaleProperties(Json::Value jval)
         m_decimalSeparator = '.';
         m_thousandsSeparator = '\0';
         }
+            unit = curs.ExtractSegment(0, curs.GetTotalLength());
     }
 
 //----------------------------------------------------------------------------------------
