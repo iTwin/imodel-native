@@ -2356,9 +2356,15 @@ protected:
     //! @note implementers should always forward this call to their superclass.
     BE_SQLITE_EXPORT virtual void _OnDbChangedByOtherConnection();
 
-    //!< override to perform additional processing when briefcase id is assigned
+    //!< Override to perform additional processing before and after the Db is setup as the master
     //! @note implementers should always forward this call to their superclass.
-    virtual DbResult _OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId) { return BE_SQLITE_OK; }
+    virtual DbResult _OnBeforeSetAsMaster(BeGuid guid) { return BE_SQLITE_OK; }
+    virtual DbResult _OnAfterSetAsMaster(BeGuid guid) { return BE_SQLITE_OK; }
+
+    //!< Override to perform additional processing before and after the Db is setup as a local briefcase
+    //! @note implementers should always forward this call to their superclass.
+    virtual DbResult _OnBeforeSetAsBriefcase(BeBriefcaseId newBriefcaseId) { return BE_SQLITE_OK; }
+    virtual DbResult _OnAfterSetAsBriefcase(BeBriefcaseId newBriefcaseId) { return BE_SQLITE_OK; }
 
     //! Gets called when a Db is opened and checks whether the file can be opened, i.e
     //! whether the file version matches what the opening API expects.
