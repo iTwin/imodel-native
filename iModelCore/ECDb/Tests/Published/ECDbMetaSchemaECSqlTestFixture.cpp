@@ -37,6 +37,8 @@ private:
     void AssertPhenomenonDef(PhenomenonCR expected, ECSqlStatement const& actualRow);
     void AssertUnitDefs(ECSchemaCR expectedSchema);
     void AssertUnitDef(ECUnitCR expected, ECSqlStatement const& actualRow);
+    void AssertFormatDefs(ECSchemaCR expectedSchema);
+    void AssertFormatDef(ECFormatCR expected, ECSqlStatement const& actualRow);
 
 protected:
     void AssertSchemaDefs();
@@ -593,22 +595,22 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
 
         if (colName.EqualsI("PersistenceUnit"))
             {
-            ASSERT_STREQ(expectedKoq.GetPersistenceUnitDescriptor().c_str(), val.GetText()) << "KindOfQuantityDef.PersistenceUnit";
+            ASSERT_STREQ(expectedKoq.GetPersistenceUnit()->GetQualifiedName(expectedKoq.GetSchema()).c_str(), val.GetText()) << "KindOfQuantityDef.PersistenceUnit";
             continue;
             }
 
         if (colName.EqualsI("PresentationUnits"))
             {
-            if (expectedKoq.GetPresentationUnitList().empty())
-                ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.PresentationUnits";
+            if (expectedKoq.GetPresentationFormatList().empty())
+                ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.PresentationFormatList";
             else
                 {
-                ASSERT_EQ((int) expectedKoq.GetPresentationUnitList().size(), val.GetArrayLength()) << "KindOfQuantityDef.PresentationUnits";
+                ASSERT_EQ((int) expectedKoq.GetPresentationFormatList().size(), val.GetArrayLength()) << "KindOfQuantityDef.PresentationFormatList";
 
                 size_t i = 0;
                 for (IECSqlValue const& arrayElementVal : val.GetArrayIterable())
                     {
-                    ASSERT_STREQ(KindOfQuantity::GetFUSDescriptor(expectedKoq.GetPresentationUnitList()[i], expectedKoq.GetSchema()).c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.PresentationUnits";
+                    ASSERT_STREQ(expectedKoq.GetPresentationFormatList()[i].GetName().c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.PresentationFormatList";
                     i++;
                     }
                 }
@@ -953,6 +955,188 @@ void ECDbMetaSchemaECSqlTestFixture::AssertUnitDef(ECUnitCR expected, ECSqlState
 
         FAIL() << "Untested UnitDef property: " << colName.c_str() << " Please adjust the test";
         }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertFormatDefs(ECSchemaCR expectedSchema)
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT f.Name, f.* FROM meta.ECSchemaDef s "
+                                                        "JOIN meta.FormatDef f USING meta.SchemaOwnsFormats "
+                                                        "WHERE s.Name=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, expectedSchema.GetName().c_str(), IECSqlBinder::MakeCopy::No));
+
+    int actualCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        Utf8CP actualName = statement.GetValueText(0);
+        ECFormatCP expected = expectedSchema.GetFormatCP(actualName);
+        ASSERT_TRUE(expected != nullptr);
+
+        AssertFormatDef(*expected, statement);
+        actualCount++;
+        }
+
+    ASSERT_EQ((int) expectedSchema.GetFormatCount(), actualCount);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertFormatDef(ECFormatCR expected, ECSqlStatement const& actualRow)
+    {
+    const int colCount = actualRow.GetColumnCount();
+    for (int i = 0; i < colCount; i++)
+        {
+        IECSqlValue const& val = actualRow.GetValue(i);
+        ECSqlColumnInfoCR colInfo = val.GetColumnInfo();
+
+        ECPropertyCP colInfoProp = colInfo.GetProperty();
+        ASSERT_TRUE(colInfoProp != nullptr);
+
+        Utf8StringCR colName = colInfoProp->GetName();
+
+        if (colName.EqualsI("ECInstanceId"))
+            {
+            ASSERT_EQ(expected.GetId().GetValue(), val.GetId<UnitId>().GetValue()) << "FormatDef.ECInstanceId";
+            continue;
+            }
+
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "FormatDef")->GetId(), val.GetId<ECClassId>()) << "FormatDef.ECClassId";
+            continue;
+            }
+
+        if (colName.EqualsI("Schema"))
+            {
+            ECClassId actualRelClassId;
+            ASSERT_EQ(expected.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "FormatDef.Schema";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "FormatDef.Schema";
+            continue;
+            }
+
+        if (colName.EqualsI("Name"))
+            {
+            ASSERT_STREQ(expected.GetName().c_str(), val.GetText()) << "FormatDef.Name";
+            continue;
+            }
+
+        if (colName.EqualsI("DisplayLabel"))
+            {
+            if (expected.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expected.GetInvariantDisplayLabel().c_str(), val.GetText()) << "FormatDef.DisplayLabel";
+            else
+                ASSERT_TRUE(val.IsNull()) << "FormatDef.DisplayLabel";
+
+            continue;
+            }
+
+        if (colName.EqualsI("Description"))
+            {
+            if (!expected.GetInvariantDescription().empty())
+                ASSERT_STREQ(expected.GetInvariantDescription().c_str(), val.GetText()) << "FormatDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "FormatDef.Description";
+
+            continue;
+            }
+
+        if (colName.EqualsI("NumericSpec"))
+            {
+            if (!expected.HasNumeric())
+                ASSERT_TRUE(val.IsNull()) << "FormatDef.NumericSpec";
+            else
+                ASSERT_STREQ(expected.GetNumericSpec()->ToJson(false).ToString().c_str(), val.GetText()) << "FormatDef.NumericSpec";
+
+            continue;
+            }
+
+        if (colName.EqualsI("CompositeSpacer"))
+            {
+            if (!expected.HasComposite() && !expected.GetCompositeSpec()->HasSpacer())
+                ASSERT_TRUE(val.IsNull()) << "FormatDef.CompositeSpacer";
+            else
+                ASSERT_STREQ(expected.GetCompositeSpec()->GetSpacer().c_str(), val.GetText()) << "FormatDef.CompositeSpacer";
+
+            continue;
+            }
+
+        FAIL() << "Untested FormatDef property: " << colName.c_str() << " Please adjust the test";
+        }
+
+    //now check the composite units
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT fcu.Label, fcu.UnitId FROM meta.FormatCompositeUnitDef fcu WHERE fcu.Format.Id=? ORDER BY fcu.Ordinal"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, expected.GetId()));
+
+    const bool expectedHasComposite = expected.HasComposite();
+    Formatting::CompositeValueSpecCP expectedCompSpec = expected.GetCompositeSpec();
+    const int expectedCompositeUnitCount = expectedHasComposite ? (int) expectedCompSpec->GetUnitCount() : 0;
+    int actualCompositeUnitCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        Utf8CP actualLabel = statement.IsValueNull(0) ? nullptr : statement.GetValueText(0);
+        UnitId actualUnitId;
+        if (!statement.IsValueNull(1))
+            actualUnitId = statement.GetValueId<UnitId>(1);
+
+        ASSERT_TRUE(expectedHasComposite) << "Actual Format has at least one composite unit";
+        ASSERT_LT(actualCompositeUnitCount, expectedCompositeUnitCount);
+
+        switch (actualCompositeUnitCount)
+            {
+                case 0:
+                {
+                if (expectedCompSpec->HasMajorLabel())
+                    ASSERT_STREQ(expectedCompSpec->GetMajorLabel().c_str(), actualLabel) << "FormatDef.MajorLabel";
+                else
+                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatDef.MajorLabel";
+
+                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetMajorUnit())->GetId(), actualUnitId) << "FormatDef.MajorUnit";
+                break;
+                }
+                case 1:
+                {
+                if (expectedCompSpec->HasMiddleLabel())
+                    ASSERT_STREQ(expectedCompSpec->GetMiddleLabel().c_str(), actualLabel) << "FormatDef.MiddleLabel";
+                else
+                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatDef.MiddleLabel";
+
+                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetMiddleUnit())->GetId(), actualUnitId) << "FormatDef.MiddleUnit";
+                break;
+                }
+                case 2:
+                {
+                if (expectedCompSpec->HasMinorLabel())
+                    ASSERT_STREQ(expectedCompSpec->GetMinorLabel().c_str(), actualLabel) << "FormatDef.MinorLabel";
+                else
+                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatDef.MinorLabel";
+
+                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetMinorUnit())->GetId(), actualUnitId) << "FormatDef.MinorUnit";
+                break;
+                }
+                case 3:
+                {
+                if (expectedCompSpec->HasSubLabel())
+                    ASSERT_STREQ(expectedCompSpec->GetSubLabel().c_str(), actualLabel) << "FormatDef.SubLabel";
+                else
+                    ASSERT_TRUE(Utf8String::IsNullOrEmpty(actualLabel)) << "FormatDef.SubLabel";
+
+                ASSERT_EQ(((ECUnitCP) expectedCompSpec->GetSubUnit())->GetId(), actualUnitId) << "FormatDef.SubUnit";
+                break;
+                }
+                default:
+                    FAIL() << "FormatDef has more than 4 composite units";
+            }
+
+        actualCompositeUnitCount++;
+        }
+
+    ASSERT_EQ(expectedCompositeUnitCount, actualCompositeUnitCount);
     }
 
 //---------------------------------------------------------------------------------

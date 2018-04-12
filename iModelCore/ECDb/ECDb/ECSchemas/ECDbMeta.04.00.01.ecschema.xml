@@ -150,6 +150,32 @@
         <ECProperty propertyName="Description" typeName="string"/>
         <ECProperty propertyName="Definition" typeName="string"/>
     </ECEntityClass>
+    <ECEntityClass typeName="FormatDef" description="Format" displayLabel="Format" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_Format</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsFormats" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECProperty propertyName="NumericSpec" typeName="string" extendedTypeName="JSON"/>
+        <ECProperty propertyName="CompositeSpacer" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="FormatCompositeUnitDef" description="FormatCompositeUnit" displayLabel="FormatCompositeUnit" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_FormatCompositeUnit</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Format" relationshipName="FormatOwnsCompositeUnits" direction="backward"/>
+        <ECProperty propertyName="Label" typeName="string"/>
+        <ECNavigationProperty propertyName="Unit" relationshipName="CompositeUnitRefersToUnit" direction="backward"/>
+        <ECProperty propertyName="Ordinal" typeName="int" description="Position of the Composite Unit in its Format"/>
+    </ECEntityClass>
     <ECEntityClass typeName="PropertyCategoryDef" description="PropertyCategory" displayLabel="PropertyCategory" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -316,6 +342,30 @@
             <Class class="ECSchemaDef"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="UnitDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsFormats" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="FormatDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="FormatOwnsCompositeUnits" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="FormatDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="FormatCompositeUnitDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CompositeUnitRefersToUnit" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="false">
+            <Class class="FormatCompositeUnitDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is referred to by" polymorphic="false">
             <Class class="UnitDef"/>
         </Target>
     </ECRelationshipClass>

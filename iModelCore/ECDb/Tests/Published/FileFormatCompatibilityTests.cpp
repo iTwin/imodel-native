@@ -2570,7 +2570,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     }
 
 
-    auto setEC32Fus = [&koqId, this] (Utf8CP persistenceUnitStr, Utf8CP presentationUnitStr)
+    auto setEC32 = [&koqId, this] (Utf8CP persistenceUnitStr, Utf8CP presentationFormatStr)
         {
         BeFileName ecdbPath(m_ecdb.GetDbFileName());
         CloseECDb();
@@ -2588,8 +2588,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
             return ERROR;
 
         stmt->BindText(1, persistenceUnitStr, Statement::MakeCopy::No);
-        if (!Utf8String::IsNullOrEmpty(presentationUnitStr))
-            stmt->BindText(2, presentationUnitStr, Statement::MakeCopy::No);
+        if (!Utf8String::IsNullOrEmpty(presentationFormatStr))
+            stmt->BindText(2, presentationFormatStr, Statement::MakeCopy::No);
 
         stmt->BindId(3, koqId);
         if (BE_SQLITE_DONE != stmt->Step())
@@ -2622,210 +2622,209 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
         return prop->GetKindOfQuantity();
         };
 
-    auto assertFus = [] (Formatting::FormatUnitSetCR fus, bool expectedIsValidUnit, Utf8CP expectedUnitName, Utf8CP expectedFusName)
+    auto assertUnit = [] (ECN::ECUnitCR unit, bool expectedIsValidUnit, Utf8CP expectedUnitName)
         {
-        EXPECT_EQ(expectedIsValidUnit, fus.GetUnit()->IsValid()) << fus.ToJsonString();
-        EXPECT_STRCASEEQ(expectedUnitName, fus.GetUnitName().c_str()) << fus.ToJsonString();
-        EXPECT_STRCASEEQ(expectedFusName, fus.GetNamedFormatSpec()->GetName().c_str()) << fus.ToJsonString();
+        EXPECT_EQ(expectedIsValidUnit, unit.IsValid()) << unit.GetFullName();
+        EXPECT_STRCASEEQ(expectedUnitName, unit.GetFullName().c_str());
         };
 
     //garbage units
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("garbage(unknownFormat)", nullptr));
+    ASSERT_EQ(SUCCESS, setEC32("garbage(unknownFormat)", nullptr));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultRealU");
-    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
+    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("garbage", nullptr));
+    ASSERT_EQ(SUCCESS, setEC32("garbage", nullptr));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultReal");
-    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
+    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("garbage(unknownFormat)", R"json(["CM","M"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("garbage(unknownFormat)", R"json(["CM","M"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultRealU");
-    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
+    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("garbage", R"json(["CM","M"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("garbage", R"json(["CM","M"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), false, "garbage", "defaultReal");
-    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
+    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["CM","garbage(unknownFormat)"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["CM","garbage(unknownFormat)"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
-    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["CM","garbage"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["CM","garbage"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
-    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["garbage(unknownFormat)","CM"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["garbage(unknownFormat)","CM"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
-    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["garbage","CM"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["garbage","CM"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
-    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     //User defined EC3.2 units
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("myalias:myunit(myformat)", R"json(["myalias:mydisplayunit1(myformat)","myalias:mydisplayunit2(myotherformat)"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("myalias:myunit(myformat)", R"json(["myalias:mydisplayunit1(myformat)","myalias:mydisplayunit2(myotherformat)"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), false, "myalias:myunit", "defaultRealU");
-    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    assertUnit(*koq->GetPersistenceUnit(), false, "myalias:myunit");
+    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("myunit(myformat)", R"json(["mydisplayunit1(myformat)","mydisplayunit2(myotherformat)"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("myunit(myformat)", R"json(["mydisplayunit1(myformat)","mydisplayunit2(myotherformat)"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), false, "myunit", "defaultRealU");
-    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    assertUnit(*koq->GetPersistenceUnit(), false, "myunit");
+    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("myalias:myunit", R"json(["myalias:mydisplayunit1","myalias:mydisplayunit2"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("myalias:myunit", R"json(["myalias:mydisplayunit1","myalias:mydisplayunit2"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), false, "myalias:myunit", "defaultReal");
-    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    assertUnit(*koq->GetPersistenceUnit(), false, "myalias:myunit");
+    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("CM", R"json(["myalias:myunit(myformat)","M"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("CM", R"json(["myalias:myunit(myformat)","M"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "CM", "defaultReal");
-    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "M", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
+    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("CM", R"json(["myalias:myunit","M"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("CM", R"json(["myalias:myunit","M"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "CM", "defaultReal");
-    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "M", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
+    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("CM", R"json(["KM","myalias:myunit(myformat)","M"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("CM", R"json(["KM","myalias:myunit(myformat)","M"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "CM", "defaultReal");
-    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "KM", "defaultReal");
-    assertFus(koq->GetPresentationUnitList().at(1), true, "M", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
+    ASSERT_EQ(2, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(1).GetName().c_str(), "f:defaultReal");
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("CM", R"json(["KM","myalias:myunit","M"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("CM", R"json(["KM","myalias:myunit","M"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "CM", "defaultReal");
-    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "KM", "defaultReal");
-    assertFus(koq->GetPresentationUnitList().at(1), true, "M", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
+    ASSERT_EQ(2, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(1).GetName().c_str(), "f:defaultReal");
     }
 
     //standard units
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("KM", nullptr));
+    ASSERT_EQ(SUCCESS, setEC32("KM", nullptr));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
-    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("u:KM", nullptr));
+    ASSERT_EQ(SUCCESS, setEC32("u:KM", nullptr));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
-    EXPECT_TRUE(koq->GetPresentationUnitList().empty());
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("KM", R"json(["CM","M"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("KM", R"json(["CM","M"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
-    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
-    assertFus(koq->GetPresentationUnitList().at(1), true, "M", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(2, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(1).GetName().c_str(), "f:defaultReal");
     }
 
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("u:KM", R"json(["u:CM","u:M"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("u:KM", R"json(["u:CM","u:M"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "KM", "defaultReal");
-    ASSERT_EQ(2, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "CM", "defaultReal");
-    assertFus(koq->GetPresentationUnitList().at(1), true, "M", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
+    ASSERT_EQ(2, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(1).GetName().c_str(), "f:defaultReal");
     }
 
     //standard units where ECName differs from unit name
     {
-    ASSERT_EQ(SUCCESS, setEC32Fus("u:CM_PER_SEC", R"json(["u:M_PER_SEC"])json"));
+    ASSERT_EQ(SUCCESS, setEC32("u:CM_PER_SEC", R"json(["u:M_PER_SEC"])json"));
     KindOfQuantityCP koq = getKoq();
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
-    assertFus(koq->GetPersistenceUnit(), true, "CM/SEC", "defaultReal");
-    ASSERT_EQ(1, koq->GetPresentationUnitList().size());
-    assertFus(koq->GetPresentationUnitList().at(0), true, "M/SEC", "defaultReal");
+    assertUnit(*koq->GetPersistenceUnit(), true, "u:CM_PER_SEC");
+    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     }

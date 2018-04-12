@@ -342,10 +342,11 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     ECSchemaId unitsSchemaId, formatsSchemaId;
     {
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext();
-    ctx->AddSchemaLocater(ecdb);
+    ctx->AddSchemaLocater(ecdb.GetSchemaLocater());
     //Formats schema references Units schema. So if formats are needed, we can just locate Formats and it will deserialize Units as well
     Utf8CP schemaName = schemasThatNeedUnitsAndFormatsReference.empty() ? UnitsSchemaName : FormatsSchemaName;
-    if (ECSchema::LocateSchema(SchemaKey(schemaName, 1, 0, 0), ctx) == nullptr)
+    SchemaKey schemaKey(schemaName, 1, 0, 0);
+    if (ECSchema::LocateSchema(schemaKey, *ctx) == nullptr)
         {
         LOG.error("ECDb profile upgrade failed: Deserializing standard Units and Formats ECSchemas failed.");
         return BE_SQLITE_ERROR_ProfileUpgradeFailed;
@@ -393,7 +394,7 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     for (ECSchemaId schemaThatNeedUnitsReference : schemasThatNeedUnitsReference)
         {
         if (BE_SQLITE_OK != stmt.BindId(1, schemaThatNeedUnitsReference) ||
-            BE_SQLITE_OK != stmt.BindId(2, unitSchemaId) ||
+            BE_SQLITE_OK != stmt.BindId(2, unitsSchemaId) ||
             BE_SQLITE_DONE != stmt.Step())
             {
             LOG.error("ECDb profile upgrade failed: Failed to insert references to standard Units schema.");
@@ -407,7 +408,7 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     for (ECSchemaId schemaThatNeedFormatsReference : schemasThatNeedUnitsAndFormatsReference)
         {
         if (BE_SQLITE_OK != stmt.BindId(1, schemaThatNeedFormatsReference) ||
-            BE_SQLITE_OK != stmt.BindId(2, formatSchemaId) ||
+            BE_SQLITE_OK != stmt.BindId(2, formatsSchemaId) ||
             BE_SQLITE_DONE != stmt.Step())
             {
             LOG.error("ECDb profile upgrade failed: Failed to insert references to standard Formats schema.");
@@ -522,6 +523,7 @@ void ProfileUpgrader_4002::UpgradeKoqSqlFunction::_ComputeScalar(Context& ctx, i
 
     for (Json::Value& presentationFormatJson : presentationFormatArrayJson)
         {
+        //WIP_FORMAT: How to convert old presentation FUS to new formats?
         Utf8String newFormat;
         if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptor(newFormat, presentationFormatJson.asCString()))
             {

@@ -57,26 +57,16 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
                        "Name TEXT NOT NULL COLLATE NOCASE," \
                        "DisplayLabel TEXT," \
                        "Description TEXT," \
-                       "RoundFactor REAL," \
-                       "Type TEXT NOT NULL COLLATE NOCASE," \
-                       "Precision INTEGER NOT NULL," \
-                       "ScientificType TEXT COLLATE NOCASE," \
-                       "SignOption TEXT COLLATE NOCASE," \
-                       "FormatTraits TEXT COLLATE NOCASE," \
-                       "DecimalSeparator TEXT," \
-                       "ThousandsSeparator TEXT," \
-                       "UOMSeparator TEXT," \
-                       "StationSeparator TEXT," \
-                       "StationOffsetSize INTEGER," \
-                       "CompositeSpacer TEXT);" \
+                       "NumericSpec TEXT," \
+                       "CompositeSpacer TEXT,);" \
                        "CREATE INDEX ix_ec_Format_SchemaId ON " TABLE_Format "(SchemaId);" \
                        "CREATE INDEX ix_ec_Format_Name ON " TABLE_Format "(Name);"
 
 #define TABLEDDL_FormatCompositeUnit "CREATE TABLE " TABLE_FormatCompositeUnit \
                        "(Id INTEGER PRIMARY KEY," \
                        "FormatId INTEGER NOT NULL REFERENCES " TABLE_Format "(Id) ON DELETE CASCADE," \
-                       "Label TEXT COLLATE NOCASE," \
-                       "UnitId INTEGER REFERECES " TABLE_Unit "(Id) ON DELETE NO ACTION," \
+                       "Label TEXT," \
+                       "UnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE NO ACTION," \
                        "Ordinal INTEGER NOT NULL);" \
                        "CREATE UNIQUE INDEX uix_ec_FormatCompositeUnit_FormatId_Ordinal ON " TABLE_FormatCompositeUnit "(FormatId,Ordinal);" \
                        "CREATE INDEX ix_ec_FormatCompositeUnit_UnitId ON " TABLE_FormatCompositeUnit "(UnitId);"

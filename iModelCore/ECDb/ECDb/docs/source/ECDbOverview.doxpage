@@ -287,22 +287,27 @@
     - @ref BentleyApi::ECN::KindOfQuantity::GetDisplayLabel "DisplayLabel": Modify
     - @ref BentleyApi::ECN::KindOfQuantity::GetDescription "Description": Modify
     - @ref BentleyApi::ECN::KindOfQuantity::GetRelativeError "RelativeError": Modify
-    - @ref BentleyApi::ECN::KindOfQuantity::GetPresentationUnitList "PresentationUnits": Add, Remove
+    - @ref BentleyApi::ECN::KindOfQuantity::GetPresentationFormatList "PresentationFormats": Add, Remove
 
     ### Phenomenon
-    - @b Modify 
-        - @ref BentleyApi::ECN::Phenomenon::GetDisplayLabel "DisplayLabel"
-        - @ref BentleyApi::ECN::Phenomenon::GetDescription "Description"
+    - @ref BentleyApi::ECN::Phenomenon::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::Phenomenon::GetDescription "Description": Modify
 
     ### UnitSystem
-    - @b Modify 
-        - @ref BentleyApi::ECN::UnitSystem::GetDisplayLabel "DisplayLabel"
-        - @ref BentleyApi::ECN::UnitSystem::GetDescription "Description"
+    - @ref BentleyApi::ECN::UnitSystem::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::UnitSystem::GetDescription "Description": Modify
 
     ### Unit
-    - @b Modify 
-        - @ref BentleyApi::ECN::ECUnit::GetDisplayLabel "DisplayLabel"
-        - @ref BentleyApi::ECN::ECUnit::GetDescription "Description"
+    - @ref BentleyApi::ECN::ECUnit::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECUnit::GetDescription "Description": Modify
+
+    ### Format
+    - @ref BentleyApi::ECN::ECFormat::GetDisplayLabel "DisplayLabel": Modify
+    - @ref BentleyApi::ECN::ECFormat::GetDescription "Description": Modify
+    - @ref BentleyApi::ECN::ECFormat::GetNumericSpec "NumericFormatSpec": Modify any of its attributes
+    - @ref BentleyApi::ECN::ECFormat::GetCompositeSpec "CompositeValueSpec": 
+        - @ref BentleyApi::Formatting::CompositeValueSpec::GetSpacer "Spacer": Modify
+        - Unit labels: Modify
 
     ### ECProperty
     - @ref BentleyApi::ECN::ECProperty::GetDescription "Description": Modify
@@ -315,8 +320,8 @@
     - @ref BentleyApi::ECN::ECProperty::GetCategory "Category": Assign, Remove
     - @ref BentleyApi::ECN::ECProperty::GetPriority "Priority": Assign, Remove
     - @ref BentleyApi::ECN::ECProperty::GetKindOfQuantity "KindOfQuantity":
-            - It is possible to 
-        - Replace, only if its "PersistenceUnit" does not change
+        - Assign
+        - Replace, only if its @ref BentleyApi::ECN::KindOfQuantity::GetPersistenceUnit "PersistenceUnit" does not change
     - @b CustomAttributes on the ECProperty: Add, Remove, Modify
 
     #### Primitive ECProperty

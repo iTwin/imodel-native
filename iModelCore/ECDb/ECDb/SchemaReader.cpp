@@ -999,20 +999,10 @@ BentleyStatus SchemaReader::ReadFormats(Context& ctx) const
     const int nameIx = 2;
     const int displayLabelColIx = 3;
     const int descriptionColIx = 4;
-    const int roundFactorColIx = 5;
-    const int typeColIx = 6;
-    const int precColIx = 7;
-    const int scientificTypeColIx = 8;
-    const int signOptionColIx = 9;
-    const int formatTraitsColIx = 10;
-    const int decimalSepColIx = 11;
-    const int thousandsSepColIx = 12;
-    const int uomSepColIx = 13;
-    const int stationSepColIx = 14;
-    const int stationOffsetSizeColIx = 15;
-    const int compositeSpacerColIx = 16;
+    const int numSpecColIx = 5;
+    const int compositeSpacerColIx = 6;
 
-    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,RoundFactor,Type,Precision,ScientificType,SignOption,FormatTraits,DecimalSeparator,ThousandsSeparator,UOMSeparator,StationSeparator,StationOffsetSize,CompositeSpacer FROM [%s]." TABLE_Format, GetTableSpace().GetName().c_str()).c_str());
+    CachedStatementPtr stmt = GetCachedStatement(Utf8PrintfString("SELECT Id,SchemaId,Name,DisplayLabel,Description,NumericSpec,CompositeSpacer FROM [%s]." TABLE_Format, GetTableSpace().GetName().c_str()).c_str());
     if (stmt == nullptr)
         return ERROR;
 
@@ -1029,113 +1019,18 @@ BentleyStatus SchemaReader::ReadFormats(Context& ctx) const
         Utf8CP displayLabel = stmt->IsColumnNull(displayLabelColIx) ? nullptr : stmt->GetValueText(displayLabelColIx);
         Utf8CP description = stmt->IsColumnNull(descriptionColIx) ? nullptr : stmt->GetValueText(descriptionColIx);
 
-        Nullable<double> roundFactor;
-        if (!stmt->IsColumnNull(roundFactorColIx))
-            roundFactor = stmt->GetValueDouble(roundFactorColIx);
+        Utf8CP numericSpecJson = stmt->IsColumnNull(numSpecColIx) ? nullptr : stmt->GetValueText(numSpecColIx);
+        Formatting::NumericFormatSpec* numSpec = nullptr;
+        if (!Utf8String::IsNullOrEmpty(numericSpecJson))
+            {
+            //WIP_FORMAT Formatting::NumericFormatSpec::FromJson(numericSpecJson)
+            }
 
-        BeAssert(!stmt->IsColumnNull(typeColIx));
-        Utf8CP type = stmt->GetValueText(typeColIx);
-
-        BeAssert(!stmt->IsColumnNull(precColIx));
-        const int precision = stmt->GetValueInt(precColIx);
-
-        Utf8CP scientType = stmt->IsColumnNull(scientificTypeColIx) ? nullptr : stmt->GetValueText(scientificTypeColIx);
-        Utf8CP signOption = stmt->IsColumnNull(signOptionColIx) ? nullptr : stmt->GetValueText(signOptionColIx);
-        Utf8CP formatTraits = stmt->IsColumnNull(formatTraitsColIx) ? nullptr : stmt->GetValueText(formatTraitsColIx);
-        Utf8CP decSeparator = stmt->IsColumnNull(decimalSepColIx) ? nullptr : stmt->GetValueText(decimalSepColIx);
-        Utf8CP thousandsSeparator = stmt->IsColumnNull(thousandsSepColIx) ? nullptr : stmt->GetValueText(thousandsSepColIx);
-        Utf8CP uomSeparator = stmt->IsColumnNull(uomSepColIx) ? nullptr : stmt->GetValueText(uomSepColIx);
-        Utf8CP stationSeparator = stmt->IsColumnNull(stationSepColIx) ? nullptr : stmt->GetValueText(stationSepColIx);
-        Nullable<int> stationOffsizeSize;
-        if (!stmt->IsColumnNull(stationOffsetSizeColIx))
-            stationOffsizeSize = stmt->GetValueInt(stationOffsetSizeColIx);
-        
         Utf8CP compositeSpacer = stmt->IsColumnNull(compositeSpacerColIx) ? nullptr : stmt->GetValueText(compositeSpacerColIx);
-
-        Formatting::NumericFormatSpec numericFormatSpec;
-        if (roundFactor != nullptr)
-            numericFormatSpec.SetRoundingFactor(roundFactor.Value());
-
-        Formatting::PresentationType specType;
-        if (!Formatting::Utils::NameToPresentationType(specType, type))
-            return ERROR;
-
-        numericFormatSpec.SetPresentationType(specType);
-
-        if (Formatting::PresentationType::Scientific == specType)
-            {
-            Formatting::ScientificType unitsScientificType;
-            if (!Formatting::Utils::NameToScientificType(unitsScientificType, scientType))
-                return ERROR;
-
-            numericFormatSpec.SetScientificType(unitsScientificType);
-            }
-
-        if (Formatting::PresentationType::Station == specType)
-            numericFormatSpec.SetStationOffsetSize(stationOffsizeSize.Value());
-
-        if (!Utf8String::IsNullOrEmpty(signOption))
-            {
-            Formatting::ShowSignOption showSign;
-            if (!Formatting::Utils::NameToSignOption(showSign, signOption))
-                return ERROR;
-
-            numericFormatSpec.SetSignOption(showSign);
-            }
-
-        if (!Utf8String::IsNullOrEmpty(formatTraits))
-            {
-            if (!numericFormatSpec.SetFormatTraitsFromString(formatTraits))
-                return ERROR;
-            }
-
-        if (specType == Formatting::PresentationType::Fractional)
-            {
-            Formatting::FractionalPrecision unitsFractionalPrecision;
-            if (!Formatting::Utils::FractionalPrecisionByDenominator(unitsFractionalPrecision, precision))
-                return ERROR;
-
-            numericFormatSpec.SetFractionalPrecision(unitsFractionalPrecision);
-            }
-        else
-            {
-            Formatting::DecimalPrecision unitsDecimalPrecision;
-            if (!Formatting::Utils::DecimalPrecisionByIndex(unitsDecimalPrecision, precision))
-                return ERROR;
-
-            numericFormatSpec.SetDecimalPrecision(unitsDecimalPrecision);
-            }
-
-        if (!Utf8String::IsNullOrEmpty(decSeparator))
-            {
-            if (strlen(decSeparator) > 1)
-                return ERROR;
-
-            numericFormatSpec.SetDecimalSeparator(decSeparator[0]);
-            }
-
-        if (!Utf8String::IsNullOrEmpty(thousandsSeparator))
-            {
-            if (strlen(thousandsSeparator) > 1)
-                return ERROR;
-
-            numericFormatSpec.SetThousandSeparator(thousandsSeparator[0]);
-            }
-
-        if (!Utf8String::IsNullOrEmpty(uomSeparator))
-            numericFormatSpec.SetUomSeparator(uomSeparator);
-
-        if (!Utf8String::IsNullOrEmpty(stationSeparator))
-            {
-            if (strlen(stationSeparator) > 1)
-                return ERROR;
-
-            numericFormatSpec.SetStationSeparator(stationSeparator[0]);
-            }
 
         ECSchemaR schema = *schemaKey->m_cachedSchema;
         ECFormatP format = nullptr;
-        if (ECObjectsStatus::Success != schema.CreateFormat(format, name, displayLabel, description, &numericFormatSpec))
+        if (ECObjectsStatus::Success != schema.CreateFormat(format, name, displayLabel, description, numSpec))
             return ERROR;
 
         if (SUCCESS != ReadFormatComposite(*format, id, compositeSpacer))
@@ -1263,8 +1158,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityCP& koq, Context& c
 
     // WIP_FORMAT 
     ECUnitCP unit = nullptr;
-    ECFormatCP format = nullptr;
-    if (ECObjectsStatus::Success != newKoq->ParsePersistenceUnit(unit, format, persUnitStr, nullptr, 3, 2) ||
+    if (ECObjectsStatus::Success != newKoq->ParsePersistenceUnit(persUnitStr, nullptr, 3, 2) ||
         ECObjectsStatus::Success != newKoq->SetPersistenceUnit(*unit))
         {
         LOG.errorv("Failed to read KindOfQuantity '%s'. Its persistence unit '%s' could not be parsed.", newKoq->GetFullName().c_str(), persUnitStr);

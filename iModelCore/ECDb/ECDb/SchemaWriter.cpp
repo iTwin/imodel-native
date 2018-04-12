@@ -652,7 +652,7 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
         return ERROR;
         }
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Format "(SchemaId,Name,DisplayLabel,Description,RoundFactor,Type,Precision,ScientificType,SignOption,FormatTraits,DecimalSeparator,ThousandsSeparator,UOMSeparator,StationSeparator,StationOffsizeSize,CompositeSpacer) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Format "(SchemaId,Name,DisplayLabel,Description,NumericSpec,CompositeSpacer) VALUES(?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -660,18 +660,8 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
     const int nameParamIx = 2;
     const int labelParamIx = 3;
     const int descParamIx = 4;
-    const int roundFactorParamIx = 5;
-    const int typeParamIx = 6;
-    const int precParamIx = 7;
-    const int scientificPrecParamIx = 8;
-    const int signOptionParamIx = 9;
-    const int formatTraitsParamIx = 10;
-    const int decSeparatorParamIx = 11;
-    const int thousandsSepParamIx = 12;
-    const int uomSepParamIx = 13;
-    const int stationSepParamIx = 14;
-    const int stationOffsetSizeParamIx = 15;
-    const int compositeSpacerParamIx = 16;
+    const int numericSpecParamIx = 5;
+    const int compositeSpacerParamIx = 6;
 
     if (BE_SQLITE_OK != stmt->BindId(schemaIdParamIx, format.GetSchema().GetId()))
         return ERROR;
@@ -693,70 +683,9 @@ BentleyStatus SchemaWriter::ImportFormat(Context& ctx, ECFormatCR format)
 
     if (format.HasNumeric())
         {
-        Formatting::NumericFormatSpec const& spec = *format.GetNumericSpec();
-        if (spec.HasRoundingFactor())
-            {
-            if (BE_SQLITE_OK != stmt->BindDouble(roundFactorParamIx, spec.GetRoundingFactor()))
-                return ERROR;
-            }
-
-        if (BE_SQLITE_OK != stmt->BindText(typeParamIx, Formatting::Utils::PresentationTypeName(spec.GetPresentationType()), Statement::MakeCopy::Yes))
+        Json::Value json = format.GetNumericSpec()->ToJson(false);
+        if (BE_SQLITE_OK != stmt->BindText(numericSpecParamIx, json.ToString(), Statement::MakeCopy::Yes))
             return ERROR;
-
-        if (spec.HasSignOption())
-            {
-            if (BE_SQLITE_OK != stmt->BindText(signOptionParamIx, Formatting::Utils::SignOptionName(spec.GetSignOption()), Statement::MakeCopy::Yes))
-                return ERROR;
-            }
-
-        if (spec.HasFormatTraits())
-            {
-            if (BE_SQLITE_OK != stmt->BindText(signOptionParamIx, spec.GetFormatTraitsString(), Statement::MakeCopy::Yes))
-                return ERROR;
-            }
-
-        const int64_t prec = spec.GetPresentationType() == Formatting::PresentationType::Fractional ?
-            (int64_t) pow(INT64_C(2), (int64_t) spec.GetFractionalPrecision()) :
-            (int64_t) spec.GetDecimalPrecision();
-
-        if (BE_SQLITE_OK != stmt->BindInt64(precParamIx, prec))
-            return ERROR;
-
-        if (Formatting::PresentationType::Scientific == spec.GetPresentationType())
-            {
-            if (BE_SQLITE_OK != stmt->BindText(scientificPrecParamIx, Formatting::Utils::ScientificTypeName(spec.GetScientificType()), Statement::MakeCopy::Yes))
-                return ERROR;
-            }
-
-        if (spec.HasDecimalSeparator())
-            {
-            if (BE_SQLITE_OK != stmt->BindText(decSeparatorParamIx, Utf8String(1, spec.GetDecimalSeparator()), Statement::MakeCopy::Yes))
-                return ERROR;
-            }
-
-        if (spec.HasThousandsSeparator())
-            {
-            if (BE_SQLITE_OK != stmt->BindText(thousandsSepParamIx, Utf8String(1, spec.GetThousandSeparator()), Statement::MakeCopy::Yes))
-                return ERROR;
-            }
-
-        if (spec.HasUomSeparator())
-            {
-            if (BE_SQLITE_OK != stmt->BindText(uomSepParamIx, spec.GetUomSeparator(), Statement::MakeCopy::Yes))
-                return ERROR;
-            }
-
-        if (spec.HasStationSeparator())
-            {
-            if (BE_SQLITE_OK != stmt->BindText(stationSepParamIx, Utf8String(1, spec.GetStationSeparator()), Statement::MakeCopy::Yes))
-                return ERROR;
-            }
-
-        if (Formatting::PresentationType::Station == spec.GetPresentationType())
-            {
-            if (BE_SQLITE_OK != stmt->BindInt64(stationOffsetSizeParamIx, (int64_t) spec.GetStationOffsetSize()))
-                return ERROR;
-            }
         }
 
     if (format.HasComposite())
@@ -1995,7 +1924,7 @@ BentleyStatus SchemaWriter::UpdateProperty(Context& ctx, ECPropertyChange& prope
                 return ERROR;
                 }
            
-            if (!oldKoq->GetPersistenceUnit().GetUnitName().EqualsIAscii(newKoq->GetPersistenceUnit().GetUnitName()))
+            if (!oldKoq->GetPersistenceUnit()->GetFullName().EqualsIAscii(newKoq->GetPersistenceUnit()->GetFullName()))
                 {
                 ctx.Issues().ReportV("ECSchema Upgrade failed. ECProperty %s.%s: Replacing KindOfQuantity '%s' by '%s' is not supported because their persistent units differ.",
                                      oldProperty.GetClass().GetFullName(), oldProperty.GetName().c_str(), oldKoq->GetFullName().c_str(), newKoq->GetFullName().c_str());

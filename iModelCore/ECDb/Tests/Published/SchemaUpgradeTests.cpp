@@ -7658,7 +7658,7 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
                                     <KindOfQuantity typeName="K4" description="My KOQ 4" displayLabel="KOQ 4" persistenceUnit="G" presentationUnits="MG" relativeError="4" />
                             </ECSchema>)xml")));
 
-    auto assertKoq = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, Utf8CP persUnit, Utf8CP presUnits, double relError)
+    auto assertKoq = [] (ECSchemaCR schema, Utf8CP name, Utf8CP displayLabel, Utf8CP description, Utf8CP persUnit, Utf8CP presFormats, double relError)
         {
         KindOfQuantityCP koq = schema.GetKindOfQuantityCP(name);
         ASSERT_TRUE(koq != nullptr) << name;
@@ -7674,8 +7674,19 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
         EXPECT_STRCASEEQ(description, koq->GetDescription().c_str()) << name;
 
         EXPECT_DOUBLE_EQ(relError, koq->GetRelativeError()) << name;
-        EXPECT_STRCASEEQ(persUnit, koq->GetPersistenceUnitDescriptor().c_str()) << name;
-        EXPECT_STRCASEEQ(presUnits, koq->GetPresentationUnitDescriptor().c_str()) << name;
+        EXPECT_STRCASEEQ(persUnit, koq->GetPersistenceUnit()->GetQualifiedName(koq->GetSchema()).c_str()) << name;
+        Utf8String actualPresentationFormats;
+        bool isFirstFormat = true;
+        for (ECN::NamedFormatCR format : koq->GetPresentationFormatList())
+            {
+            if (!isFirstFormat)
+                actualPresentationFormats.append(";");
+
+            actualPresentationFormats.append(format.GetName());
+            isFirstFormat = false;
+            }
+
+        EXPECT_STRCASEEQ(presFormats, actualPresentationFormats.c_str()) << name;
         };
 
     {

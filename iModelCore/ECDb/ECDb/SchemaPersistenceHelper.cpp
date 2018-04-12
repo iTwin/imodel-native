@@ -683,8 +683,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8Strin
             return ERROR;
             }
 
-        // WIP_FORMAT Is this the right way to serialize a presentation format?
-        Utf8String formatStr = format.GetName();
+        Utf8StringCR formatStr = format.GetName();
         if (formatStr.empty())
             {
             BeAssert(!formatStr.empty());
@@ -719,11 +718,8 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQ
     for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray())
         {
         BeAssert(presFormatJson.IsString() && presFormatJson.GetStringLength() > 0);
-
-        /* WIP_FORMAT
-        ECUnitCP unit = nullptr;
-        if (ECObjectsStatus::Success != KindOfQuantity::ParsePresentationUnit(unit, format, presFormatJson.GetString(), koq, 3, 2) ||
-            ECObjectsStatus::Success != koq.AddPresentationFormat(*unit, format))
+        //WIP_FORMAT
+        /*if (ECObjectsStatus::Success != koq.ParsePresentationUnit(presFormatJson.GetString(), nullptr, 3, 2))
             {
             LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), presUnitJson.GetString());
             return ERROR;
