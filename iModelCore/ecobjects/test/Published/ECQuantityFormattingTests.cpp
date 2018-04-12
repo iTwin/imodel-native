@@ -109,25 +109,26 @@ TEST_F(ECQuantityFormattingTest, Preliminary)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-//TEST_F(ECQuantityFormattingTest, TestWithOnlyInputUnit)
-//    {
-//    ECSchemaPtr schema;
-//    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
-//    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
-//
-//    ECUnitCP meter = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
-//    ECFormatCP fi = ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI");
-//
-//    KindOfQuantityP koq;
-//    schema->CreateKindOfQuantity(koq, "Test");
-//    koq->SetPersistenceUnit(*meter);
-//    koq->SetDefaultPresentationFormat(NamedFormat("fi8", *fi));
-//
-//    Formatting::FormatProblemCode problem;
-//    BEU::Quantity newQuantity = ECQuantityFormatting::CreateQuantity("5", *meter, &problem);
-//    EXPECT_EQ(meter, newQuantity.GetUnit());
-//    EXPECT_EQ(5, newQuantity.GetMagnitude());
-//    }
+TEST_F(ECQuantityFormattingTest, TestWithOnlyMajorUnit)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+    schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
+    schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
+
+    ECUnitCP meter = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
+    ECFormatCP fi = ECTestFixture::GetFormatsSchema()->GetFormatCP("Meters4U");
+
+    KindOfQuantityP koq;
+    schema->CreateKindOfQuantity(koq, "Test");
+    koq->SetPersistenceUnit(*meter);
+    koq->SetDefaultPresentationFormat(*fi);
+
+    Formatting::FormatProblemCode problem;
+    BEU::Quantity newQuantity = ECQuantityFormatting::CreateQuantity("5", *fi, &problem);
+    EXPECT_TRUE(ECUnit::AreEqual(meter, newQuantity.GetUnit()));
+    EXPECT_EQ(5, newQuantity.GetMagnitude());
+    }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
