@@ -2,7 +2,7 @@
 |
 |  $Source: serialization/src/BeJsonToCG.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1177,38 +1177,113 @@ bvector<IGeometryPtr> &geometry
     }
 
 
-static void DumpIndent (int n)
+static size_t DumpIndent (size_t n)
     {
     GEOMAPI_PRINTF ("\n");
-    for (int i = 0; i < n; i++)
+    for (size_t i = 0; i < n; i++)
         GEOMAPI_PRINTF ("  ");
+    return 2 * n;
+    }
+static bool IsBreak (char c)
+    {
+    return c == ',' || c == '[' || c == ']';
+    }
+static size_t CharWeight (char c)
+    {
+    if (c == '[' || c == ']')
+        return 15;
+    return 1;
+    }
+// Look at contents starting at i0.
+// skip over numbers, decimals, comma, and plus/minus signs.
+// Return first index other than those.
+static size_t  LookAheadOverNumbers (Utf8StringCR string, size_t i0)
+    {
+    auto n = string.size ();
+    for (;i0 < n; i0++)
+        {
+        char c = string[i0];
+        if (c >= '0' && c <= '9')
+            continue;
+        if (c == ',')
+            continue;
+        if (c == '.')
+            continue;
+        break;
+        }
+    return i0;
     }
 void BentleyGeometryJson::DumpJson (Utf8StringCR string)
     {
-    int indent = 0;
-    for (auto c : string)
+    size_t columnLimit = 70;
+    size_t columnLimit2 = 90;
+    size_t blockPad = 10;
+    size_t indent = 0;
+    size_t column = 0;
+    size_t n = string.size ();
+    for (size_t i0 = 0; i0 < n; i0++)
         {
+        char c = string[i0];
         if (c == '{')
             {
             indent++;
-            DumpIndent (indent);
+            column = DumpIndent (indent);
             GEOMAPI_PRINTF ("%c", c);
             }
         else if (c == '}')
             {
-            DumpIndent (indent);
+            column = DumpIndent (indent);
             indent--;
             GEOMAPI_PRINTF ("%c", c);
             }
-        else if (c == '{')
+        else if (c == '[')
             {
-            indent++;
-            DumpIndent (indent);
+            size_t i1 = LookAheadOverNumbers (string, i0 + 1);
+            if (i1 > i0 && string[i1] == ']')
+                {
+                // absorb trailing comma . . 
+                if (i1 + 1 < n && string[i1 + 1] == ',')
+                    i1++;
+                for (;i0 <= i1; i0++)
+                    {
+                    char c2 = string[i0];
+                    GEOMAPI_PRINTF ("%c", c2);
+                    column++;
+                    if (c2 == ',' && column > columnLimit2)
+                        column = DumpIndent (indent);
+                    }
+                if (column + blockPad >= columnLimit)
+                    column = DumpIndent (indent);
+                i0 = i1;
+                //GEOMAPI_PRINTF ("!");
+                // This is the body of an array of comma-separated numbers, and they all fit on a (longish) line . . .  fast dump.
+                // the entire block was dumped, including the final bracket.
+                // i0 sits on the bracket.
+                }
+            else
+                {
+                // strong left bracket ..
+                indent++;
+                column = DumpIndent (indent);
+                GEOMAPI_PRINTF ("%c", c);
+                column = DumpIndent (indent);
+                }
+            }
+        else if (c == ']')
+            {
+            // string right bracket . . 
+            column = DumpIndent (indent);
+            indent--;
             GEOMAPI_PRINTF ("%c", c);
             }
         else
             {
             GEOMAPI_PRINTF("%c", c);
+            column += CharWeight (c);
+            }
+        if (column > columnLimit && IsBreak(c))
+            {
+            column = DumpIndent (indent);
             }
         }
     }
