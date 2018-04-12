@@ -609,6 +609,9 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
 NumericFormatSpecCR NumericFormatSpec::DefaultFormat()
     {
     static NumericFormatSpec nfs;
+    nfs.SetKeepSingleZero(true);
+    nfs.SetKeepDecimalPoint(true);
+    nfs.SetShowUnitLabel(true);
     return nfs;
     }
 

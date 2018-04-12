@@ -730,6 +730,8 @@ public:
 
     // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
+
+    UNITS_EXPORT static FormatCR DefaultFormat();
 };
 
 //=======================================================================================
