@@ -912,15 +912,20 @@ void Converter::DrawingRegisterModelToBeMerged(bvector<ResolvedModelMapping>& tb
 
     auto refTrans = ComputeAttachmentTransform(transformToParent, v8DgnAttachment);
 
-    SyncInfo::V8ModelMapping refSyncInfoMapping;
-    if (BSISUCCESS != GetSyncInfo().InsertModel(refSyncInfoMapping, targetBimModel.GetModelId(), *attachedV8model, refTrans))
+    ResolvedModelMapping mergedModelMapping = GetModelFromSyncInfo(*attachedV8model, refTrans);
+    if (!mergedModelMapping.IsValid())
         {
-        BeAssert(false);
-        LOG.infov("DrawingRegisterModelToBeMerged %s -> %s failed - duplicate attachments??", IssueReporter::FmtModel(*attachedV8model).c_str(), IssueReporter::FmtModel(targetBimModel).c_str());
-        return;
-        }
+        SyncInfo::V8ModelMapping refSyncInfoMapping;
 
-    ResolvedModelMapping mergedModelMapping(targetBimModel, *attachedV8model, refSyncInfoMapping, &v8DgnAttachment);
+        if (BSISUCCESS != GetSyncInfo().InsertModel(refSyncInfoMapping, targetBimModel.GetModelId(), *attachedV8model, refTrans))
+            {
+            BeAssert(false);
+            LOG.infov("DrawingRegisterModelToBeMerged %s -> %s failed - duplicate attachments??", IssueReporter::FmtModel(*attachedV8model).c_str(), IssueReporter::FmtModel(targetBimModel).c_str());
+            return;
+            }
+
+        mergedModelMapping = ResolvedModelMapping (targetBimModel, *attachedV8model, refSyncInfoMapping, &v8DgnAttachment);
+        }
 
     tbm.push_back(mergedModelMapping);
 
