@@ -6,3 +6,4 @@ CompressionTests.CreateZipFile   # crashing when run seperately from test suite
 # Issue with void ScopedIssueReporter::Report(Utf8CP message, ...) const
 ECSqlSelectPrepareTests.LikeOperator
 
+BeSQliteTestFixture.SQLiteMemCheck_*

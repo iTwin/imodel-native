@@ -5152,7 +5152,8 @@ static void logCallback(void *pArg, int iErrCode, Utf8CP zMsg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult BeSQLiteLib::GetMemoryUsed(int64_t& current, int64_t& high, bool reset)
     {
-    return (DbResult)sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &current, &high, reset?1:0);
+    //return (DbResult)sqlite3_status64(SQLITE_STATUS_MEMORY_USED, &current, &high, reset?1:0);
+    return DbResult::BE_SQLITE_ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
