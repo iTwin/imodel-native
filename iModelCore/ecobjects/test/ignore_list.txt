@@ -19,7 +19,3 @@ LiteralExpressionTests.MiscSymbols
     # Which is: 2017
     # To be equal to: result.GetECValue ()->GetDateTime ().GetYear ()
     # Which is: 2018
-
-
-#UnitSpecificationConversionTest.SameKOQMultiplePersistenceUnits
-#UnitSpecificationConversionTest.PersistenceUnitChange_WithPresentationUnits
