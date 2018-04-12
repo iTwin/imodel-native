@@ -189,6 +189,7 @@ public:
             virtual void _OnGraphicElementModified(DgnDbR, DgnElementId) {}
             virtual void _OnGraphicElementDeleted(DgnDbR, DgnElementId) {}
             DGNPLATFORM_EXPORT virtual void _OnCommit(TxnManager&);
+            DGNPLATFORM_EXPORT virtual void _OnCommitted(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnAppliedChanges(TxnManager&);
             DGNPLATFORM_EXPORT virtual void _OnUndoRedo(TxnManager&, TxnAction);
 

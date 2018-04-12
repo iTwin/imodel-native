@@ -172,6 +172,7 @@ protected:
     bool m_is3dView = false;         // view is of a 3d model
     bool m_isCameraOn = false;       // view is 3d and the camera is turned on.
     bool m_undoActive = false;
+    bool m_renderContinuously = false;
     Byte m_dynamicsTransparency = 64;
     Byte m_flashingTransparency = 100;
     size_t m_maxUndoSteps = 20;
@@ -592,6 +593,13 @@ public:
 
     DGNPLATFORM_EXPORT void SetAnimator(IViewportAnimatorR animator);
     DGNPLATFORM_EXPORT void RemoveAnimator();
+
+    // Continuous rendering causes the viewport to redraw on every iteration of the render loop, regardless of whether anything has changed
+    // which might affect display. This can negatively impact performance. It should only be enabled while untracked animations (such as
+    // those used for scientific visualization) are active.
+    bool IsContinuousRenderingEnabled() const { return m_renderContinuously; }
+    void EnableContinuousRendering() { m_renderContinuously = true; }
+    void DisableContinuousRendering() { m_renderContinuously = false; }
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 

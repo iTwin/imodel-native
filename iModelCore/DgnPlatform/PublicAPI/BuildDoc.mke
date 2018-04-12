@@ -2,7 +2,7 @@
 #
 #     $Source: PublicAPI/BuildDoc.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include    mdl.mki
@@ -15,7 +15,7 @@
 SrcDgnPlatform          = $(SrcRoot)DgnPlatform/
 OutDgnPlatformBuild     = $(OutBuildDir)DgnPlatform/
 
-%if !defined (NO_CHM)
+%if defined (FORCE_CHM)
 %if !defined (OutputFile)
     %error OutputFile - You must define this to identify where to link the generated .chm file
     %return
@@ -79,14 +79,14 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
     %else
         ~@putenv DOXYGEN_GENERATE_XML=YES
     %endif 
-    %if defined (NO_CHM)
-        ~@putenv DOXYGEN_GENERATE_CHM=NO
-        | ************************************************
-        | *  NO_CHM is defined - not building *.chm
-        | ************************************************
-    %else 
+    %if defined (FORCE_CHM)
         ~@putenv CHM_FILE=$(DOXYGEN_OUTPUT)DgnPlatformApi
         ~@putenv DOXYGEN_GENERATE_CHM=YES
+    %else 
+        ~@putenv DOXYGEN_GENERATE_CHM=NO
+        | ************************************************
+        | *  FORCE_CHM is NOT defined - not building *.chm
+        | ************************************************
     %endif
     %if defined (NO_HTML)
         ~@putenv DOXYGEN_GENERATE_HTML=NO
@@ -104,7 +104,7 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
         | ************************************************
         ~linkdir "$(BuildContext)xml=$(DOXYGEN_OUTPUT)xml/"
     %endif
-    %if !defined (NO_CHM)
+    %if defined (FORCE_CHM)
         | [== hhc $(DOXYGEN_OUTPUT)html/index.hhp ==]
         !-$(hhc) $(DOXYGEN_OUTPUT)html/index.hhp
         | ************************************************
@@ -118,7 +118,7 @@ $(DOXYGEN_OUTPUT)doxygen.cfg : $(InputStamp)
     %endif
     ~time
 
-%if !defined (NO_CHM)
+%if defined (FORCE_CHM)
     $(BuildContext)$(OutputFile): $(DOXYGEN_OUTPUT)DgnPlatformAPI.chm
         $(LinkFirstDepToFirstTarget)
 %endif

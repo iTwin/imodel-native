@@ -185,6 +185,9 @@ private:
 
     BeSQLite::DbResult InitializeSchemas(BeSQLite::Db::OpenParams const& params);
     BeSQLite::DbResult ProcessRevisions(BeSQLite::Db::OpenParams const& params);
+    void InitParentChangeSetIds();
+    void BackupParentChangeSetIds();
+    BeSQLite::DbResult RestoreParentChangeSetIds();
 
 protected:
     friend struct Txns;
@@ -207,6 +210,8 @@ protected:
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
     mutable RealityData::CachePtr m_elementTileCache;
     mutable std::unordered_map<uint64_t, std::unique_ptr<BeSQLite::EC::ECInstanceInserter>> m_cacheECInstanceInserter;
+    Utf8String m_parentChangeSetId;
+    Utf8String m_initialParentChangeSetId;
 
     DGNPLATFORM_EXPORT BeSQLite::DbResult _VerifyProfileVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeVerifyProfileVersion() override;
@@ -214,7 +219,13 @@ protected:
     DGNPLATFORM_EXPORT void _OnDbClose() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpening() override;
     DGNPLATFORM_EXPORT BeSQLite::DbResult _OnDbOpened(BeSQLite::Db::OpenParams const& params) override;
-    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBriefcaseIdAssigned(BeSQLite::BeBriefcaseId newBriefcaseId) override;
+
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeSetAsMaster(BeSQLite::BeGuid guid) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterSetAsMaster(BeSQLite::BeGuid guid) override;
+
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnBeforeSetAsBriefcase(BeSQLite::BeBriefcaseId newBriefcaseId) override;
+    DGNPLATFORM_EXPORT BeSQLite::DbResult _OnAfterSetAsBriefcase(BeSQLite::BeBriefcaseId newBriefcaseId) override;
+
     DGNPLATFORM_EXPORT void DestroyBriefcaseManager();
 
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported

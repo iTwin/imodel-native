@@ -1885,7 +1885,6 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
     auto&   techniqueStates = technique["states"];
     techniqueStates["enable"] = Json::arrayValue;
     techniqueStates["enable"].append(Gltf::DepthTest);
-    techniqueStates["disable"].append(Gltf::CullFace);
 
     auto& techniqueAttributes = technique["attributes"];
     techniqueAttributes["a_pos"] = "pos";
@@ -2108,8 +2107,10 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db)
             }
         }
 
-    if (IsTextured() || m_overridesAlpha)
+    if (m_overridesAlpha)
         m_hasAlpha = alpha > 0.0;
+    else if (IsTextured())
+        m_hasAlpha = ImageSource::Format::Png == m_texture->GetImageSource().GetFormat();
     else
         m_hasAlpha = mesh.GetColorIndexMap().HasTransparency();
 
@@ -2232,6 +2233,9 @@ void TileMaterial::AddTextureTechniqueParameters(Json::Value& technique, Json::V
         technique["uniforms"]["u_tex"] = "tex";
         technique["attributes"]["a_texc"] = "texc";
         TilePublisher::AppendProgramAttribute(program, "a_texc");
+
+        if (HasTransparency())
+            addTransparencyToTechnique(technique);
         }
     }
 

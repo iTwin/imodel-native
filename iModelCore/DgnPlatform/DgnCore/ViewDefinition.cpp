@@ -68,11 +68,8 @@ template<class T> T& getThreadSafe(DgnDbR db, DgnElementId id, RefCountedPtr<T>&
             {
             BeAssert(id.IsValid());
             auto el = db.Elements().Get<T>(id);
-            if (!el.IsValid())
-                {
-                BeAssert(false);
-                }
-            var = el->template MakeCopy<T>();
+            if (el.IsValid())
+                var = el->template MakeCopy<T>();
             }
         }
 
@@ -120,6 +117,10 @@ ViewControllerPtr ViewDefinition::LoadViewController(bool allowOverrides) const
     if (!controller.IsValid())
         return nullptr;
 
+    // make sure the view definition holds valid data before returning the ViewController
+    if (controller->GetViewDefinitionR()._ValidateState())
+        return nullptr;
+
     controller->LoadState();
     return controller;
     }
@@ -154,13 +155,19 @@ DgnDbStatus ViewDefinition::_OnInsert()
     {
     if (!GetDisplayStyle().GetElementId().IsValid())
         {
-        m_displayStyle->Insert();
+        DgnDbStatus stat;
+        m_displayStyle->Insert(&stat);
+        if (DgnDbStatus::Success != stat)
+            return stat;
         m_displayStyleId = m_displayStyle->GetElementId();
         }
 
     if (!GetCategorySelector().GetElementId().IsValid())
         {
-        m_categorySelector->Insert();
+        DgnDbStatus stat;
+        m_categorySelector->Insert(&stat);
+        if (DgnDbStatus::Success != stat)
+            return stat;
         m_categorySelectorId = m_categorySelector->GetElementId();
         }
 
@@ -313,6 +320,28 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
 
     // NOTE: Const ViewDefinitions should never have their display styles or category selector set! You must get a writeable copy to have them.
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* ensure that the members of this SpatialViewDefintion are valid before we use it for a ViewController.
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SpatialViewDefinition::_ValidateState()
+    {
+    GetModelSelector();
+    return (T_Super::_ValidateState() == SUCCESS && m_modelSelector.IsValid()) ? SUCCESS : ERROR;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* ensure that the members of this ViewDefintion are valid before we use it for a ViewController.
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ViewDefinition::_ValidateState()
+    {
+    GetDisplayStyle();
+    GetCategorySelector();
+    return (m_displayStyle.IsValid() && m_categorySelector.IsValid()) ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1040,7 +1069,10 @@ DgnDbStatus SpatialViewDefinition::_OnInsert()
     {
     if (!GetModelSelector().GetElementId().IsValid())
         {
-        m_modelSelector->Insert();
+        DgnDbStatus stat; 
+        m_modelSelector->Insert(&stat);
+        if (DgnDbStatus::Success != stat)
+            return stat;
         m_modelSelectorId = m_modelSelector->GetElementId();
         }
 
