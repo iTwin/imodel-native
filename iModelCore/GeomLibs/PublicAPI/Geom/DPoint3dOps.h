@@ -1389,6 +1389,28 @@ double                  xyTolerance,
 bool                    bSignedOneBasedIndices
 );
 
+//!
+//! Triangulate a single space polygon.  Best effort to handle non-planar polygons.  Optionally handle self-intersecting polygons.
+//! @param [out] pIndices  array of output indices.  The value of bSignedOneBasedIndices determines the separator of each face loop
+//!                                   and whether or not interior edges are negated.
+//! @param [out] triangleIndices array giving vertex sequence for each exterior loop.
+//! @param [out] exteriorLoopIndices  array of output points, or NULL to disallow adding points at crossings.
+//! @param [out] localToWorld  local to world transformation
+//! @param [out] worldToLocal  world to local transformation
+//! @param [in] loops  array of arrays of points traversing loops.
+//! @return false if nonsimple polygon.
+//!
+public:
+static GEOMDLLIMPEXP bool FixupAndTriangulateSpaceLoops
+(
+bvector<int>        &triangleIndices,
+bvector<int>        &exteriorLoopIndices,
+bvector<DPoint3d>   &xyzOut,
+TransformR              localToWorld,
+TransformR              worldToLocal,
+bvector<bvector<DPoint3d>> &loops
+);
+
 
 //!
 //! Compute a local to world transformation for a polygon (disconnects allowed)
