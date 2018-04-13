@@ -349,7 +349,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
 BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
     {
     static size_t const precisionOverrideIndx = 0;
-    static std::regex const rgx(R"REGEX(([\w,:]+)(<([^>]+)>)?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?)REGEX", std::regex::optimize);
+    static std::regex const rgx(R"REGEX(([\w,:]+)(\(([^\)]+)\))?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?)REGEX", std::regex::optimize);
     std::cmatch match;
 
     
@@ -379,9 +379,9 @@ BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigne
         bvector<Utf8String> overrides = [](Utf8StringCR str) -> bvector<Utf8String>
             {
             bvector<Utf8String> tokens;
-            size_t prevPos = 1; // Initial position is the character directly after the opening '<' in the override string.
+            size_t prevPos = 1; // Initial position is the character directly after the opening '(' in the override string.
             size_t currPos;
-            while (str.npos != (currPos = str.find_first_of(",>", prevPos)))
+            while (str.npos != (currPos = str.find_first_of(",)", prevPos)))
                 {
                 tokens.push_back(Utf8String(str.substr(prevPos, currPos - prevPos).c_str()).Trim());
                 prevPos = currPos + 1;

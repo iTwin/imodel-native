@@ -16,21 +16,21 @@ struct FormatTest : FormattingTestFixture {};
 struct FormatStringTest : FormatTest
 {
     // Valid format strings.
-    Utf8String const fmtStrBasic = Utf8String("ExampleFmt<9>");
-    Utf8String const fmtStrBasicTrailingComma = Utf8String("ExampleFmt<9,>");
+    Utf8String const fmtStrBasic = Utf8String("ExampleFmt(9)");
+    Utf8String const fmtStrBasicTrailingComma = Utf8String("ExampleFmt(9,)");
     Utf8String const fmtStrBasicNoOverrides = Utf8String("ExampleFmt");
     Utf8String const fmtStrBasicUnitOverrideNoLabel = Utf8String("ExampleFmt[u:M]");
     Utf8String const fmtStrBasicUnitOverrideEmptyLabel = Utf8String("ExampleFmt[u:M|]");
     Utf8String const fmtStrBasicUnitOverrideWithLabel = Utf8String("ExampleFmt[u:|m]");
 
-    Utf8String const fmtStrFutureAddition = Utf8String("ExampleFmt<9,banana>");
-    Utf8String const fmtStrFutureAdditionWhiteSpace = Utf8String("ExampleFmt \n < 9 \t , banana > ");
-    Utf8String const fmtStrFutureAdditionTrailingComma = Utf8String("ExampleFmt<9,banana,>");
-    Utf8String const fmtStrFutureAdditionNoFirstOverride = Utf8String("ExampleFmt<,banana>");
+    Utf8String const fmtStrFutureAddition = Utf8String("ExampleFmt(9,banana)");
+    Utf8String const fmtStrFutureAdditionWhiteSpace = Utf8String("ExampleFmt \n ( 9 \t , banana ) ");
+    Utf8String const fmtStrFutureAdditionTrailingComma = Utf8String("ExampleFmt(9,banana,)");
+    Utf8String const fmtStrFutureAdditionNoFirstOverride = Utf8String("ExampleFmt(,banana)");
 
     // Invalid format strings.
-    Utf8String const fmtStrBasicNoOverridesButStillHasBrackets = Utf8String("ExampleFmt<>");
-    Utf8String const fmtStrBasicNoOverridesButStillHasBracketsWithCommas = Utf8String("ExampleFmt<,,,,>");
+    Utf8String const fmtStrBasicNoOverridesButStillHasBrackets = Utf8String("ExampleFmt()");
+    Utf8String const fmtStrBasicNoOverridesButStillHasBracketsWithCommas = Utf8String("ExampleFmt(,,,,)");
     Utf8String const fmtStrWithEmptySqBrackets = Utf8String("ExampleFmt[]");
     Utf8String const fmtStrWithOnlyEmptySqBrackets = Utf8String("ExampleFmt[|]");
     Utf8String const fmtStrUnit5Overrides = Utf8String("ExampleFmt[M|label][DM|label2][CM|label3][MM|label4][UM|label5]");
@@ -277,15 +277,15 @@ TEST_F(FormatStringTest, ParseFormatString)
         };
     Format parsedNfs;
 
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExDec<5>", mapper));
+    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExDec(5)", mapper));
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecDec));
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExFrac<128>", mapper));
+    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExFrac(128)", mapper));
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecFrac));
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExSci<4>", mapper));
+    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExSci(4)", mapper));
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSci));
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExSciNorm<7>", mapper));
+    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExSciNorm(7)", mapper));
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecSciNorm));
-    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExStation<9>", mapper));
+    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, "ExStation(9)", mapper));
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpecStation));
     }
 
