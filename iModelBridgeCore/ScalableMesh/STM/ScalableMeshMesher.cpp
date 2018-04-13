@@ -6,7 +6,7 @@
 //:>       $Date: 2011/06/27 14:53:05 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
         
@@ -529,6 +529,29 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 
             }
         }
+
+    //keep unique resulting polygons
+    for (auto& poly : polygons)
+    {
+        if (!available[&poly - &polygons.front()]) continue;
+        if (used[&poly - &polygons[0]]) continue;
+        if (poly.empty()) continue;
+        for (auto& poly2 : polygons)
+        {
+            if (!available[&poly2 - &polygons.front()]) continue;
+            if (&poly == &poly2) continue;
+            if (used[&poly2 - &polygons[0]]) continue;
+            if (poly2.empty()) continue;
+            
+            if (poly2.size() != poly.size()) continue;
+            size_t i = 0;
+            for (i = 0; i < poly.size(); ++i)
+                if (!bsiDPoint3d_pointEqualTolerance(&poly[i], &poly2[i], 1e-8))
+                    break;
+            if (i == poly.size())
+                used[&poly2 - &polygons[0]] = true;
+        }
+    }
 
     for (auto& poly : polygons)
         {
