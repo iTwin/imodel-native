@@ -220,24 +220,27 @@ private:
     int TrimTrailingZeroes(Utf8P buf, int index) const;
     size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
 
-    // TODO: Attempt to remove these methods from the private API===============
-    int FormatInteger(int n, Utf8P bufOut, int bufLen);
-    size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
+    // Rounds the provided double value to round factor if it is within the threshold. The threshold is defined by FormatConstant::IsNegligible.
     static double RoundDouble(double dval, double roundTo);
-    int GetDecimalPrecisionIndex(int prec = -1) const;
-    double GetDecimalPrecisionFactor(int prec = -1) const {return Utils::DecimalPrecisionFactor(m_decPrecision, prec);}
+
+    double GetDecimalPrecisionFactor() const {return Utils::DecimalPrecisionFactor(m_decPrecision);}
+    int GetDecimalPrecisionIndex() const {return Utils::DecimalPrecisionToInt(m_decPrecision);}
+
+    // TODO: Attempt to remove these methods from the private API===============
+    int FormatInt(int n, Utf8P bufOut, int bufLen) const;
+    size_t FormatDouble(double dval, Utf8P buf, size_t bufLen, double round) const;
     int IntPartToText(double n, Utf8P bufOut, int bufLen, bool useSeparator) const;
-    Utf8String FormatIntegerToString(int n, int minSize) const;
+    Utf8String FormatToString(int n, int minSize) const;
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
     // !TODO====================================================================
 
 public:
     // TODO: Attempt to remove these methods from the public API================
-    //! The following methind does not perform buffer related checks and does not use
+    //! The following method does not perform buffer related checks and does not use
     //! parenthesis for indicating negative numbers However it uses other ShowSign options
     //! the calling function.
     //! The main purpose of this methind is to form exponent value.
-    UNITS_EXPORT int static FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
+    UNITS_EXPORT int static FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
     // !TODO====================================================================
 
     UNITS_EXPORT NumericFormatSpec();
@@ -375,16 +378,16 @@ public:
     //! Format an integer using this NumericFormatSpec's format settings.
     //! @param[in] ival Integer to format.
     //! @return ival as a formatted string.
-    UNITS_EXPORT Utf8String FormatInteger(int32_t ival);
+    UNITS_EXPORT Utf8String Format(int32_t ival) const;
     //! Format a double using this NumericFormatSpec's format settings.
     //! @param[in] dval Double to format.
     //! @return dval as a formatted string.
-    UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0) const;
+    UNITS_EXPORT Utf8String Format(double dval, double round = -1.0) const;
     //! Format a double using the format settings of numericFormatSpec.
     //! @param[in] nfs  NumericFormatSpec used for formatting.
     //! @param[in] dval Double to format.
     //! @return dval as a formatted string.
-    UNITS_EXPORT static Utf8String FormatDouble(NumericFormatSpecCR nfs, double dval, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String Format(NumericFormatSpecCR nfs, double dval) {return nfs.Format(dval);}
 };
 
 //=======================================================================================
@@ -463,14 +466,13 @@ private:
     static size_t const indxSub    = 3;
 
     size_t m_ratio[indxSub];
-    bool m_includeZero; // Not currently used in the formatting code.
+    bool m_includeZero; // TODO: Not currently used in the formatting code, needs to be fixed.
     bool m_explicitlyDefinedSpacer;
     bool m_explicitlyDefinedMajorLabel;
     bool m_explicitlyDefinedMiddleLabel;
     bool m_explicitlyDefinedMinorLabel;
     bool m_explicitlyDefinedSubLabel;
     Utf8String m_spacer;
-    Utf8String m_labelOverride;
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
 
@@ -500,13 +502,8 @@ private:
         }
     bool IsIndexValid(size_t indx) const { return indx < m_proxys.size(); }
 
-
     UNITS_EXPORT void SetUnitLabel(size_t index, Utf8CP label);
 public:
-    // TODO: Attempt to remove these methods from the public API================
-    UNITS_EXPORT void LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP context);
-    // !TODO====================================================================
-
     UNITS_EXPORT CompositeValueSpec();
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit);
     UNITS_EXPORT CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middleUnit);
@@ -525,10 +522,11 @@ public:
     BEU::UnitCP GetMiddleUnit() const {return GetUnit(indxMiddle);}
     BEU::UnitCP GetMinorUnit()  const {return GetUnit(indxMinor);}
     BEU::UnitCP GetSubUnit()    const {return GetUnit(indxSub);}
-    bool HasMajorUnit()  const {return nullptr != GetUnit(indxMajor);}
-    bool HasMiddleUnit() const {return nullptr != GetUnit(indxMiddle);}
-    bool HasMinorUnit()  const {return nullptr != GetUnit(indxMinor);}
-    bool HasSubUnit()    const {return nullptr != GetUnit(indxSub);}
+    
+    bool HasMajorUnit()  const {return nullptr != GetUnit(indxMajor);} //!< Determine whether this composite value has a major unit.
+    bool HasMiddleUnit() const {return nullptr != GetUnit(indxMiddle);} //!< Determine whether this composite value has a middle unit.
+    bool HasMinorUnit()  const {return nullptr != GetUnit(indxMinor);} //!< Determine whether this composite value has a minor unit.
+    bool HasSubUnit()    const {return nullptr != GetUnit(indxSub);} //!< Determine whether this composite value has a sub unit.
 
     UNITS_EXPORT void SetUnitLabels(Utf8CP majorLabel, Utf8CP middleLabel = nullptr, Utf8CP minorLabel = nullptr, Utf8CP subLabel = nullptr);
     Utf8String GetMajorLabel()  const {return GetEffectiveLabel(indxMajor);}
@@ -542,10 +540,10 @@ public:
     void SetSubLabel(Utf8StringCR label) {m_explicitlyDefinedSubLabel = true; SetUnitLabel(indxSub, label.c_str());}
     UNITS_EXPORT bool SetUnitLabel(Utf8StringCR label, int indx);
 
-    bool HasMajorLabel()    const {return m_explicitlyDefinedMajorLabel;}
-    bool HasMiddleLabel()   const {return m_explicitlyDefinedMiddleLabel;}
-    bool HasMinorLabel()    const {return m_explicitlyDefinedMinorLabel;}
-    bool HasSubLabel()      const {return m_explicitlyDefinedSubLabel;}
+    bool HasMajorLabel()    const {return m_explicitlyDefinedMajorLabel;} //!< Determine whether this composite value has a major unit label override.
+    bool HasMiddleLabel()   const {return m_explicitlyDefinedMiddleLabel;} //!< Determine whether this composite value has a middle unit label override.
+    bool HasMinorLabel()    const {return m_explicitlyDefinedMinorLabel;} //!< Determine whether this composite value has a minor unit label override.
+    bool HasSubLabel()      const {return m_explicitlyDefinedSubLabel;} //!< Determine whether this composite value has a sub unit label override.
 
     size_t GetMajorToMiddleRatio() const {return m_ratio[indxMajor];}
     size_t GetMiddleToMinorRatio() const {return m_ratio[indxMiddle];}
@@ -554,18 +552,26 @@ public:
     bool IsProblem() const {return m_problem.IsProblem();}
     Utf8String GetProblemDescription() const {return m_problem.GetProblemDescription();}
 
+    //! Set the string that will be used as a spacer in between each segment value and its uom label of the composite value string.
     Utf8String SetSpacer(Utf8CP spacer) {m_explicitlyDefinedSpacer = true; return m_spacer = spacer;}
-    Utf8String GetSpacer() const {return m_spacer;}
-    bool HasSpacer() const {return m_explicitlyDefinedSpacer;}
+    Utf8String GetSpacer() const {return m_spacer;} //!< Get the spacer used in between each segment value and its uom label of a composite value string.
+    bool HasSpacer() const {return m_explicitlyDefinedSpacer;} //!< Returns whether a spacer has been explicitly set.
 
+    //! Sets whether a segment of the composite value will be serialized to the resulting string if it evaluates to zero.
     bool SetIncludeZero(bool incl) {return m_includeZero = incl;}
+    //! Determine whether a segment of the composite value will be serialized to the resulting string if it evaluates to zero.
     bool IsIncludeZero() const {return m_includeZero;}
 
+    //! Given a double value decompose the value into the units defined within this.
     //! If uom is not provided we assume that the value is defined in the smallest units defined
     //! in the current spec.
-    UNITS_EXPORT CompositeValue DecomposeValue(double dval, BEU::UnitCP uom = nullptr);
+    //! @param[in] value The value to decompose into the segments.
+    //! @param[in] uom The Unit of the value provided.
+    //! @return
+    UNITS_EXPORT CompositeValue DecomposeValue(double value, BEU::UnitCP uom = nullptr) const;
 
     UNITS_EXPORT Json::Value ToJson() const;
+    UNITS_EXPORT void FromJson(JsonValueCR jval, BEU::IUnitsContextCP context);
 };
 
 //=======================================================================================
@@ -574,41 +580,37 @@ public:
 struct CompositeValue
 {
 private:
-    static size_t const indxInput = 4;
     bool m_negative;
-    double m_parts[5];
+    double m_parts[4];
     FormatProblemDetail m_problem;
-    double GetSignFactor() { return m_negative ? -1.0 : 1.0; }
 
 public:
     CompositeValue() : m_negative(false) {memset(m_parts, 0, sizeof(m_parts));}
 
-    void SetNegative() { m_negative = true; }
-    void SetPositive() { m_negative = false; }
+    void SetNegative() {m_negative = true;}
+    void SetPositive() {m_negative = false;}
 
     Utf8String GetSignPrefix(bool useParenth = false) const { return m_negative?  (useParenth ? "(" : "-") : ""; }
     Utf8String GetSignSuffix(bool useParenth = false) const { return m_negative ? (useParenth ? ")" : "") : ""; }
 
-    double SetMajor(double dval)  { return m_parts[CompositeValueSpec::indxMajor] = dval; }
-    double SetMiddle(double dval) { return m_parts[CompositeValueSpec::indxMiddle] = dval; }
-    double SetMinor(double dval)  { return m_parts[CompositeValueSpec::indxMinor] = dval; }
-    double SetSub(double dval)    { return m_parts[CompositeValueSpec::indxSub] = dval; }
-    double SetInput(double dval)  { return m_parts[indxInput] = dval; }
+    double SetMajor(double dval)  {return m_parts[CompositeValueSpec::indxMajor] = dval;}
+    double SetMiddle(double dval) {return m_parts[CompositeValueSpec::indxMiddle] = dval;}
+    double SetMinor(double dval)  {return m_parts[CompositeValueSpec::indxMinor] = dval;}
+    double SetSub(double dval)    {return m_parts[CompositeValueSpec::indxSub] = dval;}
 
-    double GetMajor()  const { return m_parts[CompositeValueSpec::indxMajor]; }
-    double GetMiddle() const { return m_parts[CompositeValueSpec::indxMiddle]; }
-    double GetMinor()  const { return m_parts[CompositeValueSpec::indxMinor]; }
-    double GetSub()    const { return m_parts[CompositeValueSpec::indxSub]; }
-    double GetInput()  const { return m_parts[indxInput]; }
+    double GetMajor()  const {return m_parts[CompositeValueSpec::indxMajor];}
+    double GetMiddle() const {return m_parts[CompositeValueSpec::indxMiddle];}
+    double GetMinor()  const {return m_parts[CompositeValueSpec::indxMinor];}
+    double GetSub()    const {return m_parts[CompositeValueSpec::indxSub];}
 
     bool UpdateProblemCode(FormatProblemCode code) { return m_problem.UpdateProblemCode(code); }
-    bool IsProblem() const { return m_problem.IsProblem(); }
+    bool IsProblem() const {return m_problem.IsProblem();}
 };
 
 //=======================================================================================
-//! Container for keeping together primary, numeric, composite and other types of specs.
-//! Name and a valid numeric spec are required for creating a valid instance of this class.
-//! Alias and composite spec are optional at the moment of creation but can be added at
+//! Container for keeping together numeric and composite spec types.
+//! A valid NumericFormatSpec is required for creating a valid instance of this class.
+//! A CompositeValuespec are optional at the moment of creation but can be added at
 //! any time.
 //!
 //! @bsistruct                                          David.Fox-Rabinovitz  03/2017
@@ -694,9 +696,9 @@ public:
     Utf8String GetProblemDescription() const {return m_problem.GetProblemDescription();}
     PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
 
-    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", int prec = -1, double round = -1.0);
+    UNITS_EXPORT Utf8String FormatQuantity(BEU::QuantityCR qty, BEU::UnitCP useUnit, Utf8CP space="", double round = -1.0);
     Utf8String FormatQuantity(BEU::QuantityCR qty, Utf8CP space) const {return Format::StdFormatQuantity(*this, qty.ConvertTo(m_compositeSpec.GetMajorUnit()), nullptr, space);}
-    UNITS_EXPORT static Utf8String StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::UnitCP useUnit = nullptr, Utf8CP space = nullptr, Utf8CP useLabel = nullptr, double round = -1.0);
 
     //! Parse a Format from the provided format string. A format string takes the form,
     //! <code>

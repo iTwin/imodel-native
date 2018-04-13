@@ -33,10 +33,9 @@ struct CompositeValueSpecTest : FormattingTestFixture
         if (nullptr == s_inch)
             s_inch = s_unitsContext->LookupUnit("IN");
         }
-
-    void VerifyCompositeJson(Utf8CP jsonString, Utf8CP errorMsg = nullptr);
     };
 struct CompositeValueTest : FormattingTestFixture {};
+struct FormatCompositeStringTest : CompositeValueSpecTest {};
 
 //===================================================
 // CompositeValueSpec
@@ -265,12 +264,10 @@ TEST_F(CompositeValueTest, DataMemberSettersAndGetters)
     cv.SetMiddle(2.0);
     cv.SetMinor(3.0);
     cv.SetSub(4.0);
-    cv.SetInput(5.0);
     EXPECT_EQ(1.0, cv.GetMajor());
     EXPECT_EQ(2.0, cv.GetMiddle());
     EXPECT_EQ(3.0, cv.GetMinor());
     EXPECT_EQ(4.0, cv.GetSub());
-    EXPECT_EQ(5.0, cv.GetInput());
 
     cv.SetPositive();
     EXPECT_STREQ("", cv.GetSignPrefix().c_str());
@@ -283,6 +280,29 @@ TEST_F(CompositeValueTest, DataMemberSettersAndGetters)
     EXPECT_STREQ("(", cv.GetSignPrefix(true).c_str());
     EXPECT_STREQ("", cv.GetSignSuffix().c_str());
     EXPECT_STREQ(")", cv.GetSignSuffix(true).c_str());
+    }
+
+//===================================================
+// FormatCompositeStringTest
+//===================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Victor.Cushman                  03/18
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatCompositeStringTest, CompositeValueUsesThousandSeparatorForLastUnit)
+    {
+    NumericFormatSpec numericFormatSpec;
+    numericFormatSpec.SetThousandSeparator('\'');
+    numericFormatSpec.SetUse1000Separator(true);
+    numericFormatSpec.SetKeepSingleZero(true);
+
+    CompositeValueSpec compositeValueSpec(*s_mile, *s_inch);
+    ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
+    Format format(numericFormatSpec, compositeValueSpec);
+
+    // 1500.5 miles == 1,500 miles and 31,680 inches
+    BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
+    EXPECT_STREQ("1500 31'680.0", Format::StdFormatQuantity(format, quantity).c_str());
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

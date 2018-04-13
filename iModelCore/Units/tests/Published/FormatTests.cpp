@@ -145,27 +145,6 @@ TEST_F(FormatTest, IsIdentical)
     }
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatTest, StdFormatQuantityUsesThousandSeparatorForAllUnits)
-    {
-    NumericFormatSpec numericFormatSpec;
-    numericFormatSpec.SetThousandSeparator('\'');
-    numericFormatSpec.SetUse1000Separator(true);
-    numericFormatSpec.SetKeepSingleZero(true);
-
-    BEU::UnitCP mile = s_unitsContext->LookupUnit("MILE");
-    BEU::UnitCP inch = s_unitsContext->LookupUnit("IN");
-    CompositeValueSpec compositeValueSpec(*mile, *inch);
-    ASSERT_EQ(2, compositeValueSpec.GetUnitCount());
-    Format Format(numericFormatSpec, compositeValueSpec);
-
-    // 1500.5 miles == 1,500 miles and 31,680 inches
-    BEU::Quantity quantity(1500.5, *compositeValueSpec.GetMajorUnit());
-    EXPECT_STREQ("1'500.0 31'680.0", Format::StdFormatQuantity(Format, quantity).c_str());
-    }
-
 //===================================================
 // FormatStringTest
 //===================================================

@@ -2,37 +2,22 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 
-# Integer formatting isn't defined by the specification, and a use case has
-# not been identified for needing the formatting. Ignore integer formatting
-# until the specification is better defined.
-FormatIntegerTest.*
-
-
-# FUSs are in flux and may ultimately get removed. Ignore FUS tests for now.
-FormatUnitSetTest*
-
-# MinWidth needs more discussion. Since we don't even know if we want MinWidth
-# in the formatting layer, ignore it for now.
-FormatDoubleTest.FormatDoubleWithDifferentMinWidths
+#----------------------------------------------------------------------------------------
+#   Tests that need attention
+#----------------------------------------------------------------------------------------
 
 # Since the std formats might get reworked anyway, we'll ignore this failing
 # test for now.
 FormatParsingSetTest.TestParseToStd
 
-#----------------------------------------------------------------------------------------
-#   Tests that need attention
-#----------------------------------------------------------------------------------------
-# Implementation is bugged.
-FormatTest.StdFormatQuantityUsesThousandSeparatorForAllUnits
-
-# Implementation is bugged.
-FormatDoubleTest.FormatDoublePresentationTypeTests_IGNORED
-FormatDoubleTest.FormatDoubleIndividualFormatTraitsTests_IGNORED
-
 # Parsing implementation is bugged.
 FormatParsingSetTest.IdentityIncorrectLeadingPlusAndMinus
-
-# Implementation is bugged.
 FormatParsingSetTest.FractionCanUseUnderscoreBetweenIntegerAndFractionalComponent
 
 FormatParsingSetTest.CompositeFormats_IGNORED
+
+FormatIntegerTest.FormatIntegerPresentationTypeTests
+FormatIntegerTest.FormatIntegerIndividualFormatTraitsTests
+FormatDoubleTest.FormatDoublePresentationTypeTests_IGNORED
+FormatDoubleTest.FormatDoubleWithDifferentMinWidths
+FormatDoubleTest.FormatDoubleIndividualFormatTraitsTests_IGNORED

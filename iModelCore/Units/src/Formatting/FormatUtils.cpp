@@ -449,10 +449,10 @@ Utf8String Utils::GetCurrentThousandSeparator()
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::DecimalPrecisionByIndex(DecimalPrecision& out, const size_t num)
+bool Utils::DecimalPrecisionByIndex(DecimalPrecision& out, size_t num)
     {
     if (num <= static_cast<uint32_t>(DecimalPrecision::Max))
-        { 
+        {
         out = static_cast<DecimalPrecision>(num);
         return true;
         }
@@ -463,11 +463,9 @@ bool Utils::DecimalPrecisionByIndex(DecimalPrecision& out, const size_t num)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-double Utils::DecimalPrecisionFactor(DecimalPrecision decP, int index = -1)
+double Utils::DecimalPrecisionFactor(DecimalPrecision decP)
     {
     static double FactorSet[13] = { 1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10, 1.0e11, 1.0e12 };
-    if (0 <= index && sizeof(FactorSet) / sizeof(double) > index)
-        return FactorSet[index];
     return FactorSet[DecimalPrecisionToInt(decP)];
     }
 

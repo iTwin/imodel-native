@@ -301,7 +301,7 @@ bool CompositeValueSpec::SetUnitLabel(Utf8StringCR label, int indx)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 01/17
 //---------------------------------------------------------------------------------------
-CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
+CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom) const
     {
     CompositeValue cv = CompositeValue();
     BEU::UnitCP smallest = GetSmallestUnit();
@@ -319,7 +319,7 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom)
         {
         if (!BEU::Unit::AreCompatible(uom, smallest))
             {
-            m_problem.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
+            cv.UpdateProblemCode(FormatProblemCode::CVS_UncomparableUnits);
             }
         else
             {
@@ -424,7 +424,7 @@ Json::Value CompositeValueSpec::ToJson() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
-void CompositeValueSpec::LoadJsonData(JsonValueCR jval, BEU::IUnitsContextCP context)
+void CompositeValueSpec::FromJson(JsonValueCR jval, BEU::IUnitsContextCP context)
     {
     Utf8CP paramName;
     Utf8String str;

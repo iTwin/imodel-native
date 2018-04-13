@@ -102,11 +102,11 @@ void FractionalNumeric::FormTextParts(bool reduce)
         numer /= m_gcf;
         denom /= m_gcf;
         }
-    m_textParts.push_back(fmt.FormatInteger((int)m_integral));
+    m_textParts.push_back(fmt.Format((int)m_integral));
     if (numer > 0)
         {
-        m_textParts.push_back(fmt.FormatInteger((int)numer));
-        m_textParts.push_back(fmt.FormatInteger((int)denom));
+        m_textParts.push_back(fmt.Format((int)numer));
+        m_textParts.push_back(fmt.Format((int)denom));
         }
     }
 
@@ -221,7 +221,7 @@ Utf8String FactorPower::ToText(Utf8Char pref)
         {
         if (n > 0)
             buf[i++] = 'x';
-        i += NumericFormatSpec::FormatIntegerSimple(static_cast<int>(m_divisor), buf + i, static_cast<int>(sizeof(buf)) - i, false, false);
+        i += NumericFormatSpec::FormatSimple(static_cast<int>(m_divisor), buf + i, static_cast<int>(sizeof(buf)) - i, false, false);
         }
     return Utf8String(buf);
     }
@@ -247,9 +247,9 @@ const size_t* FactorizedNumber::GetPrimes(int* length)
 //----------------------------------------------------------------------------------------
 size_t FactorizedNumber::GetPrimeCount()
     {
-     int primN;
-     GetPrimes(&primN);
-     return static_cast<size_t>(primN);
+    int primN;
+    GetPrimes(&primN);
+    return static_cast<size_t>(primN);
     }
 
 //----------------------------------------------------------------------------------------

@@ -57,7 +57,7 @@ size_t NumericFormatSpec::InsertChar(Utf8P buf, size_t index, char c, int num) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::FormatInteger(int n, Utf8P bufOut,  int bufLen)
+int NumericFormatSpec::FormatInt(int n, Utf8P bufOut,  int bufLen) const
     {
     char sign = '+';
     char buf[64];
@@ -116,12 +116,12 @@ int NumericFormatSpec::FormatInteger(int n, Utf8P bufOut,  int bufLen)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec, double round) const
+size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen, double round) const
     {
     double ival;
     Utf8Char sign = '+';
-    double precScale = NumericFormatSpec::GetDecimalPrecisionFactor(prec);
-    int totFractLen = NumericFormatSpec::GetDecimalPrecisionIndex(prec);
+    double precScale = GetDecimalPrecisionFactor();
+    int totFractLen = Utils::DecimalPrecisionToInt(m_decPrecision);
     double expInt = 0.0;
     double fract;
     char intBuf[64];
@@ -215,7 +215,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         if (sci && expInt != 0)
             {
             char expBuf[32];
-            int expLen = FormatIntegerSimple ((int)expInt, expBuf, sizeof(expBuf), true, (IsExponentZero() ? true : false));
+            int expLen = FormatSimple ((int)expInt, expBuf, sizeof(expBuf), true, (IsExponentZero() ? true : false));
             locBuf[ind++] = 'e';
             //if (IsExponentZero())
             //    locBuf[ind++] = '0';
@@ -272,7 +272,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         size_t k = 0;
         if (hiPart > 0)
             {
-            Utf8String hiS = FormatIntegerToString(hiPart, 0);
+            Utf8String hiS = FormatToString(hiPart, 0);
             memcpy(locBuf, hiS.c_str(), hiS.length());
             k += hiS.length();
             }
@@ -280,12 +280,12 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
             locBuf[k++] = '0';
         
         locBuf[k++] = GetStationSeparator();
-        Utf8String loS = FormatIntegerToString(loPart, m_minWidth);
+        Utf8String loS = FormatToString(loPart, m_minWidth);
         memcpy(&locBuf[k], loS.c_str(), loS.length());
         k += loS.length();
         if (frPart > 0)
             {
-            Utf8String frS = FormatIntegerToString(frPart, 0);
+            Utf8String frS = FormatToString(frPart, 0);
             locBuf[k++] = GetDecimalSeparator();
             memcpy(&locBuf[k], frS.c_str(), frS.length());
             k += frS.length();
@@ -329,16 +329,6 @@ double NumericFormatSpec::RoundDouble(double dval, double roundTo)
     modf(rnd, &ival);
     rnd = ival * roundTo;
     return (dval < 0.0) ? -rnd : rnd;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-int NumericFormatSpec::GetDecimalPrecisionIndex(int prec) const
-    { 
-    if (0 <= prec && prec < Utils::DecimalPrecisionToInt(DecimalPrecision::Precision12))
-        return prec;
-    return Utils::DecimalPrecisionToInt(m_decPrecision); 
     }
 
 //----------------------------------------------------------------------------------------
@@ -427,7 +417,7 @@ int NumericFormatSpec::IntPartToText(double n, Utf8P bufOut, int bufLen, bool us
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 07/17
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::FormatIntegerToString(int n, int minSize) const
+Utf8String NumericFormatSpec::FormatToString(int n, int minSize) const
     {
     const int bufLen = 64;  // this's overkill, but does not hurt
     char dig[bufLen+2];
@@ -469,7 +459,7 @@ Utf8String NumericFormatSpec::FormatIntegerToString(int n, int minSize) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-int NumericFormatSpec::FormatIntegerSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero)
+int NumericFormatSpec::FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero)
     {
     char sign = '+';
     char buf[64];
@@ -793,30 +783,21 @@ Json::Value NumericFormatSpec::FormatTraitsToJson(bool verbose) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
- Utf8String NumericFormatSpec::FormatInteger(int32_t ival)
+ Utf8String NumericFormatSpec::Format(int32_t ival) const
     {
     char buf[64];
-    FormatInteger(ival, buf, sizeof(buf));
+    FormatInt(ival, buf, sizeof(buf));
     return Utf8String(buf);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-Utf8String NumericFormatSpec::FormatDouble(double dval, int prec, double round) const
+Utf8String NumericFormatSpec::Format(double dval, double round) const
     {
     char buf[64];
-    FormatDoubleBuf(dval, buf, sizeof(buf), prec, round);
+    FormatDouble(dval, buf, sizeof(buf), round);
     return Utf8String(buf);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                 03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-// static
-Utf8String NumericFormatSpec::FormatDouble(NumericFormatSpecCR nfs, double dval, int prec, double round)
-    {
-    return nfs.FormatDouble(dval, prec, round);
     }
 
 //---------------------------------------------------------------------------------------

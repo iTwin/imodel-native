@@ -283,9 +283,12 @@ struct Utils
     UNITS_EXPORT static Utf8String ScientificTypeName(ScientificType type);
     UNITS_EXPORT static bool NameToScientificType(ScientificType& out, Utf8StringCR name);
     UNITS_EXPORT static bool NameToSignOption(ShowSignOption& out, Utf8CP name);
-    static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
-    UNITS_EXPORT static bool DecimalPrecisionByIndex( DecimalPrecision& out, const size_t num);
-    UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP, int index);
+    static int DecimalPrecisionToInt(DecimalPrecision decP) {return static_cast<int>(decP);}
+    UNITS_EXPORT static bool DecimalPrecisionByIndex(DecimalPrecision& out, size_t num);
+
+    //! Returns a factor, as a double, representing the provided precision.
+    UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP);
+
     UNITS_EXPORT static Utf8String PresentationTypeName(PresentationType type);
     UNITS_EXPORT static bool NameToPresentationType(PresentationType& type, Utf8CP name);
     UNITS_EXPORT static Utf8String SignOptionName(ShowSignOption opt);
