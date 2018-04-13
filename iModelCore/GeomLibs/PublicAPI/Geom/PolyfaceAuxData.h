@@ -68,7 +68,7 @@ template <typename T_Data>  struct T_PolyfaceAuxChannel : RefCountedBase
     Utf8StringCR                GetInputName() const        { return m_inputName; }
     bvector<DataPtr> const&     GetData() const             { return m_data; }
     bool                        IsScalar() const            { return DataType::Scalar == m_dataType || DataType::Distance == m_dataType; }
-    size_t                      GetValueCount() const       { return m_data.empty() ? 0 : m_data.front()->GetValueCount(); }
+    size_t                      GetValueCount() const       { return m_data.empty() ? 0 : m_data.front()->GetValueCount() / GetBlockSize(); }
     size_t                      GetBlockSize() const        { return m_dataType < Vector ? 1 : 3; }
 
     void AppendDataByIndex(T_PolyfaceAuxChannel const& input, size_t index)

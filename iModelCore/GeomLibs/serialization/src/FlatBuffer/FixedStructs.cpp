@@ -665,8 +665,8 @@ flatbuffers::Offset<BGFB::PolyfaceAuxChannelData> WriteAsFBPolyfaceAuxChannelDat
     if (nullptr == pData)
         return 0;
 
-    BGFB::PolyfaceAuxChannelDataBuilder builder (m_fbb);
     auto        valuesOffset = WriteOptionalVector<double, double, 1> (pData->GetValues());
+    BGFB::PolyfaceAuxChannelDataBuilder builder (m_fbb);
     builder.add_input (pData->GetInput());
     builder.add_values(valuesOffset);
 
