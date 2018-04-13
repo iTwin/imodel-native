@@ -20,21 +20,39 @@ BEGIN_BENTLEY_LINEARREFERENCING_NAMESPACE
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILinearElement
 {
+
 protected:
+    //! @private
     virtual double _GetLength() const = 0;
+    //! @private
     virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const = 0;
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(ILinearElement)
+    //! Get a const reference to the DgnElement of this ILinearElement
     Dgn::DgnElementCR ToElement() const { return _ILinearElementToDgnElement(); }
+    
+    //__PUBLISH_SECTION_END__
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearElementToDgnElement()); }
+    //__PUBLISH_SECTION_START__
 
+    //! Get the DgnElementId of the ILinearElementSource //TODO DIEGO What is an ILinearElementSource?
     Dgn::DgnElementId GetILinearElementSource() const { return ToElement().GetPropertyValueId<Dgn::DgnElementId>("ILinearElementSource"); }
-    LINEARREFERENCING_EXPORT void SetILinearElementSource(ILinearElementSourceCP);
 
+    //__PUBLISH_SECTION_END__
+    LINEARREFERENCING_EXPORT void SetILinearElementSource(ILinearElementSourceCP);
+    //__PUBLISH_SECTION_START__
+
+    //! Get the length of the ILinearElement
+    //! @return The length of this ILinearElement, in meters.
     LINEARREFERENCING_EXPORT double GetLength() const { return _GetLength(); }
+
+    //! Get the start value of the ILinearElement
     double GetStartValue() const { return ToElement().GetPropertyValueDouble("StartValue"); }
+
+    //__PUBLISH_SECTION_END__
     void SetStartValue(double newStartVal) { ToElementR().SetPropertyValue("StartValue", newStartVal); }
+    //__PUBLISH_SECTION_START__
 }; // ILinearElement
 
 //=======================================================================================
@@ -43,28 +61,44 @@ public:
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ISpatialLinearElement : virtual ILinearElement
 {
+//! @privatesection
 protected:
     virtual DPoint3d _ToDPoint3d(DistanceExpressionCR distanceExpression) const = 0;
     virtual DistanceExpression _ToDistanceExpression(DPoint3dCR point) const = 0;
+//! @publicsection
 
 public:
+    //! Get the actual point in space of the DistanceExpression, relative to this element. 
+    //! @see ToDistanceExpression
+    //! @param distanceExpression The DistanceExpression whose location you want to determine.
+    //! @return The DPoing3d reflecting /p distanceExpression.
     LINEARREFERENCING_EXPORT DPoint3d ToDPoint3d(DistanceExpressionCR distanceExpression) const { return _ToDPoint3d(distanceExpression); }
+
+    //! Given a point in space, creates a DistanceExpression describing the point's relation to this ISpatialLinearElement.
+    //! @see ToDPoint3d
+    //! @param point The point from which to derive a DistanceExpression.
+    //! @return The DistanceExpression derived from /point.
     LINEARREFERENCING_EXPORT DistanceExpression ToDistanceExpression(DPoint3dCR point) const { return _ToDistanceExpression(point); }
 }; // ISpatialLinearElement
 
 //=======================================================================================
-//! Interface implemented by elements that can realize Linear-Elements along which
+//! Interface implemented by elements that can realize ILinearElements along which
 //! linear referencing is performed.
+//! TODO Diego Can this be made more clear?  I don't understand what is meant by "realize ILinearElements along which linear referencing is performed"
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ILinearElementSource
 {
 protected:
+    //! @private
     virtual Dgn::DgnElementCR _ILinearElementSourceToDgnElement() const = 0;
 
 public:
+    //! Get a const reference to the DgnElement of this ILinearElementSource
     Dgn::DgnElementCR ToElement() const { return _ILinearElementSourceToDgnElement(); }
+    //__PUBLISH_SECTION_END__
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearElementSourceToDgnElement()); }
+    //__PUBLISH_SECTION_START__
     LINEARREFERENCING_EXPORT bset<Dgn::DgnElementId> QueryLinearElements() const;
 }; // ILinearElementSource
 
@@ -77,26 +111,49 @@ typedef BeSQLite::EC::ECInstanceId LinearlyReferencedLocationId;
 struct EXPORT_VTABLE_ATTRIBUTE ILinearlyLocated
 {
 protected:
+    //! @private
     LINEARREFERENCING_EXPORT ILinearlyLocated();
 
+    //! @private
     LINEARREFERENCING_EXPORT void _SetLinearElement(Dgn::DgnElementId elementId);
+    
+    //! @private
     virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const = 0;
+
+    //! @private
     LINEARREFERENCING_EXPORT void _AddLinearlyReferencedLocation(LinearlyReferencedLocationR);
     
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(ILinearlyLocated)
-    Dgn::DgnElementCR ToElement() const { return _ILinearlyLocatedToDgnElement(); }
-    Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearlyLocatedToDgnElement()); }
 
+    //! Get a const reference to the DgnElement of this ILinearlyLocated
+    Dgn::DgnElementCR ToElement() const { return _ILinearlyLocatedToDgnElement(); }
+
+    //! Get the DgnElementId of the LienarElement
     LINEARREFERENCING_EXPORT Dgn::DgnElementId GetLinearElementId() const;
+
+    //! Get the LinearElement
     LINEARREFERENCING_EXPORT ILinearElementCP GetLinearElement() const;
+
+    //! Obtain all of the LinearlyReferencedLocationIds related to this element.
     LINEARREFERENCING_EXPORT bvector<LinearlyReferencedLocationId> QueryLinearlyReferencedLocationIds() const;
+
+    //! Given a LinearlyReferencedLocationId (see QueryLinearlyReferencedLocationIds()), obtain its LinearlyReferencedLocation.
     LINEARREFERENCING_EXPORT LinearlyReferencedLocationCP GetLinearlyReferencedLocation(LinearlyReferencedLocationId) const;
-    LINEARREFERENCING_EXPORT LinearlyReferencedLocationP GetLinearlyReferencedLocationP(LinearlyReferencedLocationId);
+    
+    //! Given a LinearlyReferencedLocationId (see QueryLinearlyReferencedLocationIds()), get its LinearlyReferencedAtLocation.
     LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationCP GetLinearlyReferencedAtLocation(LinearlyReferencedLocationId) const;
-    LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationP GetLinearlyReferencedAtLocationP(LinearlyReferencedLocationId);
+    
+    //! Given a LinearlyReferencedLocationId (see QueryLinearlyReferencedLocationIds()), get its LinearlyReferencedLocationId.
     LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationCP GetLinearlyReferencedFromToLocation(LinearlyReferencedLocationId) const;
+
+    //__PUBLISH_SECTION_END__
+    Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearlyLocatedToDgnElement()); }
     LINEARREFERENCING_EXPORT LinearlyReferencedFromToLocationP GetLinearlyReferencedFromToLocationP(LinearlyReferencedLocationId);
+    LINEARREFERENCING_EXPORT LinearlyReferencedAtLocationP GetLinearlyReferencedAtLocationP(LinearlyReferencedLocationId);
+    LINEARREFERENCING_EXPORT LinearlyReferencedLocationP GetLinearlyReferencedLocationP(LinearlyReferencedLocationId);
+    //__PUBLISH_SECTION_START__
+    
 }; // ILinearlyLocated
 
 //=======================================================================================
@@ -145,14 +202,20 @@ private:
     virtual LinearReferencing::ILinearlyLocatedR ToLinearlyLocatedR() { return *dynamic_cast<LinearReferencing::ILinearlyLocatedP>(this); }
 
 protected:
+    //! @private
     LINEARREFERENCING_EXPORT ILinearlyLocatedSingleAt() {}
 
+    //! @private
     LINEARREFERENCING_EXPORT ILinearlyLocatedSingleAt(double atDistanceAlong);
 
+    //! @private
     LinearReferencing::LinearlyReferencedAtLocationPtr _GetUnpersistedAtLocation() const { return m_unpersistedAtLocationPtr; }
 
 public:
+    //! Get the distance along of this LinearLocated from the start of the ILinearElement
     LINEARREFERENCING_EXPORT double GetAtDistanceAlongFromStart() const;
+
+    //! @private
     LINEARREFERENCING_EXPORT void SetAtDistanceAlongFromStart(double newAt);
 }; // ILinearlyLocatedSingleAt
 
@@ -177,17 +240,26 @@ private:
     virtual LinearReferencing::ILinearlyLocatedR ToLinearlyLocatedR() { return *dynamic_cast<LinearReferencing::ILinearlyLocatedP>(this); }
 
 protected:
+    //! @private
     LINEARREFERENCING_EXPORT ILinearlyLocatedSingleFromTo() {}
 
+    //! @private
     LINEARREFERENCING_EXPORT ILinearlyLocatedSingleFromTo(double fromDistanceAlong, double toDistanceAlong);
 
+    //! @private
     LinearReferencing::LinearlyReferencedFromToLocationPtr _GetUnpersistedFromToLocation() const { return m_unpersistedFromToLocationPtr; }
 
 public:
+    //! Get the "From" distance from the start.
     LINEARREFERENCING_EXPORT double GetFromDistanceAlongFromStart() const;
+    
+    //! Set the "From" distance from the start.
     LINEARREFERENCING_EXPORT void SetFromDistanceAlongFromStart(double newFrom);
 
+    //! Get the "To" distance from the start.
     LINEARREFERENCING_EXPORT double GetToDistanceAlongFromStart() const;
+
+    //! Set the "To" distance from the start.
     LINEARREFERENCING_EXPORT void SetToDistanceAlongFromStart(double newFrom);
 }; // ILinearlyLocatedSingleFromTo
 
@@ -200,13 +272,21 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE IReferent
 {
 protected:
+    //! @private
     virtual NullableDouble _GetRestartValue() const = 0;
+
+    //! @private
     virtual Dgn::DgnElementCR _IReferentToDgnElement() const = 0;
 
 public:
+    //! Get the DgnElement from this IReferent
     Dgn::DgnElementCR ToElement() const { return _IReferentToDgnElement(); }
-    Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_IReferentToDgnElement()); }
 
+    //__PUBLISH_SECTION_END__
+    Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_IReferentToDgnElement()); }
+    //__PUBLISH_SECTION_START__
+
+    //! Ge the Restart Value from this IReferent.
     LINEARREFERENCING_EXPORT NullableDouble GetRestartValue() const { return _GetRestartValue(); }    
 }; // IReferent
 

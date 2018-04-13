@@ -31,20 +31,51 @@ private:
         Dgn::DgnElementId fromReferentId, NullableDouble distanceAlongFromReferent);
 
 public:
+    //! Create a new instance of DistanceExpression with default settings
     LINEARREFERENCING_EXPORT DistanceExpression();
+
+    //! Create a new instance of DistanceExpression
+    //! @param distanceAlong The distance along the ILinearElement
+    //! @param lateralOffset The lateral offset from the ILinearElement //TODO DIEGO - Is the offset left or right?  +/-? From start station?
+    //! @param verticalOffset The vertical offset from the ILinearElement
+    //! @param fromReferentId The id of the IReferent of interest
+    //! @param distanceAlongFromReferent The distance along the alignment from \p fromReferentId
     LINEARREFERENCING_EXPORT DistanceExpression(double distanceAlong, NullableDouble lateralOffset = NullableDouble(), NullableDouble verticalOffset = NullableDouble(), 
         IReferentCP fromReferentId = nullptr, NullableDouble distanceAlongFromReferent = NullableDouble());
 
+    //! Get the distance along from the start of the ILinearElement
+    //! @return The distance along from the start
     double GetDistanceAlongFromStart() const { return m_distanceAlong; }    
+
+    //! Get the lateral offset from the ILinearElement
+    //! @return The lateral offset from the ILinearElement, or NullableDouble::IsNull() if not set. 
     NullableDouble GetLateralOffsetFromILinearElement() const { return m_lateralOffset; }    
+
+    //! Get the vertical offset from the ILinearElement
+    //! @return The vertical offset from the ILinearElement, or NullableDouble::IsNull() if not set.
     NullableDouble GetVerticalOffsetFromILinearElement() const { return m_verticalOffset; }
+
+    //! Get the distace along from the IReferent
+    //! @return The distance along fromt he IReferent, or NullableDouble::IsNull() if not set.
     NullableDouble GetDistanceAlongFromReferent() const { return m_distanceAlongFromReferent; }
+
+    //! Get the id of the IReferent
+    //! @return The DgnElementId of the IReferent.  Returns !DgnElementId::IsValid() if not set.
     Dgn::DgnElementId GetFromReferentId() const { return m_fromReferentId; }
     
+    //! Set the distance along from the start of the ILinearElement, in meters.
     void SetDistanceAlongFromStart(double newVal) { m_distanceAlong = newVal; }
+
+    //! Set the lateral offset from the ILinearElement, in meters.
     void SetLateralOffsetFromILinearElement(NullableDouble newVal) { m_lateralOffset = newVal; }
+
+    //! Set the vertical offset from the ILinearElement, in meters.
     void SetVerticalOffsetFromILinearElement(NullableDouble newVal) { m_verticalOffset = newVal; }
+
+    //! Set the distance along from the IReferent of interest, in meters.
     void SetDistanceAlongFromReferent(NullableDouble newVal) { m_distanceAlongFromReferent = newVal; }    
+
+    //! Set the IReferent of interest.
     LINEARREFERENCING_EXPORT void SetFromReferent(IReferentCP fromReferent);
 }; // DistanceExpression
 
