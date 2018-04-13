@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/ValuePrinter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ValuePrinter.h"
@@ -29,7 +29,8 @@ std::ostream& operator << (std::ostream &o, ConnectionStatus status)
         TO_VALUE_STRING_PAIR(ConnectionStatus::CouldNotResolveProxy),
         TO_VALUE_STRING_PAIR(ConnectionStatus::ConnectionLost),
         TO_VALUE_STRING_PAIR(ConnectionStatus::Timeout),
-        TO_VALUE_STRING_PAIR(ConnectionStatus::UnknownError),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::CertificateError),
+        TO_VALUE_STRING_PAIR(ConnectionStatus::UnknownError)
         };
 
     Utf8String name = names[status];
