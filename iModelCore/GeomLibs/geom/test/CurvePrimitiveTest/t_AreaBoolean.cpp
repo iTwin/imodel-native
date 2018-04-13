@@ -1725,3 +1725,87 @@ TEST(CurveVector,AreaUnionCroomLineStringChatter)
         Check::SaveTransformed (*cvAB);
     Check::ClearGeometry ("CurveVector.AreaUnionCroomLineStringChatter");
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  11/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(CurveVector,ReduceToCCWAreas)
+    {
+    // an outer loop
+    auto outerLoop = CurveVector::CreateLinear (bvector<DPoint3d> {
+            DPoint3d::From (0,0),
+            DPoint3d::From (20,0),
+            DPoint3d::From (18,10),
+            DPoint3d::From (1,10),
+            DPoint3d::From (0,0)},
+        CurveVector::BOUNDARY_TYPE_Outer
+        );
+    // a hole loop, input counterclockwise 
+    auto holeA = CurveVector::CreateLinear (bvector<DPoint3d> {
+            DPoint3d::From (2,2),
+            DPoint3d::From (6,2),
+            DPoint3d::From (6,5),
+            DPoint3d::From (2,5),
+            DPoint3d::From (2,2)},
+        CurveVector::BOUNDARY_TYPE_Inner
+        );
+    // a hole loop, defined clockwise 
+    auto holeB = CurveVector::CreateLinear (bvector<DPoint3d> {
+            DPoint3d::From (12,2),
+            DPoint3d::From (12,5),
+            DPoint3d::From (16,5),
+            DPoint3d::From (16,2),
+            DPoint3d::From (12,2)},
+        CurveVector::BOUNDARY_TYPE_Inner
+        );
+
+    // a hole loop, but it jumps outside ...
+    auto holeC = CurveVector::CreateLinear (bvector<DPoint3d> {
+            DPoint3d::From (8,8),
+            DPoint3d::From (12,9),
+            DPoint3d::From (12,12),
+            DPoint3d::From (8,12),
+            DPoint3d::From (8,8)},
+        CurveVector::BOUNDARY_TYPE_Inner
+        );
+
+
+
+    auto parityRegion = CurveVector::Create (CurveVector::BOUNDARY_TYPE_ParityRegion);
+    parityRegion->Add (outerLoop);
+    parityRegion->Add (holeA);
+    parityRegion->Add (holeB);
+    parityRegion->Add (holeC);
+
+    Check::SaveTransformed (*parityRegion);
+    auto fixed = CurveVector::ReduceToCCWAreas (*parityRegion);
+    Check::Shift (0,20,0);
+    Check::SaveTransformed (*fixed);
+
+    // we expect that the output is a union region with two  members -- one parity region and one loop
+    if (Check::Size (2, fixed->size (), "Expect two members of fixup output")
+        && Check::Int (CurveVector::BOUNDARY_TYPE_UnionRegion, fixed->GetBoundaryType ()))
+        {
+        // one should be a parity region, one should be a simple loop ...
+        int numParity = 0;
+        int numOuter = 0;
+        for (auto i = 0; i < fixed->size (); i++)
+            {
+            CurveVector::BoundaryType t;
+            if (fixed->GetChildBoundaryType(i, t))
+                {
+                if (t == CurveVector::BOUNDARY_TYPE_Outer)
+                    numOuter++;
+                if (t == CurveVector::BOUNDARY_TYPE_ParityRegion)
+                    numParity++;
+                }
+            }
+        Check::Int (1, numParity, "num parity regions");
+        Check::Int (1, numOuter,   "num outer");
+        }
+
+    Check::ClearGeometry ("CurveVector.ReduceToCCWAreas");
+    }
+
+

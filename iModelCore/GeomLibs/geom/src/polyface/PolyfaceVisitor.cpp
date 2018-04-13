@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/polyface/PolyfaceVisitor.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -14,13 +14,12 @@ DVec3dCP                            PolyfaceVisitor::GetNormalCP () const       
 DPoint2dCP                          PolyfaceVisitor::GetParamCP () const                { return m_param.GetCP(); }
 uint32_t const*                     PolyfaceVisitor::GetIntColorCP () const             { return (uint32_t*)m_intColor.GetCP(); }
 FacetFaceDataCP                     PolyfaceVisitor::GetFaceDataCP () const             { return m_faceData.GetCP(); }
-
+PolyfaceAuxDataCPtr                 PolyfaceVisitor::GetAuxDataCP() const               { return _GetAuxDataCP(); }
 
 BlockedVectorDPoint3dR              PolyfaceVisitor::Point ()                           { return m_point; }
 BlockedVectorDPoint2dR              PolyfaceVisitor::Param ()                           { return m_param; }
 BlockedVectorDVec3dR                PolyfaceVisitor::Normal ()                          { return m_normal; }
 BlockedVectorUInt32R                PolyfaceVisitor::IntColor ()                        { return m_intColor; }
-WString&                            PolyfaceVisitor::IlluminationName()                 { return m_illuminationName; }
 
 BlockedVectorIntR                   PolyfaceVisitor::ClientPointIndex  ()               { return m_pointIndex; }
 BlockedVectorIntR                   PolyfaceVisitor::ClientParamIndex  ()               { return m_paramIndex; }
@@ -28,13 +27,15 @@ BlockedVectorIntR                   PolyfaceVisitor::ClientNormalIndex  ()      
 BlockedVectorIntR                   PolyfaceVisitor::ClientColorIndex  ()               { return m_colorIndex; }
 BlockedVectorIntR                   PolyfaceVisitor::ClientFaceIndex ()                 { return m_faceIndex; }
 
-int32_t const*                        PolyfaceVisitor::GetClientPointIndexCP () const     { return m_pointIndex.GetCP(); }
-int32_t const*                        PolyfaceVisitor::GetClientParamIndexCP() const      { return m_paramIndex.GetCP(); }
-int32_t const*                        PolyfaceVisitor::GetClientNormalIndexCP() const     { return m_normalIndex.GetCP(); }
-int32_t const*                        PolyfaceVisitor::GetClientColorIndexCP() const      { return m_colorIndex.GetCP(); }
-int32_t const*                        PolyfaceVisitor::GetClientFaceIndexCP() const       { return m_faceIndex.GetCP(); }
+int32_t const*                      PolyfaceVisitor::GetClientPointIndexCP () const     { return m_pointIndex.GetCP(); }
+int32_t const*                      PolyfaceVisitor::GetClientParamIndexCP() const      { return m_paramIndex.GetCP(); }
+int32_t const*                      PolyfaceVisitor::GetClientNormalIndexCP() const     { return m_normalIndex.GetCP(); }
+int32_t const*                      PolyfaceVisitor::GetClientColorIndexCP() const      { return m_colorIndex.GetCP(); }
+int32_t const*                      PolyfaceVisitor::GetClientFaceIndexCP() const       { return m_faceIndex.GetCP(); }
+int32_t const*                      PolyfaceVisitor::GetClientAuxIndexCP() const        { return m_auxData.IsValid() ? m_auxData->GetIndices().data() : nullptr; }
 
-bool                                  PolyfaceVisitor::GetTwoSided() const                { return m_twoSided; }
+bool                                PolyfaceVisitor::GetTwoSided() const                { return m_twoSided; }
+
 
 template<typename TargetType>
 bool PushIndexDataFromMesh      // carefully get data by way of in index array.  index array might go through default.
@@ -515,12 +516,14 @@ bool _AdvanceToNextFace () override
                     m_parentMesh.GetFaceIndexCP (), m_parentMesh.GetFaceIndexCount (),
                    i0, m_numEdgesThisFace, m_numWrap);
 
-            // NEEDS WORK: variant cases for color indexer?
             if (m_parentMesh.GetIntColorCP () != NULL)
                 m_intColor.ClearAndAppendByOneBasedIndices (m_colorIndex,   NULL,
                     m_parentMesh.GetIntColorCP (), m_parentMesh.GetColorCount (),
                     m_parentMesh.GetColorIndexCP (), m_parentMesh.GetPointIndexCount (),
                     i0, m_numEdgesThisFace, m_numWrap);
+
+            if (m_auxData.IsValid())
+                m_auxData->AdvanceVisitorToNextFace(*m_parentMesh.GetAuxDataCP(), i0, m_numEdgesThisFace, m_numWrap);
             }
         m_currentReadIndex = m_nextReadIndex;
         m_nextReadIndex = i2;
@@ -531,6 +534,9 @@ bool _AdvanceToNextFace () override
     }
 
 
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
 bool _AddVertexByReadIndex (size_t readIndex) override
     {
     size_t numIndex = m_parentMesh.GetPointIndexCount ();
@@ -612,6 +618,10 @@ _PolyfaceVisitor_IndexedPolyfaceQueryToIndexed (PolyfaceQueryCR parentMesh, bool
         CopyAllActiveFlagsFromQuery (m_parentMesh);
 
     m_numPerFaceInParent = m_parentMesh.GetNumPerFace ();
+    if (m_parentMesh.GetAuxDataCP().IsValid())
+        m_auxData = m_parentMesh.GetAuxDataCP()->CreateForVisitor();
+
+
     m_allData = allData;
     Reset ();
     }

@@ -17,8 +17,8 @@ MGeometry.ConvexHullManyPoints # fails on iOS - 0 test is seeing very tiny negat
 Polyface.MultiMeshVisibilityCS4
 Polyface.MultiMeshVisibilityF
 Polyface.MultiMeshVisibilityE
-
-DPlane3d.IntersectByDistance
+# EDL mobile devices have fuzzy determinant where windows gets true 0.
+#DPlane3d.IntersectByDistance
 
     # TFS#819718
     # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: ipadair2, Date: 02/15/2018
@@ -30,8 +30,8 @@ DPlane3d.IntersectByDistance
     # 2018-02-15 11:57:14.583914+0500 BeTestiOS[3440:6191977] TestRunner: DPlane3d.IntersectByDistance FAILED
     # Feb 15 11:57:14  Be[3440] <Emergency>: TestRunner: DPlane3d.IntersectByDistance FAILED
     # /Users/naveed.khan/bsi-src/bim0200dev/out/iOSARM64/static/build/GeomLibs/XCodeProject/BeTestiOSTests/UnitTests.mm:2741: error: -[GeomLibsstructsTest_DPlane3d testIntersectByDistance] : ((0 == BETEST_TEST_RUNNER_FUNC(DPlane3d,IntersectByDistance) ()) is true) failed
-
-CurvePrimitive.Tracking
+# tolerance on length comparison
+#CurvePrimitive.Tracking
 
     # TFS#819720
     # Stream:bim0200dev, build configuration :NDEBUG, architecture: iOSARM64, Device: ipadair2, Date: 02/15/2018

@@ -61,6 +61,15 @@ void ExerciseCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, char const 
     double cutVolume0, fillVolume0;
     PolyfaceQuery::ComputeSingleSheetCutFillVolumes (*dtm, *road, cutVolume0, fillVolume0, messages);
     PolyfaceQuery::ComputeSingleSheetCutFillMeshes (*dtm, *road, cutMesh, fillMesh, messages);
+
+    Check::SaveTransformed (*dtm);
+    Check::SaveTransformed (*road);
+    auto range = dtm->PointRange ();
+    Check::Shift (0, 1.5 * range.YLength (), 0);
+    Check::SaveTransformed (*cutMesh);
+    Check::SaveTransformed (*fillMesh);
+
+
     auto cutVolume1 = cutMesh->ValidatedVolume ();
     auto fillVolume1 = fillMesh->ValidatedVolume ();
     Check::Near (cutVolume1.Value (), fabs (cutVolume0), "Cut Volume from mesh vs direct");
@@ -104,8 +113,6 @@ void ExerciseCutFill (PolyfaceHeaderPtr dtm, PolyfaceHeaderPtr road, char const 
         printf (" old method volumes            %g %g (closure errors %d)\n", cutVolume2, fillVolume2, errors);
 
         }
-
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -121,6 +128,7 @@ TEST(FastCutFill,NoCrossings)
         {
         for (double zRoad : bvector<double> {1.0, 0.25})
             {
+            SaveAndRestoreCheckTransform shifter (30.0, 0, 0);
             int roadNumX = 1 + numAdd;
             int roadNumY = 1 + numAdd / 2;
             auto road = UnitGridPolyface (
@@ -141,6 +149,7 @@ TEST(FastCutFill,NoCrossings)
             ExerciseCutFill (dtm, road, "Flat Road And DTM");
             }
         }
+    Check::ClearGeometry ("FastCutFill.NoCrossings");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -153,6 +162,7 @@ TEST(FastCutFill,SlopedWithCrossings)
     // double roadSlope = -0.8;
     for (int numAdd : bvector<int>{0, 1})
         {
+        SaveAndRestoreCheckTransform shifter (30.0, 0, 0);
         int roadNumX = 3 + numAdd;
         int roadNumY = 1 + numAdd;
         auto road = UnitGridPolyface (
@@ -168,6 +178,7 @@ TEST(FastCutFill,SlopedWithCrossings)
 
         ExerciseCutFill (dtm, road, "CutFill with road slope");
         }
+    Check::ClearGeometry ("FastCutFill.SlopedWithCrossings");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -181,6 +192,7 @@ TEST(FastCutFill,SingleVertexTouch)
 
     for (double x1 : bvector<double>{dtmSide, dtmSide + 1})
         {
+        SaveAndRestoreCheckTransform shifter (30.0, 0, 0);
         auto dtm = UnitGridPolyface (
                 DPoint3dDVec3dDVec3d (DPoint3d::From (0,0,0),   DVec3d::From (dtmSide,0,0),   DVec3d::From (0,dtmSide,0)),
                                 dtmNumX, dtmNumY, false);
@@ -201,6 +213,7 @@ TEST(FastCutFill,SingleVertexTouch)
 
         ExerciseCutFill (dtm, road, "CutFill with single touch");
         }
+    Check::ClearGeometry ("FastCutFill.SingleVertexTouch");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -214,7 +227,8 @@ TEST(FastCutFill,NoEdgeContact)
 
     for (double z1 : bvector<double>{1.0, -1.0})
         {
-        // 1x1 dtm (large face)
+        SaveAndRestoreCheckTransform shifter (30.0, 0, 0);
+    // 1x1 dtm (large face)
         auto dtm = UnitGridPolyface (
                 DPoint3dDVec3dDVec3d (DPoint3d::From (0,0,0),   DVec3d::From (dtmSide,0,0),   DVec3d::From (0,dtmSide,0)),
                                 dtmNumX, dtmNumY, false);
@@ -233,6 +247,8 @@ TEST(FastCutFill,NoEdgeContact)
         auto road = PolyfaceHeader::CreateIndexedMesh (0, points, indices);
         ExerciseCutFill (dtm, road, "CutFill with single touch");
         }
+    Check::ClearGeometry ("FastCutFill.NoEdgeContact");
+
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -244,6 +260,7 @@ TEST(FastCutFill,SinusoidPlane)
     double z1 = 0.5;
     for (size_t numX = 2, numY = 2; numX < 8; numX++, numY++)
         {
+        SaveAndRestoreCheckTransform shifter (50.0, 0, 0);
         auto bsurf = SurfaceWithSinusoidalControlPolygon (2, 2, numX, numY, 0.0, 0.3, 0.0, 0.5);
         bvector<DPoint3d> poles;
         bsurf->GetPoles (poles);
@@ -277,8 +294,8 @@ TEST(FastCutFill,SinusoidPlane)
             printf ("  volume %g\n", v.Value ());
             }
 #endif
-        ExerciseCutFill (dtm, road, "Sinusoid, Road");
         }
+    Check::ClearGeometry ("FastCutFill.SinusoidPlane");
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/SolidPrimitive/SolidPrimitive.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -680,6 +680,34 @@ bool &capped
     return vector0.IsPerpendicularTo (vector90);
     }
 
+
+/*--------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/2012
++--------------------------------------------------------------------------------------*/
+bool DgnConeDetail::IsCylinder
+(
+DPoint3dR centerA,
+DPoint3dR centerB,
+double &radius,
+bool &capped
+) const
+    {
+    centerA = m_centerA;
+    centerB = m_centerB;
+    double radiusA = m_radiusA * m_vector0.Magnitude ();
+    double radiusB = m_radiusB * m_vector0.Magnitude ();
+    radius = radiusA;
+    DVec3d vector0 = m_vector0;
+    DVec3d vector90 = m_vector90;
+    DVec3d vectorAB = DVec3d::FromStartEnd (centerA, centerB);
+    vector0.Normalize ();
+    vector90.Normalize ();
+    capped = m_capped;
+    return vector0.IsPerpendicularTo (vector90)
+        && vector0.IsPerpendicularTo (vectorAB)
+        && vector90.IsPerpendicularTo (vectorAB)
+        && DoubleOps::AlmostEqual (radiusA, radiusB);
+    }
 GEOMDLLIMPEXP ISolidPrimitivePtr ISolidPrimitive::CreateDgnCone (DgnConeDetailCR data)
     {
     ISolidPrimitivePtr newPrimitive =  new DgnCone (data);

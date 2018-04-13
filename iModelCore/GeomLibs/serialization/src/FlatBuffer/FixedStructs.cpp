@@ -605,7 +605,7 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsFBVariantGeometry (ISolidPrimi
     }
 
 template<typename TBlocked, typename TScalar, int numPerBlock>
-flatbuffers::Offset<flatbuffers::Vector<TScalar>> WriteOptionalVector (bvector<TBlocked> &source)
+flatbuffers::Offset<flatbuffers::Vector<TScalar>> WriteOptionalVector (bvector<TBlocked> const &source)
     {
     if (source.size () > 0)
         {
@@ -657,6 +657,74 @@ flatbuffers::Offset<BGFB::VariantGeometry> WriteAsVariantGeometry (bvector<IGeom
         );                         
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                      Ray.Bentley      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+flatbuffers::Offset<BGFB::PolyfaceAuxChannelData> WriteAsFBPolyfaceAuxChannelData (PolyfaceAuxChannel::DataP pData)
+    {
+    if (nullptr == pData)
+        return 0;
+
+    BGFB::PolyfaceAuxChannelDataBuilder builder (m_fbb);
+    auto        valuesOffset = WriteOptionalVector<double, double, 1> (pData->GetValues());
+    builder.add_input (pData->GetInput());
+    builder.add_values(valuesOffset);
+
+    return builder.Finish();
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                      Ray.Bentley      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+flatbuffers::Offset<BGFB::PolyfaceAuxChannel> WriteAsFBPolyfaceAuxChannel(PolyfaceAuxChannelCP pChannel)
+    {
+    if (nullptr == pChannel)
+        return 0;
+
+    bvector<flatbuffers::Offset<BGFB::PolyfaceAuxChannelData>> fbDataVector;
+
+    for (auto const& data : pChannel->GetData())
+        fbDataVector.push_back(WriteAsFBPolyfaceAuxChannelData(data.get()));
+
+    auto    fbName = m_fbb.CreateString(pChannel->GetName());
+    auto    fbInputName = m_fbb.CreateString(pChannel->GetInputName()); 
+    auto    fbData = m_fbb.CreateVector(fbDataVector);
+
+    BGFB::PolyfaceAuxChannelBuilder builder (m_fbb);
+    builder.add_dataType(pChannel->GetDataType());
+    builder.add_name (fbName);
+    builder.add_inputName (fbInputName);
+    builder.add_data(fbData);
+
+    return builder.Finish();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                      Ray.Bentley      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+flatbuffers::Offset<BGFB::PolyfaceAuxData> WriteAsFBPolyfaceAuxData (PolyfaceAuxDataCP pAuxData)
+    {
+    if (nullptr == pAuxData)
+        return 0;
+
+    bvector<flatbuffers::Offset<BGFB::PolyfaceAuxChannel>> fbChannelVector;
+
+    for (auto const& channel : pAuxData->GetChannels())
+        fbChannelVector.push_back(WriteAsFBPolyfaceAuxChannel(channel.get()));
+
+    auto    fbIndices = m_fbb.CreateVector(pAuxData->GetIndices());
+    auto    fbChannels = m_fbb.CreateVector(fbChannelVector);
+
+    BGFB::PolyfaceAuxDataBuilder builder (m_fbb);
+    builder.add_indices(fbIndices);
+    builder.add_channels(fbChannels);
+
+    return builder.Finish();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod        
++---------------+---------------+---------------+---------------+---------------+------*/
 flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
     {
     int32_t numPerFace = parent.GetNumPerFace ();
@@ -668,17 +736,13 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
     const flatbuffers::Offset<flatbuffers::Vector<double>> param = WriteOptionalVector<DPoint2d, double, 2>(parent.Param ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> normal = WriteOptionalVector<DVec3d, double, 3>(parent.Normal ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> faceData = WriteOptionalVector<FacetFaceData, double, 8>(parent.FaceData ());
-
-//    const flatbuffers::Offset<flatbuffers::Vector<double>> doubleColor = WriteOptionalVector<RgbFactor, double, 3>(parent.DoubleColor ());
-
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> pointIndex = WriteOptionalVector<int, int, 1>(parent.PointIndex ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> paramIndex = WriteOptionalVector<int, int, 1>(parent.ParamIndex ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> normalIndex = WriteOptionalVector<int, int, 1>(parent.NormalIndex ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorIndex = WriteOptionalVector<int, int, 1>(parent.ColorIndex ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> faceIndex = WriteOptionalVector<int, int, 1>(parent.FaceIndex ());
-
-//    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorTable = WriteOptionalVector<uint32_t, int, 1>(parent.ColorTable());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intColor = WriteOptionalVector<uint32_t, int, 1>(parent.IntColor ());
+    const flatbuffers::Offset<BGFB::PolyfaceAuxData>        auxData = WriteAsFBPolyfaceAuxData(parent.GetAuxDataCP().get());
 
     BGFB::PolyfaceBuilder builder (m_fbb);
     builder.add_numPerFace (numPerFace);
@@ -692,9 +756,6 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
         builder.add_param (param);
     if (IsWritten (normal))
         builder.add_normal (normal);
-//    if (IsWritten (doubleColor))
-//        builder.add_doubleColor (doubleColor);
-        
     if (IsWritten (pointIndex))
         builder.add_pointIndex (pointIndex);
     if (IsWritten (paramIndex))
@@ -703,16 +764,15 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceHeaderR parent)
         builder.add_normalIndex (normalIndex);
     if (IsWritten (colorIndex))
         builder.add_colorIndex (colorIndex);
-        
     if (IsWritten (intColor))
         builder.add_intColor (intColor);
-//    if (IsWritten (colorTable))
-//        builder.add_colorTable (colorTable);
-
     if (IsWritten (faceIndex))
         builder.add_faceIndex (faceIndex);
     if (IsWritten (faceData))
         builder.add_faceData (faceData);
+    if (0 != auxData.o)
+        builder.add_auxData(auxData);
+
     return builder.Finish ();
     }
 
@@ -727,17 +787,14 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceQueryCR parent)
     const flatbuffers::Offset<flatbuffers::Vector<double>> param = WriteOptionalVector<DPoint2d, double, 2>(parent.GetParamCP (), parent.GetParamCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> normal = WriteOptionalVector<DVec3d, double, 3>(parent.GetNormalCP (), parent.GetNormalCount ());
     const flatbuffers::Offset<flatbuffers::Vector<double>> faceData = WriteOptionalVector<FacetFaceData, double, 8>(parent.GetFaceDataCP (), parent.GetFaceCount ());
-
-//    const flatbuffers::Offset<flatbuffers::Vector<double>> doubleColor = WriteOptionalVector<RgbFactor, double, 3>(parent.GetDoubleColorCP (), parent.GetColorCount ());
-
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> pointIndex = WriteOptionalVector<int, int, 1>(parent.GetPointIndexCP (), parent.GetPointIndexCount ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> paramIndex = WriteOptionalVector<int, int, 1>(parent.GetParamIndexCP (), parent.GetPointIndexCount ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> normalIndex = WriteOptionalVector<int, int, 1>(parent.GetNormalIndexCP (), parent.GetPointIndexCount ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorIndex = WriteOptionalVector<int, int, 1>(parent.GetColorIndexCP (), parent.GetPointIndexCount ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> faceIndex = WriteOptionalVector<int, int, 1>(parent.GetFaceIndexCP (), parent.GetPointIndexCount ());
-
-//    const flatbuffers::Offset<flatbuffers::Vector<int32_t>> colorTable = WriteOptionalVector<uint32_t, int, 1>(parent.GetColorTableCP (), parent.GetColorCount ());
     const flatbuffers::Offset<flatbuffers::Vector<int32_t>> intColor = WriteOptionalVector<uint32_t, int, 1>(parent.GetIntColorCP (), parent.GetColorCount ());
+    const flatbuffers::Offset<BGFB::PolyfaceAuxData>        auxData = WriteAsFBPolyfaceAuxData(parent.GetAuxDataCP().get());
+
 
     BGFB::PolyfaceBuilder builder (m_fbb);
     builder.add_numPerFace (numPerFace);
@@ -751,9 +808,6 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceQueryCR parent)
         builder.add_param (param);
     if (IsWritten (normal))
         builder.add_normal (normal);
-//    if (IsWritten (doubleColor))
-//        builder.add_doubleColor (doubleColor);
-        
     if (IsWritten (pointIndex))
         builder.add_pointIndex (pointIndex);
     if (IsWritten (paramIndex))
@@ -762,16 +816,14 @@ flatbuffers::Offset<BGFB::Polyface> WriteAsFBPolyface (PolyfaceQueryCR parent)
         builder.add_normalIndex (normalIndex);
     if (IsWritten (colorIndex))
         builder.add_colorIndex (colorIndex);
-        
     if (IsWritten (intColor))
         builder.add_intColor (intColor);
-//    if (IsWritten (colorTable))
-//        builder.add_colorTable (colorTable);
-
     if (IsWritten (faceIndex))
         builder.add_faceIndex (faceIndex);
     if (IsWritten (faceData))
         builder.add_faceData (faceData);
+    if (0 != auxData.o)
+        builder.add_auxData(auxData);
 
     return builder.Finish ();
     }
@@ -954,6 +1006,40 @@ static CurveVectorPtr ReadCurveVectorDirect (const BGFB::CurveVector * fbCurveVe
         }
     return cvPtr;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                      Ray.Bentley      03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+static PolyfaceAuxDataPtr ReadPolyfaceAuxData(const BGFB::PolyfaceAuxData* fbPolyfaceAuxData)
+    {
+    auto                        fbIndices = fbPolyfaceAuxData->indices();
+    auto                        fbChannels = fbPolyfaceAuxData->channels();
+    PolyfaceAuxData::Channels   channels;
+    bvector<int32_t>            indices(fbIndices->Length());
+
+    memcpy(indices.data(), fbIndices->GetStructFromOffset(0), fbIndices->Length()*sizeof(int32_t));
+                                                                                      
+    for (unsigned int i=0; i<fbChannels->Length(); i++)
+        {
+        auto    fbChannel = fbChannels->Get(i);
+        auto    fbChannelDataVector = fbChannel->data();
+        bvector<PolyfaceAuxChannel::DataPtr>  channelDataVector;
+
+        for (unsigned int j=0; j<fbChannelDataVector->Length(); j++)
+            {
+            auto            fbChannelData = fbChannelDataVector->Get(j);
+            auto            fbChannelDataValues = fbChannelData->values();
+            bvector<double> values(fbChannelDataValues->Length());
+
+            memcpy (values.data(), fbChannelDataValues->GetStructFromOffset(0), fbChannelDataValues->Length() * sizeof(double));
+            channelDataVector.push_back(new PolyfaceAuxChannel::Data(fbChannelData->input(), std::move(values)));
+            }
+        channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType(fbChannel->dataType()), fbChannel->name()->c_str(), fbChannel->inputName()->c_str(), std::move(channelDataVector)));
+        }
+
+    return new PolyfaceAuxData(std::move(indices), std::move(channels));
+    }
+
 template <typename BlockedVectorType, typename StructType>
 static void LoadBlockedVector (BlockedVectorType dest, StructType *source, size_t n)
     {
@@ -1016,16 +1102,6 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
                 (size_t)(fbNormals->Length () / 3)
                 );
         }
-
-//    if (fbPolyface->has_doubleColor ())
-//        {
-//        auto fbDoubleColors = fbPolyface->doubleColor ();
-//        LoadBlockedVector<BlockedVectorRgbFactorR, RgbFactor> (
-//                polyface->DoubleColor (),
-//                ((RgbFactor*)fbDoubleColors->GetStructFromOffset(0)),
-//                (size_t)(fbDoubleColors->Length () / 3)
-//                );
-//        }
 
 
     if (fbPolyface->has_pointIndex ())
@@ -1098,15 +1174,8 @@ static PolyfaceHeaderPtr ReadPolyfaceHeaderDirect (const BGFB::Polyface *fbPolyf
                 );
         }
 
-//    if (fbPolyface->has_colorTable ())
-//        {
-//        auto fbData = fbPolyface->colorTable ();
-//        LoadBlockedVector<BlockedVectorUInt32R, uint32_t> (
-//                polyface->ColorTable (),
-//                (uint32_t*)fbData->GetStructFromOffset(0),
-//                (size_t)fbData->Length ()
-//                );
-//        }
+    if (fbPolyface->has_auxData())
+        polyface->AuxData() = ReadPolyfaceAuxData(fbPolyface->auxData());
 
     return polyface;
     }
@@ -1134,8 +1203,6 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
     FacetFaceDataCP pFaceData = nullptr;
 //    RgbFactor const* pDoubleColor = nullptr;
     uint32_t const* pIntColor = nullptr;
-//    uint32_t const* pColorTable = nullptr;
-    wchar_t const*          pIlluminationName = nullptr;
 
     // Blocked vectors need non-zero numPerRow ...
     if (numPerRow < 1)
@@ -1160,13 +1227,6 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
         pNormals = (DVec3d*)fbNormals->GetStructFromOffset(0);
         numNormal = (size_t)(fbNormals->Length () / 3);
         }
-
-//    if (fbPolyface->has_doubleColor ())
-//        {
-//        auto fbDoubleColors = fbPolyface->doubleColor ();
-//        pDoubleColor = (RgbFactor*)fbDoubleColors->GetStructFromOffset(0);
-//        numDoubleColor = (size_t)(fbDoubleColors->Length () / 3);
-//        }
 
     if (fbPolyface->has_pointIndex ())
         {
@@ -1245,13 +1305,18 @@ static bool ReadPolyfaceQueryCarrierDirect (const BGFB::Polyface *fbPolyface, Po
         numPoint,  pPoints, pPointIndex,
         numNormal, pNormals, pNormalIndex,
         numParam,  pParams, pParamIndex,
-        numColor,  pColorIndex, pIntColor,
-        pIlluminationName,
+        numColor,  pColorIndex, pIntColor, nullptr,
         meshStyle, numPerRow
         );
 
     carrier.SetFacetFaceData (pFaceData, numFace);
     carrier.SetFaceIndex (pFaceIndex);
+    if (fbPolyface->has_auxData())
+        {
+        PolyfaceAuxDataCPtr  auxData = ReadPolyfaceAuxData(fbPolyface->auxData());
+        carrier.SetAuxData(auxData);
+        }
+
     return true;
     }
 

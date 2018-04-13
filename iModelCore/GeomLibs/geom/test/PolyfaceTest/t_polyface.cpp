@@ -2,7 +2,7 @@
 |
 |  $Source: geom/test/PolyfaceTest/t_polyface.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "testHarness.h"
@@ -1289,9 +1289,11 @@ TEST (PolyfaceConstruction, WackyCone)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST (PolyfaceConstruction, BsplineSurface)
     {
+    // ?? Somebody left it hanging ..
+    Check::SetTransform (Transform::FromIdentity ());
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
-    double mySize = SetTransformToNewGridSpot (*builder);
+    double mySize = 4.0;
     bvector<DPoint3d> points;
     int numU = 5;
     int numV = 7;
@@ -1313,7 +1315,7 @@ TEST (PolyfaceConstruction, BsplineSurface)
     ExaminePolyface (builder->GetClientMeshR (), "BsplineSurface");
     CheckSurfaceMesh (*surface, *builder);
     Check::SaveTransformed (surface);
-    Check::ShiftToLowerRight ();
+    Check::Shift (43.2, 50.0);      // Just to match regression
     Check::SaveTransformed (builder->GetClientMeshR ());
     Check::ClearGeometry ("PolyfaceConstruction.BsplineSurface");
     }
@@ -1620,16 +1622,6 @@ TEST(PolyfaceHeader, BsplineCurve2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST (Polyface,IlluminationName)
-    {
-    PolyfaceHeaderPtr header = PolyfaceHeader::CreateVariableSizeIndexed ();
-    wchar_t const* name1 = L"name1";
-    header->SetIlluminationName (name1);
-    wchar_t const* name2 = header->GetIlluminationNameCP ();
-    for (size_t i = 0; name1[i] != 0; i++)
-        Check::True (name1[i] == name2[i]);    
-    }
-
 void testContours (int splineOrder, double z0, double zStep, bool capped)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1954,14 +1946,14 @@ void TestPolyfaceConstructionTriangulation (int numPerFace, bool convexRequired)
     options->SetParamsRequired (true);
     options->SetEdgeChainsRequired (true);
     IPolyfaceConstructionPtr builder =  IPolyfaceConstruction::Create (*options);
-    double mySize = SetTransformToNewGridSpot (*builder, true);
+    double mySize = sCallerSize;
 
     // Regular polygons ...
     double r = mySize / 4.0;
     double z = 0.0;
     double deltaZ = 0.5 * mySize;
     double deltaX = 2.5 * r;
-    SaveAndRestoreCheckTransform shifter (0.0, 10.0 * r, 0);
+    SaveAndRestoreCheckTransform shifter (0.0, 20.0 * r, 0);
     double bigStep = 30.0 * r;
     double oneStep = 4.0 * r;
     for (size_t numPoint = 3; numPoint < 10; numPoint++, z += deltaZ)
@@ -2014,6 +2006,8 @@ void TestPolyfaceConstructionTriangulation (int numPerFace, bool convexRequired)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(PolyfaceConstruction, Triangulation)
     {
+    // unnecessary shift -- but it makes the regression files match
+    Check::Shift (0,70,0);
     TestPolyfaceConstructionTriangulation (3, false);
     TestPolyfaceConstructionTriangulation (4, false);
     TestPolyfaceConstructionTriangulation (40, false);

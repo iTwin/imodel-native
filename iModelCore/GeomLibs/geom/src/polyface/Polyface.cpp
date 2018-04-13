@@ -728,7 +728,11 @@ bool        reverseIndicesIfMirrored
     double  transformScale = pow (fabs (determinant), 1.0 / 3.0) * (determinant >= 0.0 ? 1.0 : -1.0);
     for (size_t i=0; i<m_faceData.size(); i++)
         m_faceData[i].ScaleDistances (transformScale);
+
+    if (m_auxData.IsValid())
+        m_auxData->Transform(transform);
     }
+
 
 
 /*--------------------------------------------------------------------------------**//**
@@ -801,20 +805,8 @@ void PolyfaceHeader::CopyFrom (PolyfaceQueryCR source)
     m_paramIndex.SetStructsPerRow (numIndexPerRow);
     m_colorIndex.SetStructsPerRow (numIndexPerRow);
     m_faceIndex.SetStructsPerRow (numIndexPerRow);
-
-
-    m_illuminationName.clear ();
-    wchar_t const *pChars = source.GetIlluminationNameCP ();
-    if (pChars != NULL)
-        {
-        for (size_t i = 0;;i++)
-            {
-            m_illuminationName.push_back (pChars[i]);
-            if (pChars[i] == 0)
-                break;
-            }
-        }
-
+    if (source.GetAuxDataCP().IsValid())
+        m_auxData = new PolyfaceAuxData(*source.GetAuxDataCP());   // Do we need to do a deep copy here??
     }
 
 /*--------------------------------------------------------------------------------**//**
@@ -1404,7 +1396,7 @@ BlockedVectorDVec3dR                PolyfaceHeader::Normal ()           { return
 BlockedVectorUInt32R                PolyfaceHeader::IntColor ()         { return m_intColor;}
 BlockedVector<FacetFaceData>&       PolyfaceHeader::FaceData ()         { return m_faceData; } 
 BlockedVector<PolyfaceEdgeChain>&   PolyfaceHeader::EdgeChain ()        { return m_edgeChain; } 
-WString&                            PolyfaceHeader::IlluminationName()  { return m_illuminationName;}
+PolyfaceAuxDataPtr&                 PolyfaceHeader::AuxData()           { return m_auxData; }
 
 
 
@@ -1624,17 +1616,6 @@ bool PolyfaceHeader::AddIndexedFacet
     return false;
     }
 
-void    PolyfaceHeader::SetTextureId (uintptr_t id)        { m_textureId = id; }
-
- /*--------------------------------------------------------------------------------**//**
-* @bsimethod                                                    EarlinLutz      04/2012
-+--------------------------------------------------------------------------------------*/
-void PolyfaceHeader::SetIlluminationName (wchar_t const *name)
-    {
-    if (NULL != name)
-        m_illuminationName = WString (name);
-    }
-
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2012
 +--------------------------------------------------------------------------------------*/
@@ -1665,5 +1646,6 @@ void  PolyfaceHeader::NormalizeParameters ()
         faceData.m_paramRange = DRange2d::From(0.0, 0.0, 1.0, 1.0);
     
     }
+
 
 END_BENTLEY_GEOMETRY_NAMESPACE

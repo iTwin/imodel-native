@@ -183,7 +183,7 @@ TEST(Cosh,IntersectHomogeneousLine)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Catenary, TrimCatenary) 
     {
-    DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d::DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
+    DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
     //double a = 2;
     //double x1 = 8;
     auto cp0 = ICurvePrimitive::CreateCatenary(10, dTri3d, 2, 20);
@@ -229,7 +229,7 @@ TEST(Catenary, TrimCatenary)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Catenary, CloneBetweenFractions_Reverse) 
     {
-    DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d::DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
+    DPoint3dDVec3dDVec3d dTri3d = DPoint3dDVec3dDVec3d(DPoint3d::From(0, 0, 0), DVec3d::From(1, 0, 0), DVec3d::From(0, 1, 0));
 
     auto cp0 = ICurvePrimitive::CreateCatenary(10, dTri3d, 2, 20);
     

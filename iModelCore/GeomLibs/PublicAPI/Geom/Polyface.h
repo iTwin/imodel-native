@@ -14,6 +14,9 @@
 #include <Bentley/WString.h>
 #include <Bentley/RefCounted.h>
 #include <Bentley/NonCopyableClass.h>
+
+#include <Geom/PolyfaceAuxData.h>
+
 #include <limits.h>
 #include <cstdlib> // for std::abs
 /*__PUBLISH_SECTION_END__*/
@@ -34,7 +37,8 @@ typedef PolyfaceCoordinateMap &PolyfaceCoordinateMapR;
 //=======================================================================================
 //! 
 //! Data for face containing facets.
-//!  This is built up cooperatively by the IPolyfaceConstruction and its callers, and stored as FaceData array in PolyfaceHeader.
+//!  This is built up cooperatively by the IPolyfaceConstruction and its callers
+//!  and stored as FaceData array in PolyfaceHeader.
 //!
 //=======================================================================================
 struct FacetFaceData
@@ -530,6 +534,9 @@ size_t readIndex;
 double fraction;
 };
 
+
+
+
 //=======================================================================================
 //! 
 //! Data for describing a polyface edge.
@@ -667,9 +674,6 @@ static GEOMDLLIMPEXP ValidatedDouble ZVolumeBetweenFacets (bvector<DPoint3d> con
 //!
 struct PolyfaceQuery
 {
-
-
-
 GEOMAPI_VIRTUAL size_t                       _GetPointCount () const = 0;
 GEOMAPI_VIRTUAL size_t                       _GetNormalCount () const = 0;
 GEOMAPI_VIRTUAL size_t                       _GetParamCount () const = 0;
@@ -688,14 +692,13 @@ GEOMAPI_VIRTUAL int32_t const*               _GetColorIndexCP () const = 0;
 GEOMAPI_VIRTUAL int32_t const*               _GetParamIndexCP () const = 0;
 GEOMAPI_VIRTUAL int32_t const*               _GetNormalIndexCP () const = 0;
 GEOMAPI_VIRTUAL int32_t const*               _GetFaceIndexCP () const = 0;
-GEOMAPI_VIRTUAL wchar_t const*               _GetIlluminationNameCP () const = 0;
-GEOMAPI_VIRTUAL uintptr_t                    _GetTextureId () const = 0;
 GEOMAPI_VIRTUAL bool                         _GetTwoSided () const = 0;
 GEOMAPI_VIRTUAL uint32_t                     _GetNumPerFace () const = 0;
 GEOMAPI_VIRTUAL uint32_t                     _GetNumPerRow () const = 0;
 GEOMAPI_VIRTUAL uint32_t                     _GetMeshStyle () const = 0;
 GEOMAPI_VIRTUAL PolyfaceEdgeChainCP          _GetEdgeChainCP () const = 0;
-GEOMAPI_VIRTUAL PolyfaceVectors *            _AsPolyfaceVectorsP() const; // Default implementation returns nullptr.  Only PolyfaceVectors overrides.
+GEOMAPI_VIRTUAL PolyfaceAuxDataCPtr          _GetAuxDataCP() const;
+GEOMAPI_VIRTUAL PolyfaceVectors *            _AsPolyfaceVectorsP() const;
 
                                             PolyfaceQuery () { }
 
@@ -731,12 +734,10 @@ GEOMDLLIMPEXP DPoint2dCP                    GetParamCP () const;
 GEOMDLLIMPEXP uint32_t const*               GetIntColorCP () const;
 //! Return a pointer to contiguous face FacetFaceData structs.
 GEOMDLLIMPEXP FacetFaceDataCP               GetFaceDataCP () const;
-//! Return a pointer to an illumination name.
-GEOMDLLIMPEXP wchar_t const*                GetIlluminationNameCP () const;
 //! Return a pointer to contiguous edge chain structs
 GEOMDLLIMPEXP PolyfaceEdgeChainCP           GetEdgeChainCP () const;
-//! Return a pointer to contiguous texture id.
-GEOMDLLIMPEXP uintptr_t                     GetTextureId () const;
+//! Return a pointer to Aux data
+GEOMDLLIMPEXP PolyfaceAuxDataCPtr           GetAuxDataCP() const;
 
 
 //! For Color, Param, and normal indices, resolveToDefaults allows caller to request using
@@ -1580,9 +1581,9 @@ private:
     int32_t const*      m_paramIndexPtr;
     int32_t const*      m_colorIndexPtr;
     int32_t const*      m_faceIndexPtr;
-    FacetFaceDataCP      m_faceDataPtr;
-    wchar_t const*      m_illuminationNamePtr;
+    FacetFaceDataCP     m_faceDataPtr;
     PolyfaceEdgeChainCP m_edgeChainsPtr;
+    PolyfaceAuxDataCPtr m_auxDataPtr;
 
     //bool              m_twoSided;
     size_t              m_pointCount;
@@ -1592,12 +1593,8 @@ private:
     size_t              m_indexCount;
     size_t              m_faceCount;
     size_t              m_edgeChainCount;
-
-    uintptr_t           m_textureId;
-                                          
     uint32_t            m_numPerFace;
     bool                m_twoSided;
-
     uint32_t            m_meshStyle;
     uint32_t            m_numPerRow;
 public:
@@ -1612,19 +1609,18 @@ GEOMDLLIMPEXP PolyfaceQueryCarrier (
     size_t normalCount = 0, DVec3dCP  pNormal = NULL, int32_t const* pNormalIndex = NULL,
     size_t paramCount = 0,  DPoint2dCP pParam = NULL, int32_t const* pParamIndex = NULL,
     size_t colorCount = 0,  int32_t const* pColorIndex = NULL, uint32_t const* pIntColor = NULL,
-    wchar_t const*          pIlluminationName = NULL,
+    void const* unused = nullptr,                // Was illuminated name.
     uint32_t                meshStyle = 1,       // MESH_ELM_STYLE_INDEXED_FACE_LOOPS
-    uint32_t                numPerRow = 0       // only needed for QUAD_GRID and TRIANGLE_GRID
-    );
+    uint32_t                numPerRow = 0        // only needed for QUAD_GRID and TRIANGLE_GRID
+    );                                    
 
 
 //! set FacetFaceData array and count.
 GEOMDLLIMPEXP void SetFacetFaceData (FacetFaceDataCP facetFaceData, size_t n);
-//! set face index pointer in the carrier.  Note that the number of entries must match all other index arrays (point, normal, param, collor)
+//! set face index pointer in the carrier.  Note that the number of entries must match all other index arrays (point, normal, param, color)
 GEOMDLLIMPEXP void SetFaceIndex (int32_t const *indexArray);
-
-GEOMDLLIMPEXP void SetIlluminationName (wchar_t const *name);
-GEOMDLLIMPEXP void SetTextureId (uintptr_t id);
+//! set Aux data in the carrier.  Note that the number of entries must match all other index arrays (point, normal, param, color)
+void SetAuxData (PolyfaceAuxDataCPtr& auxData) { m_auxDataPtr = auxData; }
 
 public:
 
@@ -1645,6 +1641,8 @@ DPoint2dCP          _GetParamCP      ()         const override { return m_paramP
 uint32_t const*     _GetIntColorCP   ()         const override { return m_intColorPtr;}
 FacetFaceDataCP     _GetFaceDataCP()            const override { return m_faceDataPtr; }
 PolyfaceEdgeChainCP _GetEdgeChainCP()           const override { return m_edgeChainsPtr;}
+PolyfaceAuxDataCPtr _GetAuxDataCP()             const override { return m_auxDataPtr;}
+
 
 //! For Color, Param, and normal indices, resolveToDefaults allows caller to request using
 //! PointIndex (or other default decision) if respective index is same as PointIndex. 
@@ -1654,8 +1652,6 @@ int32_t const*      _GetColorIndexCP ()         const override { return m_colorI
 int32_t const*      _GetParamIndexCP ()         const override { return m_paramIndexPtr;}
 int32_t const*      _GetNormalIndexCP ()        const override { return m_normalIndexPtr;}
 int32_t const*      _GetFaceIndexCP ()          const override { return m_faceIndexPtr;}
-uintptr_t           _GetTextureId ()            const override { return m_textureId;}
-wchar_t const*      _GetIlluminationNameCP ()   const override { return m_illuminationNamePtr;}
 bool                _GetTwoSided ()             const override { return m_twoSided; }
 uint32_t            _GetNumPerFace ()           const override { return m_numPerFace; }
 uint32_t            _GetNumPerRow ()            const override { return m_numPerRow; }
@@ -1713,13 +1709,12 @@ protected:
     BlockedVectorInt                    m_paramIndex;
     BlockedVectorInt                    m_normalIndex;
     BlockedVectorInt                    m_colorIndex;
-    uintptr_t                           m_textureId;
-    WString                             m_illuminationName;
     BlockedVectorInt                    m_faceIndex;
     uint32_t                            m_numPerFace;
     bool                                m_twoSided;
     uint32_t                            m_meshStyle;
     uint32_t                            m_numPerRow;
+    PolyfaceAuxDataPtr                  m_auxData;
 
 protected:
 size_t                  _GetPointCount ()       const override;
@@ -1736,6 +1731,7 @@ DPoint2dCP              _GetParamCP ()          const override;
 uint32_t const*         _GetIntColorCP ()       const override;
 FacetFaceDataCP         _GetFaceDataCP ()       const override;
 PolyfaceEdgeChainCP     _GetEdgeChainCP ()      const override;
+PolyfaceAuxDataCPtr     _GetAuxDataCP ()        const override;
 
 
 //! These virtuals are called by plain methods with additional argument for default control.
@@ -1747,8 +1743,6 @@ int32_t const*          _GetColorIndexCP  ()     const override;
 int32_t const*          _GetParamIndexCP  ()     const override;
 int32_t const*          _GetNormalIndexCP ()     const override;
 int32_t const*          _GetFaceIndexCP   ()     const override;
-wchar_t const*          _GetIlluminationNameCP ()const override;
-uintptr_t               _GetTextureId ()         const override;
 bool                    _GetTwoSided ()          const override;
 uint32_t                _GetNumPerFace ()        const override;
 uint32_t                _GetMeshStyle ()         const override;
@@ -1776,6 +1770,8 @@ public:
     GEOMDLLIMPEXP void  SetNumPerRow (uint32_t numPerRow);
     //! Set the facet data style.
     GEOMDLLIMPEXP void  SetMeshStyle (uint32_t meshStyle); 
+    //! Set the auxilliary data.
+    GEOMDLLIMPEXP void SetAuxData(PolyfaceAuxDataPtr& auxData);
 
 
 //! Given signed, one-based indices to a (large) data array.
@@ -1872,11 +1868,6 @@ GEOMDLLIMPEXP bool AddIndexedFacet
     bvector<int> *colorIndices = NULL
     );
 
-//! Set the illumination name string
-GEOMDLLIMPEXP void SetIlluminationName (wchar_t const *name);
-//! Set the texture id.
-GEOMDLLIMPEXP void SetTextureId(uintptr_t id);
-
 public:
 //! Copy all contents to destination vectors
 //GEOMDLLIMPEXP void CopyTo (PolyfaceVectors& dest);
@@ -1896,15 +1887,14 @@ GEOMDLLIMPEXP BlockedVectorIntR   ParamIndex  ();
 GEOMDLLIMPEXP BlockedVectorIntR   NormalIndex ();
 //! Return a reference to the color index vector.   Completion of color dereference depends on additional data in IntColor.
 GEOMDLLIMPEXP BlockedVectorIntR   ColorIndex  ();
-//! Return a reference to the illumination name string.
-GEOMDLLIMPEXP WString  & IlluminationName ();
 //! Return a reference to the face index vector.
 GEOMDLLIMPEXP BlockedVectorIntR   FaceIndex ();
 //! Return a reference to the face information.
 GEOMDLLIMPEXP BlockedVector<FacetFaceData> & FaceData ();
 //! Return a reference to the edge chain index vector.
 GEOMDLLIMPEXP BlockedVector<PolyfaceEdgeChain>& EdgeChain();
-
+//! Return a the aux data pointer.
+GEOMDLLIMPEXP PolyfaceAuxDataPtr& AuxData();
 //! Clear all index vectors.
 GEOMDLLIMPEXP void ClearAllIndexVectors ();
 //! Clear all facets.
@@ -2807,8 +2797,8 @@ GEOMDLLIMPEXP BlockedVectorDPoint2dR            Param ();
 GEOMDLLIMPEXP BlockedVectorDVec3dR              Normal();
 //! Get reference to the integer color array with blocking data.
 GEOMDLLIMPEXP BlockedVectorUInt32R              IntColor ();
-//! Get reference to the illumination name
-GEOMDLLIMPEXP WString&                          IlluminationName ();
+// Get auxiliary data.
+GEOMDLLIMPEXP PolyfaceAuxDataCPtr               GetAuxDataCP() const;
 
 //! The client indices are zero-based indices into the client mesh data.
 //! Get reference to the blocked array of zero-based indices into client mesh points.
@@ -2823,15 +2813,17 @@ GEOMDLLIMPEXP BlockedVectorIntR                 ClientColorIndex  ();
 GEOMDLLIMPEXP BlockedVectorIntR                 ClientFaceIndex  ();
 
 //! Get reference to the contiguous array of zero-based indices into client mesh points.
-GEOMDLLIMPEXP int32_t const*                      GetClientPointIndexCP () const;
+GEOMDLLIMPEXP int32_t const*                    GetClientPointIndexCP () const;
 //! Get reference to the contiguous array of zero-based indices into client mesh colors.
-GEOMDLLIMPEXP int32_t const*                      GetClientColorIndexCP() const;
+GEOMDLLIMPEXP int32_t const*                    GetClientColorIndexCP() const;
 //! Get reference to the contiguous array of zero-based indices into client mesh params.
-GEOMDLLIMPEXP int32_t const*                      GetClientParamIndexCP() const;
+GEOMDLLIMPEXP int32_t const*                    GetClientParamIndexCP() const;
 //! Get reference to the contiguous array of zero-based indices into client mesh normals.
-GEOMDLLIMPEXP int32_t const*                      GetClientNormalIndexCP() const;
+GEOMDLLIMPEXP int32_t const*                    GetClientNormalIndexCP() const;
 //! Get reference to the contiguous array of zero-based indices into client mesh faces.
-GEOMDLLIMPEXP int32_t const*                      GetClientFaceIndexCP() const;
+GEOMDLLIMPEXP int32_t const*                    GetClientFaceIndexCP() const;
+//! Get reference to the contiguous array of zero-based indices into auxilliaryData.
+GEOMDLLIMPEXP int32_t const*                    GetClientAuxIndexCP() const;
 
 //! access zero-based point index and visibility flag for an vertex within the current face.
 GEOMDLLIMPEXP bool TryGetClientZeroBasedPointIndex (int zeroBasedVisitorIndex, int &zeroBasedIndex, bool &visible);
