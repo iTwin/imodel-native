@@ -1158,8 +1158,10 @@ bool VertexKey::operator<(VertexKeyCR rhs) const
     static_assert(0x2C == offsetof(VertexKey, m_class), "unexpected offset");
     static_assert(0x2D == offsetof(VertexKey, m_normalValid), "unexpected offset");
 
-    size_t offset = offsetof(VertexKey, m_normalAndPos) + m_normalValid ? 0 : sizeof(uint16_t);
-    size_t size = offsetof(VertexKey, m_normalValid) - offset;
+    // TFS#874608: This used to add 2 bytes to `offset` if m_normalValid=false to avoid unnecessarily comparing normals.
+    // But invalid normals are initialized to 0 so they will not affect memcmp(), and optimizer was producing incorrect comparisons here.
+    static constexpr size_t offset = offsetof(VertexKey, m_normalAndPos);
+    static constexpr size_t size = offsetof(VertexKey, m_normalValid) - offset;
     auto cmp = memcmp(reinterpret_cast<uint8_t const*>(this)+offset, reinterpret_cast<uint8_t const*>(&rhs)+offset, size);
     if (0 != cmp)
         return cmp < 0;
@@ -2237,7 +2239,8 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
     double pixelSize = context.GetPixelSizeAtPoint(&textRangeCenter);
     double meterSize = 0.0 != pixelSize ? 1.0 / pixelSize : 0.0;
 
-    double minAxis = std::min(textRange.XLength(), textRange.YLength());
+    // NB: Need scaled 2d range - ignore 3d transform...
+    double minAxis = std::min(textRange2d.high.x - textRange2d.low.x, textRange2d.high.y - textRange2d.low.y) * geom.GetTransform().ColumnXMagnitude();
     double textSize = minAxis * meterSize;
     constexpr double s_minToleranceRatioMultiplier = 2.0; // from ElementTileTree.cpp; used to multiply the s_minToleranceRatio
     constexpr double s_texSizeThreshold = 64.0;
@@ -2590,7 +2593,7 @@ void GeometryListBuilder::_ActivateGraphicParams(GraphicParamsCR gfParams, Geome
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mark.Schlosser  02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip, DRange3dR rangeOut) const
+bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCorners const& corners, ClipVectorCP clip) const
     {
     bvector<PolyfaceHeaderPtr> sheetTilePolys;
 
@@ -2612,7 +2615,6 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
     builder->AddTriangulation(quadPts);
     PolyfaceHeaderPtr pfHdr = builder->GetClientMeshPtr();
 
-    rangeOut.Init();
     if (nullptr != clip)
         {
         GeometryClipper::PolyfaceClipper pfClipper;
@@ -2622,23 +2624,13 @@ bvector<PolyfaceHeaderPtr> System::_CreateSheetTilePolys(GraphicBuilder::TileCor
             bvector<PolyfaceQueryCP>& clippedPolyfaceQueries = pfClipper.GetOutput();
 
             for (auto& clippedPolyfaceQuery : clippedPolyfaceQueries)
-                {
-                DPoint3dCP pts = clippedPolyfaceQuery->GetPointCP();
-                uint32_t numPts = clippedPolyfaceQuery->GetPointCount();
                 sheetTilePolys.push_back(clippedPolyfaceQuery->Clone());
-                for (uint32_t i = 0; i < numPts; i++)
-                    {
-                    rangeOut.Extend(pts[i]);
-                    }
-                }
             }
         // else no output, so don't output any polys (empty sheetTilePolys)
         }
     else // not clipped, so return original unclipped poly in sheetTilePolys
         {
         sheetTilePolys.push_back(pfHdr);
-        for (int i = 0; i < 4; i++)
-            rangeOut.Extend(corners.m_pts[i]);
         }
 
     return sheetTilePolys;

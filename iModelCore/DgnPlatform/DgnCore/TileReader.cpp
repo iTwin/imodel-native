@@ -1157,8 +1157,8 @@ private:
         BufferData32        m_indices;
         QPoint3dCP          m_vertices;
         Features            m_features;
-        uint16_t const*     m_normals;
-        FPoint2d const*     m_params;
+        uint16_t const*     m_normals = nullptr;
+        FPoint2d const*     m_params = nullptr;
         bvector<uint32_t>   m_colorsByIndex;
         BufferData16        m_colorIndices;
         IndexMap            m_indexMap;
@@ -1216,6 +1216,7 @@ private:
     uint16_t const* ReadNormals(Json::Value const&);
     void AddMesh(MeshPrimitive& mesh, Json::Value const&);
     uint32_t AddMeshVertex(MeshBuilderR, MeshPrimitive const&, uint32_t index, FeatureCR feature);
+    void AddTriangle(MeshBuilderR, MeshPrimitive&, uint32_t indexOfFirstIndex, FeatureCP feature);
 
     void AddPolylines(MeshPrimitive const&, Json::Value const& json);
     Polyline ReadPolyline(void const*& pData, bool useShortIndices); // increments pData past the end of the polyline
@@ -1223,6 +1224,7 @@ private:
     void AddMeshEdges(MeshBuilderR builder, MeshPrimitive const& mesh, Json::Value const& json);
     void AddPolylineEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
     void AddSilhouetteEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
+    void AddVisibleEdges(MeshEdgesR, MeshPrimitive const&, Json::Value const&);
 public:
     DgnCacheTileRebuilder(StreamBufferR buffer, DgnModelR model, Render::System& system, Render::Primitives::MeshBuilderMapR builders)
         : GltfReader(buffer, model, system), m_builders(builders) { }
@@ -1406,6 +1408,32 @@ uint32_t DgnCacheTileRebuilder::AddMeshVertex(MeshBuilderR builder, MeshPrimitiv
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCacheTileRebuilder::AddTriangle(MeshBuilderR builder, MeshPrimitive& mesh, uint32_t indexOfFirstIndex, FeatureCP feature)
+    {
+    uint32_t oldIndices[3] = { mesh.m_indices[indexOfFirstIndex], mesh.m_indices[indexOfFirstIndex+1], mesh.m_indices[indexOfFirstIndex+2] };
+    uint32_t newIndices[3];
+
+    if (nullptr == feature)
+        {
+        newIndices[0] = newIndices[1] = newIndices[2] = -1;
+        }
+    else
+        {
+        newIndices[0] = AddMeshVertex(builder, mesh, indexOfFirstIndex, *feature);
+        newIndices[1] = AddMeshVertex(builder, mesh, indexOfFirstIndex+1, *feature);
+        newIndices[2] = AddMeshVertex(builder, mesh, indexOfFirstIndex+2, *feature);
+        builder.AddTriangle(Triangle(newIndices[0], newIndices[1], newIndices[2], false));
+        }
+
+    // If indices changed, map old to new index so we can remap edge indices later
+    for (size_t i = 0; i < 3; i++)
+        if (oldIndices[i] != newIndices[i])
+            mesh.m_indexMap.Insert(oldIndices[i], newIndices[i]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCacheTileRebuilder::AddMesh(MeshPrimitive& mesh, Json::Value const& json)
@@ -1418,30 +1446,10 @@ void DgnCacheTileRebuilder::AddMesh(MeshPrimitive& mesh, Json::Value const& json
     MeshBuilderR builder = m_builders[key];
     for (uint32_t i = 0; i < mesh.m_numIndices; i += 3)
         {
-        uint32_t i0, i1, i2;
         uint32_t index = mesh.m_indices[i];
         uint32_t featureId = mesh.m_features.GetFeatureId(index);
         FeatureCP feature = m_featureList.GetFeature(featureId);
-        if (nullptr == feature)
-            {
-            // -1 indicates this vertex no longer exists.
-            i0 = i1 = i2 = -1;
-            }
-        else
-            {
-            i0 = AddMeshVertex(builder, mesh, i, *feature);
-            i1 = AddMeshVertex(builder, mesh, i+1, *feature);
-            i2 = AddMeshVertex(builder, mesh, i+2, *feature);
-            builder.AddTriangle(Triangle(i0, i1, i2, false));
-            }
-        
-        if (i0 != index)
-            {
-            // If indices changed, map old to new index so we can remap edge indices later
-            mesh.m_indexMap.Insert(index, i0);
-            mesh.m_indexMap.Insert(mesh.m_indices[1], i1);
-            mesh.m_indexMap.Insert(mesh.m_indices[2], i2);
-            }
+        AddTriangle(builder, mesh, i, feature);
         }
 
     AddMeshEdges(builder, mesh, json);
@@ -1462,14 +1470,13 @@ void DgnCacheTileRebuilder::AddMeshEdges(MeshBuilderR builder, MeshPrimitive con
     // AddMesh() has removed any vertices belonging to features to be excluded from the reconstituted mesh;
     // and has populated a mapping from old to new indices (with -1 == removed).
     // All we need to do for edges is skip those which have been removed, and remap the indices of the rest.
-    MeshEdgesPtr edges = new MeshEdges();
+    if (builder.GetMesh()->GetEdgesR().IsNull())
+        builder.GetMesh()->GetEdgesR() = new MeshEdges();
+
+    MeshEdgesPtr edges = builder.GetMesh()->GetEdgesR();
+    AddVisibleEdges(*edges, mesh, edgesJson);
     AddPolylineEdges(*edges, mesh, edgesJson);
     AddSilhouetteEdges(*edges, mesh, edgesJson);
-    builder.GetMesh()->GetEdgesR() = edges;
-
-    // ###TODO: Overlooking some edges?? See:
-    //  DgnCacheTileWriter::CreateMeshEdges() - adds as "visibles"
-    //  GltfReader::ReadMeshEdges() - does not look for "visibles"
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1605,12 +1612,38 @@ void DgnCacheTileRebuilder::AddSilhouetteEdges(MeshEdgesR edges, MeshPrimitive c
         }
 
     // m_silhouettes is a list of MeshEdge, which is a pair of indices...
+    BeAssert(0 == (numIndices & 1));
     edges.m_silhouette.resize(numIndices/2);
     edges.m_silhouette[0] = MeshEdge(newFirstIndex, mesh.RemapIndex(indexView[1]));
-    for (uint32_t i = 0; i < edges.m_silhouette.size(); i++)
+    for (uint32_t i = 1; i < edges.m_silhouette.size(); i++)
         {
         uint32_t baseIndex = i * 2;
         edges.m_silhouette[i] = MeshEdge(mesh.RemapIndex(indexView[baseIndex]), mesh.RemapIndex(indexView[baseIndex+1]));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCacheTileRebuilder::AddVisibleEdges(MeshEdgesR edges, MeshPrimitive const& mesh, Json::Value const& edgesJson)
+    {
+    uint32_t numIndices;
+    BufferData32 indexView = ReadBufferData32(edgesJson, "visibles", &numIndices);
+    if (!indexView.IsValid() || 0 == numIndices)
+        return;
+
+    // If any vertex was removed, the entire silhouette was removed...
+    uint32_t newFirstIndex = mesh.RemapIndex(indexView[0]);
+    if (-1 == newFirstIndex)
+        return;
+
+    BeAssert(0 == (numIndices & 1));
+    edges.m_visible.resize(numIndices/2);
+    edges.m_visible[0] = MeshEdge(newFirstIndex, mesh.RemapIndex(indexView[1]));
+    for (uint32_t i = 1; i < edges.m_visible.size(); i++)
+        {
+        uint32_t baseIndex = i * 2;
+        edges.m_visible[i] = MeshEdge(mesh.RemapIndex(indexView[baseIndex]), mesh.RemapIndex(indexView[baseIndex+1]));
         }
     }
 
@@ -1698,10 +1731,111 @@ ReadStatus DgnCacheTileRebuilder::ReadTile(DgnTile::Flags& flags, DgnElementIdSe
     return ReadGltf();
     }
 
+#if defined(TEST_TILE_REBUILDER)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
+    {
+    bool asserted = false;
+    auto const& lhe = lhm.GetEdges()->m_visible, rhe = rhm.GetEdges()->m_visible;
+    BeAssert(lhe.size() == rhe.size());
+    auto const& lhv = lhm.Verts();
+    auto const& rhv = rhm.Verts();
+    for (size_t i = 0; i < lhe.size(); i++)
+        {
+        auto const& lh = lhe[i];
+        auto const& rh = rhe[i];
+
+        auto lhp0 = lhv[lh.m_indices[0]],
+             lhp1 = lhv[lh.m_indices[1]],
+             rhp0 = rhv[rh.m_indices[0]],
+             rhp1 = rhv[rh.m_indices[1]];
+         if (!asserted)
+             {
+             BeAssert(lhp0 == rhp0);
+             BeAssert(lhp1 == rhp1);
+             if (lhp0 != rhp0 || lhp1 != rhp1)
+                 asserted = true;
+             }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareSilhouettes(MeshCR lhm, MeshCR rhm)
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void comparePolylineEdges(MeshCR lhm, MeshCR rhm)
+    {
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareEdges(MeshCR lhm, MeshCR rhm)
+    {
+    compareVisibleEdges(lhm, rhm);
+    compareSilhouettes(lhm, rhm);
+    comparePolylineEdges(lhm, rhm);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareTriangles(MeshCR lhs, MeshCR rhs)
+    {
+    auto const& lhv = lhs.Verts();
+    auto const& rhv = rhs.Verts();
+    auto const& lht = lhs.Triangles().Indices();
+    auto const& rht = rhs.Triangles().Indices();
+    BeAssert(lht.size() == rht.size());
+    BeAssert(lhv.size() == rhv.size());
+    BeAssert(lhv.GetParams().GetOrigin().AlmostEqual(rhv.GetParams().GetOrigin()));
+    BeAssert(lhv.GetParams().GetScale().AlmostEqual(rhv.GetParams().GetScale()));
+
+    for (size_t i = 0; i < lht.size(); i++)
+        {
+        auto lhp = lhv[lht[i]];
+        auto rhp = rhv[rht[i]];
+        BeAssert(lhp == rhp);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareMeshes(MeshCR lhs, MeshCR rhs)
+    {
+    compareTriangles(lhs, rhs);
+    BeAssert(lhs.GetEdges().IsValid() == rhs.GetEdges().IsValid());
+    if (lhs.GetEdges().IsValid() && rhs.GetEdges().IsValid())
+        compareEdges(lhs, rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareMeshLists(MeshList const& lhs, MeshList const& rhs)
+    {
+    for (size_t i = 0; i < lhs.size(); i++)
+        compareMeshes(*lhs[i], *rhs[i]);
+    }
+
+#endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf)
+ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange)
     {
 #if defined(TEST_TILE_REBUILDER)
     DgnTile::Header header;
@@ -1710,8 +1844,8 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
     contentRange = header.contentRange;
     isLeaf = DgnTile::Flags::None != (header.flags & DgnTile::Flags::IsLeaf);
 
-    Render::FeatureTable features(model.GetModelId(), 100000);
-    Render::Primitives::MeshBuilderMap builders(0.0, &features, DRange3d::NullRange(), false);
+    geometry.Meshes().FeatureTable() = FeatureTable(model.GetModelId(), 100000); // maxFeatures will be read + updated in ReadFeatureTable()...
+    Render::Primitives::MeshBuilderMap builders(0.0, &geometry.Meshes().FeatureTable(), tileRange, false);
     DgnTile::Flags flags;
     auto status = ReadDgnTile(builders, streamBuffer, model, renderSystem, flags, DgnElementIdSet());
     if (ReadStatus::Success != status)
@@ -1730,6 +1864,20 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
     if (DgnTile::Flags::None != (flags & DgnTile::Flags::Incomplete))
         geometry.MarkIncomplete();
 
+    // Compare with ordinary deserialization path...
+    ElementAlignedBox3d testContentRange;
+    bool testIsLeaf;
+    Render::Primitives::GeometryCollection testGeometry;
+    streamBuffer.SetPos(0);
+    ReadStatus testStatus = DgnTileReader(streamBuffer, model, renderSystem).ReadTile(testContentRange, testGeometry, testIsLeaf);
+
+    BeAssert(ReadStatus::Success == testStatus);
+    BeAssert(testContentRange.low.AlmostEqual(contentRange.low) && testContentRange.high.AlmostEqual(contentRange.high));
+    BeAssert(testIsLeaf == isLeaf);
+    BeAssert(testGeometry.Meshes().size() == geometry.Meshes().size());
+
+    compareMeshLists(testGeometry.Meshes(), geometry.Meshes());
+
     return ReadStatus::Success;
 #else
     return DgnTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry, isLeaf);
@@ -1741,6 +1889,7 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
 +---------------+---------------+---------------+---------------+---------------+------*/
 ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR builders, StreamBufferR buffer, GeometricModelR model, Render::System& system, DgnTile::Flags& flags, DgnElementIdSet const& skipElems)
     {
+    BeAssert(!builders.GetRange().IsNull());
     return DgnCacheTileRebuilder(buffer, model, system, builders).ReadTile(flags, skipElems);
     }
 

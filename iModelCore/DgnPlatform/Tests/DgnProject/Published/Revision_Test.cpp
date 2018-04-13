@@ -1854,6 +1854,166 @@ TEST_F(RevisionTestFixture, MoreDataAndSchemaChanges)
     }
 
 #ifdef DEBUG_REVISION_TEST_MANUAL
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, TestMemoryLeak)
+{
+    BeFileName seedFile("D:\\temp\\Defects\\MemoryLeak\\ReadOnlyTest.bim", true);
+    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(L"ReadOnlyTest.bim");
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedFile.c_str(), copyFile.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+    Utf8CP changeSetIds[] =
+    {
+        "dbe4b3824129f99e4eb485fb7cd9d2fea2354be1",
+        "20f94790e4a67782c2bafb93fa9b3955311c3fdb",
+        "eb5075bd61a77c773b4a1e82c89087ba28b31aec",
+        "1b186c485d182c46c02b99aff4fb12637263438f"
+    };
+
+    const int changeSetSize = sizeof(changeSetIds) / sizeof(Utf8CP);
+
+    bvector<BeFileName> csPathnames;
+    BeFileName basePath(L"D:\\temp\\Defects\\MemoryLeak\\csets\\");
+    for (int ii = 0; ii < changeSetSize; ii++)
+    {
+        BeFileName csFileName(changeSetIds[ii], true);
+        csFileName.AppendExtension(L"cs");
+
+        BeFileName csPathname = basePath;
+        csPathname.AppendToPath(csFileName);
+        csPathnames.push_back(csPathname);
+    }
+
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+
+    Utf8String dbGuid = m_db->GetDbGuid().ToString();
+    bvector<DgnRevisionPtr> revisionPtrs;
+    bvector<DgnRevisionCP> revisions;
+
+    Utf8String parentChangeSetId = m_db->Revisions().GetParentRevisionId();
+
+    for (int ii = 0; ii < changeSetSize; ii++)
+    {
+        Utf8String changeSetId = changeSetIds[ii];
+        if (ii > 0)
+            parentChangeSetId = changeSetIds[ii - 1];
+
+        DgnRevisionPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
+
+        fileStatus = BeFileName::BeCopyFile(csPathnames[ii].c_str(), rev->GetRevisionChangesFile().c_str());
+        ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+        //if (ii == 3)
+        //    rev->Dump(*m_db);
+
+        revisionPtrs.push_back(rev);
+        revisions.push_back(rev.get());
+    }
+
+    m_db->CloseDb();
+
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
+    openParams.SetStartDefaultTxn(DefaultTxn::No);
+
+    printf("Before opening Db pre-upgrade");
+    getchar();
+
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    m_db->CloseDb();
+    m_db = nullptr;
+
+    printf("After closing Db post-upgrade");
+    getchar();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+TEST_F(RevisionTestFixture, MergeMemoryIssue)
+{
+    BeFileName seedFile("D:\\temp\\Defects\\MemoryIssue\\119c3a62-d08a-4102-83e5-ff0902251740.bim", true);
+    BeFileName copyFile = DgnDbTestDgnManager::GetOutputFilePath(L"119c3a62-d08a-4102-83e5-ff0902251740.bim");
+    BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedFile.c_str(), copyFile.c_str());
+    ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+    Utf8CP changeSetIds[1] =
+    {
+        "d532b16cb2b21ca76d17170041df58df578044ec"
+    };
+
+    const int changeSetSize = sizeof(changeSetIds) / sizeof(Utf8CP);
+
+    bvector<BeFileName> csPathnames;
+    BeFileName basePath(L"D:\\temp\\Defects\\MemoryIssue\\");
+    for (int ii = 0; ii < changeSetSize; ii++)
+    {
+        BeFileName csFileName(changeSetIds[ii], true);
+        csFileName.AppendExtension(L"cs");
+
+        BeFileName csPathname = basePath;
+        csPathname.AppendToPath(csFileName);
+        csPathnames.push_back(csPathname);
+    }
+
+    DbResult openStatus;
+    DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
+
+    Utf8String dbGuid = m_db->GetDbGuid().ToString();
+    bvector<DgnRevisionPtr> revisionPtrs;
+    bvector<DgnRevisionCP> revisions;
+
+    Utf8String parentChangeSetId = m_db->Revisions().GetParentRevisionId();
+
+    for (int ii = 0; ii < changeSetSize; ii++)
+    {
+        Utf8String changeSetId = changeSetIds[ii];
+        if (ii > 0)
+            parentChangeSetId = changeSetIds[ii - 1];
+
+        DgnRevisionPtr rev = DgnRevision::Create(nullptr, changeSetId, parentChangeSetId, dbGuid);
+
+        fileStatus = BeFileName::BeCopyFile(csPathnames[ii].c_str(), rev->GetRevisionChangesFile().c_str());
+        ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
+
+        //if (ii == 3)
+        //    rev->Dump(*m_db);
+
+        revisionPtrs.push_back(rev);
+        revisions.push_back(rev.get());
+    }
+
+    m_db->CloseDb();
+
+    openParams.GetSchemaUpgradeOptionsR().SetUpgradeFromRevisions(revisions);
+    openParams.SetStartDefaultTxn(DefaultTxn::No);
+
+    printf("Before opening Db pre-upgrade");
+    getchar();
+
+    m_db = DgnDb::OpenDgnDb(&openStatus, copyFile, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
+
+    m_db->CloseDb();
+    m_db = nullptr;
+
+    printf("After closing Db post-upgrade");
+    getchar();
+}
+
 // Tests that are useful for one off testing and performance. These aren't included
 // as part of the build, but used whenever necessary
 
@@ -2165,14 +2325,17 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
 
     DgnElementId eid;   // The element that the two db's will fight over.
     DgnElementId eid2;  // another element that the two db's will fight over.
+    DgnElementId eid3;  // another element that the two db's will fight over.
     
     // First: Create an element.
     int baseIntegerPropertyValue = 1;
     int expectedIntegerPropertyValueForElement2 = baseIntegerPropertyValue;
+    int expectedIntegerPropertyValueForElement3 = baseIntegerPropertyValue;
     if (true) 
         {
         eid = insertTestElement(*firstModel, catId, baseIntegerPropertyValue)->GetElementId();
         eid2 = insertTestElement(*firstModel, catId, expectedIntegerPropertyValueForElement2)->GetElementId();
+        eid3 = insertTestElement(*firstModel, catId, expectedIntegerPropertyValueForElement3)->GetElementId();
         first->SaveChanges();
         history.push_back(createRevision(*first));
         firstParent = 0;        // when I push a changeset, it automatically becomes my parent
@@ -2370,7 +2533,7 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
         updateIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2 = 222);
         second->SaveChanges();
 
-        // merge first's changeset and accept his change
+        // merge first's changeset
         ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
 
         ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());  // updateVsDelete = acceptIncomingChanges
@@ -2382,6 +2545,70 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
         history.push_back(createRevision(*second));
         ++secondParent;
         }
+
+    // first: pull and verify that delete still stands
+    if (true)
+        {
+        ASSERT_TRUE(!first->Elements().GetElement(eid2).IsValid()) << "eid2 should be gone in first's briefcase";
+        ASSERT_EQ( RevisionStatus::Success, first->Revisions().MergeRevision(*history[++firstParent]) );
+        ASSERT_TRUE(!first->Elements().GetElement(eid2).IsValid()) << "eid2 should still be gone in first's briefcase";
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+        first->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+        }
+
+#ifdef NOT_SUPPORTED_1u2d1r
+
+    // ----------------------------------------------------
+    // --- update vs delete  - reject in-coming change ----
+    // ----------------------------------------------------
+    // Note that eid and eid3 were deleted in the tests above. Therefore, work with eid3
+
+    policy.updateVsDelete = OptimisticConcurrencyControl::OnConflict::RejectIncomingChange;
+    first->SetConcurrencyControl(new OptimisticConcurrencyControl(policy));  // adds ref
+    second->SetConcurrencyControl(new OptimisticConcurrencyControl(policy)); // adds ref
+
+    if (true)
+        {
+        auto el3 = first->Elements().GetElement(eid3);
+        el3->Delete();
+        first->SaveChanges();
+        ASSERT_TRUE(!first->Elements().GetElement(eid3).IsValid()) << "eid3 should be gone in first's briefcase";
+        history.push_back(createRevision(*first));
+        ++firstParent;
+        }
+
+    if (true)
+        {
+        verifyIntegerProperty(*second, eid3, expectedIntegerPropertyValueForElement3);
+        updateIntegerProperty(*second, eid3, expectedIntegerPropertyValueForElement3 = 333);
+        second->SaveChanges();
+
+        // merge first's changeset
+        ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
+
+        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());  // updateVsDelete = rejectIncomingChanges
+        ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+        second->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+
+        verifyIntegerProperty(*second, eid3, expectedIntegerPropertyValueForElement3);  // eid3 should still be in my briefcase, with my change.
+
+        history.push_back(createRevision(*second));
+        ++secondParent;
+        }
+
+    // first: merge and see that second overrode my change. Verify that there is no conflict reported.
+    if (true)
+        {
+        ASSERT_TRUE(!first->Elements().GetElement(eid3).IsValid()) << "eid3 should be gone in first's briefcase";
+        ASSERT_EQ( RevisionStatus::Success, first->Revisions().MergeRevision(*history[++firstParent]) );
+        verifyIntegerProperty(*first, eid3, expectedIntegerPropertyValueForElement3); // eid3 should be back again
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+        first->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+        }
+
+#endif
 
     first->SaveChanges();
     first = nullptr;

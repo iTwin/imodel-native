@@ -174,7 +174,6 @@ PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, 
     if (viewerOptions["imageryProvider"].isNull())
         viewerOptions["imageryProvider"] = IsGeolocated() ? "BingMapsAerialWithLabels" : "NaturalEarth";
 
-
     switch (params.GetUnitSystem(GetDgnDb(), m_defaultViewId))
         {
          case UnitSystem::Metric:
