@@ -142,19 +142,11 @@ void WaitForThreadStop(IScalableMeshProgress* p)
         }
     }
 
-RasterTexturingThreadPool::RasterTexturingThreadPool(int numWorkingThreads)
-    : m_numWorkingThreads(numWorkingThreads)//, m_isTerminating(false)
-{
+WorkerThreadPool::WorkerThreadPool(int numWorkingThreads)
+    : m_numWorkingThreads(numWorkingThreads)
+    {
     m_futures = new std::future<void>[m_numWorkingThreads];
-
-    //m_workingThreads = new std::thread[m_numWorkingThreads];
-    /*
-    m_areWorkingThreadRunning = new std::atomic<bool>[m_maxThreads];
-
-    for (size_t ind = 0; ind < m_numWorkingThreads; ind++)
-    m_areWorkingThreadRunning[ind] = false;
-    */
-
+    
     m_currentWorkInd = 0;
     m_run = false;
     m_threadRun = new atomic<bool>[m_numWorkingThreads];
@@ -162,93 +154,83 @@ RasterTexturingThreadPool::RasterTexturingThreadPool(int numWorkingThreads)
     for (int i = 0; i < m_numWorkingThreads; i++)
         m_threadRun[i] = false;
 
-
     m_numberOfTask = 0;
-}
+    }
 
-RasterTexturingThreadPool::~RasterTexturingThreadPool()
-{
+WorkerThreadPool::~WorkerThreadPool()
+    {
     WaitAndStop();
 
     delete[] m_futures;
     delete[] m_threadRun;
-}
+    }
 
-void RasterTexturingThreadPool::ClearQueueWork()
-{
+void WorkerThreadPool::ClearQueueWork()
+    {
     m_workQueueMutex.lock();
     m_currentWorkInd = 0;
     m_workQueue.clear();
     m_workQueueMutex.unlock();
-}
+    }
 
-void RasterTexturingThreadPool::QueueWork(RasterTexturingWorkPtr& work)
-{
-    //assert(m_run == false);
+void WorkerThreadPool::QueueWork(WorkItemPtr& work)
+    {    
     m_workQueueMutex.lock();
     m_workQueue.push_back(work);
     m_workQueueMutex.unlock();
     m_numberOfTask++;
-}
+    }
 
-void RasterTexturingThreadPool::Start(IActiveWait* activeWait)
-{
+void WorkerThreadPool::Start(IActiveWait* activeWait)
+    {
     m_activeWait = activeWait;
 
     if (m_run == false)
-    {
+        {
         m_run = true;
         assert(m_currentWorkInd == 0);
 
         //Launch a group of threads
         for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId)
-        {
-            m_futures[threadId] = std::async(&RasterTexturingThreadPool::WorkThread, this, /*DgnPlatformLib::QueryHost(), */threadId);
+            {
+            m_futures[threadId] = std::async(&WorkerThreadPool::WorkThread, this, threadId);
+            }
         }
     }
-}
 
-void RasterTexturingThreadPool::WaitAndStop()
-{
+void WorkerThreadPool::WaitAndStop()
+    {
     std::chrono::milliseconds span(500);
 
     for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId)
-    {
-        if (m_futures[threadId].valid())
         {
+        if (m_futures[threadId].valid())
+            {
             if (m_activeWait == nullptr)
-            {
-                m_futures[threadId].get();
-            }
-            else
-            {
-                while (m_futures[threadId].wait_for(span) == std::future_status::timeout)
                 {
-                    m_activeWait->Progress();
+                m_futures[threadId].get();
                 }
-            }
+            else
+                {
+                while (m_futures[threadId].wait_for(span) == std::future_status::timeout)
+                    {
+                    m_activeWait->Progress();
+                    }
+                }
+            }        
         }
-        /*
-        if (m_workingThreads[threadId].joinable())
-        m_workingThreads[threadId].join();
-        */
-    }
 
     m_run = false;
-}
+    }
 
-void RasterTexturingThreadPool::WorkThread(/*DgnPlatformLib::Host* hostToAdopt, */int threadId)
-{
-    //DgnPlatformLib::AdoptHost(*hostToAdopt);
-
-    RasterTexturingWorkPtr currentWork;
+void WorkerThreadPool::WorkThread(int threadId)
+    {    
+    WorkItemPtr currentWork;
     int i;
 
     do
-    {
-        currentWork = nullptr;
-
-        //uint32_t currentInd = std::atomic_exchange<uint32_t>(&m_currentWorkInd, m_currentWorkInd + 1);
+        {
+        currentWork = nullptr;        
 
         m_workQueueMutex.lock();
         if (m_workQueue.size() > 0)
@@ -258,29 +240,22 @@ void RasterTexturingThreadPool::WorkThread(/*DgnPlatformLib::Host* hostToAdopt, 
             m_threadRun[threadId] = true;
             m_numberOfTask--;
             }
-/*
-        if (currentInd < m_workQueue.size())
-        {
-            currentWork = m_workQueue[currentInd];                    
-        }
-*/
+
         m_workQueueMutex.unlock();
         
-
         if (currentWork.IsValid())
-            {          
-            
+            {                      
             currentWork->_DoWork();                            
             m_threadRun[threadId] = false;
             }
 
-    i = 0;
+        i = 0;
 
-    for (; i < m_numWorkingThreads; i++)
-        if (m_threadRun[i] == true) break;
+        for (; i < m_numWorkingThreads; i++)
+            if (m_threadRun[i] == true) break;
     
-    } while (m_run && (i < m_numWorkingThreads || m_numberOfTask > 0));
-}
+        } while (m_run && (i < m_numWorkingThreads || m_numberOfTask > 0));
+    }
 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

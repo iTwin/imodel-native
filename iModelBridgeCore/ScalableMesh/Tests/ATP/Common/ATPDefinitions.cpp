@@ -396,8 +396,6 @@ void PerformDcGroundDetectionTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     }
 
 
-static bool s_usePolygon = false;
-
 void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
     BeXmlStatus status;
@@ -565,19 +563,7 @@ void PerformGenerateTest(BeXmlNodeP pTestNode, FILE* pResultFile)
                         }
                     });
 
-                if (s_usePolygon)
-                    { 
-                    bvector<DPoint3d> polygon;
-
-                    polygon.push_back(DPoint3d::From(360854.037,4388846.416,1.421));
-                    polygon.push_back(DPoint3d::From(371050.694,4388846.416,1.421));
-                    polygon.push_back(DPoint3d::From(371050.694,4385572.326,1.421));
-                    polygon.push_back(DPoint3d::From(360854.037,4385572.326,1.421));
-                    polygon.push_back(DPoint3d::From(360854.037,4388846.416,1.421));
-
-                    creatorPtr->SetSourceImportPolygon(&polygon[0], polygon.size());
-                    }
-
+                
                 StatusInt status = creatorPtr->Create(isSingleFile);
                 importInProgress = false;
                 mythread.join();

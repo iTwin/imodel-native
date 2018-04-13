@@ -46,16 +46,16 @@ void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda);
 void WaitForThreadStop(IScalableMeshProgress* p =nullptr);
 
 
-struct RasterTexturingThreadPool;
-typedef RefCountedPtr<RasterTexturingThreadPool> RasterTexturingThreadPoolPtr;
+struct WorkerThreadPool;
+typedef RefCountedPtr<WorkerThreadPool> WorkerThreadPoolPtr;
 
-struct RasterTexturingWork;
-typedef RefCountedPtr<RasterTexturingWork> RasterTexturingWorkPtr;
+struct WorkItem;
+typedef RefCountedPtr<WorkItem> WorkItemPtr;
 
 
-struct RasterTexturingWork : RefCountedBase
+struct WorkItem : RefCountedBase
 {
-    friend struct RasterTexturingThreadPool;
+    friend struct WorkerThreadPool;
     //size_t          GetMemorySize() { return _GetMemorySize(); }
 protected:
     virtual void    _DoWork() = 0;
@@ -67,7 +67,7 @@ public:
 };
 
 
-struct RasterTexturingThreadPool : public RefCountedBase //: RefCounted<PointCloudWorkerThread::IStateListener>
+struct WorkerThreadPool : public RefCountedBase //: RefCounted<PointCloudWorkerThread::IStateListener>
 {
     struct IActiveWait
     {
@@ -88,7 +88,7 @@ private:
 
     //bmap<PointCloudWorkerThread*, bool> m_threads;
     //GroundDetectionWorkQueue            m_workQueue;
-    bvector<RasterTexturingWorkPtr>       m_workQueue;
+    bvector<WorkItemPtr>       m_workQueue;
     std::mutex                            m_workQueueMutex;
     std::atomic<uint32_t>                 m_currentWorkInd;
     IActiveWait*                          m_activeWait;
@@ -97,7 +97,7 @@ private:
 
 protected:
 
-    RasterTexturingThreadPool(int numWorkingThreads);
+    WorkerThreadPool(int numWorkingThreads);
 
     void WorkThread(/*DgnPlatformLib::Host* hostToAdopt, */int threadId);
 
@@ -119,13 +119,13 @@ protected:
 
 public:
 
-    static RasterTexturingThreadPoolPtr Create(int maxThreads) { return new RasterTexturingThreadPool(maxThreads); }
-    virtual ~RasterTexturingThreadPool();
+    static WorkerThreadPoolPtr Create(int maxThreads) { return new WorkerThreadPool(maxThreads); }
+    virtual ~WorkerThreadPool();
     //int  GetThreadsCount() const;
 
     void ClearQueueWork();
 
-    void QueueWork(RasterTexturingWorkPtr& work);
+    void QueueWork(WorkItemPtr& work);
 
     void Start(IActiveWait* activeWait = nullptr);
 
