@@ -1054,24 +1054,25 @@ bool DgnTileReader::VerifyFeatureTable()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnTileReader::FindDeletedElements(DgnElementIdSet& deletedElemIds)
+template<typename T> static bool processDeletedElements(DgnElementIdSet& deletedElemIds, StreamBufferR buffer, DgnModelR model, T func)
     {
-    StreamBufferScope scope(m_buffer);
+    StreamBufferScope scope(buffer);
 
     DgnTile::Header tileHeader;
     DgnTile::FeatureTableHeader tableHeader;
-    if (!tileHeader.Read(m_buffer) || !tableHeader.Read(m_buffer))
+    if (!tileHeader.Read(buffer) || !tableHeader.Read(buffer))
         {
         BeAssert(false);
         return false;
         }
 
+    // Ugh, we must use ECSql because ECDb persists datetime as floating-point julian day value...
+    CachedECSqlStatementPtr stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT LastMod FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECInstanceId=?");
     uint32_t numBytesToSkip = sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint32_t);
-    CachedStatementPtr stmt = m_model.GetDgnDb().GetCachedStatement("SELECT ModelId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
     for (size_t i = 0; i < tableHeader.count; i++)
         {
         uint64_t elemId64;
-        if (!m_buffer.Read(elemId64) || !m_buffer.Advance(numBytesToSkip))
+        if (!buffer.Read(elemId64) || !buffer.Advance(numBytesToSkip))
             {
             BeAssert(false);
             return false;
@@ -1081,11 +1082,43 @@ bool DgnTileReader::FindDeletedElements(DgnElementIdSet& deletedElemIds)
         stmt->BindId(1, elemId);
         if (BE_SQLITE_ROW != stmt->Step())
             deletedElemIds.insert(elemId);
+        else
+            func(*stmt, elemId);
 
         stmt->Reset();
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnTileReader::FindDeletedElements(DgnElementIdSet& deletedElemIds)
+    {
+    auto noop = [](CachedECSqlStatement& stmt, DgnElementId elemId) { };
+    return processDeletedElements(deletedElemIds, m_buffer, m_model, noop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnTileReader::GetElements(DgnElementIdSet& deletedOrModified, DgnElementIdSet& unmodified, uint64_t lastModTime)
+    {
+    return processDeletedElements(deletedOrModified, m_buffer, m_model, [&](CachedECSqlStatement& stmt, DgnElementId elemId)
+        {
+        DateTime dt = stmt.GetValueDateTime(0);
+        int64_t unixMillis;
+        if (SUCCESS == dt.ToUnixMilliseconds(unixMillis))
+            {
+            auto& set = static_cast<uint64_t>(unixMillis) <= lastModTime ? unmodified : deletedOrModified;
+            set.insert(elemId);
+            }
+        else
+            {
+            BeAssert(false);
+            }
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**

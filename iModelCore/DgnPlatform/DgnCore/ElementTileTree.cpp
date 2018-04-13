@@ -1036,7 +1036,7 @@ BentleyStatus Loader::_LoadTile()
         {
         if (!m_tileBytes.empty())
             {
-            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache, tile.GetRange(), m_deletedElemIds))
+            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache, tile.GetRange(), m_omitElemIds))
                 {
                 BeAssert(false);
                 return ERROR;
@@ -1207,7 +1207,7 @@ bool Loader::_IsValidData()
     BeAssert(!m_tileBytes.empty());
     TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), *GetRenderSystem());
 #if defined(WIP_TILE_REPAIR)
-    reader.FindDeletedElements(m_deletedElemIds);
+    reader.GetElements(m_omitElemIds, m_tileElemIds, m_cacheCreateTime);
     return true;
 #else
     return reader.VerifyFeatureTable();
