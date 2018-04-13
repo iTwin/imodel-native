@@ -22,6 +22,7 @@
 #include "ECSchemaXmlContextUtils.h"
 #include <Bentley/Desktop/FileSystem.h>
 #include <Bentley/BeThread.h>
+#include <ECPresentation/DgnECPresentationSerializer.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -571,6 +572,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         RulesDrivenECPresentationManager::Paths paths(assetsDir, tempDir);
         m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(m_connections, paths));
         IECPresentationManager::RegisterImplementation(m_presentationManager.get());
+        IECPresentationManager::SetSerializer(&DgnECPresentationSerializer::Get());
         m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
         m_connections.NotifyConnectionOpened(*m_dgndb);
         }

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECPresentationUtils.h"
+#include <ECPresentation/DgnECPresentationSerializer.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                12/2017
@@ -19,6 +20,7 @@ RulesDrivenECPresentationManager* ECPresentationUtils::CreatePresentationManager
 
     BeFileName supplementalsDirectory = BeFileName(assetsDir).AppendToPath(L"PresentationRules");
     manager->GetLocaters().RegisterLocater(*SupplementalRuleSetLocater::Create(*DirectoryRuleSetLocater::Create(supplementalsDirectory.GetNameUtf8().c_str())));
+    IECPresentationManager::SetSerializer(&DgnECPresentationSerializer::Get());
 
     return manager;
     }
