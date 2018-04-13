@@ -331,3 +331,101 @@ DrawingTests.SheetScale_WithMultiAttachmentOfSameStoredScale
     # Which is: 3
     # To be equal to: ndrawings
     # Which is: 5
+
+DrawingTests.Cyclic2dModels_AttachToSheet
+
+    # TFS#875884
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    # Which is: 4
+    # To be equal to: ndrawings
+    # Which is: 5
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\DrawingTests.cpp(1150): error:       Expected: 3
+    # To be equal to: DgnDbTestUtils::SelectCountFromECClass(*db, "BisCore" "." "Drawing")
+    # Which is: 4
+
+DimensionTests.NotetoSheet
+
+    # TFS#875886
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    # Which is: 2
+    # To be equal to: ndrawings
+    # Which is: 3
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\DimensionTests.cpp(300): error:       Expected: 1
+    # To be equal to: idlist.size()
+    # Which is: 3
+
+LevelTests.LevelMaskfromSheetAttachment_toViewAttachment
+
+    # TFS#875883
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\LevelTests.cpp(54): error:       Expected: numGeometricModelsExpected
+    # Which is: 5
+    # To be equal to: CountGeometricModels(*db)
+    # Which is: 6
+
+DrawingTests.SheetProperties
+
+    # TFS#875884
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    # Which is: 2
+    # To be equal to: ndrawings
+    # Which is: 3
+
+DrawingTests.Basic3dAttachment
+
+    # TFS#875885
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    # Which is: 2
+    # To be equal to: ndrawings
+    # Which is: 3
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
+    # Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    # Which is: 1
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    # Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    # Which is: 1
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    # Which is: 2
+    # To be equal to: ndrawings
+    # Which is: 3
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(776): error:       Expected: expected
+    # Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    # Which is: 1
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(788): error:       Expected: expected
+    # Which is: 2
+    # To be equal to: stmt->GetValueInt(0)
+    # Which is: 1
+
+DrawingTests.SheetScale_WithMultiAttachmentOfDiffStoredScale
+
+    # TFS#875884
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    # Which is: 5
+    # To be equal to: ndrawings
+    # Which is: 8
+
+DrawingTests.BorderAttachmenttoSheet
+
+    # TFS#875884
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    # Which is: 3
+    # To be equal to: ndrawings
+    # Which is: 4
+
+DrawingTests.SheetScale_WithMultiAttachmentOfSameStoredScale
+
+    # TFS#875884
+    # Stream:bim0200dev, build configuration :NDEBUG, architecture: (x64), Device: Desktop, Date: 04/13/2018
+    # c:\build\src\mds06t\DgnDbSync\DgnV8\Tests\ConverterTestsBaseFixture.cpp(759): error:       Expected: ndrawings_expected
+    # Which is: 3
+    # To be equal to: ndrawings
+    # Which is: 5
