@@ -1041,6 +1041,20 @@ BentleyStatus Loader::_LoadTile()
                 BeAssert(false);
                 return ERROR;
                 }
+
+            if (!m_omitElemIds.empty())
+                {
+                m_tileBytes.clear();
+                m_omitElemIds.clear();
+                m_tileElemIds.clear();
+
+                BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor());
+                bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
+                if (SUCCESS != TileTree::IO::WriteDgnTile(m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), isLeaf))
+                    { BeAssert(false); return ERROR; }
+
+                m_saveToCache = true;
+                }
             }
 
         tile.SetContentRange(contentRange);
