@@ -475,7 +475,7 @@ Image      ThematicDisplaySettings::GetImage()  const
 * @bsimethod                                                    RayBentley      11/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DPoint2d    computeTextureParam (double value)
-    {
+    {       
     static double       s_paramEpsilon = .00002; 
     static double       s_minMargin = s_margin, s_maxMargin = 1.0 - s_margin;
     static double       s_minLimit = -s_margin + s_paramEpsilon, s_maxLimit = 1.0 + s_minMargin - s_paramEpsilon;
@@ -491,13 +491,13 @@ static DPoint2d    computeTextureParam (double value)
     else if (fabs (textureValue - s_maxMargin) < s_paramEpsilon)
         textureValue -= s_paramEpsilon;
     
-    return DPoint2d::From (.5, 1.0 - textureValue);
+    return DPoint2d::From (.5f, textureValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementTileTree::ThematicMeshBuilder::ThematicMeshBuilder(Utf8StringCR channel, SystemCR system, DgnDbR db, ThematicDisplaySettingsCR settings, ThematicCookedRangeCR cookedRange) : m_channel(channel), m_cookedRange(cookedRange)
+ElementTileTree::ThematicMeshBuilder::ThematicMeshBuilder(Utf8StringCR channel, SystemCR system, DgnDbR db, ThematicDisplaySettingsCR settings) : m_channel(channel)
     {
     TexturePtr                  texture = system._CreateTexture(settings.GetImage(), db);
     
@@ -507,31 +507,109 @@ ElementTileTree::ThematicMeshBuilder::ThematicMeshBuilder(Utf8StringCR channel, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool   ElementTileTree::ThematicMeshBuilder::DoThematicDisplay(PolyfaceHeaderR mesh, TextureMappingR textureMapping) const  
+bool   ElementTileTree::ThematicMeshBuilder::DoThematicDisplay(PolyfaceHeaderR mesh, Render::TextureMappingR textureMapping) const
     {
-    PolyfaceAuxChannelCPtr        channel;
-
-    if (! mesh.GetAuxDataCP().IsValid() ||
-        ! (channel = mesh.GetAuxDataCP()->GetChannel(m_channel.c_str())).IsValid())
+    // TBD -- Active channel selection - for now any scalar.
+    if (!mesh.GetAuxDataCP().IsValid())
         return false;
 
-    textureMapping = m_textureMapping;
-    mesh.ParamIndex().clear();
-    mesh.Param().clear();
+    for (auto& channel : mesh.GetAuxDataCP()->GetChannels())    
+        {
+        if (channel->IsScalar())
+            {
+            textureMapping = m_textureMapping;
 
-    mesh.ParamIndex().SetActive(true);
-    mesh.ParamIndex().resize(mesh.PointIndex().size());
-    memcpy (mesh.ParamIndex().data(), mesh.GetAuxDataCP()->GetIndices().data(), mesh.PointIndex().size() * sizeof(int32_t));
+            // Add parameters from initial entry.   Texture will not be published correctly without parameters.
+            mesh.ParamIndex().clear();
+            mesh.Param().clear();
 
-    auto& values = channel->GetData().front()->GetValues(); 
+            mesh.ParamIndex().SetActive(true);
+            mesh.ParamIndex().resize(mesh.PointIndex().size());
+            memcpy (mesh.ParamIndex().data(), mesh.GetAuxDataCP()->GetIndices().data(), mesh.PointIndex().size() * sizeof(int32_t));
 
-    mesh.Param().reserve(values.size());
-    mesh.Param().SetActive(true);
-    
-    for (auto value : values)
-        mesh.Param().push_back(computeTextureParam(m_cookedRange.GetNormalizedValueFromRaw((double) value)));
+            auto& values = channel->GetData().front()->GetValues(); 
 
-    return true;
+            mesh.Param().reserve(values.size());
+            mesh.Param().SetActive(true);
+
+            ThematicCookedRange  cookedRange(DRange1d::From(values.data(), values.size()));
+
+            for (auto value : values)
+                mesh.Param().push_back(computeTextureParam(cookedRange.GetNormalizedValueFromRaw((double) value)));
+
+            return true;
+            }
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void   ElementTileTree::ThematicMeshBuilder::BuildMeshAuxData(MeshAuxDataR auxData, PolyfaceQueryCR mesh)
+    {
+    // TBD -- Active channel selection - for now use first scalar or displacement.
+    if (!mesh.GetAuxDataCP().IsValid())
+        return;
+
+    for (auto& channel : mesh.GetAuxDataCP()->GetChannels())    
+        {
+        switch(channel->GetDataType())
+            {
+            case PolyfaceAuxChannel::Distance:
+            case PolyfaceAuxChannel::Scalar:
+                {
+                if (auxData.m_paramChannel.IsValid())
+                    break;              // More than one scalar channel -- just use first for now.
+
+                auto&                               inDataVector = channel->GetData();
+                bvector<AuxParamChannel::DataPtr>   outDataVector;
+
+                DRange1d        range = DRange1d::NullRange();
+
+                for (auto inData : inDataVector)
+                    range.Extend (inData->GetValues().data(), inData->GetValues().size());
+                    
+                ThematicCookedRange         cookedRange(range.low, range.high);
+
+                for (auto inData : inDataVector)
+                    {
+                    bvector<DPoint2d>   params;
+
+                    for (auto& value : inData->GetValues())
+                        params.push_back(computeTextureParam(cookedRange.GetNormalizedValueFromRaw(value)));
+                    
+                    outDataVector.push_back(new AuxParamChannel::Data((float) inData->GetInput(), std::move(params)));
+                    }
+                auxData.m_paramChannel = new AuxParamChannel(std::move(outDataVector));
+                break;
+                }
+            case PolyfaceAuxChannel::Vector:
+                {
+                if (auxData.m_displacementChannel.IsValid())
+                    break;              // More than one scalar channel -- just use first for now.
+                
+
+                auto&                                   inDataVector = channel->GetData();
+                bvector<AuxDisplacementChannel::DataPtr>      outDataVector;
+
+                for (auto inData : inDataVector)
+                    {
+                    bvector<DPoint3d>   points;
+                    double const*       pValue = inData->GetValues().data();
+
+                    for (double const* pEnd = pValue + inData->GetValues().size(); pValue < pEnd; pValue += 3)
+                        points.push_back(DPoint3d::FromArray(pValue));
+                    
+                    outDataVector.push_back(new AuxDisplacementChannel::Data((float) inData->GetInput(), std::move(points)));
+                    }
+                auxData.m_displacementChannel = new AuxDisplacementChannel(std::move(outDataVector));
+                break;
+                }
+            }
+            
+        }
     }
 
 
