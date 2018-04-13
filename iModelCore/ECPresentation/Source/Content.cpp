@@ -1063,7 +1063,7 @@ rapidjson::Document ECInstanceChangeResult::AsJson(rapidjson::Document::Allocato
 * @bsimethod                                    Grigas.Petraitis                08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 SelectionInfo::SelectionInfo(ISelectionProvider const& selectionProvider, SelectionChangedEventCR evt)
-    : m_selectionProviderName(evt.GetSourceName()), m_isSubSelection(evt.IsSubSelection())
+    : m_selectionProviderName(evt.GetSourceName()), m_isSubSelection(evt.IsSubSelection()), m_timestamp(evt.GetTimestamp())
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -1073,6 +1073,7 @@ SelectionInfo& SelectionInfo::operator=(SelectionInfo const& other)
     {
     m_selectionProviderName = other.m_selectionProviderName;
     m_isSubSelection = other.m_isSubSelection;
+    m_timestamp = other.m_timestamp;
     return *this;
     }
 
@@ -1083,6 +1084,7 @@ SelectionInfo& SelectionInfo::operator=(SelectionInfo&& other)
     {
     m_isSubSelection = other.m_isSubSelection;
     m_selectionProviderName.swap(other.m_selectionProviderName);
+    m_timestamp = other.m_timestamp;
     return *this;
     }
 
@@ -1091,8 +1093,9 @@ SelectionInfo& SelectionInfo::operator=(SelectionInfo&& other)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool SelectionInfo::operator==(SelectionInfo const& other) const
     {
-    return (m_isSubSelection == other.m_isSubSelection
-            && m_selectionProviderName == other.m_selectionProviderName);
+    return m_isSubSelection == other.m_isSubSelection
+        && m_timestamp == other.m_timestamp
+        && m_selectionProviderName == other.m_selectionProviderName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1103,6 +1106,11 @@ bool SelectionInfo::operator<(SelectionInfo const& other) const
     if (!m_isSubSelection && other.m_isSubSelection)
         return true;
     if (m_isSubSelection && !other.m_isSubSelection)
+        return false;
+
+    if (m_timestamp < other.m_timestamp)
+        return true;
+    if (m_timestamp > other.m_timestamp)
         return false;
 
     int selectionProviderNameCmp = m_selectionProviderName.CompareTo(other.m_selectionProviderName);

@@ -152,7 +152,7 @@ TEST_F(ContentCacheTests, ReplacesProvidersDifferingJustBySelectionInfo)
     // cache provider with selection info
     // the one with no selection info should still exist in the cache
     SpecificationContentProviderPtr provider2 = CreateProvider();
-    SelectionInfo selectionInfo1("name1", true);
+    SelectionInfo selectionInfo1("name1", true, 1);
     ContentProviderKey keyWithSelectionInfo("connection id", "ruleset id", "display type", *NavNodeKeyListContainer::Create(), &selectionInfo1);
     m_cache.CacheProvider(keyWithSelectionInfo, *provider2);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1));
@@ -161,7 +161,7 @@ TEST_F(ContentCacheTests, ReplacesProvidersDifferingJustBySelectionInfo)
     // cache provider with selection info differing just by selection source name
     // it should replace the previous provider
     SpecificationContentProviderPtr provider3 = CreateProvider();
-    SelectionInfo selectionInfo2("name2", true);
+    SelectionInfo selectionInfo2("name2", true, 1);
     ContentProviderKey keyWithSelectionInfoWithDifferentName("connection id", "ruleset id", "display type", *NavNodeKeyListContainer::Create(), &selectionInfo2);
     m_cache.CacheProvider(keyWithSelectionInfoWithDifferentName, *provider3);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1));
@@ -171,20 +171,30 @@ TEST_F(ContentCacheTests, ReplacesProvidersDifferingJustBySelectionInfo)
     // cache provider with selection info differing just by selection level 
     // it should replace the previous provider
     SpecificationContentProviderPtr provider4 = CreateProvider();
-    SelectionInfo selectionInfo3("name2", false);
+    SelectionInfo selectionInfo3("name2", false, 1);
     ContentProviderKey keyWithSelectionInfoWithDifferentLevel("connection id", "ruleset id", "display type", *NavNodeKeyListContainer::Create(), &selectionInfo3);
     m_cache.CacheProvider(keyWithSelectionInfoWithDifferentLevel, *provider4);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1));
     EXPECT_TRUE(m_cache.GetProvider(keyWithSelectionInfoWithDifferentName).IsNull());
     EXPECT_EQ(provider4, m_cache.GetProvider(keyWithSelectionInfoWithDifferentLevel));
     
+    // cache provider with selection info differing just by timestamp
+    // it should replace the previous provider
+    SpecificationContentProviderPtr provider5 = CreateProvider();
+    SelectionInfo selectionInfo4("name2", false, 2);
+    ContentProviderKey keyWithSelectionInfoWithDifferentTimestamp("connection id", "ruleset id", "display type", *NavNodeKeyListContainer::Create(), &selectionInfo4);
+    m_cache.CacheProvider(keyWithSelectionInfoWithDifferentTimestamp, *provider5);
+    EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1));
+    EXPECT_TRUE(m_cache.GetProvider(keyWithSelectionInfoWithDifferentLevel).IsNull());
+    EXPECT_EQ(provider5, m_cache.GetProvider(keyWithSelectionInfoWithDifferentTimestamp));
+
     // cache another provider with no selection info
     // it should add this new provider in addition to keeping all cached ones
-    SpecificationContentProviderPtr provider5 = CreateProvider();
+    SpecificationContentProviderPtr provider6 = CreateProvider();
     INavNodeKeysContainerCPtr keys = NavNodeKeyListContainer::Create({NavNodeKey::Create("a", bvector<Utf8String>())});
     ContentProviderKey keyNoSelectionInfo2("connection id", "ruleset id", "display type", *keys, nullptr);
-    m_cache.CacheProvider(keyNoSelectionInfo2, *provider5);
+    m_cache.CacheProvider(keyNoSelectionInfo2, *provider6);
     EXPECT_EQ(provider1, m_cache.GetProvider(keyNoSelectionInfo1));
-    EXPECT_EQ(provider4, m_cache.GetProvider(keyWithSelectionInfoWithDifferentLevel));
-    EXPECT_EQ(provider5, m_cache.GetProvider(keyNoSelectionInfo2));
+    EXPECT_EQ(provider5, m_cache.GetProvider(keyWithSelectionInfoWithDifferentTimestamp));
+    EXPECT_EQ(provider6, m_cache.GetProvider(keyNoSelectionInfo2));
     }
