@@ -1052,6 +1052,43 @@ bool DgnTileReader::VerifyFeatureTable()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnTileReader::FindDeletedElements(DgnElementIdSet& deletedElemIds)
+    {
+    StreamBufferScope scope(m_buffer);
+
+    DgnTile::Header tileHeader;
+    DgnTile::FeatureTableHeader tableHeader;
+    if (!tileHeader.Read(m_buffer) || !tableHeader.Read(m_buffer))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    uint32_t numBytesToSkip = sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint32_t);
+    CachedStatementPtr stmt = m_model.GetDgnDb().GetCachedStatement("SELECT ModelId FROM " BIS_TABLE(BIS_CLASS_Element) " WHERE Id=?");
+    for (size_t i = 0; i < tableHeader.count; i++)
+        {
+        uint64_t elemId64;
+        if (!m_buffer.Read(elemId64) || !m_buffer.Advance(numBytesToSkip))
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        DgnElementId elemId(elemId64);
+        stmt->BindId(1, elemId);
+        if (BE_SQLITE_ROW != stmt->Step())
+            deletedElemIds.insert(elemId);
+
+        stmt->Reset();
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ReadStatus DgnTileReader::ReadTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, bool& isLeaf)
@@ -1991,31 +2028,8 @@ static void compareMeshLists(MeshList const& lhs, MeshList const& rhs)
 ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange)
     {
 #if defined(TEST_TILE_REBUILDER)
-    DgnTile::Header header;
-    header.Read(streamBuffer);
-    streamBuffer.ResetPos();
-    contentRange = header.contentRange;
-    isLeaf = DgnTile::Flags::None != (header.flags & DgnTile::Flags::IsLeaf);
-
-    geometry.Meshes().FeatureTable() = FeatureTable(model.GetModelId(), 100000); // maxFeatures will be read + updated in ReadFeatureTable()...
-    Render::Primitives::MeshBuilderMap builders(0.0, &geometry.Meshes().FeatureTable(), tileRange, false);
-    DgnTile::Flags flags;
-    auto status = ReadDgnTile(builders, streamBuffer, model, renderSystem, flags, DgnElementIdSet());
-    if (ReadStatus::Success != status)
-        { BeAssert(false); return status; }
-
-    for (auto& builder : builders)
-        {
-        MeshP mesh = builder.second->GetMesh();
-        if (nullptr != mesh && !mesh->IsEmpty())
-            geometry.Meshes().push_back(mesh);
-        }
-
-    if (DgnTile::Flags::None != (flags & DgnTile::Flags::ContainsCurves))
-        geometry.MarkCurved();
-
-    if (DgnTile::Flags::None != (flags & DgnTile::Flags::Incomplete))
-        geometry.MarkIncomplete();
+    // Tile data => MeshBuilderMap => GeometryCollection
+    ReadDgnTile(contentRange, geometry, streamBuffer, model, renderSystem, isLeaf, tileRange, DgnElementIdSet());
 
     // Compare with ordinary deserialization path...
     ElementAlignedBox3d testContentRange;
@@ -2035,6 +2049,43 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
 #else
     return DgnTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry, isLeaf);
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange, DgnElementIdSet const& skipElems)
+    {
+    if (skipElems.empty())
+        return ReadDgnTile(contentRange, geometry, streamBuffer, model, renderSystem, isLeaf, tileRange);
+
+    DgnTile::Header header;
+    header.Read(streamBuffer);
+    streamBuffer.ResetPos();
+    contentRange = header.contentRange;
+    isLeaf = DgnTile::Flags::None != (header.flags & DgnTile::Flags::IsLeaf);
+
+    geometry.Meshes().FeatureTable() = FeatureTable(model.GetModelId(), 100000); // maxFeatures will be read + updated in ReadFeatureTable()...
+    Render::Primitives::MeshBuilderMap builders(0.0, &geometry.Meshes().FeatureTable(), tileRange, false);
+    DgnTile::Flags flags;
+    auto status = ReadDgnTile(builders, streamBuffer, model, renderSystem, flags, skipElems);
+    if (ReadStatus::Success != status)
+        { BeAssert(false); return status; }
+
+    for (auto& builder : builders)
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (nullptr != mesh && !mesh->IsEmpty())
+            geometry.Meshes().push_back(mesh);
+        }
+
+    if (DgnTile::Flags::None != (flags & DgnTile::Flags::ContainsCurves))
+        geometry.MarkCurved();
+
+    if (DgnTile::Flags::None != (flags & DgnTile::Flags::Incomplete))
+        geometry.MarkIncomplete();
+
+    return ReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -337,6 +337,8 @@ DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Ren
 // Read meshes from cache data into a MeshBuilderMap, optionally excluding specific elements.
 DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(Render::Primitives::MeshBuilderMapR builderMap, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, DgnTile::Flags& flags, DgnElementIdSet const& skipElems=DgnElementIdSet());
 
+DGNPLATFORM_EXPORT ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange, DgnElementIdSet const& skipElems);
+
 // Read geometry from one of the web-standard tile formats (i3dm, b3dm, cmpt, pnts, vctr)
 DGNPLATFORM_EXPORT ReadStatus ReadWebTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem);
 

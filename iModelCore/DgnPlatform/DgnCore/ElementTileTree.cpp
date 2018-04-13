@@ -23,6 +23,9 @@
 // thereby improving tile generation speed significantly.
 // #define POPULATE_ROOT_TILE
 
+// Uncomment to test selective tile repair
+// #define WIP_TILE_REPAIR
+
 USING_NAMESPACE_ELEMENT_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 
@@ -768,7 +771,7 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
-    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime())
+    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime)
     {
 #if defined(DISABLE_PARTIAL_TILES)
     if (nullptr != loads)
@@ -1033,7 +1036,7 @@ BentleyStatus Loader::_LoadTile()
         {
         if (!m_tileBytes.empty())
             {
-            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache, tile.GetRange()))
+            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache, tile.GetRange(), m_deletedElemIds))
                 {
                 BeAssert(false);
                 return ERROR;
@@ -1185,10 +1188,15 @@ BentleyStatus Loader::DoGetFromSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::_IsExpired(uint64_t createTimeMillis)
     {
-    auto& tile = GetElementTile();
+    m_cacheCreateTime = createTimeMillis;
 
+#if defined(WIP_TILE_REPAIR)
+    return false;
+#else
+    auto& tile = GetElementTile();
     uint64_t lastModMillis = tile.GetElementRoot().GetModel()->GetLastElementModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1196,14 +1204,14 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::_IsValidData()
     {
-    // TFS#800675 quick-fix...reject cached tile if it contains deleted elements
-    // (We key off the most recent modification to any element in the model in order to determine
-    // tile validity - that obviously can't work for deleted elements).
-    // Eventual real solution is to selectively repair tiles by combining cached data with data
-    // from changed elements.
     BeAssert(!m_tileBytes.empty());
     TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), *GetRenderSystem());
+#if defined(WIP_TILE_REPAIR)
+    reader.FindDeletedElements(m_deletedElemIds);
+    return true;
+#else
     return reader.VerifyFeatureTable();
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -214,6 +214,7 @@ public:
     ReadStatus ReadTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR, bool& isLeaf);
 
     bool VerifyFeatureTable();
+    bool FindDeletedElements(DgnElementIdSet& elemIds);
 };
 
 END_TILETREE_IO_NAMESPACE
