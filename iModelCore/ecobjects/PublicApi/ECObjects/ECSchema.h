@@ -1582,7 +1582,7 @@ public:
     //! @param[in]  ecXmlMajorVersion   Major version of the original schema xml
     //! @param[in]  ecXmlMinorVersion   Minor version of the original schema xml
     //! @return     ECObjectsStatus::Success if successfully parses fus/unit and adds as well as maps old units to new ones if necessary
-    ECObjectsStatus ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
+    ECOBJECTS_EXPORT ECObjectsStatus ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
 };
 
 //=======================================================================================
