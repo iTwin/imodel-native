@@ -358,6 +358,7 @@
     <Part Name="FontConverterAppExe" BentleyBuildMakeFile="DgnV8/Converters/FontConverterApp.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="DgnV8ConverterDLL"/>
         <SubPart PartName="LoggingNative" PartFile="LoggingSDK" Repository="loggingsdk"/>
+        <SubPart PartName="RmgrToolsDll" PartFile="RmgrTools" Repository="RmgrTools"/>
         <Bindings>
             <Files ProductDirectoryName="ApplicationRoot">Delivery\FontConverter.exe</Files>
             <Files ProductDirectoryName="PublisherLoggingConfigXml">Delivery/FontConverter.logging.config.xml</Files>
@@ -369,7 +370,6 @@
         <SubPart PartName="FontConverterAppExe" />
         <Directories DirectoryListName="DgnDbSyncAppCommonDirList"/>
         <Directories DirectoryListName="DgnV8ConverterDirList" />
-        <FeatureExclude>ImagePP,PointCloud</FeatureExclude>
     </Product>
 
     <Part Name="Converters-Untested" >

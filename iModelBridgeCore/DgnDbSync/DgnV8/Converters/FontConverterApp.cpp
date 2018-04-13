@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converters/FontConverterApp.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -149,7 +149,7 @@ static BentleyStatus parseArgs(AppArgs& appArgs, int argc, WCharCP argv[])
         if (0 == wcscmp(L"-l", currArg)) { appArgs.m_logConfigPath.AssignOrClear(argValue); ++iArg; continue; }
         if (0 == wcscmp(L"-c", currArg)) { appArgs.m_fontConfigPath.AssignOrClear(argValue); ++iArg; continue; }
 
-        printf("ERROR - unknown argument '%s'.\n", AString(currArg));
+        printf("ERROR - unknown argument '%s'.\n", AString(currArg).c_str());
         return ERROR;
         }
     
@@ -489,7 +489,7 @@ int wmain(int argc, wchar_t const* argv[])
     RscFileManager::StaticInitialize (L"not-used");
 
     FontConverterApp app;
-    DgnPlatformLib::Initialize(app, false, true);
+    DgnPlatformLib::Initialize(app, true);
 
     if (appArgs.m_fontConfigPath.empty())
         {
@@ -507,7 +507,7 @@ int wmain(int argc, wchar_t const* argv[])
     Db outputDb;
     if (appArgs.m_outputPath.DoesPathExist())
         {
-        if (BE_SQLITE_OK != outputDb.OpenBeSQLiteDb(appArgs.m_outputPath, Db::OpenParams(Db::OPEN_ReadWrite)))
+        if (BE_SQLITE_OK != outputDb.OpenBeSQLiteDb(appArgs.m_outputPath, Db::OpenParams(Db::OpenMode::ReadWrite)))
             {
             printf("ERROR - could not open the existing output database '%s'\n", AString(appArgs.m_outputPath).c_str());
             return 1;
