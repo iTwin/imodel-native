@@ -30,16 +30,17 @@ ITaskSchedulerPtr           UrlProvider::s_thread;
 IHttpHandlerPtr UrlProvider::s_customHandler;
 
 // Region IDs from the buddi.bentley.com
-uint32_t s_regionsId[3] = {
+uint32_t s_regionsId[4] = {
     103,    // Region "Bentley Corporate Network - DEV"
     102,    // Region "Bentley Corporate Network - QA"
-    0       // No region for PROD - use BUDDI non-regional URLs
+    0,      // No region for PROD - use BUDDI non-regional URLs
+    294     // Region "Performance Testing"
     };
 
 // Managed urls.
 // ADDING NEW URL:
 //  Submit help request "I Need Something"-> "Be Connect" -> "Buddi" on help.bentley.com.
-//  Request should contain 3 URLs and their maching regions. See s_regionsId for using proper region.
+//  Request should contain 4 URLs and their maching regions. See s_regionsId for using proper region.
 //  Got to buddi.bentley.com to dobule check if correct URLs were added.
 // Will log errors if buddi.bentley.com does not have required URL for given environment (region).
 bset<UrlProvider::UrlDescriptor*> s_urlRegistry;
@@ -49,6 +50,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::BIMReviewShare(
     "https://dev-bimreviewshare.bentley.com",
     "https://qa-bimreviewshare.bentley.com",
     "https://bimreviewshare.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -57,6 +59,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     "https://dev-agreement-eus.cloudapp.net/rest",
     "https://qa-connect-agreement.bentley.com/rest",
     "https://connect-agreement.bentley.com/rest",
+    "https://perf-agreement-eus.cloudapp.net/rest",
     &s_urlRegistry
     );
 
@@ -65,6 +68,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectTermsOfServiceUrl(
     "https://dev-agreementportal-eus.cloudapp.net/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
     "https://qa-connect-agreementportal.bentley.com/AgreementApp/Home/Eula/View/ReadOnly/BentleyConnect",
     "https://connect-agreementportal.bentley.com/AgreementApp/Home/Eula/view/readonly/BentleyConnect",
+    "https://perf-agreementportal-eus.cloudapp.net/AgreementApp/Home/Eula/view/readonly/BentleyConnect",
     &s_urlRegistry
      );
 
@@ -73,6 +77,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
     "https://dev-webportal-eus.cloudapp.net/project/index?projectId=",
     "https://qa-connect-webportal.bentley.com/project/index?projectId=",
     "https://connect.bentley.com/project/index?projectId=",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -81,6 +86,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -89,6 +95,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectedContext(
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
+    "https://perf-wsg20-eus.cloudapp.net",
     &s_urlRegistry
     );
 
@@ -97,6 +104,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPersonalPublishing
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -105,6 +113,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -113,6 +122,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
     "https://dev-projectsharestorage-eus.cloudapp.net",
     "https://qa-connect-projectsharestorage.bentley.com",
     "https://connect-projectsharestorage.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -121,6 +131,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
     "https://dev-punchlist-eus.cloudapp.net",
     "https://qa-connect-punchlist.bentley.com",
     "https://connect-punchlist.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -129,6 +140,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgClashIssues(
     "https://dev-punchlist-eus.cloudapp.net",
     "https://qa-connect-punchlist.bentley.com",
     "https://connect-punchlist.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -137,6 +149,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgSharedContent(
     "https://dev-wsg20-eus.cloudapp.net",
     "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -145,6 +158,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgRepositoryFederati
     "https://dev-bcsf.bentley.com/ProjectGateway/Wsg",
     "https://qa-bcsf.bentley.com/ProjectGateway/Wsg",
     "https://bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://perf-bcsf.bentley.com/ProjectGateway/Wsg",
     &s_urlRegistry
     );
 
@@ -153,11 +167,13 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
     "https://dev-formswsg-eus.cloudapp.net",
     "https://qa-connect-formswsg.bentley.com",
     "https://connect-formswsg.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelHubApi(
     "iModelHubApi",
+    nullptr,
     nullptr,
     nullptr,
     nullptr,
@@ -169,6 +185,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsStsAuth(
     "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
     "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
     "https://ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
+    "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
     &s_urlRegistry
     );
 
@@ -177,6 +194,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsActiveStsDelegationServic
     "https://qa-ims.bentley.com/rest/DelegationSTSService",
     "https://qa-ims.bentley.com/rest/DelegationSTSService",
     "https://ims.bentley.com/rest/DelegationSTSService",
+    "https://qa-ims.bentley.com/rest/DelegationSTSService",
     &s_urlRegistry
     );
 
@@ -185,6 +203,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsFederatedAuth(
     "https://qa-ims.bentley.com/",
     "https://qa-ims.bentley.com/",
     "https://ims.bentley.com/",
+    "https://qa-ims.bentley.com/",
     &s_urlRegistry
     );
 
@@ -193,6 +212,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::Passport(
     "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
     "https://qa-ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
     "https://ims.bentley.com/services/bentleyconnectservice/rest/json/HasUserPassport",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -201,6 +221,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageAndFeatureTrackingAPI(
     "https://qa-selectserver.bentley.com/LicensingProxy",
     "https://qa-selectserver.bentley.com/LicensingProxy",
     "https://SELECTserver.bentley.com/LicensingProxy",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -209,6 +230,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageTracking(
     "https://licenseXM.bentley.com/bss/ws/mobile",
     "https://licenseXM.bentley.com/bss/ws/mobile",
     "https://SELECTserver.bentley.com/bss/ws/mobile",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -217,6 +239,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageLoggingServices(
     "https://dev-ulas-eus2-sfc01.bentley.com/",
     "https://qa-ulas-eus2-sfc01.bentley.com/",
     "https://ulas.bentley.com/",
+    "https://perf-ulas-eus2-sfc01.bentley.com/",
     &s_urlRegistry
 );
 
@@ -225,6 +248,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageLoggingServicesLocation
     "https://dev-ulas-eus2-sfc01.bentley.com/api/v1/location",
     "https://qa-ulas-eus2-sfc01.bentley.com/api/v1/location",
     "https://ulas.bentley.com/api/v1/location",
+    "https://perf-ulas-eus2-sfc01.bentley.com/Bentley.ULAS.LocationService/LocationSvcWebApi",
     &s_urlRegistry
 );
 
@@ -233,6 +257,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::EntitlementPolicyService(
     "https://dev-ulas-eus2-sfc01.bentley.com/v1/policyservice/api",
     "https://qa-ulas-eus2-sfc01.bentley.com/v1/policyservice/api",
     "https://entitlement-search.bentley.com/PolicyService/api",
+    "https://qa-ulas-eus2-sfc01.bentley.com/v1/PolicyService/api",
     &s_urlRegistry
 );
 
@@ -241,6 +266,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     "dev-xmppcollab-eus.cloudapp.net",
     "qa-connect-xmppcollab.bentley.com",
     "connect-xmppcollab.bentley.com",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -249,6 +275,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsActiveSTSHelperService(
     "https://qa-ims.bentley.com/rest/STSHelperService",
     "https://qa-ims.bentley.com/rest/STSHelperService",
     "https://ims.bentley.com/rest/STSHelperService",
+    "https://qa-ims.bentley.com/rest/STSHelperService",
     &s_urlRegistry
     );
 
@@ -257,6 +284,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsPassiveAuthUrl(
     "https://qa-ims.bentley.com/SignIn/K",
     "https://qa-ims.bentley.com/SignIn/K",
     "https://ims.bentley.com/Account/LoginK",
+    nullptr,
     &s_urlRegistry
     );
 
@@ -265,6 +293,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::iModelBridgeConfiguration(
     "https://dev-connect-iModelBridgeConfiguration.bentley.com",
     "https://qa-connect-iModelBridgeConfiguration.bentley.com",
     "https://connect-iModelBridgeConfiguration.bentley.com",
+    "https://perf-connect-iModelBridgeConfiguration.bentley.com",
     &s_urlRegistry
     );
 
@@ -273,6 +302,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::RecommendationServiceUrl(
     "https://dev-recommendation-eus.cloudapp.net",
     "https://qa-connect-recommendation.bentley.com",
     "https://connect-recommendation.bentley.com",
+    "https://dev-recommendation-eus.cloudapp.net",
     &s_urlRegistry
     );
 /*--------------------------------------------------------------------------------------+
@@ -416,13 +446,14 @@ void UrlProvider::SetHttpHandler(IHttpHandlerPtr customHandler)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-UrlProvider::UrlDescriptor::UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, bset<UrlDescriptor*>* registry) :
+UrlProvider::UrlDescriptor::UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, Utf8CP perfUrl, bset<UrlDescriptor*>* registry) :
 m_name(name),
 m_registry(registry)
     {
     m_defaultUrls[0] = devUrl;
     m_defaultUrls[1] = qaUrl;
     m_defaultUrls[2] = prodUrl;
+    m_defaultUrls[3] = perfUrl;
 
     if (nullptr != m_registry)
         {

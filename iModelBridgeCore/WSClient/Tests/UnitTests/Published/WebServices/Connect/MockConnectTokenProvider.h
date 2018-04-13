@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/MockConnectTokenProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,10 +21,10 @@ struct MockConnectTokenProvider : public IConnectTokenProvider
         MockConnectTokenProvider()
             {
             ON_CALL(*this, GetToken()).WillByDefault(Return(nullptr));
-            ON_CALL(*this, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask(SamlTokenPtr())));
+            ON_CALL(*this, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask(ISecurityTokenPtr())));
             }
-        MOCK_METHOD0(UpdateToken, AsyncTaskPtr<SamlTokenPtr>());
-        MOCK_METHOD0(GetToken, SamlTokenPtr());
+        MOCK_METHOD0(UpdateToken, AsyncTaskPtr<ISecurityTokenPtr>());
+        MOCK_METHOD0(GetToken, ISecurityTokenPtr());
     };
 #endif
 

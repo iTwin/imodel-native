@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectTokenProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -36,14 +36,15 @@ void ConnectTokenProvider::Configure(uint64_t tokenLifetime)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<SamlTokenPtr> ConnectTokenProvider::UpdateToken()
+AsyncTaskPtr<ISecurityTokenPtr> ConnectTokenProvider::UpdateToken()
     {
     Credentials creds = m_persistence->GetCredentials();
     if (!creds.IsValid())
-        return CreateCompletedAsyncTask(SamlTokenPtr());
+        return CreateCompletedAsyncTask(ISecurityTokenPtr());
 
     auto rpUri = ImsClient::GetLegacyRelyingPartyUri();
-    return  m_client->RequestToken(creds, rpUri, m_tokenLifetime)->Then<SamlTokenPtr>([=] (SamlTokenResult result)
+    return  m_client->RequestToken(creds, rpUri, m_tokenLifetime)
+        ->Then<ISecurityTokenPtr>([=] (SamlTokenResult result)
         {
         if (!result.IsSuccess())
             return SamlTokenPtr();
@@ -57,7 +58,7 @@ AsyncTaskPtr<SamlTokenPtr> ConnectTokenProvider::UpdateToken()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SamlTokenPtr ConnectTokenProvider::GetToken()
+ISecurityTokenPtr ConnectTokenProvider::GetToken()
     {
     return m_persistence->GetToken();
     }

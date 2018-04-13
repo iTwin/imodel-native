@@ -1,12 +1,16 @@
-#include "FakeServer.h"
+#include <FakeServer/FakeServer.h>
 
 
 BeFileNameStatus FakeServer::CreateiModelFromSeed(WCharCP seedFilePath, WCharCP serverPath)
     {
-    //here place the seed file on mockserver and return a mock response
     BeFileName seedPathFile(seedFilePath);
-    WCharCP fileName = BeFileName::GetFileNameAndExtension(seedFilePath).c_str();
+    
+    BeFileName fileName = seedPathFile.GetBaseName();
     BeFileName servPathFile(serverPath);
+    if (!servPathFile.DoesPathExist())
+        if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(servPathFile.GetName()))
+            return BeFileNameStatus::UnknownError;
+    
     servPathFile.AppendToPath(fileName);
     BeFileNameStatus stat = BeFileName::BeCopyFile(seedPathFile, servPathFile);
     if (BeFileNameStatus::Success != stat)
@@ -48,19 +52,15 @@ BeFileNameStatus FakeServer::DeleteiModel(Utf8String serverPath, Utf8String file
     }
 BeFileNameStatus FakeServer::DownloadiModel(BeFileName downloadPath, CharCP serverPath, CharCP fileToDownload)
     {
-
-    if (!downloadPath.DoesPathExist())
-        if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(downloadPath.GetName()))
+    BeFileName basePath = downloadPath.GetDirectoryName();
+    if (!BeFileName::DoesPathExist(basePath.GetWCharCP()))
+        if (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(basePath.GetWCharCP()))
             return BeFileNameStatus::UnknownError;
 
     BeFileName imodelPathFile(downloadPath);
     BeFileName servPathFile(serverPath);
-    imodelPathFile.AppendA("\\");
     servPathFile.AppendA("\\");
-    imodelPathFile.AppendA(fileToDownload);
     servPathFile.AppendA(fileToDownload);
-    imodelPathFile.append(L".bim");
-    servPathFile.append(L".bim");
 
     BeFileNameStatus stat = BeFileName::BeCopyFile(servPathFile.GetName(), imodelPathFile.GetName());
     if (BeFileNameStatus::Success != stat)

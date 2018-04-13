@@ -2,7 +2,7 @@
 #
 #     $Source: iModelHubClient/Client.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -48,7 +48,8 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/UserInfo.h               \
                                 $(iModelHubClientMkiPublicApiDir)Client/UserInfoManager.h        \
                                 $(iModelHubClientMkiPublicApiDir)Client/StatisticsInfo.h         \
-                                $(iModelHubClientMkiPublicApiDir)Client/StatisticsManager.h
+                                $(iModelHubClientMkiPublicApiDir)Client/StatisticsManager.h      \
+                                $(iModelHubClientMkiPublicApiDir)Client/ChunkedWSChangeset.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -117,3 +118,5 @@ $(o)VersionsManager$(oext)                 : $(iModelHubClientMkiSourceDir)Versi
 $(o)StatisticsInfo$(oext)                  : $(iModelHubClientMkiSourceDir)StatisticsInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)StatisticsManager$(oext)               : $(iModelHubClientMkiSourceDir)StatisticsManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)ChunkedWSChangeset$(oext)              : $(iModelHubClientMkiSourceDir)ChunkedWSChangeset.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}

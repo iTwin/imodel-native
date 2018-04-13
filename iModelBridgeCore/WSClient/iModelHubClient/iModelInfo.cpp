@@ -2,7 +2,7 @@
 |
 |     $Source: iModelHubClient/iModelInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/iModelHub/Client/iModelInfo.h>
@@ -102,15 +102,18 @@ StatusResult iModelInfo::WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId
 iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, UserInfoPtr ownerInfo, Utf8StringCR url)
     {
     Utf8String name = properties[ServerSchema::Property::iModelName].GetString();
-    Utf8String description = properties[ServerSchema::Property::iModelDescription].GetString();
-    Utf8String userUploaded = properties.HasMember(ServerSchema::Property::UserCreated) ? 
-                                                   properties[ServerSchema::Property::UserCreated].GetString() : "";
+    Utf8String description = (properties.HasMember(ServerSchema::Property::iModelDescription) && properties[ServerSchema::Property::iModelDescription].IsString()) ?
+        properties[ServerSchema::Property::iModelDescription].GetString() : "";
+    Utf8String userUploaded = (properties.HasMember(ServerSchema::Property::UserCreated) && properties[ServerSchema::Property::UserCreated].IsString()) ?
+        properties[ServerSchema::Property::UserCreated].GetString() : "";
     DateTime createdDate;
-    Utf8String dateStr = properties.HasMember(ServerSchema::Property::CreatedDate) ? 
+    Utf8String dateStr = (properties.HasMember(ServerSchema::Property::CreatedDate) && properties[ServerSchema::Property::CreatedDate].IsString()) ?
         properties[ServerSchema::Property::CreatedDate].GetString() : "";
     if (!dateStr.empty())
         DateTime::FromString(createdDate, dateStr.c_str());
-    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate, ownerInfo);
+    bool isInitialized = (properties.HasMember(ServerSchema::Property::Initialized) && properties[ServerSchema::Property::Initialized].IsBool()) ?
+        properties[ServerSchema::Property::Initialized].GetBool() : false;
+    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate, ownerInfo, isInitialized);
     }
 
 //---------------------------------------------------------------------------------------
