@@ -2,11 +2,12 @@
 |
 |     $Source: BeHttp/HttpRequest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeHttp/HttpRequest.h>
 #include <BeHttp/DefaultHttpHandler.h>
+#include <Bentley/Tasks/ThreadlessTaskScheduler.h>
 #include <folly/BeFolly.h>
 
 USING_NAMESPACE_BENTLEY_HTTP
@@ -30,7 +31,7 @@ folly::Future<Response> Request::Perform()
     {
     auto follyPromise = std::make_shared<folly::Promise<Response>>();
 
-    PerformAsync()->Then([=] (Response& response)
+    PerformAsync()->Then(std::make_shared<ThreadlessTaskScheduler>(), [=] (Response& response)
         {
         follyPromise->setValue(response);
         });
