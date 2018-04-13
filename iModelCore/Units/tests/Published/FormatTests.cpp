@@ -196,17 +196,17 @@ TEST_F(FormatStringTest, SuccessfullyParseKnownFormat)
     ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverrides, mapper));
     EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
 
-    //ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAddition, mapper));
-    //EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAddition, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
 
-    //EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, mapper));
-    //EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionWhiteSpace, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
 
-    //ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, mapper));
-    //EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionTrailingComma, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
 
-    //ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, mapper));
-    //EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
+    ASSERT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrFutureAdditionNoFirstOverride, mapper));
+    EXPECT_TRUE(parsedNfs.IsIdentical(exampleNamedFmtSpec));
     }
 
 //---------------------------------------------------------------------------------------

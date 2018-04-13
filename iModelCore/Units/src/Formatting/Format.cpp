@@ -253,7 +253,7 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
 BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper, BEU::IUnitsContextCP unitContext)
     {
     static size_t const precisionOverrideIndx = 0;
-    static std::regex const rgx(R"REGEX(([\w,:]+)(<([0-9, ^>]*)>)?(\[([^\|\]]*)\|?([^\]|]*)?\])?(\[([^\|\]]*)\|?([^\]|]*)?\])?(\[([^\|\]]*)\|?([^\]|]*)?\])?(\[([^\|\]]*)\|?([^\]|]*)?\])?)REGEX", std::regex::optimize);
+    static std::regex const rgx(R"REGEX(([\w,:]+)(<([^>]+)>)?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?)REGEX", std::regex::optimize);
     std::cmatch match;
 
     if (!std::regex_match(formatString.c_str(), match, rgx))
@@ -394,7 +394,8 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
 // static
 BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
     {
-    static std::regex const rgx(R"REGEX(([\w,:]+)(<([0-9, ^>]*)>)?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?)REGEX", std::regex::optimize);
+    static size_t const precisionOverrideIndx = 0;
+    static std::regex const rgx(R"REGEX(([\w,:]+)(<([^>]+)>)?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?)REGEX", std::regex::optimize);
     std::cmatch match;
 
     
@@ -417,13 +418,55 @@ BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigne
     
     if (match[2].matched && match[3].matched)
         {
-        // Get the precision override if it exists
-        BentleyStatus status = SUCCESS;
-        precision = static_cast<unsigned>(BeStringUtilities::ParseUInt64(match[3].str().c_str(), &status));
-        if (status != SUCCESS)
+        Utf8String const overrideStr(match[2].str().c_str());
+        // BeStringUtilities::Split ignores empty tokens. Since overrides are
+        // position dependent, we actually need to count tokens even if they are
+        // the empty string. This function does just that using ',' as a separator.
+        bvector<Utf8String> overrides = [](Utf8StringCR str) -> bvector<Utf8String>
             {
-            LOG.errorv("Failed to parse precision %s as an integer", match[3].str().c_str());
-            return ERROR;
+            bvector<Utf8String> tokens;
+            size_t prevPos = 1; // Initial position is the character directly after the opening '<' in the override string.
+            size_t currPos;
+            while (str.npos != (currPos = str.find_first_of(",>", prevPos)))
+                {
+                tokens.push_back(Utf8String(str.substr(prevPos, currPos - prevPos).c_str()).Trim());
+                prevPos = currPos + 1;
+                }
+            return tokens;
+            }(overrideStr);
+
+        // It is considered an error to pass in a format string with empty
+        // override brackets. If no overrides are needed, the user should instead
+        // leave the brackets off altogether. As an example the incorrect format
+        // string "SomeFormat<>" should instead be written as "SomeFormat".
+        // Additionally, if a format would be specified using an override string
+        // With no items actually overridden such as "SomeFormat<,,,,>" the string
+        // is also erroneous.
+        if (!overrideStr.empty()
+            && overrides.end() == std::find_if_not(overrides.begin(), overrides.end(),
+                [](Utf8StringCR ovrstr) -> bool
+            {
+            return std::all_of(ovrstr.begin(), ovrstr.end(), ::isspace);
+            }))
+            {
+            LOG.errorv("override list must contain at least one override");
+            return BentleyStatus::ERROR;
+            }
+
+        // The first override parameter overrides the default precision for the format.
+        if (overrides.size() >= precisionOverrideIndx + 1) // Bail if the user didn't include this override.
+            {
+            if (!overrides[precisionOverrideIndx].empty())
+                {
+                uint64_t localPrecision;
+                BentleyStatus status = BeStringUtilities::ParseUInt64(localPrecision, overrides[precisionOverrideIndx].c_str());
+                if (BentleyStatus::SUCCESS != status)
+                    {
+                    LOG.errorv("failed to parse integer for precision override");
+                    return status;
+                    }
+                precision = static_cast<unsigned>(localPrecision);
+                }
             }
         }
 
