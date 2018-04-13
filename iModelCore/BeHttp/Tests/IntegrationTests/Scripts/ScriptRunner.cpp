@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Scripts/ScriptRunner.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -89,7 +89,7 @@ void ScriptRunner::StopAllPythonScripts()
 void ScriptRunner::GetDerivedProcesses(Utf8CP pid, bvector<ProccessInfo>& derived)
     {
     // Get direct children
-    Utf8PrintfString command("wmic process where (ParentProcessId=%s) get Caption,ProcessId 2> NULL", pid);
+    Utf8PrintfString command("wmic process where (ParentProcessId=%s) get Caption,ProcessId 2> nul", pid);
     Utf8String output = ExecuteCommand(command.c_str());
 
     bvector<Utf8String> lines;
