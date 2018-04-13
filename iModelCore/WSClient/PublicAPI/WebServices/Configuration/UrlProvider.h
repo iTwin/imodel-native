@@ -33,19 +33,20 @@ struct UrlProvider
             {
             Dev = 0,
             Qa,
-            Release
+            Release,
+            Perf
             };
 
         struct UrlDescriptor
             {
             private:
                 Utf8String m_name;
-                Utf8String m_defaultUrls[3];
+                Utf8String m_defaultUrls[4];
                 bset<UrlDescriptor*>* m_registry;
 
             public:
                 //! Constructur for internal use
-                UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, bset<UrlDescriptor*>* registry);
+                UrlDescriptor(Utf8CP name, Utf8CP devUrl, Utf8CP qaUrl, Utf8CP prodUrl, Utf8CP perfUrl, bset<UrlDescriptor*>* registry);
                 ~UrlDescriptor();
 
                 //! Get URL name used to identify it
