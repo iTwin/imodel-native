@@ -421,6 +421,11 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
     {
     Formatting::Format::ParseUnitFormatDescriptor(unitName, formatName, descriptor);
     unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
+    if (unitName.empty())
+        {
+        LOG.errorv("Failed to find unit mapping for unit with name '%s' in legacy unit mappings", unitName);
+        return ECObjectsStatus::InvalidUnitName;
+        }
     Utf8CP mappedName;
     if (Utf8String::IsNullOrEmpty(formatName.c_str()))
         mappedName = formatName.c_str();
@@ -432,8 +437,8 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
 
     if (nullptr == mappedName)
         {
-        LOG.errorv("Failed to find format mapping with name '%s' in legacy format mappings", mappedName);
-        return ECObjectsStatus::Error;
+        LOG.errorv("Failed to find format mapping for format with name '%s' in legacy format mappings", mappedName);
+        return ECObjectsStatus::InvalidFormat;
         }
 
     formatName = mappedName;
@@ -445,13 +450,10 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
 //--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::ParseDescriptorAndAddRefs(Utf8StringR unitName, Utf8StringR formatName, ECUnitCP& unit, Utf8CP descriptor, ECSchemaReadContextP context)
     {
-    ExtractUnitFormatAndMap(unitName, formatName, descriptor);
-    if (unitName.empty())
-        {
-        LOG.errorv("FormatUnitSet '%s' on KindOfQuantity '%s' has a unit '%s' that cannot be mapped to a Unit in the standard Units schema",
-            descriptor, GetFullName().c_str(), unitName.c_str());
-        return ECObjectsStatus::Error;
-        }
+    ECObjectsStatus status = ExtractUnitFormatAndMap(unitName, formatName, descriptor);
+    if (ECObjectsStatus::Success != status)
+        return status;
+
     Utf8String alias;
     ECClass::ParseClassName(alias, unitName, unitName);
     SchemaKey key("Units", 1, 0, 0);
@@ -662,19 +664,15 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8S
     //Persistence
     Utf8String persistenceUnit;
     Utf8String persistenceFormat;
-    if (ECObjectsStatus::Success != ExtractUnitFormatAndMap(persistenceUnit, persistenceFormat, persFus))
-        return ECObjectsStatus::InvalidFormat;
-
-    if (persistenceUnit.empty())
-        {
-        LOG.errorv("In UpdateFUSDescriptors could not parse and map persistence unit in FUS '%s'", persFus);
-        return ECObjectsStatus::InvalidUnitName;
-        }
+    Utf8String alias;
+    Utf8String unqualifiedPers;
+    ECObjectsStatus status = ExtractUnitFormatAndMap(persistenceUnit, persistenceFormat, persFus);
+    if (ECObjectsStatus::Success != status )
+        return status;
 
     if (persistenceFormat.empty())
         persistenceFormat = Formatting::FormatConstant::DefaultFormatName();
-    Utf8String alias;
-    Utf8String unqualifiedPers;
+
     if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPers, persistenceUnit))
         return ECObjectsStatus::Error;
 
@@ -690,12 +688,13 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8S
 
         for (const auto& str : split)
             {
-            if (ECObjectsStatus::Success != ExtractUnitFormatAndMap(presentationUnit, presentationFormat, str.c_str()))
-                return ECObjectsStatus::InvalidFormat;
+            status = ExtractUnitFormatAndMap(presentationUnit, presentationFormat, str.c_str());
+            if (ECObjectsStatus::Success != status)
+                return status;
 
             if (presentationUnit.empty())
                 {
-                LOG.errorv("In UpdateFUSDescriptors could not parse and map presentation unit in FUS '%s'", str.c_str());
+                LOG.errorv("Presentation unit was not defined in this descriptor '%s'", str.c_str());
                 return ECObjectsStatus::InvalidUnitName;
                 }
 
@@ -719,7 +718,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8S
                 .append("[")
                 .append("u:")
                 .append(unqualifiedPres)
-                .append("|]");
+                .append("]");
             first = false;
             }
         }
@@ -738,7 +737,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8S
             .append("[")
             .append("u:")
             .append(unqualifiedPers)
-            .append("|]");
+            .append("]");
         }
     formatString = outFormatString;
     unitName = "u:" + unqualifiedPers;
@@ -781,10 +780,12 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
                 return ECObjectsStatus::Error;
             out += "[";
             out += unit->GetQualifiedName(GetSchema());
-            out += "|";
 
-            if (nullptr != i.second)
+            if (nullptr != i.second) // We want to override a label
+                {
+                out += "|";
                 out += i.second;
+                }
 
             out += "]";
             }

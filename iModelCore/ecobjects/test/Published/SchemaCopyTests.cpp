@@ -265,7 +265,7 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_PresentationUnitDefinedInSchema)
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
     EXPECT_STREQ("SMOOT", targetKoq->GetPersistenceUnit()->GetName().c_str());
-    EXPECT_STREQ("SMOOT_FORMAT[SMOOT_SQUARED|]", targetKoq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("SMOOT_FORMAT[SMOOT_SQUARED]", targetKoq->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_TRUE(targetKoq->HasPresentationFormats());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }

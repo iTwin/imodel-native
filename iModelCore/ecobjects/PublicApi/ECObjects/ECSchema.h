@@ -1560,11 +1560,19 @@ public:
     //! @param[in]  includeSchemaVersion    If true the schema version will be included in the Json object.
     ECOBJECTS_EXPORT SchemaWriteStatus WriteJson(Json::Value& outValue, bool includeSchemaVersion = true) const {return WriteJson(outValue, true, includeSchemaVersion);};
    
-    //! Given an old EC3.1 FUS descriptor, {unitName}({formatName}), it will convert it into the new format.
-    //! @param[out] updatedDescriptor  The updated descriptor if it is able to be updated. If not it will be an empty string.
-    //! @param[in] descriptor  The descriptor that is of the format for the old FUS descriptor, format: {unitName}({formatName}), where the format part is optional.
-    //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
-    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR unitName, Utf8StringR formatString, Utf8CP persFus, Utf8CP presFuses);
+    //! Given an old EC3.1 persistence FUS descriptor as well as the semi-colon separated string of 
+    //! presentation FUS descriptors in the format: {unitName}({formatName}), it will extract and convert 
+    //! the persistence unit to a new unit name. If the persistence fus has a format, it will be added to the end of the
+    //! formatString that is returned
+    //!
+    //! @param[out] persUnitName    The qualified name of the persitence unit mapped to a unit name in the standard units schema
+    //! @param[out] formatString    The semi-colon separated list of format strings representing format overrides. 
+    //! @param[in] persFus          The descriptor for the persistence FUS that is of the format for the old FUS descriptor, 
+    //!                             format: {unitName}({formatName}), where the format part is optional.
+    //! @param[in]                  The semi-colo separated list of presentation FUS descriptors
+    //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName 
+    //! if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
+    ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, Utf8StringR formatString, Utf8CP persFus, Utf8CP presFuses);
 };
 
 //=======================================================================================
