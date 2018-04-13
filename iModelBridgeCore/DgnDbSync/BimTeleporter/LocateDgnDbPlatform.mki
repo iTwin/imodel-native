@@ -19,5 +19,5 @@ DGNDB_VER=DgnDb06
     DgnDbDgnPlatformBase = $(BuildContext)nuget/native/DgnDb_1_6_ForTeleporterNuget/native/
 %endif
 
-DgndbDgnPlatformLibDir = $(DgnDbDgnPlatformBase)lib/$(TARGET_PROCESSOR_ARCHITECTURE)/
+DgndbDgnPlatformLibDir = $(DgnDbDgnPlatformBase)lib/
 DgndbDgnPlatformIncludeDir = $(DgnDbDgnPlatformBase)include/

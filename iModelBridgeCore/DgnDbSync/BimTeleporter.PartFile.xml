@@ -14,7 +14,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="BisJson1Exporter0601" BentleyBuildMakeFile="BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="BisJson1Exporter0601" BentleyBuildMakeFile="BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.mke" OnlyPlatforms="x64,WinRTX64" ExcludeLibType="Static">
         <SubPart PartName="DgnDb0601Assemblies"/>
         <SubPart PartFile="DgnDbSync" PartName="TeleporterPublicAPI"/>
         <Bindings>
