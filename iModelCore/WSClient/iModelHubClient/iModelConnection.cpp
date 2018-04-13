@@ -2317,6 +2317,10 @@ ICancellationTokenPtr             cancellationToken
     RevisionStatus changeSetStatus;
     DgnRevisionPtr changeSetPtr = DgnRevision::Create(&changeSetStatus, changeSet->GetId(), changeSet->GetParentChangeSetId(), 
                                                       changeSet->GetDbGuid());
+    if (!changeSetPtr.IsValid())
+        {
+        return CreateCompletedAsyncTask<ChangeSetResult>(ChangeSetResult::Error(changeSetStatus));
+        }
     auto changeSetFileName = changeSetPtr->GetRevisionChangesFile();
 
     if (m_changeSetCacheManager.TryGetChangeSetFile(changeSetFileName, changeSet->GetId()))
