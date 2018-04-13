@@ -1219,8 +1219,8 @@ bool VertexKey::operator<(VertexKeyCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddTriangle(TriangleCR triangle)
     {
-    if (triangle.IsDegenerate())
-        return;
+    // Prefer to avoid adding vertices originating from degenerate triangles before we get here...
+    BeAssert(!triangle.IsDegenerate());
 
     TriangleKey key(triangle);
 
@@ -1275,11 +1275,25 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
                 BeAssert(false && "ComputeUVParams() failed");
             }
 
+        auto computeIndex   = [=](size_t i) { return (0 == i) ? 0 : iTriangle + i; };
+        auto makeVertexKey  = [&](size_t index)
+            {
+            return VertexKey(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr); 
+            };
+
+        size_t indices[3]       = { computeIndex(0), computeIndex(1), computeIndex(2) };
+        VertexKey vertices[3]   = { makeVertexKey(indices[0]), makeVertexKey(indices[1]), makeVertexKey(indices[2]) };
+
+        // Previously we would add all 3 vertices to our map, then detect degenerate triangles in AddTriangle().
+        // This led to unused vertex data, and caused mismatch in # of vertices when recreating the MeshBuilder from the data in the tile cache.
+        // Detect beforehand instead.
+        if (vertices[0].GetPosition() == vertices[1].GetPosition() || vertices[0].GetPosition() == vertices[2].GetPosition() || vertices[1].GetPosition() == vertices[2].GetPosition())
+            continue;
+
         for (size_t i = 0; i < 3; i++)
             {
-            size_t      index = (0 == i) ? 0 : iTriangle + i; 
-            VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
-
+            size_t index = indices[i];
+            VertexKey const& vertex = vertices[i];
             if (auxChannel.IsValid())
                 {
                 // No deduplication with auxData (for now...)
@@ -1290,7 +1304,6 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
                 {
                 newTriangle[i] = AddVertex(vertex);
                 }
-
 
             if (m_currentPolyface.IsValid())
                 m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[index]);

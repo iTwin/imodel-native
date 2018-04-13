@@ -9,6 +9,9 @@
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/TileReader.h>
 
+// Uncomment to turn on validation of logic for tile cache => MeshBuilderMap => GeometryCollection for debugging.
+// #define TEST_TILE_REBUILDER
+
 USING_NAMESPACE_TILETREE_IO
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER
@@ -1446,6 +1449,9 @@ void DgnCacheTileRebuilder::AddMesh(MeshPrimitive& mesh, Json::Value const& json
         uint32_t index = mesh.m_indices[i];
         uint32_t featureId = mesh.m_features.GetFeatureId(index);
         FeatureCP feature = m_featureList.GetFeature(featureId);
+#if defined(TEST_TILE_REBUILDER)
+        BeAssert(nullptr != feature);
+#endif
         AddTriangle(builder, mesh, i, feature);
         }
 
@@ -1728,8 +1734,6 @@ ReadStatus DgnCacheTileRebuilder::ReadTile(DgnTile::Flags& flags, DgnElementIdSe
     return ReadGltf();
     }
 
-// Uncomment to turn on validation of logic for tile cache => MeshBuilderMap => GeometryCollection for debugging.
-//#define TEST_TILE_REBUILDER
 #if defined(TEST_TILE_REBUILDER)
 
 //=======================================================================================
