@@ -44,14 +44,14 @@ Utf8String ECQuantityFormatting::FormatQuantity(BEU::QuantityCR qty, KindOfQuant
     *formatStatus = ECQuantityFormattingStatus::Success;
 
     if (nullptr == koq)
-        return defFormat->FormatDouble(qty.GetMagnitude());
+        return defFormat->Format(qty.GetMagnitude());
     
     NamedFormatCP format = koq->GetDefaultPresentationFormat();
     if (nullptr != format && (!format->HasCompositeMajorUnit() || ECUnit::AreCompatible(qty.GetUnit(), format->GetCompositeSpec()->GetMajorUnit())))
         return format->FormatQuantity(qty, nullptr);
 
     *formatStatus = ECQuantityFormattingStatus::IncompatibleKOQ;
-    return defFormat->FormatDouble(qty.GetMagnitude());
+    return defFormat->Format(qty.GetMagnitude());
     }
 
 //----------------------------------------------------------------------------------------
