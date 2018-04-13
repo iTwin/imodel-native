@@ -229,7 +229,7 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
     koq->SetPersistenceUnit(*ftUnit);
     koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"), 8, unitSchema->GetUnitCP("IN"), "banana");
 
-    EXPECT_STREQ("f:InchesU<8>[u:IN|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name and the format name";
+    EXPECT_STREQ("f:InchesU(8)[u:IN|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name and the format name";
     }
     {
     KindOfQuantityP koq;
@@ -260,7 +260,7 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
     koq->AddPresentationFormatSingleUnitOverride(*format, nullptr, smoot, "banana");
     koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"), 8, unitSchema->GetUnitCP("IN"), "banana");
 
-    EXPECT_STREQ("SmootFormat[Smoot|banana];f:InchesU<8>[u:IN|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
+    EXPECT_STREQ("SmootFormat[Smoot|banana];f:InchesU(8)[u:IN|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
     }
     }
 
@@ -334,21 +334,21 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     presString.clear();
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM(real)", "CM(real4u)"));
     EXPECT_STRCASEEQ("u:MM", persUnit.c_str());
-    EXPECT_STRCASEEQ("f:DefaultRealU<4>[u:CM];f:DefaultReal[u:MM]", presString.c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM];f:DefaultReal[u:MM]", presString.c_str());
     }
     {
     persUnit.clear();
     presString.clear();
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM", "CM(real4u)"));
     EXPECT_STRCASEEQ("u:MM", persUnit.c_str());
-    EXPECT_STRCASEEQ("f:DefaultRealU<4>[u:CM];f:DefaultRealU[u:MM]", presString.c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU(4)[u:CM];f:DefaultRealU[u:MM]", presString.c_str());
     }
     {
     persUnit.clear();
     presString.clear();
     EC_EXPECT_SUCCESS(KindOfQuantity::UpdateFUSDescriptors(persUnit, presString, "MM(real)", "DM(real);CM(real4u)"));
     EXPECT_STRCASEEQ("u:MM", persUnit.c_str());
-    EXPECT_STRCASEEQ("f:DefaultReal[u:DM];f:DefaultRealU<4>[u:CM];f:DefaultReal[u:MM]", presString.c_str());
+    EXPECT_STRCASEEQ("f:DefaultReal[u:DM];f:DefaultRealU(4)[u:CM];f:DefaultReal[u:MM]", presString.c_str());
     }
     }
 
@@ -893,7 +893,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationFormats="f:InchesU&lt;9&gt;[u:IN|banana];f:InchesU" />
+                        presentationFormats="f:InchesU(9)[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -920,7 +920,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTripShouldDropUnknownPresentationF
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="f:InchesU&lt;9&gt;[u:IN|banana];f:InchesU" />
+                        presentationFormats="f:InchesU(9)[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -948,7 +948,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec30_roundTrip)
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationFormats="f:InchesU&lt;9&gt;[u:IN|banana];f:InchesU" />
+                        presentationFormats="f:InchesU(9)[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -975,7 +975,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTripShouldDropUnknownPresentationF
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="f:InchesU&lt;9&gt;[u:IN|banana];f:InchesU" />
+                        presentationFormats="f:InchesU(9)[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />

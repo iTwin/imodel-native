@@ -759,9 +759,9 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
     
     if (precisionOverride.IsValid())
         {
-        out += "<";
+        out += "(";
         out += std::to_string(precisionOverride.Value()).c_str();
-        out += ">";
+        out += ")";
         }
 
     if (nullptr != unitsAndLabels)

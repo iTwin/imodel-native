@@ -102,7 +102,7 @@ TEST_F(ECQuantityFormattingTest, Preliminary)
     ShowQuantifiedValue(":6", "AmerFI", "MM");
     ShowQuantifiedValue(":6", "AmerFI", "IN");
 
-    // TODO another FormatString override, f:AngleDMS<8>
+    // TODO another FormatString override, f:AngleDMS(8)
     // ShowQuantifiedValue("135:23:11", "dms8", "ARC_DEG");
     }
 
