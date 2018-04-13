@@ -57,6 +57,127 @@ static BentleyApi::TransformR DoInterop(Bentley::Transform&source) { return (Ben
 static BentleyApi::TransformCR DoInterop(Bentley::Transform const&source) { return (BentleyApi::TransformCR)source; }
 static Bentley::TransformCR DoInterop(BentleyApi::Transform const&source) { return (Bentley::TransformCR)source; }
 
+
+//#define TEST_AUXDATA_FILE
+#ifdef TEST_AUXDATA_FILE
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley     04/2018
+//---------------------------------------------------------------------------------------
+static GeometricPrimitivePtr createFromTestFile ()
+    {
+    BeFile          beFile;
+    bvector<Byte>   bytes;
+    
+//  if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\Model1982.json", BeFileAccess::Read) &&
+    if (BeFileStatus::Success == beFile.Open(L"g:\\BulentAnalysis\\ExpansionJoint.json", BeFileAccess::Read) &&
+        BeFileStatus::Success == beFile.ReadEntireFile(bytes))
+        {
+        Utf8String              string((Utf8CP) bytes.data());
+        Json::Value             value = Json::Reader::DoParse(string);
+        JsonValueCR             nodes = value["Nodes"];
+        JsonValueCR             elements = value["Elements"];
+        JsonValueCR             results = value["Results"];
+        bmap<int32_t, int32_t>  idToIndex;
+        PolyfaceHeaderPtr       polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+
+        // Points...
+        for (int32_t i=0, count = nodes.size(); i<count; i++)
+            {
+            JsonValueCR     node = nodes[i];
+            JsonValueCR     coords = node["Coordinates"];
+            
+            polyface->Point().push_back(DPoint3d::From(coords[0].asDouble(), coords[1].asDouble(), coords[2].asDouble()));
+            idToIndex.Insert(node["Id"].asInt(), (int32_t) polyface->Point().size());
+            }
+        // Point Indices...
+        for (int32_t i=0, count = elements.size(); i<count; i++)
+            {
+            JsonValueCR     nodeIds = elements[i]["NodeIds"];
+
+            for (int32_t j=0, nodeCount = std::min(4, (int) nodeIds.size()); j<nodeCount; j++)
+                polyface->PointIndex().push_back(idToIndex[nodeIds[j].asInt()]);
+
+            polyface->PointIndex().push_back(0);
+            }
+        if (results.isArray())
+            {
+            PolyfaceAuxData::Channels     channels;
+
+            // Results...
+            for (int32_t i=0, count = results.size(); i<count; i++)
+                {
+                JsonValueCR     result = results[i]; 
+                JsonValueCR     nodeResults = result["NodeResults"];
+                bvector<double> displacementValues(3 * polyface->Point().size(), 0.0);
+                bvector<double> reactionValues(polyface->Point().size(), 0.0); 
+                
+                for (int32_t j=0, nodeCount = nodeResults.size(); j<nodeCount; j++)
+                    {
+                    JsonValueCR     nodeResult = nodeResults[j];
+
+                    if (nodeResult.isMember("Displacement"))
+                        {
+                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
+                        int32_t displacementIndex = 3 * index;
+                        JsonValueCR     displacementValue = nodeResult["Displacement"];
+
+                        displacementValues[displacementIndex++] = displacementValue["Ux"].asDouble();
+                        displacementValues[displacementIndex++] = displacementValue["Uy"].asDouble();
+                        displacementValues[displacementIndex++] = displacementValue["Uz"].asDouble();
+
+                        reactionValues[index] = displacementValue["Uy"].asDouble();
+                        }
+                    
+#ifdef USE_REACTION
+                    if (nodeResult.isMember("Reaction"))
+                        {
+                        int32_t index = idToIndex[nodeResult["NodeId"].asInt()];
+                        JsonValueCR     reactionValue = nodeResult["Reaction"];
+
+                        reactionValues[index++] = reactionValue["Fy"].asDouble();
+                        }
+#endif
+                    }
+
+                if (!displacementValues.empty())
+                    {
+                    // Add a zero for animation...
+                    bvector<double>     zeroValues(displacementValues.size(), 0.0);
+                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
+                    
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(displacementValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
+
+                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Vector, Utf8PrintfString("Displacement_%d", i).c_str(), "", std::move(dataVector)));
+                    }
+                if (!reactionValues.empty())
+                    {
+                    // Add a zero for animation...
+                    bvector<double>     zeroValues(reactionValues.size(), 0.0);
+                    bvector<PolyfaceAuxChannel::DataPtr>   dataVector;
+                    
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(reactionValues)));
+                    dataVector.push_back(new PolyfaceAuxChannel::Data(2.0, std::move(zeroValues)));
+
+                    channels.push_back(new PolyfaceAuxChannel(PolyfaceAuxChannel::Scalar, Utf8PrintfString("Reaction_%d", i).c_str(), "", std::move(dataVector)));
+                    }
+                }
+            if (!channels.empty())
+                {
+                bvector<int32_t>        indices = polyface->PointIndex();
+                PolyfaceAuxDataPtr      auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+
+                polyface->SetAuxData(auxData);
+                }
+            }
+        return GeometricPrimitive::Create(polyface);
+        }
+    return nullptr;
+    }
+#endif
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
@@ -393,6 +514,33 @@ void Converter::ConvertPolyface(BentleyApi::PolyfaceHeaderPtr& clone, Bentley::P
 
     clone = BentleyApi::PolyfaceHeader::New();
     clone->CopyFrom(sourceData);
+
+//#define TEST_AUXDATA_HEIGHT
+#ifdef TEST_AUXDATA_HEIGHT
+    bvector<double>      zeroData, heightData;
+    bvector<int32_t>    indices(clone->PointIndex().size());
+
+    memcpy (indices.data(), clone->PointIndex().data(), indices.size() * sizeof(int32_t));
+    for(auto& point : clone->Point())
+        {
+        zeroData.push_back(0.0);
+        heightData.push_back(point.z);
+        }
+
+    bvector<PolyfaceAuxChannel::DataPtr>   heightDataVector;
+
+#ifdef ANIMATE_FROM_ZERO
+    heightDataVector.push_back(new PolyfaceAuxChannel::Data(0.0, std::move(zeroData)));
+#endif
+    heightDataVector.push_back(new PolyfaceAuxChannel::Data(1.0, std::move(heightData)));
+
+    PolyfaceAuxChannelPtr         heightChannel = new PolyfaceAuxChannel(PolyfaceAuxChannel::DataType::Distance, "Height", nullptr, std::move(heightDataVector));
+    PolyfaceAuxData::Channels           channels;
+    channels.push_back (heightChannel);
+    PolyfaceAuxDataPtr              auxData = new PolyfaceAuxData(std::move(indices), std::move(channels));
+    
+    clone->SetAuxData(auxData);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2982,7 +3130,11 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
             if (0 == (++iEntry % 10))
                 m_converter.ReportProgress();
 
+#ifdef TEST_AUXDATA_FILE
+            GeometricPrimitivePtr geometry = createFromTestFile();
+#else
             GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, 0.0);
+#endif
 
             if (!geometry.IsValid())
                 continue;

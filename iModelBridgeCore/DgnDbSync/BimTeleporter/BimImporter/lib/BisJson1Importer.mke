@@ -52,6 +52,8 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)BentleyGeom.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeJsonCpp.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)Planning.lib
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnView.lib
 LINKER_LIBRARIES  + user32.lib
 
 %include $(sharedMki)LinkLibrary.mki

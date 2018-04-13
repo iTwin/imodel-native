@@ -52,6 +52,12 @@ bool DgnDbToBimConverter::Convert(WCharCP inputPath, WCharCP outputPath)
     exporter.SetPerformanceLogger(perfLogFunc);
 
     BisJson1Importer importer(outputPath);
+    if (!importer.CreateBim())
+        {
+        BentleyApi::NativeLogging::LoggingManager::GetLogger("DgnDbToBimConverter")->fatal("Failed to create bim.  Aborting");
+        return false;
+        }
+
     exporter.SetQueueWrite([&importer] (const char* jsonEntry)
         {
         importer.AddToQueue(jsonEntry);
@@ -60,7 +66,7 @@ bool DgnDbToBimConverter::Convert(WCharCP inputPath, WCharCP outputPath)
     StopWatch totalTimer(true);
 //    std::thread consumer([&importer] { importer.CreateBim(); });
     auto future = ExportDgnDb(&exporter);
-    importer.CreateBim(future);
+    importer.ImportJson(future);
     //bool stat = future.get();
     //importer.SetDone();
 //    consumer.join();

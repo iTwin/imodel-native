@@ -33,6 +33,7 @@ BEGIN_BIM_TELEPORTER_NAMESPACE
 
 struct BisJson1ImporterImpl;
 struct PCQueue;
+struct DgnDbPtrHolder;
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            10/2016
@@ -43,6 +44,7 @@ struct BisJson1Importer
         BisJson1ImporterImpl *m_importer;
         BeFileName m_outputPath;
         PCQueue* m_queue;
+        DgnDbPtrHolder* m_holder;
 
     public:
         //! Constructor for the importer.  The calling application must have already been initialized the host.
@@ -50,8 +52,11 @@ struct BisJson1Importer
         BIM_IMPORTER_EXPORT BisJson1Importer(const wchar_t* bimPath);
         BIM_IMPORTER_EXPORT ~BisJson1Importer();
 
-        //! Main method of the importer.  This will create a new bim, initialize it and then import JSON messages from the queue
-        BIM_IMPORTER_EXPORT bool CreateBim(folly::Future<bool>& exporterFuture);
+        //! This will create a new bim and initialize it
+        BIM_IMPORTER_EXPORT bool CreateBim();
+
+        //! Do the actual import
+        BIM_IMPORTER_EXPORT bool ImportJson(folly::Future<bool>& exporterFuture);
 
         //! Callback to add a new entry to the queue for import
         BIM_IMPORTER_EXPORT void AddToQueue(const char* entry);

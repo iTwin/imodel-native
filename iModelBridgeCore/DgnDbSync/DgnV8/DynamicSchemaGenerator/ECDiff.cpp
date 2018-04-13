@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/DynamicSchemaGenerator/ECDiff.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -2252,20 +2252,23 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
             {
             // The defaultConstraint might be from a different in-memory copy of the schema, so need to use the one from the mergedSchema
             ECN::ECClassCP defaultAbstractConstraint = defaultContraint->GetAbstractConstraint();
-            ECN::ECClassCP mergedAbstract = ResolveClass(defaultContraint->GetAbstractConstraint()->GetFullName());
-            if (defaultAbstractConstraint->IsEntityClass())
+            if (defaultAbstractConstraint)
                 {
-                if (nullptr != mergedAbstract)
-                    mergedConstraint.SetAbstractConstraint(*mergedAbstract->GetEntityClassCP());
+                ECN::ECClassCP mergedAbstract = ResolveClass(defaultContraint->GetAbstractConstraint()->GetFullName());
+                if (defaultAbstractConstraint->IsEntityClass())
+                    {
+                    if (nullptr != mergedAbstract)
+                        mergedConstraint.SetAbstractConstraint(*mergedAbstract->GetEntityClassCP());
+                    else
+                        mergedConstraint.SetAbstractConstraint(*defaultAbstractConstraint->GetEntityClassCP());
+                    }
                 else
-                    mergedConstraint.SetAbstractConstraint(*defaultAbstractConstraint->GetEntityClassCP());
-                }
-            else
-                {
-                if (nullptr != mergedAbstract->GetRelationshipClassCP())
-                    mergedConstraint.SetAbstractConstraint(*mergedAbstract->GetRelationshipClassCP());
-                else
-                    mergedConstraint.SetAbstractConstraint(*defaultAbstractConstraint->GetRelationshipClassCP());
+                    {
+                    if (nullptr != mergedAbstract->GetRelationshipClassCP())
+                        mergedConstraint.SetAbstractConstraint(*mergedAbstract->GetRelationshipClassCP());
+                    else
+                        mergedConstraint.SetAbstractConstraint(*defaultAbstractConstraint->GetRelationshipClassCP());
+                    }
                 }
             }
         }
