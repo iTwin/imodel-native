@@ -9,11 +9,14 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/WString.h>
+#include <Bentley/Tasks/TaskScheduler.h>
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Configuration/BuddiClient.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_TASKS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Brad.Hadden    11/2014
