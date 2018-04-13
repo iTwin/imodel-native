@@ -21,11 +21,7 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //---------------------------------------------------------------------------------------
 CompositeValueSpec::CompositeValueSpec(BEU::UnitCP majorUnit, BEU::UnitCP middleUnit, BEU::UnitCP minorUnit, BEU::UnitCP subUnit)
     : m_includeZero(true)
-    , m_explicitlyDefinedMajorLabel(false)
-    , m_explicitlyDefinedMiddleLabel(false)
-    , m_explicitlyDefinedMinorLabel(false)
     , m_explicitlyDefinedSpacer(false)
-    , m_explicitlyDefinedSubLabel(false)
     , m_spacer(FormatConstant::DefaultSpacer())
     , m_ratio {0}
     {
@@ -91,11 +87,7 @@ CompositeValueSpec::CompositeValueSpec(BEU::UnitCR majorUnit, BEU::UnitCR middle
 //---------------+---------------+---------------+---------------+---------------+-------
 CompositeValueSpec::CompositeValueSpec(bvector<BEU::UnitCP> const& units)
     : m_includeZero(true)
-    , m_explicitlyDefinedMajorLabel(false)
-    , m_explicitlyDefinedMiddleLabel(false)
-    , m_explicitlyDefinedMinorLabel(false)
     , m_explicitlyDefinedSpacer(false)
-    , m_explicitlyDefinedSubLabel(false)
     , m_spacer(FormatConstant::DefaultSpacer())
     , m_ratio {0}
     {
@@ -120,11 +112,7 @@ CompositeValueSpec::CompositeValueSpec(bvector<BEU::UnitCP> const& units)
 //---------------+---------------+---------------+---------------+---------------+-------
 CompositeValueSpec::CompositeValueSpec(CompositeValueSpecCR other)
     : m_includeZero(other.m_includeZero)
-    , m_explicitlyDefinedMajorLabel(other.m_explicitlyDefinedMajorLabel)
-    , m_explicitlyDefinedMiddleLabel(other.m_explicitlyDefinedMiddleLabel)
-    , m_explicitlyDefinedMinorLabel(other.m_explicitlyDefinedMinorLabel)
     , m_explicitlyDefinedSpacer(other.m_explicitlyDefinedSpacer)
-    , m_explicitlyDefinedSubLabel(other.m_explicitlyDefinedSubLabel)
     , m_spacer(other.m_spacer)
     , m_problem(other.m_problem)
     , m_proxys(other.m_proxys)

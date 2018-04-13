@@ -398,15 +398,16 @@ struct UnitProxy
 private:
     BEU::UnitCP m_unit;
     Utf8String m_unitLabel;
-
+    bool m_explicitlyDefinedLabel;
 public:
-    UnitProxy() : m_unit(nullptr) {}
-    UnitProxy(BEU::UnitCP unit, Utf8CP label = nullptr) : m_unit(unit), m_unitLabel(label) {}
+    UnitProxy() : m_explicitlyDefinedLabel(false), m_unit(nullptr) {}
+    UnitProxy(BEU::UnitCP unit, Utf8CP label = nullptr) 
+        : m_unit(unit), m_explicitlyDefinedLabel(nullptr != label), m_unitLabel(label) {}
     UnitProxy(UnitProxyCR other)
         {
         if (nullptr != other.m_unit)
             m_unit = other.m_unit;
-        
+        m_explicitlyDefinedLabel = other.m_explicitlyDefinedLabel;
         m_unitLabel = other.m_unitLabel.c_str();
         }
     void Copy(UnitProxyCP other)
@@ -419,15 +420,15 @@ public:
 
         if (nullptr != other->m_unit)
             m_unit = other->m_unit;
-        
+        m_explicitlyDefinedLabel = other->m_explicitlyDefinedLabel;
         m_unitLabel = other->m_unitLabel.c_str();
         }
 
     UNITS_EXPORT void LoadJson(Json::Value jval, BEU::IUnitsContextCP context);
     bool SetUnit(BEU::UnitCP unit) {m_unit = unit; return true;}
     Utf8StringCR GetLabel() const { return m_unitLabel; }
-    bool HasLabel() const {return !m_unitLabel.empty();}
-    void SetLabel(Utf8CP lab) {if (nullptr == lab) return; m_unitLabel = lab;}
+    bool HasLabel() const {return m_explicitlyDefinedLabel;}
+    void SetLabel(Utf8CP lab) {if (nullptr == lab) return; m_explicitlyDefinedLabel = true; m_unitLabel = lab;}
 
     //! Returns the name of Unit in this if one is available
     Utf8CP GetName() const {if (nullptr == m_unit) return nullptr; return m_unit->GetName().c_str();}
@@ -468,10 +469,6 @@ private:
     size_t m_ratio[indxSub];
     bool m_includeZero; // TODO: Not currently used in the formatting code, needs to be fixed.
     bool m_explicitlyDefinedSpacer;
-    bool m_explicitlyDefinedMajorLabel;
-    bool m_explicitlyDefinedMiddleLabel;
-    bool m_explicitlyDefinedMinorLabel;
-    bool m_explicitlyDefinedSubLabel;
     Utf8String m_spacer;
     FormatProblemDetail m_problem;
     bvector<UnitProxy> mutable m_proxys;
@@ -534,16 +531,16 @@ public:
     Utf8String GetMinorLabel()  const {return GetEffectiveLabel(indxMinor);}
     Utf8String GetSubLabel()    const {return GetEffectiveLabel(indxSub);}
 
-    void SetMajorLabel(Utf8StringCR label) {m_explicitlyDefinedMajorLabel = true; SetUnitLabel(indxMajor, label.c_str());}
-    void SetMiddleLabel(Utf8StringCR label) {m_explicitlyDefinedMiddleLabel = true; SetUnitLabel(indxMiddle, label.c_str());}
-    void SetMinorLabel(Utf8StringCR label) {m_explicitlyDefinedMinorLabel = true; SetUnitLabel(indxMinor, label.c_str());}
-    void SetSubLabel(Utf8StringCR label) {m_explicitlyDefinedSubLabel = true; SetUnitLabel(indxSub, label.c_str());}
+    void SetMajorLabel(Utf8StringCR label) {SetUnitLabel(indxMajor, label.c_str());}
+    void SetMiddleLabel(Utf8StringCR label) {SetUnitLabel(indxMiddle, label.c_str());}
+    void SetMinorLabel(Utf8StringCR label) {SetUnitLabel(indxMinor, label.c_str());}
+    void SetSubLabel(Utf8StringCR label) {SetUnitLabel(indxSub, label.c_str());}
     UNITS_EXPORT bool SetUnitLabel(Utf8StringCR label, int indx);
 
-    bool HasMajorLabel()    const {return m_explicitlyDefinedMajorLabel;} //!< Determine whether this composite value has a major unit label override.
-    bool HasMiddleLabel()   const {return m_explicitlyDefinedMiddleLabel;} //!< Determine whether this composite value has a middle unit label override.
-    bool HasMinorLabel()    const {return m_explicitlyDefinedMinorLabel;} //!< Determine whether this composite value has a minor unit label override.
-    bool HasSubLabel()      const {return m_explicitlyDefinedSubLabel;} //!< Determine whether this composite value has a sub unit label override.
+    bool HasMajorLabel()    const {return HasMajorUnit() && GetProxy(indxMajor)->HasLabel();} //!< Determine whether this composite value has a major unit label override.
+    bool HasMiddleLabel()   const {return HasMiddleUnit() && GetProxy(indxMiddle)->HasLabel();} //!< Determine whether this composite value has a middle unit label override.
+    bool HasMinorLabel()    const {return HasMinorUnit() && GetProxy(indxMinor)->HasLabel();} //!< Determine whether this composite value has a minor unit label override.
+    bool HasSubLabel()      const {return HasSubUnit() && GetProxy(indxSub)->HasLabel();} //!< Determine whether this composite value has a sub unit label override.
 
     size_t GetMajorToMiddleRatio() const {return m_ratio[indxMajor];}
     size_t GetMiddleToMinorRatio() const {return m_ratio[indxMiddle];}

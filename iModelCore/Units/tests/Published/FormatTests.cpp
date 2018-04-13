@@ -33,6 +33,7 @@ struct FormatStringTest : FormatTest
     Utf8String const fmtStrBasicNoOverridesButStillHasBracketsWithCommas = Utf8String("ExampleFmt<,,,,>");
     Utf8String const fmtStrWithEmptySqBrackets = Utf8String("ExampleFmt[]");
     Utf8String const fmtStrWithOnlyEmptySqBrackets = Utf8String("ExampleFmt[|]");
+    Utf8String const fmtStrUnit5Overrides = Utf8String("ExampleFmt[M|label][DM|label2][CM|label3][MM|label4][UM|label5]");
 };
 
 //---------------------------------------------------------------------------------------
@@ -225,6 +226,8 @@ TEST_F(FormatStringTest, FailWithInvalidOverride)
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrBasicNoOverridesButStillHasBracketsWithCommas, mapper));
     EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
+    EXPECT_NE(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrUnit5Overrides, mapper));
+    EXPECT_EQ(FormatProblemCode::NotInitialized, parsedNfs.GetProblem());
     }
 
 //---------------------------------------------------------------------------------------
@@ -313,12 +316,79 @@ TEST_F(FormatStringTest, UnitAndLabelOverride)
         return name == "ExampleFmt" ? &exampleNamedFmtSpec : nullptr;
         };
 
-    Utf8String fmtStrWithMeter("ExampleFmt[M]");
-    Utf8String fmtStrWithMeterNoLabel("ExampleFmt[M|]");
-    Utf8String fmtStrWithMeterWithLabelOverride("ExampleFmt[M|meter(s)]");
+    Utf8String const fmtStrWithMeter("ExampleFmt[M]");
+    Utf8String const fmtStrWithMeterNoLabel("ExampleFmt[M|]");
+    Utf8String const fmtStrUnitOverride("ExampleFmt[M|label]");
+    Utf8String const fmtStrUnit2Overrides("ExampleFmt[M|label][DM|label2]");
+    Utf8String const fmtStrUnit3Overrides("ExampleFmt[M|label][DM|label2][CM|label3]");
+    Utf8String const fmtStrUnit4Overrides("ExampleFmt[M|label][DM|label2][CM|label3][MM|label4]");
 
     Format parsedNfs;
     EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrWithMeter, mapper, s_unitsContext));
+    CompositeValueSpecP spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_FALSE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ(spec->GetMajorLabel().c_str(), "M");
+
+    parsedNfs = Format();
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrWithMeterNoLabel, mapper, s_unitsContext));
+    spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ("", spec->GetMajorLabel().c_str());
+
+    parsedNfs = Format();
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrUnitOverride, mapper, s_unitsContext));
+    spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ("label", spec->GetMajorLabel().c_str());
+
+    parsedNfs = Format();
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrUnit2Overrides, mapper, s_unitsContext));
+    spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ("label", spec->GetMajorLabel().c_str());
+    EXPECT_STRCASEEQ(spec->GetMiddleUnit()->GetName().c_str(), "DM");
+    EXPECT_TRUE(spec->HasMiddleLabel());
+    EXPECT_STRCASEEQ("label2", spec->GetMiddleLabel().c_str());
+
+    parsedNfs = Format();
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrUnit3Overrides, mapper, s_unitsContext));
+    spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ("label", spec->GetMajorLabel().c_str());
+    EXPECT_STRCASEEQ(spec->GetMiddleUnit()->GetName().c_str(), "DM");
+    EXPECT_TRUE(spec->HasMiddleLabel());
+    EXPECT_STRCASEEQ("label2", spec->GetMiddleLabel().c_str());
+    EXPECT_STRCASEEQ(spec->GetMinorUnit()->GetName().c_str(), "CM");
+    EXPECT_TRUE(spec->HasMinorLabel());
+    EXPECT_STRCASEEQ("label3", spec->GetMinorLabel().c_str());
+
+    parsedNfs = Format();
+    EXPECT_EQ(BentleyStatus::SUCCESS, Format::ParseFormatString(parsedNfs, fmtStrUnit4Overrides, mapper, s_unitsContext));
+    spec = parsedNfs.GetCompositeSpecP();
+    ASSERT_NE(nullptr, spec);
+    EXPECT_STRCASEEQ(spec->GetMajorUnit()->GetName().c_str(), "M");
+    EXPECT_TRUE(spec->HasMajorLabel());
+    EXPECT_STRCASEEQ("label", spec->GetMajorLabel().c_str());
+    EXPECT_STRCASEEQ(spec->GetMiddleUnit()->GetName().c_str(), "DM");
+    EXPECT_TRUE(spec->HasMiddleLabel());
+    EXPECT_STRCASEEQ("label2", spec->GetMiddleLabel().c_str());
+    EXPECT_STRCASEEQ(spec->GetMinorUnit()->GetName().c_str(), "CM");
+    EXPECT_TRUE(spec->HasMinorLabel());
+    EXPECT_STRCASEEQ("label3", spec->GetMinorLabel().c_str());
+    EXPECT_STRCASEEQ(spec->GetSubUnit()->GetName().c_str(), "MM");
+    EXPECT_TRUE(spec->HasSubLabel());
+    EXPECT_STRCASEEQ("label4", spec->GetSubLabel().c_str());
+
     }
 
 END_BENTLEY_FORMATTEST_NAMESPACE

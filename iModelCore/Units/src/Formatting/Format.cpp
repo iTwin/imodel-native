@@ -333,7 +333,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
                     comp->SetMiddleLabel(unitLabels[1].Value());
             case 1:
                 if (unitLabels[0].IsValid())
-                    comp->SetMiddleLabel(unitLabels[0].Value());
+                    comp->SetMajorLabel(unitLabels[0].Value());
             default:
                 break;
             }
@@ -349,7 +349,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
 BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
     {
     static size_t const precisionOverrideIndx = 0;
-    static std::regex const rgx(R"REGEX(([\w,:]+)(<([^>]+)>)?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?)REGEX", std::regex::optimize);
+    static std::regex const rgx(R"REGEX(([\w,:]+)(<([^>]+)>)?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?)REGEX", std::regex::optimize);
     std::cmatch match;
 
     
@@ -434,11 +434,13 @@ BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigne
             return ERROR;
         unitNames.push_back(match[i+1].str().c_str());
         // Label override; optional
-        if (match[i+2].matched)
-            labels.push_back(Nullable<Utf8String>(match[i+2].str().c_str()));
+        if (match[i+2].matched) // matches a bar
+            {
+            labels.push_back(Nullable<Utf8String>(match[i+3].str().c_str()));
+            }
         else // no label. ok
             labels.push_back(nullptr);
-        i+=3;
+        i+=4;
         }
 
     return BentleyStatus::SUCCESS;
