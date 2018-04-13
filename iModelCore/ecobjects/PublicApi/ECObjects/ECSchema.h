@@ -1461,7 +1461,6 @@ private:
     ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatInternal(NamedFormat format);
     //! Gets the cached persistence format. Creates one based on Formatting::NumericFormatSpec::DefaultFormat() if it does not exist.
     ECOBJECTS_EXPORT NamedFormatCP GetOrCreateCachedPersistenceFormat() const;
-    ECObjectsStatus ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
     ECObjectsStatus ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion, bool shouldBeDefault);
     ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
     ECObjectsStatus ParseDescriptorAndAddRefs(Utf8StringR unitName, Utf8StringR formatName, ECUnitCP& unit, Utf8CP descriptor, ECSchemaReadContextP context);
@@ -1573,6 +1572,17 @@ public:
     //! @return ECObjectsStatus::Success if successfully updates the descriptor; otherwise ECObjectsStatus::InvalidUnitName 
     //! if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
     ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, Utf8StringR formatString, Utf8CP persFus, Utf8CP presFuses);
+    //! Given an old FUS descriptor or an EC3.2 unit name, parse and set the perstence unit for this KoQ
+    //! Additionally if upgrading a FUS descriptor, this will add an override to this KoQ's presentation
+    //! unit list taking the persistence unit as the major unit based on the format provided (DefaultRealU)
+    //! if none is provided
+    //!
+    //! @param[in]  descriptor          The persistence FUS descriptor or the Persistence unit name
+    //! @param[in]  context             Read context for this schema to locate formats/units schema
+    //! @param[in]  ecXmlMajorVersion   Major version of the original schema xml
+    //! @param[in]  ecXmlMinorVersion   Minor version of the original schema xml
+    //! @return     ECObjectsStatus::Success if successfully parses fus/unit and adds as well as maps old units to new ones if necessary
+    ECObjectsStatus ParsePersistenceUnit(Utf8CP descriptor, ECSchemaReadContextP context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion);
 };
 
 //=======================================================================================
