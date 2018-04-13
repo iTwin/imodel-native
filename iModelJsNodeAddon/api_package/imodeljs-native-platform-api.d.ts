@@ -413,6 +413,9 @@ declare class NativeDgnDb {
 
     /** read the font map. */
     readFontMap(): string;
+
+    /** embed a font. */
+    embedFont(fontProps: string): string;
     
     /** query a file property.
      * @param props the stringified version of the FilePropertyProps

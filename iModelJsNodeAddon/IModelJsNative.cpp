@@ -1232,6 +1232,62 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
         return Napi::String::New(Env(), fonts.ToString().c_str());
         }
 
+    Napi::Value EmbedFont(Napi::CallbackInfo const& info)
+        {
+        REQUIRE_ARGUMENT_STRING(0, fontProps, Env().Undefined());
+        auto propsJson = Json::Value::From(fontProps);
+        if (!propsJson.isMember(DgnFonts::json_name()) || !propsJson.isMember(DgnFonts::json_type()))
+            {
+            Napi::TypeError::New(Env(), "Invalid FontProps").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+
+        DgnFontType fontType = (DgnFontType) propsJson[DgnFonts::json_type()].asInt();
+        if (DgnFontType::TrueType != fontType)
+            {
+            Napi::TypeError::New(Env(), "Unsupported font type").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+
+        Utf8CP fontName = propsJson[DgnFonts::json_name()].asCString();
+        DgnFontPtr font = DgnFontPersistence::OS::FromGlobalTrueTypeRegistry(fontName);
+        if (!font.IsValid())
+            {
+            Napi::TypeError::New(Env(), "Unable to locate font").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+
+        auto& fonts = GetDgnDb().Fonts();
+        DgnFontId fontId = fonts.DbFontMap().QueryIdByTypeAndName(fontType, fontName);
+        if (fontId.IsValid())
+            {
+            if (SUCCESS != fonts.DbFontMap().Update(*font, fontId)) // Update rsc and shx font metadata...
+                {
+                Napi::TypeError::New(Env(), "Unable to update font").ThrowAsJavaScriptException();
+                return Env().Undefined();
+                }
+            }
+        else
+            {
+            if (SUCCESS != fonts.DbFontMap().Insert(*font, fontId))
+                {
+                Napi::TypeError::New(Env(), "Unable to insert font").ThrowAsJavaScriptException();
+                return Env().Undefined();
+                }
+            }
+
+        if (SUCCESS != DgnFontPersistence::Db::Embed(fonts.DbFaceData(), *font))
+            {
+            Napi::TypeError::New(Env(), "Unable to embed font").ThrowAsJavaScriptException();
+            return Env().Undefined();
+            }
+
+        auto thisFont = Json::Value();
+        thisFont[DgnFonts::json_id()] = (int)fontId.GetValue();
+        thisFont[DgnFonts::json_type()] = (int)fontType;
+        thisFont[DgnFonts::json_name()] = fontName;
+        return Napi::String::New(Env(), thisFont.ToString().c_str());
+        }
 
     // query a property from the be_prop table.
     Napi::Value QueryFileProperty(Napi::CallbackInfo const& info)
@@ -1386,6 +1442,7 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             InstanceMethod("queryFileProperty", &NativeDgnDb::QueryFileProperty),
             InstanceMethod("queryNextAvailableFileProperty", &NativeDgnDb::QueryNextAvailableFileProperty),
             InstanceMethod("readFontMap", &NativeDgnDb::ReadFontMap),
+            InstanceMethod("embedFont", &NativeDgnDb::EmbedFont),
             InstanceMethod("saveChanges", &NativeDgnDb::SaveChanges),
             InstanceMethod("saveFileProperty", &NativeDgnDb::SaveFileProperty),
             InstanceMethod("setBriefcaseId", &NativeDgnDb::SetBriefcaseId),

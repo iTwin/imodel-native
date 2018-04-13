@@ -11,6 +11,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <ECDb/ECDbApi.h>
 #include <DgnPlatform/ECUtils.h>
+#include <DgnPlatform/DgnFontData.h>
 #include <node-addon-api/napi.h>
 
 USING_NAMESPACE_BENTLEY
