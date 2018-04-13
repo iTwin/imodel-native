@@ -404,11 +404,11 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
             // TODO: cache all information about schemas in same transaction as importing schemas to avoid missing data.
             // TODO: Cache schema response and files AFTER schemas were upgraded in ECDb.
 
-            // Ensure ECSchemaDef class is available
+            // Ensure MetaSchema is available
             auto txn = StartCacheTransaction();
-            if (!txn.GetCache().GetAdapter().HasECSchema(SCHEMA_WSCacheMetaSchema))
+            if (!txn.GetCache().GetAdapter().HasECSchema(SCHEMA_MetaSchema))
                 {
-                auto path = SchemaContext::GetCacheSchemasDir().AppendToPath(BeFileName(SCHEMA_WSCacheMetaSchema ".03.00.ecschema.xml"));
+                auto path = SchemaContext::GetCacheSchemasDir().AppendToPath(BeFileName(SCHEMA_MetaSchema ".02.00.ecschema.xml"));
                 if (SUCCESS != txn.GetCache().UpdateSchemas({path}))
                     {
                     result->SetError(Status::InternalCacheError);
@@ -431,9 +431,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     }
 
                 auto txn = StartCacheTransaction();
-                // MetaSchema instances are read-only in ECDb, need to use different schema
-                SchemaChangeWSObjectsResponse response(objectsResult.GetValue(), SCHEMA_WSCacheMetaSchema);
-                if (CacheStatus::OK != txn.GetCache().CacheResponse(responseKey, response))
+                if (CacheStatus::OK != txn.GetCache ().CacheResponse (responseKey, objectsResult.GetValue ()))
                     {
                     result->SetError(Status::InternalCacheError);
                     return;
@@ -480,9 +478,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
 
                     temporaryFiles->push_back(schemaFile);
 
-                    ObjectId remoteSchemaId = schemaId;
-                    remoteSchemaId.schemaName = SCHEMA_MetaSchema;
-                    m_client->SendGetFileRequest(remoteSchemaId, schemaFile->GetPath(), eTag, nullptr, ct)
+                    m_client->SendGetFileRequest (schemaId, schemaFile->GetPath (), eTag, nullptr, ct)
                         ->Then(m_cacheAccessThread, [=] (WSFileResult& schemaFileResult)
                         {
                         schemaDownloadResults->insert({schemaId, schemaFileResult});
@@ -622,9 +618,6 @@ bool CachingDataSource::IsServerSchemaSupported(JsonValueCR schemaDef)
 
     if (ECSchema::IsStandardSchema(name))
         return false; // Avoid downgrading standard schemas. // TODO: import if standard schema version is higher than local, but not lower
-
-    if (name == SCHEMA_MetaSchema)
-        return false; // Use WSCacheMetaSchema instead
 
     if (name == "Contents" && prefix == "rest_cnt")
         return false; // Deprecated, incompatible schema

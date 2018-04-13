@@ -25,6 +25,7 @@
 #include <WebServices/iModelHub/Client/VersionsManager.h>
 #include <WebServices/iModelHub/Client/ChangeSetCacheManager.h>
 #include <WebServices/iModelHub/Client/StatisticsManager.h>
+#include <WebServices/iModelHub/Client/ChunkedWSChangeset.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -373,6 +374,18 @@ private:
                                                IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
                                                ICancellationTokenPtr cancellationToken = nullptr, 
                                                IWSRepositoryClient::RequestOptionsPtr requestOptions = nullptr) const;
+
+    StatusTaskPtr SendChunkedChangesetRequestRecursive(ChunkedWSChangeset const& changesets,
+        IBriefcaseManager::ResponseOptions options,
+        ICancellationTokenPtr cancellationToken,
+        IWSRepositoryClient::RequestOptionsPtr requestOptions,
+        uint64_t changesetIndex,
+        uint8_t attempt) const;
+
+    StatusTaskPtr SendChunkedChangesetRequestInternal(ChunkedWSChangeset const& changesets,
+        IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
+        ICancellationTokenPtr cancellationToken = nullptr,
+        IWSRepositoryClient::RequestOptionsPtr requestOptions = nullptr) const;
 
     //! Initializes the changeSet.
     StatusTaskPtr InitializeChangeSet(Dgn::DgnRevisionPtr changeSet, Dgn::DgnDbCR dgndb, JsonValueR pushJson, ObjectId changeSetObjectId, 

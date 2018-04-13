@@ -367,11 +367,12 @@ TEST_F(LocksTests, FailingLocksResponseOptions)
     JsonValueCR error1 = result1.GetError().GetExtendedData();
     EXPECT_EQ(1, error1["ConflictingLocks"].size());
 
-    StatusResult result2 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::None)->GetResult();
-    ASSERT_FAILURE(result2);
-    EXPECT_EQ(Error::Id::LockOwnedByAnotherBriefcase, result1.GetError().GetId());
-    JsonValueCR error2 = result2.GetError().GetExtendedData();
-    EXPECT_EQ(Json::Value::GetNull(), error2["ConflictingLocks"]);
+    LockRequest lockRequest;
+    lockRequest.Insert(*model2_1, LockLevel::Exclusive);
+    db1.BriefcaseManager().ClearUserHeldCodesLocks();
+    IBriefcaseManager::Response result2 = db1.BriefcaseManager().AcquireLocks(lockRequest, IBriefcaseManager::ResponseOptions::None);
+    ASSERT_EQ(RepositoryStatus::LockAlreadyHeld, result2.Result());
+    EXPECT_TRUE(result2.LockStates().empty());
     }
 
 //---------------------------------------------------------------------------------------
@@ -408,7 +409,7 @@ TEST_F(LocksTests, RelinquishOtherUserLocks)
     // Briefcase1 should be able to push changes since nobody owns them.
     ASSERT_SUCCESS(iModelHubHelpers::PullMergeAndPush(briefcase1, true, false));
     Utf8String changeSet1 = briefcase1->GetLastChangeSetPulled();
-     iModelHubHelpers::ExpectLocksCount(briefcase1, 8);
+     iModelHubHelpers::ExpectLocksCount(briefcase1, 6);
 
     // Briefcase1 deletes two models.
     EXPECT_EQ(DgnDbStatus::Success, model1->Delete());
@@ -429,14 +430,14 @@ TEST_F(LocksTests, RelinquishOtherUserLocks)
     EXPECT_EQ(RepositoryStatus::Success, db2.BriefcaseManager().PrepareForModelDelete(req, *model1_2, IBriefcaseManager::PrepareAction::Acquire));
     EXPECT_EQ(DgnDbStatus::Success, model1_2->Delete());
     db2.SaveChanges();
-     iModelHubHelpers::ExpectLocksCount(briefcase1, 6);
+     iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
      iModelHubHelpers::ExpectLocksCount(briefcase2, 2);
 
     // Briefcase1 should not be able to push his changes since one lock is owned.
     iModelHubHost::Instance().SetRepositoryAdmin(nonAdminClient->GetiModelAdmin());
     auto pushResult = briefcase1->PullMergeAndPush()->GetResult();
     EXPECT_EQ(Error::Id::LockOwnedByAnotherBriefcase, pushResult.GetError().GetId());
-     iModelHubHelpers::ExpectLocksCount(briefcase1, 6);
+     iModelHubHelpers::ExpectLocksCount(briefcase1, 4);
      iModelHubHelpers::ExpectLocksCount(briefcase2, 2);
 
     // Briefcase1 should not be able to release all other briefcase locks.
@@ -448,12 +449,12 @@ TEST_F(LocksTests, RelinquishOtherUserLocks)
     iModelHubHost::Instance().SetRepositoryAdmin(s_client->GetiModelAdmin());
     EXPECT_EQ(Error::Id::UserDoesNotHavePermission, result.GetError().GetId());
 
-    // Briefcase2 should be able to push changes but he will need to wait.
+    // Briefcase2 can push its changes.
     pushResult = briefcase2->PullMergeAndPush()->GetResult();
-    EXPECT_EQ(Error::Id::AnotherUserPushing, pushResult.GetError().GetId());
+    EXPECT_SUCCESS(pushResult);
 
-    iModelHubHelpers::ExpectLocksCountById(briefcase1, 2, false, LockableId(*model3), LockableId(model1->GetDgnDb()));
-    iModelHubHelpers::ExpectLocksCountById(briefcase1, 4, false, LockableId(*model1), LockableId(*model2), LockableId(model1->GetDgnDb()));
+    iModelHubHelpers::ExpectLocksCountById(briefcase1, 1, false, LockableId(*model3), LockableId(model1->GetDgnDb()));
+    iModelHubHelpers::ExpectLocksCountById(briefcase1, 3, false, LockableId(*model1), LockableId(*model2), LockableId(model1->GetDgnDb()));
     }
 
 //---------------------------------------------------------------------------------------

@@ -917,9 +917,10 @@ TEST_F(CodesTests, FailingCodesResponseOptions)
     JsonValueCR error1 = result1.GetError().GetExtendedData();
     EXPECT_EQ(1, error1["ConflictingCodes"].size());
 
-    StatusResult result2 = briefcase1->Push(nullptr, false, nullptr, IBriefcaseManager::ResponseOptions::None)->GetResult();
-    ASSERT_FAILURE(result2);
-    EXPECT_EQ(Error::Id::CodeReservedByAnotherBriefcase, result2.GetError().GetId());
-    JsonValueCR error2 = result2.GetError().GetExtendedData();
-    EXPECT_EQ(Json::Value::GetNull(), error2["ConflictingCodes"]);
+    DgnCodeSet codes;
+    codes.insert(partition1_1->GetCode());
+    db1.BriefcaseManager().ClearUserHeldCodesLocks();
+    IBriefcaseManager::Response result2 = db1.BriefcaseManager().ReserveCodes(codes, IBriefcaseManager::ResponseOptions::None);
+    ASSERT_EQ(RepositoryStatus::CodeUnavailable, result2.Result());
+    EXPECT_TRUE(result2.CodeStates().empty());
     }

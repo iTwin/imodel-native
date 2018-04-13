@@ -104,7 +104,7 @@ ClientPtr Client::Create(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken) const
+iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr cancellationToken, bool filterInitialized) const
     {
     const Utf8String methodName = "Client::GetiModels";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -127,6 +127,10 @@ iModelsTaskPtr Client::GetiModels(Utf8StringCR projectId, ICancellationTokenPtr 
     Utf8String select = "*";
     iModelInfo::AddHasCreatorInfoSelect(select);
     query.SetSelect(select);
+    if (filterInitialized)
+        {
+        query.SetFilter("Initialized+eq+true");
+        }
 
     IWSRepositoryClientPtr client = CreateProjectConnection(projectId);
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", projectId.c_str());
@@ -261,6 +265,7 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
+BEGIN_UNNAMED_NAMESPACE
 Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description)
     {
     Json::Value iModelCreation(Json::objectValue);
@@ -272,6 +277,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     properties[ServerSchema::Property::iModelDescription] = description;
     return iModelCreation;
     }
+END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016

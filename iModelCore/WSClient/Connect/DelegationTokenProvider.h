@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/DelegationTokenProvider.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -48,8 +48,8 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         //! Set new token lifetime and expiration threshold in minutes
         void Configure(uint32_t tokenLifetime, uint32_t tokenExpirationThreshold);
 
-        AsyncTaskPtr<SamlTokenPtr> UpdateToken() override;
-        SamlTokenPtr GetToken() override;
+        AsyncTaskPtr<ISecurityTokenPtr> UpdateToken() override;
+        ISecurityTokenPtr GetToken() override;
         void ClearCache();
     };
 
