@@ -9,6 +9,28 @@
 
 #define DEFAULT_MANIPULATION_STRATEGY LineManipulationStrategy::Create()
 
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(CurveVectorDynamicState)
+BEGIN_BUILDING_SHARED_NAMESPACE
+
+//=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               04/2018
+//=======================================================================================
+struct CurveVectorDynamicState : DynamicStateBase
+    {
+    typedef bpair<CurvePrimitiveManipulationStrategyPtr, DynamicStateBaseCPtr> StatePair;
+
+    private:
+        bvector<StatePair> m_state;
+
+        CurveVectorDynamicState(bvector<StatePair> const& state) : m_state(state) {}
+
+    public:
+        static CurveVectorDynamicStatePtr Create(bvector<StatePair> const& state) { return new CurveVectorDynamicState(state); }
+        bvector<StatePair> const& GetState() const { return m_state; }
+    };
+
+END_BUILDING_SHARED_NAMESPACE
+
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
@@ -769,6 +791,56 @@ void CurveVectorManipulationStrategy::Init
                 break;
             }
         }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurveVectorManipulationStrategy::_SetDynamicState
+(
+    DynamicStateBaseCR state
+)
+    {
+    BooleanDynamicStateCPtr booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
+    if (booleanState.IsValid())
+        {
+        for (CurvePrimitiveManipulationStrategyPtr const& strategy : m_primitiveStrategyContainer.GetManipulationStrategies())
+            {
+            strategy->SetDynamicState(state);
+            }
+
+        return;
+        }
+
+    CurveVectorDynamicStateCPtr cvState = dynamic_cast<CurveVectorDynamicStateCP>(&state);
+    if (cvState.IsNull())
+        return;
+
+    for (CurveVectorDynamicState::StatePair const& innerState : cvState->GetState())
+        {
+        if (innerState.first.IsNull() || innerState.second.IsNull())
+            continue;
+
+        innerState.first->SetDynamicState(*innerState.second);
+        }
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DynamicStateBaseCPtr CurveVectorManipulationStrategy::_GetDynamicState() const
+    {
+    bvector<CurveVectorDynamicState::StatePair> state;
+    for (CurvePrimitiveManipulationStrategyPtr const& strategy : m_primitiveStrategyContainer.GetManipulationStrategies())
+        {
+        DynamicStateBaseCPtr innerState = strategy->GetDynamicState();
+        if (innerState.IsNull())
+            return nullptr;
+
+        state.push_back({strategy, innerState});
+        }
+
+    return CurveVectorDynamicState::Create(state);
     }
 
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \

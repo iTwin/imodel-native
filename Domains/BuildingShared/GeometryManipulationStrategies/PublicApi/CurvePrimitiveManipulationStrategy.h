@@ -24,6 +24,10 @@ struct CurvePrimitiveManipulationStrategy : public GeometryManipulationStrategy
     protected:
         CurvePrimitiveManipulationStrategy() : T_Super(), m_dynamicKeyPointSet(false) {}
 
+        // IRessetableDynamic
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetDynamicState(DynamicStateBaseCR state) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DynamicStateBaseCPtr _GetDynamicState() const override;
+
         bvector<DPoint3d>& GetKeyPointsR() { return m_keyPoints; }
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual bvector<DPoint3d> _GetKeyPoints() const override;
 

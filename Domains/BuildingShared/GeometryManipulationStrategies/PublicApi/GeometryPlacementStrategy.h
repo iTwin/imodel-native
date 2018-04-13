@@ -29,6 +29,10 @@ struct GeometryPlacementStrategy : public GeometryManipulationStrategyBase
     protected:
         GeometryPlacementStrategy() : T_Super() {}
 
+        // IRessetableDynamic
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetDynamicState(DynamicStateBaseCR state) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DynamicStateBaseCPtr _GetDynamicState() const override;
+
         virtual GeometryManipulationStrategyCR _GetManipulationStrategy() const = 0;
         virtual GeometryManipulationStrategyR _GetManipulationStrategyForEdit() = 0;
 

@@ -9,6 +9,25 @@
 
 USING_NAMESPACE_BUILDING_SHARED
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DynamicStateBaseCPtr IResettableDynamic::GetDynamicState() const
+    {
+    return _GetDynamicState();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void IResettableDynamic::SetDynamicState
+(
+    DynamicStateBaseCR state
+)
+    {
+    _SetDynamicState(state);
+    }
+
 #define SET_PROPERTY_IMPL(value_type) \
     void GeometryManipulationStrategyBase::SetProperty(Utf8CP key, value_type const& value) \
         { \

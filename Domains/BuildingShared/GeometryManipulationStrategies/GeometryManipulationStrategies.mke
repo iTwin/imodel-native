@@ -91,6 +91,8 @@ $(o)ExtrusionPlacementStrategy$(oext) : $(_MakeFilePath)ExtrusionPlacementStrate
 
 $(o)RectanglePlacementStrategy$(oext) : $(_MakeFilePath)RectanglePlacementStrategy.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/RectanglePlacementStrategy.h
 
+$(o)ScopedDynamicKeyPointResetter$(oext) : $(_MakeFilePath)ScopedDynamicKeyPointResetter.cpp ${MultiCompileDepends} $(_MakeFilePath)PublicApi/ScopedDynamicKeyPointResetter.h
+
 
 %include MultiCppCompileGo.mki
 objs +% $(MultiCompileObjectList)

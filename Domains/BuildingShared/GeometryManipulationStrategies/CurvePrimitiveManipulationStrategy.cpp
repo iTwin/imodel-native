@@ -10,6 +10,29 @@
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void CurvePrimitiveManipulationStrategy::_SetDynamicState
+(
+    DynamicStateBaseCR state
+)
+    {
+    BooleanDynamicStateCPtr booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
+    if (booleanState.IsNull())
+        return;
+
+    m_dynamicKeyPointSet = booleanState->GetState();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DynamicStateBaseCPtr CurvePrimitiveManipulationStrategy::_GetDynamicState() const
+    {
+    return BooleanDynamicState::Create(m_dynamicKeyPointSet);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                12/2017
 //---------------+---------------+---------------+---------------+---------------+------
 ICurvePrimitivePtr CurvePrimitiveManipulationStrategy::FinishPrimitive() const

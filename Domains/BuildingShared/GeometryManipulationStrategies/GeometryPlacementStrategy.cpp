@@ -151,6 +151,22 @@ IGeometryPtr GeometryPlacementStrategy::_FinishGeometry() const
     return _GetManipulationStrategy().FinishGeometry();
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void GeometryPlacementStrategy::_SetDynamicState(DynamicStateBaseCR state)
+    {
+    _GetManipulationStrategyForEdit().SetDynamicState(state);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DynamicStateBaseCPtr GeometryPlacementStrategy::_GetDynamicState() const
+    {
+    return _GetManipulationStrategy().GetDynamicState();
+    }
+
 #define GMS_PROPERTY_OVERRIDE_IMPL(value_type) \
     void GeometryPlacementStrategy::_SetProperty(Utf8CP key, value_type const& value) \
         { \

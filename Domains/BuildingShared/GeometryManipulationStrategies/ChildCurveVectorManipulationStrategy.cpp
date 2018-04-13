@@ -76,3 +76,210 @@ CurvePrimitivePlacementStrategyPtr ChildCurveVectorManipulationStrategy::_Create
     {
     return ChildCurveVectorPlacementStrategy::Create(*this);
     }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<DPoint3d> ChildCurveVectorManipulationStrategy::_GetKeyPoints() const
+    {
+    return m_cvManipulationStrategy->GetKeyPoints();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bool ChildCurveVectorManipulationStrategy::_IsDynamicKeyPointSet() const
+    {
+    return m_cvManipulationStrategy->IsDynamicKeyPointSet();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_AppendDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint
+)
+    {
+    m_cvManipulationStrategy->AppendDynamicKeyPoint(newDynamicKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_AppendDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints
+)
+    {
+    m_cvManipulationStrategy->AppendDynamicKeyPoints(newDynamicKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_InsertDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint, 
+    size_t index
+)
+    {
+    m_cvManipulationStrategy->InsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_InsertDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints, 
+    size_t index
+)
+    {
+    m_cvManipulationStrategy->InsertDynamicKeyPoints(newDynamicKeyPoints, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_UpdateDynamicKeyPoint
+(
+    DPoint3dCR newDynamicKeyPoint, 
+    size_t index
+)
+    {
+    m_cvManipulationStrategy->UpdateDynamicKeyPoint(newDynamicKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_UpdateDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints, 
+    size_t index
+)
+    {
+    m_cvManipulationStrategy->UpdateDynamicKeyPoints(newDynamicKeyPoints, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_UpsertDynamicKeyPoint
+(
+    DPoint3d newDynamicKeyPoint, 
+    size_t index
+)
+    {
+    m_cvManipulationStrategy->UpsertDynamicKeyPoint(newDynamicKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_UpsertDynamicKeyPoints
+(
+    bvector<DPoint3d> const& newDynamicKeyPoints, 
+    size_t index
+)
+    {
+    m_cvManipulationStrategy->UpsertDynamicKeyPoints(newDynamicKeyPoints, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_ResetDynamicKeyPoint()
+    {
+    m_cvManipulationStrategy->ResetDynamicKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_AppendKeyPoint
+(
+    DPoint3dCR newKeyPoint
+)
+    {
+    m_cvManipulationStrategy->AppendKeyPoint(newKeyPoint);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_AppendKeyPoints
+(
+    bvector<DPoint3d> const& newKeyPoints
+)
+    {
+    m_cvManipulationStrategy->AppendKeyPoints(newKeyPoints);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_InsertKeyPoint
+(
+    DPoint3dCR newKeyPoint, 
+    size_t index
+)
+    {
+    m_cvManipulationStrategy->InsertKeyPoint(newKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_ReplaceKeyPoint
+(
+    DPoint3dCR newKeyPoint, 
+    size_t index
+)
+    {
+    m_cvManipulationStrategy->ReplaceKeyPoint(newKeyPoint, index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_PopKeyPoint()
+    {
+    m_cvManipulationStrategy->PopKeyPoint();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_RemoveKeyPoint
+(
+    size_t index
+)
+    {
+    m_cvManipulationStrategy->RemoveKeyPoint(index);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_Clear()
+    {
+    m_cvManipulationStrategy->Clear();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ChildCurveVectorManipulationStrategy::_SetDynamicState(DynamicStateBaseCR state)
+    {
+    m_cvManipulationStrategy->SetDynamicState(state);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DynamicStateBaseCPtr ChildCurveVectorManipulationStrategy::_GetDynamicState() const
+    {
+    return m_cvManipulationStrategy->GetDynamicState();
+    }

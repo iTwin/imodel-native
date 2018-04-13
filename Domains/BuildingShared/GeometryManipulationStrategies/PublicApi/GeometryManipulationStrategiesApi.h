@@ -58,6 +58,10 @@ BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ExtrusionPlacementStrategy)
 
 BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(RectanglePlacementStrategy)
 
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(DynamicStateBase)
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(BooleanDynamicState)
+BUILDING_SHARED_TYPEDEFS(IResettableDynamic)
+
 BEGIN_BUILDING_SHARED_NAMESPACE
 enum class LinePlacementStrategyType;
 enum class ArcPlacementMethod;
@@ -102,3 +106,5 @@ END_BUILDING_SHARED_NAMESPACE
 #include "ExtrusionPlacementStrategy.h"
 
 #include "RectanglePlacementStrategy.h"
+
+#include "ScopedDynamicKeyPointResetter.h"

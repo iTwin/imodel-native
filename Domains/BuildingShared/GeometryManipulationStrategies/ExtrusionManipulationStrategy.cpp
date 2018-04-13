@@ -7,6 +7,38 @@
 +--------------------------------------------------------------------------------------*/
 #include "PublicApi/GeometryManipulationStrategiesApi.h"
 
+BUILDING_SHARED_REFCOUNTED_PTR_AND_TYPEDEFS(ExtrusionDynamicState)
+BEGIN_BUILDING_SHARED_NAMESPACE
+
+//=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               04/2018
+//=======================================================================================
+struct ExtrusionDynamicState : DynamicStateBase
+    {
+    private:
+        DynamicStateBaseCPtr m_baseState;
+        bool m_heightState;
+        bool m_sweepState;
+
+        ExtrusionDynamicState(DynamicStateBaseCR baseState, bool heightState, bool sweepState)
+            : m_baseState(&baseState)
+            , m_heightState(heightState)
+            , m_sweepState(sweepState)
+            {}
+
+    public:
+        static ExtrusionDynamicStatePtr Create(DynamicStateBaseCR baseState, bool heightState, bool sweepState)
+            {
+            return new ExtrusionDynamicState(baseState, heightState, sweepState);
+            }
+
+        DynamicStateBaseCPtr GetBaseState() const { return m_baseState; }
+        bool GetHeightState() const { return m_heightState; }
+        bool GetSweepState() const { return m_sweepState; }
+    };
+
+END_BUILDING_SHARED_NAMESPACE
+
 USING_NAMESPACE_BUILDING_SHARED
 
 //--------------------------------------------------------------------------------------
@@ -404,4 +436,51 @@ ISolidPrimitivePtr ExtrusionManipulationStrategy::FinishExtrusion
         return nullptr;
 
     return ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(baseShape, GetSweepDirection(), capped));
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+void ExtrusionManipulationStrategy::_SetDynamicState
+(
+    DynamicStateBaseCR state
+)
+    {
+    BooleanDynamicStateCPtr booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
+    if (booleanState.IsValid())
+        {
+        m_baseShapeManipulationStrategy->SetDynamicState(state);
+        m_dynamicHeightSet = booleanState->GetState();
+        m_dynamicSweepDirectionSet = booleanState->GetState();
+        return;
+        }
+
+    ExtrusionDynamicStateCPtr extrusionState = dynamic_cast<ExtrusionDynamicStateCP>(&state);
+    if (extrusionState.IsNull())
+        {
+        BeAssert(extrusionState.IsValid());
+        return;
+        }
+
+    if (extrusionState->GetBaseState().IsNull())
+        {
+        BeAssert(extrusionState->GetBaseState().IsValid());
+        return;
+        }
+
+    m_baseShapeManipulationStrategy->SetDynamicState(*extrusionState->GetBaseState());
+    m_dynamicHeightSet = extrusionState->GetHeightState();
+    m_dynamicSweepDirectionSet = extrusionState->GetSweepState();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+DynamicStateBaseCPtr ExtrusionManipulationStrategy::_GetDynamicState() const
+    {
+    DynamicStateBaseCPtr baseState = m_baseShapeManipulationStrategy->GetDynamicState();
+    if (baseState.IsNull())
+        return nullptr;
+
+    return ExtrusionDynamicState::Create(*baseState, m_dynamicHeightSet, m_dynamicSweepDirectionSet);
     }

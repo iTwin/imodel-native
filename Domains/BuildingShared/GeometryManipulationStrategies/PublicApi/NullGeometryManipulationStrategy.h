@@ -17,6 +17,15 @@ struct NullGeometryManipulationStrategy final : public GeometryManipulationStrat
     DEFINE_T_SUPER(GeometryManipulationStrategy)
 
     private:
+        struct NullDynamicState : DynamicStateBase
+            {
+            private:
+                NullDynamicState() {}
+
+            public:
+                static RefCountedPtr<NullDynamicState> Create() { return new NullDynamicState(); }
+            };
+
         NullGeometryManipulationStrategy() : T_Super() {}
 
     protected:
@@ -46,6 +55,10 @@ struct NullGeometryManipulationStrategy final : public GeometryManipulationStrat
         virtual bool _CanAcceptMorePoints() const override { return false; }
 
         virtual IGeometryPtr _FinishGeometry() const override { return nullptr; }
+
+        // IRessetableDynamic
+        virtual void _SetDynamicState(DynamicStateBaseCR state) override {}
+        virtual DynamicStateBaseCPtr _GetDynamicState() const override { return NullDynamicState::Create(); }
 
     public:
         static NullGeometryManipulationStrategyPtr Create() { return new NullGeometryManipulationStrategy(); }

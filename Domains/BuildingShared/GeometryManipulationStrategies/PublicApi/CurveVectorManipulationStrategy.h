@@ -115,6 +115,10 @@ struct CurveVectorManipulationStrategy : public GeometryManipulationStrategy
 
         GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual IGeometryPtr _FinishGeometry() const override;
 
+        // IRessetableDynamic
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual void _SetDynamicState(DynamicStateBaseCR state) override;
+        GEOMETRYMANIPULATIONSTRATEGIES_EXPORT virtual DynamicStateBaseCPtr _GetDynamicState() const override;
+
         CV_PROPERTY_OVERRIDE(bool)
         CV_PROPERTY_OVERRIDE(int)
         CV_PROPERTY_OVERRIDE(double)

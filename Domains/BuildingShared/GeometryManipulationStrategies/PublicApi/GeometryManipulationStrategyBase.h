@@ -30,6 +30,50 @@ BEGIN_BUILDING_SHARED_NAMESPACE
     GMS_TRYGET_PROPERTY_TYPE(value_type)
 
 //=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               04/2018
+//=======================================================================================
+struct DynamicStateBase : RefCountedBase
+    {
+    protected:
+        DynamicStateBase() {}
+        virtual ~DynamicStateBase() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                     Mindaugas.Butkus               04/2018
+//=======================================================================================
+struct BooleanDynamicState : DynamicStateBase
+    {
+    private:
+        bool m_state;
+
+        BooleanDynamicState(bool state) : m_state(state) {}
+
+    public:
+        static BooleanDynamicStatePtr Create(bool state) { return new BooleanDynamicState(state); }
+        bool GetState() const { return m_state; }
+    };
+
+//=======================================================================================
+// Interface that is used by the ScopedDynamicKeyPointResetter
+// for restoring dynamic key points.
+//
+// @bsiclass                                     Mindaugas.Butkus               04/2018
+//=======================================================================================
+struct IResettableDynamic
+    {
+    protected:
+        virtual ~IResettableDynamic() {}
+
+        virtual DynamicStateBaseCPtr _GetDynamicState() const = 0;
+        virtual void _SetDynamicState(DynamicStateBaseCR state) = 0;
+
+    public:
+        DynamicStateBaseCPtr GetDynamicState() const;
+        void SetDynamicState(DynamicStateBaseCR state);
+    };
+
+//=======================================================================================
 // A base class for custom property types to use with SetProperty and TryGetProperty
 // methods of GeometryManipulationStrategyBase.
 //
@@ -45,7 +89,7 @@ struct GeometryManipulationStrategyProperty
 //=======================================================================================
 // @bsiclass                                     Mindaugas.Butkus               12/2017
 //=======================================================================================
-struct GeometryManipulationStrategyBase : RefCountedBase
+struct GeometryManipulationStrategyBase : RefCountedBase, IResettableDynamic
     {
     private:
         GeometryManipulationStrategyBase() {}

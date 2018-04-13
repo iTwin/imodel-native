@@ -33,6 +33,31 @@ struct ChildCurveVectorManipulationStrategy : public CurvePrimitiveManipulationS
 
         CurvePrimitiveManipulationStrategyPtr _Clone() const override;
 
+        virtual bvector<DPoint3d> _GetKeyPoints() const override;
+
+        virtual bool _IsDynamicKeyPointSet() const override;
+        virtual void _AppendDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint) override;
+        virtual void _AppendDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints) override;
+        virtual void _InsertDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        virtual void _InsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
+        virtual void _UpdateDynamicKeyPoint(DPoint3dCR newDynamicKeyPoint, size_t index) override;
+        virtual void _UpdateDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
+        virtual void _UpsertDynamicKeyPoint(DPoint3d newDynamicKeyPoint, size_t index) override;
+        virtual void _UpsertDynamicKeyPoints(bvector<DPoint3d> const& newDynamicKeyPoints, size_t index) override;
+        virtual void _ResetDynamicKeyPoint() override;
+
+        virtual void _AppendKeyPoint(DPoint3dCR newKeyPoint) override;
+        virtual void _AppendKeyPoints(bvector<DPoint3d> const& newKeyPoints) override;
+        virtual void _InsertKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
+        virtual void _ReplaceKeyPoint(DPoint3dCR newKeyPoint, size_t index) override;
+        virtual void _PopKeyPoint() override;
+        virtual void _RemoveKeyPoint(size_t index) override;
+        virtual void _Clear() override;
+
+        // IRessetableDynamic
+        virtual void _SetDynamicState(DynamicStateBaseCR state) override;
+        virtual DynamicStateBaseCPtr _GetDynamicState() const override;
+
     public:
         static ChildCurveVectorManipulationStrategyPtr Create() { return new ChildCurveVectorManipulationStrategy(); }
         static ChildCurveVectorManipulationStrategyPtr Create(CurveVectorCR cv);
