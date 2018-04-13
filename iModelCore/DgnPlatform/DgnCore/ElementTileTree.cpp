@@ -3050,7 +3050,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  2: Removed rangeCenter from polylines
     //  3: Fixed ordering of DisplayParams::operator<() to use stable IDs of materials and textures rather than addresses,
     //     to ensure same order when deserializing from cache data back into MeshBuilderMap.
-    return "3";
+    //  4: Prevent unused vertices from ending up in meshes due to degenerate triangles (detect degenerates *before* adding vertices)
+    return "4";
     }
 
 /*---------------------------------------------------------------------------------**//**
