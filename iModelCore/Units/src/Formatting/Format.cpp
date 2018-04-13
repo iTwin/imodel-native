@@ -39,11 +39,11 @@ Format::Format(NumericFormatSpecCR numSpec)
 //---------------+---------------+---------------+---------------+---------------+-------
 bool Format::SetCompositeSpec(CompositeValueSpec spec) 
     {
-    //if (spec.IsProblem())
-        //{
-        //LOG.warningv("Failed to set composite spec because it has problem '%s'", spec.GetProblemDescription().c_str());
-        //return false;
-        //}
+    if (spec.IsProblem())
+        {
+        LOG.warningv("Failed to set composite spec because it has problem '%s'", spec.GetProblemDescription().c_str());
+        return false;
+        }
     m_explicitlyDefinedComposite = true;
     m_compositeSpec = spec;
     m_specType = static_cast<FormatSpecType>(m_compositeSpec.GetUnitCount());
@@ -394,7 +394,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
 // static
 BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
     {
-    static std::regex const rgx(R"REGEX(([\w,:]+)(<([0-9, ^>]*)>)?(\[([^\|\]]*)\|?([^\]|]*)?\])?(\[([^\|\]]*)\|?([^\]|]*)?\])?(\[([^\|\]]*)\|?([^\]|]*)?\])?(\[([^\|\]]*)\|?([^\]|]*)?\])?)REGEX", std::regex::optimize);
+    static std::regex const rgx(R"REGEX(([\w,:]+)(<([0-9, ^>]*)>)?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?)REGEX", std::regex::optimize);
     std::cmatch match;
 
     
