@@ -252,121 +252,63 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
 // static
 BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper, BEU::IUnitsContextCP unitContext)
     {
-    static size_t const precisionOverrideIndx = 0;
-    static std::regex const rgx(R"REGEX(([\w,:]+)(<([^>]+)>)?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?(\[([^\|\]]*)\|?([^\]|]+)?\])?)REGEX", std::regex::optimize);
-    std::cmatch match;
-
-    if (!std::regex_match(formatString.c_str(), match, rgx))
+    Utf8String formatName;
+    Nullable<unsigned> parsedPrecision;
+    bvector<Utf8String> unitNames;
+    bvector<Nullable<Utf8String>> unitLabels;
+    if (BentleyStatus::SUCCESS != ParseFormatString(formatName, parsedPrecision, unitNames, unitLabels, formatString))
         return BentleyStatus::ERROR;
 
-    size_t numOfRegexes = match.size();
-    if (0 == numOfRegexes)
-        return BentleyStatus::ERROR;
-
-    // Handle format first to fail fast.
-    if (!match[1].matched)
-        {
-        LOG.errorv("failed to map a format name to a Format");
-        return BentleyStatus::ERROR;
-        }
-
-    Utf8String const namedFormat(match[1].str().c_str());
+    Utf8String const namedFormat(formatName);
     FormatCP defaultFormat = defaultFormatMapper(namedFormat);
     if (nullptr == defaultFormat)
         {
         LOG.errorv("failed to map a format name to a Format");
         return BentleyStatus::ERROR;
         }
+
     nfs = *defaultFormat;
-
-    // Handle overrides in <>
-    if (match[2].matched)
+    if (parsedPrecision.IsValid())
         {
-        Utf8String const overrideStr(match[2].str().c_str());
-        // BeStringUtilities::Split ignores empty tokens. Since overrides are
-        // position dependent, we actually need to count tokens even if they are
-        // the empty string. This function does just that using ',' as a separator.
-        bvector<Utf8String> overrides = [](Utf8StringCR str) -> bvector<Utf8String>
+        uint64_t precision = parsedPrecision.Value();
+        switch (nfs.m_numericSpec.GetPresentationType())
             {
-            bvector<Utf8String> tokens;
-            size_t prevPos = 1; // Initial position is the character directly after the opening '<' in the override string.
-            size_t currPos;
-            while (str.npos != (currPos = str.find_first_of(",>", prevPos)))
-                {
-                tokens.push_back(Utf8String(str.substr(prevPos, currPos - prevPos).c_str()).Trim());
-                prevPos = currPos + 1;
-                }
-            return tokens;
-            }(overrideStr);
-
-        // It is considered an error to pass in a format string with empty
-        // override brackets. If no overrides are needed, the user should instead
-        // leave the brackets off altogether. As an example the incorrect format
-        // string "SomeFormat<>" should instead be written as "SomeFormat".
-        // Additionally, if a format would be specified using an override string
-        // With no items actually overridden such as "SomeFormat<,,,,>" the string
-        // is also erroneous.
-        if (!overrideStr.empty()
-            && overrides.end() == std::find_if_not(overrides.begin(), overrides.end(),
-                [](Utf8StringCR ovrstr) -> bool
-            {
-            return std::all_of(ovrstr.begin(), ovrstr.end(), ::isspace);
-            }))
-            {
-            LOG.errorv("override list must contain at least one override");
-            return BentleyStatus::ERROR;
-            }
-
-        // The first override parameter overrides the default precision for the format.
-        if (overrides.size() >= precisionOverrideIndx + 1) // Bail if the user didn't include this override.
-            {
-            if (!overrides[precisionOverrideIndx].empty())
-                {
-                uint64_t precision;
-                BentleyStatus status = BeStringUtilities::ParseUInt64(precision, overrides[precisionOverrideIndx].c_str());
-                if (BentleyStatus::SUCCESS != status)
-                    {
-                    LOG.errorv("failed to parse integer for precision override");
-                    return status;
-                    }
-                switch (nfs.m_numericSpec.GetPresentationType())
-                    {
-                case PresentationType::Decimal:        /* intentional fallthrough */
-                case PresentationType::Scientific:     /* intentional fallthrough */
-                case PresentationType::Station: /* intentional fallthrough */
-                    DecimalPrecision prec;
-                    Utils::DecimalPrecisionByIndex(prec, precision);
-                    nfs.m_numericSpec.SetDecimalPrecision(prec);
-                    break;
-                case PresentationType::Fractional:
-                    FractionalPrecision frac;
-                    Utils::FractionalPrecisionByDenominator(frac, precision);
-                    nfs.m_numericSpec.SetFractionalPrecision(frac);
-                    break;
-                default:
-                    LOG.errorv("unknown presentation type");
-                    return BentleyStatus::ERROR;
-                    }
-                }
+            case PresentationType::Decimal:        /* intentional fallthrough */
+            case PresentationType::Scientific:     /* intentional fallthrough */
+            case PresentationType::Station: /* intentional fallthrough */
+                DecimalPrecision prec;
+                Utils::DecimalPrecisionByIndex(prec, precision);
+                nfs.m_numericSpec.SetDecimalPrecision(prec);
+                break;
+            case PresentationType::Fractional:
+                FractionalPrecision frac;
+                Utils::FractionalPrecisionByDenominator(frac, precision);
+                nfs.m_numericSpec.SetFractionalPrecision(frac);
+                break;
+            default:
+                LOG.errorv("unknown presentation type");
+                return BentleyStatus::ERROR;
             }
         }
 
-    if (!match[4].matched)
-        return BentleyStatus::SUCCESS;
-
     // Handle Unit Override
-    Utf8String const overrideUnitName(match[5].str().c_str());
-    if (!overrideUnitName.empty())
+    if (!unitNames.empty())
         {
-        BEU::UnitCP inputUnit = unitContext->LookupUnit(overrideUnitName.c_str());
-        if (nullptr == inputUnit)
+        BeAssert(4 >= unitNames.size());
+        bvector<BEU::UnitCP> units;
+        for (const auto& u : unitNames)
             {
-            LOG.errorv("Failed to resolve the input Unit %s from format string, %s.", overrideUnitName.c_str(), formatString.c_str());
-            return BentleyStatus::ERROR;
+            BEU::UnitCP inputUnit = unitContext->LookupUnit(u.c_str());
+            if (nullptr == inputUnit)
+                {
+                LOG.errorv("Failed to resolve the input Unit %s from format string, %s.", u.c_str(), formatString.c_str());
+                return BentleyStatus::ERROR;
+                }
+            units.push_back(inputUnit);
             }
         auto compSpec = nfs.GetCompositeSpecP();
         if (nullptr == compSpec)
-            nfs.SetCompositeSpec(CompositeValueSpec(*inputUnit));
+            nfs.SetCompositeSpec(CompositeValueSpec(units));
         if (nfs.GetCompositeSpec()->IsProblem())
             {
             LOG.errorv("Invalid format string, %s. %s ", formatString.c_str(), compSpec->GetProblemDescription());
@@ -374,15 +316,27 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
             }
         }
 
-    Utf8String const overrideUnitLabel(match[6].str().c_str());
-    if (overrideUnitLabel.empty())
+    if (!unitLabels.empty())
         {
-        if (!nfs.HasComposite())
-            // TODO helpful error message.
-            return BentleyStatus::ERROR;
-
-        //auto compSpec = nfs.GetCompositeSpecP();
-        
+        auto comp = nfs.GetCompositeSpecP();
+        BeAssert(nullptr != comp);
+        switch (unitLabels.size())
+            {
+            case 4:
+                if (unitLabels[3].IsValid())
+                    comp->SetSubLabel(unitLabels[3].Value());
+            case 3:
+                if (unitLabels[2].IsValid())
+                    comp->SetMinorLabel(unitLabels[2].Value());
+            case 2:
+                if (unitLabels[1].IsValid())
+                    comp->SetMiddleLabel(unitLabels[1].Value());
+            case 1:
+                if (unitLabels[0].IsValid())
+                    comp->SetMiddleLabel(unitLabels[0].Value());
+            default:
+                break;
+            }
         }
 
     return BentleyStatus::SUCCESS;
