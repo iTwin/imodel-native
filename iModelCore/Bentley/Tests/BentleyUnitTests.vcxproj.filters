@@ -133,6 +133,7 @@
     <ClCompile Include="Published\TimeOutSampleTest.cpp" />
     <ClCompile Include="..\Bentley\nonport\BeTest.cpp" />
     <ClCompile Include="Published\Tasks\AsyncTasksManagerTests.cpp" />
+    <ClCompile Include="Published\Tasks\ThreadlessTaskSchedulerTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />
