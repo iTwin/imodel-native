@@ -353,16 +353,7 @@ BentleyStatus SamlToken::GetX509Certificate(Utf8StringR certOut) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SamlToken::ToAuthorizationString() const
     {
-    return "token " + Base64Utilities::Encode(m_token);
-    }
-
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    David.Jones     03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SamlToken::ToSAMLAuthorizationString() const
-    {
-    return "SAML " + Base64Utilities::Encode(m_token);
+    return Base64Utilities::Encode(m_token);
     }
 
 /*--------------------------------------------------------------------------------------+

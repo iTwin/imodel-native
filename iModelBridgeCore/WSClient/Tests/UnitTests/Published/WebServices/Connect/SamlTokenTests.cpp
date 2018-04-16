@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Connect/SamlTokenTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SamlTokenTests.h"
@@ -171,15 +171,7 @@ TEST_F(SamlTokenTests, IsSupported_ValidAssertionWithVersions_SuportedOnlyVersio
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SamlTokenTests, ToAuthorizationString_AnyStringPassed_ReturnsFormattedAuthorizationHeaderValue)
     {
-    EXPECT_EQ("token " + Base64Utilities::Encode("TestToken"), SamlToken("TestToken").ToAuthorizationString());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SamlTokenTests, ToSAMLAuthorizationString_AnyStringPassed_ReturnsFormattedAuthorizationHeaderValue)
-    {
-    EXPECT_EQ("SAML " + Base64Utilities::Encode("TestToken"), SamlToken("TestToken").ToSAMLAuthorizationString());
+    EXPECT_EQ(Base64Utilities::Encode("TestToken"), SamlToken("TestToken").ToAuthorizationString());
     }
 
 /*--------------------------------------------------------------------------------------+

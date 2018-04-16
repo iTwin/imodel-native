@@ -2,7 +2,7 @@
 |
 |     $Source: Connect/ConnectSignInManager.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -447,13 +447,12 @@ HeaderPrefix prefix
 
     auto handler = UrlProvider::GetSecurityConfigurator(httpHandler);
 
-    return std::make_shared<ConnectAuthenticationHandler>
+    return ConnectAuthenticationHandler::Create
         (
         serverUrl,
         GetTokenProvider(rpUri),
         handler,
-        HeaderPrefix::Saml == prefix,
-        false
+        HeaderPrefix::Saml == prefix ? TOKENPREFIX_SAML : TOKENPREFIX_Token
         );
     }
 
