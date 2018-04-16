@@ -199,15 +199,16 @@ void LegacyNameMappings::AddMappings()
     {
     AddMapping("DefaultReal", "f:DefaultReal");
     AddMapping("DefaultRealU", "f:DefaultRealU");
-    AddMapping("Real", "f:DefaultReal");
+    //AddMapping("RealU", "f:DefaultRealU"); These are duplicates of DefaultRealU or DefaultReal
+    //AddMapping("Real6U", "f:DefaultRealU");
+    //AddMapping("Real", "f:DefaultReal");
+    //AddMapping("DefaultInt", "f:DefaultReal");
     AddMapping("Real2", "f:DefaultReal(2)");
     AddMapping("Real3", "f:DefaultReal(3)");
     AddMapping("Real4", "f:DefaultReal(4)");
-    AddMapping("RealU", "f:DefaultRealU");
     AddMapping("Real2U", "f:DefaultRealU(2)");
     AddMapping("Real3U", "f:DefaultRealU(3)");
     AddMapping("Real4U", "f:DefaultRealU(4)");
-    AddMapping("Real6U", "f:DefaultRealU");
     AddMapping("Real2UNS", "f:DefaultRealUNS(2)");
     AddMapping("Real3UNS", "f:DefaultRealUNS(3)");
     AddMapping("Real4UNS", "f:DefaultRealUNS(4)");
@@ -253,7 +254,6 @@ void LegacyNameMappings::AddMappings()
     AddMapping("DefaultExp", "f:Scientific");
     AddMapping("SignedExp", "f:SignedScientific");
     AddMapping("NormalizedExp", "f:ScientificNormal");
-    AddMapping("DefaultInt", "f:DefaultReal");
 
     AddMapping("AngleDMS", "f:AngleDMS");
     AddMapping("AngleDMS8", "f:AngleDMS(8)");
