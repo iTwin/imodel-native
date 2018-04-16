@@ -1624,7 +1624,7 @@ ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQ
 
     if (sourceKOQ.HasPresentationFormats())
         {
-        for (const auto& format : sourceKOQ.GetPresentationFormatList())
+        for (const auto& format : sourceKOQ.GetPresentationFormats())
             {
             auto newFormat = format;
             auto parentFormat = targetKOQ->GetSchema().GetFormatCP(format.GetParentFormat()->GetName().c_str());
@@ -2342,7 +2342,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema(ECSchemaR refSchema)
             if (nullptr != persUnit && persUnit->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                 return ECObjectsStatus::SchemaInUse;
 
-            for (auto presUnit : koq->GetPresentationFormatList())
+            for (auto presUnit : koq->GetPresentationFormats())
                 {
                 if (persUnit->GetSchema().GetSchemaKey() == foundSchema->GetSchemaKey())
                     return ECObjectsStatus::SchemaInUse;

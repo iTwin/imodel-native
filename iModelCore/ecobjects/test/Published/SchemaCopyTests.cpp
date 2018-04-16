@@ -165,8 +165,8 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity)
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
     EXPECT_STREQ("f:AmerFI", targetKoq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_EQ(2, targetKoq->GetPresentationFormatList().size());
-    EXPECT_STREQ("f:InchesU", targetKoq->GetPresentationFormatList().at(1).GetName().c_str());
+    EXPECT_EQ(2, targetKoq->GetPresentationFormats().size());
+    EXPECT_STREQ("f:InchesU", targetKoq->GetPresentationFormats().at(1).GetName().c_str());
     EXPECT_STREQ("M", targetKoq->GetPersistenceUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, targetKoq->GetRelativeError());
     }

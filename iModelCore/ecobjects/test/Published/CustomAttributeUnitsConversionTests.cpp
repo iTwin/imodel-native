@@ -619,8 +619,8 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
     EXPECT_STRNE(lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str(), specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("f:DefaultRealU[u:KM]", lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("f:DefaultRealU[u:CM]", specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_EQ(1, lengthKOQ->GetPresentationFormatList().size());
-    EXPECT_EQ(1, specialLengthKOQ->GetPresentationFormatList().size());
+    EXPECT_EQ(1, lengthKOQ->GetPresentationFormats().size());
+    EXPECT_EQ(1, specialLengthKOQ->GetPresentationFormats().size());
 
     auto oldPersistenceUnit = specialPipeLength->GetCustomAttributeLocal("OldPersistenceUnit");
     ECValue oldUnitName;

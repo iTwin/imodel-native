@@ -1433,12 +1433,12 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
         change.GetPersistenceUnit().SetValue(oldPersUnitStr, newPersUnitStr);
 
     std::vector<Utf8String> oldPresUnits, newPresUnits;
-    for (NamedFormat const& format : oldVal.GetPresentationFormatList())
+    for (NamedFormat const& format : oldVal.GetPresentationFormats())
         {
         oldPresUnits.push_back(format.GetName());
         }
 
-    for (NamedFormat const& format : newVal.GetPresentationFormatList())
+    for (NamedFormat const& format : newVal.GetPresentationFormats())
         {
         newPresUnits.push_back(format.GetName());
         }
@@ -2047,7 +2047,7 @@ BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChanges& change
     change.GetDescription().SetValue(appendType, koq.GetInvariantDescription());
     change.GetPersistenceUnit().SetValue(appendType, koq.GetPersistenceUnit()->GetFullName());
     change.GetRelativeError().SetValue(appendType, koq.GetRelativeError());
-    for (NamedFormat const& format : koq.GetPresentationFormatList())
+    for (NamedFormat const& format : koq.GetPresentationFormats())
         change.GetPresentationUnitList().Add(state).SetValue(appendType, format.GetName());
 
     return SUCCESS;

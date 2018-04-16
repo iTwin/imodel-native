@@ -1548,7 +1548,7 @@ public:
     //! Removes all presentation formats.
     void RemoveAllPresentationFormats() {m_presentationFormats.clear();}
     //! Gets a list of all presentation formats available for this KoQ.
-    bvector<NamedFormat> const& GetPresentationFormatList() const {return m_presentationFormats;}
+    bvector<NamedFormat> const& GetPresentationFormats() const {return m_presentationFormats;}
     //! Returns true if one or more presentation formats exist
     bool HasPresentationFormats() const {return m_presentationFormats.size() > 0;}
 

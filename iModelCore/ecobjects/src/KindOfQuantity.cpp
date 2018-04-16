@@ -246,7 +246,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
     double relError = GetRelativeError();
     xmlWriter.WriteAttribute(ECXML_RELATIVE_ERROR_ATTRIBUTE, relError);
 
-    bvector<NamedFormat> const& presentationUnits = GetPresentationFormatList();
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
     if (presentationUnits.size() > 0)
         {
         Utf8String presentationUnitString;
@@ -346,7 +346,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
 
     outValue[ECJSON_RELATIVE_ERROR_ATTRIBUTE] = GetRelativeError();
 
-    bvector<NamedFormat> const& presentationUnits = GetPresentationFormatList();
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
     if (0 != presentationUnits.size())
         {
         Json::Value presentationUnitArr(Json::ValueType::arrayValue);
@@ -1052,7 +1052,7 @@ Json::Value KindOfQuantity::GetPresentationsJson() const
     {
     Json::Value arrayObj(Json::arrayValue);
 
-    bvector<NamedFormat> const& presentationUnits = GetPresentationFormatList();
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
     if (presentationUnits.size() > 0)
         {
         for (NamedFormatCR format : presentationUnits)
