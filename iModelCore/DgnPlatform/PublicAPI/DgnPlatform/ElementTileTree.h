@@ -62,11 +62,13 @@ private:
     BentleyStatus _LoadTile() override;
     bool _IsExpired(uint64_t) override;
     bool _IsValidData() override;
+    bool _IsCompleteData() override;
     folly::Future<BentleyStatus> _ReadFromDb() override;
 
     BentleyStatus LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry);
     BentleyStatus DoGetFromSource();
     bool IsCacheable() const;
+    bool IsExpired() const { return m_cacheCreateTime < m_createTime; }
     TileCR GetElementTile() const;
     TileR GetElementTile();
 

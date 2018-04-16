@@ -1229,6 +1229,18 @@ bool Loader::_IsValidData()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::_IsCompleteData()
+    {
+#if defined(WIP_TILE_REPAIR)
+    return !IsExpired() && m_omitElems.empty();
+#else
+    return true;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileCR Loader::GetElementTile() const { return static_cast<TileCR>(*m_tile); }

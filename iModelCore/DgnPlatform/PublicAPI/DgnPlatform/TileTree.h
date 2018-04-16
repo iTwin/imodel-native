@@ -536,6 +536,8 @@ public:
 
     //! Return false if m_tileBytes contains invalid data and should be updated from source.
     virtual bool _IsValidData() { return true; }
+    //! Return true if m_tileBytes contains complete tile data; false if data must be further processed by _GetFromSource()
+    virtual bool _IsCompleteData() { return true; }
 
     struct LoadFlag
         {
