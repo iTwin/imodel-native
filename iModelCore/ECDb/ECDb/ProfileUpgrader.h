@@ -94,27 +94,6 @@ struct ProfileUpgrader_4002 final : ProfileUpgrader
     {
 //intentionally use compiler generated ctor, dtor, copy ctor and copy assignment op
 private:
-    struct UpgradeKoqSqlFunction final : ScalarFunction
-        {
-        private:
-            ECDbCR m_ecdb;
-            bset<ECN::ECSchemaId>& m_schemasWithKoqs;
-            bset<ECN::ECSchemaId>& m_schemasWithKoqsWithPresentationFormats;
-
-            void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
-
-        public:
-            UpgradeKoqSqlFunction(ECDbCR ecdb, bset<ECN::ECSchemaId>& schemaWithKoqs, bset<ECN::ECSchemaId>& schemaWithKoqsWithPresentationFormats) : ScalarFunction("UPGRADEKOQ", 3, DbValueType::TextVal), m_ecdb(ecdb), m_schemasWithKoqs(schemaWithKoqs), m_schemasWithKoqsWithPresentationFormats(schemaWithKoqsWithPresentationFormats)
-                {
-                m_ecdb.AddFunction(*this);
-                }
-
-            ~UpgradeKoqSqlFunction()
-                {
-                m_ecdb.RemoveFunction(*this);
-                }
-        };
-
     static constexpr Utf8CP UnitsSchemaName = "Units";
     static constexpr Utf8CP FormatsSchemaName = "Formats";
 

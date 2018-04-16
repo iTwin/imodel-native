@@ -315,28 +315,69 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     {
     bset<ECSchemaId> schemasThatNeedUnitsReference;
     bset<ECSchemaId> schemasThatNeedUnitsAndFormatsReference;
-    {
-        UpgradeKoqSqlFunction upgradeKoqSqlFnc(ecdb, schemasThatNeedUnitsReference, schemasThatNeedUnitsAndFormatsReference);
-        ecdb.AddFunction(upgradeKoqSqlFnc);
 
-        Statement stmt;
-        if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE " TABLE_KindOfQuantity " SET PersistenceUnit=UPGRADEKOQ(SchemaId,PersistenceUnit,0), PresentationUnits=UPGRADEKOQ(SchemaId,PresentationUnits,1)"))
-            {
-            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-            }
+    // Upgrade the persisted PersistenceUnits and PresentationFormat strings to new format
+    struct UpgradedUnitFormatStrings
+        {
+        Utf8String m_persistenceUnit;
+        Utf8String m_presentationFormats;
+        };
 
-        if (BE_SQLITE_DONE != stmt.Step())
-            {
-            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
-            }
+    bmap<KindOfQuantityId, UpgradedUnitFormatStrings> koqs;
 
-        LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
+    Statement stmt;
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "SELECT Id,SchemaId,PersistenceUnit,PresentationUnits,SchemaId FROM " TABLE_KindOfQuantity))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
         }
 
-    if (schemasThatNeedUnitsReference.empty())
+
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        UpgradedUnitFormatStrings& unitFormatStrings = koqs[stmt.GetValueId<KindOfQuantityId>(0)];
+        ECSchemaId schemaId = stmt.GetValueId<ECSchemaId>(1);
+        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(unitFormatStrings.m_persistenceUnit, unitFormatStrings.m_presentationFormats, stmt.GetValueText(2), stmt.GetValueText(3)))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        schemasThatNeedUnitsReference.insert(schemaId);
+        if (!unitFormatStrings.m_presentationFormats.empty())
+            schemasThatNeedUnitsAndFormatsReference.insert(schemaId);
+        }
+
+    stmt.Finalize();
+    if (koqs.empty())
+        {
+        LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
         return BE_SQLITE_OK;
+        }
+
+    if (BE_SQLITE_OK != stmt.Prepare(ecdb, "UPDATE " TABLE_KindOfQuantity " SET PersistenceUnit=?,PresentationUnits=? WHERE Id=?"))
+        {
+        LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+        return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+        }
+
+    for (bpair<KindOfQuantityId, UpgradedUnitFormatStrings> const& kvPair : koqs)
+        {
+        if (BE_SQLITE_OK != stmt.BindText(1, kvPair.second.m_persistenceUnit, Statement::MakeCopy::No) ||
+            BE_SQLITE_OK != stmt.BindText(2, kvPair.second.m_presentationFormats, Statement::MakeCopy::No) ||
+            BE_SQLITE_OK != stmt.BindId(3, kvPair.first) ||
+            BE_SQLITE_DONE != stmt.Step())
+            {
+            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        stmt.Reset();
+        stmt.ClearBindings();
+        }
+
+    stmt.Finalize();
+    BeAssert(!schemasThatNeedUnitsReference.empty());
 
     //now import Units (and Formats schemas) as new KOQ format requires references to it.
     ECSchemaId unitsSchemaId, formatsSchemaId;
@@ -384,7 +425,6 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     }
 
     //now add the schema references
-    Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, "INSERT INTO main." TABLE_SchemaReference "(SchemaId,ReferencedSchemaId) VALUES(?,?)"))
         {
         LOG.error("ECDb profile upgrade failed: Failed to prepare SQL to insert references to standard Units schema.");
@@ -461,81 +501,6 @@ DbResult ProfileUpgrader_4002::FixMetaSchemaClassMapCAXml(ECDbCR ecdb)
 
     LOG.debug("ECDb profile upgrade: Fixed ClassMap custom attribute ECXML of MetaSchema.ClassHasAllBaseClasses.");
     return BE_SQLITE_OK;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle    03/2018
-//+---------------+---------------+---------------+---------------+---------------+--------
-void ProfileUpgrader_4002::UpgradeKoqSqlFunction::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
-    {
-    DbValue const& schemaIdVal = args[0];
-    if (schemaIdVal.GetValueType() != DbValueType::IntegerVal)
-        {
-        ctx.SetResultError("UPGRADEKOQ SQL: Argument 0 is expected to be the SchemaId of the ec_KindOfQuantity row.");
-        return;
-        }
-
-    m_schemasWithKoqs.insert(schemaIdVal.GetValueId<ECSchemaId>());
-
-    DbValue const& oldFusValue = args[1];
-    if (oldFusValue.GetValueType() != DbValueType::NullVal && oldFusValue.GetValueType() != DbValueType::TextVal)
-        {
-        ctx.SetResultError("UPGRADEKOQ SQL: Argument 1 is expected to be the pre-EC3.2 FUS descriptor.");
-        return;
-        }
-
-    if (oldFusValue.IsNull())
-        {
-        ctx.SetResultNull();
-        return;
-        }
-
-    DbValue const& isPresentationFormatValue = args[2];
-    if (isPresentationFormatValue.GetValueType() != DbValueType::IntegerVal)
-        {
-        ctx.SetResultError("UPGRADEKOQ SQL: Argument 2 is expected to be a bool.");
-        return;
-        }
-
-    Utf8CP oldFus = oldFusValue.GetValueText();
-    const bool isPresentationFormatList = isPresentationFormatValue.GetValueInt() != 0;
-    if (!isPresentationFormatList)
-        {
-        Utf8String newPersUnitStr;
-        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptor(newPersUnitStr, oldFus))
-            {
-            ctx.SetResultError(Utf8PrintfString("UPGRADEKOQ SQL: Could not upgrade FUS descriptor '%s' to EC3.2 format.", oldFus).c_str());
-            return;
-            }
-
-        ctx.SetResultText(newPersUnitStr.c_str(), (int) newPersUnitStr.size(), DbFunction::Context::CopyData::Yes);
-        return;
-        }
-
-    m_schemasWithKoqsWithPresentationFormats.insert(schemaIdVal.GetValueId<ECSchemaId>());
-
-    Json::Value presentationFormatArrayJson;
-    if (!Json::Reader::Parse(oldFus, presentationFormatArrayJson))
-        {
-        ctx.SetResultError(Utf8PrintfString("UPGRADEKOQ SQL: Could not parse presentation units '%s' as JSON.", oldFus).c_str());
-        return;
-        }
-
-    for (Json::Value& presentationFormatJson : presentationFormatArrayJson)
-        {
-        //WIP_FORMAT: How to convert old presentation FUS to new formats?
-        Utf8String newFormat;
-        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptor(newFormat, presentationFormatJson.asCString()))
-            {
-            ctx.SetResultError(Utf8PrintfString("UPGRADEKOQ SQL: Could not upgrade FUS descriptor '%s' to EC3.2 format.", presentationFormatJson.asCString()).c_str());
-            return;
-            }
-
-        presentationFormatJson = newFormat;
-        }
-
-    Utf8String newFusArray = presentationFormatArrayJson.ToString();
-    ctx.SetResultText(newFusArray.c_str(), (int) newFusArray.size(), DbFunction::Context::CopyData::Yes);
     }
 
 //******************************************************************************************************************
