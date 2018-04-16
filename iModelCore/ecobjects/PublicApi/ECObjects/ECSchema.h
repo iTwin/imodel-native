@@ -1462,7 +1462,7 @@ private:
     //! Gets the cached persistence format. Creates one based on Formatting::NumericFormatSpec::DefaultFormat() if it does not exist.
     ECOBJECTS_EXPORT NamedFormatCP GetOrCreateCachedPersistenceFormat() const;
     ECObjectsStatus ParsePresentationUnit(Utf8CP descriptor, ECSchemaReadContextR context, uint32_t ecXmlMajorVersion, uint32_t ecXmlMinorVersion, bool shouldBeDefault);
-    ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
+    ECObjectsStatus CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr) const;
     ECObjectsStatus ParseDescriptorAndAddRefs(Utf8StringR unitName, Utf8StringR formatName, ECUnitCP& unit, Utf8CP descriptor, ECSchemaReadContextP context);
 public:
     ECSchemaCR GetSchema() const {return m_schema;} //!< The ECSchema that this kind of quantity is defined in.
@@ -1506,7 +1506,7 @@ public:
     //! Gets the Unit of measurement used for persisting the information
     ECUnitCP GetPersistenceUnit() const {return m_persistenceUnit;}
     //! Constructs a NamedFormat and sets it as the default (First in the presentation format list).
-    ECObjectsStatus SetDefaultPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr)
+    ECObjectsStatus SetDefaultPresentationFormat(ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr)
         {return AddPresentationFormatSingleUnitOverride(parent, precisionOverride, inputUnitOverride, labelOverride, true);}
     //! Gets the default presentation format of this KindOfQuantity.
     NamedFormatCP GetDefaultPresentationFormat() const {return HasPresentationFormats() ? &m_presentationFormats[0] : GetOrCreateCachedPersistenceFormat();}
@@ -1520,7 +1520,7 @@ public:
     //! @param[in]  unitsAndLabels      Optionally override units and labels for the composite
     //! @param[in]  isDefault           Optionally set the created override as the default presentation unit
     //! @return ECObjectsStatus::Succcess if format is successfully added as a presentation format. Otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr, bool isDefault = false);
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormat(ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, UnitAndLabelPairs const* unitsAndLabels = nullptr, bool isDefault = false);
 
     //! Adds NamedFormat to this KoQ's list of presentation formats. If the format has any units,
     //! they must be compatible with the persistence unit and each other. This is a convenience method to handle
@@ -1530,7 +1530,7 @@ public:
     //! @param[in]  unitsAndLabels      Optionally override units and labels for the composite
     //! @param[in]  isDefault           Optionally set the created override as the default presentation unit
     //! @return ECObjectsStatus::Succcess if format is successfully added as a presentation format. Otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<uint32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr, bool isDefault = false);
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr, bool isDefault = false);
 
     //! Removes the specified presentation format.
     ECOBJECTS_EXPORT void RemovePresentationFormat(NamedFormatCR fus);

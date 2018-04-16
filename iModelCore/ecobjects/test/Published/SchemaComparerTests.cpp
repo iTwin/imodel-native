@@ -331,7 +331,7 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     auto num = Formatting::NumericFormatSpec();
     num.SetApplyRounding(true);
     num.SetPresentationType(Formatting::PresentationType::Fractional);
-    num.SetFractionalPrecision(Formatting::FractionalPrecision::Over_128);
+    num.SetPrecision(Formatting::FractionalPrecision::Over_128);
     num.SetMinWidth(4);
     num.SetUomSeparator("");
     num.SetPrefixPadChar('0');

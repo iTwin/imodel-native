@@ -178,7 +178,7 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
             LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        spec.SetFractionalPrecision(unitsFractionalPrecision);
+        spec.SetPrecision(unitsFractionalPrecision);
         }
     else
         {
@@ -188,7 +188,7 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
             LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        spec.SetDecimalPrecision(unitsDecimalPrecision);
+        spec.SetPrecision(unitsDecimalPrecision);
         }
 
     uint32_t minWidth;

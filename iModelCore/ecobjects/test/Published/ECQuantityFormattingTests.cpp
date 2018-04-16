@@ -47,7 +47,7 @@ static void ShowQuantifiedValue(Utf8CP input, Utf8CP formatName, Utf8CP fusUnit,
             }
 
         real4uFormat = namedFormat = new NamedFormat(real4u->GetName() + "[" + unit->GetName().c_str() + "]", real4u);
-        real4uFormat->GetNumericSpecP()->SetDecimalPrecision(Formatting::DecimalPrecision::Precision4);
+        real4uFormat->GetNumericSpecP()->SetPrecision(Formatting::DecimalPrecision::Precision4);
         if (!real4uFormat->HasComposite())
             {
             Formatting::CompositeValueSpec compositeSpec(*unit);

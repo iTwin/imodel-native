@@ -500,7 +500,7 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
     {
     bool xmlLessThan32 = (3 == ecXmlMajorVersion && 2 > ecXmlMinorVersion) && (nullptr != context);
     ECUnitCP unit = nullptr;
-    Nullable<unsigned> prec = nullptr;
+    Nullable<int32_t> prec = nullptr;
     ECFormatCP persistenceFormat = nullptr;
     if (xmlLessThan32)
         {
@@ -569,7 +569,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
         if (ECObjectsStatus::Success != ParseDescriptorAndAddRefs(unitName, formatName, unit, descriptor, &context))
             return ECObjectsStatus::Error;
 
-        Nullable<unsigned> precision = nullptr;
+        Nullable<int32_t> precision = nullptr;
         if (!Utf8String::IsNullOrEmpty(formatName.c_str()))
             {
             Utf8String localformatName;
@@ -617,7 +617,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
         {
         bvector<Utf8String> names;
         bvector<Nullable<Utf8String>> unitLabels;
-        Nullable<unsigned> precision;
+        Nullable<int32_t> precision;
         Utf8String formatName;
         Formatting::Format::ParseFormatString(formatName, precision, names, unitLabels, descriptor);
         ECFormatCP format = GetSchema().LookupFormat(formatName.c_str());
@@ -747,7 +747,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8S
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<uint32_t> precisionOverride,  UnitAndLabelPairs const* unitsAndLabels) const
+ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride,  UnitAndLabelPairs const* unitsAndLabels) const
     {
     if (parent.IsOverride())
         {
@@ -828,7 +828,7 @@ NamedFormatCP KindOfQuantity::GetOrCreateCachedPersistenceFormat() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<uint32_t> precisionOverride, UnitAndLabelPairs const* unitsAndLabels, bool isDefault)
+ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullable<int32_t> precisionOverride, UnitAndLabelPairs const* unitsAndLabels, bool isDefault)
     {
     if (parent.IsOverride())
         {
@@ -886,7 +886,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
                 LOG.errorv("On KOQ '%s' %d is not a valid fractional precision override value", GetFullName().c_str(), precisionOverride.Value());
                 return ECObjectsStatus::Error;
                 }
-            nfp->GetNumericSpecP()->SetFractionalPrecision(prec);
+            nfp->GetNumericSpecP()->SetPrecision(prec);
             }
         else
             {
@@ -896,7 +896,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
                 LOG.errorv("On KOQ '%s' %d is not a valid decimal precision override value", GetFullName().c_str(), precisionOverride.Value());
                 return ECObjectsStatus::Error;
                 }
-            nfp->GetNumericSpecP()->SetDecimalPrecision(prec);
+            nfp->GetNumericSpecP()->SetPrecision(prec);
             }
         }
     if ((nullptr == unitsAndLabels) || (0 == unitsAndLabels->size()))
@@ -962,7 +962,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<uint32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
+ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
     {
     UnitAndLabelPairs units;
     if (nullptr != inputUnitOverride)

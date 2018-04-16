@@ -29,7 +29,7 @@ TEST_F(FormatTest, BasicUnitFormatCreation)
     Formatting::NumericFormatSpec format = Formatting::NumericFormatSpec();
     format.SetApplyRounding(true);
     format.SetPresentationType(Formatting::PresentationType::Fractional);
-    format.SetFractionalPrecision(Formatting::FractionalPrecision::Over_128);
+    format.SetPrecision(Formatting::FractionalPrecision::Over_128);
     EC_ASSERT_SUCCESS(schema->CreateFormat(ufmt, "TestFormat", "TestDisplayLabel", "a test format", &format));
 
     ASSERT_NE(nullptr, ufmt);
@@ -136,7 +136,7 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     numeric.SetSignOption(ShowSignOption::OnlyNegative);
     numeric.SetUseLeadingZeroes(true);
     numeric.SetKeepTrailingZeroes(true);
-    numeric.SetFractionalPrecision(FractionalPrecision::Quarter);
+    numeric.SetPrecision(FractionalPrecision::Quarter);
     numeric.SetDecimalSeparator('.');
     numeric.SetThousandSeparator(',');
     numeric.SetUomSeparator(" ");

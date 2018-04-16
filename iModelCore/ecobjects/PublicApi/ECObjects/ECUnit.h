@@ -236,17 +236,20 @@ public:
 struct NamedFormat : Formatting::Format
 {
 DEFINE_T_SUPER(Formatting::Format)
+friend ECSchema;
 
 private:
     Utf8String m_nameOrFormatString;
     ECFormatCP m_ecFormat;
 
+protected:
+    void SetParentFormat(ECFormatCP parent) {m_ecFormat = parent;}
+
 public:
     ECOBJECTS_EXPORT NamedFormat(Utf8StringCR name = "", ECFormatCP format = nullptr);
     Utf8StringCR GetName() const {return m_nameOrFormatString;}
-    bool IsOverride() const {return this != (NamedFormatCP)m_ecFormat; }
+    bool IsOverride() const {return this != (NamedFormatCP)m_ecFormat;}
     ECFormatCP GetParentFormat() const {return m_ecFormat;}
-    void SetParentFormat(ECFormatCP parent) {m_ecFormat = parent;}
 };
 
 //=======================================================================================
