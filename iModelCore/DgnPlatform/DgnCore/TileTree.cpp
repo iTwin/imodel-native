@@ -276,7 +276,7 @@ BentleyStatus TileLoader::DoReadFromDb()
         if (!_IsCompleteData())
             return ERROR; // _GetFromSource() will be invoked to further process the cache data
 
-        m_saveToCache = true;  // We just load the data from cache don't save it and update timestamp only.
+        m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE FileName=?"))
             {

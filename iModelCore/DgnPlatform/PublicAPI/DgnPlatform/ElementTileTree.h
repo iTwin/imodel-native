@@ -66,6 +66,7 @@ private:
     folly::Future<BentleyStatus> _ReadFromDb() override;
 
     BentleyStatus LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry);
+    void SetupForTileRepair();
     BentleyStatus DoGetFromSource();
     bool IsCacheable() const;
     bool IsExpired() const { return m_cacheCreateTime < m_createTime; }
@@ -299,6 +300,7 @@ public:
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 
     virtual bool IsCacheable() const;
+    void SetGenerator(TileGeneratorUPtr&&);
 };
 
 //=======================================================================================
