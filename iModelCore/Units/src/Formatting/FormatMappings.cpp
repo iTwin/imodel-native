@@ -200,17 +200,17 @@ void LegacyNameMappings::AddMappings()
     AddMapping("DefaultReal", "f:DefaultReal");
     AddMapping("DefaultRealU", "f:DefaultRealU");
     AddMapping("Real", "f:DefaultReal");
-    AddMapping("Real2", "f:DefaultReal<2>");
-    AddMapping("Real3", "f:DefaultReal<3>");
-    AddMapping("Real4", "f:DefaultReal<4>");
+    AddMapping("Real2", "f:DefaultReal(2)");
+    AddMapping("Real3", "f:DefaultReal(3)");
+    AddMapping("Real4", "f:DefaultReal(4)");
     AddMapping("RealU", "f:DefaultRealU");
-    AddMapping("Real2U", "f:DefaultRealU<2>");
-    AddMapping("Real3U", "f:DefaultRealU<3>");
-    AddMapping("Real4U", "f:DefaultRealU<4>");
+    AddMapping("Real2U", "f:DefaultRealU(2)");
+    AddMapping("Real3U", "f:DefaultRealU(3)");
+    AddMapping("Real4U", "f:DefaultRealU(4)");
     AddMapping("Real6U", "f:DefaultRealU");
-    AddMapping("Real2UNS", "f:DefaultRealUNS<2>");
-    AddMapping("Real3UNS", "f:DefaultRealUNS<3>");
-    AddMapping("Real4UNS", "f:DefaultRealUNS<4>");
+    AddMapping("Real2UNS", "f:DefaultRealUNS(2)");
+    AddMapping("Real3UNS", "f:DefaultRealUNS(3)");
+    AddMapping("Real4UNS", "f:DefaultRealUNS(4)");
     AddMapping("Real6UNS", "f:DefaultRealUNS");
 
     // TODO Stations
@@ -237,18 +237,18 @@ void LegacyNameMappings::AddMappings()
     AddMapping("DefaultFractionalU", "f:FractionalU");
     AddMapping("SignedFractional", "f:SignedFractional");
 
-    AddMapping("Fractional4", "f:Fractional<4>");
-    AddMapping("Fractional4U", "f:FractionalU<4>");
-    AddMapping("Fractional8", "f:Fractional<8>");
-    AddMapping("Fractional8U", "f:FractionalU<8>");
-    AddMapping("Fractional16", "f:Fractional<16>");
-    AddMapping("Fractional16U", "f:FractionalU<16>");
-    AddMapping("Fractional32", "f:Fractional<32>");
-    AddMapping("Fractional32U", "f:FractionalU<32>");
+    AddMapping("Fractional4", "f:Fractional(4)");
+    AddMapping("Fractional4U", "f:FractionalU(4)");
+    AddMapping("Fractional8", "f:Fractional(8)");
+    AddMapping("Fractional8U", "f:FractionalU(8)");
+    AddMapping("Fractional16", "f:Fractional(16)");
+    AddMapping("Fractional16U", "f:FractionalU(16)");
+    AddMapping("Fractional32", "f:Fractional(32)");
+    AddMapping("Fractional32U", "f:FractionalU(32)");
     AddMapping("Fractional64", "f:Fractional");
     AddMapping("Fractional64U", "f:FractionalU");
-    AddMapping("Fractional128", "f:Fractional<128>");
-    AddMapping("Fractional128U", "f:FractionalU<128>");
+    AddMapping("Fractional128", "f:Fractional(128)");
+    AddMapping("Fractional128U", "f:FractionalU(128)");
 
     AddMapping("DefaultExp", "f:Scientific");
     AddMapping("SignedExp", "f:SignedScientific");
@@ -256,7 +256,7 @@ void LegacyNameMappings::AddMappings()
     AddMapping("DefaultInt", "f:DefaultReal");
 
     AddMapping("AngleDMS", "f:AngleDMS");
-    AddMapping("AngleDMS8", "f:AngleDMS<8>");
+    AddMapping("AngleDMS8", "f:AngleDMS(8)");
     AddMapping("AngleDM8", "f:AngleDM");
 
     AddMapping("HMS", "f:HMS");
@@ -264,22 +264,22 @@ void LegacyNameMappings::AddMappings()
     AddMapping("AmerMYFI4", "f:AmerMYFI");
 
     AddMapping("AmerFI8", "f:AmerFI");
-    AddMapping("AmerFI16", "f:AmerFI<16>");
-    AddMapping("AmerFI32", "f:AmerFI<32>");
+    AddMapping("AmerFI16", "f:AmerFI(16)");
+    AddMapping("AmerFI32", "f:AmerFI(32)");
 
     AddMapping("AmerYFI8", "f:AmerYFI");
 
     AddMapping("Meters4u", "f:Meters4u");
     AddMapping("Feet4u", "f:Feet4U");
     AddMapping("Inches4u", "f:InchesU");
-    AddMapping("Inches18u", "f:InchesU<18>");
+    AddMapping("Inches18u", "f:InchesU(8)");
 
     AddMapping("DecimalDeg4", "f:DecimalDeg4");
     AddMapping("StationFt2", "f:StationFt2");
     AddMapping("StationM4", "f:StationM4");
 
     AddMapping("CAngleDMS", "f:AngleDMS");
-    AddMapping("CAngleDMS8", "f:AngleDMS<8>");
+    AddMapping("CAngleDMS8", "f:AngleDMS(8)");
     AddMapping("CAngleDM8", "f:AngleDM");
     }
 
