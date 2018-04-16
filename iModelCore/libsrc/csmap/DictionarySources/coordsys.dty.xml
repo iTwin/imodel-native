@@ -498,88 +498,46 @@
                 <Name>Libya</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:2068</KeyName>
+                    <KeyName>ELD1979.Libya-5</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2069</KeyName>
+                    <KeyName>ELD1979.Libya-6</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2070</KeyName>
+                    <KeyName>ELD1979.Libya-7</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2071</KeyName>
+                    <KeyName>ELD1979.Libya-8</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2072</KeyName>
+                    <KeyName>ELD1979.Libya-9</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2073</KeyName>
+                    <KeyName>ELD1979.Libya-10</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2074</KeyName>
+                    <KeyName>ELD1979.Libya-11</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2075</KeyName>
+                    <KeyName>ELD1979.Libya-12</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2076</KeyName>
+                    <KeyName>ELD1979.Libya-13</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2077</KeyName>
+                    <KeyName>ELD1979.UTM-32N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2078</KeyName>
+                    <KeyName>ELD1979.UTM-33N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2079</KeyName>
+                    <KeyName>ELD1979.UTM-34N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2080</KeyName>
+                    <KeyName>ELD1979.UTM-35N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2087</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-5</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-6</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-7</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-8</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-9</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-10</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-11</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-12</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-13</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.UTM-32N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.UTM-33N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.UTM-34N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.UTM-35N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.TM-12NE</KeyName>
+                    <KeyName>ELD1979.TM-12NE</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Libyan2006.Libya/TM</KeyName>
@@ -9982,10 +9940,10 @@
                 <Name>Syria</Name>
                 <Members>
                   <Member>
-                    <KeyName>DeirEzZor.Syria</KeyName>
+                    <KeyName>DeirEzZor_2.Syria</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:22770</KeyName>
+                    <KeyName>DeirEzZor-7P.Syria</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -10054,7 +10012,10 @@
                 <Name>Others</Name>
                 <Members>
                   <Member>
-                    <KeyName>DeirEzZor.Levant</KeyName>
+                    <KeyName>DeirEzZor_2.Levant</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DeirEzZor-7P.Levant</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:22780</KeyName>
@@ -28482,6 +28443,9 @@
             <Name>Legacy</Name>
             <Members>
               <Member>
+                <KeyName>DeirEzZor.Levant</KeyName>
+              </Member>
+              <Member>
                 <KeyName>EPSG:3994</KeyName>
               </Member>
               <Member>
@@ -30302,6 +30266,95 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Libya</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:2068</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2069</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2070</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2071</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2072</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2073</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2074</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2075</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2076</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2077</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2078</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2079</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2080</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2087</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-5</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-6</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-7</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-8</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-9</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-10</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-11</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-12</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-13</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.UTM-32N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.UTM-33N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.UTM-34N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.UTM-35N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.TM-12NE</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>Morocco</Name>
                 <Members>
                   <Member>
@@ -30426,6 +30479,17 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:21782</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
+                <Name>Syria</Name>
+                <Members>
+                  <Member>
+                    <KeyName>DeirEzZor.Syria</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:22770</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -32362,10 +32426,7 @@
                     <KeyName>EPSG:4754</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4159</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EuropLibyan79.LL</KeyName>
+                    <KeyName>ELD1979.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -33882,7 +33943,10 @@
                  <KeyName>EPSG:4204</KeyName>
                </Member>
                <Member>
-                 <KeyName>DeirEzZor.LL</KeyName>
+                 <KeyName>DeirEzZor_2.LL</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>DeirEzZor-7P.LL</KeyName>
                </Member>
                <Member>
                  <KeyName>EPSG:4227</KeyName>
@@ -34454,10 +34518,7 @@
                     <KeyName>NZGD49-7P.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Chatham1979.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4673</KeyName>
+                    <KeyName>Chatham1979a.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:104108</KeyName>
@@ -34840,9 +34901,6 @@
                   </Member>
                   <Member>
                     <KeyName>Chua.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4224</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Corrego.LL</KeyName>
@@ -35859,6 +35917,24 @@
               <Member>
                 <KeyName>EPSG:4277</KeyName>
               </Member>
+              <Member>
+                <KeyName>Chatham1979.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4673</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4224</KeyName>
+              </Member>
+               <Member>
+                 <KeyName>DeirEzZor.LL</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>EPSG:4159</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>EuropLibyan79.LL</KeyName>
+               </Member>
             </Members>
           </Group>
         </Groups>
