@@ -48,7 +48,23 @@ ClassificationSystemPtr ClassificationSystem::Create
     ClassificationSystemPtr system = new ClassificationSystem(params, name);
     return system;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ClassificationSystem::_OnInserted(Dgn::DgnElementP copiedFrom) const 
+    {
+        T_Super::_OnInserted(copiedFrom);
+        Dgn::DefinitionModelPtr model = Dgn::DefinitionModel::Create(this);
+        if (!model.IsValid()) 
+            //return nullptr;
+            return;
+        Dgn::IBriefcaseManager::Request req;
+        GetDgnDb().BriefcaseManager().PrepareForModelInsert(req, *model, Dgn::IBriefcaseManager::PrepareAction::Acquire);
+        if (Dgn::DgnDbStatus::Success != model->Insert())
+            //return nullptr;
+            return;
 
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/

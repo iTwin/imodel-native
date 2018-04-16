@@ -41,6 +41,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement
         //! @param[in]  name   new name for this ClassificationSystem
         void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
 
+        virtual void _OnInserted(Dgn::DgnElementP copiedFrom) const override;
+
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
@@ -54,7 +56,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemPtr Create(Dgn::DgnDbR db, Utf8CP name);
 
         //! Gets the name of this ClassificationSystem
-        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
 
     };
 
@@ -113,7 +115,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinitionGroup : Dgn::G
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemClassDefinitionGroupPtr Create(Dgn::DgnDbR db, Utf8CP name);
         
         //! Gets the name of this ClassificationSystemClassDefinitionGroup
-        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
     };
     
     
@@ -155,10 +157,10 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(CIBSEClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
         //! Gets the name of this CIBSEClassDefinition
-        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
 
         //! Gets the Category of this CIBSEClassDefinition
-        Utf8CP GetCategory() const { return GetPropertyValueString(prop_Category()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetCategory() const { return GetPropertyValueString(prop_Category()).c_str(); }
         
     };
 
@@ -206,13 +208,13 @@ struct EXPORT_VTABLE_ATTRIBUTE OmniClassClassDefinition : ClassificationSystemCl
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(OmniClassClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
         //! Gets the name of this OmniClassClassDefinition
-        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
 
         //! Gets the ID of this OmniClassClassDefinition
-        Utf8CP GetOmniClassID() const { return GetPropertyValueString(prop_OmniClassID()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetOmniClassID() const { return GetPropertyValueString(prop_OmniClassID()).c_str(); }
 
         //! Gets the description of this OmniClassClassDefinition
-        Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
 
     };
 
@@ -241,10 +243,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ASHRAEClassDefinition : ClassificationSystemClass
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAEClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
         //! Gets the name of this ASHRAEClassDefinition
-        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
 
         //! Gets the Category of this ASHRAEClassDefinition
-        Utf8CP GetCategory() const { return GetPropertyValueString(prop_Category()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetCategory() const { return GetPropertyValueString(prop_Category()).c_str(); }
     };
 //=======================================================================================
 //! A ASHRAE2004 Class Definition element
@@ -337,10 +339,10 @@ struct EXPORT_VTABLE_ATTRIBUTE MasterFormatClassDefinition : ClassificationSyste
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(MasterFormatClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
         //! Gets the name of this MasterFormatClassDefinition
-        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
 
         //! Gets the description of this MasterFormatClassDefinition
-        Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
 
     };
 
@@ -382,10 +384,10 @@ struct EXPORT_VTABLE_ATTRIBUTE UniFormatClassDefinition : ClassificationSystemCl
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(UniFormatClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
         //! Gets the name of this UniFormatClassDefinition
-        Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
 
         //! Gets the description of this UniFormatClassDefinition
-        Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetDescription() const { return GetPropertyValueString(prop_Description()).c_str(); }
 
     };
 END_CLASSIFICATIONSYSTEMS_NAMESPACE
