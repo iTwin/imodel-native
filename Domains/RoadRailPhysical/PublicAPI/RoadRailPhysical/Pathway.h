@@ -63,9 +63,10 @@ public:
 
     ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::PhysicalModelCR scope, Utf8StringCR value);
-    ROADRAILPHYSICAL_EXPORT static PathwayElementCPtr QueryByCode(Dgn::PhysicalModelCR model, Utf8StringCR code);
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(PathwayElementCR pathway, Dgn::DgnElementCR representedBy);
+    ROADRAILPHYSICAL_EXPORT static PathwayElementCPtr QueryByCode(Dgn::PhysicalModelCR model, Utf8StringCR code);    
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(PathwayElementCR pathway, Dgn::GeometrySourceCR representedBy);
 
+    ROADRAILPHYSICAL_EXPORT bool QueryIsRepresentedBy(Dgn::GeometrySourceCR) const;
     ROADRAILPHYSICAL_EXPORT Dgn::DgnElementIdSet QueryPortionIds() const;
     ROADRAILPHYSICAL_EXPORT bset<TravelPortionInfo> QueryTravelPortionInfos() const;
     ROADRAILPHYSICAL_EXPORT Dgn::DgnElementId QueryTravelPortionId(TravelSide side) const;

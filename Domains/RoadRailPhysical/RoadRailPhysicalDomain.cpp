@@ -321,18 +321,18 @@ DgnViewId RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP al
     {
     auto& dgnDb = subject.GetDgnDb();
 
+    auto roadwayStandardsModelPtr = RoadwayStandardsModel::Query(subject);
+    RoadRailAlignmentDomain::SetUpViewDefinitions(*roadwayStandardsModelPtr);
+
     auto physicalModelPtr = RoadRailPhysicalDomain::QueryPhysicalModel(subject, (physicalPartitionName) ? physicalPartitionName :
         RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
-
-    auto& subjectName = subject.GetCode().GetValue();
-
-    auto displayStyle3dPtr = getDisplayStyle3d(dgnDb.GetDictionaryModel());
-    auto spatialCategorySelectorPtr = getSpatialCategorySelector(dgnDb.GetDictionaryModel(), additionalCategoriesForSelector);
-    auto model3dSelectorPtr = getModelSelector(dgnDb.GetDictionaryModel(), subjectName.GetUtf8());
+    
+    auto displayStyle3dPtr = getDisplayStyle3d(*roadwayStandardsModelPtr);
+    auto spatialCategorySelectorPtr = getSpatialCategorySelector(*roadwayStandardsModelPtr, additionalCategoriesForSelector);
+    auto model3dSelectorPtr = getModelSelector(*roadwayStandardsModelPtr, "3D - Road/Rail");
     model3dSelectorPtr->AddModel(physicalModelPtr->GetModelId());
 
-    auto& view3dName = subjectName;
-    return create3dView(dgnDb.GetDictionaryModel(), view3dName.GetUtf8CP(),
+    return create3dView(*roadwayStandardsModelPtr, "3D - Road/Rail",
         *spatialCategorySelectorPtr, *model3dSelectorPtr, *displayStyle3dPtr);
     }
 

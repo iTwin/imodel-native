@@ -63,13 +63,13 @@ PathwayElementCPtr PathwayElement::QueryByCode(PhysicalModelCR model, Utf8String
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PathwayElement::AddRepresentedBy(PathwayElementCR pathway, DgnElementCR representedBy)
+DgnDbStatus PathwayElement::AddRepresentedBy(PathwayElementCR pathway, GeometrySourceCR representedBy)
     {
-    if (!representedBy.GetElementId().IsValid() || !pathway.GetElementId().IsValid())
+    if (!representedBy.ToElement()->GetElementId().IsValid() || !pathway.GetElementId().IsValid())
         return DgnDbStatus::BadElement;
 
     Utf8String relClassName;
-    if (representedBy.ToGeometrySource2d())
+    if (representedBy.Is2d())
         relClassName = BRRP_REL_DrawingGraphicRepresentsPathway;
     else
         relClassName = BRRP_REL_GraphicalElement3dRepresentsPathway;
@@ -77,10 +77,35 @@ DgnDbStatus PathwayElement::AddRepresentedBy(PathwayElementCR pathway, DgnElemen
     ECInstanceKey insKey;
     if (DbResult::BE_SQLITE_OK != pathway.GetDgnDb().InsertLinkTableRelationship(insKey,
         *pathway.GetDgnDb().Schemas().GetClass(BRRP_SCHEMA_NAME, relClassName)->GetRelationshipClassCP(),
-        ECInstanceId(representedBy.GetElementId().GetValue()), ECInstanceId(pathway.GetElementId().GetValue())))
+        ECInstanceId(representedBy.ToElement()->GetElementId().GetValue()), ECInstanceId(pathway.GetElementId().GetValue())))
         return DgnDbStatus::BadElement;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PathwayElement::QueryIsRepresentedBy(GeometrySourceCR geometrySource) const
+    {
+    Utf8String relClassName;
+    if (geometrySource.Is2d())
+        relClassName = BRRP_REL_DrawingGraphicRepresentsPathway;
+    else
+        relClassName = BRRP_REL_GraphicalElement3dRepresentsPathway;
+
+    auto ecsql = Utf8PrintfString("SELECT ECInstanceId FROM %s.%s WHERE SourceECInstanceId = ? AND TargetECInstanceId = ?;", 
+        BRRP_SCHEMA_NAME, relClassName.c_str());
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(ecsql.c_str());
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, geometrySource.ToElement()->GetElementId());
+    stmtPtr->BindId(2, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        return true;
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
