@@ -393,7 +393,7 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     {
     KindOfQuantityP koq;
 
-    static const std::function<ECUnitCP(Utf8StringCR)> unitLookerUpper = [&](Utf8StringCR name)
+    static const auto unitLookerUpper = [&](Utf8StringCR name)
         {
         return koq->GetSchema().GetUnitsContext().LookupUnit(name.c_str());
         };
@@ -408,7 +408,7 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
-    koq->AddPresentationFormatsByString("f:InchesU", formatLookerUpper);
+    koq->AddPresentationFormatsByString("f:InchesU", formatLookerUpper, unitLookerUpper);
     EXPECT_STRCASEEQ("f:InchesU", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
 
@@ -417,7 +417,7 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
-    koq->AddPresentationFormatsByString("f:InchesU(8)", formatLookerUpper);
+    koq->AddPresentationFormatsByString("f:InchesU(8)", formatLookerUpper, unitLookerUpper);
     EXPECT_STRCASEEQ("f:InchesU(8)", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
 
@@ -427,7 +427,7 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
     koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
-    koq->AddPresentationFormatsByString("f:InchesU(8)[u:IN|inch(es)]", formatLookerUpper, &unitLookerUpper);
+    koq->AddPresentationFormatsByString("f:InchesU(8)[u:IN|inch(es)]", formatLookerUpper, unitLookerUpper);
     EXPECT_STRCASEEQ("f:InchesU(8)[u:IN|inch(es)]", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
 

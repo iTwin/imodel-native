@@ -1584,7 +1584,7 @@ public:
     //! if the unit name is not found or ECObjectStatus::NullPointerValue if a nullptr is passed in for the descriptor.
     ECOBJECTS_EXPORT static ECObjectsStatus UpdateFUSDescriptors(Utf8StringR persUnitName, Utf8StringR formatString, Utf8CP persFus, Utf8CP presFuses);
     ECOBJECTS_EXPORT ECObjectsStatus AddPersitenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR)> const& nameToUnitMapper);
-    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatsByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR)> const* nameToUnitMapper = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatsByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR)> const& nameToUnitMapper);
 };
 
 //=======================================================================================

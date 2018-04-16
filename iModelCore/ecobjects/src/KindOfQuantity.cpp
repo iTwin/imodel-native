@@ -764,7 +764,7 @@ ECObjectsStatus KindOfQuantity::AddPersitenceUnitByName(Utf8StringCR unitName, s
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR)> const* nameToUnitMapper)
+ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR)> const& nameToUnitMapper)
     {
     bvector<Utf8String> tokens;
     BeStringUtilities::Split(formatString.c_str(), ";", tokens);
@@ -791,17 +791,11 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR form
 
         if (!unitNames.empty())
             {
-            if (nullptr == nameToUnitMapper)
-                {
-                LOG.errorv("Must provide a unit name mapping function if there are overrides in Format String '%s' on KoQ '%s'", str.c_str(), GetFullName().c_str());
-                return ECObjectsStatus::Error;
-                }
-
             UnitAndLabelPairs units;
             int i = 0;
             for (const auto& u : unitNames)
                 {
-                auto unit = (*nameToUnitMapper)(u);
+                auto unit = nameToUnitMapper(u);
                 if (nullptr == unit)
                     {
                     LOG.errorv("Presentation unit with name '%s' could not be looked up on KoQ '%s'", u.c_str(), GetFullName().c_str());
