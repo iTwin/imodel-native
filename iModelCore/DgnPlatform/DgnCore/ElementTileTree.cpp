@@ -1014,38 +1014,27 @@ BentleyStatus Loader::_LoadTile()
     { 
     TileR                                   tile = GetElementTile();
     RootR                                   root = tile.GetElementRoot();
-    Render::Primitives::GeometryCollection  geometry;
     ElementAlignedBox3d                     contentRange;
     StopWatch                               stopWatch(true);
 
     bool isLeafInCache = false;
+    auto& geometry = m_geometry;
     if (!IsCacheable())
         {
-        if (SUCCESS != LoadGeometryFromModel(geometry))
+        if (SUCCESS != LoadGeometryFromModel())
             return ERROR;
         }
     else
         {
-        if (!m_tileBytes.empty())
+        // NB: If we loaded this tile from the cache, m_saveToCache will be false. Read it from the cache data.
+        // Otherwise, we've already populated m_geometry from model and written it to m_tileBytes. Do not deserialize it again.
+        if (!m_tileBytes.empty() && !m_saveToCache)
             {
-            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache, tile.GetRange(), m_omitElemIds))
+            BeAssert(geometry.IsEmpty());
+            if (TileTree::IO::ReadStatus::Success != TileTree::IO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeafInCache, tile.GetRange()))
                 {
                 BeAssert(false);
                 return ERROR;
-                }
-
-            if (!m_omitElemIds.empty())
-                {
-                m_tileBytes.clear();
-                m_omitElemIds.clear();
-                m_tileElemIds.clear();
-
-                BeAssert(!tile.HasZoomFactor() || 1.0 == tile.GetZoomFactor());
-                bool isLeaf = tile.IsLeaf() || tile.HasZoomFactor();
-                if (SUCCESS != TileTree::IO::WriteDgnTile(m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), isLeaf))
-                    { BeAssert(false); return ERROR; }
-
-                m_saveToCache = true;
                 }
             }
 
@@ -1152,11 +1141,11 @@ BentleyStatus Loader::DoGetFromSource()
       
     TileR   tile = GetElementTile();
     RootR   root = tile.GetElementRoot();
-    Render::Primitives::GeometryCollection geometry;
 
-    if (SUCCESS != LoadGeometryFromModel(geometry))
+    if (SUCCESS != LoadGeometryFromModel())
         return ERROR;
 
+    auto& geometry = m_geometry;
     if (geometry.IsEmpty() && geometry.IsComplete())
         {
         m_tileBytes.clear();
@@ -2643,7 +2632,7 @@ END_ELEMENT_TILETREE_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry)
+BentleyStatus Loader::LoadGeometryFromModel()
     {
 #if defined (BENTLEYCONFIG_PARASOLID)    
     PSolidThreadUtil::WorkerThreadOuterMark outerMark;
@@ -2654,7 +2643,7 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
     auto& tile = GetElementTile();
 
     LoadContext loadContext(this);
-    geometry = tile.GenerateGeometry(loadContext);
+    m_geometry = tile.GenerateGeometry(loadContext);
 
     return loadContext.WasAborted() ? ERROR : SUCCESS;
     }
@@ -2667,8 +2656,6 @@ void Loader::SetupForTileRepair()
 #if !defined(TEST_TILE_REPAIR)
     if (!IsExpired() && m_omitElemIds.empty())
         return;
-
-    BeAssert(!m_tileBytes.empty());
 #endif
 
     if (m_tileBytes.empty())
