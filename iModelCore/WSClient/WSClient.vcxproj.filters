@@ -549,7 +549,7 @@
     <ClCompile Include="Client\WebApi\WebApiV2Utils\JobApi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-	<ClCompile Include="FakeServer\FakeServer.cpp">
+    <ClCompile Include="FakeServer\FakeServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FakeServer\RequestHandler.cpp">
@@ -558,7 +558,7 @@
     <ClCompile Include="FakeServer\MockIMHubHttpHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-	<ClCompile Include="iModelHubClient\ChunkedWSChangeset.cpp">
+    <ClCompile Include="iModelHubClient\ChunkedWSChangeset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1265,16 +1265,19 @@
     <ClInclude Include="PublicAPI\WebServices\Client\WSJob.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-	<ClInclude Include="PublicAPI\FakeServer\FakeServer.h">
+    <ClInclude Include="PublicAPI\FakeServer\FakeServer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-	<ClInclude Include="PublicAPI\FakeServer\MockIMHubHttpHandler.h">
+    <ClInclude Include="PublicAPI\FakeServer\MockIMHubHttpHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-	<ClInclude Include="PublicAPI\FakeServer\RequestHandler.h">
+    <ClInclude Include="PublicAPI\FakeServer\RequestHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-	<ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChunkedWSChangeset.h">
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChunkedWSChangeset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Connect\ISecurityToken.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

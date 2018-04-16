@@ -2,7 +2,7 @@
 |
 |     $Source: ConnectC/CWSCC.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "CWSCCInternal.h"
@@ -611,7 +611,7 @@ Utf8String collection
 )
     {
     Utf8String wsgGlobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
-    shared_ptr<AuthenticationHandler> samlAuthHandler = std::make_shared<ConnectAuthenticationHandler>
+    shared_ptr<AuthenticationHandler> samlAuthHandler = ConnectAuthenticationHandler::CreateLegacy
         (
         wsgGlobalUrl,
         m_connectSignInManager->GetTokenProvider(wsgGlobalUrl),

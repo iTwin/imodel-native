@@ -262,7 +262,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_DefaultAuthentication
     GetHandler().ForAnyRequest([&] (Http::RequestCR request)
         {
         EXPECT_FALSE(delegationToken->ToAuthorizationString().empty());
-        EXPECT_STREQ(delegationToken->ToAuthorizationString().c_str(), request.GetHeaders().GetAuthorization());
+        EXPECT_STREQ(("token " + delegationToken->ToAuthorizationString()).c_str(), request.GetHeaders().GetAuthorization());
         return StubHttpResponse();
         });
 
@@ -292,7 +292,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TokenAuthenticationHa
     GetHandler().ForAnyRequest([&] (Http::RequestCR request)
         {
         EXPECT_FALSE(delegationToken->ToAuthorizationString().empty());
-        EXPECT_STREQ(delegationToken->ToAuthorizationString().c_str(), request.GetHeaders().GetAuthorization());
+        EXPECT_STREQ(("token " + delegationToken->ToAuthorizationString()).c_str(), request.GetHeaders().GetAuthorization());
         return StubHttpResponse();
         });
 
@@ -321,8 +321,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TokenAuthenticationHa
 
     GetHandler().ForAnyRequest([&] (Http::RequestCR request)
         {
-        EXPECT_FALSE(delegationToken->ToSAMLAuthorizationString().empty());
-        EXPECT_STREQ(delegationToken->ToSAMLAuthorizationString().c_str(), request.GetHeaders().GetAuthorization());
+        EXPECT_STREQ(("SAML " + delegationToken->ToAuthorizationString()).c_str(), request.GetHeaders().GetAuthorization());
         return StubHttpResponse();
         });
 
