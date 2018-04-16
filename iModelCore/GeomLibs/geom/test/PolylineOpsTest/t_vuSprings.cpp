@@ -1074,6 +1074,48 @@ TEST(Vu,CreateDelauneySkew)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Earlin.Lutz  04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(Vu,CreateDelauneyPointsOnLine)
+    {
+    // 3 input points on x axis, same spacing, much larger radii (problem from Mindaugus)
+    double gridStep = 50.0;
+    // double markerSize = 0.02;
+    for (int distanceSelect : {3})
+        {
+        SaveAndRestoreCheckTransform shifter (3 * gridStep, 0, 0);
+        for (double xCoordinate : {1.0, 0.5, 0.110, 0.108, 0.106, 0.01, 0.001})
+            {
+            SaveAndRestoreCheckTransform shifter (0, 3 * gridStep, 0);
+            bvector<DPoint3d> points {
+                DPoint3d::From (-xCoordinate, 0.00000000000000000, 0.00000000000000000),
+                DPoint3d::From (0.00000000000000000, 0.00000000000000000, 0.00000000000000000),
+                DPoint3d::From (xCoordinate, 0.00000000000000000, 0.00000000000000000)
+                };
+            bvector<double> radii { 0.95050000000000001, 0.92822500000000008, 0.91820125000000008};
+         
+            PolyfaceHeaderPtr delauney, voronoi;
+            bvector<NeighborIndices> cellData;
+            if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radii, distanceSelect, delauney, voronoi, &cellData)))
+                {
+                // Check::SaveTransformed (*delauney);
+                Check::SaveTransformed (*voronoi);
+                //Check::Shift (0, gridStep, 0);
+                //Check::SaveTransformed (*delauney);
+                // z shift to make the point markers visible.
+                Check::Shift (0, 0, 0.1);
+                for (size_t i = 0; i < radii.size (); i++)
+                    {
+                    Check::SaveTransformedMarker (points[i], -radii[i]);
+                    Check::SaveTransformed (DSegment3d::From (points[i], points[i] + DVec3d::From (0, radii[i], 0)));
+                    }
+                }
+            }
+        }
+    Check::ClearGeometry ("Vu.CreateDelauneyPointsOnLine");
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     Earlin.Lutz  10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Vu,CreateDelauneyCircle)
