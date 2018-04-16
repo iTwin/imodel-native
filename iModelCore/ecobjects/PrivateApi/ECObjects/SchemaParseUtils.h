@@ -115,7 +115,6 @@
 #define ENUMERATOR_VALUE_ATTRIBUTE          "value"
 #define PERSISTENCE_UNIT_ATTRIBUTE          "persistenceUnit"
 #define PRESENTATION_UNITS_ATTRIBUTE        "presentationUnits"
-#define PRESENTATION_FORMATS_ATTRIBUTE      "presentationFormats"
 #define ECXML_RELATIVE_ERROR_ATTRIBUTE      "relativeError"
 #define ECJSON_RELATIVE_ERROR_ATTRIBUTE     "precision"
 #define ECJSON_UNIT_FORMAT_UNIT             "unit"

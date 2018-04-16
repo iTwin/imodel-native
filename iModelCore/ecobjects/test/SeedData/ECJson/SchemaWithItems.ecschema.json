@@ -112,7 +112,7 @@
       "schemaItemType": "KindOfQuantity",
       "persistenceUnit": "u:MM",
       "precision": 3.0,
-      "presentationFormats": [
+      "presentationUnits": [
         "f:InchesU", 
         "f:Feet4U",
         "f:AmerFI"

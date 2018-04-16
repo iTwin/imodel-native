@@ -844,7 +844,7 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPresentationUnit)
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                             <ECSchemaReference name="Units" version="01.00" alias="u"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationFormats="SILLYMETER;ANOTHERSILLYMETER" relativeError="10e-3" />
+                                               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="SILLYMETER;ANOTHERSILLYMETER" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an known presentation Unit");
     }
 
@@ -857,7 +857,7 @@ TEST_F(KindOfQuantityDeserializationTest, Fail_UnknownPresentationFormat)
                                         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
                                             <ECSchemaReference name="Units" version="01.00" alias="u"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationFormats="u:MM;u:CM(SILLYFORMAT)" relativeError="10e-3" />
+                                                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="u:MM;u:CM(SILLYFORMAT)" relativeError="10e-3" />
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Schema should fail to deserialize with an unknown presentation format");
     }
 
@@ -869,7 +869,7 @@ Utf8CP KindOfQuantitySerializationTest::s_testSchemaXml = R"xml(<?xml version="1
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="Units" version="01.00" alias="u"/>
         <ECSchemaReference name="Formats" version="01.00" alias="f"/>
-        <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="u:M" presentationFormats="f:InchesU" />
+        <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="u:M" presentationUnits="f:InchesU" />
     </ECSchema>)xml";
 
 //---------------------------------------------------------------------------------------
@@ -973,7 +973,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationFormats="f:InchesU(9)[u:IN|banana];f:InchesU" />
+                        presentationUnits="f:InchesU(9)[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1000,7 +1000,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTripShouldDropUnknownPresentationF
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="f:InchesU(9)[u:IN|banana];f:InchesU" />
+                        presentationUnits="f:InchesU(9)[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1028,7 +1028,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec30_roundTrip)
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationFormats="f:InchesU(9)[u:IN|banana];f:InchesU" />
+                        presentationUnits="f:InchesU(9)[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1055,7 +1055,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTripShouldDropUnknownPresentationF
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="f:InchesU(9)[u:IN|banana];f:InchesU" />
+                        presentationUnits="f:InchesU(9)[u:IN|banana];f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1082,7 +1082,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTrip)
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="f:AmerFI;f:InchesU" />
+                        presentationUnits="f:AmerFI;f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1114,7 +1114,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationFormats="f:AmerFI;f:InchesU" />
+                        presentationUnits="f:AmerFI;f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1212,7 +1212,7 @@ TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownUnit)
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
-               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationFormats="f:InchesU;ANOTHERSILLYMETER" relativeError="10e-3" />
+               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:InchesU;ANOTHERSILLYMETER" relativeError="10e-3" />
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an unknown presentation format in a newer (3.3) version");
     }
 
@@ -1227,7 +1227,7 @@ TEST_F(KindOfQuantityCompatibilityTest, Fail_UnknownFormat)
             <ECSchemaReference name="Units" version="1.0" alias="u"/>
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
-                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationFormats="f:InchesU;SILLYFORMAT" relativeError="10e-3" />
+                displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:InchesU;SILLYFORMAT" relativeError="10e-3" />
         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with invalid presentation format in EC 3.3");
     }
 
@@ -1242,7 +1242,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                        presentationFormats="f:AmerFI;f:InchesU" />
+                        presentationUnits="f:AmerFI;f:InchesU" />
         </ECSchema>)xml");
 
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1295,7 +1295,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInSchema)
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                        presentationFormats="f:InchesU;f:Feet4U" />
+                        presentationUnits="f:InchesU;f:Feet4U" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1339,7 +1339,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityWithUnitsInSchem
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationFormats="f:DefaultRealU[TestUnit];f:AmerFI;f:InchesU" />
+                        presentationUnits="f:DefaultRealU[TestUnit];f:AmerFI;f:InchesU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />

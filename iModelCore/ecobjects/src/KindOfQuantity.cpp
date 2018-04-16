@@ -306,8 +306,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                 first = false;
                 }
             }
-        auto presAttr = ecXmlVersion >= ECVersion::V3_2 ? PRESENTATION_FORMATS_ATTRIBUTE : PRESENTATION_UNITS_ATTRIBUTE;
-        xmlWriter.WriteAttribute(presAttr, presentationUnitString.c_str());
+        xmlWriter.WriteAttribute(PRESENTATION_UNITS_ATTRIBUTE, presentationUnitString.c_str());
         }
 
     xmlWriter.WriteElementEnd();
@@ -360,7 +359,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
                 }
             presentationUnitArr.append(format.GetParentFormat()->GetQualifiedName(GetSchema()));
             }
-        outValue[PRESENTATION_FORMATS_ATTRIBUTE] = presentationUnitArr;
+        outValue[PRESENTATION_UNITS_ATTRIBUTE] = presentationUnitArr;
         }
 
     return SchemaWriteStatus::Success;
@@ -399,7 +398,7 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
         return SchemaReadStatus::InvalidECSchemaXml; // Logging in ParsePersistenceUnit
 
     // Read Presentation Formats
-    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_2) ? PRESENTATION_FORMATS_ATTRIBUTE : PRESENTATION_UNITS_ATTRIBUTE))
+    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, PRESENTATION_UNITS_ATTRIBUTE))
         {
         bvector<Utf8String> presentationFormats;
         BeStringUtilities::Split(value.c_str(), ";", presentationFormats);

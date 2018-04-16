@@ -6,7 +6,7 @@
   "name": "ExampleKoQ",
   "precision": 3.0,
   "persistenceUnit": "u:MM",
-  "presentationFormats": [
+  "presentationUnits": [
        "f:InchesU",
        "f:Feet4U",
        "f:AmerFI"
