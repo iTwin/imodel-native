@@ -12,20 +12,13 @@
 USING_BENTLEY_FORMATTING
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 
-//===================================================
-// NumericFormatSpec
-//===================================================
-struct NumericFormatSpecTest : FormattingTestFixture
-    {
-    };
-
-struct FormatIntegerTest : NumericFormatSpecTest
+struct FormatIntegerTest : FormattingTestFixture
     {
     int32_t const testValPos = 100501;
     int32_t const testValNeg = -100501;
     };
 
-struct FormatDoubleTest : NumericFormatSpecTest
+struct FormatDoubleTest : FormattingTestFixture
     {
     double const testValPos = 100501.125;
     double const testValNeg = -100501.125;
@@ -93,44 +86,6 @@ public:
         ASSERT_TRUE(fps.HasProblem()) << GetFmtStringErrMsg(fmtStr);
         }
     };
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(NumericFormatSpecTest, DefaultConstructorValues)
-    {
-    // Default constructed.
-    NumericFormatSpec nfs;
-    EXPECT_DOUBLE_EQ(FormatConstant::DefaultRoundingFactor(), nfs.GetRoundingFactor());
-    EXPECT_EQ(FormatConstant::DefaultPresentaitonType(), nfs.GetPresentationType());
-    EXPECT_EQ(FormatConstant::DefaultSignOption(), nfs.GetSignOption());
-    EXPECT_EQ(FormatConstant::DefaultFormatTraits(), nfs.GetFormatTraits());
-    EXPECT_EQ(FormatConstant::DefaultDecimalPrecision(), nfs.GetDecimalPrecision());
-    EXPECT_EQ(FormatConstant::DefaultFractionalPrecision(), nfs.GetFractionalPrecision());
-    EXPECT_EQ(FormatConstant::DefaultDecimalSeparator(), nfs.GetDecimalSeparator());
-    EXPECT_EQ(FormatConstant::DefaultThousandSeparator(), nfs.GetThousandSeparator());
-    EXPECT_EQ(FormatConstant::DefaultUomSeparator(), nfs.GetUomSeparator());
-    EXPECT_EQ(FormatConstant::DefaultStationSeparator(), nfs.GetStationSeparator());
-    EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
-    EXPECT_EQ(FormatConstant::DefaultMinWidth(), nfs.GetMinWidth());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Victor.Cushman                  03/18
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(NumericFormatSpecTest, IsIdentical)
-    {
-    NumericFormatSpec nfsA;
-    NumericFormatSpec nfsB;
-
-    EXPECT_TRUE(nfsA.IsIdentical(nfsA)) << "NumericFormatSpec is not identical to itself.";
-
-    nfsB.SetDecimalPrecision(DecimalPrecision::Max);
-    EXPECT_FALSE(nfsA.IsIdentical(nfsB)) << "nfsA should not be identical to nfsB, which has different decimal precision.";
-
-    nfsA.SetDecimalPrecision(DecimalPrecision::Max);
-    EXPECT_TRUE(nfsA.IsIdentical(nfsB)) << "nfsA should be identical to nfsB.";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Victor.Cushman                  03/18
@@ -218,7 +173,7 @@ TEST_F(FormatIntegerTest, FormatIntegerPresentationTypeTests)
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
-    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetPrecision(DecimalPrecision::Max);
     EXPECT_STREQ("1.00501e+5", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-1.00501e+5", nfs.Format(testValNeg).c_str());
     }
@@ -228,7 +183,7 @@ TEST_F(FormatIntegerTest, FormatIntegerPresentationTypeTests)
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
     nfs.SetScientificType(ScientificType::Normal);
-    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetPrecision(DecimalPrecision::Max);
     EXPECT_STREQ("0.100501e+6", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-0.100501e+6", nfs.Format(testValNeg).c_str());
     }
@@ -405,7 +360,7 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Decimal);
-    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("100501.125", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-100501.125", nfs.Format(testValNeg).c_str());
@@ -415,7 +370,7 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Fractional);
-    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("100501 1/8", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-100501 1/8", nfs.Format(testValNeg).c_str());
@@ -425,7 +380,7 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
-    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("1.00501125e+5", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-1.00501125e+5", nfs.Format(testValNeg).c_str());
@@ -436,7 +391,7 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests)
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
     nfs.SetScientificType(ScientificType::Normal);
-    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("0.100501125e+6", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-0.100501125e+6", nfs.Format(testValNeg).c_str());
@@ -458,7 +413,7 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests_IGNORED)
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
-    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("1.25e-4", nfs.Format(testValMagnitudeLt1Pos).c_str());
     EXPECT_STREQ("-1.25e-4", nfs.Format(testValMagnitudeLt1Neg).c_str());
@@ -469,7 +424,7 @@ TEST_F(FormatDoubleTest, FormatDoublePresentationTypeTests_IGNORED)
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
     nfs.SetScientificType(ScientificType::Normal);
-    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetPrecision(DecimalPrecision::Max);
 
     EXPECT_STREQ("0.125e-3", nfs.Format(testValMagnitudeLt1Pos).c_str());
     EXPECT_STREQ("-0.125e-3", nfs.Format(testValMagnitudeLt1Neg).c_str());
@@ -555,7 +510,7 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests)
     EXPECT_STREQ("0", nfs.Format((double) 0).c_str());
     EXPECT_STREQ("100501.25", nfs.Format(testValPos).c_str());
     EXPECT_STREQ("-100501.25", nfs.Format(testValNeg).c_str());
-    nfs.SetDecimalPrecision(DecimalPrecision::Precision6);
+    nfs.SetPrecision(DecimalPrecision::Precision6);
     nfs.SetRoundingFactor(0.1);
     EXPECT_STREQ("0", nfs.Format((double) 0).c_str());
     EXPECT_STREQ("100501.1", nfs.Format(testValPos).c_str());
@@ -616,7 +571,7 @@ TEST_F(FormatDoubleTest, FormatDoubleIndividualFormatTraitsTests_IGNORED)
     {
     NumericFormatSpec nfs;
     nfs.SetPresentationType(PresentationType::Scientific);
-    nfs.SetDecimalPrecision(DecimalPrecision::Max);
+    nfs.SetPrecision(DecimalPrecision::Max);
     nfs.SetFormatTraits(FormatTraits::ExponentZero);
     EXPECT_STREQ("0e+00", nfs.Format((double) 0).c_str());
     EXPECT_STREQ("1.00501125e+05", nfs.Format(testValPos).c_str());
@@ -820,7 +775,7 @@ TEST_F(FormatParsingSetTest, TestParseToStd)
     numeric8->SetFormatTraits(FormatTraits::KeepSingleZero);
     numeric8->SetFormatTraits(FormatTraits::KeepDecimalPoint);
     numeric8->SetPresentationType(PresentationType::Fractional);
-    numeric8->SetFractionalPrecision(FractionalPrecision::Eighth);
+    numeric8->SetPrecision(FractionalPrecision::Eighth);
         
     Format fi8 = Format(*numeric8, *fi);
 

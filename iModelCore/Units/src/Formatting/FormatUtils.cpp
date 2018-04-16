@@ -449,7 +449,7 @@ Utf8String Utils::GetCurrentThousandSeparator()
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::DecimalPrecisionByIndex(DecimalPrecision& out, size_t num)
+bool Utils::DecimalPrecisionByIndex(DecimalPrecision& out, int32_t num)
     {
     if (num <= static_cast<uint32_t>(DecimalPrecision::Max))
         {
@@ -525,7 +525,7 @@ Utf8String Utils::SignOptionName(ShowSignOption opt)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::FractionalPrecisionByDenominator(FractionalPrecision& out, const size_t prec)
+bool Utils::FractionalPrecisionByDenominator(FractionalPrecision& out, int32_t prec)
     {
     switch (prec)
         {
@@ -547,7 +547,7 @@ bool Utils::FractionalPrecisionByDenominator(FractionalPrecision& out, const siz
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //----------------------------------------------------------------------------------------
  // static
-const size_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
+int32_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
     {
     switch (prec)
         {

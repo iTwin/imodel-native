@@ -283,8 +283,8 @@ struct Utils
     UNITS_EXPORT static Utf8String ScientificTypeName(ScientificType type);
     UNITS_EXPORT static bool NameToScientificType(ScientificType& out, Utf8StringCR name);
     UNITS_EXPORT static bool NameToSignOption(ShowSignOption& out, Utf8CP name);
-    static int DecimalPrecisionToInt(DecimalPrecision decP) {return static_cast<int>(decP);}
-    UNITS_EXPORT static bool DecimalPrecisionByIndex(DecimalPrecision& out, size_t num);
+    static int32_t DecimalPrecisionToInt(DecimalPrecision decP) {return static_cast<int32_t>(decP);}
+    UNITS_EXPORT static bool DecimalPrecisionByIndex(DecimalPrecision& out, int32_t num);
 
     //! Returns a factor, as a double, representing the provided precision.
     UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP);
@@ -292,9 +292,9 @@ struct Utils
     UNITS_EXPORT static Utf8String PresentationTypeName(PresentationType type);
     UNITS_EXPORT static bool NameToPresentationType(PresentationType& type, Utf8CP name);
     UNITS_EXPORT static Utf8String SignOptionName(ShowSignOption opt);
-    UNITS_EXPORT static bool FractionalPrecisionByDenominator(FractionalPrecision& out, const size_t prec);
+    UNITS_EXPORT static bool FractionalPrecisionByDenominator(FractionalPrecision& out, const int32_t prec);
+    UNITS_EXPORT static int32_t FractionalPrecisionDenominator(FractionalPrecision prec);
     static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
-    UNITS_EXPORT static const size_t FractionalPrecisionDenominator(FractionalPrecision prec);
     UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
     static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return Utf8String::IsNullOrEmpty(name) ? subs : name; }
     static Utf8CP SubstituteNull(Utf8CP name, Utf8CP subs) { return (nullptr == name) ? subs : name; }

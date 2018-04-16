@@ -121,9 +121,9 @@ TEST_F(FormatTest, IsIdentical)
     // Formats with differing NumericFormatSpecs.
     {
     NumericFormatSpec numFmtSpecA;
-    numFmtSpecA.SetDecimalPrecision(DecimalPrecision::Precision8);
+    numFmtSpecA.SetPrecision(DecimalPrecision::Precision8);
     NumericFormatSpec numFmtSpecB;
-    numFmtSpecB.SetDecimalPrecision(DecimalPrecision::Precision9);
+    numFmtSpecB.SetPrecision(DecimalPrecision::Precision9);
 
     Format namedFmtSpecA(numFmtSpecA);
     Format namedFmtSpecB(numFmtSpecB);
@@ -180,7 +180,7 @@ TEST_F(FormatStringTest, SuccessfullyParseKnownFormat)
     {
     NumericFormatSpec exampleNumericFmtSpec;
     exampleNumericFmtSpec.SetPresentationType(PresentationType::Decimal);
-    exampleNumericFmtSpec.SetDecimalPrecision(DecimalPrecision::Precision9);
+    exampleNumericFmtSpec.SetPrecision(DecimalPrecision::Precision9);
     Format const exampleNamedFmtSpec(exampleNumericFmtSpec);
     auto const mapper = [exampleNamedFmtSpec](Utf8StringCR name) -> FormatCP
         {
@@ -237,21 +237,21 @@ TEST_F(FormatStringTest, ParseFormatString)
     {
     NumericFormatSpec exampleNumericFmtSpecDec;
     exampleNumericFmtSpecDec.SetPresentationType(PresentationType::Decimal);
-    exampleNumericFmtSpecDec.SetDecimalPrecision(DecimalPrecision::Precision5);
+    exampleNumericFmtSpecDec.SetPrecision(DecimalPrecision::Precision5);
     Format const exampleNamedFmtSpecDec(exampleNumericFmtSpecDec);
 
     NumericFormatSpec exampleNumericFmtSpecFrac;
     exampleNumericFmtSpecFrac.SetPresentationType(PresentationType::Fractional);
-    exampleNumericFmtSpecFrac.SetFractionalPrecision(FractionalPrecision::Over_128);
+    exampleNumericFmtSpecFrac.SetPrecision(FractionalPrecision::Over_128);
     Format const exampleNamedFmtSpecFrac(exampleNumericFmtSpecFrac);
 
     NumericFormatSpec exampleNumericFmtSpecSci;
-    exampleNumericFmtSpecSci.SetDecimalPrecision(DecimalPrecision::Precision4);
+    exampleNumericFmtSpecSci.SetPrecision(DecimalPrecision::Precision4);
     exampleNumericFmtSpecSci.SetPresentationType(PresentationType::Scientific);
     Format const exampleNamedFmtSpecSci(exampleNumericFmtSpecSci);
 
     NumericFormatSpec exampleNumericFmtSpecSciNorm;
-    exampleNumericFmtSpecSciNorm.SetDecimalPrecision(DecimalPrecision::Precision7);
+    exampleNumericFmtSpecSciNorm.SetPrecision(DecimalPrecision::Precision7);
     exampleNumericFmtSpecSciNorm.SetPresentationType(PresentationType::Scientific);
     exampleNumericFmtSpecSciNorm.SetScientificType(ScientificType::Normal);
     Format const exampleNamedFmtSpecSciNorm(exampleNumericFmtSpecSciNorm);
@@ -259,7 +259,7 @@ TEST_F(FormatStringTest, ParseFormatString)
     NumericFormatSpec exampleNumericFmtSpecStation;
     exampleNumericFmtSpecStation.SetPresentationType(PresentationType::Station);
     exampleNumericFmtSpecStation.SetStationOffsetSize(2);
-    exampleNumericFmtSpecStation.SetDecimalPrecision(DecimalPrecision::Precision9);
+    exampleNumericFmtSpecStation.SetPrecision(DecimalPrecision::Precision9);
     Format const exampleNamedFmtSpecStation(exampleNumericFmtSpecStation);
     auto const mapper = [&](Utf8StringCR name) -> FormatCP
         {

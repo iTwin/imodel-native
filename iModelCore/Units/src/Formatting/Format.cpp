@@ -180,7 +180,7 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
         Utf8CP spacer = Utf8String::IsNullOrEmpty(space) ? compS->GetSpacer().c_str() : space;
         // for all parts but the last one we need to format an integer 
         NumericFormatSpec fmtI;
-        fmtI.SetDecimalPrecision(DecimalPrecision::Precision0);
+        fmtI.SetPrecision(DecimalPrecision::Precision0);
         fmtI.SetKeepSingleZero(false);
 
         switch (compS->GetUnitCount())
@@ -253,7 +253,7 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
 BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper, BEU::IUnitsContextCP unitContext)
     {
     Utf8String formatName;
-    Nullable<unsigned> parsedPrecision;
+    Nullable<int32_t> parsedPrecision;
     bvector<Utf8String> unitNames;
     bvector<Nullable<Utf8String>> unitLabels;
     if (BentleyStatus::SUCCESS != ParseFormatString(formatName, parsedPrecision, unitNames, unitLabels, formatString))
@@ -270,7 +270,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
     nfs = *defaultFormat;
     if (parsedPrecision.IsValid())
         {
-        uint64_t precision = parsedPrecision.Value();
+        int32_t precision = parsedPrecision.Value();
         switch (nfs.m_numericSpec.GetPresentationType())
             {
             case PresentationType::Decimal:        /* intentional fallthrough */
@@ -278,12 +278,12 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
             case PresentationType::Station: /* intentional fallthrough */
                 DecimalPrecision prec;
                 Utils::DecimalPrecisionByIndex(prec, precision);
-                nfs.m_numericSpec.SetDecimalPrecision(prec);
+                nfs.m_numericSpec.SetPrecision(prec);
                 break;
             case PresentationType::Fractional:
                 FractionalPrecision frac;
                 Utils::FractionalPrecisionByDenominator(frac, precision);
-                nfs.m_numericSpec.SetFractionalPrecision(frac);
+                nfs.m_numericSpec.SetPrecision(frac);
                 break;
             default:
                 LOG.errorv("unknown presentation type");
@@ -311,7 +311,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
             nfs.SetCompositeSpec(CompositeValueSpec(units));
         if (nfs.GetCompositeSpec()->IsProblem())
             {
-            LOG.errorv("Invalid format string, %s. %s ", formatString.c_str(), compSpec->GetProblemDescription());
+            LOG.errorv("Invalid format string, %s. %s ", formatString.c_str(), compSpec->GetProblemDescription().c_str());
             return BentleyStatus::ERROR;
             }
         }
@@ -346,7 +346,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
 // @bsimethod                                    Kyle.Abramowitz                  04/18
 //---------------+---------------+---------------+---------------+---------------+-------
 // static
-BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
+BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<int32_t>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
     {
     static size_t const precisionOverrideIndx = 0;
     static std::regex const rgx(R"REGEX(([\w,:]+)(\(([^\)]+)\))?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?)REGEX", std::regex::optimize);
@@ -416,10 +416,10 @@ BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<unsigne
                 BentleyStatus status = BeStringUtilities::ParseUInt64(localPrecision, overrides[precisionOverrideIndx].c_str());
                 if (BentleyStatus::SUCCESS != status)
                     {
-                    LOG.errorv("failed to parse integer for precision override");
+                    LOG.errorv("Invalid FormatString: Failed to parse integer for precision override of FormatString, %s", formatString.c_str());
                     return status;
                     }
-                precision = static_cast<unsigned>(localPrecision);
+                precision = static_cast<int32_t>(localPrecision);
                 }
             }
         }

@@ -94,7 +94,7 @@ void FractionalNumeric::FormTextParts(bool reduce)
     fmt.SetPresentationType(PresentationType::Decimal);
     fmt.SetSignOption(ShowSignOption::OnlyNegative);
     fmt.SetFormatTraits(static_cast<FormatTraits>(0x000));
-    fmt.SetDecimalPrecision(DecimalPrecision::Precision0);
+    fmt.SetPrecision(DecimalPrecision::Precision0);
     size_t numer = m_numerator;
     size_t denom = m_denominator;
     if (reduce && m_gcf > 1)

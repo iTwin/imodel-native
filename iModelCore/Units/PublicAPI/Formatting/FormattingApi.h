@@ -187,15 +187,15 @@ public:
 struct NumericFormatSpec
 {
 private:
-    bool                m_explicitlyDefinedMinWidth;
-    bool                m_explicitlyDefinedPrefixPadChar;
-    bool                m_explicitlyDefinedRoundFactor;
-    bool                m_explicitlyDefinedShowSign;
-    bool                m_explicitlyDefinedPrecision;
-    bool                m_explicitlyDefinedDecimalSeparator;
-    bool                m_explicitlyDefinedThousandsSeparator;
-    bool                m_explicitlyDefinedUOMSeparator;
-    bool                m_explicitlyDefinedStatSeparator;
+    bool m_explicitlyDefinedMinWidth = false;
+    bool m_explicitlyDefinedPrefixPadChar = false;
+    bool m_explicitlyDefinedRoundFactor = false;
+    bool m_explicitlyDefinedShowSign = false;
+    bool m_explicitlyDefinedPrecision = false;
+    bool m_explicitlyDefinedDecimalSeparator = false;
+    bool m_explicitlyDefinedThousandsSeparator = false;
+    bool m_explicitlyDefinedUOMSeparator = false;
+    bool m_explicitlyDefinedStatSeparator = false;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
     ScientificType      m_scientificType;
@@ -235,30 +235,25 @@ private:
     // !TODO====================================================================
 
 public:
-    // TODO: Attempt to remove these methods from the public API================
-    //! The following method does not perform buffer related checks and does not use
-    //! parenthesis for indicating negative numbers However it uses other ShowSign options
-    //! the calling function.
-    //! The main purpose of this methind is to form exponent value.
-    UNITS_EXPORT int static FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
-    // !TODO====================================================================
-
+    //! Creates a new valid NumericFormatSpec with a 
     UNITS_EXPORT NumericFormatSpec();
-    NumericFormatSpec(NumericFormatSpecCR other) = default;
-    UNITS_EXPORT NumericFormatSpec(Json::Value jval);
-    ~NumericFormatSpec() = default;
+    NumericFormatSpec(Json::Value jval) : NumericFormatSpec() {FromJson(jval);}
 
+    NumericFormatSpec(NumericFormatSpecCR other) = default;
+    ~NumericFormatSpec() = default;
     NumericFormatSpecR operator=(NumericFormatSpecCR other) = default;
+
+    //! Given the Json
+    UNITS_EXPORT void FromJson(Json::Value jval);
+    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+
+    UNITS_EXPORT static NumericFormatSpecCR DefaultFormat();
 
     //! Returns true if the all formatting properties of *this and other are equivalent.
     UNITS_EXPORT bool IsIdentical(NumericFormatSpecCR other) const;
 
     UNITS_EXPORT bool ImbueLocale(Utf8CP localeName);
     UNITS_EXPORT bool ImbueLocaleProperties(LocalePropertiesCR locProp);
-
-    UNITS_EXPORT static NumericFormatSpecCR DefaultFormat();
-
-    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
 
     //======================================
     // Data Member Setters/Getters
@@ -293,12 +288,11 @@ public:
     void SetScientificType(ScientificType type) {m_scientificType = type;}
     ScientificType GetScientificType() const {return m_scientificType;}
 
-    void SetDecimalPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}
-    DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
-    bool IsPrecisionZero() const { return m_decPrecision == DecimalPrecision::Precision0; }
-
-    void SetFractionalPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision;}
-    FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
+    void SetPrecision(FractionalPrecision precision) {m_explicitlyDefinedPrecision = true; m_fractPrecision = precision; }
+    void SetPrecision(DecimalPrecision precision) {m_explicitlyDefinedPrecision = true; m_decPrecision = precision;}
+    DecimalPrecision GetDecimalPrecision() const {return m_decPrecision;}
+    FractionalPrecision GetFractionalPrecision() const {return m_fractPrecision;}
+    bool IsPrecisionZero() const {return m_decPrecision == DecimalPrecision::Precision0;}
     bool HasPrecision() const {return m_explicitlyDefinedPrecision;}
 
     void SetDecimalSeparator(Utf8Char sep) {m_explicitlyDefinedDecimalSeparator = true; m_decimalSeparator = sep;}
@@ -388,6 +382,14 @@ public:
     //! @param[in] dval Double to format.
     //! @return dval as a formatted string.
     UNITS_EXPORT static Utf8String Format(NumericFormatSpecCR nfs, double dval) {return nfs.Format(dval);}
+
+    // TODO: Attempt to remove these methods from the public API================
+    //! The following method does not perform buffer related checks and does not use
+    //! parenthesis for indicating negative numbers However it uses other ShowSign options
+    //! the calling function.
+    //! The main purpose of this methind is to form exponent value.
+    UNITS_EXPORT int static FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
+    // !TODO====================================================================
 };
 
 //=======================================================================================
@@ -510,6 +512,9 @@ public:
     UNITS_EXPORT CompositeValueSpec(bvector<BEU::UnitCP> const& units);
     UNITS_EXPORT CompositeValueSpec(CompositeValueSpecCR other);
 
+    UNITS_EXPORT Json::Value ToJson() const;
+    UNITS_EXPORT void FromJson(JsonValueCR jval, BEU::IUnitsContextCP context);
+
     UNITS_EXPORT bool IsIdentical(CompositeValueSpecCR other) const;
 
     size_t GetUnitCount() const {return m_proxys.size();}
@@ -566,9 +571,6 @@ public:
     //! @param[in] uom The Unit of the value provided.
     //! @return
     UNITS_EXPORT CompositeValue DecomposeValue(double value, BEU::UnitCP uom = nullptr) const;
-
-    UNITS_EXPORT Json::Value ToJson() const;
-    UNITS_EXPORT void FromJson(JsonValueCR jval, BEU::IUnitsContextCP context);
 };
 
 //=======================================================================================
@@ -632,7 +634,9 @@ public:
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec);
     UNITS_EXPORT Format(NumericFormatSpecCR numSpec, CompositeValueSpecCR compSpec);
 
-    FormatR operator=(const Format& other) = default;
+    UNITS_EXPORT static FormatCR DefaultFormat();
+
+    FormatR operator=(FormatCR other) = default;
 
     //! Returns true if the name, NumericFormatSpec, CompositeValueSpec, and problem codes of *this
     //! and other are identical.
@@ -647,7 +651,7 @@ public:
     bool HasNumeric() const {return !IsProblem() || (m_problem.GetProblemCode() != FormatProblemCode::NotInitialized);}
     //! Returns true if this Format contains a CompositeFormatSpec.
     //! A Format that contains a CompositeValueSpec will also contain a NumericFormatSpec.
-    bool HasComposite() const {return m_explicitlyDefinedComposite || static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0 ;}
+    bool HasComposite() const {return m_explicitlyDefinedComposite || static_cast<std::underlying_type<FormatSpecType>::type>(m_specType) > 0;}
     //! Returns true if the spec has no problems and is set successfully. False otherwise
     UNITS_EXPORT bool SetCompositeSpec(CompositeValueSpec spec);
     //! Returns true if the spec is set successfully.
@@ -725,12 +729,10 @@ public:
     //! @returns BentleyStatus::SUCCESS if the string was successfully parsed.
     UNITS_EXPORT static BentleyStatus ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper, BEU::IUnitsContextCP unitContext = nullptr);
 
-    UNITS_EXPORT static BentleyStatus ParseFormatString(Utf8StringR formatName, Nullable<unsigned>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString);
+    UNITS_EXPORT static BentleyStatus ParseFormatString(Utf8StringR formatName, Nullable<int32_t>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString);
 
     // Legacy Descriptor string
     UNITS_EXPORT static void ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description);
-
-    UNITS_EXPORT static FormatCR DefaultFormat();
 };
 
 //=======================================================================================

@@ -506,16 +506,7 @@ int NumericFormatSpec::FormatSimple(int n, Utf8P bufOut, int bufLen, bool showSi
 // @bsimethod                                    Victor.Cushman                 03/18
 //---------------+---------------+---------------+---------------+---------------+-------
 NumericFormatSpec::NumericFormatSpec()
-    : m_explicitlyDefinedPrefixPadChar(false)
-    , m_explicitlyDefinedMinWidth(false)
-    , m_explicitlyDefinedDecimalSeparator(false)
-    , m_explicitlyDefinedPrecision(false)
-    , m_explicitlyDefinedRoundFactor(false)
-    , m_explicitlyDefinedShowSign(false)
-    , m_explicitlyDefinedStatSeparator(false)
-    , m_explicitlyDefinedThousandsSeparator(false)
-    , m_explicitlyDefinedUOMSeparator(false)
-    , m_roundFactor(FormatConstant::DefaultRoundingFactor())
+    : m_roundFactor(FormatConstant::DefaultRoundingFactor())
     , m_presentationType(FormatConstant::DefaultPresentaitonType())
     , m_signOption(FormatConstant::DefaultSignOption())
     , m_formatTraits(FormatConstant::DefaultFormatTraits())
@@ -535,7 +526,7 @@ NumericFormatSpec::NumericFormatSpec()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz
 //----------------------------------------------------------------------------------------
-NumericFormatSpec::NumericFormatSpec(Json::Value jval) : NumericFormatSpec()
+void NumericFormatSpec::FromJson(Json::Value jval)
     {
     if (jval.empty())
         return;
@@ -552,9 +543,9 @@ NumericFormatSpec::NumericFormatSpec(Json::Value jval) : NumericFormatSpec()
         else if (BeStringUtilities::StricmpAscii(paramName, json_roundFactor()) == 0)
             m_roundFactor = val.asDouble();
         else if (BeStringUtilities::StricmpAscii(paramName, json_decPrec()) == 0)
-            Utils::DecimalPrecisionByIndex(m_decPrecision, val.asInt64());
+            Utils::DecimalPrecisionByIndex(m_decPrecision, (int32_t) val.asInt64());
         else if (BeStringUtilities::StricmpAscii(paramName, json_fractPrec()) == 0)
-            Utils::FractionalPrecisionByDenominator(m_fractPrecision, val.asInt64());
+            Utils::FractionalPrecisionByDenominator(m_fractPrecision, (int32_t) val.asInt64());
         else if (BeStringUtilities::StricmpAscii(paramName, json_signOpt()) == 0)
             Utils::NameToSignOption(m_signOption, val.asCString());
         else if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
