@@ -265,7 +265,7 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
     }
 
 //--------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    03/2018
+// @bsimethod                                  Kyle.Abramowitz                 04/2018
 //--------------------------------------------------------------------------------------
 TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     {
@@ -352,6 +352,86 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
     }
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityTest, AddPersistenceUnitByName)
+    {
+    KindOfQuantityP koq;
+    static const auto unitLookerUpper = [&](Utf8StringCR name)
+        {
+        return koq->GetSchema().GetUnitsContext().LookupUnit(name.c_str());
+        };
+
+    static const auto formatLookerUpper = [&](Utf8StringCR name)
+        {
+        return koq->GetSchema().LookupFormat(name.c_str());
+        };
+
+    {
+    CreateTestSchema(true);
+    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
+    EXPECT_EQ(nullptr, koq->GetPersistenceUnit());
+    koq->AddPersitenceUnitByName("u:M", unitLookerUpper);
+    EXPECT_STRCASEEQ("M", koq->GetPersistenceUnit()->GetName().c_str());
+    }
+
+    {
+    CreateTestSchema(true);
+    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
+    EXPECT_EQ(nullptr, koq->GetPersistenceUnit());
+    koq->AddPersitenceUnitByName("u:fakeUnit", unitLookerUpper);
+    EXPECT_EQ(nullptr, koq->GetPersistenceUnit());
+    }
+
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                 04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
+    {
+    KindOfQuantityP koq;
+
+    static const std::function<ECUnitCP(Utf8StringCR)> unitLookerUpper = [&](Utf8StringCR name)
+        {
+        return koq->GetSchema().GetUnitsContext().LookupUnit(name.c_str());
+        };
+
+    static const auto formatLookerUpper = [&](Utf8StringCR name)
+        {
+        return koq->GetSchema().LookupFormat(name.c_str());
+        };
+
+    {
+    CreateTestSchema(true);
+    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
+    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
+    EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
+    koq->AddPresentationFormatsByString("f:InchesU", formatLookerUpper);
+    EXPECT_STRCASEEQ("f:InchesU", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    }
+
+    {
+    CreateTestSchema(true);
+    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
+    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
+    EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
+    koq->AddPresentationFormatsByString("f:InchesU(8)", formatLookerUpper);
+    EXPECT_STRCASEEQ("f:InchesU(8)", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    }
+
+    {
+    CreateTestSchema(true);
+    m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
+    m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
+    EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
+    koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
+    koq->AddPresentationFormatsByString("f:InchesU(8)[u:IN|inch(es)]", formatLookerUpper, &unitLookerUpper);
+    EXPECT_STRCASEEQ("f:InchesU(8)[u:IN|inch(es)]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    }
+
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Victor.Cushman                          11/2017
 //+---------------+---------------+---------------+---------------+---------------+------

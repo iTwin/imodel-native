@@ -261,7 +261,9 @@ TEST_F(SchemaCopyTest, TestKindOfQuantity_PresentationUnitDefinedInSchema)
     EXPECT_EQ(1, m_targetSchema->GetKindOfQuantityCount());
 
     KindOfQuantityCP targetKoq = m_targetSchema->GetKindOfQuantityCP("TestKoQ");
+    ECFormatCP targetFormat = m_targetSchema->GetFormatCP("SMOOT_FORMAT");
     ASSERT_TRUE(nullptr != targetKoq);
+    ASSERT_TRUE(nullptr != targetFormat);
     EXPECT_STREQ("Test KoQ", targetKoq->GetDisplayLabel().c_str());
     EXPECT_STREQ("Test Description", targetKoq->GetDescription().c_str());
     EXPECT_STREQ("SMOOT", targetKoq->GetPersistenceUnit()->GetName().c_str());

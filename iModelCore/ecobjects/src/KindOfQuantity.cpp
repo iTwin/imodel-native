@@ -747,6 +747,81 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8S
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPersitenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR)> const& nameToUnitMapper)
+    {
+    auto unit = nameToUnitMapper(unitName);
+    
+    if (nullptr == GetSchema().GetUnitsContext().LookupUnit(unitName.c_str()))
+        {
+        LOG.errorv("On KoQ '%s' persitence unit with name '%s' could not be located", GetFullName().c_str(), unitName.c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    SetPersistenceUnit(*unit);
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR)> const* nameToUnitMapper)
+    {
+    bvector<Utf8String> tokens;
+    BeStringUtilities::Split(formatString.c_str(), ";", tokens);
+
+    for (auto const& str : tokens) // str of the format {formatName}<{precision}>[overrides|label][...]...
+        {
+        Utf8String formatName;
+        Nullable<int32_t> prec;
+        bvector<Utf8String> unitNames;
+        bvector<Nullable<Utf8String>> unitLabels;
+        if (BentleyStatus::SUCCESS != Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, str))
+            {
+            LOG.errorv("Failed to parse Presentation FormatString '%s' on KindOfQuantity '%s'", str.c_str(), GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
+
+        auto format = nameToFormatMapper(formatName);
+
+        if (nullptr == format)
+            {
+            LOG.errorv("Format '%s' could not be looked up on KoQ '%s'", formatName.c_str(), GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
+
+        if (!unitNames.empty())
+            {
+            if (nullptr == nameToUnitMapper)
+                {
+                LOG.errorv("Must provide a unit name mapping function if there are overrides in Format String '%s' on KoQ '%s'", str.c_str(), GetFullName().c_str());
+                return ECObjectsStatus::Error;
+                }
+
+            UnitAndLabelPairs units;
+            int i = 0;
+            for (const auto& u : unitNames)
+                {
+                auto unit = (*nameToUnitMapper)(u);
+                if (nullptr == unit)
+                    {
+                    LOG.errorv("Presentation unit with name '%s' could not be looked up on KoQ '%s'", u.c_str(), GetFullName().c_str());
+                    return ECObjectsStatus::Error;
+                    }
+                units.push_back(make_bpair(unit, (i < unitLabels.size() && unitLabels[i].IsValid()) ? unitLabels[i].Value().c_str() : nullptr));
+                i++;
+                }
+            if (ECObjectsStatus::Success != AddPresentationFormat(*format, prec, &units))
+                return ECObjectsStatus::Error;
+            }
+        else if (ECObjectsStatus::Success != AddPresentationFormat(*format, prec)) // no unit overrides
+                return ECObjectsStatus::Error;
+        }
+    return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
 ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR parent, Nullable<int32_t> precisionOverride,  UnitAndLabelPairs const* unitsAndLabels) const
     {
     if (parent.IsOverride())
@@ -812,6 +887,9 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatInternal(NamedFormat format
 //--------------------------------------------------------------------------------------
 NamedFormatCP KindOfQuantity::GetOrCreateCachedPersistenceFormat() const
     {
+    if (nullptr == m_persistenceUnit)
+        return nullptr;
+
     if (m_persFormatCache.IsValid())
         {
         if (Units::Unit::AreEqual(m_persFormatCache.Value().GetCompositeMajorUnit(), m_persistenceUnit))
