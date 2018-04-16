@@ -11,6 +11,7 @@
 #include <Formatting/FormattingDefinitions.h>
 #include <Formatting/FormattingEnum.h>
 #include <Formatting/FormattingParsing.h>
+#include <Formatting/AliasMappings.h>
 #include <Units/Units.h>
 #include <time.h>
 namespace BEU = BentleyApi::Units;
