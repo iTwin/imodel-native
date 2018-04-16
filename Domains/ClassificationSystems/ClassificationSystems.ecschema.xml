@@ -12,6 +12,9 @@
     <ECEntityClass typeName="ClassificationSystem" displayLabel="ClassificationSystem">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <BaseClass>bis:ISubModeledElement</BaseClass>
+        <ECCustomAttributes>
+          <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
     </ECEntityClass>
   

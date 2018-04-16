@@ -54,7 +54,7 @@ ClassificationSystemPtr ClassificationSystem::Create
 void ClassificationSystem::_OnInserted(Dgn::DgnElementP copiedFrom) const 
     {
         T_Super::_OnInserted(copiedFrom);
-        Dgn::DefinitionModelPtr model = Dgn::DefinitionModel::Create(this);
+        Dgn::DefinitionModelPtr model = Dgn::DefinitionModel::Create(*this);
         if (!model.IsValid()) 
             //return nullptr;
             return;
