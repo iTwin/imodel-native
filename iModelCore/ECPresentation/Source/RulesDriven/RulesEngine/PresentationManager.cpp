@@ -45,14 +45,28 @@ struct TaskDependencies
 private:
     Utf8String m_connectionId;
     Utf8String m_rulesetId;
+    Utf8String m_displayType;
+    SelectionInfo const* m_selectionInfo;
     Utf8String m_selectionSourceName;
 public:
-    TaskDependencies(Utf8String connectionId = "", Utf8String rulesetId = "", SelectionInfo const* selectionInfo = nullptr)
-        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_selectionSourceName(selectionInfo ? selectionInfo->GetSelectionProviderName() : "")
+    TaskDependencies(Utf8String connectionId = "", Utf8String rulesetId = "", Utf8CP displayType = nullptr, SelectionInfo const* selectionInfo = nullptr)
+        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_displayType(displayType), m_selectionInfo(selectionInfo ? new SelectionInfo(*selectionInfo) : nullptr)
         {}
+    TaskDependencies(TaskDependencies const& other)
+        : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_displayType(other.m_displayType), 
+        m_selectionInfo(other.m_selectionInfo ? new SelectionInfo(*other.m_selectionInfo) : nullptr)
+        {}
+    TaskDependencies(TaskDependencies&& other)
+        : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), 
+        m_displayType(std::move(other.m_displayType)), m_selectionInfo(other.m_selectionInfo)
+        {
+        other.m_selectionInfo = nullptr;
+        }
+    ~TaskDependencies() {DELETE_AND_CLEAR(m_selectionInfo);}
     Utf8StringCR GetConnectionIdDependency() const {return m_connectionId;}
     Utf8StringCR GetRulesetIdDependency() const {return m_rulesetId;}
-    Utf8StringCR GetSelectionSourceDependency() const {return m_selectionSourceName;}
+    Utf8StringCR GetDisplayTypeDependency() const {return m_displayType;}
+    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}
 };
 
 /*=================================================================================**//**
@@ -115,15 +129,21 @@ public:
         m_tasks.erase(&task);
         }
     void CancelAll(){Cancel(nullptr);}
-    void CancelSelectionDependants(IConnectionCR connection, SelectionInfo const& selectionInfo)
+    void CancelSelectionDependants(IConnectionCR connection, Utf8StringCR displayType, SelectionInfo const& selectionInfo)
         {
         bool didCancel = Cancel([&](ICancelableTask const& task)
             {
-            return task.GetDependencies().GetSelectionSourceDependency().Equals(selectionInfo.GetSelectionProviderName())
-                && task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId());
+            return task.GetDependencies().GetDisplayTypeDependency().Equals(displayType)
+                && task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId())
+                && task.GetDependencies().GetSelectionInfo()
+                && selectionInfo.GetSelectionProviderName().Equals(task.GetDependencies().GetSelectionInfo()->GetSelectionProviderName())
+                && selectionInfo.GetTimestamp() != task.GetDependencies().GetSelectionInfo()->GetTimestamp();
             });
         if (didCancel)
+            {
+            LoggingHelper::LogMessage(Log::Default, "Interrupting connection requests due to canceled tasks");
             connection.InterruptRequests();
+            }
         }
     void CancelConnectionRequests(IConnectionCR connection)
         {
@@ -132,7 +152,10 @@ public:
             return task.GetDependencies().GetConnectionIdDependency().Equals(connection.GetId());
             });
         if (didCancel)
+            {
+            LoggingHelper::LogMessage(Log::Default, "Interrupting connection requests due to canceled tasks");
             connection.InterruptRequests();
+            }
         }
     void CancelByRulesetId(Utf8StringCR rulesetId)
         {
@@ -454,6 +477,8 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetRootNodes
         });
     return promise->GetFuture().then([](INavNodesDataSourcePtr ds)
         {
+        if (ds.IsNull())
+            return DataContainer<NavNodeCPtr>();
         return DataContainer<NavNodeCPtr>(*ds);
         });
     }
@@ -497,6 +522,8 @@ folly::Future<NavNodesContainer> RulesDrivenECPresentationManager::_GetChildren(
         });
     return promise->GetFuture().then([](INavNodesDataSourcePtr ds)
         {
+        if (ds.IsNull())
+            return DataContainer<NavNodeCPtr>();
         return DataContainer<NavNodeCPtr>(*ds);
         });
     }
@@ -622,9 +649,10 @@ folly::Future<bvector<SelectClassInfo>> RulesDrivenECPresentationManager::_GetCo
 folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetContentDescriptor(IConnectionCR primaryConnection, Utf8CP preferredDisplayType, KeySetCR inputKeys, SelectionInfo const* selectionInfo, JsonValueCR jsonOptions)
     {
     if (selectionInfo)
-        m_cancelableTasks->CancelSelectionDependants(primaryConnection, *selectionInfo);
+        m_cancelableTasks->CancelSelectionDependants(primaryConnection, preferredDisplayType, *selectionInfo);
 
-    auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", TaskDependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), selectionInfo));
+    TaskDependencies dependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), preferredDisplayType, selectionInfo);
+    auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", dependencies);
     folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, input = KeySetCPtr(&inputKeys), selectionInfo, jsonOptions]()
         {
         if (promise->IsCanceled())
@@ -645,9 +673,10 @@ folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetConte
 folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(ContentDescriptorCR descriptor, PageOptionsCR pageOpts)
     {
     if (descriptor.GetSelectionInfo())
-        m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), *descriptor.GetSelectionInfo());
-
-    auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetSelectionInfo()));
+        m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), descriptor.GetPreferredDisplayType().c_str(), *descriptor.GetSelectionInfo());
+    
+    TaskDependencies dependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetPreferredDisplayType().c_str(), descriptor.GetSelectionInfo());
+    auto promise = CreateCancelablePromise<ContentCPtr>(*m_cancelableTasks, "Content", dependencies);
     folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor), pageOpts]()
         {
         if (promise->IsCanceled())
@@ -665,9 +694,10 @@ folly::Future<ContentCPtr> RulesDrivenECPresentationManager::_GetContent(Content
 folly::Future<size_t> RulesDrivenECPresentationManager::_GetContentSetSize(ContentDescriptorCR descriptor)
     {
     if (descriptor.GetSelectionInfo())
-        m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), *descriptor.GetSelectionInfo());
-
-    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", TaskDependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetSelectionInfo()));
+        m_cancelableTasks->CancelSelectionDependants(descriptor.GetConnection(), descriptor.GetPreferredDisplayType().c_str(), *descriptor.GetSelectionInfo());
+    
+    TaskDependencies dependencies(descriptor.GetConnection().GetId(), ContentOptions(descriptor.GetOptions()).GetRulesetId(), descriptor.GetPreferredDisplayType().c_str(), descriptor.GetSelectionInfo());
+    auto promise = CreateCancelablePromise<size_t>(*m_cancelableTasks, "Content set size", dependencies);
     folly::via(m_executor, [&, promise, descriptor = ContentDescriptorCPtr(&descriptor)]()
         {
         if (promise->IsCanceled())

@@ -29,6 +29,34 @@ struct ECExpressionsOptimizerTests : ECPresentationTest
     };
 
 /*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsOptimizerTests, CachesValidOptimizedExpressions)
+    {
+    Utf8CP expression = "SelectedNode.IsInstanceNode";
+    OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
+    ASSERT_TRUE(optimizedExpression.IsValid());
+
+    OptimizedExpressionPtr cachedOptimizedExpression;
+    EXPECT_EQ(SUCCESS, m_expressionsCache.Get(cachedOptimizedExpression, expression));
+    EXPECT_EQ(optimizedExpression, cachedOptimizedExpression);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                08/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ECExpressionsOptimizerTests, CachesInvalidOptimizedExpressions)
+    {
+    Utf8CP expression = "Something.Invalid";
+    OptimizedExpressionPtr optimizedExpression = m_optimizer.GetOptimizedExpression(expression);
+    ASSERT_TRUE(optimizedExpression.IsNull());
+
+    OptimizedExpressionPtr cachedOptimizedExpression;
+    EXPECT_EQ(SUCCESS, m_expressionsCache.Get(cachedOptimizedExpression, expression));
+    EXPECT_TRUE(cachedOptimizedExpression.IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @betest                                       Saulius.Skliutas                08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECExpressionsOptimizerTests, OptimizeContentDisplayTypeExpression)

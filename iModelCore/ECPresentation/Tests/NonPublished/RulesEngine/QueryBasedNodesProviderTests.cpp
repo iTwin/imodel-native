@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/RulesEngine/QueryBasedNodesProviderTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../../../Source/RulesDriven/RulesEngine/JsonNavNode.h"
@@ -99,7 +99,7 @@ TEST_F(QueryBasedNodesProviderTests, AbortsInitializationWhenCanceled)
         });
     m_context->SetCancelationToken(cancelationToken.get());
 
-    m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<Utf8String> const&, bool)
+    m_nodesCache.SetCacheDataSourceHandler([&](DataSourceInfo& ds, DataSourceFilter const&, bmap<ECClassId, bool> const&, bvector<UserSettingEntry> const&, bool)
         {
         cachedDataSource = &ds;
         });

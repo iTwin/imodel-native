@@ -666,12 +666,12 @@ TEST(SupplementalRuleSetLocater, FindsSupplementalRuleSetsAndSetsProvidedId)
 
     //Using StyleOverride as ruleset identification, because ruleset id was changed
     ASSERT_STREQ("Ruleset1", rulesets[0]->GetRuleSetId().c_str());
-    EXPECT_EQ("Red", rulesets[0]->GetStyleOverrides()[0]->GetForeColor());
-    EXPECT_EQ("Green", rulesets[0]->GetStyleOverrides()[0]->GetBackColor());
+    EXPECT_STREQ("Red", rulesets[0]->GetStyleOverrides()[0]->GetForeColor().c_str());
+    EXPECT_STREQ("Green", rulesets[0]->GetStyleOverrides()[0]->GetBackColor().c_str());
 
     ASSERT_STREQ("Ruleset1", rulesets[1]->GetRuleSetId().c_str());
-    EXPECT_EQ("Blue", rulesets[1]->GetStyleOverrides()[0]->GetForeColor());
-    EXPECT_EQ("Orange", rulesets[1]->GetStyleOverrides()[0]->GetBackColor());
+    EXPECT_STREQ("Blue", rulesets[1]->GetStyleOverrides()[0]->GetForeColor().c_str());
+    EXPECT_STREQ("Orange", rulesets[1]->GetStyleOverrides()[0]->GetBackColor().c_str());
     }
 
 /*=================================================================================**//**
@@ -740,7 +740,7 @@ TEST_F(EmbeddedRuleSetLocaterTests, LocateRuleSets_FindsRuleSet)
     // validate 1 ruleset was found in opened connection
     bvector<PresentationRuleSetPtr> rulesets = locater->LocateRuleSets();
     ASSERT_EQ(1, rulesets.size());
-    EXPECT_EQ("LocateRuleSets_FindsRuleSet", rulesets[0]->GetRuleSetId());
+    EXPECT_STREQ("LocateRuleSets_FindsRuleSet", rulesets[0]->GetRuleSetId().c_str());
     ASSERT_EQ(1, locater->GetRuleSetIds().size());
     EXPECT_STREQ("LocateRuleSets_FindsRuleSet", locater->GetRuleSetIds()[0].c_str());
     }

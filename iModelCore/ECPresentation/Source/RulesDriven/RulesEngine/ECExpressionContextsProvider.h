@@ -130,12 +130,12 @@ private:
 
 public:
     ECExpressionsCache() {}
-    NodePtr Get(Utf8CP expression) const;
-    OptimizedExpressionPtr GetOptimized(Utf8CP expression) const;
+    ECPRESENTATION_EXPORT BentleyStatus Get(NodePtr&, Utf8CP expression) const;
+    ECPRESENTATION_EXPORT BentleyStatus Get(OptimizedExpressionPtr&, Utf8CP expression) const;
     bvector<Utf8String> const* GetUsedClasses(Utf8CP expression) const;
     bool HasOptimizedExpression(Utf8CP expression) const;
-    void Add(Utf8CP expression, Node&);
-    void Add(Utf8CP expression, OptimizedExpression&);
+    void Add(Utf8CP expression, NodePtr);
+    void Add(Utf8CP expression, OptimizedExpressionPtr);
     bvector<Utf8String> const& Add(Utf8CP expression, bvector<Utf8String>&);
     void Clear();
 };

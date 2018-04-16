@@ -2605,6 +2605,12 @@ static BentleyStatus AppendParents(ComplexNavigationQuery& query, bset<unsigned>
     Utf8String parentAlias = "parent";
     for (unsigned targetLevel : usedParents)
         {
+        if (previousParent.IsNull())
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
         NavNodeCPtr parent = GetParentNodeByLevel(params.GetNodesCache(), *previousParent, previousLevel, targetLevel);
         if (parent.IsNull() || nullptr == parent->GetKey()->AsECInstanceNodeKey())
             {

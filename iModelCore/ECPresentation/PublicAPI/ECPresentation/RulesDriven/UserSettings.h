@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECPresentation/RulesDriven/UserSettings.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -58,6 +58,7 @@ protected:
     virtual int64_t _GetSettingIntValue(Utf8CP id) const = 0;
     virtual bvector<int64_t> _GetSettingIntValues(Utf8CP id) const = 0;
     virtual bool _GetSettingBoolValue(Utf8CP id) const = 0;
+    virtual Json::Value _GetSettingValueAsJson(Utf8CP id) const = 0;
 
 public:
     //! Get the presentation info for user settings stored in this instance.
@@ -85,6 +86,8 @@ public:
     bvector<int64_t> GetSettingIntValues(Utf8CP id) const {return _GetSettingIntValues(id);}
     //! Get a setting value.
     bool GetSettingBoolValue(Utf8CP id) const {return _GetSettingBoolValue(id);}
+    //! Get a setting value.
+    Json::Value GetSettingValueAsJson(Utf8CP id) const {return _GetSettingValueAsJson(id);}
 };
 
 //=======================================================================================
@@ -124,6 +127,7 @@ protected:
     ECPRESENTATION_EXPORT int64_t _GetSettingIntValue(Utf8CP id) const override;
     ECPRESENTATION_EXPORT bvector<int64_t> _GetSettingIntValues(Utf8CP id) const override;
     ECPRESENTATION_EXPORT bool _GetSettingBoolValue(Utf8CP id) const override;
+    ECPRESENTATION_EXPORT Json::Value _GetSettingValueAsJson(Utf8CP id) const override;
 
 public:
     //! Constructor.
