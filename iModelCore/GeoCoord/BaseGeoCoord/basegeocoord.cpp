@@ -1195,6 +1195,7 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
     WString name = GetName (wkt);
     WString authorityID = GetAuthorityIdFromNameOracleStyle(name);
     bool sectionCompleted = false;
+    bool ellipsoidPresentAndKnown = false;
 
     size_t previousLength;
     while (wkt.length() > 0 && !sectionCompleted)
@@ -1212,9 +1213,11 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
         if ((wkt.length() >= 9) && (wkt.substr (0, 9) == (L"AUTHORITY")))
             authorityID = GetAuthority (wkt);
 
-        if ((wkt.length() >= 8) && (wkt.substr (0, 8) == (L"SPHEROID")))
-            if (SUCCESS != (status = GetEllipsoidToCoordSys (wkt, coordinateSystem)))
+        if ((wkt.length() >= 8) && (wkt.substr(0, 8) == (L"SPHEROID")))
+            {
+            if (SUCCESS != (status = GetEllipsoidToCoordSys(wkt, coordinateSystem, ellipsoidPresentAndKnown)))
                 return status;
+            }
 
         if ((wkt.length() >= 7) && (wkt.substr (0, 7) == (L"TOWGS84")))
             if (SUCCESS != (status = GetTOWGS84ToCoordSys (wkt, coordinateSystem)))
@@ -1253,6 +1256,9 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
     // In such case this ellipsoid may already been set in the GCS and nothing needs be done except nullify the datum code
     if (0 == name.length())
         {
+        // If no spheroid nor datum are specified then the WKT is invalid.
+        if (!ellipsoidPresentAndKnown)
+            return ERROR;
         coordinateSystem.SetDatumCode (-1);        
         }
     else
@@ -1349,9 +1355,12 @@ StatusInt GetHorizontalDatumToCoordSys (WStringR wkt, BaseGCSR coordinateSystem)
 *
 *   @bsimethod                                                  Alain Robert 2004/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt GetEllipsoidToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
+StatusInt GetEllipsoidToCoordSys (WStringR wkt, BaseGCSR coordinateSystem, bool& ellipsoidPresentAndKnown) const
     {
     StatusInt status = SUCCESS;
+
+    ellipsoidPresentAndKnown = false;
+
     wkt.Trim();
 
     // Validate that this is the proper section (must start with ")
@@ -1410,11 +1419,7 @@ StatusInt GetEllipsoidToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
     // This allows for the support of ellipsoid-based GCS that specify no datum.
     coordinateSystem.SetDatumCode(-1);
 
-    if (0 == name.length())
-        {
-        coordinateSystem.SetEllipsoidCode (-1);        
-        }
-    else
+    if (0 != name.length())
         {
 
         // Check if ellipsoid name is known ...
@@ -1472,12 +1477,10 @@ StatusInt GetEllipsoidToCoordSys (WStringR wkt, BaseGCSR coordinateSystem) const
             if (foundIndex >= 0)
                 {
                 coordinateSystem.SetEllipsoidCode (foundIndex);
-                }
-            else
-                coordinateSystem.SetEllipsoidCode (-1);          
+                ellipsoidPresentAndKnown = true;
+                }  
             }
-        else
-            coordinateSystem.SetEllipsoidCode (-1);        
+
     }
 
     return status;
@@ -2967,6 +2970,8 @@ StatusInt SetParameterToCoordSys (WStringR parameterName, WStringR parameterStri
             (BaseGCS::pcvBonne == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvCzechKrovak == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvLambertEqualAreaAzimuthal == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvObliqueStereographic == coordinateSystem.GetProjectionCode()) ||
+            (BaseGCS::pcvSnyderObliqueStereographic == coordinateSystem.GetProjectionCode()) ||
             (BaseGCS::pcvAlbersEqualArea == coordinateSystem.GetProjectionCode()) )
             {
             if (SUCCESS != coordinateSystem.SetOriginLongitude (parameterValue * conversionToDegree))
