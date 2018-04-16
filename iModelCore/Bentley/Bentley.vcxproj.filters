@@ -351,6 +351,12 @@
     <ClInclude Include="BeJpeg\PublicAPI\BeJpeg\BeJpeg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\Bentley\Tasks\ThreadlessTaskSheduler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\Bentley\Tasks\ThreadlessTaskScheduler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Tasks\AsyncError.cpp">

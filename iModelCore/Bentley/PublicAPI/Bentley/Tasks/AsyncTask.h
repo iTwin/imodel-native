@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Bentley/Tasks/AsyncTask.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,16 +11,8 @@
 #include <Bentley/Tasks/Tasks.h>
 #include <Bentley/bset.h>
 #include <functional>
+#include <Bentley/BeDebugUtilities.h>
 #include <Bentley/BeThread.h>
-
-#if defined (THREADING_DEBUG)
-    #include <MobileDgn/Utils/BeDbgHelp.h>
-    
-    #define ASYNC_TASK_ADD_DEBUG_INFO(task, callerFrame) { task->SetStackInfo(BeDbgHelp::GetStackInfoAt(callerFrame)); }
-
-#else
-    #define ASYNC_TASK_ADD_DEBUG_INFO(task, callerFrame)
-#endif
 
 BEGIN_BENTLEY_TASKS_NAMESPACE
 
@@ -56,6 +48,9 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
             };
 
     private:
+        static bool s_stackInfoEnabled;
+
+    private:
         BeMutex m_mutex;
         BeConditionVariable m_completedCV;
 
@@ -70,9 +65,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
 
         Priority m_priority;
 
-#if defined (THREADING_DEBUG)
-        BeDbgHelp::StackInfo m_stackInfo;
-#endif
+        BeDebugUtilities::StackFrameInfo* m_stackInfo = nullptr;
 
     private:
         void SetPriority (Priority priority);
@@ -144,12 +137,16 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
 
         BENTLEYDLL_EXPORT void Execute ();
 
-#if defined (THREADING_DEBUG)
-        void SetStackInfo(const BeDbgHelp::StackInfo& stackInfo)
-            {
-            m_stackInfo = stackInfo;
-            }
-#endif
+        //! Enable adding caller stack information into each task for debugging.
+        //! Useful when debugging deadlocks.
+        //! This will only work on DEBUG builds.
+        BENTLEYDLL_EXPORT static void SetStackInfoEnabled(bool enabled);
+
+        //! Get caller stack frame info for debugging if available.
+        BENTLEYDLL_EXPORT BeDebugUtilities::StackFrameInfo* GetStackInfo() const;
+
+        //! Internal. Used to set caller stack information for task.
+        BENTLEYDLL_EXPORT void SetStackInfo(size_t frameIndex);
     };
 
 /*--------------------------------------------------------------------------------------+
@@ -187,7 +184,7 @@ struct PackagedAsyncTask : AsyncTask
         std::shared_ptr<PackagedThenAsyncTask<R, T>> Then (const std::function<R (T&)>& taskCallback)
             {
             auto task = std::make_shared<PackagedThenAsyncTask<R, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
-            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
+            task->SetStackInfo(1);
             AddThenTask (task);
             return task;
             }
@@ -197,7 +194,7 @@ struct PackagedAsyncTask : AsyncTask
         std::shared_ptr<PackagedThenAsyncTask<R, T>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<R (T&)>& taskCallback)
             {
             auto task = std::make_shared<PackagedThenAsyncTask<R, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
-            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
+            task->SetStackInfo(1);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -206,7 +203,7 @@ struct PackagedAsyncTask : AsyncTask
         std::shared_ptr<PackagedThenAsyncTask<void, T>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<void (T&)>& taskCallback)
             {
             auto task = std::make_shared<PackagedThenAsyncTask<void, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
-            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
+            task->SetStackInfo(1);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -215,7 +212,7 @@ struct PackagedAsyncTask : AsyncTask
         std::shared_ptr<PackagedThenAsyncTask<void, T>> Then (const std::function<void (T&)>& taskCallback)
             {
             auto task = std::make_shared<PackagedThenAsyncTask<void, T>> (taskCallback, std::shared_ptr <T> (shared_from_this (), &m_result));
-            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
+            task->SetStackInfo(1);
             AddThenTask (task);
             return task;
             }
@@ -245,7 +242,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         std::shared_ptr<PackagedAsyncTask<R>> Then (const std::function<R (void)>& taskCallback)
             {
             auto task = std::make_shared<PackagedAsyncTask<R>> (taskCallback);
-            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
+            task->SetStackInfo(1);
             AddThenTask (task);
             return task;
             }
@@ -255,7 +252,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         std::shared_ptr<PackagedAsyncTask<R>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<R (void)>& taskCallback)
             {
             auto task = std::make_shared<PackagedAsyncTask<R>> (taskCallback);
-            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
+            task->SetStackInfo(1);
             AddThenTask (task, scheduler);
             return task;
             }
@@ -264,7 +261,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         std::shared_ptr<PackagedAsyncTask<void>> Then (const std::function<void (void)>& taskCallback)
             {
             auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
-            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
+            task->SetStackInfo(1);
             AddThenTask (task);
             return task;
             }
@@ -273,7 +270,7 @@ struct PackagedAsyncTask<void> : AsyncTask
         std::shared_ptr<PackagedAsyncTask<void>> Then (std::shared_ptr<ITaskScheduler> scheduler, const std::function<void (void)>& taskCallback)
             {
             auto task = std::make_shared<PackagedAsyncTask<void>> (taskCallback);
-            ASYNC_TASK_ADD_DEBUG_INFO(task, 2);
+            task->SetStackInfo(1);
             AddThenTask (task, scheduler);
             return task;
             }

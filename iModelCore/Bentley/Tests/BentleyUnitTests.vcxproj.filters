@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Published">
       <UniqueIdentifier>{843b3d19-42d8-4234-8511-79b28f73e4e3}</UniqueIdentifier>
@@ -131,6 +131,9 @@
     <ClCompile Include="Performance\base64utilities_performance.cpp" />
     <ClCompile Include="Published\WPrintfStringTests.cpp" />
     <ClCompile Include="Published\TimeOutSampleTest.cpp" />
+    <ClCompile Include="..\Bentley\nonport\BeTest.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTasksManagerTests.cpp" />
+    <ClCompile Include="Published\Tasks\ThreadlessTaskSchedulerTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />
@@ -167,6 +170,9 @@
     <ClInclude Include="Published\Tasks\UniqueTasksHolderTests.h" />
     <ClInclude Include="Published\Tasks\WorkerThreadTests.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
+    <ClInclude Include="..\PublicAPI\Bentley\BeTest.h" />
+    <ClInclude Include="Published\Tasks\StubTaskScheduler.h" />
+    <ClInclude Include="Published\Tasks\AsyncTestCheckpoint.h" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Published\datetimedstanalysis.logging.config.xml">

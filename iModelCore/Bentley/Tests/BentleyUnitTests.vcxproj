@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -60,9 +60,11 @@
     <ClCompile Include="Published\shared_mutex.cpp" />
     <ClCompile Include="Published\Tasks\AsyncErrorTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncResultTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncTasksManagerTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncTaskTests.cpp" />
     <ClCompile Include="Published\Tasks\CancellationTokenTests.cpp" />
     <ClCompile Include="Published\Tasks\LimitingTaskQueueTests.cpp" />
+    <ClCompile Include="Published\Tasks\ThreadlessTaskSchedulerTests.cpp" />
     <ClCompile Include="Published\Tasks\UniqueTaskHolderTests.cpp" />
     <ClCompile Include="Published\Tasks\UniqueTasksHolderTests.cpp" />
     <ClCompile Include="Published\Tasks\WorkerThreadTests.cpp" />
@@ -90,9 +92,11 @@
     <ClInclude Include="Published\shared_mutex.h" />
     <ClInclude Include="Published\Tasks\AsyncResultTests.h" />
     <ClInclude Include="Published\Tasks\AsyncTaskTests.h" />
+    <ClInclude Include="Published\Tasks\AsyncTestCheckpoint.h" />
     <ClInclude Include="Published\Tasks\CancellationTokenTests.h" />
     <ClInclude Include="Published\Tasks\LimitingTaskQueueTests.h" />
     <ClInclude Include="Published\Tasks\MockCancellationListener.h" />
+    <ClInclude Include="Published\Tasks\StubTaskScheduler.h" />
     <ClInclude Include="Published\Tasks\TasksTestsHelper.h" />
     <ClInclude Include="Published\Tasks\UniqueTaskHolderTests.h" />
     <ClInclude Include="Published\Tasks\UniqueTasksHolderTests.h" />
@@ -119,12 +123,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">

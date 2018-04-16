@@ -2,14 +2,17 @@
  |
  |     $Source: Tasks/AsyncTask.cpp $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include <Bentley/Tasks/TaskScheduler.h>
+#include "ThreadingLogging.h"
 
 USING_NAMESPACE_BENTLEY_TASKS
+
+bool AsyncTask::s_stackInfoEnabled = false;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas     10/2013
@@ -24,6 +27,39 @@ AsyncTask::AsyncTask ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTask::~AsyncTask ()
     {
+    if (m_stackInfo)
+        delete m_stackInfo;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTask::SetStackInfoEnabled(bool enabled)
+    {
+#ifdef DEBUG
+    s_stackInfoEnabled = enabled;
+    if (s_stackInfoEnabled)
+        LOG.warning("AsyncTask stack info is enabled, this may cause runtime performance hit.");
+#endif
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTask::SetStackInfo(size_t frameIndex)
+    {
+#ifdef DEBUG
+    if (s_stackInfoEnabled)
+        m_stackInfo = new BeDebugUtilities::StackFrameInfo(BeDebugUtilities::GetStackFrameInfoAt(frameIndex + 1));
+#endif
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BeDebugUtilities::StackFrameInfo* AsyncTask::GetStackInfo() const
+    {
+    return m_stackInfo;
     }
 
 /*--------------------------------------------------------------------------------------+
