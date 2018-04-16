@@ -933,6 +933,16 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::IsEmpty() const
+    {
+    // NB: A parent tile may be empty because the elements contained within it are all too small to contribute geometry -
+    // children may not be empty.
+    return IsDisplayable() && IsReady() && !_HasGraphics() && !_HasChildren();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const

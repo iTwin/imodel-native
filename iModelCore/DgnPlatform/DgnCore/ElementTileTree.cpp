@@ -1115,8 +1115,10 @@ BentleyStatus Loader::_LoadTile()
 
         if (!tile._IsPartial())
             {
+            // Possible that one or more parent tiles will contain solely elements too small to produce geometry, in which case
+            // we must create their children in order to get graphics...mark undisplayable.
+            tile.SetDisplayable(batch.IsValid());
             tile.ClearBackupGraphic();
-            // tile.SetIsReady();
             return SUCCESS;
             }
         else

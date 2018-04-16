@@ -294,6 +294,7 @@ public:
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 
     virtual bool IsCacheable() const;
+    void SetDisplayable(bool displayable) { m_displayable = displayable; }
 };
 
 //=======================================================================================
