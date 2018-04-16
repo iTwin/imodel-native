@@ -93,7 +93,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define OPTIONAL_ARGUMENT_BOOL(i, var, default, retval)\
     bool var;\
-    if (info.Length() <= (i) || info[i].IsUndefined()) {\
+    if (info.Length() <= (i) || (info[i].IsUndefined() || info[i].IsNull())) {\
         var = (default);\
     }\
     else if (info[i].IsBoolean()) {\
@@ -106,7 +106,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define OPTIONAL_ARGUMENT_INTEGER(i, var, default, retval)\
     int var;\
-    if (info.Length() <= (i) || info[i].IsUndefined()) {\
+    if (info.Length() <= (i) || (info[i].IsUndefined() || info[i].IsNull())) {\
         var = (default);\
     }\
     else if (info[i].IsNumber()) {\
@@ -119,14 +119,15 @@ USING_NAMESPACE_BENTLEY_EC
 
 #define OPTIONAL_ARGUMENT_STRING(i, var, retval)\
     Utf8String var;\
-    if (info.Length() <= (i) || info[i].IsUndefined()) {\
+    if (info.Length() <= (i) || (info[i].IsUndefined() || info[i].IsNull())) {\
         ;\
     }\
     else if (info[i].IsString()) {\
         var = info[i].As<Napi::String>().Utf8Value().c_str();\
     }\
     else {\
-        THROW_TYPE_EXCEPTION_AND_RETURN("Argument " #i " must be string or undefined", retval)\
+        Utf8PrintfString msg("Argument " #i " is type %d. It must be a string or undefined", info[i].Type());\
+        THROW_TYPE_EXCEPTION_AND_RETURN(msg.c_str(), retval)\
     }
 
 namespace IModelJsNative {
