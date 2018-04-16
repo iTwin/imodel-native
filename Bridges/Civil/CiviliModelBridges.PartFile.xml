@@ -197,7 +197,8 @@
     </Part>
 
     <Part Name="CiviliModelBridgesTested">
-        <SubPart PartName="GTest-Run-CheckCoverage" />
+        <SubPart PartName="RunGtest" />
+        <!-- <SubPart PartName="GTest-Run-CheckCoverage" /> -->
     </Part>
 
   <!-- ........................................................................................................................................ -->
