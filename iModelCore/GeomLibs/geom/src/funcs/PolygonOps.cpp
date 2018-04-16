@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/funcs/PolygonOps.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -633,6 +633,40 @@ bool                 bSignedOneBasedIndices
                     pIndices, pExteriorLoopIndices, pXYZOut,
                     localToWorld, worldToLocal,
                     pXYZIn, xyTolerance, bSignedOneBasedIndices);
+        }
+
+    return status;
+    }
+
+bool PolygonOps::FixupAndTriangulateSpaceLoops
+(
+bvector<int>        &triangleIndices,
+bvector<int>        &exteriorLoopIndices,
+bvector<DPoint3d>   &xyzOut,
+TransformR              localToWorld,
+TransformR              worldToLocal,
+bvector<bvector<DPoint3d>> &loops
+)
+    {
+    //size_t numPoints = pXYZIn->size ();
+    bool                   status = false;
+    bvector<DPoint3d> packedPoints;
+    DPoint3d disconnect;
+    disconnect.InitDisconnect ();
+    for (auto &loop : loops)
+        {
+        for (auto &xyz : loop)
+            packedPoints.push_back (xyz);
+        packedPoints.push_back (disconnect);
+        }
+
+    if (CoordinateFrame (&packedPoints, localToWorld, worldToLocal))
+        {
+        status = FixupAndTriangulateProjectedLoops
+                    (
+                    &triangleIndices, &exteriorLoopIndices, &xyzOut,
+                    localToWorld, worldToLocal,
+                    &packedPoints, 0.0, true);
         }
 
     return status;
