@@ -16,6 +16,7 @@
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/BeFileName.h>
+#include <Bentley/Nullable.h>
 #include <Formatting/FormattingApi.h>
 
 #define DEFAULT_VERSION_READ       1
@@ -1968,7 +1969,7 @@ private:
     SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
 
     SchemaWriteStatus WriteJson(Json::Value& outValue, bool standalone, bool includeSchemaVersion) const;
-
+    static BentleyStatus ParseFormatString(Utf8StringR formatName, Nullable<int32_t>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString);
 public:
     //! The ECSchema that this kind of quantity is defined in
     ECSchemaCR GetSchema() const {return m_schema;}

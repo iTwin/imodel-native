@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "ECObjectsPch.h"
+#include <regex>
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
@@ -324,20 +325,89 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
             {
             Formatting::FormatUnitSet presFUS;
             bool invalidUnit = false;
-            ECObjectsStatus status = ParseFUSDescriptor(presFUS, invalidUnit, presValue.c_str(), *this, true, !ecSchemaXmlGreaterThen31);
-            if (ECObjectsStatus::Success != status || invalidUnit)
+            if (!ecSchemaXmlGreaterThen31)
                 {
-                if (ecSchemaXmlGreaterThen31)
+                ECObjectsStatus status = ParseFUSDescriptor(presFUS, invalidUnit, presValue.c_str(), *this, true, true);
+                if (ECObjectsStatus::Success != status || invalidUnit)
                     {
-                    LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' is being dropped.",
-                        presValue.c_str(), GetFullName().c_str());
-                    continue; // Drop the presentation FUS
+                    LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
+                        presValue.c_str(), GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
+                    }
+                }
+            else
+                {
+                Utf8CP mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(presValue.c_str());
+                
+                Utf8String formatName;
+                Nullable<int32_t> prec;
+                bvector<Utf8String> unitNames;
+                bvector<Nullable<Utf8String>> unitLabels;
+                if ((SUCCESS != ParseFormatString(formatName, prec, unitNames, unitLabels, presValue)) || formatName.empty())
+                    {
+                    LOG.warningv("Presentation Format String '%s' is invalid on KoQ '%s'", presValue.c_str(), GetFullName().c_str());
+                    continue;
                     }
 
-                LOG.warningv("Presentation FormatUnitSet '%s' on KindOfQuantity '%s' has problem '%s'.  Continuing to load but schema will not pass validation.",
-                    presValue.c_str(), GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
-                }
+                if (Utf8String::IsNullOrEmpty(mappedName))
+                    {
+                    if (prec.IsValid())
+                        {
+                        Utf8String nameWithPrec;
+                        nameWithPrec = formatName;
+                        nameWithPrec
+                            .append("(")
+                            .append(std::to_string(prec.Value()).c_str())
+                            .append(")");
+                            
+                        mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(nameWithPrec.c_str());
+                        }
+                    if (nullptr == mappedName)
+                        {
+                        mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(formatName.c_str());
+                        if (Utf8String::IsNullOrEmpty(mappedName))
+                            {
+                            LOG.warningv("Presentation Format String '%s' has a format that could not be mapped on KoQ '%s'", presValue.c_str(), GetFullName().c_str());
+                            mappedName = "DefaultRealU";
+                            }
+                        }
+                    }
+                Utf8CP unitName = nullptr;
+                if (!unitNames.empty())
+                    {
+                    unitName = unitNames.front().c_str();
+                    }
+                Utf8String presFusString;
+                if (!Utf8String::IsNullOrEmpty(unitName))
+                    {
+                    Utf8String newName;
+                    Utf8String alias;
+                    Utf8String className;
+                    ECClass::ParseClassName(alias, className, unitName);
 
+                    if (alias.Equals("u"))
+                        alias = "UNITS";
+
+                    if(!Units::UnitRegistry::Instance().TryGetNewNameFromECName((alias + ":" + className).c_str(), newName))
+                        {
+                        LOG.warningv("Failed to map unit '%s' from format string '%s' to a known unit on KoQ '%s'", unitName, presValue.c_str(), GetFullName().c_str());
+                        newName = GetPersistenceUnit().GetUnitName();
+                        }
+                    presFusString.append(newName);
+                    }
+                else
+                    presFusString.append(GetPersistenceUnit().GetUnitName());
+
+                presFusString
+                    .append("(")
+                    .append(mappedName)
+                    .append(")");
+
+                if (ECObjectsStatus::Success != ParseFUSDescriptor(presFUS, invalidUnit, presFusString.c_str(), *this, true, false))
+                    {
+                    LOG.warningv("Failed to parse FUS '%s' created from format string '%s' on KoQ '%s'", presFusString.c_str(), presValue.c_str(), GetFullName().c_str());
+                    continue;
+                    }
+                }
             m_presentationFUS.push_back(presFUS);
             }
         }
@@ -428,6 +498,110 @@ ECObjectsStatus KindOfQuantity::ParseFUSDescriptor(Formatting::FormatUnitSet& fu
             descriptor, koq.GetFullName().c_str(), fus.GetProblemDescription().c_str());
 
     return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Kyle.Abramowitz                  04/18
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+BentleyStatus KindOfQuantity::ParseFormatString(Utf8StringR formatName, Nullable<int32_t>& precision, bvector<Utf8String>& unitNames, bvector<Nullable<Utf8String>>& labels, Utf8StringCR formatString)
+    {
+    static size_t const precisionOverrideIndx = 0;
+    static std::regex const rgx(R"REGEX(([\w,:]+)(\(([^\)]+)\))?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?(\[([^\|\]]+)([\|])?([^\|\]]+)?\])?)REGEX", std::regex::optimize);
+    std::cmatch match;
+
+    
+    if (!std::regex_match(formatString.c_str(), match, rgx))
+        return BentleyStatus::ERROR;
+
+    size_t numOfRegexes = match.size();
+    if (0 == numOfRegexes)
+        return BentleyStatus::ERROR;
+
+    // Handle format first to fail fast.
+    if (!match[1].matched)
+        {
+        LOG.errorv("failed to map a format name to a Format");
+        return BentleyStatus::ERROR;
+        }
+    // Get format name. Should always be the first match
+    formatName = match[1].str().c_str();
+
+    
+    if (match[2].matched && match[3].matched)
+        {
+        Utf8String const overrideStr(match[2].str().c_str());
+        // BeStringUtilities::Split ignores empty tokens. Since overrides are
+        // position dependent, we actually need to count tokens even if they are
+        // the empty string. This function does just that using ',' as a separator.
+        bvector<Utf8String> overrides = [](Utf8StringCR str) -> bvector<Utf8String>
+            {
+            bvector<Utf8String> tokens;
+            size_t prevPos = 1; // Initial position is the character directly after the opening '(' in the override string.
+            size_t currPos;
+            while (str.npos != (currPos = str.find_first_of(",)", prevPos)))
+                {
+                tokens.push_back(Utf8String(str.substr(prevPos, currPos - prevPos).c_str()).Trim());
+                prevPos = currPos + 1;
+                }
+            return tokens;
+            }(overrideStr);
+
+        // It is considered an error to pass in a format string with empty
+        // override brackets. If no overrides are needed, the user should instead
+        // leave the brackets off altogether. As an example the incorrect format
+        // string "SomeFormat<>" should instead be written as "SomeFormat".
+        // Additionally, if a format would be specified using an override string
+        // With no items actually overridden such as "SomeFormat<,,,,>" the string
+        // is also erroneous.
+        if (!overrideStr.empty()
+            && overrides.end() == std::find_if_not(overrides.begin(), overrides.end(),
+                [](Utf8StringCR ovrstr) -> bool
+            {
+            return std::all_of(ovrstr.begin(), ovrstr.end(), ::isspace);
+            }))
+            {
+            LOG.errorv("override list must contain at least one override");
+            return BentleyStatus::ERROR;
+            }
+
+        // The first override parameter overrides the default precision for the format.
+        if (overrides.size() >= precisionOverrideIndx + 1) // Bail if the user didn't include this override.
+            {
+            if (!overrides[precisionOverrideIndx].empty())
+                {
+                uint64_t localPrecision;
+                BentleyStatus status = BeStringUtilities::ParseUInt64(localPrecision, overrides[precisionOverrideIndx].c_str());
+                if (BentleyStatus::SUCCESS != status)
+                    {
+                    LOG.errorv("Invalid FormatString: Failed to parse integer for precision override of FormatString, %s", formatString.c_str());
+                    return status;
+                    }
+                precision = static_cast<int32_t>(localPrecision);
+                }
+            }
+        }
+
+    int i = 4;
+    while (i < match.size())
+        {
+        if (!match[i].matched)
+            break;
+        // Unit override: required;
+        if (!match[i+1].matched)
+            return ERROR;
+        unitNames.push_back(match[i+1].str().c_str());
+        // Label override; optional
+        if (match[i+2].matched) // matches a bar
+            {
+            labels.push_back(Nullable<Utf8String>(match[i+3].str().c_str()));
+            }
+        else // no label. ok
+            labels.push_back(nullptr);
+        i+=4;
+        }
+
+    return BentleyStatus::SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**

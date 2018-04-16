@@ -563,7 +563,7 @@ TEST_F(KindOfQuantityDeserializationTest, SuccessfulWithUnknownUnitInNewerECVers
                displayLabel="best quantity of all time" persistenceUnit="SILLYMETER" relativeError="10e-3" />
 
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
-               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="u:MM;ANOTHERSILLYMETER" relativeError="10e-3" />
+               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultRealU[ANOTHERSILLYMETER]" relativeError="10e-3" />
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -604,7 +604,7 @@ TEST_F(KindOfQuantityDeserializationTest, UseDefaultFormatInNewerECVersion)
                displayLabel="best quantity of all time" persistenceUnit="M(SILLYFORMAT)" relativeError="10e-3" />
 
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
-               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="MM(DefaultReal);CM(SILLYFORMAT)" relativeError="10e-3" />
+               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="f:DefaultReal[u:MM];SILLYFORMAT[u:CM]" relativeError="10e-3" />
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -644,6 +644,98 @@ TEST_F(KindOfQuantityDeserializationTest, UseDefaultFormatInNewerECVersion)
     EXPECT_FALSE(nfs2->IsProblem());
     EXPECT_STREQ("DefaultRealU", nfs2->GetName()) << "The format should have been set to the default.";
     ASSERT_STREQ("CM(DefaultRealU)", presUnitList[1].ToText(false).c_str()) << "Should be able to write FUS with default format to string";
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                 Kyle.Abramowitz                   04/2018
+//--------------------------------------------------------------------------------------
+TEST_F(KindOfQuantityDeserializationTest, TestReadingFormatStrings)
+    {
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
+               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="f:DefaultReal" relativeError="10e-3" />
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("KoQWithPres");
+    EXPECT_STRCASEEQ("M(DefaultReal)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
+               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="f:DefaultRealU[u:MM]" relativeError="10e-3" />
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("KoQWithPres");
+    EXPECT_STRCASEEQ("MM(DefaultRealU)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
+               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="f:DefaultRealU[u:MM][u:UM]" relativeError="10e-3" />
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("KoQWithPres");
+    EXPECT_STRCASEEQ("MM(DefaultRealU)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
+               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="f:DefaultRealU(4)[u:MM][u:UM]" relativeError="10e-3" />
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("KoQWithPres");
+    EXPECT_STRCASEEQ("MM(real4u)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
+               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="banana:banana[u:MM][u:UM]" relativeError="10e-3" />
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("KoQWithPres");
+    EXPECT_STRCASEEQ("MM(DefaultRealU)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
+    }
+
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
+            <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
+               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="banana:banana[u:banana]" relativeError="10e-3" />
+        </ECSchema>)xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "ECSchema failed to deserialize.";
+    KindOfQuantityCP koq = schema->GetKindOfQuantityCP("KoQWithPres");
+    EXPECT_STRCASEEQ("M(DefaultRealU)", koq->GetDefaultPresentationUnit().ToText(false).c_str());
+    }
+
     }
 
 //--------------------------------------------------------------------------------------
