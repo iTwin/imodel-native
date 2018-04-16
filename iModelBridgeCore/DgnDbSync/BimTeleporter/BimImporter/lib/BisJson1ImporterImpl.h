@@ -86,6 +86,7 @@ struct BisJson1ImporterImpl : DgnImportContext
         DgnFontId _RemapFont(DgnFontId) override;
         DgnStyleId _RemapLineStyleId(DgnStyleId sourceId) override;
         BentleyStatus ImportJson(Json::Value& jsonInput);
+        void GenerateThumbnails();
 
     public:
         BisJson1ImporterImpl(DgnDb* dgndb);

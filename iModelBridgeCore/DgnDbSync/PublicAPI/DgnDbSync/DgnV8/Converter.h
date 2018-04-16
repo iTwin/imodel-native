@@ -615,7 +615,7 @@ struct Converter
             m_isPowerplatformBased = false;
             m_wantProvenanceInBim = false;
             m_processAffected = false;
-            m_convertViewsOfAllDrawings = false;
+            m_convertViewsOfAllDrawings = true;
             }
 
         void SetInputRootDir(BentleyApi::BeFileNameCR fileName) {m_rootDir = fileName;}

@@ -58,6 +58,7 @@ void UpdaterChangeDetector::_Cleanup (DwgImporter& importer)
     DELETE_AND_CLEAR (m_byIdIter);
     m_elementsSeen.clear();
     m_dwgModelsSeen.clear ();
+    m_viewsSeen.clear ();
     m_dwgModelsSkipped.clear ();
     m_newlyDiscoveredModels.clear ();
     m_elementsDiscarded = 0;
@@ -607,7 +608,7 @@ void UpdaterChangeDetector::_OnElementSeen (DwgImporter& importer, DgnElementId 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UpdaterChangeDetector::_DeleteDeletedMaterials (DwgImporter& importer)
+void UpdaterChangeDetector::_DetectDeletedMaterials (DwgImporter& importer)
     {
     // collect materials from syncInfo:
     DwgSyncInfo::MaterialIterator syncMaterials (importer.GetDgnDb());
@@ -637,6 +638,56 @@ void UpdaterChangeDetector::_DeleteDeletedMaterials (DwgImporter& importer)
             syncInfo.DeleteMaterial (id);
             }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_OnViewSeen (DwgImporter& importer, DgnViewId viewId)
+    {
+    if (viewId.IsValid())
+        m_viewsSeen.insert (viewId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          03/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void UpdaterChangeDetector::_DetectDeletedViews (DwgImporter& importer)
+    {
+    auto&   elements = importer.GetDgnDb().Elements ();
+    auto&   syncInfo = importer.GetSyncInfo ();
+    auto    jobModelId = importer.GetOrCreateJobDefinitionModel()->GetModelId ();
+
+    for (auto const& entry : ViewDefinition::MakeIterator(importer.GetDgnDb()))
+        {
+        auto viewId = entry.GetId ();
+        if (m_viewsSeen.find(viewId) == m_viewsSeen.end())
+            {
+            // don't delete views not created by us:
+            auto view = entry.GetSpatialViewDefinition ();
+            if (view.IsValid() && view->GetModel()->GetModelId() != jobModelId)
+                continue;
+
+            // a special case for a SpatialView: if attached to a Sheet::ViewAttachment, do not delete it:
+            bool    isAttached = false;
+            for (auto va : elements.MakeIterator(BIS_SCHEMA(BIS_CLASS_ViewAttachment)))
+                {
+                auto viewAttachment = elements.Get<Sheet::ViewAttachment>(va.GetElementId());
+                if (viewAttachment.IsValid() && viewAttachment->GetAttachedViewId() == viewId)
+                    {
+                    isAttached = true;
+                    break;
+                    }
+                }
+            if (!isAttached)
+                {
+                elements.Delete (viewId);
+                syncInfo.DeleteView (viewId);
+                }
+            }
+        }
+
+    m_viewsSeen.clear ();
     }
 
 /*---------------------------------------------------------------------------------**//**

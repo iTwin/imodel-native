@@ -824,7 +824,7 @@ BentleyStatus LightWeightConverter::ConvertElement(DgnV8EhCR v8eh, GeometryBuild
     {
 
     //if element doesn't have any ECInstances and is a non-graphical element, just skip the element
-    if (!v8eh.GetElementRef()->IsGraphics())
+    if ( NULL != v8eh.GetElementRef() && !v8eh.GetElementRef()->IsGraphics())
         return BentleyApi::SUCCESS;
 
     if (!categoryId.IsValid())

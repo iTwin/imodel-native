@@ -216,6 +216,9 @@ struct IDwgChangeDetector
     //! @param[in] xRef     The xref attachment if the DWG model is a root model, this will be nullptr. Otherwise, this would be the attachment that was used to reach the DWG model.
     virtual void _OnModelInserted (DwgImporter& importer, ResolvedModelMapping const& map, DwgDbDatabaseCP xRef) = 0;
 
+    //! Called when a DWG modelspace viewport or a paperspace viewport is dicovered.
+    virtual void  _OnViewSeen (DwgImporter&, DgnViewId) = 0;
+
     //! @name  Inferring Deletions - call these methods after processing all models in a conversion unit. Don't forget to call the ...End function when done.
     //! @{
     virtual void _DetectDeletedElements (DwgImporter&, DwgSyncInfo::ElementIterator&) = 0;  //!< don't forget to call _DetectDeletedElementsEnd when done
@@ -224,7 +227,8 @@ struct IDwgChangeDetector
     virtual void _DetectDeletedModels (DwgImporter&, DwgSyncInfo::ModelIterator&) = 0;      //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsInFile (DwgImporter&, DwgDbDatabaseR) = 0;             //!< don't forget to call _DetectDeletedModelsEnd when done
     virtual void _DetectDeletedModelsEnd (DwgImporter&) = 0;
-    virtual void _DeleteDeletedMaterials (DwgImporter&) = 0;
+    virtual void _DetectDeletedMaterials (DwgImporter&) = 0;
+    virtual void _DetectDeletedViews (DwgImporter&) = 0;
     //! @}
 };  // IDwgChangeDetector
 typedef std::unique_ptr <IDwgChangeDetector>    T_DwgChangeDetectorPtr;
@@ -835,6 +839,7 @@ public:
         L10N_STRING(SyncInfoInconsistent)        // =="The syncInfo file [%s] is inconsistent with the project"==
         L10N_STRING(SyncInfoTooNew)              // =="Sync info was created by a later version"==
         L10N_STRING(ViewNoneFound)               // =="No view was found"==
+        L10N_STRING(ViewportError)               // =="Modelspace viewport error %s"==
         L10N_STRING(ImageNotAJpeg)               // =="Sky box image is not a jpeg file, %s"==
         L10N_STRING(WrongBriefcaseManager)       // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
         L10N_STRING(UpdateDoesNotChangeClass)    // =="Update cannot change the class of an element. Element: %s. Proposed class: %s."==
@@ -939,9 +944,10 @@ protected:
     uint32_t                    m_fileCount;
     DgnCategoryId               m_uncategorizedCategoryId;
     CodeSpecId                  m_businessKeyCodeSpecId;
+    DwgDbObjectId               m_activeViewportId;
     DgnViewId                   m_defaultViewId;
     bvector<ImportRule>         m_modelImportRules;
-    bool                        m_errorCount;
+    size_t                      m_errorCount;
     IssueReporter               m_issueReporter;
     bset<Utf8String>            m_reportedIssues;
     StableIdPolicy              m_currIdPolicy;
@@ -961,6 +967,7 @@ protected:
     T_MaterialTextureIdMap      m_materialTextures;
     bvector<BeFileName>         m_materialSearchPaths;
     uint32_t                    m_entitiesImported;
+    uint32_t                    m_layersImported;
     MessageCenter               m_messageCenter;
     ECN::ECSchemaCP             m_attributeDefinitionSchema;
     T_ConstantBlockAttrdefList  m_constantBlockAttrdefList;
@@ -1079,7 +1086,7 @@ protected:
     // Each layout may have multiple viewports, the first of which is the paperspace viewport which should be used for the sheet model
     // imported from the layout block.
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportModelspaceViewports ();
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportModelspaceViewport (DwgDbViewportTableRecordCR vport);
+    DGNDBSYNC_EXPORT virtual DgnViewId      _ImportModelspaceViewport (DwgDbViewportTableRecordCR vport);
     DGNDBSYNC_EXPORT virtual BentleyStatus  _ImportPaperspaceViewport (DgnModelR model, TransformCR transform, DwgDbLayoutCR layout);
     DGNDBSYNC_EXPORT virtual void           _PostProcessViewports ();
 
@@ -1278,6 +1285,7 @@ public:
     bool    _ShouldSkipFile (DwgImporter&, DwgDbDatabaseCR) override { return false; }
     bool    _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const& m) override { return false; }
     void    _OnModelSeen (DwgImporter&, ResolvedModelMapping const& m) override {}
+    void    _OnViewSeen (DwgImporter&, DgnViewId) override {}
     void    _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP) override {}
     void    _OnElementSeen (DwgImporter&, DgnElementId) override {}
     void    _DetectDeletedElements (DwgImporter&, DwgSyncInfo::ElementIterator&) override {}
@@ -1286,7 +1294,8 @@ public:
     void    _DetectDeletedModels (DwgImporter&, DwgSyncInfo::ModelIterator&) override {}
     void    _DetectDeletedModelsInFile (DwgImporter&, DwgDbDatabaseR) override {}
     void    _DetectDeletedModelsEnd (DwgImporter&) override {}
-    void   _DeleteDeletedMaterials (DwgImporter&) override {}
+    void    _DetectDeletedMaterials (DwgImporter&) override {}
+    void    _DetectDeletedViews (DwgImporter&) override {}
 
     //! always fills in element provenence and returns true
     DGNDBSYNC_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter*) override;
@@ -1306,6 +1315,7 @@ private:
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_dwgModelsSeen;
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_dwgModelsSkipped;
     bset<DwgSyncInfo::DwgModelSyncInfoId>   m_newlyDiscoveredModels;
+    bset<DgnViewId>                         m_viewsSeen;
     uint32_t                                m_elementsDiscarded;
 
 public:
@@ -1320,6 +1330,7 @@ public:
     DGNDBSYNC_EXPORT bool   _ShouldSkipModel (DwgImporter&, ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT void   _OnModelSeen (DwgImporter&, ResolvedModelMapping const&) override;
     DGNDBSYNC_EXPORT void   _OnModelInserted (DwgImporter&, ResolvedModelMapping const&, DwgDbDatabaseCP xRef) override;
+    DGNDBSYNC_EXPORT void   _OnViewSeen (DwgImporter&, DgnViewId) override;
     DGNDBSYNC_EXPORT void   _OnElementSeen (DwgImporter&, DgnElementId) override;
     DGNDBSYNC_EXPORT bool   _IsElementChanged (DetectionResults&, DwgImporter&, DwgDbObjectCR, ResolvedModelMapping const&, T_DwgSyncInfoElementFilter* filter) override;
     //! @}
@@ -1335,7 +1346,8 @@ public:
     DGNDBSYNC_EXPORT void   _DetectDeletedModelsInFile (DwgImporter&, DwgDbDatabaseR) override;    //!< don't forget to call _DetectDeletedModelsEnd when done
     DGNDBSYNC_EXPORT void   _DetectDeletedModelsEnd (DwgImporter&) override {m_dwgModelsSeen.clear();}
     //! delete tables
-    DGNDBSYNC_EXPORT void   _DeleteDeletedMaterials (DwgImporter&);
+    DGNDBSYNC_EXPORT void   _DetectDeletedMaterials (DwgImporter&) override;
+    DGNDBSYNC_EXPORT void   _DetectDeletedViews (DwgImporter&) override;
     //! @}
 };  // UpdaterChangeDetector
 

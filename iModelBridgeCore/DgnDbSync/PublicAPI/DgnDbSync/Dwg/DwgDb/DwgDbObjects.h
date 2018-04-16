@@ -123,6 +123,7 @@ public:
     DWGDB_EXPORT DwgDbDatabaseP     GetDatabase () const;
     DWGDB_EXPORT DwgDbHandle        GetHandle () const;
     DWGDB_EXPORT DwgString          GetDwgClassName () const;
+    DWGDB_EXPORT DWG_TypeP(RxClass) GetDwgClass () const;
     DWGDB_EXPORT bool               IsObjectDerivedFrom (DWG_TypeCP(RxClass) rxClass) const;
     DWGDB_EXPORT uint64_t           ToUInt64 () const;
     DWGDB_EXPORT DwgString          ToAscii () const;
@@ -538,6 +539,8 @@ public:
     DWGDB_EXPORT DwgDbObjectId  FindLayoutByName (DwgStringCR name, DwgDbDatabaseCP dwg) const;
     DWGDB_EXPORT DwgDbObjectId  FindActiveLayout (DwgDbDatabaseCP dwg) const;
     DWGDB_EXPORT DwgDbObjectId  GetActiveLayoutBlock (DwgDbDatabaseCP dwg) const;
+    //! Switch active layout to layoutId.
+    //! @note Make sure the layout block is closed before calling this method as otherwise this call fails in RealDWG.
     DWGDB_EXPORT DwgDbStatus    ActivateLayout (DwgDbObjectId layoutId);
     DWGDB_EXPORT DwgDbStatus    CreateLayout (DwgDbObjectIdR layoutId, DwgDbObjectIdR blockId, DwgStringCR name, DwgDbDatabaseP);
     DWGDB_EXPORT DwgDbStatus    DeleteLayout (DwgStringCR name, DwgDbDatabaseP dwg);

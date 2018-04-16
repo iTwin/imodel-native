@@ -134,7 +134,8 @@
         DWGDB_EXPORT static OdRxObjectPtr   CreateObject ();                    \
         DWGDB_EXPORT static _className_*    Cast (OdRxObject const* rxObj);     \
         DWGDB_EXPORT OdRxObject*            QueryX (OdRxClass const* c) const;  \
-        DWGDB_EXPORT OdRxObject*            GetX (OdRxClass const* c) const;
+        DWGDB_EXPORT OdRxObject*            GetX (OdRxClass const* c) const;    \
+        DWGDB_EXPORT OdRxClass*             IsA () const;
 
     #define DWGRX_DEFINE_SMARTPTR_BASE()    \
         void addRef() {;}                   \
@@ -199,7 +200,8 @@
         DWGDB_EXPORT static AcRxObject*     CreateObject ();                    \
         DWGDB_EXPORT static _className_*    Cast (AcRxObject const* rxObj);     \
         DWGDB_EXPORT AcRxObject*            QueryX (AcRxClass const* c) const;  \
-        DWGDB_EXPORT AcRxObject*            GetX (AcRxClass const* c) const;
+        DWGDB_EXPORT AcRxObject*            GetX (AcRxClass const* c) const;    \
+        DWGDB_EXPORT AcRxClass*             IsA () const;
     // OpenDWG specific
     #define DWGRX_DEFINE_SMARTPTR_BASE()
     #define DWGRX_CONS_DEFINE_MEMBERS(_class_,_parent_)     ACRX_CONS_DEFINE_MEMBERS(##_class_##,##_parent_##,1);
