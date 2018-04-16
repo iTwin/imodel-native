@@ -272,7 +272,7 @@ void LegacyNameMappings::AddMappings()
     AddMapping("Meters4u", "f:Meters4u");
     AddMapping("Feet4u", "f:Feet4U");
     AddMapping("Inches4u", "f:InchesU");
-    AddMapping("Inches18u", "f:InchesU(8)");
+    AddMapping("Inches8u", "f:InchesU(8)");
 
     AddMapping("DecimalDeg4", "f:DecimalDeg4");
     AddMapping("StationFt2", "f:StationFt2");
