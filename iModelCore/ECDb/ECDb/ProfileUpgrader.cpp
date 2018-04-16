@@ -459,6 +459,7 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
         stmt.ClearBindings();
         }
 
+    LOG.debug("ECDb profile upgrade: Upgraded KindOfQuantities to EC3.2 format.");
     return BE_SQLITE_OK;
     }
 
