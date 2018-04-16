@@ -24,7 +24,7 @@
 // #define POPULATE_ROOT_TILE
 
 // Uncomment to test selective tile repair
-// #define WIP_TILE_REPAIR
+#define WIP_TILE_REPAIR
 // Uncomment to always use tile repair when reading from cache, instead of only when tile contents invalidated.
 // (Must have WIP_TILE_REPAIR defined too!)
 // #define TEST_TILE_REPAIR
@@ -2032,7 +2032,7 @@ public:
     TileCR GetTile() const { return m_tile; }
     void SetLoadContext(LoadContextCR context) { m_loadContext = context; }
 
-    bool ReadFrom(TileTree::StreamBufferR, bool& containsCurves, DgnElementIdSet const& omitElems);
+    bool ReadFrom(TileTree::StreamBufferR, bool& containsCurves, bool& isIncomplete, DgnElementIdSet const& omitElems);
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2018
@@ -2439,7 +2439,7 @@ MeshList MeshGenerator::GetMeshes(bool isPartialTile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool MeshGenerator::ReadFrom(TileTree::StreamBufferR stream, bool& containsCurves, DgnElementIdSet const& omitElems)
+bool MeshGenerator::ReadFrom(TileTree::StreamBufferR stream, bool& containsCurves, bool& isIncomplete, DgnElementIdSet const& omitElems)
     {
     auto model = m_tile.GetElementRoot().GetModel();
     BeAssert(model.IsValid());
@@ -2455,6 +2455,8 @@ bool MeshGenerator::ReadFrom(TileTree::StreamBufferR stream, bool& containsCurve
         }
 
     containsCurves = TileTree::IO::DgnTile::Flags::None != (tileFlags & TileTree::IO::DgnTile::Flags::ContainsCurves);
+    isIncomplete = TileTree::IO::DgnTile::Flags::None != (tileFlags & TileTree::IO::DgnTile::Flags::Incomplete);
+
     return true;
     }
 
@@ -2521,7 +2523,8 @@ TileGeneratorUPtr TileGenerator::Create(DRange3dCR range, RangeIndex::Tree& rang
 bool TileGenerator::ReadFrom(TileTree::StreamBufferR stream, DgnElementIdSet const& omitElems)
     {
     bool containsCurves;
-    if (!m_meshGenerator.ReadFrom(stream, containsCurves, omitElems))
+    bool isIncomplete;
+    if (!m_meshGenerator.ReadFrom(stream, containsCurves, isIncomplete, omitElems))
         {
         BeAssert(false);
         return false;
@@ -2530,6 +2533,10 @@ bool TileGenerator::ReadFrom(TileTree::StreamBufferR stream, DgnElementIdSet con
     // We have no way of determining that all curved elements were removed from the tile...
     if (containsCurves)
         m_geometries.MarkCurved();
+
+    // Similarly we can't know whether all geometry previously omitted from tile no longer exists or would no longer be omitted...
+    if (isIncomplete)
+        m_geometries.MarkIncomplete();
 
     return true;
     }
