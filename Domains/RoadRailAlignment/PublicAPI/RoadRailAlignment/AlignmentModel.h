@@ -113,7 +113,7 @@ public:
     }; // CreateParams
 
 protected:
-    explicit VerticalAlignmentModel(CreateParams const& params) : T_Super(params) {}
+    explicit VerticalAlignmentModel(CreateParams const& params) : T_Super(params) { SetIsPrivate(true); }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(VerticalAlignmentModel)

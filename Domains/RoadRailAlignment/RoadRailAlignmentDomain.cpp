@@ -91,7 +91,7 @@ void setupModelSelector(ModelSelectorR mSelector)
 // @bsimethod                           Alexandre.Gagnon                        09/2017
 //---------------------------------------------------------------------------------------
 template <typename VIEWDEF_T>
-RefCountedPtr<VIEWDEF_T> createViewDefinition(DictionaryModelR dictionary, Utf8StringCR viewName)
+RefCountedPtr<VIEWDEF_T> createViewDefinition(DefinitionModelR model, Utf8StringCR viewName)
     {
     Utf8String cSelectorName = viewName;
     cSelectorName.append("CategorySelector");
@@ -102,9 +102,9 @@ RefCountedPtr<VIEWDEF_T> createViewDefinition(DictionaryModelR dictionary, Utf8S
     Utf8String mSelectorName = viewName;
     mSelectorName.append("ModelSelector");
 
-    CategorySelectorPtr cSelector = new CategorySelector(dictionary, cSelectorName);
-    DisplayStyle3dPtr dStyle = new DisplayStyle3d(dictionary, dStyleName);
-    ModelSelectorPtr mSelector = new ModelSelector(dictionary, mSelectorName);
+    CategorySelectorPtr cSelector = new CategorySelector(model, cSelectorName);
+    DisplayStyle3dPtr dStyle = new DisplayStyle3d(model, dStyleName);
+    ModelSelectorPtr mSelector = new ModelSelector(model, mSelectorName);
     if (!cSelector.IsValid() || !dStyle.IsValid() || !mSelector.IsValid())
         return nullptr;
 
@@ -112,7 +112,7 @@ RefCountedPtr<VIEWDEF_T> createViewDefinition(DictionaryModelR dictionary, Utf8S
     setupDisplayStyle(*dStyle);
     setupModelSelector(*mSelector);
 
-    RefCountedPtr<VIEWDEF_T> viewDefinition = new VIEWDEF_T(dictionary, viewName, *cSelector, *dStyle, *mSelector);
+    RefCountedPtr<VIEWDEF_T> viewDefinition = new VIEWDEF_T(model, viewName, *cSelector, *dStyle, *mSelector);
     if (viewDefinition.IsValid())
         {
         viewDefinition->SetIsPrivate(true);
@@ -121,16 +121,17 @@ RefCountedPtr<VIEWDEF_T> createViewDefinition(DictionaryModelR dictionary, Utf8S
 
     return viewDefinition;
     }
+
+END_UNNAMED_NAMESPACE
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        09/2017
 // Inserts the 'system' private views for AlignmentXSViewDefinition and AlignmentProfileViewDefinition classes
 //---------------------------------------------------------------------------------------
-DgnDbStatus insertAlignmentViewDefinitions(DgnDbR db)
+DgnDbStatus RoadRailAlignmentDomain::SetUpViewDefinitions(DefinitionModelR model)
     {
-    DictionaryModelR dictionary = db.GetDictionaryModel();
-
-    AlignmentProfileViewDefinitionPtr profileDefinition = createViewDefinition<AlignmentProfileViewDefinition>(dictionary, AlignmentProfileViewDefinition::SYSTEM_VIEW_NAME);
-    AlignmentXSViewDefinitionPtr xsDefinition = createViewDefinition<AlignmentXSViewDefinition>(dictionary, AlignmentXSViewDefinition::SYSTEM_VIEW_NAME);
+    AlignmentProfileViewDefinitionPtr profileDefinition = createViewDefinition<AlignmentProfileViewDefinition>(model, AlignmentProfileViewDefinition::SYSTEM_VIEW_NAME);
+    AlignmentXSViewDefinitionPtr xsDefinition = createViewDefinition<AlignmentXSViewDefinition>(model, AlignmentXSViewDefinition::SYSTEM_VIEW_NAME);
 
     if (!profileDefinition.IsValid() || !xsDefinition.IsValid())
         return DgnDbStatus::BadElement;
@@ -144,8 +145,6 @@ DgnDbStatus insertAlignmentViewDefinitions(DgnDbR db)
 
     return DgnDbStatus::Success;
     }
-
-END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
@@ -171,10 +170,6 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject, Utf8
     auto horizontalBreakDownModelPtr = HorizontalAlignmentModel::Create(HorizontalAlignmentModel::CreateParams(subject.GetDgnDb(), horizontalPartitionCPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = horizontalBreakDownModelPtr->Insert()))
-        return status;
-
-
-    if (DgnDbStatus::Success != (status = insertAlignmentViewDefinitions(subject.GetDgnDb())))
         return status;
 
     return DgnDbStatus::Success;

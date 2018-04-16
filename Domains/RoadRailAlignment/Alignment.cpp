@@ -310,13 +310,13 @@ DgnDbStatus Alignment::SetMainVertical(AlignmentCR alignment, VerticalAlignmentC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Alignment::AddRepresentedBy(AlignmentCR alignment, DgnElementCR representedBy)
+DgnDbStatus Alignment::AddRepresentedBy(AlignmentCR alignment, GeometrySourceCR representedBy)
     {
-    if (!representedBy.GetElementId().IsValid() || !alignment.GetElementId().IsValid())
+    if (!representedBy.ToElement()->GetElementId().IsValid() || !alignment.GetElementId().IsValid())
         return DgnDbStatus::BadElement;
     
     Utf8String relClassName;
-    if (representedBy.ToGeometrySource2d())
+    if (representedBy.Is2d())
         relClassName = BRRA_REL_DrawingGraphicRepresentsAlignment;
     else
         relClassName = BRRA_REL_GraphicalElement3dRepresentsAlignment;
@@ -324,10 +324,35 @@ DgnDbStatus Alignment::AddRepresentedBy(AlignmentCR alignment, DgnElementCR repr
     ECInstanceKey insKey;
     if (DbResult::BE_SQLITE_OK != alignment.GetDgnDb().InsertLinkTableRelationship(insKey,
         *alignment.GetDgnDb().Schemas().GetClass(BRRA_SCHEMA_NAME, relClassName)->GetRelationshipClassCP(),
-        ECInstanceId(representedBy.GetElementId().GetValue()), ECInstanceId(alignment.GetElementId().GetValue())))
+        ECInstanceId(representedBy.ToElement()->GetElementId().GetValue()), ECInstanceId(alignment.GetElementId().GetValue())))
         return DgnDbStatus::BadElement;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Alignment::QueryIsRepresentedBy(GeometrySourceCR geometrySource) const
+    {
+    Utf8String relClassName;
+    if (geometrySource.Is2d())
+        relClassName = BRRA_REL_DrawingGraphicRepresentsAlignment;
+    else
+        relClassName = BRRA_REL_GraphicalElement3dRepresentsAlignment;
+
+    auto ecsql = Utf8PrintfString("SELECT ECInstanceId FROM %s.%s WHERE SourceECInstanceId = ? AND TargetECInstanceId = ?;", 
+        BRRA_SCHEMA_NAME, relClassName.c_str());
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement(ecsql.c_str());
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, geometrySource.ToElement()->GetElementId());
+    stmtPtr->BindId(2, GetElementId());
+
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        return true;
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

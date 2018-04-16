@@ -122,9 +122,9 @@ public:
     //! @return Alignment's start station
     double GetStartStation() const { return GetPropertyValueDouble("StartStation"); }
 
-    //! Given a DgnElement, attempts to convert it to an Alignment.
-    //! @param element The element to attempt to convert to an alignment.
-    //! @return Either an Alignment, or nullptr if the element could not be converted.
+    //! Given a DgnElement, attempts to retrieve an Alignment associated with it.
+    //! @param element The element to attempt to retrieve an associated alignment for.
+    //! @return Either an Alignment, or nullptr if the element does not have any associated alignment.
     ROADRAILALIGNMENT_EXPORT static AlignmentCPtr GetAssociated(Dgn::DgnElementCR element);
 
     //__PUBLISH_SECTION_END__
@@ -133,10 +133,12 @@ public:
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertWithMainPair(CivilGeometry::AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(CivilGeometry::AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateAprox3dGeom();
-    void SetStartStation(double station) { SetPropertyValue("StartStation", station); }
+    ROADRAILALIGNMENT_EXPORT bool QueryIsRepresentedBy(Dgn::GeometrySourceCR geometrySource) const;
+    void SetStartStation(double station) { SetPropertyValue("StartStation", station); }    
+
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetHorizontal(AlignmentCR alignment, HorizontalAlignmentCR vertical);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetMainVertical(AlignmentCR alignment, VerticalAlignmentCR vertical);
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(AlignmentCR alignment, Dgn::DgnElementCR representedBy);
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus AddRepresentedBy(AlignmentCR alignment, Dgn::GeometrySourceCR representedBy);
     //! @publicsection
     //__PUBLISH_SECTION_START__
 }; // Alignment
