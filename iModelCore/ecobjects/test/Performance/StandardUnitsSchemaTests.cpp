@@ -133,7 +133,7 @@ TEST_F(UnitsPerformanceTest, ConvertManyValues)
     for (int i = 0; i < numTimes; ++i)
         unitA->Convert(converted, 42.42, unitB);
     timer.Stop();
-    PERFORMANCELOG.infov("Time to convert between %s and %s %d times: %.15g", unitA->GetName(), unitB->GetName(), numTimes, timer.GetElapsedSeconds());
+    PERFORMANCELOG.infov("Time to convert between %s and %s %d times: %.15g", unitA->GetName().c_str(), unitB->GetName().c_str(), numTimes, timer.GetElapsedSeconds());
 
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), numTimes, "Convert between two units. (Conversion is not cached)");
     }
