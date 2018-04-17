@@ -3774,6 +3774,11 @@ public:
     //! @return   A pointer to an ECN::ECClass if the named class exists in within the current schema; otherwise, nullptr
     ECClassP GetClassP(Utf8CP name) {return GetSchemaChild<ECClass, ClassMap>(name, &m_classMap);}
 
+    //! Get an ECClass by name within the context of this schema and all schemas referenced by this schema.
+    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT ECClassCP LookupClass(Utf8CP name) const;
+
     //! Get an enumeration by name within the context of this schema.
     //! @param[in]  name     The name of the enumeration to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::ECEnumeration if the named enumeration exists in within the current schema; otherwise, nullptr
@@ -3784,6 +3789,11 @@ public:
     //! @return   A const pointer to an ECN::ECEnumeration if the named enumeration exists in within the current schema; otherwise, nullptr
     ECEnumerationP GetEnumerationP(Utf8CP name) {return GetSchemaChild<ECEnumeration, EnumerationMap>(name, &m_enumerationMap);}
 
+    //! Get an ECENumeration by name within the context of this schema and all schemas referenced by this schema.
+    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT ECEnumerationCP LookupEnumeration(Utf8CP name) const;
+
     //! Get a kind of quantity by name within the context of this schema.
     //! @param[in]  name     The name of the kind of quantity to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::KindOfQuantity if the named kind of quantity exists in within the current schema; otherwise, nullptr
@@ -3793,6 +3803,11 @@ public:
     //! @param[in]  name     The name of the kind of quantity to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::KindOfQuantity if the named enumeration exists in within the current schema; otherwise, nullptr
     KindOfQuantityP GetKindOfQuantityP(Utf8CP name) {return GetSchemaChild<KindOfQuantity, KindOfQuantityMap>(name, &m_kindOfQuantityMap);}
+    
+    //! Get a KindOfQuantity by name within the context of this schema and all schemas referenced by this schema.
+    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT KindOfQuantityCP LookupKindOfQuantity(Utf8CP name) const;
 
     //! Get a property category by name within the context of this schema.
     //! @param[in]  name     The name of the property category to lookup.  This must be an unqualified (short) name.
@@ -3802,7 +3817,12 @@ public:
     //! Get a property category by name within the context of this schema.
     //! @param[in]  name     The name of the property category to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::PropertyCategory if the named property category exists in within the current schema; otherwise, nullptr
-    PropertyCategoryP GetPropertyCategoryP(Utf8CP name) {return GetSchemaChild<PropertyCategory, PropertyCategoryMap>(name, &m_propertyCategoryMap);}
+    PropertyCategoryCP GetPropertyCategoryP(Utf8CP name) {return GetSchemaChild<PropertyCategory, PropertyCategoryMap>(name, &m_propertyCategoryMap);}
+
+    //! Get a PropertyCategory by name within the context of this schema and all schemas referenced by this schema.
+    //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
+    //! @return   A pointer to the item if the named item exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT PropertyCategoryCP LookupPropertyCategory(Utf8CP name) const;
 
     //! Get a unit system by name within the context of this schema.
     //! @param[in]  name     The name of the unit system to lookup.  This must be an unqualified (short) name.

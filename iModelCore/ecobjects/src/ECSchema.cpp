@@ -1979,6 +1979,106 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECClassCP ECSchema::LookupClass(Utf8CP name) const
+    {
+    Utf8String alias;
+    Utf8String localName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, localName, name))
+        return nullptr;
+
+    ECClassCP foundClass = nullptr;
+    if (alias.empty())
+        foundClass = GetClassCP(localName.c_str());
+    else
+        {
+        ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
+        if (nullptr == resolvedSchema)
+            return nullptr;
+
+        foundClass = resolvedSchema->GetClassCP(localName.c_str());
+        }
+
+    return foundClass;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+KindOfQuantityCP ECSchema::LookupKindOfQuantity(Utf8CP name) const
+    {
+    Utf8String alias;
+    Utf8String localName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, localName, name))
+        return nullptr;
+
+    KindOfQuantityCP foundClass = nullptr;
+    if (alias.empty())
+        foundClass = GetKindOfQuantityCP(localName.c_str());
+    else
+        {
+        ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
+        if (nullptr == resolvedSchema)
+            return nullptr;
+
+        foundClass = resolvedSchema->GetKindOfQuantityCP(localName.c_str());
+        }
+
+    return foundClass;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECEnumerationCP ECSchema::LookupEnumeration(Utf8CP name) const
+    {
+    Utf8String alias;
+    Utf8String localName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, localName, name))
+        return nullptr;
+
+    ECEnumerationCP foundClass = nullptr;
+    if (alias.empty())
+        foundClass = GetEnumerationCP(localName.c_str());
+    else
+        {
+        ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
+        if (nullptr == resolvedSchema)
+            return nullptr;
+
+        foundClass = resolvedSchema->GetEnumerationCP(localName.c_str());
+        }
+
+    return foundClass;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+PropertyCategoryCP ECSchema::LookupPropertyCategory(Utf8CP name) const
+    {
+    Utf8String alias;
+    Utf8String localName;
+    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, localName, name))
+        return nullptr;
+
+    PropertyCategoryCP foundClass = nullptr;
+    if (alias.empty())
+        foundClass = GetPropertyCategoryCP(localName.c_str());
+    else
+        {
+        ECSchemaCP resolvedSchema = GetSchemaByAliasP(alias);
+        if (nullptr == resolvedSchema)
+            return nullptr;
+
+        foundClass = resolvedSchema->GetPropertyCategoryCP(localName.c_str());
+        }
+
+    return foundClass;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 template<typename T>
