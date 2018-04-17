@@ -2,7 +2,7 @@
 |
 |     $Source: SyncInfo.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ConverterInternal.h"
@@ -1549,7 +1549,8 @@ bool SyncInfo::TryGetECSchema(ECN::SchemaKey& schemaKey, ECSchemaMappingType& ma
     schemaKey.m_schemaName = v8SchemaName;
     schemaKey.m_versionRead = (uint32_t) stmt->GetValueInt(0);
     schemaKey.m_versionMinor = (uint32_t) stmt->GetValueInt(1);
-    schemaKey.m_checkSum = (uint32_t) stmt->GetValueInt(2);
+    // WIP_REMOVE_CheckSum
+    // schemaKey.m_checkSum = (uint32_t) stmt->GetValueInt(2);
     mappingType = (ECSchemaMappingType) stmt->GetValueInt(3);
 
     return true;
