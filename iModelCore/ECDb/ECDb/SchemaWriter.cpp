@@ -265,7 +265,7 @@ BentleyStatus SchemaWriter::ImportClass(Context& ctx, ECN::ECClassCR ecClass)
         }
     
     //now import actual ECClass
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_Class(SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType) VALUES(?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Class "(SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType) VALUES(?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -368,7 +368,7 @@ BentleyStatus SchemaWriter::ImportEnumeration(Context& ctx, ECEnumerationCR ecEn
         return ERROR;
         }
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_Enumeration(SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues) VALUES(?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Enumeration "(SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues) VALUES(?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -429,7 +429,7 @@ BentleyStatus SchemaWriter::ImportUnitSystem(Context& ctx, UnitSystemCR us)
         return ERROR;
         }
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_UnitSystem(SchemaId,Name,DisplayLabel,Description) VALUES(?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_UnitSystem "(SchemaId,Name,DisplayLabel,Description) VALUES(?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -477,7 +477,7 @@ BentleyStatus SchemaWriter::ImportPhenomenon(Context& ctx, PhenomenonCR ph)
         return ERROR;
         }
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_Phenomenon(SchemaId,Name,DisplayLabel,Description,Definition) VALUES(?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Phenomenon "(SchemaId,Name,DisplayLabel,Description,Definition) VALUES(?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -532,7 +532,7 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
     if (SUCCESS != ImportPhenomenon(ctx, *phen))
         return ERROR;
 
-    if (!unit.IsConstant())
+    if (unit.HasUnitSystem())
         {
         UnitSystemCP system = unit.GetUnitSystem();
         if (SUCCESS != ImportUnitSystem(ctx, *system))
@@ -549,7 +549,7 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
         }
     
 
-    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main.ec_Unit(SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Numerator,Denominator,Offset,IsConstant,InvertingUnitId) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = ctx.GetCachedStatement("INSERT INTO main." TABLE_Unit "(SchemaId,Name,DisplayLabel,Description,PhenomenonId,UnitSystemId,Definition,Numerator,Denominator,Offset,IsConstant,InvertingUnitId) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -587,7 +587,7 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
     if (BE_SQLITE_OK != stmt->BindId(phIdParamIx, phen->GetId()))
         return ERROR;
 
-    if (!unit.IsConstant())
+    if (unit.HasUnitSystem())
         {
         if (BE_SQLITE_OK != stmt->BindId(usIdParamIx, unit.GetUnitSystem()->GetId()))
             return ERROR;
@@ -617,8 +617,12 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
             return ERROR;
         }
 
-    if (BE_SQLITE_OK != stmt->BindBoolean(isConstantParamIx, unit.IsConstant()))
-        return ERROR;
+    // WIP_UNITS replace with unit.HasIsConstant once implemented
+    if (!unit.IsInvertedUnit())
+        {
+        if (BE_SQLITE_OK != stmt->BindBoolean(isConstantParamIx, unit.IsConstant()))
+            return ERROR;
+        }
 
     if (invertingUnit != nullptr)
         {
@@ -626,7 +630,8 @@ BentleyStatus SchemaWriter::ImportUnit(Context& ctx, ECUnitCR unit)
             return ERROR;
         }
 
-    if (BE_SQLITE_DONE != stmt->Step())
+    DbResult stat = stmt->Step();
+    if (BE_SQLITE_DONE != stat)
         return ERROR;
 
     const UnitId unitId = DbUtilities::GetLastInsertedId<UnitId>(ctx.GetECDb());
@@ -802,6 +807,7 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
             return ERROR;
         }
 
+    BeAssert(ordinal != 0);
     return SUCCESS;
     }
 

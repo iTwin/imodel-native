@@ -1099,6 +1099,12 @@ BentleyStatus SchemaReader::ReadFormatComposite(Context& ctx, ECFormat& format, 
         }
     stmt = nullptr;
 
+    if (units.empty()) // format doesn't have a composite spec
+        {
+        BeAssert(Utf8String::IsNullOrEmpty(compositeSpacer));
+        return SUCCESS;
+        }
+
     const size_t labelCount = labels.size();
 
     BeAssert(labelCount <= 4 && units.size() <= 4);
