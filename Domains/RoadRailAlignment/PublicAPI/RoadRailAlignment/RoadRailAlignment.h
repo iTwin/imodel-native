@@ -61,10 +61,10 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 // Elements
 #define BRRA_CLASS_Alignment                                        "Alignment"
-#define BRRA_CLASS_AlignmentCategoryModel                           "AlignmentCategoryModel"
 #define BRRA_CLASS_AlignmentModel                                   "AlignmentModel"
 #define BRRA_CLASS_AlignmentProfileViewDefinition                   "AlignmentProfileViewDefinition"
-#define BRRA_CLASS_LinearlyLocatedReferentElement                         "LinearlyLocatedReferentElement"
+#define BRRA_CLASS_ConfigurationModel                               "ConfigurationModel"
+#define BRRA_CLASS_LinearlyLocatedReferentElement                   "LinearlyLocatedReferentElement"
 #define BRRA_CLASS_AlignmentStation                                 "AlignmentStation"
 #define BRRA_CLASS_AlignmentXSViewDefinition                        "AlignmentXSViewDefinition"
 #define BRRA_CLASS_HorizontalAlignment                              "HorizontalAlignment"
@@ -143,10 +143,10 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // Define typedefs and Ptrs in the RoadRailAlignment namespace
 //-----------------------------------------------------------------------------------------
 ROADRAILALIGNMENT_TYPEDEFS(Alignment)
-ROADRAILALIGNMENT_TYPEDEFS(AlignmentCategoryModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentModelHandler)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentProfileViewDefinition)
+ROADRAILALIGNMENT_TYPEDEFS(ConfigurationModel)
 ROADRAILALIGNMENT_TYPEDEFS(LinearlyLocatedReferentElement)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentStation)
 ROADRAILALIGNMENT_TYPEDEFS(AlignmentXSViewDefinition)
@@ -157,12 +157,12 @@ ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignment)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignmentModel)
 
 ROADRAILALIGNMENT_REFCOUNTED_PTR(Alignment)
-ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentCategoryModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentProfileViewDefinition)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStation)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentStationingTranslator)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(AlignmentXSViewDefinition)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(ConfigurationModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignments)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentModel)

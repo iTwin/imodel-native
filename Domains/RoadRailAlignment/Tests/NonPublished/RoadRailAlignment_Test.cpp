@@ -8,11 +8,14 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     DgnDbPtr projectPtr = CreateProject(L"BasicAlignmentTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
-    auto names = AlignmentModel::QueryAlignmentPartitionNames(*projectPtr->Elements().GetRootSubject());
-    ASSERT_EQ(1, names.size());
+    auto configurationModelPtr = ConfigurationModel::Query(*projectPtr->Elements().GetRootSubject());
+    ASSERT_TRUE(configurationModelPtr.IsValid());
 
-    DgnModelId modelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
-    auto alignModelPtr = AlignmentModel::Get(*projectPtr, modelId);
+    auto subjectCPtr = configurationModelPtr->GetParentSubject();
+    ASSERT_TRUE(subjectCPtr.IsValid());
+    ASSERT_EQ(projectPtr->Elements().GetRootSubjectId(), subjectCPtr->GetElementId());
+
+    auto alignModelPtr = AlignmentModel::Query(*subjectCPtr);
 
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
@@ -172,18 +175,4 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     ASSERT_TRUE(alignmentPairPtr != nullptr);
     ASSERT_DOUBLE_EQ(150.0, alignmentPairPtr->LengthXY());
     ASSERT_TRUE(alignmentPairPtr->IsValidVertical());
-
-    // Setting up default views
-    auto displayStyle2dPtr = CreateDisplayStyle2d(projectPtr->GetDictionaryModel());
-    auto drawingCategorySelectorPtr = CreateDrawingCategorySelector(projectPtr->GetDictionaryModel());
-    ASSERT_EQ(BentleyStatus::SUCCESS, Create2dView(projectPtr->GetDictionaryModel(), "Test-2d", 
-        *drawingCategorySelectorPtr, alignmentPtr->QueryHorizontal()->GetModelId(), *displayStyle2dPtr));
-
-    auto displayStyle3dPtr = CreateDisplayStyle3d(projectPtr->GetDictionaryModel());
-    auto spatialCategorySelectorPtr = CreateSpatialCategorySelector(projectPtr->GetDictionaryModel());
-    auto model3dSelectorPtr = CreateModelSelector(projectPtr->GetDictionaryModel(), "Default-3d");
-    model3dSelectorPtr->AddModel(alignModelPtr->GetModelId());
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, Create3dView(projectPtr->GetDictionaryModel(), "Test-3d", 
-        *spatialCategorySelectorPtr, *model3dSelectorPtr, *displayStyle3dPtr));
     }

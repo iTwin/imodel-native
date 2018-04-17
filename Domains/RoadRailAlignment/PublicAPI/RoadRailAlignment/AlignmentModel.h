@@ -10,6 +10,8 @@
 //__PUBLISH_SECTION_START__
 #include "RoadRailAlignment.h"
 
+//TODO DIEGO I'm very unclear about what parts of the model we want/need to expose to SDK consumers. Does someone who's trying to get information about an alignment CARE about the model?  Or the Alignments (breakdown) model?
+
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 //=======================================================================================
@@ -42,12 +44,21 @@ protected:
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentModel)
-    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentsCPtr QueryHorizontalPartition() const;
-    ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentIds() const;
 
-    ROADRAILALIGNMENT_EXPORT static bset<Utf8String> QueryAlignmentPartitionNames(Dgn::SubjectCR parentSubject);
-    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject, Utf8CP modelName = nullptr);
+    //! Query for the InformationModel containing all of the HorizontalAlignments
+    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentsCPtr QueryHorizontalPartition() const;
+    
+    //! Query for DgnElementSet containing all of the AlignmentIds in this AlignmentModel
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentIds() const;
+    ROADRAILALIGNMENT_EXPORT Dgn::SubjectCPtr GetParentSubject() const;
+
+    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject);
+
+
+    //! @private
     static AlignmentModelPtr Create(CreateParams const& params) { return new AlignmentModel(params); }
+
+
     static AlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< AlignmentModel >(id); }    
 }; // AlignmentModel
 
@@ -113,10 +124,11 @@ public:
     }; // CreateParams
 
 protected:
-    explicit VerticalAlignmentModel(CreateParams const& params) : T_Super(params) {}
+    explicit VerticalAlignmentModel(CreateParams const& params) : T_Super(params) { SetIsPrivate(true); }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(VerticalAlignmentModel)
+    ROADRAILALIGNMENT_EXPORT AlignmentCPtr GetAlignment() const;
 
     static VerticalAlignmentModelPtr Create(CreateParams const& params) { return new VerticalAlignmentModel(params); }
     static VerticalAlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get<VerticalAlignmentModel>(id); }
@@ -125,6 +137,7 @@ public:
 
 //=======================================================================================
 //! The ModelHandler for AlignmentModel
+//! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AlignmentModelHandler : Dgn::dgn_ModelHandler::SpatialLocation
 {
@@ -133,6 +146,7 @@ struct EXPORT_VTABLE_ATTRIBUTE AlignmentModelHandler : Dgn::dgn_ModelHandler::Sp
 
 //=======================================================================================
 //! The ModelHandler for HorizontalAlignmentModel
+//! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentModelHandler : Dgn::dgn_ModelHandler::SpatialLocation
 {
@@ -141,6 +155,7 @@ struct EXPORT_VTABLE_ATTRIBUTE HorizontalAlignmentModelHandler : Dgn::dgn_ModelH
 
 //=======================================================================================
 //! The ModelHandler for VerticalAlignmentModel
+//! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE VerticalAlignmentModelHandler : Dgn::dgn_ModelHandler::Geometric2d
 {

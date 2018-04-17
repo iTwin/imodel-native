@@ -8,6 +8,7 @@
 #pragma once
 
 #include "RoadRailAlignment.h"
+#include "RoadRailAlignmentDomain.h"
 
 //__PUBLISH_SECTION_START__
 BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
@@ -20,63 +21,32 @@ struct AlignmentCategory : NonCopyableClass
 {
 //__PUBLISH_SECTION_END__
 private:
-    static Dgn::DgnCategoryId QueryDomainCategoryId(Dgn::DgnDbR, Utf8CP, bool isSpatial);
+    static Dgn::DgnCategoryId QueryDomainCategoryId(Dgn::SubjectCR, Utf8CP, bool isSpatial);
 
 public:
-    static void InsertDomainCategories(Dgn::DgnDbR);
+    static void InsertDomainCategories(ConfigurationModelR);
 
 //__PUBLISH_SECTION_START__
 public:
-    //! Return the DgnCategoryId for alignment elements
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId Get(Dgn::DgnDbR);
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetHorizontal(Dgn::DgnDbR);
-    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetVertical(Dgn::DgnDbR);
+    //! Return the DgnCategoryId for the Alignment Category
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetAlignment(Dgn::SubjectCR);
+    //! Return the DgnCategoryId for the Horizontal Alignment Category
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetHorizontal(Dgn::SubjectCR);
+    //! Return the DgnCategoryId for the Vertical Alignment Category
+    ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetVertical(Dgn::SubjectCR);
+
 }; // BridgePhysicalDomain
 
-//=======================================================================================
-//! Model containing categories for Alignments
-//=======================================================================================
-struct AlignmentCategoryModel : Dgn::DefinitionModel
-{
-    DGNMODEL_DECLARE_MEMBERS(BRRA_CLASS_AlignmentCategoryModel, Dgn::DefinitionModel);
-    friend struct AlignmentCategoryModelHandler;
+    //! @private
+    //! Create a new AlignmentCategoryModel
+    //! @private
+    
+    //! @private
 
-public:
-    struct CreateParams : T_Super::CreateParams
-    {
-    DEFINE_T_SUPER(AlignmentCategoryModel::T_Super::CreateParams);
-
-    //! Parameters to create a new instance of an AlignmentModel.
-    //! @param[in] dgndb The DgnDb for the new DgnModel
-    //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-    CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnElementId modeledElementId)
-        : T_Super(dgndb, AlignmentCategoryModel::QueryClassId(dgndb), modeledElementId)
-        {}
+    //! Get the AlignmentCategoryModel from the DgnDb
+    //! @param[in] The DgnDb to get the AlignmentCategoryModel from 
+    //! @return The AlignmentCategoryModel from the DgnDb
 
     //! @private
-    //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
-    CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
-    }; // CreateParams
-
-protected:
-    explicit AlignmentCategoryModel(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentCategoryModel)
-    static AlignmentCategoryModelPtr Create(CreateParams const& params) { return new AlignmentCategoryModel(params); }
-
-    static void SetUp(Dgn::DgnDbR);
-    static Dgn::DgnModelId GetDomainModelId(Dgn::DgnDbR);
-    ROADRAILALIGNMENT_EXPORT static AlignmentCategoryModelPtr GetDomainModel(Dgn::DgnDbR);
-    static Utf8CP GetDomainPartitionName() { return "Alignment Domain Categories"; }
-}; // AlignmentCategoryModel
-
-//=======================================================================================
-//! The ModelHandler for AlignmentCategoryModel
-//=======================================================================================
-struct AlignmentCategoryModelHandler : Dgn::dgn_ModelHandler::Definition
-{
-MODELHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentCategoryModel, AlignmentCategoryModel, AlignmentCategoryModelHandler, Dgn::dgn_ModelHandler::Definition, )
-}; // AlignmentCategoryModelHandler
-
+//! @private
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

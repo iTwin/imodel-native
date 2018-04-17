@@ -45,7 +45,7 @@ AlignmentStationPtr AlignmentStation::Create(AlignmentCR alignment, double dista
     if (!alignment.GetModelId().IsValid() || !alignment.GetElementId().IsValid())
         return nullptr;
 
-    CreateParams params(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
+    CreateParams params(alignment.GetDgnDb(), alignment.GetModelId(), QueryClassId(alignment.GetDgnDb()), AlignmentCategory::GetAlignment(*alignment.GetAlignmentModel()->GetParentSubject()));
     params.SetParentId(alignment.GetElementId(), DgnClassId(alignment.GetDgnDb().Schemas().GetClassId(BRRA_SCHEMA_NAME, BRRA_REL_AlignmentOwnsReferents)));
 
     AlignmentStationPtr retVal(new AlignmentStation(params, distanceAlongFromStart, station));
