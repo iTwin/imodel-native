@@ -46,7 +46,6 @@ public:
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentIds() const;
     ROADRAILALIGNMENT_EXPORT Dgn::SubjectCPtr GetParentSubject() const;
 
-    ROADRAILALIGNMENT_EXPORT static bset<Utf8String> QueryAlignmentPartitionNames(Dgn::SubjectCR parentSubject);
     ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject);
     static AlignmentModelPtr Create(CreateParams const& params) { return new AlignmentModel(params); }
     static AlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< AlignmentModel >(id); }    

@@ -16,27 +16,6 @@ HANDLER_DEFINE_MEMBERS(VerticalAlignmentModelHandler)
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      03/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-bset<Utf8String> AlignmentModel::QueryAlignmentPartitionNames(SubjectCR parentSubject)
-    {
-    auto stmtPtr = parentSubject.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT slp.CodeValue FROM "
-        BRRA_SCHEMA(BRRA_CLASS_AlignmentModel) " am, "
-        BIS_SCHEMA(BIS_CLASS_SpatialLocationPartition) " slp "
-        "WHERE am.ModeledElement.Id = slp.ECInstanceId AND slp.Parent.Id = ?;");
-    BeAssert(stmtPtr.IsValid());
-
-    stmtPtr->BindId(1, parentSubject.GetElementId());
-
-    bset<Utf8String> retVal;
-    while (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
-        retVal.insert(Utf8String(stmtPtr->GetValueText(0)));
-
-    return retVal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentModelPtr AlignmentModel::Query(Dgn::SubjectCR parentSubject)
