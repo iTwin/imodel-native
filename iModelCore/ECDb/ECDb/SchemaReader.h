@@ -108,6 +108,7 @@ struct SchemaReader final
                 ECN::UnitSystemCP Find(ECN::UnitSystemId id) const { auto it = m_unitSystemCache.find(id); return it != m_unitSystemCache.end() ? it->second : nullptr;}
                 ECN::PhenomenonCP Find(ECN::PhenomenonId id) const { auto it = m_phenomenonCache.find(id); return it != m_phenomenonCache.end() ? it->second : nullptr; }
                 ECN::ECUnitCP Find(ECN::UnitId id) const { auto it = m_unitCache.find(id); return it != m_unitCache.end() ? it->second : nullptr; }
+                ECN::ECFormatCP Find(ECN::FormatId id) const { auto it = m_formatCache.find(id); return it != m_formatCache.end() ? it->second : nullptr; }
 
                 ECN::ECClassId Find(Utf8StringCR schemaName, Utf8StringCR className) const;
                 bool HasClassEntry(ECN::ECClassId id) const;
@@ -121,8 +122,7 @@ struct SchemaReader final
                 void Insert(ECN::UnitSystemCR us) const { m_unitSystemCache.insert(std::make_pair(us.GetId(), &us)); }
                 void Insert(ECN::PhenomenonCR ph) const { m_phenomenonCache.insert(std::make_pair(ph.GetId(), &ph)); }
                 void Insert(ECN::ECUnitCR unit) const { m_unitCache.insert(std::make_pair(unit.GetId(), &unit)); }
-                bool UnitsAreLoaded() const { return m_unitsAreLoaded; }
-                void SetUnitsAreLoaded() const { m_unitsAreLoaded = true; }
+                void Insert(ECN::ECFormatCR format) const { m_formatCache.insert(std::make_pair(format.GetId(), &format)); }
             };
 
         ReaderCache m_cache;
@@ -142,17 +142,17 @@ struct SchemaReader final
         BentleyStatus LoadRelationshipConstraintFromDb(ECN::ECRelationshipClassP&, Context&, ECN::ECClassId constraintClassId, ECN::ECRelationshipEnd) const;
         BentleyStatus LoadRelationshipConstraintClassesFromDb(ECN::ECRelationshipConstraintR, Context&, ECRelationshipConstraintId constraintId) const;
         BentleyStatus LoadSchemaDefinition(SchemaDbEntry*&, bvector<SchemaDbEntry*>& newlyLoadedSchemas, ECN::ECSchemaId) const;
-        BentleyStatus LoadUnits(Context&) const;
 
         BentleyStatus ReadSchema(SchemaDbEntry*&, Context&, ECN::ECSchemaId, bool loadSchemaEntities) const;
         BentleyStatus ReadEnumeration(ECN::ECEnumerationCP&, Context&, ECN::ECEnumerationId) const;
         
         BentleyStatus ReadKindOfQuantity(ECN::KindOfQuantityCP&, Context&, ECN::KindOfQuantityId) const;
-        BentleyStatus ReadUnitSystems(Context&) const;
-        BentleyStatus ReadPhenomena(Context&) const;
-        BentleyStatus ReadUnits(Context&) const;
-        BentleyStatus ReadFormats(Context&) const;
-        BentleyStatus ReadFormatComposite(ECN::ECFormat&, ECN::FormatId, Utf8CP compositeSpacer) const;
+        BentleyStatus ReadUnitSystem(ECN::UnitSystemCP&, Context&, ECN::UnitSystemId) const;
+        BentleyStatus ReadPhenomenon(ECN::PhenomenonCP&, Context&, ECN::PhenomenonId) const;
+        BentleyStatus ReadUnit(ECN::ECUnitCP&, Context&, ECN::UnitId) const;
+        BentleyStatus ReadInvertedUnit(ECN::ECUnitCP&, Context&, ECN::UnitId unitId, ECN::UnitId invertingUnitId, SchemaDbEntry&, Utf8CP name, Utf8CP displayLabel, Utf8CP description, ECN::UnitSystemCR) const;
+        BentleyStatus ReadFormat(ECN::ECFormatCP&, Context&, ECN::FormatId) const;
+        BentleyStatus ReadFormatComposite(Context&, ECN::ECFormat&, ECN::FormatId, Utf8CP compositeSpacer) const;
         BentleyStatus ReadPropertyCategory(ECN::PropertyCategoryCP&, Context&, ECN::PropertyCategoryId) const;
 
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
@@ -192,7 +192,9 @@ struct SchemaReader final
 
         ECN::UnitSystemId GetUnitSystemId(ECN::UnitSystemCR) const;
         ECN::PhenomenonId GetPhenomenonId(ECN::PhenomenonCR) const;
+        ECN::ECUnitCP GetUnit(Utf8StringCR schemaName, Utf8StringCR unitName, SchemaLookupMode) const;
         ECN::UnitId GetUnitId(ECN::ECUnitCR) const;
+        ECN::ECFormatCP GetFormat(Utf8StringCR schemaName, Utf8StringCR formatName, SchemaLookupMode) const;
         ECN::FormatId GetFormatId(ECN::ECFormatCR) const;
 
         BentleyStatus EnsureDerivedClassesExist(ECN::ECClassId) const;

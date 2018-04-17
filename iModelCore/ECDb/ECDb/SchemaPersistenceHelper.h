@@ -78,7 +78,7 @@ public:
     static BentleyStatus DeserializeEnumerationValues(ECN::ECEnumerationR, Utf8CP jsonStr);
 
     static BentleyStatus SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR, ECN::KindOfQuantityCR);
-    static BentleyStatus DeserializeKoqPresentationFormats(ECN::KindOfQuantityR, Utf8CP jsonStr);
+    static BentleyStatus DeserializeKoqPresentationFormats(ECN::KindOfQuantityR, TableSpaceSchemaManager const&, Utf8CP jsonStr);
 
     //!Safe method to cast an integer value to the ECClassType enum.
     //!It makes sure the integer is a valid value for the enum.

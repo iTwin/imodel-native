@@ -758,31 +758,47 @@ BentleyStatus SchemaWriter::ImportFormatComposite(Context& ctx, ECFormatCR forma
     int ordinal = 0;
     if (spec.HasMajorUnit())
         {
+        ECUnitCP unit = (ECUnitCP) spec.GetMajorUnit();
+        if (SUCCESS != ImportUnit(ctx, *unit))
+            return ERROR;
+
         Nullable<Utf8String> label = spec.HasMajorLabel() ? spec.GetMajorLabel() : nullptr;
-        if (SUCCESS != insertUnit(*stmt, formatId, label, (ECUnitCR) *spec.GetMajorUnit(), ordinal))
+        if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
     ordinal++;
     if (spec.HasMiddleUnit())
         {
+        ECUnitCP unit = (ECUnitCP) spec.GetMiddleUnit();
+        if (SUCCESS != ImportUnit(ctx, *unit))
+            return ERROR;
+
         Nullable<Utf8String> label = spec.HasMiddleLabel() ? spec.GetMiddleLabel() : nullptr;
-        if (SUCCESS != insertUnit(*stmt, formatId, label, (ECUnitCR) *spec.GetMiddleUnit(), ordinal))
+        if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
 
     ordinal++;
     if (spec.HasMinorUnit())
         {
+        ECUnitCP unit = (ECUnitCP) spec.GetMinorUnit();
+        if (SUCCESS != ImportUnit(ctx, *unit))
+            return ERROR;
+
         Nullable<Utf8String> label = spec.HasMinorLabel() ? spec.GetMinorLabel() : nullptr;
-        if (SUCCESS != insertUnit(*stmt, formatId, label, (ECUnitCR) *spec.GetMinorUnit(), ordinal))
+        if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
 
     ordinal++;
     if (spec.HasSubUnit())
         {
+        ECUnitCP unit = (ECUnitCP) spec.GetSubUnit();
+        if (SUCCESS != ImportUnit(ctx, *unit))
+            return ERROR;
+
         Nullable<Utf8String> label = spec.HasSubLabel() ? spec.GetSubLabel() : nullptr;
-        if (SUCCESS != insertUnit(*stmt, formatId, label, (ECUnitCR) *spec.GetSubUnit(), ordinal))
+        if (SUCCESS != insertUnit(*stmt, formatId, label, *unit, ordinal))
             return ERROR;
         }
 

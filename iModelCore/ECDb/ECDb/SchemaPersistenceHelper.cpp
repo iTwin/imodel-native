@@ -704,7 +704,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8Strin
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQuantityR koq, Utf8CP jsonStr)
+BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQuantityR koq, TableSpaceSchemaManager const& schemaManager, Utf8CP jsonStr)
     {
     rapidjson::Document presFormatsJson;
     if (presFormatsJson.Parse<0>(jsonStr).HasParseError())
@@ -715,16 +715,38 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQ
 
     BeAssert(presFormatsJson.IsArray());
 
+    auto lookupFormat = [&schemaManager, &koq] (Utf8StringCR formatName)
+        {
+        Utf8String alias, name;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, name, formatName))
+            return (ECFormatCP) nullptr;
+
+        if (alias.empty())
+            alias.assign(koq.GetSchema().GetAlias());
+
+        return schemaManager.GetFormat(alias, name, SchemaLookupMode::ByAlias);
+        };
+
+    auto lookupUnit = [&schemaManager, &koq] (Utf8StringCR unitName)
+        {
+        Utf8String alias, name;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, name, unitName))
+            return (ECUnitCP) nullptr;
+
+        if (alias.empty())
+            alias.assign(koq.GetSchema().GetAlias());
+
+        return schemaManager.GetUnit(alias, name, SchemaLookupMode::ByAlias);
+        };
+
     for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray())
         {
         BeAssert(presFormatJson.IsString() && presFormatJson.GetStringLength() > 0);
-        //WIP_FORMAT
-        /*if (ECObjectsStatus::Success != koq.ParsePresentationUnit(presFormatJson.GetString(), nullptr, 3, 2))
+        if (ECObjectsStatus::Success != koq.AddPresentationFormatByString(presFormatJson.GetString(), lookupFormat, lookupUnit))
             {
-            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation unit's FormatUnitSet descriptor '%s' could not be parsed.", koq.GetFullName().c_str(), presUnitJson.GetString());
+            LOG.errorv("Failed to read KindOfQuantity '%s'. Its presentation format '%s' could not be parsed.", koq.GetFullName().c_str(), presFormatJson.GetString());
             return ERROR;
             }
-            */
         }
 
     return SUCCESS;

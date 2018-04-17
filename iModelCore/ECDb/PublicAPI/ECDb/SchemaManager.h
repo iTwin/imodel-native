@@ -223,6 +223,22 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater
         //! @return The retrieved KindOfQuantity or nullptr if not found
         ECDB_EXPORT ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
 
+        //! Gets the ECUnit for the specified name.
+        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the ECUnit (@see @p mode)
+        //! @param[in] unitName Name of the ECUnit to be retrieved
+        //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] tableSpace Table space containing the ECUnit - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
+        //! @return The retrieved ECUnit or nullptr if not found
+        ECDB_EXPORT ECN::ECUnitCP GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
+
+        //! Gets the ECFormat for the specified name.
+        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the ECFormat (@see @p mode)
+        //! @param[in] formatName Name of the ECFormat to be retrieved
+        //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @param[in] tableSpace Table space containing the ECFormat - in case other ECDb files are attached to this. Passing nullptr means to search all table spaces (starting with the primary one, aka main).
+        //! @return The retrieved ECFormat or nullptr if not found
+        ECDB_EXPORT ECN::ECFormatCP GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode mode = SchemaLookupMode::ByName, Utf8CP tableSpace = nullptr) const;
+
         //! Gets the PropertyCategory for the specified name.
         //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the category (@see @p mode)
         //! @param[in] propertyCategoryName Name of the PropertyCategory to be retrieved

@@ -358,6 +358,44 @@ KindOfQuantityCP SchemaManager::Dispatcher::GetKindOfQuantity(Utf8StringCR schem
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+ECUnitCP SchemaManager::Dispatcher::GetUnit(Utf8StringCR schemaNameOrAlias, Utf8StringCR unitName, SchemaLookupMode mode, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (TableSpaceSchemaManager const* manager : iterable)
+        {
+        ECUnitCP unit = manager->GetUnit(schemaNameOrAlias, unitName, mode);
+        if (unit != nullptr)
+            return unit;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   04/2018
+//+---------------+---------------+---------------+---------------+---------------+------
+ECFormatCP SchemaManager::Dispatcher::GetFormat(Utf8StringCR schemaNameOrAlias, Utf8StringCR formatName, SchemaLookupMode mode, Utf8CP tableSpace) const
+    {
+    Iterable iterable = GetIterable(tableSpace);
+    if (!iterable.IsValid())
+        return nullptr;
+
+    for (TableSpaceSchemaManager const* manager : iterable)
+        {
+        ECFormatCP format = manager->GetFormat(schemaNameOrAlias, formatName, mode);
+        if (format != nullptr)
+            return format;
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   11/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyCategoryCP SchemaManager::Dispatcher::GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR catName, SchemaLookupMode mode, Utf8CP tableSpace) const
