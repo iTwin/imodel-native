@@ -185,7 +185,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 ORDAlignmentsConverter::ORDAlignmentsConverter(SubjectCR jobSubject)
     {
-    m_bimAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject, ORDBRIDGE_AlignmentModelName);
+    m_bimAlignmentModelPtr = AlignmentBim::AlignmentModel::Query(jobSubject);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -623,7 +623,7 @@ public:
 ORDCorridorsConverter::ORDCorridorsConverter(DgnDbSync::DgnV8::Converter& converter, TransformCR unitsScaleTransform):
     m_converter(converter), m_unitsScaleTransform(unitsScaleTransform)
     {
-    m_bimPhysicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(m_converter.GetJobSubject(), ORDBRIDGE_PhysicalModelName);
+    m_bimPhysicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(m_converter.GetJobSubject());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -934,10 +934,10 @@ void ConvertORDElementXDomain::_ProcessResults(DgnDbSync::DgnV8::ElementConversi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId convertToSpatialCategory(DrawingCategoryCR drawingCategory)
+DgnCategoryId convertToSpatialCategory(SubjectCR subject, DrawingCategoryCR drawingCategory)
     {
-    auto domainCategoryModelPtr = RoadRailAlignment::AlignmentCategoryModel::GetDomainModel(drawingCategory.GetDgnDb());
-    SpatialCategory spatialCategory(*domainCategoryModelPtr, drawingCategory.GetCategoryName());
+    auto configurationModelPtr = RoadRailAlignment::ConfigurationModel::Query(subject);
+    SpatialCategory spatialCategory(*configurationModelPtr, drawingCategory.GetCategoryName());
 
     auto drawingSubCategoryCPtr = DgnSubCategory::Get(drawingCategory.GetDgnDb(), drawingCategory.GetDefaultSubCategoryId());
 
@@ -948,7 +948,7 @@ DgnCategoryId convertToSpatialCategory(DrawingCategoryCR drawingCategory)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId getSpatialCategoryToUse(GeometrySourceCP bimGeomSourceCP, bmap<DgnCategoryId, DgnCategoryId>& drawingToSpatialCategoryMap)
+DgnCategoryId getSpatialCategoryToUse(SubjectCR subject, GeometrySourceCP bimGeomSourceCP, bmap<DgnCategoryId, DgnCategoryId>& drawingToSpatialCategoryMap)
     {
     DgnCategoryId categoryId = bimGeomSourceCP->GetCategoryId();
     if (bimGeomSourceCP->Is2d())
@@ -957,7 +957,7 @@ DgnCategoryId getSpatialCategoryToUse(GeometrySourceCP bimGeomSourceCP, bmap<Dgn
         if (drawingToSpatialCategoryMap.end() == categoryMapIter)
             {
             DgnCategoryId drawingCategoryId = categoryId;
-            categoryId = convertToSpatialCategory(*DrawingCategory::Get(bimGeomSourceCP->GetSourceDgnDb(), drawingCategoryId));
+            categoryId = convertToSpatialCategory(subject, *DrawingCategory::Get(bimGeomSourceCP->GetSourceDgnDb(), drawingCategoryId));
             drawingToSpatialCategoryMap.insert({ drawingCategoryId, categoryId });
             }
         else
@@ -998,7 +998,7 @@ void ORDConverter::CreateAlignments(bset<DgnCategoryId>& additionalCategoriesFor
             bimElmPtr = v8Iter->second;
             if (auto bimGeomSourceCP = bimElmPtr->ToGeometrySource())
                 {
-                categoryId = getSpatialCategoryToUse(bimGeomSourceCP, drawingToSpatialCategoryMap);
+                categoryId = getSpatialCategoryToUse(GetJobSubject(), bimGeomSourceCP, drawingToSpatialCategoryMap);
 
                 if (additionalCategoriesForSelector.end() == additionalCategoriesForSelector.find(categoryId))
                     additionalCategoriesForSelector.insert(categoryId);
@@ -1059,7 +1059,7 @@ void ORDConverter::CreatePathways(bset<DgnCategoryId>& additionalCategoriesForSe
             bimElmPtr = v8Iter->second;
             if (auto bimGeomSourceCP = bimElmPtr->ToGeometrySource())
                 {
-                categoryId = getSpatialCategoryToUse(bimGeomSourceCP, drawingToSpatialCategoryMap);
+                categoryId = getSpatialCategoryToUse(GetJobSubject(), bimGeomSourceCP, drawingToSpatialCategoryMap);
 
                 if (additionalCategoriesForSelector.end() == additionalCategoriesForSelector.find(categoryId))
                     additionalCategoriesForSelector.insert(categoryId);
@@ -1149,17 +1149,16 @@ void ORDConverter::CreateRoadRailElements()
     CreatePathways(additionalCategories);
     AssociateGeneratedAlignments();
 
-    auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(GetJobSubject(), ORDBRIDGE_AlignmentModelName);
+    auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(GetJobSubject());
     auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
     auto horizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), horizontalAlignmentModelId);
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(GetJobSubject(), ORDBRIDGE_PhysicalModelName);
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(GetJobSubject());
 
     updateProjectExtents(*horizAlignmentModelCPtr, *m_ordParams, false);
     updateProjectExtents(*physicalModelPtr, *m_ordParams, true);
 
     if (IsCreatingNewDgnDb())
         {
-        auto alignmentModelPtr = RoadRailAlignment::AlignmentModel::Query(GetJobSubject(), ORDBRIDGE_AlignmentModelName);
         alignmentModelPtr->SetIsPrivate(false);
         alignmentModelPtr->Update();
 
@@ -1167,7 +1166,7 @@ void ORDConverter::CreateRoadRailElements()
         for (auto categoryId : additionalCategories)
             additionalCategoriesForSelector.push_back(categoryId);
 
-        auto viewId = RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(GetJobSubject(), ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName, &additionalCategoriesForSelector);
+        auto viewId = RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(GetJobSubject(), &additionalCategoriesForSelector);
         if (viewId.IsValid())
             {
             m_defaultViewId = viewId;
@@ -1234,8 +1233,8 @@ static void setUpModelFormatter(Dgn::GeometricModelR geometricModel, DgnV8Api::M
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::SetUpModelFormatters(Dgn::SubjectCR jobSubject)
     {
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(jobSubject, ORDBRIDGE_PhysicalModelName);
-    auto alignmentModelPtr = RoadRailAlignment::RoadRailAlignmentDomain::QueryAlignmentModel(jobSubject, ORDBRIDGE_AlignmentModelName);
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(jobSubject);
+    auto alignmentModelPtr = RoadRailAlignment::AlignmentModel::Query(jobSubject);
 
     DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(*GetRootModelP());
 

@@ -24,11 +24,3 @@ extern "C"
         WCharCP affinityLibraryPath, WCharCP sourceFileName);
     ORDBRIDGE_EXPORT wchar_t const* iModelBridge_getRegistrySubKey();
     }
-
-//-----------------------------------------------------------------------------------------
-// DgnModel/DgnView names
-//-----------------------------------------------------------------------------------------
-#define ORDBRIDGE_AlignmentModelName    "ORD-Bridge Alignment Model"
-#define ORDBRIDGE_PhysicalModelName     "ORD-Bridge Physical Model"
-#define ORDBRIDGE_3dViewName            "ORD-Bridge View-3d"
-#define ORDBRIDGE_2dViewName            "ORD-Bridge View-2d"
