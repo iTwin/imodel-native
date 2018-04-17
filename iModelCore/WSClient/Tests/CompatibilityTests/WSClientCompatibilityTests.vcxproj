@@ -34,6 +34,10 @@
     <None Include="CompatibilityTests.mke" />
     <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.bat" />
     <None Include="RunTests\RunWSClientCompatibilityTestToolForKnownServices.config" />
+    <None Include="RunTests\TestReport\makereport.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="RunTests\TestReport\gtest.xsl" />
   </ItemGroup>
   <PropertyGroup>
     <ShowAllFiles>true</ShowAllFiles>
