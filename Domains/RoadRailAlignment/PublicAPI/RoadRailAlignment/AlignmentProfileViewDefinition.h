@@ -31,14 +31,26 @@ private:
     static IViewControllerFactory s_factory;
 
 protected:
+    //! @private
     bool m_allowRotation;
 
 protected:
+    //! @private
     Dgn::ViewControllerPtr _SupplyController() const override final;
+
+    //! @private
     void _AdjustAspectRatio(double windowAspect) override final;
+   
+    //! @private
     void _SetRotation(RotMatrixCR rot) override final;
+
+    //! @private
     bool _ViewsModel(Dgn::DgnModelId modelId) override final;
+
+    //! @private
     void _EnableCamera() override final {}
+    
+    //! @private
     bool _SupportsCamera() const override final { return false; }
 
     //! @private
@@ -48,17 +60,28 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentProfileViewDefinition)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(AlignmentProfileViewDefinition)
 
+    //! Control whether or not this ViewDefinition supports rotation
+    //! @param[in] value true to allow rotation, false to disallow
     void SetAllowRotation(bool value) { m_allowRotation = value; }
+
+    //! Check whether or not this ViewDefinition supports rotation
+    //! @return true if rotation is allowed, otherwise false.
     bool GetAllowRotation() const { return m_allowRotation; }
 
     //! Construct a SpatialViewDefinition in the specified DefinitionModel
     ROADRAILALIGNMENT_EXPORT AlignmentProfileViewDefinition(ConfigurationModelCR model, Utf8StringCR name, Dgn::CategorySelectorR categories, Dgn::DisplayStyle3dR displayStyle, Dgn::ModelSelectorR modelSelector);
 
+    //! Query for the ViewId of this ViewDefinition
+    //! @param[in] db The DgnDb containing the View
+    //! @return The DgnViewId of this ViewDefinition.  Caller must check .IsValid() on the returned ID before using it.
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnViewId QuerySystemViewId(Dgn::SubjectCR subject);
+    //! @param[in] db The DgnDb containing the View
+    //! @return The DgnViewId of this ViewDefinition.  Caller must check .IsValid() on the returned ID before using it.
 }; // AlignmentProfileViewDefinition
 
 //=======================================================================================
 //! The ElementHandler for the AlignmentProfileViewDefinition class
+//! @private
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AlignmentProfileViewDefinitionHandler : Dgn::ViewElementHandler::SpatialView
 {

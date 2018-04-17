@@ -28,10 +28,25 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
-    //! Return the DgnCategoryId for alignment elements
+    //! Return the DgnCategoryId for the Alignment Category
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetAlignment(Dgn::SubjectCR);
+    //! Return the DgnCategoryId for the Horizontal Alignment Category
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetHorizontal(Dgn::SubjectCR);
+    //! Return the DgnCategoryId for the Vertical Alignment Category
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetVertical(Dgn::SubjectCR);
+
 }; // BridgePhysicalDomain
 
+    //! @private
+    //! Create a new AlignmentCategoryModel
+    //! @private
+    
+    //! @private
+
+    //! Get the AlignmentCategoryModel from the DgnDb
+    //! @param[in] The DgnDb to get the AlignmentCategoryModel from 
+    //! @return The AlignmentCategoryModel from the DgnDb
+
+    //! @private
+//! @private
 END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE

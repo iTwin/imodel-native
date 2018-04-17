@@ -24,11 +24,16 @@ private:
     static Dgn::DgnDbStatus InsertViewDefinitions(ConfigurationModelR model);
 
 protected:
+    //! @private
     void _OnSchemaImported(Dgn::DgnDbR dgndb) const override;
 
 public:
+    //! @private
     RoadRailAlignmentDomain();
 
+    //! Query for the Alignment CodeSpecId
+    //! @param[in] dgndb The DgnDb to query
+    //! @return The CodeSpecId of the Alignment partition
     ROADRAILALIGNMENT_EXPORT static Dgn::CodeSpecId QueryAlignmentCodeSpecId(Dgn::DgnDbCR dgndb);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnModelCR scopeModel, Utf8StringCR value);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR subject);    
