@@ -373,6 +373,7 @@ public:
     UNITS_EXPORT Utf8String Format(int32_t ival) const;
     //! Format a double using this NumericFormatSpec's format settings.
     //! @param[in] dval Double to format.
+    //! @param[in] round A rounding factor to use when formatting the given double.
     //! @return dval as a formatted string.
     UNITS_EXPORT Utf8String Format(double dval, double round = -1.0) const;
     //! Format a double using the format settings of numericFormatSpec.
@@ -701,7 +702,7 @@ public:
 
     //! Parse a Format from the provided format string. A format string takes the form,
     //! <code>
-    //! FORMAT_NAME<PRECISION_OVERRIDE>[INPUT_UNIT_NAME|UNIT_LABEL]
+    //! FORMAT_NAME(PRECISION_OVERRIDE)[INPUT_UNIT_NAME|UNIT_LABEL]
     //! </code>
     //! FORMAT_NAME is a defined named format that will be located using the defaultFormatMapper parameter.
     //! PRECISION_OVERRIDE is a decimal/fractional precision override for the Format.
@@ -709,20 +710,15 @@ public:
     //! UNIT_LABEL is a string that overrides the unit label defined on the override input unit.
     //! Examples:
     //! <code>
-    //! "Real<2>"
-    //! "Fractional<64>"
-    //! "Scientific<12>"
-    //! "Real<2>[u:M|m]"
+    //! "Real(2)"
+    //! "Fractional(64)"
+    //! "Scientific(12)"
+    //! "Real(2)[u:M|m]"
     //! </code>
     //! @param[out] nfs                 Format to be populated with the settings parsed from the format string.
     //! @param[in]  formatString        String to be parsed.
-    //! @param[in]  defaultFormatMapper Functor that maps a format name to a NumericformatSpec containing default settings for the parsed,
-    //!                                     NumericFormatSpec, overrides specified within the format string will override these defaults.
-    //!                                     defaultFormatMapper should return a pointer to some Format if any such mapping
-    //!                                     exists or nullptr if no such mapping exists. For example the mapping "Real" --> <default real spec>
-    //!                                     is a supported within EC, so an EC mapping function should map "Real" to the DefaultReal format
-    //!                                     spec. However the mapping "BlaBlaBla" does not exist within EC by default, so the mapping function
-    //!                                     would return nullptr for a format string with name "BlaBlaBla".
+    //! @param[in]  defaultFormatMapper Functor that maps a Format name to a defined Format. The functor should return a pointer to some Format if any such mapping
+    //!                                     exists or nullptr if no such mapping exists.
     //! @param[in]  unitContext         Units contex to be used to resolve 
     //! @returns BentleyStatus::SUCCESS if the string was successfully parsed.
     UNITS_EXPORT static BentleyStatus ParseFormatString(FormatR nfs, Utf8StringCR formatString, std::function<FormatCP(Utf8StringCR)> defaultFormatMapper, BEU::IUnitsContextCP unitContext = nullptr);
