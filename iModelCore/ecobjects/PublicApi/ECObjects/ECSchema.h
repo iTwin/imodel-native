@@ -1539,6 +1539,7 @@ public:
     void RemoveAllPresentationFormats() {m_presentationFormats.clear();}
     //! Gets a list of all presentation formats available for this KoQ.
     bvector<NamedFormat> const& GetPresentationFormats() const {return m_presentationFormats;}
+    ECOBJECTS_EXPORT bvector<ECFormatCP> const GetReferencedFormats() const;
     //! Returns true if one or more presentation formats exist
     bool HasPresentationFormats() const {return m_presentationFormats.size() > 0;}
 

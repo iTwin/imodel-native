@@ -177,6 +177,19 @@ void KindOfQuantity::RemovePresentationFormat(NamedFormatCR presentationFormat)
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//---------------+---------------+---------------+---------------+---------------+------
+bvector<ECFormatCP> const KindOfQuantity::GetReferencedFormats() const
+    {
+    bvector<ECFormatCP> formats;
+    formats.reserve(m_presentationFormats.size());
+    for (auto const& f : m_presentationFormats)
+        formats.push_back(f.GetParentFormat());
+
+    return formats;
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    03/2018
 //--------------------------------------------------------------------------------------
 Utf8String KindOfQuantity::GetPresentationUnitDescriptor() const

@@ -161,6 +161,43 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationFormats)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityTest, GetReferencedFormats)
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
+    EC_EXPECT_SUCCESS(schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
+    
+    KindOfQuantityP kindOfQuantity;
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity, "MyKindOfQuantity"));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDescription("Kind of a Description here"));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDisplayLabel("best quantity of all times"));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
+    kindOfQuantity->SetRelativeError(10e-3);
+    
+    EXPECT_EQ(0, kindOfQuantity->GetReferencedFormats().size());
+    EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
+
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U"), 3, nullptr, "banana"));
+    EXPECT_EQ(1, kindOfQuantity->GetPresentationFormats().size());
+    EXPECT_EQ(1, kindOfQuantity->GetReferencedFormats().size());
+    EXPECT_STRCASEEQ("f:Feet4U", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
+    kindOfQuantity->RemoveAllPresentationFormats();
+    EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
+
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("InchesU")));
+    EXPECT_EQ(2, kindOfQuantity->GetPresentationFormats().size());
+    EXPECT_EQ(2, kindOfQuantity->GetReferencedFormats().size());
+    EXPECT_STRCASEEQ("f:Feet4U", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
+    EXPECT_STRCASEEQ("f:InchesU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationFormats)
     {
     ECSchemaPtr schema;

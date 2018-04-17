@@ -57,8 +57,8 @@ Utf8String NamedFormat::GetQualifiedName(ECSchemaCR primarySchema) const
     Utf8StringCR name = GetName();
     if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(m_ecFormat->GetSchema(), alias)))
         {
-        LOG.warningv ("warning: Cannot qualify an ECFormat name with an alias unless the schema containing the ECFormat is referenced by the primary schema."
-            "The name will remain unqualified.\n  Primary ECSchema: %s\n  Phenomenon: %s\n ECSchema containing ECFormat: %s", primarySchema.GetName().c_str(), name.c_str(), m_ecFormat->GetSchema().GetName().c_str());
+        LOG.warningv ("warning: Cannot qualify a NamedFormat name with an alias unless the schema containing the ECFormat is referenced by the primary schema."
+            "The name will remain unqualified.\n  Primary ECSchema: %s\n  NamedFormat: %s\n ECSchema containing the parent ECFormat: %s", primarySchema.GetName().c_str(), name.c_str(), m_ecFormat->GetSchema().GetName().c_str());
         return name;
         }
 
