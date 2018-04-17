@@ -775,8 +775,9 @@ BECN::ECSchemaPtr ECSchemaXmlDeserializer::_LocateSchema(BECN::SchemaKeyR key, B
                     leftSchema = merged;
                     Utf8String xml;
                     merged->WriteToXmlString(xml);
-                    leftSchema->ReComputeCheckSum();
-                    LOG.infov("Merged two versions of ECSchema '%s' successfully. Updated checksum: 0x%llx", leftSchema->GetFullSchemaName().c_str(), leftSchema->GetSchemaKey().m_checkSum);
+                    // WIP_REMOVE_CheckSum
+                    // leftSchema->ReComputeCheckSum();
+                    // LOG.infov("Merged two versions of ECSchema '%s' successfully. Updated checksum: 0x%llx", leftSchema->GetFullSchemaName().c_str(), leftSchema->GetSchemaKey().m_checkSum);
                     }
                 else
                     {
@@ -2656,6 +2657,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
             if (existingToNewVersionDiff >= 0)
                 {
                 // WIP_REMOVE_CheckSum
+                /*
                 if (existingToNewVersionDiff == 0) //  && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
                     {
                     Utf8String error;
@@ -2666,6 +2668,7 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
                     }
                 else
                     return BSISUCCESS;
+                    */
                 }
             }
         }
