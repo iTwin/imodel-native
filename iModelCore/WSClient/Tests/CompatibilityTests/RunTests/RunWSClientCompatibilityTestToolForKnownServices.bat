@@ -9,6 +9,8 @@ echo Run all tests:
 echo    RunWSClientCompatibilityTestToolForKnownServices.bat *
 echo Run specific test by number:
 echo    RunWSClientCompatibilityTestToolForKnownServices.bat *10
+echo Options:
+echo    RunWSClientCompatibilityTestToolForKnownServices_Silent - environment variable set to not empty will not launch results report.
 
 set gtestAction=--gtest_filter=*RepositoryCompatibilityTests*%1
 if "%1" == "" set gtestAction=--gtest_list_tests
@@ -40,7 +42,7 @@ call %exePath% ^
 
 if exist %outfile% (
 call python %~dp0\TestReport\makereport.py "%outfile%" > %workdir%results.htm
-start %workdir%results.htm
+if "%RunWSClientCompatibilityTestToolForKnownServices_Silent%" == "" start %workdir%results.htm
 echo;
 echo Results: %workdir%results.htm
 )
