@@ -860,6 +860,7 @@ private:
     bool                        m_surfacesOnly;
     bool                        m_haveTransform;
     bool                        m_checkGlyphBoxes = false;
+    bool                        m_addingCurved = false;
     DRange3d                    m_tileRange;
 
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, bool disjoint);
@@ -915,6 +916,8 @@ public:
     //! If enabled, TextString range will be tested against chord tolerance to determine whether the text should be stroked or rendered as a simple box.
     //! By default, it is always stroked.
     void SetCheckGlyphBoxes(bool check) { m_checkGlyphBoxes = check; }
+    void SetAddingCurved(bool curved) { m_addingCurved = curved; }
+    bool IsAddingCurved() const { return m_addingCurved; }
 };
 
 //=======================================================================================
@@ -990,6 +993,9 @@ public:
     DisplayParamsCR GetTextDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Text, false); }
 
     System& GetSystem() const { return m_accum.GetSystem(); }
+
+    void SetAddingCurved(bool curved) { m_accum.SetAddingCurved(curved); }
+    bool IsAddingCurved() const { return m_accum.IsAddingCurved(); }
 
     void Add(GeometryR geom) { m_accum.AddGeometry(geom); }
 

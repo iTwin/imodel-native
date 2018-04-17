@@ -1927,7 +1927,9 @@ bool GeometryAccumulator::Add(CurveVectorR curves, bool filled, DisplayParamsCR 
     if (m_surfacesOnly && !curves.IsAnyRegionType())
         return true;    // ignore...
 
-    bool isCurved = curves.ContainsNonLinearPrimitive();
+    // NB: If we're stroking a styled curve vector, we have set m_addingCurved based on whether the input curve vector was curved - the
+    // stroked components may not be.
+    bool isCurved = m_addingCurved || curves.ContainsNonLinearPrimitive();
     IGeometryPtr geom = IGeometry::Create(CurveVectorPtr(&curves));
     return AddGeometry(*geom, isCurved, displayParams, transform, clip, disjoint);
     }
