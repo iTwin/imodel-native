@@ -279,15 +279,22 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_ServerRetursUserAndDeprecatedSchemas
 
     EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
-
+    
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "C"), _, _, _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(WSFileResult())));
+        .WillOnce(Return(CreateCompletedAsyncTask(StubWSFileResult(StubFile(StubSchemaXml("Contents"), "Contents.01.00.ecschema.xml")))));
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "D"), _, _, _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(WSFileResult())));
+        .WillOnce(Return(CreateCompletedAsyncTask(StubWSFileResult(StubFile(StubSchemaXml("Views"), "Views.01.00.ecschema.xml")))));
     EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "E"), _, _, _, _))
-        .WillOnce(Return(CreateCompletedAsyncTask(WSFileResult())));
+        .WillOnce(Return(CreateCompletedAsyncTask(StubWSFileResult(StubFile(StubSchemaXml("TestSchema"), "TestSchema.01.00.ecschema.xml")))));
+    
+    auto ds = CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->GetResult().GetValue();
+    ASSERT_TRUE(nullptr != ds);
 
-    CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->Wait();
+    auto txn = ds->StartCacheTransaction();
+    auto schemasKeysList = ds->GetRepositorySchemaKeys(txn);
+    auto schemasList = ds->GetRepositorySchemas(txn);
+    EXPECT_EQ(schemasKeysList.size(), 3);
+    EXPECT_EQ(schemasList.size(), 3);
     }
 
 /*--------------------------------------------------------------------------------------+
