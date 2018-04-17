@@ -335,7 +335,7 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     num.SetMinWidth(4);
     num.SetUomSeparator("");
     num.SetPrefixPadChar('0');
-    num.SetSignOption(Formatting::ShowSignOption::NegativeParentheses);
+    num.SetSignOption(Formatting::SignOption::NegativeParentheses);
     num.SetDecimalSeparator(',');
     num.SetThousandSeparator(',');
 

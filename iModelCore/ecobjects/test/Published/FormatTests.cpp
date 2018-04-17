@@ -76,7 +76,7 @@ TEST_F(FormatTest, BasicRoundTripTest)
         ASSERT_STREQ("", ufmt->GetDescription().c_str());
         ASSERT_STREQ("", ufmt->GetInvariantDescription().c_str());
         ASSERT_EQ(Formatting::PresentationType::Fractional, ufmt->GetNumericSpec()->GetPresentationType());
-        ASSERT_EQ(Formatting::ShowSignOption::OnlyNegative, ufmt->GetNumericSpec()->GetSignOption());
+        ASSERT_EQ(Formatting::SignOption::OnlyNegative, ufmt->GetNumericSpec()->GetSignOption());
         ASSERT_EQ(Formatting::FractionalPrecision::Quarter, ufmt->GetNumericSpec()->GetFractionalPrecision());
         ASSERT_EQ('.', ufmt->GetNumericSpec()->GetDecimalSeparator());
         ASSERT_EQ(',', ufmt->GetNumericSpec()->GetThousandSeparator());
@@ -133,7 +133,7 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     NumericFormatSpec numeric = NumericFormatSpec();
     numeric.SetPresentationType(PresentationType::Fractional);
     numeric.SetRoundingFactor(0.0);
-    numeric.SetSignOption(ShowSignOption::OnlyNegative);
+    numeric.SetSignOption(SignOption::OnlyNegative);
     numeric.SetUseLeadingZeroes(true);
     numeric.SetKeepTrailingZeroes(true);
     numeric.SetPrecision(FractionalPrecision::Quarter);
@@ -186,7 +186,7 @@ TEST_F(FormatTest, VerifyDefaults)
     EXPECT_FALSE(nfs->HasMinWidth());
     EXPECT_DOUBLE_EQ(0.0, nfs->GetMinWidth());
     EXPECT_FALSE(nfs->HasSignOption());
-    EXPECT_EQ(Formatting::ShowSignOption::OnlyNegative, nfs->GetSignOption());
+    EXPECT_EQ(Formatting::SignOption::OnlyNegative, nfs->GetSignOption());
     EXPECT_FALSE(nfs->HasFormatTraits());
     EXPECT_EQ(Formatting::FormatTraits::None, nfs->GetFormatTraits());
     EXPECT_FALSE(nfs->HasDecimalSeparator());
@@ -463,7 +463,7 @@ TEST_F(FormatOptionalAttributesTest, VerifyAllowedShowSignOptions)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::ShowSignOption::NoSign, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
+    EXPECT_EQ(Formatting::SignOption::NoSign, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
     }
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -474,7 +474,7 @@ TEST_F(FormatOptionalAttributesTest, VerifyAllowedShowSignOptions)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::ShowSignOption::OnlyNegative, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
+    EXPECT_EQ(Formatting::SignOption::OnlyNegative, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
     }
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -485,7 +485,7 @@ TEST_F(FormatOptionalAttributesTest, VerifyAllowedShowSignOptions)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::ShowSignOption::SignAlways, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
+    EXPECT_EQ(Formatting::SignOption::SignAlways, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
     }
     {
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -496,7 +496,7 @@ TEST_F(FormatOptionalAttributesTest, VerifyAllowedShowSignOptions)
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    EXPECT_EQ(Formatting::ShowSignOption::NegativeParentheses, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
+    EXPECT_EQ(Formatting::SignOption::NegativeParentheses, schema->GetFormatCP("AmerMYFI4")->GetNumericSpec()->GetSignOption());
     }
     }
 

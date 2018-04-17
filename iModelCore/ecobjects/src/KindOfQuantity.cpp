@@ -565,6 +565,9 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
     return ECObjectsStatus::Success;
     }
 
+// Used for upgrading from ECXml 3.1.
+static const Utf8CP oldDefaultFormatName = "DefaultRealU";
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
@@ -599,7 +602,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
         else
             {
             // Assuming since there was previously a format that it should contain the Unit with it.
-            format = GetSchema().LookupFormat(Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(Formatting::FormatConstant::DefaultFormatName()));
+            format = GetSchema().LookupFormat(Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(oldDefaultFormatName));
             BeAssert(nullptr != format);
             LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.", descriptor, GetFullName().c_str());
             }
@@ -683,7 +686,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         return status;
 
     if (persistenceFormat.empty())
-        persistenceFormat = Formatting::FormatConstant::DefaultFormatName();
+        persistenceFormat = oldDefaultFormatName;
 
     if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPers, persistenceUnit))
         return ECObjectsStatus::Error;
@@ -704,7 +707,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
             }
 
         if (presentationFormat.empty())
-            presentationFormat = Formatting::FormatConstant::DefaultFormatName();
+            presentationFormat = oldDefaultFormatName;
 
         Utf8String unqualifiedPres;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPres, presentationUnit))
@@ -905,7 +908,7 @@ NamedFormatCP KindOfQuantity::GetOrCreateCachedPersistenceFormat() const
         if (Units::Unit::AreEqual(m_persFormatCache.Value().GetCompositeMajorUnit(), m_persistenceUnit))
             return &m_persFormatCache.Value();
         }
-    m_persFormatCache = NamedFormat(Formatting::FormatConstant::DefaultFormatName());
+    m_persFormatCache = NamedFormat(oldDefaultFormatName);
     m_persFormatCache.ValueR().SetNumericSpec(Formatting::NumericFormatSpec::DefaultFormat());
     auto comp = Formatting::CompositeValueSpec(*m_persistenceUnit);
     comp.SetMajorLabel(m_persistenceUnit->GetDisplayLabel().c_str());
@@ -979,7 +982,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
         else
             {
             Formatting::DecimalPrecision prec;
-            if (!Formatting::Utils::DecimalPrecisionByIndex(prec, precisionOverride.Value()))
+            if (!Formatting::Utils::GetDecimalPrecisionByInt(prec, precisionOverride.Value()))
                 {
                 LOG.errorv("On KOQ '%s' %d is not a valid decimal precision override value", GetFullName().c_str(), precisionOverride.Value());
                 return ECObjectsStatus::Error;
