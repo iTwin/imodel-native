@@ -770,46 +770,57 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR form
 
     for (auto const& str : tokens) // str of the format {formatName}<{precision}>[overrides|label][...]...
         {
-        Utf8String formatName;
-        Nullable<int32_t> prec;
-        bvector<Utf8String> unitNames;
-        bvector<Nullable<Utf8String>> unitLabels;
-        if (BentleyStatus::SUCCESS != Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, str))
-            {
-            LOG.errorv("Failed to parse Presentation FormatString '%s' on KindOfQuantity '%s'", str.c_str(), GetFullName().c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        auto format = nameToFormatMapper(formatName);
-
-        if (nullptr == format)
-            {
-            LOG.errorv("Format '%s' could not be looked up on KoQ '%s'", formatName.c_str(), GetFullName().c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        if (!unitNames.empty())
-            {
-            UnitAndLabelPairs units;
-            int i = 0;
-            for (const auto& u : unitNames)
-                {
-                auto unit = nameToUnitMapper(u);
-                if (nullptr == unit)
-                    {
-                    LOG.errorv("Presentation unit with name '%s' could not be looked up on KoQ '%s'", u.c_str(), GetFullName().c_str());
-                    return ECObjectsStatus::Error;
-                    }
-                units.push_back(make_bpair(unit, (i < unitLabels.size() && unitLabels[i].IsValid()) ? unitLabels[i].Value().c_str() : nullptr));
-                i++;
-                }
-            if (ECObjectsStatus::Success != AddPresentationFormat(*format, prec, &units))
-                return ECObjectsStatus::Error;
-            }
-        else if (ECObjectsStatus::Success != AddPresentationFormat(*format, prec)) // no unit overrides
-                return ECObjectsStatus::Error;
+        ECObjectsStatus stat = AddPresentationFormatByString(str, nameToFormatMapper, nameToUnitMapper);
+        if (ECObjectsStatus::Success != stat)
+            return stat;
         }
+
     return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR)> const& nameToUnitMapper)
+    {
+    Utf8String formatName;
+    Nullable<int32_t> prec;
+    bvector<Utf8String> unitNames;
+    bvector<Nullable<Utf8String>> unitLabels;
+    if (BentleyStatus::SUCCESS != Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, formatString))
+        {
+        LOG.errorv("Failed to parse Presentation FormatString '%s' on KindOfQuantity '%s'", formatString.c_str(), GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    auto format = nameToFormatMapper(formatName);
+
+    if (nullptr == format)
+        {
+        LOG.errorv("Format '%s' could not be looked up on KoQ '%s'", formatName.c_str(), GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    if (!unitNames.empty())
+        {
+        UnitAndLabelPairs units;
+        int i = 0;
+        for (const auto& u : unitNames)
+            {
+            auto unit = nameToUnitMapper(u);
+            if (nullptr == unit)
+                {
+                LOG.errorv("Presentation unit with name '%s' could not be looked up on KoQ '%s'", u.c_str(), GetFullName().c_str());
+                return ECObjectsStatus::Error;
+                }
+            units.push_back(make_bpair(unit, (i < unitLabels.size() && unitLabels[i].IsValid()) ? unitLabels[i].Value().c_str() : nullptr));
+            i++;
+            }
+
+        return AddPresentationFormat(*format, prec, &units);
+        }
+
+    return AddPresentationFormat(*format, prec); // no unit overrides
     }
 
 //--------------------------------------------------------------------------------------
