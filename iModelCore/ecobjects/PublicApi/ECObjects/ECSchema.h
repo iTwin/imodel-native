@@ -1528,10 +1528,11 @@ public:
     //! the common case where only the major unit needs to be overridden
     //! @param[in]  parent              The format to base this override off of
     //! @param[in]  precisionOverride   Optionally specify an override for precision
-    //! @param[in]  unitsAndLabels      Optionally override units and labels for the composite
+    //! @param[in]  majorUnitOverride   Optionally override major unit of the composite
+    //! @param[in]  labelOverride       Optionally override the major unit label of the composite
     //! @param[in]  isDefault           Optionally set the created override as the default presentation unit
     //! @return ECObjectsStatus::Succcess if format is successfully added as a presentation format. Otherwise, ECObjectsStatus::Error.
-    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, ECUnitCP inputUnitOverride = nullptr, Utf8CP labelOverride = nullptr, bool isDefault = false);
+    ECOBJECTS_EXPORT ECObjectsStatus AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride = nullptr, ECUnitCP majorUnitOverride = nullptr, Utf8CP labelOverride = nullptr, bool isDefault = false);
 
     //! Removes the specified presentation format.
     ECOBJECTS_EXPORT void RemovePresentationFormat(NamedFormatCR fus);
@@ -3681,7 +3682,7 @@ public:
     //! @param[in] description  Description of the format
     //! @param[in] nfs          A NumericFormatSpec to use to create.
     //! @param[in] composite    A CompositeValueSpec to create this use to create. 
-    ECOBJECTS_EXPORT ECObjectsStatus CreateFormat(ECFormatP& unitFormat, Utf8CP name, Utf8CP label = nullptr, Utf8CP description = nullptr, Formatting::NumericFormatSpecCP nfs = nullptr, Formatting::CompositeValueSpecCP composite = nullptr);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateFormat(ECFormatP& format, Utf8CP name, Utf8CP label = nullptr, Utf8CP description = nullptr, Formatting::NumericFormatSpecCP nfs = nullptr, Formatting::CompositeValueSpecCP composite = nullptr);
 
     //! Creates a new ECUnit and adds it to the schema.
     //! @param[out] unit        If successful, will contain a new ECUnit object
@@ -3733,7 +3734,6 @@ public:
     //! @param[in] name         Name of the constant to create
     //! @param[in] definition   Definition of the constant
     //! @param[in] phenom       Name of the phenomenon this constant is associated with
-    //! @param[in] unitSystem   Name of the unit system this constant is associated with
     //! @param[in] numerator    Numerator for unit factor
     //! @param[in] denominator  Denominator for unit factor
     //! @param[in] label        Display label of the constant
@@ -3745,7 +3745,6 @@ public:
     //! @param[in] name         Name of the constant to create
     //! @param[in] definition   Definition of the constant
     //! @param[in] phenom       Name of the phenomenon this constant is associated with
-    //! @param[in] unitSystem   Name of the unit system this constant is associated with
     //! @param[in] numerator    Numerator for unit factor
     //! @param[in] label        Display label of the constant
     //! @param[in] description  Description of the constant
