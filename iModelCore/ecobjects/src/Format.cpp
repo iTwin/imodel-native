@@ -51,14 +51,14 @@ Utf8StringCR ECFormat::GetFullName() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
-Utf8String ECFormat::GetQualifiedName(ECSchemaCR primarySchema) const
+Utf8String NamedFormat::GetQualifiedName(ECSchemaCR primarySchema) const
     {
     Utf8String alias;
     Utf8StringCR name = GetName();
-    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(GetSchema(), alias)))
+    if (!EXPECTED_CONDITION (ECObjectsStatus::Success == primarySchema.ResolveAlias(m_ecFormat->GetSchema(), alias)))
         {
         LOG.warningv ("warning: Cannot qualify an ECFormat name with an alias unless the schema containing the ECFormat is referenced by the primary schema."
-            "The name will remain unqualified.\n  Primary ECSchema: %s\n  Phenomenon: %s\n ECSchema containing ECFormat: %s", primarySchema.GetName().c_str(), name.c_str(), GetSchema().GetName().c_str());
+            "The name will remain unqualified.\n  Primary ECSchema: %s\n  Phenomenon: %s\n ECSchema containing ECFormat: %s", primarySchema.GetName().c_str(), name.c_str(), m_ecFormat->GetSchema().GetName().c_str());
         return name;
         }
 
@@ -97,7 +97,7 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
         return SchemaReadStatus::InvalidECSchemaXml;
         }
     Formatting::PresentationType type;
-    if (!Formatting::Utils::NameToPresentationType(type, specType.c_str()))
+    if (!Formatting::Utils::ParsePresentationType(type, specType.c_str()))
         {
         LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_TYPE_ATTRIBUTE, specType.c_str());
         return SchemaReadStatus::InvalidECSchemaXml;
@@ -113,7 +113,7 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
             return SchemaReadStatus::InvalidECSchemaXml;
             }
         Formatting::ScientificType unitsScientificType;
-        if (!Formatting::Utils::NameToScientificType(unitsScientificType, scientificType))
+        if (!Formatting::Utils::ParseScientificType(unitsScientificType, scientificType))
             {
             LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, scientificType.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -140,8 +140,8 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
     Utf8String showSignName;
     if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(showSignName, FORMAT_SIGN_OPTION_ATTRIBUTE))
         {        
-        Formatting::ShowSignOption showSign;
-        if (!Formatting::Utils::NameToSignOption(showSign, showSignName.c_str()))
+        Formatting::SignOption showSign;
+        if (!Formatting::Utils::ParseSignOption(showSign, showSignName.c_str()))
             {
             LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_SIGN_OPTION_ATTRIBUTE, specType.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -152,7 +152,7 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
     Utf8String formatTraits;
     if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(formatTraits, FORMAT_TRAITS_ATTRIBUTE))
         { 
-        if (!spec.SetFormatTraitsFromString(formatTraits))
+        if (!spec.SetFormatTraits(formatTraits))
             {
             LOG.errorv("%s node '%s' contains an invalid %s %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_TRAITS_ATTRIBUTE, formatTraits.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -183,7 +183,7 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
     else
         {
         Formatting::DecimalPrecision unitsDecimalPrecision;
-        if (!Formatting::Utils::DecimalPrecisionByIndex(unitsDecimalPrecision, precision))
+        if (!Formatting::Utils::GetDecimalPrecisionByInt(unitsDecimalPrecision, precision))
             {
             LOG.errorv("%s node '%s' contains an invalid %s value", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PRECISION_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
@@ -370,9 +370,9 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
         auto nfs = GetNumericSpec();
         if (nfs->HasRoundingFactor())
             xmlWriter.WriteAttribute(FORMAT_ROUND_FACTOR_ATTRIBUTE, nfs->GetRoundingFactor());
-        xmlWriter.WriteAttribute(FORMAT_TYPE_ATTRIBUTE, Formatting::Utils::PresentationTypeName(nfs->GetPresentationType()).c_str());
+        xmlWriter.WriteAttribute(FORMAT_TYPE_ATTRIBUTE, Formatting::Utils::GetPresentationTypeString(nfs->GetPresentationType()).c_str());
         if (nfs->HasSignOption())
-            xmlWriter.WriteAttribute(FORMAT_SIGN_OPTION_ATTRIBUTE, Formatting::Utils::SignOptionName(nfs->GetSignOption()).c_str());
+            xmlWriter.WriteAttribute(FORMAT_SIGN_OPTION_ATTRIBUTE, Formatting::Utils::GetSignOptionString(nfs->GetSignOption()).c_str());
         if (nfs->HasFormatTraits())
             xmlWriter.WriteAttribute(FORMAT_TRAITS_ATTRIBUTE, nfs->GetFormatTraitsString().c_str());
         xmlWriter.WriteAttribute(FORMAT_PRECISION_ATTRIBUTE, GetPresentationType() == Formatting::PresentationType::Fractional ? 
@@ -381,7 +381,7 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
         if (nfs->HasMinWidth())
             xmlWriter.WriteAttribute(FORMAT_MIN_WIDTH_ATTRIBUTE, nfs->GetMinWidth());
         if (Formatting::PresentationType::Scientific == GetPresentationType())
-            xmlWriter.WriteAttribute(FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, Formatting::Utils::ScientificTypeName(nfs->GetScientificType()).c_str());
+            xmlWriter.WriteAttribute(FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE, Formatting::Utils::GetScientificTypeString(nfs->GetScientificType()).c_str());
         if (nfs->HasDecimalSeparator())
             xmlWriter.WriteAttribute(FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE, Utf8String(1, nfs->GetDecimalSeparator()).c_str());
         if (nfs->HasThousandsSeparator())
@@ -448,9 +448,9 @@ SchemaWriteStatus ECFormat::WriteJson(Json::Value & outValue, bool standalone, b
         auto nfs = GetNumericSpec();
         if (nfs->HasRoundingFactor())
             outValue[FORMAT_ROUND_FACTOR_ATTRIBUTE] = nfs->GetRoundingFactor();
-        outValue[FORMAT_TYPE_ATTRIBUTE] = Formatting::Utils::PresentationTypeName(nfs->GetPresentationType());
+        outValue[FORMAT_TYPE_ATTRIBUTE] = Formatting::Utils::GetPresentationTypeString(nfs->GetPresentationType());
         if (nfs->HasSignOption())
-            outValue[FORMAT_SIGN_OPTION_ATTRIBUTE] = Formatting::Utils::SignOptionName(nfs->GetSignOption());
+            outValue[FORMAT_SIGN_OPTION_ATTRIBUTE] = Formatting::Utils::GetSignOptionString(nfs->GetSignOption());
         if (nfs->HasFormatTraits())
             outValue[FORMAT_TRAITS_ATTRIBUTE] = nfs->GetFormatTraitsString();
         if (nfs->HasPrecision())
@@ -460,7 +460,7 @@ SchemaWriteStatus ECFormat::WriteJson(Json::Value & outValue, bool standalone, b
                         static_cast<uint32_t>(nfs->GetDecimalPrecision());
             }
         if (Formatting::PresentationType::Scientific == GetPresentationType())
-            outValue[FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE] = Formatting::Utils::ScientificTypeName(nfs->GetScientificType());
+            outValue[FORMAT_SCIENTIFIC_TYPE_ATTRIBUTE] = Formatting::Utils::GetScientificTypeString(nfs->GetScientificType());
         if (nfs->HasDecimalSeparator())
             outValue[FORMAT_DECIMAL_SEPARATOR_ATTRIBUTE] = Utf8String(1, nfs->GetDecimalSeparator()).c_str();
         if (nfs->HasThousandsSeparator())

@@ -278,14 +278,14 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success,koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
     EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU")));
-    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
     EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U")));
-    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
 
     SchemaComparer comparer;
     SchemaChanges changes;
@@ -335,7 +335,7 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     num.SetMinWidth(4);
     num.SetUomSeparator("");
     num.SetPrefixPadChar('0');
-    num.SetSignOption(Formatting::ShowSignOption::NegativeParentheses);
+    num.SetSignOption(Formatting::SignOption::NegativeParentheses);
     num.SetDecimalSeparator(',');
     num.SetThousandSeparator(',');
 

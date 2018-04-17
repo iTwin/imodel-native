@@ -248,6 +248,8 @@ protected:
 public:
     ECOBJECTS_EXPORT NamedFormat(Utf8StringCR name = "", ECFormatCP format = nullptr);
     Utf8StringCR GetName() const {return m_nameOrFormatString;}
+    //! Gets a qualified name of the Format, prefixed by the schema alias if it does not match the primary schema.
+    ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
     bool IsOverride() const {return this != (NamedFormatCP)m_ecFormat;}
     ECFormatCP GetParentFormat() const {return m_ecFormat;}
 };
@@ -291,8 +293,6 @@ public:
 
     //! The fully qualified name of this Format in the format {SchemaName}:{FormatName}.
     ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
-    //! Gets a qualified name of the Format, prefixed by the schema alias if it does not match the primary schema.
-    ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
     //! Returns the localized display label of this Format. Returns the localized display label if one exists.
     ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;

@@ -246,7 +246,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
     double relError = GetRelativeError();
     xmlWriter.WriteAttribute(ECXML_RELATIVE_ERROR_ATTRIBUTE, relError);
 
-    bvector<NamedFormat> const& presentationUnits = GetPresentationFormatList();
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
     if (presentationUnits.size() > 0)
         {
         Utf8String presentationUnitString;
@@ -280,14 +280,14 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                     continue;
                     }
                 bvector<Utf8String> tokens;
-                BeStringUtilities::Split(format.GetName().c_str(), "[", tokens);
+                BeStringUtilities::Split(format.GetQualifiedName(GetSchema()).c_str(), "[", tokens);
                 BeAssert(tokens.size() > 0);
                 Utf8String split = tokens[0];
                 Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(split.c_str());
                 mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
                 if (nullptr == mapped)
                     {
-                    LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetName().c_str(), GetFullName().c_str());
+                    LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetQualifiedName(GetSchema()).c_str(), GetFullName().c_str());
                     continue;
                     }
                 if (!first)
@@ -302,7 +302,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                 {
                 if (!first)
                     presentationUnitString += ";";
-                presentationUnitString += format.GetName();
+                presentationUnitString += format.GetQualifiedName(GetSchema());
                 first = false;
                 }
             }
@@ -346,7 +346,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
 
     outValue[ECJSON_RELATIVE_ERROR_ATTRIBUTE] = GetRelativeError();
 
-    bvector<NamedFormat> const& presentationUnits = GetPresentationFormatList();
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
     if (0 != presentationUnits.size())
         {
         Json::Value presentationUnitArr(Json::ValueType::arrayValue);
@@ -357,7 +357,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
                 LOG.errorv("Failed to write schema because persistance format for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), format.GetProblemDescription().c_str());
                 return SchemaWriteStatus::FailedToCreateJson;
                 }
-            presentationUnitArr.append(format.GetParentFormat()->GetQualifiedName(GetSchema()));
+            presentationUnitArr.append(format.GetQualifiedName(GetSchema()));
             }
         outValue[PRESENTATION_UNITS_ATTRIBUTE] = presentationUnitArr;
         }
@@ -552,6 +552,9 @@ ECObjectsStatus KindOfQuantity::ParsePersistenceUnit(Utf8CP descriptor, ECSchema
     return ECObjectsStatus::Success;
     }
 
+// Used for upgrading from ECXml 3.1.
+static const Utf8CP oldDefaultFormatName = "DefaultRealU";
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
@@ -586,7 +589,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
         else
             {
             // Assuming since there was previously a format that it should contain the Unit with it.
-            format = GetSchema().LookupFormat(Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(Formatting::FormatConstant::DefaultFormatName()));
+            format = GetSchema().LookupFormat(Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(oldDefaultFormatName));
             BeAssert(nullptr != format);
             LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.", descriptor, GetFullName().c_str());
             }
@@ -670,7 +673,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
         return status;
 
     if (persistenceFormat.empty())
-        persistenceFormat = Formatting::FormatConstant::DefaultFormatName();
+        persistenceFormat = oldDefaultFormatName;
 
     if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPers, persistenceUnit))
         return ECObjectsStatus::Error;
@@ -691,7 +694,7 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
             }
 
         if (presentationFormat.empty())
-            presentationFormat = Formatting::FormatConstant::DefaultFormatName();
+            presentationFormat = oldDefaultFormatName;
 
         Utf8String unqualifiedPres;
         if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPres, presentationUnit))
@@ -827,7 +830,7 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
         return ECObjectsStatus::Error;
         }
 
-    out += parent.GetQualifiedName(GetSchema());
+    out += parent.GetName();
     
     if (precisionOverride.IsValid())
         {
@@ -892,7 +895,7 @@ NamedFormatCP KindOfQuantity::GetOrCreateCachedPersistenceFormat() const
         if (Units::Unit::AreEqual(m_persFormatCache.Value().GetCompositeMajorUnit(), m_persistenceUnit))
             return &m_persFormatCache.Value();
         }
-    m_persFormatCache = NamedFormat(Formatting::FormatConstant::DefaultFormatName());
+    m_persFormatCache = NamedFormat(oldDefaultFormatName);
     m_persFormatCache.ValueR().SetNumericSpec(Formatting::NumericFormatSpec::DefaultFormat());
     auto comp = Formatting::CompositeValueSpec(*m_persistenceUnit);
     comp.SetMajorLabel(m_persistenceUnit->GetDisplayLabel().c_str());
@@ -966,7 +969,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
         else
             {
             Formatting::DecimalPrecision prec;
-            if (!Formatting::Utils::DecimalPrecisionByIndex(prec, precisionOverride.Value()))
+            if (!Formatting::Utils::GetDecimalPrecisionByInt(prec, precisionOverride.Value()))
                 {
                 LOG.errorv("On KOQ '%s' %d is not a valid decimal precision override value", GetFullName().c_str(), precisionOverride.Value());
                 return ECObjectsStatus::Error;
@@ -1056,7 +1059,7 @@ Json::Value KindOfQuantity::GetPresentationsJson() const
     {
     Json::Value arrayObj(Json::arrayValue);
 
-    bvector<NamedFormat> const& presentationUnits = GetPresentationFormatList();
+    bvector<NamedFormat> const& presentationUnits = GetPresentationFormats();
     if (presentationUnits.size() > 0)
         {
         for (NamedFormatCR format : presentationUnits)

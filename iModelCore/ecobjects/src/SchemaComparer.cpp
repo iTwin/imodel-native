@@ -1433,14 +1433,14 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
         change.GetPersistenceUnit().SetValue(oldPersUnitStr, newPersUnitStr);
 
     std::vector<Utf8String> oldPresUnits, newPresUnits;
-    for (NamedFormat const& format : oldVal.GetPresentationFormatList())
+    for (NamedFormat const& format : oldVal.GetPresentationFormats())
         {
-        oldPresUnits.push_back(format.GetName());
+        oldPresUnits.push_back(format.GetQualifiedName(oldVal.GetSchema()));
         }
 
-    for (NamedFormat const& format : newVal.GetPresentationFormatList())
+    for (NamedFormat const& format : newVal.GetPresentationFormats())
         {
-        newPresUnits.push_back(format.GetName());
+        newPresUnits.push_back(format.GetQualifiedName(newVal.GetSchema()));
         }
 
     const size_t oldPresUnitCount = oldPresUnits.size();
@@ -1662,7 +1662,7 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
             change.GetRoundFactor().SetValue(ValueId::Deleted, oldNum->GetRoundingFactor());
 
         if (oldNum->GetPresentationType() != newNum->GetPresentationType())
-            change.GetPresentationType().SetValue(Formatting::Utils::PresentationTypeName(oldNum->GetPresentationType()), Formatting::Utils::PresentationTypeName(newNum->GetPresentationType()));
+            change.GetPresentationType().SetValue(Formatting::Utils::GetPresentationTypeString(oldNum->GetPresentationType()), Formatting::Utils::GetPresentationTypeString(newNum->GetPresentationType()));
 
         if (oldNum->GetDecimalPrecision() != newNum->GetDecimalPrecision())
             change.GetDecimalPrecision().SetValue(Formatting::Utils::DecimalPrecisionToInt(oldNum->GetDecimalPrecision()), Formatting::Utils::DecimalPrecisionToInt(newNum->GetDecimalPrecision()));
@@ -1678,14 +1678,14 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
             change.GetMinWidth().SetValue(ValueId::Deleted, oldNum->GetMinWidth());
 
         if (oldNum->GetScientificType() != newNum->GetScientificType())
-            change.GetScientificType().SetValue(Formatting::Utils::ScientificTypeName(oldNum->GetScientificType()), Formatting::Utils::ScientificTypeName(newNum->GetScientificType()));
+            change.GetScientificType().SetValue(Formatting::Utils::GetScientificTypeString(oldNum->GetScientificType()), Formatting::Utils::GetScientificTypeString(newNum->GetScientificType()));
 
         if (oldNum->HasSignOption() && newNum->HasSignOption() && oldNum->GetSignOption() != newNum->GetSignOption())
-            change.GetShowSignOption().SetValue(Formatting::Utils::SignOptionName(oldNum->GetSignOption()), Formatting::Utils::SignOptionName(newNum->GetSignOption()));
+            change.GetShowSignOption().SetValue(Formatting::Utils::GetSignOptionString(oldNum->GetSignOption()), Formatting::Utils::GetSignOptionString(newNum->GetSignOption()));
         else if (!oldNum->HasSignOption() && newNum->HasSignOption())
-            change.GetShowSignOption().SetValue(ValueId::New, Formatting::Utils::SignOptionName(newNum->GetSignOption()));
+            change.GetShowSignOption().SetValue(ValueId::New, Formatting::Utils::GetSignOptionString(newNum->GetSignOption()));
         else if (oldNum->HasSignOption() && !newNum->HasSignOption())
-            change.GetShowSignOption().SetValue(ValueId::Deleted, Formatting::Utils::SignOptionName(oldNum->GetSignOption()));
+            change.GetShowSignOption().SetValue(ValueId::Deleted, Formatting::Utils::GetSignOptionString(oldNum->GetSignOption()));
 
         if (oldNum->HasFormatTraits() && newNum->HasFormatTraits() && oldNum->GetFormatTraits() != newNum->GetFormatTraits())
             change.GetFormatTraits().SetValue(oldNum->GetFormatTraitsString(), newNum->GetFormatTraitsString());
@@ -2047,7 +2047,7 @@ BentleyStatus SchemaComparer::AppendKindOfQuantity(KindOfQuantityChanges& change
     change.GetDescription().SetValue(appendType, koq.GetInvariantDescription());
     change.GetPersistenceUnit().SetValue(appendType, koq.GetPersistenceUnit()->GetFullName());
     change.GetRelativeError().SetValue(appendType, koq.GetRelativeError());
-    for (NamedFormat const& format : koq.GetPresentationFormatList())
+    for (NamedFormat const& format : koq.GetPresentationFormats())
         change.GetPresentationUnitList().Add(state).SetValue(appendType, format.GetName());
 
     return SUCCESS;
@@ -2152,7 +2152,7 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChanges& changes, ECFormatCR fo
         if (num->HasRoundingFactor())
             change.GetRoundFactor().SetValue(appendType, num->GetRoundingFactor());
 
-        change.GetPresentationType().SetValue(appendType, Formatting::Utils::PresentationTypeName(num->GetPresentationType()));
+        change.GetPresentationType().SetValue(appendType, Formatting::Utils::GetPresentationTypeString(num->GetPresentationType()));
 
         if (Formatting::PresentationType::Fractional == num->GetPresentationType())
             change.GetFractionalPrecision().SetValue(appendType, (uint32_t)Formatting::Utils::FractionalPrecisionDenominator(num->GetFractionalPrecision()));
@@ -2163,10 +2163,10 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChanges& changes, ECFormatCR fo
             change.GetMinWidth().SetValue(appendType, num->GetMinWidth());
 
         if (Formatting::PresentationType::Scientific == num->GetPresentationType())
-            change.GetScientificType().SetValue(appendType, Formatting::Utils::ScientificTypeName(num->GetScientificType()));
+            change.GetScientificType().SetValue(appendType, Formatting::Utils::GetScientificTypeString(num->GetScientificType()));
 
         if (num->HasSignOption())
-            change.GetShowSignOption().SetValue(appendType, Formatting::Utils::SignOptionName(num->GetSignOption()));
+            change.GetShowSignOption().SetValue(appendType, Formatting::Utils::GetSignOptionString(num->GetSignOption()));
 
         if (num->HasFormatTraits())
             change.GetFormatTraits().SetValue(appendType, num->GetFormatTraitsString());
