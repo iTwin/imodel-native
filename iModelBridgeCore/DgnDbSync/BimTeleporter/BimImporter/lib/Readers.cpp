@@ -1495,6 +1495,64 @@ BentleyStatus PlanReader::_OnInstanceCreated(ECN::IECInstanceR instance)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void createNavigationPropertyOnConstraints(ECN::ECRelationshipClassP relClass)
+    {
+    // 1:N->nav prop on target side
+    // N:1->nav prop on source side
+    // 1:1 and StrengthDirection == Forward->nav prop on target side
+    // 1:1 and StrengthDirection == Backward->nav prop on source side
+    if (relClass->GetSource().GetMultiplicity().GetUpperLimit() == 1)
+        {
+        if (relClass->GetTarget().GetMultiplicity().IsUpperLimitUnbounded() || (relClass->GetTarget().GetMultiplicity().GetUpperLimit() == 1 && relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward))
+            {
+            bvector<ECEntityClassP> toRemove;
+            for (ECClassCP constraintClass : relClass->GetTarget().GetConstraintClasses())
+                {
+                ECEntityClassP target = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
+                NavigationECPropertyP navProp = nullptr;
+                if (ECObjectsStatus::Success != target->CreateNavigationProperty(navProp, relClass->GetName(), *relClass, ECRelatedInstanceDirection::Backward, false))
+                    toRemove.push_back(target);
+                }
+            for (ECEntityClassP constraintClass : toRemove)
+                relClass->GetTarget().RemoveClass(*constraintClass);
+            }
+        }
+    else if (relClass->GetTarget().GetMultiplicity().GetUpperLimit() == 1)
+        {
+        if (relClass->GetSource().GetMultiplicity().IsUpperLimitUnbounded() || (relClass->GetSource().GetMultiplicity().GetUpperLimit() == 1 && relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward))
+            {
+            bvector<ECEntityClassP> toRemove;
+            for (ECClassCP constraintClass : relClass->GetSource().GetConstraintClasses())
+                {
+                ECEntityClassP source = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
+                NavigationECPropertyP navProp = nullptr;
+                if (ECObjectsStatus::Success != source->CreateNavigationProperty(navProp, relClass->GetName(), *relClass, ECRelatedInstanceDirection::Forward, false))
+                    toRemove.push_back(source);
+                }
+            for (ECEntityClassP constraintClass : toRemove)
+                relClass->GetSource().RemoveClass(*constraintClass);
+            }
+        }
+    else
+        {
+        relClass->GetSource().SetMultiplicity(ECN::RelationshipMultiplicity::OneOne());
+        relClass->GetTarget().SetMultiplicity(ECN::RelationshipMultiplicity::OneMany());
+        bvector<ECEntityClassP> toRemove;
+        for (ECClassCP constraintClass : relClass->GetTarget().GetConstraintClasses())
+            {
+            ECEntityClassP target = const_cast<ECEntityClassP>(constraintClass->GetEntityClassCP());
+            NavigationECPropertyP navProp = nullptr;
+            if (ECObjectsStatus::Success != target->CreateNavigationProperty(navProp, relClass->GetName(), *relClass, ECRelatedInstanceDirection::Backward, false))
+                toRemove.push_back(target);
+            }
+        for (ECEntityClassP constraintClass : toRemove)
+            relClass->GetTarget().RemoveClass(*constraintClass);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
@@ -1560,9 +1618,13 @@ BentleyStatus SchemaReader::ValidateBaseClasses(ECN::ECSchemaP schema)
             else if (target->Is(elementClass))
                 base = elementToElement;
             }
+        else if (source->Is(uniqueAspectClass) || source->Is(multiAspectClass))
+            {
+            createNavigationPropertyOnConstraints(relClass);
+            }
         if (nullptr == base)
             {
-            return ERROR;
+            continue;
             }
         relClass->GetSource().SetMultiplicity(base->GetSource().GetMultiplicity());
         relClass->SetStrength(base->GetStrength());
@@ -1678,12 +1740,9 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
                 flattener.ProcessSP3DSchema(ecSchema.get(), baseInterface, baseObject);
                 }
             }
-        else
-            {
-            ValidateBaseClasses(ecSchema.get());
-            }
-
         ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest);
+        ValidateBaseClasses(toImport);
+
         if (!ECSchemaConverter::Convert(*toImport, false))
             {
             Utf8PrintfString error("Failed to run the schema converter on exported ECSchema '%s'", toImport->GetFullSchemaName().c_str());
@@ -1691,7 +1750,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             return BSIERROR;
             }
 
-//#define EXPORT_FLATTENEDECSCHEMAS 1
+#define EXPORT_FLATTENEDECSCHEMAS 1
 #ifdef EXPORT_FLATTENEDECSCHEMAS
         BeFileName flatFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_flat").c_str());
         if (!flatFolder.DoesPathExist())
