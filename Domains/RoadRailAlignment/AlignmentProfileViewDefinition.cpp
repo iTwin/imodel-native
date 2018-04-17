@@ -2,11 +2,12 @@
 |
 |     $Source: AlignmentProfileViewDefinition.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
 #include <RoadRailAlignment/AlignmentProfileViewDefinition.h>
+#include <RoadRailAlignment/RoadRailAlignmentDomain.h>
 
 HANDLER_DEFINE_MEMBERS(AlignmentProfileViewDefinitionHandler)
 
@@ -89,7 +90,7 @@ bool AlignmentProfileViewDefinition::_ViewsModel(DgnModelId modelId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        08/2017
 //---------------------------------------------------------------------------------------
-AlignmentProfileViewDefinition::AlignmentProfileViewDefinition(DefinitionModelR model, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector): 
+AlignmentProfileViewDefinition::AlignmentProfileViewDefinition(ConfigurationModelCR model, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector): 
     T_Super(T_Super::CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name), categories, displayStyle, modelSelector))
     {
     }
@@ -97,9 +98,9 @@ AlignmentProfileViewDefinition::AlignmentProfileViewDefinition(DefinitionModelR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        09/2017
 //---------------------------------------------------------------------------------------
-DgnViewId AlignmentProfileViewDefinition::QuerySystemViewId(DgnDbR db)
+DgnViewId AlignmentProfileViewDefinition::QuerySystemViewId(SubjectCR subject)
     {
-    DictionaryModelCR dictionary = db.GetDictionaryModel();
-    const DgnElementId eid = db.Elements().QueryElementIdByCode(CreateCode(dictionary, SYSTEM_VIEW_NAME));
+    auto configurationModelPtr = ConfigurationModel::Query(subject);
+    const DgnElementId eid = subject.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(*configurationModelPtr, SYSTEM_VIEW_NAME));
     return DgnViewId(eid.GetValueUnchecked());
     }

@@ -73,6 +73,9 @@
     <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentProfileViewDefinition.h">
       <Filter>Header Files\PublicAPI</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\RoadRailAlignment\AlignmentXSViewDefinition.h">
+      <Filter>Header Files\PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="RoadRailAlignment.PartFile.xml">

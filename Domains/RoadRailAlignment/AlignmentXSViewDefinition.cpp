@@ -2,11 +2,12 @@
 |
 |     $Source: AlignmentXSViewDefinition.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailAlignmentInternal.h"
 #include <RoadRailAlignment/AlignmentXSViewDefinition.h>
+#include <RoadRailAlignment/RoadRailAlignmentDomain.h>
 
 HANDLER_DEFINE_MEMBERS(AlignmentXSViewDefinitionHandler)
 
@@ -40,7 +41,7 @@ void AlignmentXSViewDefinition::_SetRotation(RotMatrixCR rot)
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        08/2017
 //---------------------------------------------------------------------------------------
-AlignmentXSViewDefinition::AlignmentXSViewDefinition(DefinitionModelR model, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector): 
+AlignmentXSViewDefinition::AlignmentXSViewDefinition(ConfigurationModelCR model, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR modelSelector): 
     T_Super(T_Super::CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name), categories, displayStyle, modelSelector))
     {
     }
@@ -48,9 +49,9 @@ AlignmentXSViewDefinition::AlignmentXSViewDefinition(DefinitionModelR model, Utf
 //---------------------------------------------------------------------------------------
 // @bsimethod                           Alexandre.Gagnon                        09/2017
 //---------------------------------------------------------------------------------------
-DgnViewId AlignmentXSViewDefinition::QuerySystemViewId(DgnDbR db)
+DgnViewId AlignmentXSViewDefinition::QuerySystemViewId(SubjectCR subject)
     {
-    DictionaryModelCR dictionary = db.GetDictionaryModel();
-    const DgnElementId eid = db.Elements().QueryElementIdByCode(CreateCode(dictionary, SYSTEM_VIEW_NAME));
+    auto configurationModelPtr = ConfigurationModel::Query(subject);
+    const DgnElementId eid = subject.GetDgnDb().Elements().QueryElementIdByCode(CreateCode(*configurationModelPtr, SYSTEM_VIEW_NAME));
     return DgnViewId(eid.GetValueUnchecked());
     }

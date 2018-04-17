@@ -93,7 +93,7 @@ void setupModelSelector(ModelSelectorR mSelector)
 // @bsimethod                           Alexandre.Gagnon                        09/2017
 //---------------------------------------------------------------------------------------
 template <typename VIEWDEF_T>
-RefCountedPtr<VIEWDEF_T> createViewDefinition(DefinitionModelR model, Utf8StringCR viewName)
+RefCountedPtr<VIEWDEF_T> createViewDefinition(ConfigurationModelR model, Utf8StringCR viewName)
     {
     Utf8String cSelectorName = viewName;
     cSelectorName.append("CategorySelector");
