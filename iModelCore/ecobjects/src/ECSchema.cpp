@@ -1975,6 +1975,15 @@ ECObjectsStatus ECSchema::ResolveAlias(ECSchemaCR schema, Utf8StringR alias) con
         return ECObjectsStatus::Success;
         }
 
+    bmap<ECSchemaP, Utf8String>::const_iterator aliasIterator;
+    for (aliasIterator = m_referencedSchemaAliasMap.begin(); aliasIterator != m_referencedSchemaAliasMap.end(); aliasIterator++)
+        {
+        if (aliasIterator->first->GetSchemaKey() == schema.GetSchemaKey())
+            {
+            alias = aliasIterator->second;
+            return ECObjectsStatus::Success;
+            }
+        }
     return ECObjectsStatus::SchemaNotFound;
     }
 
