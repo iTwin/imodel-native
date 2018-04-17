@@ -55,7 +55,7 @@ BeFileName ORDBridgeTestsHost::GetOutputDirectory()
     {
     BeFileName outputDir;
     BeTest::GetHost().GetOutputRoot(outputDir);
-    outputDir.AppendToPath(L"CiviliModelBridgesORDBridge\\");
+    outputDir.AppendToPath(L"CiviliModelBridges\\ORDBridge\\");
     return outputDir;
     }
 
