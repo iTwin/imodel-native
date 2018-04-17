@@ -14,6 +14,7 @@
 #include <BeHttp/HttpClient.h>
 #include <BeHttp/HttpError.h>
 #include <BeHttp/HttpStatus.h>
+#include <BeHttp/ProxyHttpHandler.h>
 #include <Bentley/Bentley.h>
 #include <Bentley/BeThread.h>
 #include <Bentley/Bentley.h>
@@ -43,34 +44,42 @@ USING_NAMESPACE_BENTLEY_TASKS
 
 struct HttpRequestTests : ::testing::Test
     {
+    static IHttpHandlerPtr s_proxy;
+
     static void SetUpTestCase()
         {
         BeFileName path;
         BeTest::GetHost().GetDgnPlatformAssetsDirectory(path);
         HttpClient::Initialize(path);
+
+        // Enable routing tests trough Fiddler for addtional tests. Note that addtional proxy might change behaviour.
+        // s_proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
         }
     void Reset()
         {
-        AsyncTasksManager::SetDefaultScheduler(nullptr);
-        HttpClient::Reinitialize();
-        Backdoor::InitStartBackgroundTask([] (Utf8CP name, std::function<void()> task, std::function<void()> onExpired) {});
-        Backdoor::CallOnApplicationSentToForeground();
+        // Enable full logging with LOG_TRACE if needed
         NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_WARNING);
-        HttpProxy::SetDefaultProxy(HttpProxy());
+
         putenv("http_proxy=");
         putenv("https_proxy=");
+
+        AsyncTasksManager::SetDefaultScheduler(nullptr);
+
+        HttpClient::Reinitialize();
+
+        Backdoor::InitStartBackgroundTask([] (Utf8CP name, std::function<void()> task, std::function<void()> onExpired) {});
+        Backdoor::CallOnApplicationSentToForeground();
+
+        HttpProxy::SetDefaultProxy(HttpProxy());
+        // Enable routing tests trough Fiddler for addtional tests. Note that addtional proxy might change behaviour.
+        // HttpProxy::SetDefaultProxy(HttpProxy("http://127.0.0.1:8888"));
         }
-    void SetUp()
-        {
-        Reset();
-        // Enable full logging with LOG_TRACE if needed
-        //NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_TRACE);
-        }
-    void TearDown()
-        {
-        Reset();
-        }
+
+    void SetUp() { Reset(); }
+    void TearDown() { Reset(); }
     };
+
+IHttpHandlerPtr HttpRequestTests::s_proxy;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                Vincas.Razma                           12/16
@@ -876,12 +885,13 @@ std::ostream& operator<<(std::ostream& os, const MethodParam& value)
     }
 
 // GET vs POST/PUT/etc has different implementations
+#define BODY_SIZE_DifferentMethods 1000
 struct HttpRequestTestsMethods : HttpRequestTests, WithParamInterface<MethodParam> {};
 INSTANTIATE_TEST_CASE_P(DifferentMethods, HttpRequestTestsMethods, Values(
-    MethodParam {"http://httpbin.org/ip", "GET", ""},
-    MethodParam {"http://httpbin.org/post", "POST", Utf8String(32 * 1024, 'x')},
-    MethodParam {"http://httpbin.org/put", "PUT", Utf8String(32 * 1024, 'x')},
-    MethodParam {"http://httpbin.org/delete", "DELETE", Utf8String(32 * 1024, 'x')}
+    MethodParam {"http://httpbin.org/ip",       "GET",      ""},
+    MethodParam {"http://httpbin.org/put",      "PUT",      Utf8String(BODY_SIZE_DifferentMethods, 'x')},
+    MethodParam {"http://httpbin.org/delete",   "DELETE",   Utf8String(BODY_SIZE_DifferentMethods, 'x')},
+    MethodParam {"http://httpbin.org/post",     "POST",     Utf8String(BODY_SIZE_DifferentMethods, 'x')}
 ));
 
 /*--------------------------------------------------------------------------------------+
