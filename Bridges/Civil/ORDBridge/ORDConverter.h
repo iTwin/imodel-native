@@ -48,9 +48,13 @@ private:
 
     bvector<CifAlignmentV8RefPair> m_cifAlignments;
     bvector<CifCorridorV8RefPair> m_cifCorridors;
+    bvector<Bentley::RefCountedPtr<Bentley::Cif::GeometryModel::SDK::LinearEntity3d>> m_cifGeneratedLinear3ds;
     bool m_isProcessing;
 
     void CreateRoadRailElements();
+    void CreateAlignments(bset<Dgn::DgnCategoryId>& additionalCategoriesForSelector);
+    void CreatePathways(bset<Dgn::DgnCategoryId>& additionalCategoriesForSelector);
+    void AssociateGeneratedAlignments();
 
 public:
     ORDConverter(Dgn::DgnDbSync::DgnV8::RootModelConverter::RootModelSpatialParams& params) : 
