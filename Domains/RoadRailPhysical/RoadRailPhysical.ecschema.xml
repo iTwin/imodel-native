@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="RoadRailPhysical" alias="rrphys" version="01.00.00" description="Base schema for the Road and Rail domains." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
     <ECSchemaReference name="RoadRailAlignment" version="01.00.00" alias="rralign"/>
@@ -41,13 +42,13 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="Roadway" modifier="Sealed" description="A Pathway with a smoothed or paved surface, made for traveling by motor vehicle, carriage, etc." >
+    <ECEntityClass typeName="Roadway" modifier="Sealed" displayLabel="Roadway" description="A Pathway with a smoothed or paved surface, made for traveling by motor vehicle, carriage, etc." >
         <BaseClass>PathwayElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="Railway" modifier="Sealed" description="A Pathway with a track or set of tracks along which passenger and freight trains run." >
+    <ECEntityClass typeName="Railway" modifier="Sealed" displayLabel="Railway" description="A Pathway with a track or set of tracks along which passenger and freight trains run." >
         <BaseClass>PathwayElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -85,6 +86,7 @@
         <BaseClass>IMainLinearElementSource</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <HiddenClass xmlns="CoreCustomAttributes.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="ThruwaySeparationPortion" modifier="Sealed" description="A TravelSeparationPortionElement specified using linear-referencing methods.">
@@ -92,6 +94,7 @@
         <BaseClass>IMainLinearElementSource</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <HiddenClass xmlns="CoreCustomAttributes.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECRelationshipClass typeName="PathwayRefersToTravelPortion" strength="referencing" modifier="Abstract">
