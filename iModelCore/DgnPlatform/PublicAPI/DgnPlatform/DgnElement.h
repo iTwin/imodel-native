@@ -3681,6 +3681,9 @@ struct ElementAssemblyUtil
     //! Query the DgnDb for members of the assembly for which the input DgnElement is a member.
     //! @return DgnElementIdSet containing the DgnElementIds of assembly elements. Will be empty if not an assembly.
     DGNPLATFORM_EXPORT static DgnElementIdSet GetAssemblyElementIdSet(DgnElementCR el);
+
+    //! Load child elements into assemblIdSet.
+    DGNPLATFORM_EXPORT static void GetChildElementIdSet(DgnElementIdSet& assemblyIdSet, DgnElementId parentId, DgnDbR dgnDb);
 };
 
 //=======================================================================================

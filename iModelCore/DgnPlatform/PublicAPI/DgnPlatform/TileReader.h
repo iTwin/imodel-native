@@ -156,7 +156,7 @@ struct GltfReader
     BentleyStatus ReadNormalPairs(Render::OctEncodedNormalPairListR pairs, Json::Value const& value, Utf8CP accessorName);
     BentleyStatus ReadNormals(Render::OctEncodedNormalListR normals, Json::Value const& value, Utf8CP accessorName);
 
-    BentleyStatus ReadParams(bvector<FPoint2d>& params, Json::Value const& value, Utf8CP accessorName);
+    template<typename T_Point> BentleyStatus ReadPoints(bvector<T_Point>& params, Json::Value const& value, Utf8CP accessorName);
 
     Render::ImageSource GetImageSource(Utf8CP imageName);
     Render::ImageSource GetTextureImageSource(Utf8CP textureName);
@@ -179,6 +179,27 @@ struct GltfReader
 
     // Reads gltf data into a GeometryCollection
     ReadStatus ReadGltf(Render::Primitives::GeometryCollectionR geometryCollection);
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod                                                    Ray.Bentley     04/2018
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    template<typename T_Channel, typename T_ChannelData, typename T_Point> T_Channel* ReadAuxChannel(JsonValueCR channelValue)
+        {
+        bvector<RefCountedPtr<T_ChannelData>>     dataVector;
+
+        if (channelValue.isArray())
+            {
+            for (uint32_t i=0; i<channelValue.size(); i++)
+                {
+                bvector<T_Point>   values;
+
+                if (SUCCESS == ReadPoints (values, channelValue[i], "values"))
+                    dataVector.push_back(new T_ChannelData(channelValue[i]["input"].asFloat(), std::move(values)));
+                }
+            }
+        return dataVector.empty() ? nullptr : new T_Channel(std::move(dataVector));
+        }
+
 };
 
 /*=================================================================================**//**
@@ -214,6 +235,8 @@ public:
     ReadStatus ReadTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR, bool& isLeaf);
 
     bool VerifyFeatureTable();
+    bool FindDeletedElements(DgnElementIdSet& elemIds);
+    bool GetElements(DgnElementIdSet& deletedOrModified, DgnElementIdSet& unmodified, uint64_t lastModTime);
 };
 
 END_TILETREE_IO_NAMESPACE

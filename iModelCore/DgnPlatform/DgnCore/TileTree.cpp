@@ -273,6 +273,9 @@ BentleyStatus TileLoader::DoReadFromDb()
         m_contentType = stmt->GetValueText(Column::ContentType);
         m_expirationDate = stmt->GetValueInt64(Column::Expires);
         
+        if (!_IsCompleteData())
+            return ERROR; // _GetFromSource() will be invoked to further process the cache data
+
         m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE FileName=?"))
@@ -930,6 +933,16 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
     bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(worldBox);
     bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
     return isOutside || clipped;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::IsEmpty() const
+    {
+    // NB: A parent tile may be empty because the elements contained within it are all too small to contribute geometry -
+    // children may not be empty.
+    return IsDisplayable() && IsReady() && !_HasGraphics() && !_HasChildren();
     }
 
 /*---------------------------------------------------------------------------------**//**

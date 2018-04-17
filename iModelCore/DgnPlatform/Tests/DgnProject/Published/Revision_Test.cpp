@@ -2325,14 +2325,17 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
 
     DgnElementId eid;   // The element that the two db's will fight over.
     DgnElementId eid2;  // another element that the two db's will fight over.
+    DgnElementId eid3;  // another element that the two db's will fight over.
     
     // First: Create an element.
     int baseIntegerPropertyValue = 1;
     int expectedIntegerPropertyValueForElement2 = baseIntegerPropertyValue;
+    int expectedIntegerPropertyValueForElement3 = baseIntegerPropertyValue;
     if (true) 
         {
         eid = insertTestElement(*firstModel, catId, baseIntegerPropertyValue)->GetElementId();
         eid2 = insertTestElement(*firstModel, catId, expectedIntegerPropertyValueForElement2)->GetElementId();
+        eid3 = insertTestElement(*firstModel, catId, expectedIntegerPropertyValueForElement3)->GetElementId();
         first->SaveChanges();
         history.push_back(createRevision(*first));
         firstParent = 0;        // when I push a changeset, it automatically becomes my parent
@@ -2530,7 +2533,7 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
         updateIntegerProperty(*second, eid2, expectedIntegerPropertyValueForElement2 = 222);
         second->SaveChanges();
 
-        // merge first's changeset and accept his change
+        // merge first's changeset
         ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
 
         ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());  // updateVsDelete = acceptIncomingChanges
@@ -2542,6 +2545,70 @@ TEST_F(RevisionTestFixture, OptimisiticConcurrencyConflict)
         history.push_back(createRevision(*second));
         ++secondParent;
         }
+
+    // first: pull and verify that delete still stands
+    if (true)
+        {
+        ASSERT_TRUE(!first->Elements().GetElement(eid2).IsValid()) << "eid2 should be gone in first's briefcase";
+        ASSERT_EQ( RevisionStatus::Success, first->Revisions().MergeRevision(*history[++firstParent]) );
+        ASSERT_TRUE(!first->Elements().GetElement(eid2).IsValid()) << "eid2 should still be gone in first's briefcase";
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+        first->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+        }
+
+#ifdef NOT_SUPPORTED_1u2d1r
+
+    // ----------------------------------------------------
+    // --- update vs delete  - reject in-coming change ----
+    // ----------------------------------------------------
+    // Note that eid and eid3 were deleted in the tests above. Therefore, work with eid3
+
+    policy.updateVsDelete = OptimisticConcurrencyControl::OnConflict::RejectIncomingChange;
+    first->SetConcurrencyControl(new OptimisticConcurrencyControl(policy));  // adds ref
+    second->SetConcurrencyControl(new OptimisticConcurrencyControl(policy)); // adds ref
+
+    if (true)
+        {
+        auto el3 = first->Elements().GetElement(eid3);
+        el3->Delete();
+        first->SaveChanges();
+        ASSERT_TRUE(!first->Elements().GetElement(eid3).IsValid()) << "eid3 should be gone in first's briefcase";
+        history.push_back(createRevision(*first));
+        ++firstParent;
+        }
+
+    if (true)
+        {
+        verifyIntegerProperty(*second, eid3, expectedIntegerPropertyValueForElement3);
+        updateIntegerProperty(*second, eid3, expectedIntegerPropertyValueForElement3 = 333);
+        second->SaveChanges();
+
+        // merge first's changeset
+        ASSERT_EQ( RevisionStatus::Success, second->Revisions().MergeRevision(*history[++secondParent]) );
+
+        ASSERT_EQ(0, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());  // updateVsDelete = rejectIncomingChanges
+        ASSERT_EQ(1, second->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+        second->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+
+        verifyIntegerProperty(*second, eid3, expectedIntegerPropertyValueForElement3);  // eid3 should still be in my briefcase, with my change.
+
+        history.push_back(createRevision(*second));
+        ++secondParent;
+        }
+
+    // first: merge and see that second overrode my change. Verify that there is no conflict reported.
+    if (true)
+        {
+        ASSERT_TRUE(!first->Elements().GetElement(eid3).IsValid()) << "eid3 should be gone in first's briefcase";
+        ASSERT_EQ( RevisionStatus::Success, first->Revisions().MergeRevision(*history[++firstParent]) );
+        verifyIntegerProperty(*first, eid3, expectedIntegerPropertyValueForElement3); // eid3 should be back again
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsAccepted().size());
+        ASSERT_EQ(0, first->GetOptimisticConcurrencyControl()->_GetConflictingElementsRejected().size());
+        first->GetOptimisticConcurrencyControl()->_ConflictsProcessed();
+        }
+
+#endif
 
     first->SaveChanges();
     first = nullptr;
