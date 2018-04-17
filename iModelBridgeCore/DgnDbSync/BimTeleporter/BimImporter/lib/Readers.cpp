@@ -1743,6 +1743,14 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
         ECSchemaP toImport = m_importer->m_schemaReadContext->GetCache().GetSchema(ecSchema->GetSchemaKey(), SchemaMatchType::Latest);
         ValidateBaseClasses(toImport);
 
+        for (ECEnumerationCP ecEnum : toImport->GetEnumerations())
+            {
+            if (!ecEnum->GetIsStrict())
+                continue;
+            ECEnumerationP nonConstEnum = const_cast<ECEnumerationP>(ecEnum);
+            nonConstEnum->SetIsStrict(false);
+            }
+
         if (!ECSchemaConverter::Convert(*toImport, false))
             {
             Utf8PrintfString error("Failed to run the schema converter on exported ECSchema '%s'", toImport->GetFullSchemaName().c_str());
@@ -1750,7 +1758,7 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
             return BSIERROR;
             }
 
-#define EXPORT_FLATTENEDECSCHEMAS 1
+//#define EXPORT_FLATTENEDECSCHEMAS 1
 #ifdef EXPORT_FLATTENEDECSCHEMAS
         BeFileName flatFolder = bimFileName.GetDirectoryName().AppendToPath(bimFileName.GetFileNameWithoutExtension().AppendUtf8("_flat").c_str());
         if (!flatFolder.DoesPathExist())
