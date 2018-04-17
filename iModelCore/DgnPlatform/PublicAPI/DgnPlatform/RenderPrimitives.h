@@ -179,6 +179,9 @@ public:
 
 
     DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
+
+    DGNPLATFORM_EXPORT static uint8_t GetMinTransparency();
+    DGNPLATFORM_EXPORT static ColorDef AdjustTransparency(ColorDef);
 };
 
 //=======================================================================================
@@ -251,6 +254,8 @@ public:
 
     void ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvector<uint16_t> const& indices) const;
     Map const& GetMap() const { return m_map; }
+
+    bool FindByIndex(ColorDef& color, uint16_t index) const;
 };
 
 //=======================================================================================
@@ -430,6 +435,8 @@ public:
     MeshEdgesPtr                    GetEdges() const { return m_edges; }
     MeshEdgesPtr&                   GetEdgesR() { return m_edges; }
     void                            SetFeatureIndices (bvector<uint32_t>&& indices) { m_features.SetIndices(std::move(indices)); }
+    bvector<uint32_t> const&        GetFeatureIndices() const { return m_features.m_indices; }
+    bool                            GetUniformFeatureIndex(uint32_t& index) const { if (!m_features.m_initialized || !m_features.m_indices.empty()) return false; index = m_features.m_uniform; return true; }
 
     bool IsEmpty() const { return m_triangles.Empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }
@@ -437,6 +444,8 @@ public:
     PrimitiveType GetType() const { return m_type; }
     FeatureTableCP GetFeatureTable() const { return m_features.m_table; }
     MeshAuxDataCR GetAuxData() const { return m_auxData; }
+    MeshAuxDataR GetAuxData() { return m_auxData; }
+    
 
     DGNPLATFORM_EXPORT DRange3d ComputeRange() const;
     DGNPLATFORM_EXPORT DRange3d ComputeUVRange() const;
@@ -636,9 +645,9 @@ public:
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar); }
 
     DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, MeshAuxDataCP auxData);
-    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
-    void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
-    void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
+    DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance);
+    void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance);
+    void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
     DGNPLATFORM_EXPORT void EndPolyface();
 
@@ -678,11 +687,10 @@ struct Strokes
         {
         double              m_startDistance;
         bvector<DPoint3d>   m_points;
-        DPoint3d            m_rangeCenter;
 
-        PointList(double startDistance, DPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
-        PointList() : m_startDistance(0.0), m_rangeCenter(DPoint3d::FromZero()) { }
-        PointList(bvector<DPoint3d>&& points, DPoint3dCR rangeCenter) : m_startDistance(0.0), m_points(std::move(points)), m_rangeCenter(rangeCenter) { }
+        explicit PointList(double startDistance) : m_startDistance(startDistance) { }
+        PointList() : m_startDistance(0.0) { }
+        explicit PointList(bvector<DPoint3d>&& points) : m_startDistance(0.0), m_points(std::move(points)) { }
         };
 
     typedef bvector<PointList> PointLists;
@@ -857,6 +865,7 @@ private:
     bool                        m_surfacesOnly;
     bool                        m_haveTransform;
     bool                        m_checkGlyphBoxes = false;
+    bool                        m_addingCurved = false;
     DRange3d                    m_tileRange;
 
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsCR displayParams, TransformCR transform, ClipVectorCP clip, bool disjoint);
@@ -912,6 +921,8 @@ public:
     //! If enabled, TextString range will be tested against chord tolerance to determine whether the text should be stroked or rendered as a simple box.
     //! By default, it is always stroked.
     void SetCheckGlyphBoxes(bool check) { m_checkGlyphBoxes = check; }
+    void SetAddingCurved(bool curved) { m_addingCurved = curved; }
+    bool IsAddingCurved() const { return m_addingCurved; }
 };
 
 //=======================================================================================
@@ -987,6 +998,9 @@ public:
     DisplayParamsCR GetTextDisplayParams() const { return GetDisplayParams(DisplayParams::Type::Text, false); }
 
     System& GetSystem() const { return m_accum.GetSystem(); }
+
+    void SetAddingCurved(bool curved) { m_accum.SetAddingCurved(curved); }
+    bool IsAddingCurved() const { return m_accum.IsAddingCurved(); }
 
     void Add(GeometryR geom) { m_accum.AddGeometry(geom); }
 

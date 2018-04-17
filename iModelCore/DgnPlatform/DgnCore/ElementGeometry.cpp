@@ -4945,7 +4945,7 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic, Geom
         {
         if (FillDisplay::Never != m_elParams.GetFillDisplay())
             {
-            if (nullptr != m_elParams.GetGradient())
+            if (nullptr != m_elParams.GetGradient() && !m_elParams.GetGradient()->IsThematic())
                 {
                 if (!allowPatGradnt)
                     hasInvalidPatGradnt = true;

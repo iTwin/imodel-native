@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileWriter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -333,6 +333,23 @@ Utf8String    Writer::AddParamAttribute(FPoint2d const* params, size_t nParams, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String    Writer::AddPointAttribute(FPoint3d const* points, size_t nPoints, Utf8StringCR name, Utf8StringCR id) 
+    {
+    Utf8String          nameId =  Utf8String(name) + Utf8String(id),
+                        accessorId = Utf8String("acc") + nameId,
+                        bufferViewId = Utf8String("bv") + nameId;
+
+    AddBufferView(bufferViewId.c_str(), points, nPoints);
+    AddAccessor(Gltf::DataType::Float, accessorId, bufferViewId, nPoints, "VEC3");
+    m_json["bufferViews"][bufferViewId]["target"] = Gltf::ArrayBuffer;
+
+    return accessorId;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Writer::AddMeshIndices(Utf8StringCR name, uint32_t const* indices, size_t numIndices, Utf8StringCR idStr, size_t maxIndex)
@@ -457,13 +474,9 @@ Json::Value Writer::AddNormalPairs(OctEncodedNormalPairCP pairs, size_t numPairs
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Writer::AppendPolylineToBufferView(MeshPolylineCR polyline, bool useShortIndices)
     {
-    auto frangeCenter = FPoint3d::From(polyline.GetRangeCenter());
     float fstartDistance = polyline.GetStartDistance();
 
     m_binaryData.Append(fstartDistance);
-    m_binaryData.Append(frangeCenter.x);
-    m_binaryData.Append(frangeCenter.y);
-    m_binaryData.Append(frangeCenter.z);
     m_binaryData.Append((uint32_t) polyline.GetIndices().size());
     for (auto& index : polyline.GetIndices())
         {
