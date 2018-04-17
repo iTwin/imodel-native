@@ -397,7 +397,7 @@ private:
     mutable MeshEdgesPtr            m_edges;
     bool                            m_is2d;
     bool                            m_isPlanar;
-    PolyfaceAuxChannelPtr     m_auxChannel;
+    MeshAuxData                     m_auxData;
 
     Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
         : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar) { }
@@ -440,6 +440,7 @@ public:
     bool IsPlanar() const { return m_isPlanar; }
     PrimitiveType GetType() const { return m_type; }
     FeatureTableCP GetFeatureTable() const { return m_features.m_table; }
+    MeshAuxDataCR GetAuxData() const { return m_auxData; }
 
     DGNPLATFORM_EXPORT DRange3d ComputeRange() const;
     DGNPLATFORM_EXPORT DRange3d ComputeUVRange() const;
@@ -447,7 +448,7 @@ public:
     void AddTriangle(TriangleCR triangle) { BeAssert(PrimitiveType::Mesh == GetType()); m_triangles.AddTriangle(triangle); }
     void AddPolyline(MeshPolylineCR polyline);
     uint32_t AddVertex(QPoint3dCR vertex, OctEncodedNormalCP normal, DPoint2dCP param, uint32_t fillColor, FeatureCR feature);
-    void AddAuxChannel(PolyfaceAuxChannelCR channel, size_t index);
+    void AddAuxChannel(MeshAuxDataCR auxData, size_t index);
 
     GraphicPtr GetGraphics (MeshGraphicArgs& args, Dgn::Render::SystemCR system, DgnDbR db) const;
 };
@@ -475,13 +476,12 @@ struct MeshBuilderMap
         Mesh::PrimitiveType m_type;
         bool                m_hasNormals;
         bool                m_isPlanar;
-        Utf8String          m_auxChannel;
 
-        Key(DisplayParamsCP params, Mesh::PrimitiveType type, bool hasNormals, bool isPlanar, Utf8CP auxChannel = nullptr) : m_params(params), m_type(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar), m_auxChannel(auxChannel) { }
+        Key(DisplayParamsCP params, Mesh::PrimitiveType type, bool hasNormals, bool isPlanar) : m_params(params), m_type(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar) { }
     public:
         Key() : Key(nullptr, Mesh::PrimitiveType::Mesh,false, false) { }
         explicit Key(MeshCR mesh) : Key(mesh.GetDisplayParams(), !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
-        Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar, Utf8CP auxChannel = nullptr) : Key(&params, type, hasNormals, isPlanar, auxChannel) { }
+        Key(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar) : Key(&params, type, hasNormals, isPlanar) { }
 
         void SetOrder(uint16_t order) { m_order = order; }
 
@@ -499,9 +499,6 @@ struct MeshBuilderMap
 
             if (m_hasNormals != rhs.m_hasNormals)
                 return !m_hasNormals;
-
-            if (m_auxChannel != rhs.m_auxChannel)
-                return m_auxChannel < rhs.m_auxChannel;
 
             BeAssert(m_params.IsValid() && rhs.m_params.IsValid());
             return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
@@ -609,6 +606,7 @@ struct TriangleKey
 typedef bmap<VertexKey, uint32_t> VertexMap;
 typedef bset<TriangleKey> TriangleSet;
 
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
@@ -632,17 +630,16 @@ private:
     double                          m_areaTolerance;
     RefCountedPtr<Polyface>         m_currentPolyface;
     DRange3d                        m_tileRange;
-    Utf8String                      m_auxChannel;   // WIP - Scientific visualization.
 
-    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, Utf8StringCR auxChannel)
-        : m_mesh(Mesh::Create(params, featureTable, type, range, is2d, isPlanar)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range), m_auxChannel(auxChannel) { }
+    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
+        : m_mesh(Mesh::Create(params, featureTable, type, range, is2d, isPlanar)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
 
     uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
-    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar, Utf8StringCR auxChannel)
-        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar, auxChannel); }
+    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
+        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar); }
 
-    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, Utf8CP auxChannel);
+    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, MeshAuxDataCP auxData);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, uint32_t fillColor, double startDistance);
     void AddPolyline(bvector<QPoint3d> const&, FeatureCR, uint32_t fillColor, double startDistance);
     void AddPointString(bvector<DPoint3d> const& pointString, FeatureCR feature, uint32_t fillColor, double startDistance);

@@ -1113,8 +1113,10 @@ BentleyStatus Loader::_LoadTile()
 
         if (!tile._IsPartial())
             {
+            // Possible that one or more parent tiles will contain solely elements too small to produce geometry, in which case
+            // we must create their children in order to get graphics...mark undisplayable.
+            tile.SetDisplayable(batch.IsValid());
             tile.ClearBackupGraphic();
-            // tile.SetIsReady();
             return SUCCESS;
             }
         else
@@ -2058,14 +2060,9 @@ MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContext
     SetViewFlags(TileContext::GetDefaultViewFlags());
 
 
-//#define TEST_THEMATIC_HEIGHT
-#ifdef TEST_THEMATIC_HEIGHT
-    SetActiveAuxChannel("Height");
-    ThematicDisplaySettings     heightDisplaySettings;
-    heightDisplaySettings.SetSteppedDisplay(ThematicSteppedDisplay_FastWithIsolines);
-    auto                        projectExtents = m_tile.GetElementRoot().GetDgnDb().GeoLocation().ComputeProjectExtents();
-    m_thematicMeshBuilder  = new ThematicMeshBuilder("Height", *loadContext.GetRenderSystem(), m_tile.GetElementRoot().GetDgnDb(), heightDisplaySettings, ThematicCookedRange(projectExtents.low.z, projectExtents.high.z));
-#endif
+    // For now always create -- (use first aux channel) - TBD control from UX.
+    ThematicDisplaySettings     displaySettings;
+    m_thematicMeshBuilder  = new ThematicMeshBuilder("", *loadContext.GetRenderSystem(), m_tile.GetElementRoot().GetDgnDb(), displaySettings);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2214,9 +2211,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 
     if (m_thematicMeshBuilder.IsValid() &&
         m_thematicMeshBuilder->DoThematicDisplay(*polyface, thematicTexture))
-        {
         displayParams = displayParams->CloneWithTextureOverride(thematicTexture);
-        }
 
     if (isContained)
         {                                                                                                                                          
@@ -2238,27 +2233,24 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId elemId, DisplayParamsCR displayParams, MeshEdgeCreationOptions edgeOptions, bool isPlanar)
     {
-    bool        hasTexture = displayParams.IsTextured();
-    bool        anyContributed = false;
-    uint32_t    fillColor = displayParams.GetFillColor();
-    DgnDbR      db = m_tile.GetElementRoot().GetDgnDb();
+    bool                hasTexture = displayParams.IsTextured();
+    bool                anyContributed = false;
+    uint32_t            fillColor = displayParams.GetFillColor();
+    DgnDbR              db = m_tile.GetElementRoot().GetDgnDb();
+    MeshAuxData         auxData;
 
     MeshBuilderMap::Key key(displayParams, nullptr != polyface.GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, isPlanar);
     MeshBuilderR        builder = GetMeshBuilder(key);
 
     builder.BeginPolyface(polyface, edgeOptions);
 
-    Utf8CP      thisAuxChannel = nullptr, activeAuxChannel =  GetActiveAuxChannel().empty() ? nullptr : GetActiveAuxChannel().c_str();
-
-    if (nullptr != activeAuxChannel &&
-        polyface.GetAuxDataCP().IsValid() &&
-        polyface.GetAuxDataCP()->GetChannel(activeAuxChannel).IsValid())
-       thisAuxChannel = activeAuxChannel;
+    if (m_thematicMeshBuilder.IsValid())
+        m_thematicMeshBuilder->BuildMeshAuxData(auxData, polyface);
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
         anyContributed = true;
-        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP(), thisAuxChannel);
+        builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), hasTexture, fillColor, nullptr != polyface.GetNormalCP(), &auxData);
         m_contentRange.Extend(visitor->Point());
         }
 

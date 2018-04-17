@@ -1005,12 +1005,14 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    Mesh::AddAuxChannel(PolyfaceAuxChannelCR channel, size_t index)
+void    Mesh::AddAuxChannel(MeshAuxDataCR auxData, size_t index)
     {
-    if (!m_auxChannel.IsValid())
-        m_auxChannel = channel.CloneWithoutData();
+    if (auxData.m_displacementChannel.IsValid())
+        auxData.m_displacementChannel->AppendDataByIndex(m_auxData.m_displacementChannel, index);
 
-    m_auxChannel->AppendDataByIndex(channel, index);
+    if (auxData.m_paramChannel.IsValid())
+        auxData.m_paramChannel->AppendDataByIndex(m_auxData.m_paramChannel, index);
+        
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1231,7 +1233,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, Utf8CP auxChannelName)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, MeshAuxDataCP auxData)
     {
     if (visitor.Point().size() < 3)
         return;
@@ -1239,11 +1241,6 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
     size_t          nTriangles = points.size() - 2;
-
-    PolyfaceAuxChannelCPtr auxChannel;
-    
-    if (nullptr != auxChannelName && visitor.GetAuxDataCP().IsValid())
-        auxChannel = visitor.GetAuxDataCP()->GetChannel(auxChannelName);
 
     if (requireNormals && visitor.Normal().size() < points.size())
         return; // TFS#790263: Degenerate triangle - no normals.
@@ -1294,11 +1291,11 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
             {
             size_t index = indices[i];
             VertexKey const& vertex = vertices[i];
-            if (auxChannel.IsValid())
+            if (nullptr != auxData && visitor.GetAuxDataCP().IsValid())
                 {
                 // No deduplication with auxData (for now...)
                 newTriangle[i] = m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
-                m_mesh->AddAuxChannel(*auxChannel, index);
+                m_mesh->AddAuxChannel(*auxData, visitor.GetAuxDataCP()->GetIndices().at(index));
                 }
             else
                 {
@@ -2031,27 +2028,19 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
     // This ensures the builder map is organized in the same order as the geometry list, and no meshes are merged.
     // This is required to make overlay decorations render correctly.
     uint16_t    order = 0;
-    Utf8CP      activeAuxChannel =  context.GetActiveAuxChannel().empty() ? nullptr : context.GetActiveAuxChannel().c_str();
     for (auto const& geom : m_geometries)                                                                        
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
         for (auto const& tilePolyface : polyfaces)
             {
-            Utf8CP      auxChannel = nullptr;
-
             PolyfaceHeaderPtr polyface = tilePolyface.m_polyface;
             if (polyface.IsNull() || 0 == polyface->GetPointCount())
                 continue;
 
-            if (nullptr != activeAuxChannel &&
-                polyface->GetAuxDataCP().IsValid() &&
-                polyface->GetAuxDataCP()->GetChannel(activeAuxChannel).IsValid())
-                auxChannel = activeAuxChannel;
-
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
-            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar, auxChannel);
+            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
             if (options.WantPreserveOrder())
                 key.SetOrder(order++);
 
@@ -2062,7 +2051,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), auxChannel);
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), nullptr);
 
             meshBuilder.EndPolyface();
             }
@@ -2564,6 +2553,7 @@ bool MeshArgs::Init(MeshCR mesh)
         }
 
     m_edges.m_polylines.Init(m_polylineEdges);
+    m_auxData = mesh.GetAuxData();
 
     return true;
     }
@@ -3529,7 +3519,7 @@ MeshBuilderR MeshBuilderMap::operator[](Key const& key)
     auto found = m_map.find(key);
     if (m_map.end() == found)
         {
-        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar, key.m_auxChannel);
+        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar);
         found = m_map.Insert(key, builder).first;
         }
 

@@ -2463,6 +2463,76 @@ struct MeshEdges : RefCountedBase
 };
 
 //=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2018
+//=======================================================================================
+template <typename T_Data>  struct AuxChannel : RefCountedBase
+{
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Data);
+    DEFINE_REF_COUNTED_PTR(Data);
+
+    struct Data : RefCountedBase
+        { 
+        private:
+        float               m_input;
+        bvector<T_Data>     m_values;
+
+        public:
+        float                       GetInput() const                     { return m_input; }
+        bvector<T_Data> const&      GetValues() const                    { return m_values; }
+        bvector<T_Data>&            GetValues()                          { return m_values; }
+        T_Data const&               GetValue(size_t i) const             { return m_values.at(i); }
+        size_t                      GetValueByteCount() const            { return m_values.size() * sizeof(T_Data); }
+        Data(float input, bvector<T_Data>&& values) : m_input(input), m_values(values) { }
+        };
+private:
+    bvector<DataPtr>         m_data;    
+
+public:
+        AuxChannel( bvector<DataPtr>&& data) : m_data(std::move(data)) { }
+        void AppendDataByIndex(RefCountedPtr<AuxChannel>& output, size_t index)
+            {
+            if (!output.IsValid())
+                output =  CloneWithoutData();
+
+            for (size_t i=0; i<m_data.size(); i++)
+                output->m_data[i]->GetValues().push_back(m_data[i]->GetValue(index));
+            }
+        AuxChannel* CloneWithoutData()
+            {
+            bvector<DataPtr>    dataVector;
+
+            for (auto& data : m_data)
+                {
+                bvector<T_Data>     values;
+                dataVector.push_back (new Data(data->GetInput(), std::move(values)));
+                }
+                
+            return new AuxChannel(std::move(dataVector));
+            }
+        bvector<DataPtr> const& GetData() const { return m_data; }
+};
+
+using AuxDisplacementChannel = AuxChannel<DPoint3d>;
+using AuxParamChannel = AuxChannel<DPoint2d>;
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(AuxDisplacementChannel);
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(AuxParamChannel);
+DEFINE_REF_COUNTED_PTR(AuxDisplacementChannel);
+DEFINE_REF_COUNTED_PTR(AuxParamChannel);
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2018
+//=======================================================================================
+struct MeshAuxData 
+{
+    AuxDisplacementChannelPtr       m_displacementChannel;
+    AuxParamChannelPtr              m_paramChannel;
+
+    bool IsValid() const { return m_displacementChannel.IsValid() || m_paramChannel.IsValid(); }
+};  
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshAuxData);
+//=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
 struct EdgeArgs
@@ -2543,6 +2613,8 @@ struct TriMeshArgs
     FillFlags                       m_fillFlags = FillFlags::None;
     bool                            m_isPlanar = false;
     bool                            m_is2d = false;
+    MeshAuxData                     m_auxData;
+
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };

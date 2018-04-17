@@ -345,7 +345,9 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         return Status::Success != m_acceptTileStatus ? m_acceptTileStatus : status;
         }
 
-    OutputStatistics(generator.GetStatistics());
+    if (params.WantOutputFinalStatistics())
+        OutputStatistics(generator.GetStatistics());
+
     return WriteWebApp(GetGroundPoint(range, params), params);
     }
 
