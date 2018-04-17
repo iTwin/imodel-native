@@ -2523,7 +2523,8 @@ BentleyApi::BentleyStatus DynamicSchemaGenerator::RetrieveV8ECSchemas(DgnV8Model
 
             schemaXml = Bentley::Utf8String(schemaXmlW);
             const size_t xmlByteSize = schemaXml.length() * sizeof(Utf8Char);
-            schemaKey.m_checkSum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
+            // WIP_REMOVE_CheckSum
+            // schemaKey.m_checkSum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
 
             isDynamicSchema = IsDynamicSchema(schemaName, schemaXml);
 
@@ -2654,7 +2655,8 @@ BentleyStatus DynamicSchemaGenerator::ProcessSchemaXml(const ECObjectsV8::Schema
 
             if (existingToNewVersionDiff >= 0)
                 {
-                if (existingToNewVersionDiff == 0 && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
+                // WIP_REMOVE_CheckSum
+                if (existingToNewVersionDiff == 0) //  && existingSchemaKey.m_checkSum != schemaKey.m_checkSum)
                     {
                     Utf8String error;
                     error.Sprintf("ECSchema %s already found in the V8 file with a different checksum (%u). Copy in model %s with checksum %u will be merged.  This may result in inconsistencies between the DgnDb version and the versions in the Dgn.",
@@ -2889,7 +2891,8 @@ void DynamicSchemaGenerator::CheckECSchemasForModel(DgnV8ModelR v8Model, bmap<Ut
 
             schemaXml = Bentley::Utf8String(schemaXmlW);
             const size_t xmlByteSize = schemaXml.length() * sizeof(Utf8Char);
-            checksum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
+            // WIP_REMOVE_CheckSum
+            // checksum = BECN::ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), xmlByteSize);
             }
         else
             {
