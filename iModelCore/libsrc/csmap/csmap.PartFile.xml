@@ -20,7 +20,7 @@
         <SubPart PartName="PrebuiltGeoCoordData" PartFile="csmap_data" Repository="thirdparty-csmap_data_2017A"/>
         <SubPart PartName="GeoCoordDataMinimal"/>
         <Bindings>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord" SubPartDirectory="GeoCoordData">
+            <Files Feature="GeoCoordAssets" FeatureDefault="Yes" ProductDirectoryName="Assets" ProductSubDirectory="DgnGeoCoord" SubPartDirectory="GeoCoordData">
                 Delivery/GeoCoordData/coordsys.dty.xml
                 Delivery/GeoCoordData/UserOverrideGeodeticTransformSeed.asc
             </Files>
