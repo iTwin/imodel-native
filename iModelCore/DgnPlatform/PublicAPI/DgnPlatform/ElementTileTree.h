@@ -51,7 +51,11 @@ struct Loader : TileTree::TileLoader
     DEFINE_T_SUPER(TileTree::TileLoader);
 
 private:
-    uint64_t    m_createTime;
+    uint64_t        m_createTime;       // The time of the most recent change to any element in the associated model when the tile loader was created.
+    uint64_t        m_cacheCreateTime;  // The time of the most recent change to any element in the associated model when the tile cache data was created.
+    DgnElementIdSet m_omitElemIds;      // IDs of any elements present in cache FeatureTable but since deleted from associated model or modified.
+    DgnElementIdSet m_tileElemIds;      // IDs of elements present in cache, modulo any present in m_omitElemIds.
+    Render::Primitives::GeometryCollection  m_geometry;
 
     Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
 
@@ -59,11 +63,14 @@ private:
     BentleyStatus _LoadTile() override;
     bool _IsExpired(uint64_t) override;
     bool _IsValidData() override;
+    bool _IsCompleteData() override;
     folly::Future<BentleyStatus> _ReadFromDb() override;
 
-    BentleyStatus LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry);
+    BentleyStatus LoadGeometryFromModel();
+    void SetupForTileRepair();
     BentleyStatus DoGetFromSource();
     bool IsCacheable() const;
+    bool IsExpired() const { return m_cacheCreateTime < m_createTime; }
     TileCR GetElementTile() const;
     TileR GetElementTile();
 
@@ -294,6 +301,8 @@ public:
     void UpdateRange(DRange3dCR parentOld, DRange3dCR parentNew, bool allowShrink);
 
     virtual bool IsCacheable() const;
+    void SetGenerator(TileGeneratorUPtr&&);
+	void SetDisplayable(bool displayable) { m_displayable = displayable; }
 };
 
 //=======================================================================================

@@ -474,13 +474,9 @@ Json::Value Writer::AddNormalPairs(OctEncodedNormalPairCP pairs, size_t numPairs
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Writer::AppendPolylineToBufferView(MeshPolylineCR polyline, bool useShortIndices)
     {
-    auto frangeCenter = FPoint3d::From(polyline.GetRangeCenter());
     float fstartDistance = polyline.GetStartDistance();
 
     m_binaryData.Append(fstartDistance);
-    m_binaryData.Append(frangeCenter.x);
-    m_binaryData.Append(frangeCenter.y);
-    m_binaryData.Append(frangeCenter.z);
     m_binaryData.Append((uint32_t) polyline.GetIndices().size());
     for (auto& index : polyline.GetIndices())
         {

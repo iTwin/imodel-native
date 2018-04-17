@@ -9,6 +9,9 @@
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/TileReader.h>
 
+// Uncomment to turn on validation of logic for tile cache => MeshBuilderMap => GeometryCollection for debugging.
+// #define TEST_TILE_REBUILDER
+
 USING_NAMESPACE_TILETREE_IO
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER
@@ -574,13 +577,9 @@ BentleyStatus GltfReader::ReadPolylines(bvector<MeshPolyline>& polylines, Json::
         uint32_t                nIndices = 0;
         bvector<uint32_t>       indices;
         float                   startDistance;
-        FPoint3d                fRangeCenter;
 
         CopyAndIncrement(&startDistance, pData, sizeof(startDistance));
-        CopyAndIncrement(&fRangeCenter, pData, sizeof(fRangeCenter));
         CopyAndIncrement(&nIndices, pData, sizeof(nIndices));
-
-        DPoint3d rangeCenter = DPoint3d::From(fRangeCenter);
 
         indices.resize(nIndices);
         if (Gltf::DataType::UnsignedShort == type)
@@ -604,7 +603,7 @@ BentleyStatus GltfReader::ReadPolylines(bvector<MeshPolyline>& polylines, Json::
             continue;
             }
 
-        polylines.push_back(MeshPolyline(startDistance, rangeCenter, std::move(indices)));
+        polylines.push_back(MeshPolyline(startDistance, std::move(indices)));
         }
 
     return SUCCESS;
@@ -1005,6 +1004,8 @@ ReadStatus DgnTileReader::ReadFeatureTable(FeatureTableR featureTable)
         featureTable.Insert(Feature(DgnElementId(elementId), DgnSubCategoryId(subCategoryId), static_cast<DgnGeometryClass>(geometryClass)), index);
         }
     
+    featureTable.SetModelId(m_model.GetModelId());
+
     m_buffer.SetPos(startPos + header.length);
 
     return ReadStatus::Success;
@@ -1055,6 +1056,76 @@ bool DgnTileReader::VerifyFeatureTable()
         }
 
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> static bool processDeletedElements(DgnElementIdSet& deletedElemIds, StreamBufferR buffer, DgnModelR model, T func)
+    {
+    StreamBufferScope scope(buffer);
+
+    DgnTile::Header tileHeader;
+    DgnTile::FeatureTableHeader tableHeader;
+    if (!tileHeader.Read(buffer) || !tableHeader.Read(buffer))
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    // Ugh, we must use ECSql because ECDb persists datetime as floating-point julian day value...
+    CachedECSqlStatementPtr stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT LastMod FROM " BIS_SCHEMA(BIS_CLASS_Element) " WHERE ECInstanceId=?");
+    uint32_t numBytesToSkip = sizeof(uint64_t) + sizeof(uint32_t) + sizeof(uint32_t);
+    for (size_t i = 0; i < tableHeader.count; i++)
+        {
+        uint64_t elemId64;
+        if (!buffer.Read(elemId64) || !buffer.Advance(numBytesToSkip))
+            {
+            BeAssert(false);
+            return false;
+            }
+
+        DgnElementId elemId(elemId64);
+        stmt->BindId(1, elemId);
+        if (BE_SQLITE_ROW != stmt->Step())
+            deletedElemIds.insert(elemId);
+        else
+            func(*stmt, elemId);
+
+        stmt->Reset();
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnTileReader::FindDeletedElements(DgnElementIdSet& deletedElemIds)
+    {
+    auto noop = [](CachedECSqlStatement& stmt, DgnElementId elemId) { };
+    return processDeletedElements(deletedElemIds, m_buffer, m_model, noop);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnTileReader::GetElements(DgnElementIdSet& deletedOrModified, DgnElementIdSet& unmodified, uint64_t lastModTime)
+    {
+    return processDeletedElements(deletedOrModified, m_buffer, m_model, [&](CachedECSqlStatement& stmt, DgnElementId elemId)
+        {
+        DateTime dt = stmt.GetValueDateTime(0);
+        int64_t unixMillis;
+        if (SUCCESS == dt.ToUnixMilliseconds(unixMillis))
+            {
+            auto& set = static_cast<uint64_t>(unixMillis) <= lastModTime ? unmodified : deletedOrModified;
+            set.insert(elemId);
+            }
+        else
+            {
+            BeAssert(false);
+            }
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1136,7 +1207,6 @@ private:
     struct PolylineHeader
     {
         float           m_startDistance;
-        FPoint3d        m_rangeCenter;
         uint32_t        m_numIndices;
     };
 
@@ -1456,6 +1526,9 @@ void DgnCacheTileRebuilder::AddMesh(MeshPrimitive& mesh, Json::Value const& json
         uint32_t index = mesh.m_indices[i];
         uint32_t featureId = mesh.m_features.GetFeatureId(index);
         FeatureCP feature = m_featureList.GetFeature(featureId);
+#if defined(TEST_TILE_REBUILDER)
+        BeAssert(nullptr != feature);
+#endif
         AddTriangle(builder, mesh, i, feature);
         }
 
@@ -1491,7 +1564,7 @@ void DgnCacheTileRebuilder::AddMeshEdges(MeshBuilderR builder, MeshPrimitive con
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCacheTileRebuilder::Polyline DgnCacheTileRebuilder::ReadPolyline(void const*& pData, bool useShortIndices)
     {
-    static_assert(sizeof(PolylineHeader) == sizeof(float)+sizeof(FPoint3d)+sizeof(uint32_t), "Unexpected sizeof");
+    static_assert(sizeof(PolylineHeader) == sizeof(float)+sizeof(uint32_t), "Unexpected sizeof");
 
     Polyline polyline;
     CopyAndIncrement(&polyline.m_header, pData, sizeof(polyline.m_header));
@@ -1551,7 +1624,7 @@ void DgnCacheTileRebuilder::AddPolylines(MeshPrimitive const& mesh, Json::Value 
 
         // Fill color will also be the same for all vertices
         uint32_t fillColor = mesh.GetVertexColor(firstIndex);
-        builder.AddPolyline(points, *feature, fillColor, polyline.m_header.m_startDistance, DPoint3d::From(polyline.m_header.m_rangeCenter));
+        builder.AddPolyline(points, *feature, fillColor, polyline.m_header.m_startDistance);
         }
     }
 
@@ -1588,7 +1661,7 @@ void DgnCacheTileRebuilder::AddPolylineEdges(MeshEdgesR edges, MeshPrimitive con
         for (uint32_t i = 1; i < polyline.m_header.m_numIndices; i++)
             newIndices[i] = mesh.RemapIndex(polyline.m_indices[i]);
 
-        MeshPolyline mpl(polyline.m_header.m_startDistance, DPoint3d::From(polyline.m_header.m_rangeCenter), std::move(newIndices));
+        MeshPolyline mpl(polyline.m_header.m_startDistance, std::move(newIndices));
         edges.m_polylines.push_back(std::move(mpl));
         }
     }
@@ -1740,13 +1813,88 @@ ReadStatus DgnCacheTileRebuilder::ReadTile(DgnTile::Flags& flags, DgnElementIdSe
 
 #if defined(TEST_TILE_REBUILDER)
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   04/18
+//=======================================================================================
+struct MeshVertex
+{
+    QPoint3d            m_pos;
+    OctEncodedNormal    m_normal = OctEncodedNormal::From(0);
+    Feature             m_feature;
+    ColorDef            m_color = ColorDef::Magenta();
+    FPoint2d            m_param;
+
+    MeshVertex(MeshCR mesh, uint32_t index)
+        {
+        BeAssert(index < mesh.Verts().size());
+        m_pos = mesh.Verts()[index];
+
+        if (!mesh.Normals().empty())
+            m_normal = mesh.Normals()[index];
+
+        if (!mesh.Params().empty())
+            m_param = mesh.Params()[index];
+        else
+            m_param.x = m_param.y = 0.0;
+
+        if (mesh.Colors().empty())
+            {
+            BeAssert(1 == mesh.GetColorTable().size());
+            m_color = ColorDef(mesh.GetColorTable().begin()->first);
+            }
+        else
+            {
+            BeAssert(1 < mesh.GetColorTable().size());
+            auto colorIndex = mesh.Colors()[index];
+            if (!mesh.GetColorTable().FindByIndex(m_color, colorIndex))
+                BeAssert(false);
+            }
+
+        auto const& featureIndices = mesh.GetFeatureIndices();
+        uint32_t featureIndex = 0;
+        if (featureIndices.empty())
+            {
+            if (!mesh.GetUniformFeatureIndex(featureIndex))
+                BeAssert(false);
+            }
+        else
+            {
+            featureIndex = featureIndices[index];
+            }
+
+        BeAssert(nullptr != mesh.GetFeatureTable());
+        if (!mesh.GetFeatureTable()->FindFeature(m_feature, featureIndex))
+            BeAssert(false);
+        }
+
+    bool operator==(MeshVertex const& rhs) const
+        {
+        if (m_pos != rhs.m_pos || m_normal != rhs.m_normal || m_feature != rhs.m_feature || m_color != rhs.m_color)
+            return false;
+
+        static constexpr double tolerance = 0.1;
+        return abs(m_param.x - rhs.m_param.x) < tolerance && abs(m_param.y - rhs.m_param.y);
+        }
+
+    void Compare(MeshVertex const& rhs) const
+        {
+        BeAssert(m_pos == rhs.m_pos);
+        BeAssert(m_normal == rhs.m_normal);
+        BeAssert(m_feature == rhs.m_feature);
+        BeAssert(m_color == rhs.m_color);
+
+        static constexpr double tolerance = 0.1;
+        BeAssert(abs(m_param.x - rhs.m_param.x) < tolerance);
+        BeAssert(abs(m_param.y - rhs.m_param.y) < tolerance);
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
+static void compareMeshEdges(MeshCR lhm, MeshCR rhm, bvector<MeshEdge> const& lhe, bvector<MeshEdge> const& rhe)
     {
     bool asserted = false;
-    auto const& lhe = lhm.GetEdges()->m_visible, rhe = rhm.GetEdges()->m_visible;
     BeAssert(lhe.size() == rhe.size());
     auto const& lhv = lhm.Verts();
     auto const& rhv = rhm.Verts();
@@ -1759,14 +1907,27 @@ static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
              lhp1 = lhv[lh.m_indices[1]],
              rhp0 = rhv[rh.m_indices[0]],
              rhp1 = rhv[rh.m_indices[1]];
-         if (!asserted)
-             {
-             BeAssert(lhp0 == rhp0);
-             BeAssert(lhp1 == rhp1);
-             if (lhp0 != rhp0 || lhp1 != rhp1)
-                 asserted = true;
-             }
+
+        // possibly order of indices reversed due to index remapping...
+        if (lhp0 != rhp0)
+            std::swap(lhp0, lhp1);
+
+        if (!asserted)
+            {
+            BeAssert(lhp0 == rhp0);
+            BeAssert(lhp1 == rhp1);
+            if (lhp0 != rhp0 || lhp1 != rhp1)
+                asserted = true;
+            }
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
+    {
+    compareMeshEdges(lhm, rhm, lhm.GetEdges()->m_visible, rhm.GetEdges()->m_visible);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1774,15 +1935,62 @@ static void compareVisibleEdges(MeshCR lhm, MeshCR rhm)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void compareSilhouettes(MeshCR lhm, MeshCR rhm)
     {
+    compareMeshEdges(lhm, rhm, lhm.GetEdges()->m_silhouette, rhm.GetEdges()->m_silhouette);
 
+    auto const& lhn = lhm.GetEdges()->m_silhouetteNormals;
+    auto const& rhn = rhm.GetEdges()->m_silhouetteNormals;
+    BeAssert(lhn.size() == rhn.size());
+
+    bool asserted = false;
+    for (size_t i = 0; i < lhn.size(); i++)
+        {
+        auto const& lhp = lhn[i];
+        auto const& rhp = rhn[i];
+
+        if (!asserted)
+            {
+            BeAssert(lhp.first == rhp.first);
+            BeAssert(lhp.second == rhp.second);
+            if (lhp.first != rhp.first || lhp.second != rhp.second)
+                asserted = true;
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void comparePolylineEdges(MeshCR lhm, MeshCR rhm)
+static void compareVertices(MeshCR lhm, uint32_t lhi, MeshCR rhm, uint32_t rhi)
     {
+    MeshVertex lhv(lhm, lhi),
+               rhv(rhm, rhi);
 
+    lhv.Compare(rhv);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void comparePolylines(MeshPolylineCR lhl, MeshCR lhm, MeshPolylineCR rhl, MeshCR rhm)
+    {
+    BeAssert(DoubleOps::AlmostEqual(lhl.GetStartDistance(), rhl.GetStartDistance()));
+
+    auto const& lhIndices = lhl.GetIndices();
+    auto const& rhIndices = rhl.GetIndices();
+    BeAssert(lhIndices.size() == rhIndices.size());
+
+    for (size_t i = 0; i < lhIndices.size(); i++)
+        compareVertices(lhm, lhIndices[i], rhm, rhIndices[i]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static void comparePolylineLists(PolylineList const& lhl, PolylineList const& rhl, MeshCR lhm, MeshCR rhm)
+    {
+    BeAssert(lhl.size() == rhl.size());
+    for (size_t i = 0; i < lhl.size(); i++)
+        comparePolylines(lhl[i], lhm, rhl[i], rhm);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1792,7 +2000,7 @@ static void compareEdges(MeshCR lhm, MeshCR rhm)
     {
     compareVisibleEdges(lhm, rhm);
     compareSilhouettes(lhm, rhm);
-    comparePolylineEdges(lhm, rhm);
+    comparePolylineLists(lhm.GetEdges()->m_polylines, rhm.GetEdges()->m_polylines, lhm, rhm);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1805,16 +2013,9 @@ static void compareTriangles(MeshCR lhs, MeshCR rhs)
     auto const& lht = lhs.Triangles().Indices();
     auto const& rht = rhs.Triangles().Indices();
     BeAssert(lht.size() == rht.size());
-    BeAssert(lhv.size() == rhv.size());
-    BeAssert(lhv.GetParams().GetOrigin().AlmostEqual(rhv.GetParams().GetOrigin()));
-    BeAssert(lhv.GetParams().GetScale().AlmostEqual(rhv.GetParams().GetScale()));
 
     for (size_t i = 0; i < lht.size(); i++)
-        {
-        auto lhp = lhv[lht[i]];
-        auto rhp = rhv[rht[i]];
-        BeAssert(lhp == rhp);
-        }
+        compareVertices(lhs, lht[i], rhs, rht[i]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1822,7 +2023,23 @@ static void compareTriangles(MeshCR lhs, MeshCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void compareMeshes(MeshCR lhs, MeshCR rhs)
     {
+    BeAssert(lhs.GetDisplayParams().IsEqualTo(rhs.GetDisplayParams(), DisplayParams::ComparePurpose::Merge));
+
+    auto const& lhct = lhs.GetColorTable();
+    auto const& rhct = rhs.GetColorTable();
+    BeAssert(lhct.size() == rhct.size());
+    for (auto lhi = lhct.begin(), rhi = rhct.begin(); lhi != lhct.end(); ++lhi, ++rhi)
+        BeAssert(lhi->first == rhi->first);
+
+    auto const& lhv = lhs.Verts();
+    auto const& rhv = rhs.Verts();
+    BeAssert(lhv.size() == rhv.size());
+    BeAssert(lhv.GetParams().GetOrigin().AlmostEqual(rhv.GetParams().GetOrigin()));
+    BeAssert(lhv.GetParams().GetScale().AlmostEqual(rhv.GetParams().GetScale()));
+
     compareTriangles(lhs, rhs);
+    comparePolylineLists(lhs.Polylines(), rhs.Polylines(), lhs, rhs);
+
     BeAssert(lhs.GetEdges().IsValid() == rhs.GetEdges().IsValid());
     if (lhs.GetEdges().IsValid() && rhs.GetEdges().IsValid())
         compareEdges(lhs, rhs);
@@ -1833,6 +2050,12 @@ static void compareMeshes(MeshCR lhs, MeshCR rhs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void compareMeshLists(MeshList const& lhs, MeshList const& rhs)
     {
+    FeatureTable const& lhft = lhs.m_features;
+    FeatureTable const& rhft = rhs.m_features;
+    BeAssert(lhft.size() == rhft.size());
+    for (auto lhi = lhft.begin(), rhi = rhft.begin(); lhi != lhft.end(); ++lhi, ++rhi)
+        BeAssert(lhi->first == rhi->first);
+
     for (size_t i = 0; i < lhs.size(); i++)
         compareMeshes(*lhs[i], *rhs[i]);
     }
@@ -1845,31 +2068,8 @@ static void compareMeshLists(MeshList const& lhs, MeshList const& rhs)
 ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange)
     {
 #if defined(TEST_TILE_REBUILDER)
-    DgnTile::Header header;
-    header.Read(streamBuffer);
-    streamBuffer.ResetPos();
-    contentRange = header.contentRange;
-    isLeaf = DgnTile::Flags::None != (header.flags & DgnTile::Flags::IsLeaf);
-
-    geometry.Meshes().FeatureTable() = FeatureTable(model.GetModelId(), 100000); // maxFeatures will be read + updated in ReadFeatureTable()...
-    Render::Primitives::MeshBuilderMap builders(0.0, &geometry.Meshes().FeatureTable(), tileRange, false);
-    DgnTile::Flags flags;
-    auto status = ReadDgnTile(builders, streamBuffer, model, renderSystem, flags, DgnElementIdSet());
-    if (ReadStatus::Success != status)
-        { BeAssert(false); return status; }
-
-    for (auto& builder : builders)
-        {
-        MeshP mesh = builder.second->GetMesh();
-        if (nullptr != mesh && !mesh->IsEmpty())
-            geometry.Meshes().push_back(mesh);
-        }
-
-    if (DgnTile::Flags::None != (flags & DgnTile::Flags::ContainsCurves))
-        geometry.MarkCurved();
-
-    if (DgnTile::Flags::None != (flags & DgnTile::Flags::Incomplete))
-        geometry.MarkIncomplete();
+    // Tile data => MeshBuilderMap => GeometryCollection
+    ReadDgnTile(contentRange, geometry, streamBuffer, model, renderSystem, isLeaf, tileRange, DgnElementIdSet());
 
     // Compare with ordinary deserialization path...
     ElementAlignedBox3d testContentRange;
@@ -1889,6 +2089,43 @@ ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::Ge
 #else
     return DgnTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry, isLeaf);
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf, DRange3dCR tileRange, DgnElementIdSet const& skipElems)
+    {
+    if (skipElems.empty())
+        return ReadDgnTile(contentRange, geometry, streamBuffer, model, renderSystem, isLeaf, tileRange);
+
+    DgnTile::Header header;
+    header.Read(streamBuffer);
+    streamBuffer.ResetPos();
+    contentRange = header.contentRange;
+    isLeaf = DgnTile::Flags::None != (header.flags & DgnTile::Flags::IsLeaf);
+
+    geometry.Meshes().FeatureTable() = FeatureTable(model.GetModelId(), 100000); // maxFeatures will be read + updated in ReadFeatureTable()...
+    Render::Primitives::MeshBuilderMap builders(0.0, &geometry.Meshes().FeatureTable(), tileRange, false);
+    DgnTile::Flags flags;
+    auto status = ReadDgnTile(builders, streamBuffer, model, renderSystem, flags, skipElems);
+    if (ReadStatus::Success != status)
+        { BeAssert(false); return status; }
+
+    for (auto& builder : builders)
+        {
+        MeshP mesh = builder.second->GetMesh();
+        if (nullptr != mesh && !mesh->IsEmpty())
+            geometry.Meshes().push_back(mesh);
+        }
+
+    if (DgnTile::Flags::None != (flags & DgnTile::Flags::ContainsCurves))
+        geometry.MarkCurved();
+
+    if (DgnTile::Flags::None != (flags & DgnTile::Flags::Incomplete))
+        geometry.MarkIncomplete();
+
+    return ReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
