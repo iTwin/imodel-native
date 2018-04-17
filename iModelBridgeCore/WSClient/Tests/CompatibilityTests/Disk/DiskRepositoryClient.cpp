@@ -177,13 +177,12 @@ ICancellationTokenPtr ct
     for (auto pair : m_schemaPaths)
         {
         auto key = pair.first;
+        Utf8String name(key.m_schemaName);
         Utf8String fullName = key.GetFullSchemaName();
         instances.Add({"MetaSchema", "ECSchemaDef", fullName}, {
-                {"Name", key.m_schemaName},
+                {"Name", name},
                 {"VersionMajor", key.m_versionRead},
-                {"VersionMinor", key.m_versionMinor},
-                {"VersionWrite", key.m_versionWrite}
-            });
+                {"VersionMinor", key.m_versionMinor}});
         }
 
     // No ETag because WSG tries to parse it if sent
