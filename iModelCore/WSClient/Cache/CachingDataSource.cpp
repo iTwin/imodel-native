@@ -619,7 +619,6 @@ TempFilePtr CachingDataSource::GetTempFileForSchema(SchemaKeyCR schemaKey)
 bool CachingDataSource::IsServerSchemaSupported(CacheTransactionCR txn, JsonValueCR schemaDef)
     {
     Utf8CP name = schemaDef[CLASS_ECSchemaDef_PROPERTY_Name].asCString();
-    Utf8CP prefix = schemaDef[CLASS_ECSchemaDef_PROPERTY_NameSpacePrefix].asCString();
 
     if (ECSchema::IsStandardSchema(name))
         {
