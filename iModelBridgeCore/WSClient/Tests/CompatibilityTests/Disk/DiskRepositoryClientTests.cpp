@@ -66,7 +66,7 @@ struct DiskRepositoryClientTests : Test
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DiskRepositoryClientTests, GetSchemas_SchemaAndOtherFilesInFolder_CacheCreatationSucceeds)
+TEST_F(DiskRepositoryClientTests, GetSchemas_SchemaAndOtherFilesInFolder_CacheCreationSucceeds)
     {
     BeFileName path = s_testFolder;
     path.AppendToPath(L"TestSchema.01.00.ecschema.xml");
