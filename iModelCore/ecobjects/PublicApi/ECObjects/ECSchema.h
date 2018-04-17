@@ -3817,7 +3817,7 @@ public:
     //! Get a property category by name within the context of this schema.
     //! @param[in]  name     The name of the property category to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::PropertyCategory if the named property category exists in within the current schema; otherwise, nullptr
-    PropertyCategoryCP GetPropertyCategoryP(Utf8CP name) {return GetSchemaChild<PropertyCategory, PropertyCategoryMap>(name, &m_propertyCategoryMap);}
+    PropertyCategoryP GetPropertyCategoryP(Utf8CP name) {return GetSchemaChild<PropertyCategory, PropertyCategoryMap>(name, &m_propertyCategoryMap);}
 
     //! Get a PropertyCategory by name within the context of this schema and all schemas referenced by this schema.
     //! @param[in]  name     The name of schema item to lookup.  This can be either an qualified or unqualified (short) name
