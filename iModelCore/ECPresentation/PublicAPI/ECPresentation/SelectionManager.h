@@ -70,20 +70,23 @@ private:
     SelectionChangeType m_changeType;
     bool m_isSubSelection;
     KeySetCPtr m_keys;
+    uint64_t m_timestamp;
 
-    SelectionChangedEvent(IConnectionCR connection, Utf8String sourceName, SelectionChangeType changeType, bool isSubSelection, KeySetCR keys)
-        : m_connection(&connection), m_sourceName(sourceName), m_changeType(changeType), m_isSubSelection(isSubSelection), m_keys(&keys)
+    SelectionChangedEvent(IConnectionCR connection, Utf8String sourceName, SelectionChangeType changeType, bool isSubSelection, KeySetCR keys, uint64_t timestamp)
+        : m_connection(&connection), m_sourceName(sourceName), m_changeType(changeType), m_isSubSelection(isSubSelection), m_keys(&keys), m_timestamp(timestamp)
         {}
 
     SelectionChangedEvent(SelectionChangedEventCR other)
-        : m_connection(other.m_connection), m_sourceName(other.m_sourceName), m_changeType(other.m_changeType), m_isSubSelection(other.m_isSubSelection), m_keys(other.m_keys)
+        : m_connection(other.m_connection), m_sourceName(other.m_sourceName), m_changeType(other.m_changeType), m_isSubSelection(other.m_isSubSelection),
+        m_keys(other.m_keys), m_timestamp(other.m_timestamp)
         {}
 
 public:
     //! Constructor. Creates the event based on the supplied parameters.
-    ECPRESENTATION_EXPORT static SelectionChangedEventPtr Create(IConnectionCR connection, Utf8String sourceName, SelectionChangeType changeType, bool isSubSelection, KeySetCR keys)
+    ECPRESENTATION_EXPORT static SelectionChangedEventPtr Create(IConnectionCR connection, Utf8String sourceName, SelectionChangeType changeType, 
+        bool isSubSelection, KeySetCR keys, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
         {
-        return new SelectionChangedEvent(connection, sourceName, changeType, isSubSelection, keys);
+        return new SelectionChangedEvent(connection, sourceName, changeType, isSubSelection, keys, timestamp);
         }
 
     //! Copy-constructor. Copies the supplied event.
@@ -109,6 +112,9 @@ public:
 
     //! Get the selection affected by this selection change event.
     KeySetCR GetSelectedKeys() const {return *m_keys;}
+
+    // Timestamp of when the selection event happened.
+    uint64_t GetTimestamp() const {return m_timestamp;}
 
     //! Serialize this event to JSON.
     ECPRESENTATION_EXPORT rapidjson::Document AsJson(rapidjson::Document::AllocatorType* = nullptr) const;

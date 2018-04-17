@@ -1894,7 +1894,7 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventSerialization)
     {
     RefCountedPtr<TestConnection> connection = new TestConnection(s_project->GetECDb());
     KeySetPtr keySet = KeySet::Create(bvector<ECInstanceKey>{ECInstanceKey(ECClassId((uint64_t) 55), ECInstanceId((uint64_t) 1))});
-    SelectionChangedEventPtr selectionChangedEvent = SelectionChangedEvent::Create(*connection, "SourceNameText", SelectionChangeType::Add, false, *keySet);
+    SelectionChangedEventPtr selectionChangedEvent = SelectionChangedEvent::Create(*connection, "SourceNameText", SelectionChangeType::Add, false, *keySet, 123);
     selectionChangedEvent->GetExtendedDataR().AddMember("ExtendedDataPropertyName", "ExtendedDataProperty", selectionChangedEvent->GetExtendedDataAllocator());
     // Serialize
     rapidjson::Document actual = selectionChangedEvent->AsJson();
@@ -1905,11 +1905,10 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventSerialization)
         "Source": "SourceNameText",
         "IsSubSelection": false,
         "ChangeType": 0,
+        "Timestamp": "123",
         "Keys": {
             "InstanceKeys": {
-                "55": [
-                    1
-                    ]
+                "55": [1]
                 },
             "NodeKeys": []
             },
@@ -1950,11 +1949,10 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationNoE
         "Source": "SourceNameText",
         "IsSubSelection": false,
         "ChangeType": 0,
+        "Timestamp": "123",
         "Keys": {
             "InstanceKeys": {
-                "55": [
-                    1
-                    ]
+                "55": [1]
                 },
             "NodeKeys": []
             }
@@ -1972,6 +1970,7 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationNoE
     EXPECT_EQ("SourceNameText", deserializedChangedEvent->GetSourceName());
     EXPECT_EQ(SelectionChangeType::Add, deserializedChangedEvent->GetChangeType());
     EXPECT_EQ(false, deserializedChangedEvent->IsSubSelection());
+    EXPECT_EQ(123, deserializedChangedEvent->GetTimestamp());
     EXPECT_FALSE(deserializedChangedEvent->GetSelectedKeys().empty());
     EXPECT_TRUE(deserializedChangedEvent->GetExtendedData().ObjectEmpty());
     }
@@ -1988,11 +1987,10 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExt
         "Source": "SourceNameText",
         "IsSubSelection": false,
         "ChangeType": 0,
+        "Timestamp": "123",
         "Keys": {
             "InstanceKeys": {
-                "55": [
-                    1
-                    ]
+                "55": [1]
                 },
             "NodeKeys": []
             },
@@ -2011,6 +2009,7 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExt
     EXPECT_EQ("SourceNameText", deserializedChangedEvent->GetSourceName());
     EXPECT_EQ(SelectionChangeType::Add, deserializedChangedEvent->GetChangeType());
     EXPECT_EQ(false, deserializedChangedEvent->IsSubSelection());
+    EXPECT_EQ(123, deserializedChangedEvent->GetTimestamp());
     EXPECT_FALSE(deserializedChangedEvent->GetSelectedKeys().empty());
     EXPECT_TRUE(deserializedChangedEvent->GetExtendedData().ObjectEmpty());
     }
@@ -2027,11 +2026,10 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExt
         "Source": "SourceNameText",
         "IsSubSelection": false,
         "ChangeType": 0,
+        "Timestamp": "123",
         "Keys": {
             "InstanceKeys": {
-                "55": [
-                    1
-                    ]
+                "55": [1]
                 },
             "NodeKeys": []
             },
@@ -2050,6 +2048,7 @@ TEST_F(DgnECPresentationSerializerTests, SelectionChangedEventDeserializationExt
     EXPECT_EQ("SourceNameText", deserializedChangedEvent->GetSourceName());
     EXPECT_EQ(SelectionChangeType::Add, deserializedChangedEvent->GetChangeType());
     EXPECT_EQ(false, deserializedChangedEvent->IsSubSelection());
+    EXPECT_EQ(123, deserializedChangedEvent->GetTimestamp());
     EXPECT_FALSE(deserializedChangedEvent->GetSelectedKeys().empty());
     EXPECT_TRUE(deserializedChangedEvent->GetExtendedData().ObjectEmpty());
     }
@@ -2194,7 +2193,7 @@ TEST_F(DgnECPresentationSerializerTests, ContentDescriptorSerializationWithSelec
         NavNodeKey::Create("TypeName2", {"456", "def"})
         });
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*connection, options.GetJson(), *container, "DisplayTypeText");
-    descriptor->SetSelectionInfo(*(new SelectionInfo("ProviderNameText", true)));
+    descriptor->SetSelectionInfo(SelectionInfo("ProviderNameText", true, 123));
     rapidjson::Document actual = descriptor->AsJson();
 
     rapidjson::Document expected;
@@ -2213,7 +2212,8 @@ TEST_F(DgnECPresentationSerializerTests, ContentDescriptorSerializationWithSelec
             },
         "SelectionInfo": {
             "SelectionProvider": "ProviderNameText",
-            "IsSubSelection": true
+            "IsSubSelection": true,
+            "Timestamp": "123"
             }
         })");
     expected["ConnectionId"].SetString(connection->GetId().c_str(), expected.GetAllocator());

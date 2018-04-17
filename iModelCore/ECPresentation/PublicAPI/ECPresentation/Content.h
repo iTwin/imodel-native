@@ -30,13 +30,15 @@ struct SelectionInfo
 private:
     Utf8String m_selectionProviderName;
     bool m_isSubSelection;
+    uint64_t m_timestamp;
 
 public:
     //! Constructor.
     //! @param[in] providerName Name of the selection provider which last changed the selection.
     //! @param[in] isSubSelection Did the last selection change happen in sub-selection.
-    SelectionInfo(Utf8String providerName, bool isSubSelection)
-        : m_selectionProviderName(providerName), m_isSubSelection(isSubSelection)
+    //! @param[in] timestamp Timestamp of when the selection event happened.
+    SelectionInfo(Utf8String providerName, bool isSubSelection, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
+        : m_selectionProviderName(providerName), m_isSubSelection(isSubSelection), m_timestamp(timestamp)
         {}
 
     //! Constructor. Initializes the instance from the provided selection event.
@@ -46,12 +48,12 @@ public:
 
     //! Move constructor.
     SelectionInfo(SelectionInfo&& other)
-        : m_selectionProviderName(std::move(other.m_selectionProviderName)), m_isSubSelection(other.m_isSubSelection)
+        : m_selectionProviderName(std::move(other.m_selectionProviderName)), m_isSubSelection(other.m_isSubSelection), m_timestamp(other.m_timestamp)
         {}
 
     //! Copy constructor.
     SelectionInfo(SelectionInfo const& other)
-        : m_selectionProviderName(other.m_selectionProviderName), m_isSubSelection(other.m_isSubSelection)
+        : m_selectionProviderName(other.m_selectionProviderName), m_isSubSelection(other.m_isSubSelection), m_timestamp(other.m_timestamp)
         {}
 
     //! Compare this selection event info object with the supplied one.
@@ -71,6 +73,9 @@ public:
 
     //! Did the last selection change happen in sub-selection.
     bool IsSubSelection() const {return m_isSubSelection;}
+
+    // Timestamp of when the selection event happened.
+    uint64_t GetTimestamp() const {return m_timestamp;}
 };
 
 //=======================================================================================

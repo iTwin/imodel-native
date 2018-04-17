@@ -911,6 +911,7 @@ rapidjson::Document DgnECPresentationSerializer::_AsJson(SelectionChangedEvent c
     json.AddMember(rapidjson::StringRef("IsSubSelection"), selectionChangedEvent.IsSubSelection(), json.GetAllocator());
     json.AddMember(rapidjson::StringRef("ChangeType"), (int) selectionChangedEvent.GetChangeType(), json.GetAllocator());
     json.AddMember(rapidjson::StringRef("Keys"), selectionChangedEvent.GetSelectedKeys().AsJson(&json.GetAllocator()), json.GetAllocator());
+    json.AddMember(rapidjson::StringRef("Timestamp"), rapidjson::Value(std::to_string(selectionChangedEvent.GetTimestamp()).c_str(), json.GetAllocator()), json.GetAllocator());
     json.AddMember(rapidjson::StringRef("ExtendedData"), rapidjson::Value(selectionChangedEvent.GetExtendedData(), json.GetAllocator()), json.GetAllocator());
 
     return json;
@@ -925,6 +926,7 @@ SelectionChangedEventPtr DgnECPresentationSerializer::_GetSelectionChangedEventF
         !(json.isMember("Source") && json["Source"].isString()) ||
         !(json.isMember("ChangeType") && json["ChangeType"].isInt()) ||
         !(json.isMember("IsSubSelection") && json["IsSubSelection"].isBool()) ||
+        !(json.isMember("Timestamp") && json["Timestamp"].isString()) ||
         !json.isMember("Keys"))
         {
         BeAssert(false);
@@ -942,10 +944,11 @@ SelectionChangedEventPtr DgnECPresentationSerializer::_GetSelectionChangedEventF
     Utf8String sourceName = json["Source"].asCString();
     SelectionChangeType changeType = (SelectionChangeType) json["ChangeType"].asInt();
     bool isSubSelection = json["IsSubSelection"].asBool();
+    uint64_t timestamp = BeJsonUtilities::UInt64FromValue(json["Timestamp"]);
     JsonValueCR keysJson = json["Keys"];
     KeySetPtr keys = _GetKeySetFromJson(keysJson);
 
-    SelectionChangedEventPtr evt = SelectionChangedEvent::Create(*connection, sourceName, changeType, isSubSelection, *keys);
+    SelectionChangedEventPtr evt = SelectionChangedEvent::Create(*connection, sourceName, changeType, isSubSelection, *keys, timestamp);
 
     if (json.isMember("ExtendedData") && json["ExtendedData"].isObject() && !json["ExtendedData"].empty())
         {
@@ -1027,6 +1030,7 @@ rapidjson::Value DgnECPresentationSerializer::_AsJson(SelectionInfo const& selec
     rapidjson::Value info(rapidjson::kObjectType);
     info.AddMember("SelectionProvider", rapidjson::StringRef(selectionInfo.GetSelectionProviderName().c_str()), allocator);
     info.AddMember("IsSubSelection", selectionInfo.IsSubSelection(), allocator);
+    info.AddMember("Timestamp", rapidjson::Value(std::to_string(selectionInfo.GetTimestamp()).c_str(), allocator), allocator);
     return info;
     }
 

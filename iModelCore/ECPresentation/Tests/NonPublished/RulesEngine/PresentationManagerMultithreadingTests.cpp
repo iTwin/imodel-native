@@ -1204,7 +1204,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentDe
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescriptorRequestCancelsOtherRequestsWithSameSelectionInfoAndConnectionAndDisplayType)
+TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescriptorRequestCancelsOtherRequestsWithSameConnectionAndDisplayTypeAndDifferentSelectionTimestamps)
     {
     // set the request handler
     m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
@@ -1214,14 +1214,15 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
         });
 
     // make first request
-    SelectionInfo selectionInfo(BeTest::GetNameOfCurrentTest(), false);
+    SelectionInfo selectionInfo1(BeTest::GetNameOfCurrentTest(), false, 1);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), &selectionInfo, options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), &selectionInfo1, options.GetJson()));
     EnsureBlocked();
 
     // make second request
-    m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), &selectionInfo, options.GetJson()).wait();
+    SelectionInfo selectionInfo2(BeTest::GetNameOfCurrentTest(), false, 2);
+    m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), &selectionInfo2, options.GetJson()).wait();
 
     // verify
     VerifyCancelation(true, true, 1);
@@ -1248,6 +1249,38 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
     // make second request
     SelectionInfo selectionInfo2(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false);
     auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo2, options.GetJson());
+
+    // wait until first request gets blocked and abort blocking
+    EnsureBlocked();
+    m_blockingState.store(BlockingState::Aborted);
+
+    // let the second request finish
+    req.wait();
+
+    // verify
+    VerifyCancelation(false, false, 2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescriptorRequestDoesntCancelRequestsWithSameSelectionTimestamps)
+    {
+    // set the request handler
+    m_impl->SetContentDescriptorHandler([&](IConnectionCR, Utf8CP, KeySetCR, SelectionInfo const*, RulesDrivenECPresentationManager::ContentOptions const&, ICancelationTokenCR)
+        {
+        m_hitCount.IncrementAtomicPre();
+        return nullptr;
+        });
+
+    // make first request
+    SelectionInfo selectionInfo(BeTest::GetNameOfCurrentTest(), false);
+    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+    BlockECPresentationThread();
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo, options.GetJson()), false);
+
+    // make second request
+    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo, options.GetJson());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
@@ -1393,7 +1426,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentRe
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestCancelsOtherRequestsWithSameSelectionInfoAndConnection)
+TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestCancelsOtherRequestsWithSameConnectionAndDisplayTypeAndDifferentSelectionTimestamps)
     {
     // set the request handler
     m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
@@ -1404,14 +1437,16 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestCa
 
     // make first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false));
+    ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+    descriptor1->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false, 1));
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContent(*descriptor, PageOptions()));
+    DoRequest(m_manager->GetContent(*descriptor1, PageOptions()));
     EnsureBlocked();
     
     // make second request
-    m_manager->GetContent(*descriptor, PageOptions()).wait();
+    ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+    descriptor2->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false, 2));
+    m_manager->GetContent(*descriptor2, PageOptions()).wait();
 
     // verify
     VerifyCancelation(true, true, 1);
@@ -1440,6 +1475,39 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     descriptor2->SetSelectionInfo(SelectionInfo(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false));
     auto req = m_manager->GetContent(*descriptor2, PageOptions());
+
+    // wait until first request gets blocked and abort blocking
+    EnsureBlocked();
+    m_blockingState.store(BlockingState::Aborted);
+
+    // let the second request finish
+    req.wait();
+
+    // verify
+    VerifyCancelation(false, false, 2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDoesntCancelRequestsWithSameSelectionTimestamps)
+    {
+    // set the request handler
+    m_impl->SetContentHandler([&](ContentDescriptorCR, PageOptionsCR, ICancelationTokenCR)
+        {
+        m_hitCount.IncrementAtomicPre();
+        return nullptr;
+        });
+
+    // make first request
+    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+    descriptor->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false));
+    BlockECPresentationThread();
+    DoRequest(m_manager->GetContent(*descriptor, PageOptions()), false);
+
+    // make second request
+    auto req = m_manager->GetContent(*descriptor, PageOptions());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
@@ -1555,7 +1623,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, CancelsContentSe
 /*---------------------------------------------------------------------------------**//**
 * @betest                                       Grigas.Petraitis                11/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRequestCancelsOtherRequestsWithSameSelectionInfoAndConnection)
+TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRequestCancelsOtherRequestsWithSameConnectionAndDisplayTypeAndDifferentSelectionTimestamps)
     {
     // set the request handler
     m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
@@ -1566,14 +1634,16 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
 
     // make first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
-    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false));
+    ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+    descriptor1->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false, 1));
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentSetSize(*descriptor));
+    DoRequest(m_manager->GetContentSetSize(*descriptor1));
     EnsureBlocked();
 
     // make second request
-    m_manager->GetContentSetSize(*descriptor).wait();
+    ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+    descriptor2->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false, 2));
+    m_manager->GetContentSetSize(*descriptor2).wait();
 
     // verify
     VerifyCancelation(true, true, 1);
@@ -1602,6 +1672,39 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     descriptor2->SetSelectionInfo(SelectionInfo(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false));
     auto req = m_manager->GetContentSetSize(*descriptor2);
+
+    // wait until first request gets blocked and abort blocking
+    EnsureBlocked();
+    m_blockingState.store(BlockingState::Aborted);
+
+    // let the second request finish
+    req.wait();
+
+    // verify
+    VerifyCancelation(false, false, 2);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @betest                                       Grigas.Petraitis                04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRequestDoesntCancelRequestsWithSameSelectionTimestamps)
+    {
+    // set the request handler
+    m_impl->SetContentSetSizeHandler([&](ContentDescriptorCR, ICancelationTokenCR)
+        {
+        m_hitCount.IncrementAtomicPre();
+        return 0;
+        });
+
+    // make first request
+    RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
+    ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
+    descriptor->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false));
+    BlockECPresentationThread();
+    DoRequest(m_manager->GetContentSetSize(*descriptor), false);
+
+    // make second request
+    auto req = m_manager->GetContentSetSize(*descriptor);
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
