@@ -280,14 +280,14 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                     continue;
                     }
                 bvector<Utf8String> tokens;
-                BeStringUtilities::Split(format.GetName().c_str(), "[", tokens);
+                BeStringUtilities::Split(format.GetQualifiedName(GetSchema()).c_str(), "[", tokens);
                 BeAssert(tokens.size() > 0);
                 Utf8String split = tokens[0];
                 Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(split.c_str());
                 mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
                 if (nullptr == mapped)
                     {
-                    LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetName().c_str(), GetFullName().c_str());
+                    LOG.warningv("Dropping presentation format '%s' for KindOfQuantity '%s' because it could not be mapped to an old format", format.GetQualifiedName(GetSchema()).c_str(), GetFullName().c_str());
                     continue;
                     }
                 if (!first)
@@ -302,7 +302,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                 {
                 if (!first)
                     presentationUnitString += ";";
-                presentationUnitString += format.GetName();
+                presentationUnitString += format.GetQualifiedName(GetSchema());
                 first = false;
                 }
             }
@@ -357,7 +357,7 @@ SchemaWriteStatus KindOfQuantity::WriteJson(Json::Value& outValue, bool standalo
                 LOG.errorv("Failed to write schema because persistance format for KindOfQuantity '%s' has problem: '%s'", GetName().c_str(), format.GetProblemDescription().c_str());
                 return SchemaWriteStatus::FailedToCreateJson;
                 }
-            presentationUnitArr.append(format.GetParentFormat()->GetQualifiedName(GetSchema()));
+            presentationUnitArr.append(format.GetQualifiedName(GetSchema()));
             }
         outValue[PRESENTATION_UNITS_ATTRIBUTE] = presentationUnitArr;
         }
@@ -827,7 +827,7 @@ ECObjectsStatus KindOfQuantity::CreateOverrideString(Utf8StringR out, ECFormatCR
         return ECObjectsStatus::Error;
         }
 
-    out += parent.GetQualifiedName(GetSchema());
+    out += parent.GetName();
     
     if (precisionOverride.IsValid())
         {

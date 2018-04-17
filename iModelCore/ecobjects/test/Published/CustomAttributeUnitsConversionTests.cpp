@@ -448,8 +448,8 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange)
 
     EXPECT_STREQ(lengthKOQ->GetPersistenceUnit()->GetName().c_str(), specialLengthKOQ->GetPersistenceUnit()->GetName().c_str());
     EXPECT_STRNE(lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str(), specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STREQ("f:DefaultRealU[u:DM]", lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STREQ("f:DefaultRealU[u:FT]", specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:DM]", lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:FT]", specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
 
     auto oldPersistenceUnit = specialPipeLength->GetCustomAttributeLocal("OldPersistenceUnit");
     ECValue oldUnitName;
@@ -519,19 +519,19 @@ TEST_F(UnitSpecificationConversionTest, SameKOQMultiplePersistenceUnits)
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
     EXPECT_STREQ("M", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
-    EXPECT_STREQ("f:DefaultRealU[u:DM]", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:DM]", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("LENGTH", schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_TRUE(schema->GetClassCP("Pipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
     EXPECT_STREQ("M", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
-    EXPECT_STREQ("f:DefaultRealU[u:FT]", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:FT]", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("Length")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
     EXPECT_STREQ("M", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
-    EXPECT_STREQ("f:DefaultRealU[u:FT]", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:FT]", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("AnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
     EXPECT_STREQ("M", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetPersistenceUnit()->GetName().c_str());
-    EXPECT_STREQ("f:DefaultRealU[u:FT]", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:FT]", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STREQ("LENGTH_SpecialPipe", schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetKindOfQuantity()->GetName().c_str());
     EXPECT_TRUE(schema->GetClassCP("SpecialPipe")->GetPropertyP("YetAnotherLength")->GetCustomAttributeLocal("ECv3ConversionAttributes", "OldPersistenceUnit").IsValid());
     EXPECT_EQ(2, schema->GetKindOfQuantityCount());
@@ -617,8 +617,8 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
 
     EXPECT_STREQ(lengthKOQ->GetPersistenceUnit()->GetName().c_str(), specialLengthKOQ->GetPersistenceUnit()->GetName().c_str());
     EXPECT_STRNE(lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str(), specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STREQ("f:DefaultRealU[u:KM]", lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STREQ("f:DefaultRealU[u:CM]", specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:KM]", lengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU[u:CM]", specialLengthKOQ->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_EQ(1, lengthKOQ->GetPresentationFormats().size());
     EXPECT_EQ(1, specialLengthKOQ->GetPresentationFormats().size());
 

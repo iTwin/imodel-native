@@ -1435,12 +1435,12 @@ BentleyStatus SchemaComparer::CompareKindOfQuantity(KindOfQuantityChange& change
     std::vector<Utf8String> oldPresUnits, newPresUnits;
     for (NamedFormat const& format : oldVal.GetPresentationFormats())
         {
-        oldPresUnits.push_back(format.GetName());
+        oldPresUnits.push_back(format.GetQualifiedName(oldVal.GetSchema()));
         }
 
     for (NamedFormat const& format : newVal.GetPresentationFormats())
         {
-        newPresUnits.push_back(format.GetName());
+        newPresUnits.push_back(format.GetQualifiedName(newVal.GetSchema()));
         }
 
     const size_t oldPresUnitCount = oldPresUnits.size();
