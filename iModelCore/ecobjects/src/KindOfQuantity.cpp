@@ -653,10 +653,10 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
 // @bsimethod                                   Caleb.Shafer                    02/2018
 //--------------------------------------------------------------------------------------
 // static
-ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8StringR formatString, Utf8CP persFus, Utf8CP presFuses)
+ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvector<Utf8String>& formatStrings, Utf8CP persFus, bvector<Utf8CP> const& presFuses)
     {
     unitName.clear();
-    formatString.clear();
+    formatStrings.clear();
     if (Utf8String::IsNullOrEmpty(persFus))
         return ECObjectsStatus::NullPointerValue;
 
@@ -675,51 +675,42 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8S
     if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPers, persistenceUnit))
         return ECObjectsStatus::Error;
 
-    Utf8String outFormatString;
-    if (!Utf8String::IsNullOrEmpty(presFuses))
-        { 
-        // Presentation
+    // Presentation
+    for (Utf8CP presFus : presFuses)
+        {
         Utf8String presentationUnit;
         Utf8String presentationFormat;
-        bvector<Utf8String> split;
-        BeStringUtilities::Split(presFuses, ";", split);
-        bool first = true;
+        status = ExtractUnitFormatAndMap(presentationUnit, presentationFormat, presFus);
+        if (ECObjectsStatus::Success != status)
+            return status;
 
-        for (const auto& str : split)
+        if (presentationUnit.empty())
             {
-            status = ExtractUnitFormatAndMap(presentationUnit, presentationFormat, str.c_str());
-            if (ECObjectsStatus::Success != status)
-                return status;
-
-            if (presentationUnit.empty())
-                {
-                LOG.errorv("Presentation unit was not defined in this descriptor '%s'", str.c_str());
-                return ECObjectsStatus::InvalidUnitName;
-                }
-
-            if (presentationFormat.empty())
-                presentationFormat = Formatting::FormatConstant::DefaultFormatName();
-
-            Utf8String unqualifiedPres;
-            if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPres, presentationUnit))
-                return ECObjectsStatus::Error;
-
-            Utf8String unqualifiedPresFormat;
-            if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPresFormat, presentationFormat))
-                return ECObjectsStatus::Error;
-
-            if (!first)
-                outFormatString.append(";");
-            outFormatString
-                .append("f:")
-                .append(unqualifiedPresFormat);
-            outFormatString
-                .append("[")
-                .append("u:")
-                .append(unqualifiedPres)
-                .append("]");
-            first = false;
+            LOG.errorv("Presentation unit was not defined in this descriptor '%s'", presFus);
+            return ECObjectsStatus::InvalidUnitName;
             }
+
+        if (presentationFormat.empty())
+            presentationFormat = Formatting::FormatConstant::DefaultFormatName();
+
+        Utf8String unqualifiedPres;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPres, presentationUnit))
+            return ECObjectsStatus::Error;
+
+        Utf8String unqualifiedPresFormat;
+        if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPresFormat, presentationFormat))
+            return ECObjectsStatus::Error;
+
+        Utf8String formatString;
+        formatString
+            .append("f:")
+            .append(unqualifiedPresFormat);
+        formatString
+            .append("[")
+            .append("u:")
+            .append(unqualifiedPres)
+            .append("]");
+        formatStrings.push_back(formatString);
         }
 
     // If we have a persistence FUS with a specified format. Put it at the end
@@ -728,17 +719,19 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, Utf8S
         Utf8String unqualifiedPersFormat;
         if(ECObjectsStatus::Success != ECClass::ParseClassName(alias, unqualifiedPersFormat, persistenceFormat))
             return ECObjectsStatus::Error;
-        if (!outFormatString.empty())
-            outFormatString.append(";");
-        outFormatString
+
+        Utf8String formatString;
+        formatString
             .append("f:")
             .append(unqualifiedPersFormat)
             .append("[")
             .append("u:")
             .append(unqualifiedPers)
             .append("]");
+
+        formatStrings.push_back(formatString);
         }
-    formatString = outFormatString;
+
     unitName = "u:" + unqualifiedPers;
     return ECObjectsStatus::Success;
     }
@@ -770,46 +763,57 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR form
 
     for (auto const& str : tokens) // str of the format {formatName}<{precision}>[overrides|label][...]...
         {
-        Utf8String formatName;
-        Nullable<int32_t> prec;
-        bvector<Utf8String> unitNames;
-        bvector<Nullable<Utf8String>> unitLabels;
-        if (BentleyStatus::SUCCESS != Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, str))
-            {
-            LOG.errorv("Failed to parse Presentation FormatString '%s' on KindOfQuantity '%s'", str.c_str(), GetFullName().c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        auto format = nameToFormatMapper(formatName);
-
-        if (nullptr == format)
-            {
-            LOG.errorv("Format '%s' could not be looked up on KoQ '%s'", formatName.c_str(), GetFullName().c_str());
-            return ECObjectsStatus::Error;
-            }
-
-        if (!unitNames.empty())
-            {
-            UnitAndLabelPairs units;
-            int i = 0;
-            for (const auto& u : unitNames)
-                {
-                auto unit = nameToUnitMapper(u);
-                if (nullptr == unit)
-                    {
-                    LOG.errorv("Presentation unit with name '%s' could not be looked up on KoQ '%s'", u.c_str(), GetFullName().c_str());
-                    return ECObjectsStatus::Error;
-                    }
-                units.push_back(make_bpair(unit, (i < unitLabels.size() && unitLabels[i].IsValid()) ? unitLabels[i].Value().c_str() : nullptr));
-                i++;
-                }
-            if (ECObjectsStatus::Success != AddPresentationFormat(*format, prec, &units))
-                return ECObjectsStatus::Error;
-            }
-        else if (ECObjectsStatus::Success != AddPresentationFormat(*format, prec)) // no unit overrides
-                return ECObjectsStatus::Error;
+        ECObjectsStatus stat = AddPresentationFormatByString(str, nameToFormatMapper, nameToUnitMapper);
+        if (ECObjectsStatus::Success != stat)
+            return stat;
         }
+
     return ECObjectsStatus::Success;
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                  Kyle.Abramowitz                  04/2018
+//--------------------------------------------------------------------------------------
+ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR)> const& nameToUnitMapper)
+    {
+    Utf8String formatName;
+    Nullable<int32_t> prec;
+    bvector<Utf8String> unitNames;
+    bvector<Nullable<Utf8String>> unitLabels;
+    if (BentleyStatus::SUCCESS != Formatting::Format::ParseFormatString(formatName, prec, unitNames, unitLabels, formatString))
+        {
+        LOG.errorv("Failed to parse Presentation FormatString '%s' on KindOfQuantity '%s'", formatString.c_str(), GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    auto format = nameToFormatMapper(formatName);
+
+    if (nullptr == format)
+        {
+        LOG.errorv("Format '%s' could not be looked up on KoQ '%s'", formatName.c_str(), GetFullName().c_str());
+        return ECObjectsStatus::Error;
+        }
+
+    if (!unitNames.empty())
+        {
+        UnitAndLabelPairs units;
+        int i = 0;
+        for (const auto& u : unitNames)
+            {
+            auto unit = nameToUnitMapper(u);
+            if (nullptr == unit)
+                {
+                LOG.errorv("Presentation unit with name '%s' could not be looked up on KoQ '%s'", u.c_str(), GetFullName().c_str());
+                return ECObjectsStatus::Error;
+                }
+            units.push_back(make_bpair(unit, (i < unitLabels.size() && unitLabels[i].IsValid()) ? unitLabels[i].Value().c_str() : nullptr));
+            i++;
+            }
+
+        return AddPresentationFormat(*format, prec, &units);
+        }
+
+    return AddPresentationFormat(*format, prec); // no unit overrides
     }
 
 //--------------------------------------------------------------------------------------
