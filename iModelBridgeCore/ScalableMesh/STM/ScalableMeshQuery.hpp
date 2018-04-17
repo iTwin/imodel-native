@@ -2394,7 +2394,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                     memcpy(&height, texPtr->GetData() + sizeof(int), sizeof(int));
 
                     size_t usedMemInBytes = 0;
-                    bool isStoredOnGpu;
+                    bool isStoredOnGpu = false;
 
                     SmCachedDisplayTexture* cachedDisplayTexture;
 
