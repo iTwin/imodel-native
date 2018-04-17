@@ -46,6 +46,7 @@ class RequestHandler
 
         FAKESERVER_EXPORT BeFileName GetDbPath();
         FAKESERVER_EXPORT void CheckDb();
+        FAKESERVER_EXPORT void DeleteTables(Utf8String tableName);
         FAKESERVER_EXPORT void Insert(bvector<Utf8String> insertStr);
 
 
