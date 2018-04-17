@@ -230,7 +230,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP
         "GROUP BY a.Model.Id");
     BeAssert(stmt.IsPrepared());
     
-    stmt.BindText(1, ORDBRIDGE_AlignmentModelName, IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(1, RoadRailAlignmentDomain::GetDefaultPartitionName(), IECSqlBinder::MakeCopy::Yes);
     BeAssert(DbResult::BE_SQLITE_ROW == stmt.Step());
     BeAssert(alignmentCount == stmt.GetValueInt(0));
     
@@ -242,7 +242,7 @@ DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP
         "GROUP BY r.Model.Id");
     BeAssert(stmt.IsPrepared());
 
-    stmt.BindText(1, ORDBRIDGE_PhysicalModelName, IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(1, RoadRailPhysical::RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName(), IECSqlBinder::MakeCopy::Yes);
 
     if (roadwayCount == 0)
         BeAssert(DbResult::BE_SQLITE_DONE == stmt.Step());
