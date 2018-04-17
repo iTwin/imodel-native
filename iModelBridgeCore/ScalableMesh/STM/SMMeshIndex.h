@@ -98,7 +98,7 @@ inline bool IsClosedFeature(ISMStore::FeatureType type)
     DTMFeatureType dtmType = (DTMFeatureType)type;
     return dtmType == DTMFeatureType::Hole || dtmType == DTMFeatureType::Island || dtmType == DTMFeatureType::Void || dtmType == DTMFeatureType::BreakVoid ||
         dtmType == DTMFeatureType::Polygon || dtmType == DTMFeatureType::Region || dtmType == DTMFeatureType::Contour || dtmType == DTMFeatureType::Hull ||
-        dtmType == DTMFeatureType::DrapeVoid;
+        dtmType == DTMFeatureType::TinHull || dtmType == DTMFeatureType::DrapeVoid;
     }
 
 inline bool IsClosedPolygon(const bvector<DPoint3d>& vec)
