@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileWriter.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -331,6 +331,23 @@ Utf8String    Writer::AddParamAttribute(FPoint2d const* params, size_t nParams, 
 
     return accessorId;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String    Writer::AddPointAttribute(FPoint3d const* points, size_t nPoints, Utf8StringCR name, Utf8StringCR id) 
+    {
+    Utf8String          nameId =  Utf8String(name) + Utf8String(id),
+                        accessorId = Utf8String("acc") + nameId,
+                        bufferViewId = Utf8String("bv") + nameId;
+
+    AddBufferView(bufferViewId.c_str(), points, nPoints);
+    AddAccessor(Gltf::DataType::Float, accessorId, bufferViewId, nPoints, "VEC3");
+    m_json["bufferViews"][bufferViewId]["target"] = Gltf::ArrayBuffer;
+
+    return accessorId;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016

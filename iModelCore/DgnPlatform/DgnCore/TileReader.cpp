@@ -319,7 +319,7 @@ BentleyStatus GltfReader::ReadNormalPairs(OctEncodedNormalPairListR pairs, Json:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GltfReader::ReadParams(bvector<FPoint2d>& params, Json::Value const& value, Utf8CP accessorName)
+template<typename T_Point> BentleyStatus GltfReader::ReadPoints(bvector<T_Point>& points, Json::Value const& value, Utf8CP accessorName)
     {
     void const*     pData;
     size_t          count, byteLength;
@@ -333,9 +333,9 @@ BentleyStatus GltfReader::ReadParams(bvector<FPoint2d>& params, Json::Value cons
         {
         case Gltf::DataType::Float:
             {
-            BeAssert (byteLength == count * sizeof(FPoint2d));
-            params.resize(count);
-            memcpy (params.data(), pData, count * sizeof(FPoint2d));
+            BeAssert (byteLength == count * sizeof(T_Point));
+            points.resize(count);
+            memcpy (points.data(), pData, count * sizeof(T_Point));
             return SUCCESS;
             }
 
@@ -344,6 +344,7 @@ BentleyStatus GltfReader::ReadParams(bvector<FPoint2d>& params, Json::Value cons
             return ERROR;
         }
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -693,6 +694,7 @@ BentleyStatus     GltfReader::ReadFeatures(MeshR mesh, Json::Value const& primit
     return SUCCESS;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -722,6 +724,11 @@ MeshPtr GltfReader::ReadMeshPrimitive(Json::Value const& primitiveValue, Feature
     ReadColorTable(mesh->GetColorTableR(), primitiveValue);
     ReadColors(mesh->ColorsR(), primitiveValue);
     ReadFeatures(*mesh, primitiveValue);
+    mesh->GetAuxData().m_displacementChannel = ReadAuxChannel<AuxDisplacementChannel, AuxDisplacementChannel::Data, FPoint3d> (primitiveValue["attributes"]["AUXDISPLACEMENTS"]);
+    mesh->GetAuxData().m_paramChannel = ReadAuxChannel<AuxParamChannel, AuxParamChannel::Data, FPoint2d> (primitiveValue["attributes"]["AUXPARAMS"]);
+
+    if (mesh->GetAuxData().m_paramChannel.IsValid() && mesh->ParamsR().empty())
+        mesh->ParamsR() = mesh->GetAuxData().m_paramChannel->GetData().front()->GetValues(); 
 
     switch (primitiveType)
         {
@@ -734,7 +741,7 @@ MeshPtr GltfReader::ReadMeshPrimitive(Json::Value const& primitiveValue, Feature
                 SUCCESS != ReadNormals(mesh->NormalsR(), primitiveValue["attributes"], "NORMAL"))
                 return nullptr;
     
-            ReadParams(mesh->ParamsR(), primitiveValue["attributes"], "TEXCOORD_0");
+            ReadPoints(mesh->ParamsR(), primitiveValue["attributes"], "TEXCOORD_0");
             mesh->GetEdgesR() = ReadMeshEdges(primitiveValue);
             break;
             }
@@ -1212,7 +1219,7 @@ private:
     ReadStatus AddMeshPrimitive(Features features, Json::Value const& primitive);
 
     BufferData32 ReadMeshIndices(uint32_t& numIndices, Json::Value const& json) { return ReadBufferData32(json, "indices", &numIndices); }
-    FPoint2d const* ReadParams(Json::Value const&);
+    FPoint2d const* ReadPoints(Json::Value const&);
     uint16_t const* ReadNormals(Json::Value const&);
     void AddMesh(MeshPrimitive& mesh, Json::Value const&);
     uint32_t AddMeshVertex(MeshBuilderR, MeshPrimitive const&, uint32_t index, FeatureCR feature);
@@ -1327,7 +1334,7 @@ ReadStatus DgnCacheTileRebuilder::AddMeshPrimitive(Features features, Json::Valu
                     return ReadStatus::ReadError;
                 }
 
-            mesh.m_params = ReadParams(json);
+            mesh.m_params = ReadPoints(json);
             AddMesh(mesh, json); // also adds edges...
             break;
             }
@@ -1379,7 +1386,7 @@ uint16_t const* DgnCacheTileRebuilder::ReadNormals(Json::Value const& json)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-FPoint2d const* DgnCacheTileRebuilder::ReadParams(Json::Value const& json)
+FPoint2d const* DgnCacheTileRebuilder::ReadPoints(Json::Value const& json)
     {
     BufferView view = GetBufferView(json["attributes"], "TEXCOORD_0");
     if (view.IsValid())

@@ -437,6 +437,8 @@ public:
     PrimitiveType GetType() const { return m_type; }
     FeatureTableCP GetFeatureTable() const { return m_features.m_table; }
     MeshAuxDataCR GetAuxData() const { return m_auxData; }
+    MeshAuxDataR GetAuxData() { return m_auxData; }
+    
 
     DGNPLATFORM_EXPORT DRange3d ComputeRange() const;
     DGNPLATFORM_EXPORT DRange3d ComputeUVRange() const;

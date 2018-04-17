@@ -85,6 +85,38 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
     if (mesh.GetEdges().IsValid())
         primitiveJson["edges"] = CreateMeshEdges(*mesh.GetEdges(), mesh.Points().size(), idStr);
 
+    if (mesh.GetAuxData().m_displacementChannel.IsValid())
+        {
+        Json::Value     displacementValues = Json::arrayValue;
+        uint32_t        index = 0;
+
+        for (auto& data : mesh.GetAuxData().m_displacementChannel->GetData())
+            {
+            Json::Value     dataValue = Json::objectValue;                       
+
+            dataValue["input"] = data->GetInput();
+            dataValue["values"] = AddPointAttribute(data->GetValues().data(), data->GetValues().size(), "AuxDisp", Utf8PrintfString("%s%u", idStr.c_str(), index++));
+            displacementValues.append(std::move(dataValue));
+            }
+        primitiveJson["attributes"]["AUXDISPLACEMENTS"] = std::move(displacementValues);
+        }
+
+    if (mesh.GetAuxData().m_displacementChannel.IsValid())
+        {
+        Json::Value     paramValues = Json::arrayValue;
+        uint32_t        index = 0;
+
+        for (auto& data : mesh.GetAuxData().m_paramChannel->GetData())
+            {
+            Json::Value     dataValue = Json::objectValue;                       
+
+            dataValue["input"] = data->GetInput();
+            dataValue["values"] = AddParamAttribute(data->GetValues().data(), data->GetValues().size(), "AuxParam", Utf8PrintfString("%s%u", idStr.c_str(), index++));
+            paramValues.append(std::move(dataValue));
+            }
+        primitiveJson["attributes"]["AUXPARAMS"] = std::move(paramValues);
+        }
+
     return SUCCESS;
     }
 

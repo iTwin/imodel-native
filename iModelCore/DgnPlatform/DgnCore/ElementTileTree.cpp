@@ -36,7 +36,7 @@ struct TileContext;
 // #define DISABLE_EDGE_GENERATION
 
 // For debugging tile generation code - disables use of cached tiles.
-// #define DISABLE_TILE_CACHE
+//#define DISABLE_TILE_CACHE
 
 // We used to cache GeometryLists for elements occupying a significant (25%) fraction of the total model range.
 // That can't work for BReps because they are associated with a specific thread's partition.
@@ -2036,8 +2036,7 @@ MeshGenerator::MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContext
 
 
     // For now always create -- (use first aux channel) - TBD control from UX.
-    ThematicDisplaySettings     displaySettings;
-    m_thematicMeshBuilder  = new ThematicMeshBuilder("", *loadContext.GetRenderSystem(), m_tile.GetElementRoot().GetDgnDb(), displaySettings);
+    m_thematicMeshBuilder  = new ThematicMeshBuilder("", "");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2181,12 +2180,10 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, double r
     DgnElementId            elemId = GetElementId(geom);
     MeshEdgeCreationOptions edges(edgeOptions);
     bool                    isPlanar = tilePolyface.m_isPlanar;
-    TextureMapping          thematicTexture;
     DisplayParamsCPtr       displayParams = &tilePolyface.GetDisplayParams(); 
 
-    if (m_thematicMeshBuilder.IsValid() &&
-        m_thematicMeshBuilder->DoThematicDisplay(*polyface, thematicTexture))
-        displayParams = displayParams->CloneWithTextureOverride(thematicTexture);
+    if (m_thematicMeshBuilder.IsValid())
+        m_thematicMeshBuilder->InitThematicDisplay(*polyface, *displayParams);
 
     if (isContained)
         {                                                                                                                                          
@@ -2220,7 +2217,7 @@ void MeshGenerator::AddClippedPolyface(PolyfaceQueryCR polyface, DgnElementId el
     builder.BeginPolyface(polyface, edgeOptions);
 
     if (m_thematicMeshBuilder.IsValid())
-        m_thematicMeshBuilder->BuildMeshAuxData(auxData, polyface);
+        m_thematicMeshBuilder->BuildMeshAuxData(auxData, polyface, displayParams);
 
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); /**/)
         {
