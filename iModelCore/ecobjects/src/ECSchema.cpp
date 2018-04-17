@@ -2813,10 +2813,9 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         }
 
     AddFilePathToSchemaPaths(schemaContext, ecSchemaXmlFile);
-    Utf8String checkSum = CheckSumHelper::ComputeCheckSumForFile(ecSchemaXmlFile);
 
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
-    status = reader.Deserialize(schemaOut, checkSum);
+    status = reader.Deserialize(schemaOut);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -2830,7 +2829,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile(ECSchemaPtr& schemaOut, WCharCP ecSch
         }
     else
         {
-        //We have serialized a schema and its valid. Add its checksum
+        //We have serialized a schema and its valid.
         timer.Stop();
         LOG.infov (L"Read (in %.4f seconds) [%3" PRIx64 " ECClasses] %ls", timer.GetElapsedSeconds(), (uint64_t) schemaOut->m_classMap.size(), ecSchemaXmlFile);
         }
@@ -2860,9 +2859,8 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, Utf8CP ecSc
         return SchemaReadStatus::FailedToParseXml;
         }
 
-    Utf8String checkSum = CheckSumHelper::ComputeCheckSumForString (ecSchemaXml, stringByteCount);
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
-    status = reader.Deserialize(schemaOut, checkSum);
+    status = reader.Deserialize(schemaOut);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -2910,9 +2908,8 @@ SchemaReadStatus ECSchema::ReadFromXmlString(ECSchemaPtr& schemaOut, WCharCP ecS
         return SchemaReadStatus::FailedToParseXml;
         }
 
-    Utf8String checkSum = CheckSumHelper::ComputeCheckSumForString(ecSchemaXml, stringSize);
     SchemaXmlReader reader(schemaContext, *xmlDom.get());
-    status = reader.Deserialize(schemaOut, checkSum);
+    status = reader.Deserialize(schemaOut);
 
     if (SchemaReadStatus::Success != status)
         {
@@ -3554,19 +3551,16 @@ Utf8String ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len)
     return CheckSumHelper::ComputeCheckSumForString (str, len);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Abeesh.Basheer                  04/2012
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Joseph.Urbano                   04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECSchema::ReComputeCheckSum ()
+Utf8String ECSchema::ComputeCheckSum ()
     {
-    if (m_immutable)
-        return;
-
     WString xmlStr;
     if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr, m_ecVersion))
-        return;
+        return "";
 
-    m_key.m_checkSum = CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(WChar)* xmlStr.length());
+    return CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(WChar)* xmlStr.length());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3575,7 +3569,6 @@ void ECSchema::ReComputeCheckSum ()
 void ECSchema::SetImmutable()
     {
     BeAssert(!m_immutable);
-    ReComputeCheckSum();
     m_immutable = true;
     }
 
@@ -3615,8 +3608,6 @@ bool SchemaKey::LessThan (SchemaKeyCR rhs, SchemaMatchType matchType) const
         {
         case SchemaMatchType::Identical:
             {
-            if (!Utf8String::IsNullOrEmpty(m_checkSum.begin()) || !Utf8String::IsNullOrEmpty(rhs.m_checkSum.begin()))
-                return m_checkSum < rhs.m_checkSum;
             //Fall through
             }
         case SchemaMatchType::Exact:
@@ -3677,8 +3668,6 @@ bool SchemaKey::Matches (SchemaKeyCR rhs, SchemaMatchType matchType) const
         {
         case SchemaMatchType::Identical:
             {
-            if (!Utf8String::IsNullOrEmpty(m_checkSum.begin()) && !Utf8String::IsNullOrEmpty(rhs.m_checkSum.begin()))
-                return m_checkSum.EqualsIAscii(rhs.m_checkSum);
             //fall through
             }
         case SchemaMatchType::Exact:
