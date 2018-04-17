@@ -398,6 +398,9 @@ std::ostream* err
     bvector<Utf8String> tokens;
     BeStringUtilities::Split((Utf8CP)content.data(), "\n", tokens);
 
+    for (auto& token : tokens)
+        token.Trim();
+
     bvector<Utf8String> args;
     for (auto& token : tokens)
         {

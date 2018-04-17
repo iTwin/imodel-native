@@ -236,6 +236,13 @@ TEST_P(RepositoryCompatibilityTests_Create, Create)
 
     auto createResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
     ASSERT_TRUE(createResult.IsSuccess());
+    auto ds = createResult.GetValue();
+
+    ds->GetCacheAccessThread()->ExecuteAsync([=]
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_NE(0, ds->GetRepositorySchemas(txn).size());
+        })->Wait();
     }
 
 struct RepositoryCompatibilityTests_Upgrade : RepositoryCompatibilityTests {};
@@ -272,15 +279,22 @@ TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
     client = CreateClient(repository);
     auto openResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
     ASSERT_TRUE(openResult.IsSuccess());
+    auto ds = createResult.GetValue();
 
     // Pull new schemas if any
-    auto updateResult = openResult.GetValue()->UpdateSchemas(nullptr)->GetResult();
+    auto updateResult = ds->UpdateSchemas(nullptr)->GetResult();
     ASSERT_TRUE(updateResult.IsSuccess());
 
     // Latest schemas pulled, second updates should do nothing and succeed
     for (int i = 0; i < 2; i++)
         {
-        updateResult = openResult.GetValue()->UpdateSchemas(nullptr)->GetResult();
+        updateResult = ds->UpdateSchemas(nullptr)->GetResult();
         ASSERT_TRUE(updateResult.IsSuccess());
         }
+
+    ds->GetCacheAccessThread()->ExecuteAsync([=]
+        {
+        auto txn = ds->StartCacheTransaction();
+        EXPECT_NE(0, ds->GetRepositorySchemas(txn).size());
+        })->Wait();
     }
