@@ -13,6 +13,7 @@
 #include "../../Localization/xliffs/Units.xliff.h"
 #include <BeSQLite/L10N.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
+#include "../../PrivateAPI/Formatting/NumericFormatUtils.h"
 
 USING_NAMESPACE_BENTLEY_UNITS
 
@@ -67,10 +68,10 @@ UIList UIUtils::GetAvailableFractionalPercisions()
 UIList UIUtils::GetAvailableSignOption()
     {
     UIList signOptions;
-    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NoSign,              UNITSL10N_GETSTRING(ShowSignOption_NoSign).c_str(), FormatConstant::FPN_NoSign().c_str()));
-    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::OnlyNegative,        UNITSL10N_GETSTRING(ShowSignOption_OnlyNegative).c_str(), FormatConstant::FPN_OnlyNegative().c_str()));
-    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::SignAlways,          UNITSL10N_GETSTRING(ShowSignOption_SignAlways).c_str(), FormatConstant::FPN_SignAlways().c_str()));
-    signOptions.AddListEntry(UIListEntry((int)ShowSignOption::NegativeParentheses, UNITSL10N_GETSTRING(ShowSignOption_NegativeParentheses).c_str(), FormatConstant::FPN_NegativeParenths().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)SignOption::NoSign,              UNITSL10N_GETSTRING(ShowSignOption_NoSign).c_str(), FormatConstant::FPN_NoSign().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)SignOption::OnlyNegative,        UNITSL10N_GETSTRING(ShowSignOption_OnlyNegative).c_str(), FormatConstant::FPN_OnlyNegative().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)SignOption::SignAlways,          UNITSL10N_GETSTRING(ShowSignOption_SignAlways).c_str(), FormatConstant::FPN_SignAlways().c_str()));
+    signOptions.AddListEntry(UIListEntry((int)SignOption::NegativeParentheses, UNITSL10N_GETSTRING(ShowSignOption_NegativeParentheses).c_str(), FormatConstant::FPN_NegativeParenths().c_str()));
     return signOptions;
     }
 
@@ -81,10 +82,10 @@ UIList UIUtils::GetAvailablePresentationTypes()
     {
     UIList presentationTypes;
 
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Decimal, UNITSL10N_GETSTRING(PresentationType_Decimal).c_str(), Utils::PresentationTypeName(PresentationType::Decimal).c_str()));
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Fractional, UNITSL10N_GETSTRING(PresentationType_Fractional).c_str(), Utils::PresentationTypeName(PresentationType::Fractional).c_str()));
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Scientific, UNITSL10N_GETSTRING(PresentationType_Scientific).c_str(), Utils::PresentationTypeName(PresentationType::Scientific).c_str()));
-    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Station, UNITSL10N_GETSTRING(PresentationType_Station).c_str(), Utils::PresentationTypeName(PresentationType::Station).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Decimal, UNITSL10N_GETSTRING(PresentationType_Decimal).c_str(), Utils::GetPresentationTypeString(PresentationType::Decimal).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Fractional, UNITSL10N_GETSTRING(PresentationType_Fractional).c_str(), Utils::GetPresentationTypeString(PresentationType::Fractional).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Scientific, UNITSL10N_GETSTRING(PresentationType_Scientific).c_str(), Utils::GetPresentationTypeString(PresentationType::Scientific).c_str()));
+    presentationTypes.AddListEntry(UIListEntry((int) PresentationType::Station, UNITSL10N_GETSTRING(PresentationType_Station).c_str(), Utils::GetPresentationTypeString(PresentationType::Station).c_str()));
 
     return presentationTypes;
     }
@@ -308,7 +309,7 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
 // @bsimethod                                               Kyle.Abramowitz      03/2018
 //----------------------------------------------------------------------------------------
 // static
-Utf8String Utils::ScientificTypeName(ScientificType type)
+Utf8String Utils::GetScientificTypeString(ScientificType type)
     {
     switch(type)
         {
@@ -325,7 +326,7 @@ Utf8String Utils::ScientificTypeName(ScientificType type)
 // @bsimethod                                              Kyle.Abramowitz       03/2018
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::NameToScientificType(ScientificType& out, Utf8StringCR name)
+bool Utils::ParseScientificType(ScientificType& out, Utf8StringCR name)
     {
     if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificStandard().c_str()) == 0) out = ScientificType::Standard;
     else if (BeStringUtilities::StricmpAscii(name.c_str(), FormatConstant::FPN_ScientificNormal().c_str()) == 0) out = ScientificType::Normal;
@@ -334,62 +335,36 @@ bool Utils::NameToScientificType(ScientificType& out, Utf8StringCR name)
         return false;
     return true;
     }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+// static
+Utf8String Utils::GetSignOptionString(SignOption opt)
+    {
+    switch (opt)
+        {
+        case SignOption::NoSign: return FormatConstant::FPN_NoSign();
+        case SignOption::SignAlways: return FormatConstant::FPN_SignAlways();
+        case SignOption::NegativeParentheses: return FormatConstant::FPN_NegativeParenths();
+        default:
+        case SignOption::OnlyNegative: return FormatConstant::FPN_OnlyNegative();
+        }
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/17
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::NameToSignOption(ShowSignOption& out, Utf8CP name)
+bool Utils::ParseSignOption(SignOption& out, Utf8CP name)
     {
-    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_NoSign().c_str()) == 0) out = ShowSignOption::NoSign;
-    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_OnlyNegative().c_str()) == 0) out = ShowSignOption::OnlyNegative;
-    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_SignAlways().c_str()) == 0) out = ShowSignOption::SignAlways;
-    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_NegativeParenths().c_str()) == 0) out = ShowSignOption::NegativeParentheses;
+    if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_NoSign().c_str()) == 0) out = SignOption::NoSign;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_OnlyNegative().c_str()) == 0) out = SignOption::OnlyNegative;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_SignAlways().c_str()) == 0) out = SignOption::SignAlways;
+    else if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_NegativeParenths().c_str()) == 0) out = SignOption::NegativeParentheses;
     else
         return false;
     return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-// static
-Utf8CP Utils::SkipBlanks(Utf8CP str)
-    {
-    while (isspace(*str))
-        str++;
-    return str;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-// static
-Utf8Char Utils::GetFirstSignificantChar(Utf8CP str)
-    {
-    if (Utf8String::IsNullOrEmpty(str))
-        return '\0';
-    while (isspace(*str))
-        str++;
-    return *str;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/17
-//----------------------------------------------------------------------------------------
-Utf8Char Utils::GetLastSignificantChar(Utf8CP str)
-    {
-    size_t len = Utf8String::IsNullOrEmpty(str)? 0 : strlen(str);
-    if(len == 0)
-        return '\0';
-    len--;
-    while (isspace(str[len]))
-        {
-        if (len > 1) 
-            len--;
-        else
-            return '\0';
-        }
-    return str[len];
     }
 
 //----------------------------------------------------------------------------------------
@@ -449,7 +424,7 @@ Utf8String Utils::GetCurrentThousandSeparator()
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::DecimalPrecisionByIndex(DecimalPrecision& out, int32_t num)
+bool Utils::GetDecimalPrecisionByInt(DecimalPrecision& out, int32_t num)
     {
     if (num <= static_cast<uint32_t>(DecimalPrecision::Max))
         {
@@ -473,7 +448,7 @@ double Utils::DecimalPrecisionFactor(DecimalPrecision decP)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-Utf8String  Utils::PresentationTypeName(PresentationType type)
+Utf8String Utils::GetPresentationTypeString(PresentationType type)
     {
     switch (type)
         {
@@ -489,7 +464,7 @@ Utf8String  Utils::PresentationTypeName(PresentationType type)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
 // static
-bool Utils::NameToPresentationType(PresentationType& type, Utf8CP name)
+bool Utils::ParsePresentationType(PresentationType& type, Utf8CP name)
     {
     if (BeStringUtilities::StricmpAscii(name, FormatConstant::FPN_Decimal().c_str()) == 0) 
         type = PresentationType::Decimal;
@@ -503,22 +478,6 @@ bool Utils::NameToPresentationType(PresentationType& type, Utf8CP name)
         return false;
 
     return true;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-// static
-Utf8String Utils::SignOptionName(ShowSignOption opt)
-    {
-    switch (opt)
-        {
-        case ShowSignOption::NoSign: return FormatConstant::FPN_NoSign();
-        case ShowSignOption::SignAlways: return FormatConstant::FPN_SignAlways();
-        case ShowSignOption::NegativeParentheses: return FormatConstant::FPN_NegativeParenths();
-        default:
-        case ShowSignOption::OnlyNegative: return FormatConstant::FPN_OnlyNegative();
-        }
     }
 
 //----------------------------------------------------------------------------------------
@@ -565,24 +524,6 @@ int32_t Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//----------------------------------------------------------------------------------------
-// static
-size_t Utils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
-    {
-    int cap = static_cast<int>(bufLen) - static_cast<int>(index) - 1;
-    size_t strL = (nullptr == str) ? 0 : strlen(str);
-    if (strL < 1 || cap < 1)
-        return index;
-    if (static_cast<int>(strL) > cap)
-        strL = static_cast<size_t>(cap);
-    memcpy(static_cast<void*>(buf + index), str, strL);
-    index += strL;
-    buf[index] = FormatConstant::EndOfLine();     
-    return index;
-    }
-
-//----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 03/17
 //----------------------------------------------------------------------------------------
 // static
@@ -607,33 +548,14 @@ Utf8String Utils::AppendUnitName(Utf8CP txtValue, Utf8CP unitName, Utf8CP space)
 // static
 Utf8Char Utils::MatchingDivider(Utf8Char div)
     {
-    Utf8CP fd= FormatConstant::FUSDividers();
-    Utf8CP df = FormatConstant::FUSDividerMatch();
+    Utf8CP fd= FormatConstant::Dividers();
+    Utf8CP df = FormatConstant::DividerMatch();
     for (int i = 0; fd[i] != FormatConstant::EndOfLine(); i++)
         {
         if (div == fd[i])
             return df[i];
         }
     return FormatConstant::EndOfLine();
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 04/17
-//----------------------------------------------------------------------------------------
-// static
-int Utils::IndexOf(Utf8Char c, Utf8CP text)
-    {
-    int indx = -1;
-    if (Utf8String::IsNullOrEmpty(text))
-        return indx;
-    while (*text != FormatConstant::EndOfLine())
-        {
-        ++indx;
-        if (c == *text)
-            return indx;
-        text++;
-        }
-    return -1;
     }
 
 //===================================================
@@ -654,7 +576,7 @@ LocaleProperties::LocaleProperties(Json::Value jval)
             {
             paramName = iter.memberName();
             JsonValueCR val = *iter;
-            if (BeStringUtilities::StricmpAscii(paramName, json_decimalSeparator()) == 0)
+            if (BeStringUtilities::StricmpAscii(paramName, json_decSeparator()) == 0)
                 {
                 str = val.asString();
                 m_decimalSeparator = str.c_str()[0];
@@ -691,7 +613,7 @@ LocaleProperties::LocaleProperties(Utf8CP localeName)
 Json::Value LocaleProperties::ToJson()
     {
     Json::Value jval;
-    jval[json_decimalSeparator()] = &m_decimalSeparator;
+    jval[json_decSeparator()] = &m_decimalSeparator;
     jval[json_thousandSeparator()] = &m_thousandsSeparator;
     return jval;
     }
@@ -751,7 +673,7 @@ FormattingWord::FormattingWord(FormattingScannerCursorP cursor, Utf8CP buffer, U
     len = (nullptr == delim) ? 0 : strlen(delim);
     memset(m_delim, 0, sizeof(m_delim));
     if (0 < len)
-        memcpy(m_delim, delim, Utils::MinInt(maxDelim, len));
+        memcpy(m_delim, delim, StringUtils::GetMinSize(maxDelim, len));
     m_isASCII = isAscii;
     }
 

@@ -20,7 +20,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatProblemDetail)
 //=======================================================================================
 // @bsienum
 //=======================================================================================
-enum class ShowSignOption
+enum class SignOption
     { 
     NoSign = 0,              // indicates that sign should not be used at all (like absolute value)
     OnlyNegative = 1,        // indicates that only "-" will be used for negative numbers
@@ -280,34 +280,37 @@ public:
 //=======================================================================================
 struct Utils
 {
-    UNITS_EXPORT static Utf8String ScientificTypeName(ScientificType type);
-    UNITS_EXPORT static bool NameToScientificType(ScientificType& out, Utf8StringCR name);
-    UNITS_EXPORT static bool NameToSignOption(ShowSignOption& out, Utf8CP name);
+    UNITS_EXPORT static Utf8String GetScientificTypeString(ScientificType type);
+    //! Parses the provided string into a ScientificType.
+    //! @return True if successfully parsed into a ScientificType. Otherwise, false.
+    UNITS_EXPORT static bool ParseScientificType(ScientificType& sciType, Utf8StringCR sciTypeString);
+
+    UNITS_EXPORT static Utf8String GetSignOptionString(SignOption opt);
+
+    //! Parses the provided string into a SignOption.
+    //! @return True if successfully parsed into a SignOption. Otherwise, false.
+    UNITS_EXPORT static bool ParseSignOption(SignOption& signOpt, Utf8CP signOptString);
+
     static int32_t DecimalPrecisionToInt(DecimalPrecision decP) {return static_cast<int32_t>(decP);}
-    UNITS_EXPORT static bool DecimalPrecisionByIndex(DecimalPrecision& out, int32_t num);
+    UNITS_EXPORT static bool GetDecimalPrecisionByInt(DecimalPrecision& decP, int32_t num);
 
     //! Returns a factor, as a double, representing the provided precision.
     UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP);
 
-    UNITS_EXPORT static Utf8String PresentationTypeName(PresentationType type);
-    UNITS_EXPORT static bool NameToPresentationType(PresentationType& type, Utf8CP name);
-    UNITS_EXPORT static Utf8String SignOptionName(ShowSignOption opt);
+    UNITS_EXPORT static Utf8String GetPresentationTypeString(PresentationType type);
+    //! Parses the provided string into a SignOption.
+    //! @return True if successfully parsed into a SignOption. Otherwise, false.
+    UNITS_EXPORT static bool ParsePresentationType(PresentationType& type, Utf8CP typeString);
+    
     UNITS_EXPORT static bool FractionalPrecisionByDenominator(FractionalPrecision& out, const int32_t prec);
     UNITS_EXPORT static int32_t FractionalPrecisionDenominator(FractionalPrecision prec);
-    static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
-    UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
-    static Utf8CP SubstituteEmptyOrNull(Utf8CP name, Utf8CP subs) { return Utf8String::IsNullOrEmpty(name) ? subs : name; }
-    static Utf8CP SubstituteNull(Utf8CP name, Utf8CP subs) { return (nullptr == name) ? subs : name; }
-    static size_t MinInt(size_t a, size_t b) { return(a <= b) ? a : b; }
-    static size_t MaxInt(size_t a, size_t b) { return(a >= b) ? a : b; }
+
     UNITS_EXPORT static Utf8String AppendUnitName(Utf8CP txtValue, Utf8CP unitName = nullptr, Utf8CP space = nullptr);
     UNITS_EXPORT static Utf8Char MatchingDivider(Utf8Char div);
-    UNITS_EXPORT static int IndexOf(Utf8Char c, Utf8CP text);
-    UNITS_EXPORT static Utf8CP SkipBlanks(Utf8CP str);
-    UNITS_EXPORT static Utf8Char GetFirstSignificantChar(Utf8CP str);
-    UNITS_EXPORT static Utf8Char GetLastSignificantChar(Utf8CP str);
-    static bool IsJsonCandidate(Utf8CP str) {return (GetFirstSignificantChar(str) == '{') && (GetLastSignificantChar(str) == '}');}
+
+    //! Gets the thousand separator for the current locale.
     UNITS_EXPORT static Utf8String GetCurrentThousandSeparator();
+    //! Gets the decimal separator for the current locale.
     UNITS_EXPORT static Utf8String GetCurrentDecimalSeparator();
     UNITS_EXPORT static Utf8String GetCurrentGrouping();
 };
@@ -321,7 +324,7 @@ struct FormatConstant
 public:
     static const double DefaultRoundingFactor() { return 0.0; }
     static PresentationType const DefaultPresentaitonType() { return PresentationType::Decimal; }
-    static ShowSignOption const DefaultSignOption() { return ShowSignOption::OnlyNegative; }
+    static SignOption const DefaultSignOption() { return SignOption::OnlyNegative; }
     static FormatTraits const DefaultFormatTraits() { return FormatTraits::None; }
     static DecimalPrecision const DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
     static FractionalPrecision const DefaultFractionalPrecision() { return  FractionalPrecision::Over_64; }
@@ -340,7 +343,7 @@ public:
     static Utf8String FPN_NoSign() { return "NoSign"; }
     static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
     static Utf8String FPN_SignAlways() { return "SignAlways"; }
-    static Utf8String FPN_NegativeParenths() { return "negativeParentheses"; }
+    static Utf8String FPN_NegativeParenths() { return "NegativeParentheses"; }
 
     static Utf8String FPN_ScientificStandard() {return "Standard";}
     static Utf8String FPN_ScientificNormal() {return "Normal";}
@@ -349,13 +352,7 @@ public:
     static Utf8String FPN_Decimal() { return "Decimal"; }
     static Utf8String FPN_Fractional() { return "Fractional"; }
     static Utf8String FPN_Scientific() { return "Scientific"; }
-    static Utf8String FPN_ScientificNorm() { return "ScientificNorm"; }
     static Utf8String FPN_Station() {return "Station";}
-    static Utf8String FPN_Station100() { return "Station100"; }
-    static Utf8String FPN_Station1000() { return "Station1000"; }
-    static Utf8String FPN_FractBarHoriz() { return "Horizontal"; }
-    static Utf8String FPN_FractBarOblique() { return "Oblique"; }
-    static Utf8String FPN_FractBarDiagonal() { return "Diagonal"; }
 
     static Utf8String FPN_TrailZeroes() {return "TrailZeroes";}
     static Utf8String FPN_LeadZeroes() {return "LeadZeroes";}
@@ -419,15 +416,10 @@ public:
     static const Utf8CP BoolText(bool t) { return t ? "true" : "false"; }
     static const Utf8CP AllocError() { return "AllocError"; }
     static const Utf8CP HexSymbols() { return "0123456789ABCDEF"; }
-    static const Utf8CP FUSDividers() { return "()[]{}|"; }
-    static const Utf8CP FUSDividerMatch() { return ")(][}{|"; }
+    static const Utf8CP Dividers() { return "()[]{}|"; }
+    static const Utf8CP DividerMatch() { return ")(][}{|"; }
     UNITS_EXPORT static const size_t* FractionCodes();
-    static const Utf8CP DefaultFormatName() { return "DefaultRealU"; }
-    static const Utf8CP DefaultFormatAlias() { return "real"; }
-    static const Utf8CP FUSJsonValue() { return "value"; }
-    static const Utf8CP FUSJsonDispValue() { return "displayValue"; }
     static const bool IsBoolEqual(bool val, bool ref) { return val == ref; }
-
 
     static const bool IsFractionSymbol(size_t code)
         {

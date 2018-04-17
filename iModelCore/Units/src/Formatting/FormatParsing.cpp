@@ -8,6 +8,7 @@
 #include <UnitsPCH.h>
 #include <Formatting/FormattingApi.h>
 #include "../../PrivateAPI/Formatting/FormattingParsing.h"
+#include "../../PrivateAPI/Formatting/NumericFormatUtils.h"
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
@@ -47,7 +48,7 @@ FormattingScannerCursor::FormattingScannerCursor(Utf8CP utf8Text, int scanLength
     m_text = Utf8String(utf8Text);  // we make a copy of the original string
     Rewind();
 
-    m_totalScanLength = Utils::TextLength(utf8Text);
+    m_totalScanLength = StringUtils::TextLength(utf8Text);
     if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
     m_dividers = FormattingDividers(div);
@@ -469,7 +470,7 @@ Utf8CP FormattingScannerCursor::GetReversedSignature(bool refresh, bool compress
 Utf8String FormattingScannerCursor::CollapseSpaces(bool replace)
     {
     Utf8CP sig = GetSignature(true, true);
-    size_t sigLen = Utils::TextLength(sig);
+    size_t sigLen = StringUtils::TextLength(sig);
     Utf8String str;
 
     if (sigLen > 0)
@@ -588,7 +589,7 @@ FormatDividerInstance::FormatDividerInstance(Utf8CP  txt, Utf8CP divs)
             {
             while (FormatConstant::EndOfLine() != *txt)
                 {
-                indx = Utils::IndexOf(*txt, divs);
+                indx = StringUtils::IndexOf(*txt, divs);
                 if (indx >= 0)
                     {
                     m_positions.push_back((indx << 8) + (int)*txt);
@@ -772,7 +773,7 @@ size_t FormattingSignature::DetectFractPattern(size_t ind)
 //----------------------------------------------------------------------------------------
 Utf8CP FormattingSignature::ReverseString(Utf8CP str, Utf8P revStr, size_t bufSize)
     {
-    size_t len = Utils::TextLength(str);
+    size_t len = StringUtils::TextLength(str);
     if (nullptr == revStr || bufSize == 0)
         return nullptr;
     if (bufSize < len + 1)
@@ -794,7 +795,7 @@ Utf8CP FormattingSignature::ReverseString(Utf8CP str, Utf8P revStr, size_t bufSi
 //----------------------------------------------------------------------------------------
 Utf8String FormattingSignature::ReversedSignature()
     {
-    size_t sigL = Utils::TextLength(m_signature);
+    size_t sigL = StringUtils::TextLength(m_signature);
     if (sigL == 0)
         return nullptr;
     Utf8P temp = (Utf8P)alloca(sigL + 2);
@@ -808,7 +809,7 @@ Utf8String FormattingSignature::ReversedSignature()
 //----------------------------------------------------------------------------------------
 Utf8String FormattingSignature::ReversedPattern()
     {
-    size_t sigL = Utils::TextLength(m_pattern);
+    size_t sigL = StringUtils::TextLength(m_pattern);
     if (sigL == 0)
         return nullptr;
     Utf8P temp = (Utf8P)alloca(sigL + 2);

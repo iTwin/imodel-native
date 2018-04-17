@@ -92,7 +92,7 @@ void FractionalNumeric::FormTextParts(bool reduce)
     {
     NumericFormatSpec fmt;
     fmt.SetPresentationType(PresentationType::Decimal);
-    fmt.SetSignOption(ShowSignOption::OnlyNegative);
+    fmt.SetSignOption(SignOption::OnlyNegative);
     fmt.SetFormatTraits(static_cast<FormatTraits>(0x000));
     fmt.SetPrecision(DecimalPrecision::Precision0);
     size_t numer = m_numerator;
@@ -415,6 +415,47 @@ Utf8String FactorizedNumber::DebugText()
     char buf[256];
     sprintf(buf, "Value %d  (factors) %s ", static_cast<int>(m_ival), ToText().c_str());
     return Utf8String(buf);
+    }
+
+//===================================================
+// StringUtils
+//===================================================
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+// static
+size_t StringUtils::AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str)
+    {
+    int cap = static_cast<int>(bufLen) - static_cast<int>(index) - 1;
+    size_t strL = (nullptr == str) ? 0 : strlen(str);
+    if (strL < 1 || cap < 1)
+        return index;
+    if (static_cast<int>(strL) > cap)
+        strL = static_cast<size_t>(cap);
+    memcpy(static_cast<void*>(buf + index), str, strL);
+    index += strL;
+    buf[index] = FormatConstant::EndOfLine();     
+    return index;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 04/17
+//----------------------------------------------------------------------------------------
+// static
+int StringUtils::IndexOf(Utf8Char c, Utf8CP text)
+    {
+    int indx = -1;
+    if (Utf8String::IsNullOrEmpty(text))
+        return indx;
+    while (*text != FormatConstant::EndOfLine())
+        {
+        ++indx;
+        if (c == *text)
+            return indx;
+        text++;
+        }
+    return -1;
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

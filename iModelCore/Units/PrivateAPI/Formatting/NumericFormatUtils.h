@@ -89,4 +89,22 @@ public:
     bool IsZero() {return (0 == m_numerator);}
 };
 
+//=======================================================================================
+//! A set of private methods used throughout the formatting code.
+// @bsistruct
+//=======================================================================================
+struct StringUtils
+{
+    //! Returns the size of the provided string. If nullptr is provided, 0 is returned. Otherwise, strlen() is
+    //! used to calculate the size of the string.
+    static size_t TextLength(Utf8CP text) { return (nullptr == text) ? 0 : strlen(text); }
+    UNITS_EXPORT static size_t AppendText(Utf8P buf, size_t bufLen, size_t index, Utf8CP str);
+    static size_t GetMinSize(size_t a, size_t b) {return(a <= b) ? a : b;}
+    static size_t GetMaxSize(size_t a, size_t b) {return(a >= b) ? a : b;}
+
+    UNITS_EXPORT static int IndexOf(Utf8Char c, Utf8CP text);
+    //! Returns the provided string without any leading spaces.
+    static Utf8CP SkipBlanks(Utf8CP str) {while(isspace(*str)) str++; return str;}
+};
+
 END_BENTLEY_FORMATTING_NAMESPACE

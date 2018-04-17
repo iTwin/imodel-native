@@ -190,7 +190,7 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
                 // if this composite only defines a single component then use format traits to determine if unit label is shown. This allows
                 // support for SuppressUnitLable options in DgnClientFx. Also in this single component situation use the define UomSeparator.
                 if (fmtP->IsShowUnitLabel())
-                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), Utils::SubstituteNull(space, fmtP->GetUomSeparator())) + suff;
+                    majT = Utils::AppendUnitName(majT.c_str(), compS->GetMajorLabel().c_str(), (nullptr ==space) ? fmtP->GetUomSeparator() : space) + suff;
                 break;
 
             case 2:
@@ -241,7 +241,7 @@ Utf8String Format::StdFormatQuantity(FormatCR nfs, BEU::QuantityCR qty, BEU::Uni
             return "";
         majT = fmtP->Format(temp.GetMagnitude(), round);
         if(fmtP->IsShowUnitLabel())
-           majT = Utils::AppendUnitName(majT.c_str(), uomLabel, Utils::SubstituteNull(space, fmtP->GetUomSeparator()));
+           majT = Utils::AppendUnitName(majT.c_str(), uomLabel, (nullptr == space) ? fmtP->GetUomSeparator() : space);
         }
     return majT;
     }
@@ -277,7 +277,7 @@ BentleyStatus Format::ParseFormatString(FormatR nfs, Utf8StringCR formatString, 
             case PresentationType::Scientific:     /* intentional fallthrough */
             case PresentationType::Station: /* intentional fallthrough */
                 DecimalPrecision prec;
-                Utils::DecimalPrecisionByIndex(prec, precision);
+                Utils::GetDecimalPrecisionByInt(prec, precision);
                 nfs.m_numericSpec.SetPrecision(prec);
                 break;
             case PresentationType::Fractional:
@@ -452,7 +452,7 @@ BentleyStatus Format::ParseFormatString(Utf8StringR formatName, Nullable<int32_t
 //----------------------------------------------------------------------------------------
 void Format::ParseUnitFormatDescriptor(Utf8StringR unitName, Utf8StringR formatString, Utf8CP description)
     {
-    FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::FUSDividers());
+    FormattingScannerCursor curs = FormattingScannerCursor(description, -1, FormatConstant::Dividers());
     FormattingWord fnam;
     FormattingWord unit;
     FormatDividerInstance fdt;
@@ -514,9 +514,8 @@ Json::Value Format::ToJson(bool verbose) const
     {
     Json::Value jNFS;
     jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
-    Json::Value jcs = m_compositeSpec.ToJson();
-    if (!jcs.empty())
-        jNFS[json_CompositeFormat()] = jcs;
+    if (HasComposite())
+        jNFS[json_CompositeFormat()] = m_compositeSpec.ToJson();
     return jNFS;
     }
 

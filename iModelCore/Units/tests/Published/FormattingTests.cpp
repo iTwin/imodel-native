@@ -96,28 +96,28 @@ TEST_F(FormatIntegerTest, FormatIntegerSignOptionTests)
 
     // NoSign
     {
-    nfs.SetSignOption(ShowSignOption::NoSign);
+    nfs.SetSignOption(SignOption::NoSign);
     EXPECT_STREQ("42", nfs.Format(42).c_str());
     EXPECT_STREQ("42", nfs.Format(-42).c_str());
     }
 
     // OnlyNegative
     {
-    nfs.SetSignOption(ShowSignOption::OnlyNegative);
+    nfs.SetSignOption(SignOption::OnlyNegative);
     EXPECT_STREQ("42", nfs.Format(42).c_str());
     EXPECT_STREQ("-42", nfs.Format(-42).c_str());
     }
 
     // SignAlways
     {
-    nfs.SetSignOption(ShowSignOption::SignAlways);
+    nfs.SetSignOption(SignOption::SignAlways);
     EXPECT_STREQ("+42", nfs.Format(42).c_str());
     EXPECT_STREQ("-42", nfs.Format(-42).c_str());
     }
 
     // NegativeParentheses
     {
-    nfs.SetSignOption(ShowSignOption::NegativeParentheses);
+    nfs.SetSignOption(SignOption::NegativeParentheses);
     EXPECT_STREQ("42", nfs.Format(42).c_str());
     EXPECT_STREQ("(42)", nfs.Format(-42).c_str());
     }
@@ -287,7 +287,7 @@ TEST_F(FormatDoubleTest, FormatDoubleSignOptionTests)
 
     // NoSign
     {
-    nfs.SetSignOption(ShowSignOption::NoSign);
+    nfs.SetSignOption(SignOption::NoSign);
 
     EXPECT_STREQ("101.25", nfs.Format(101.25).c_str());
     EXPECT_STREQ("101.25", nfs.Format(-101.25).c_str());
@@ -295,7 +295,7 @@ TEST_F(FormatDoubleTest, FormatDoubleSignOptionTests)
 
     // OnlyNegative
     {
-    nfs.SetSignOption(ShowSignOption::OnlyNegative);
+    nfs.SetSignOption(SignOption::OnlyNegative);
 
     EXPECT_STREQ("101.25", nfs.Format(101.25).c_str());
     EXPECT_STREQ("-101.25", nfs.Format(-101.25).c_str());
@@ -303,7 +303,7 @@ TEST_F(FormatDoubleTest, FormatDoubleSignOptionTests)
 
     // SignAlways
     {
-    nfs.SetSignOption(ShowSignOption::SignAlways);
+    nfs.SetSignOption(SignOption::SignAlways);
 
     EXPECT_STREQ("+101.25", nfs.Format(101.25).c_str());
     EXPECT_STREQ("-101.25", nfs.Format(-101.25).c_str());
@@ -311,7 +311,7 @@ TEST_F(FormatDoubleTest, FormatDoubleSignOptionTests)
 
     // NegativeParentheses
     {
-    nfs.SetSignOption(ShowSignOption::NegativeParentheses);
+    nfs.SetSignOption(SignOption::NegativeParentheses);
 
     EXPECT_STREQ("101.25", nfs.Format(101.25).c_str());
     EXPECT_STREQ("(101.25)", nfs.Format(-101.25).c_str());

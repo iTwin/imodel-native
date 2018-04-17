@@ -27,10 +27,21 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(UIListEntry)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(LocaleProperties)
 
 // Json presentation
+BE_JSON_NAME(type)
 BE_JSON_NAME(roundFactor)
-BE_JSON_NAME(presentType)
-BE_JSON_NAME(signOpt)
+BE_JSON_NAME(precision)
+BE_JSON_NAME(scientificType)
+BE_JSON_NAME(signOption)
 BE_JSON_NAME(formatTraits)
+BE_JSON_NAME(decSeparator)
+BE_JSON_NAME(thousandSeparator)
+BE_JSON_NAME(uomSeparator)
+BE_JSON_NAME(stationSeparator)
+BE_JSON_NAME(stationOffsetSize)
+BE_JSON_NAME(minWidth)
+BE_JSON_NAME(prefixPadChar)
+
+// Format Traits
 BE_JSON_NAME(trailZeroes)
 BE_JSON_NAME(leadZeroes)
 BE_JSON_NAME(keepSingleZero)
@@ -42,39 +53,21 @@ BE_JSON_NAME(showUnitLabel)
 BE_JSON_NAME(prependUnitLabel)
 BE_JSON_NAME(use1000Separator)
 BE_JSON_NAME(exponentOnlyNegative)
-//BE_JSON_NAME(UseLocale)
-BE_JSON_NAME(decPrec)
-BE_JSON_NAME(fractPrec)
-BE_JSON_NAME(barType)
-BE_JSON_NAME(decimalSeparator)
-BE_JSON_NAME(thousandSeparator)
-BE_JSON_NAME(uomSeparator)
-BE_JSON_NAME(statSeparator)
-BE_JSON_NAME(minWidth)
 
 // Format
-BE_JSON_NAME(SpecName)
-BE_JSON_NAME(SpecDescript)
-BE_JSON_NAME(SpecLabel)
 BE_JSON_NAME(SpecType)
 BE_JSON_NAME(CompositeFormat)
 BE_JSON_NAME(NumericFormat)
 
-//UnitProxy & FUS
+//UnitProxy
 BE_JSON_NAME(unitName)
 BE_JSON_NAME(unitLabel)
-BE_JSON_NAME(formatName)
-BE_JSON_NAME(fusName)
-BE_JSON_NAME(formatSpec)
-BE_JSON_NAME(cloneData)
-BE_JSON_NAME(synonym)
 
 //CompositeValueSpec
 BE_JSON_NAME(MajorUnit)
 BE_JSON_NAME(MiddleUnit)
 BE_JSON_NAME(MinorUnit)
 BE_JSON_NAME(SubUnit)
-BE_JSON_NAME(InputUnit)
 BE_JSON_NAME(includeZero)
 BE_JSON_NAME(spacer)
 
@@ -199,7 +192,7 @@ private:
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Scientific, Station
     ScientificType      m_scientificType;
-    ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
+    SignOption          m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParentheses
     FormatTraits        m_formatTraits;          // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
     FractionalPrecision m_fractPrecision;
@@ -220,7 +213,7 @@ private:
     int TrimTrailingZeroes(Utf8P buf, int index) const;
     size_t InsertChar(Utf8P buf, size_t index, char c, int num) const;
 
-    // Rounds the provided double value to round factor if it is within the threshold. The threshold is defined by FormatConstant::IsNegligible.
+    //! Rounds the provided double value to round factor if it is within the threshold. The threshold is defined by FormatConstant::IsNegligible.
     static double RoundDouble(double dval, double roundTo);
 
     double GetDecimalPrecisionFactor() const {return Utils::DecimalPrecisionFactor(m_decPrecision);}
@@ -237,14 +230,19 @@ private:
 public:
     //! Creates a new valid NumericFormatSpec with a 
     UNITS_EXPORT NumericFormatSpec();
-    NumericFormatSpec(Json::Value jval) : NumericFormatSpec() {FromJson(jval);}
+    NumericFormatSpec(JsonValueCR jval) : NumericFormatSpec() {FromJson(jval);}
 
     NumericFormatSpec(NumericFormatSpecCR other) = default;
     ~NumericFormatSpec() = default;
     NumericFormatSpecR operator=(NumericFormatSpecCR other) = default;
 
-    //! Given the Json
-    UNITS_EXPORT void FromJson(Json::Value jval);
+    //! Update this with the values from the provided JSON.
+    //! @return Success if this NumericFormatSpec is successfully updated. Otherwise, false.
+    UNITS_EXPORT BentleyStatus FromJson(JsonValueCR jval);
+    //! Serializes this to JSON. The JSON will only contain values which differ from their initial state, or have been explicitly set
+    //! to the current state.
+    //!
+    //! @param[in] verbose Specifies whether to include default values.
     UNITS_EXPORT Json::Value ToJson(bool verbose) const;
 
     UNITS_EXPORT static NumericFormatSpecCR DefaultFormat();
@@ -268,17 +266,20 @@ public:
     bool IsFractional() const { return PresentationType::Fractional == m_presentationType; }
     bool IsScientific() const {return PresentationType::Scientific == m_presentationType;}
 
-    void SetSignOption(ShowSignOption opt) {m_explicitlyDefinedShowSign = true; m_signOption = opt;}
-    ShowSignOption GetSignOption() const {return m_signOption;}
+    void SetSignOption(SignOption opt) {m_explicitlyDefinedShowSign = true; m_signOption = opt;}
+    SignOption GetSignOption() const {return m_signOption;}
     bool HasSignOption() const {return m_explicitlyDefinedShowSign;}
-    bool IsNoSign() const { return ShowSignOption::NoSign == m_signOption; }
-    bool IsOnlyNegative() const { return ShowSignOption::OnlyNegative == m_signOption; }
-    bool IsSignAlways() const { return ShowSignOption::SignAlways == m_signOption; }
-    bool IsNegativeParentheses() const { return ShowSignOption::NegativeParentheses == m_signOption; }
+    bool IsNoSign() const {return SignOption::NoSign == m_signOption;}
+    bool IsOnlyNegative() const {return SignOption::OnlyNegative == m_signOption;}
+    bool IsSignAlways() const {return SignOption::SignAlways == m_signOption;}
+    bool IsNegativeParentheses() const {return SignOption::NegativeParentheses == m_signOption;}
 
     UNITS_EXPORT Utf8String GetFormatTraitsString() const;
     void SetFormatTraits(FormatTraits traits) { m_formatTraits = traits; }
-    UNITS_EXPORT bool SetFormatTraitsFromString(Utf8StringCR input);
+    UNITS_EXPORT bool SetFormatTraits(Utf8CP input);
+    UNITS_EXPORT bool SetFormatTraits(JsonValueCR jval);
+    UNITS_EXPORT Json::Value FormatTraitsToJson(bool verbose) const;
+
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
     bool HasFormatTraits() const {return m_formatTraits != FormatTraits::None;}
 
@@ -323,14 +324,11 @@ public:
     // Format Traits Bit Setters/Getters
     //======================================
     UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits traits, FormatTraits bit, bool setTo);
-    UNITS_EXPORT static bool GetTraitsBit(FormatTraits traits, FormatTraits bit);
+    static bool GetTraitsBit(FormatTraits traits, FormatTraits bit) {return 0 != (static_cast<std::underlying_type<FormatTraits>::type>(traits) & static_cast<std::underlying_type<FormatTraits>::type>(bit));}
     void SetTraitsBit(FormatTraits bit, bool setTo) {m_formatTraits = NumericFormatSpec::SetTraitsBit(m_formatTraits, bit, setTo);}
     bool GetTraitsBit(FormatTraits bit) const {return NumericFormatSpec::GetTraitsBit(m_formatTraits, bit);}
     UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits* ref, bool verbose=false) const;
-    
-    UNITS_EXPORT void SetFormatTraitsFromJson(JsonValueCR jval);
-    UNITS_EXPORT Json::Value FormatTraitsToJson(bool verbose) const;
-    
+
     void SetExponentZero(bool setTo) {SetTraitsBit(FormatTraits::ExponentZero, setTo);}
     bool IsExponentZero() const {return GetTraitsBit(FormatTraits::ExponentZero);}
 
