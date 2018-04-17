@@ -156,7 +156,7 @@ struct GltfReader
     BentleyStatus ReadNormalPairs(Render::OctEncodedNormalPairListR pairs, Json::Value const& value, Utf8CP accessorName);
     BentleyStatus ReadNormals(Render::OctEncodedNormalListR normals, Json::Value const& value, Utf8CP accessorName);
 
-    template<typename T_Point> BentleyStatus GltfReader::ReadPoints(bvector<T_Point>& params, Json::Value const& value, Utf8CP accessorName);
+    template<typename T_Point> BentleyStatus ReadPoints(bvector<T_Point>& params, Json::Value const& value, Utf8CP accessorName);
 
     Render::ImageSource GetImageSource(Utf8CP imageName);
     Render::ImageSource GetTextureImageSource(Utf8CP textureName);
