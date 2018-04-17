@@ -150,7 +150,7 @@ ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
     {
     if (unit.IsConstant())
         {
-        LOG.errorv("On KoQ '%s' cannot set unit '%s' as the persistence unit because it is a constant", GetFullName().c_str(), unit.GetFullName());
+        LOG.errorv("On KoQ '%s' cannot set unit '%s' as the persistence unit because it is a constant", GetFullName().c_str(), unit.GetFullName().c_str());
         return ECObjectsStatus::Error;
         }
     if (HasPresentationFormats())
@@ -159,7 +159,7 @@ ECObjectsStatus KindOfQuantity::SetPersistenceUnit(ECUnitCR unit)
             {
             if (format.HasCompositeMajorUnit() && !ECUnit::AreCompatible(&unit, format.GetCompositeMajorUnit()))
                 {
-                LOG.errorv("On KoQ '%s' cannot set unit '%s' as the persistence unit because it is not compatible with format '%s'", GetFullName().c_str(), unit.GetFullName(), format.GetName());
+                LOG.errorv("On KoQ '%s' cannot set unit '%s' as the persistence unit because it is not compatible with format '%s'", GetFullName().c_str(), unit.GetFullName().c_str(), format.GetName().c_str());
                 return ECObjectsStatus::Error;
                 }
             }
@@ -422,7 +422,7 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
     unitName = Units::UnitNameMappings::TryGetECNameFromNewName(unitName.c_str());
     if (unitName.empty())
         {
-        LOG.errorv("Failed to find unit mapping for unit with name '%s' in legacy unit mappings", unitName);
+        LOG.errorv("Failed to find unit mapping for unit with name '%s' in legacy unit mappings", unitName.c_str());
         return ECObjectsStatus::InvalidUnitName;
         }
     Utf8CP mappedName;
@@ -872,7 +872,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatInternal(NamedFormat format
     {
     if (format.HasCompositeMajorUnit() && !Units::Unit::AreCompatible(format.GetCompositeMajorUnit(), GetPersistenceUnit()))
         {
-        LOG.errorv("On KoQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName());
+        LOG.errorv("On KoQ '%s' cannot add presentation format '%s' because its major unit is not compatible with this KoQ's persistence unit", GetFullName().c_str(), format.GetName().c_str());
         return ECObjectsStatus::Error;
         }
     m_presentationFormats.emplace_back(format);
@@ -936,7 +936,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
             {
             if (format.HasCompositeMajorUnit() && !ECUnit::AreCompatible(parent.GetCompositeMajorUnit(), format.GetCompositeMajorUnit()))
                 {
-                LOG.errorv("On KOQ '%s' cannot add a format that has a major unit that is incompatible with other formats in this KOQ namely '%s'", GetFullName().c_str(), format.GetName());
+                LOG.errorv("On KOQ '%s' cannot add a format that has a major unit that is incompatible with other formats in this KOQ namely '%s'", GetFullName().c_str(), format.GetName().c_str());
                 return ECObjectsStatus::Error;
                 }
             }
