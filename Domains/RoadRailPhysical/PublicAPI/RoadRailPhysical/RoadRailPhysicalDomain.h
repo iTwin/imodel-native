@@ -26,10 +26,10 @@ protected:
 public:
     RoadRailPhysicalDomain();
 
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR, Utf8CP physicalPartitionName);
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnViewId SetUpDefaultViews(Dgn::SubjectCR, Utf8CP alignmentPartitionName = nullptr, Utf8CP physicalPartitionName = nullptr,
-        bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
-    ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryPhysicalModel(Dgn::SubjectCR parentSubject, Utf8CP modelName);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnViewId SetUpDefaultViews(Dgn::SubjectCR, bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
+    ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryPhysicalModel(Dgn::SubjectCR parentSubject);
+    ROADRAILPHYSICAL_EXPORT static Dgn::SubjectCPtr GetParentSubject(Dgn::PhysicalModelCR model);
     static Utf8CP GetDefaultPhysicalPartitionName() { return "Roads/Rail Physical"; }
     static Utf8CP GetDefaultStandardsPartitionName() { return "Roadway Standards"; }
 

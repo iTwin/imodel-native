@@ -14,10 +14,10 @@ HANDLER_DEFINE_MEMBERS(RoadwayStandardsModelHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      12/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadwayStandardsModelPtr RoadwayStandardsModel::Query(SubjectCR parentSubject, Utf8CP modelName)
+RoadwayStandardsModelPtr RoadwayStandardsModel::Query(SubjectCR parentSubject)
     {
     DgnDbR db = parentSubject.GetDgnDb();
-    DgnCode partitionCode = DefinitionPartition::CreateCode(parentSubject, (modelName) ? modelName : RoadRailPhysicalDomain::GetDefaultStandardsPartitionName());
+    DgnCode partitionCode = DefinitionPartition::CreateCode(parentSubject, RoadRailPhysicalDomain::GetDefaultStandardsPartitionName());
     DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
     DefinitionPartitionCPtr partition = db.Elements().Get<DefinitionPartition>(partitionId);
     if (!partition.IsValid())

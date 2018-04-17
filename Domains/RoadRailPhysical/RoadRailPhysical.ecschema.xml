@@ -5,12 +5,6 @@
     <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
     <ECSchemaReference name="RoadRailAlignment" version="01.00.00" alias="rralign"/>
 
-    <ECEntityClass typeName="RoadRailCategoryModel">
-        <BaseClass>bis:DefinitionModel</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECEntityClass typeName="RoadwayStandardsModel">
         <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>

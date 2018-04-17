@@ -2,68 +2,19 @@
 |
 |     $Source: RoadRailCategory.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailPhysicalInternal.h"
 #include <RoadRailPhysical/RoadRailCategory.h>
 
-HANDLER_DEFINE_MEMBERS(RoadRailCategoryModelHandler)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void RoadRailCategoryModel::SetUp(DgnDbR db)
-    {
-    DgnDbStatus status;
-    auto categoryPartitionPtr = DefinitionPartition::Create(*db.Elements().GetRootSubject(), GetPartitionName());
-    if (categoryPartitionPtr->Insert(&status).IsNull())
-        {
-        BeAssert(false);
-        }
-
-    auto modelPtr = RoadRailCategoryModel::Create(RoadRailCategoryModel::CreateParams(db, categoryPartitionPtr->GetElementId()));
-
-    if (!modelPtr.IsValid() || (DgnDbStatus::Success != modelPtr->Insert()))
-        {
-        BeAssert(false);
-        }
-
-    RoadRailCategory::InsertDomainCategories(db);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId RoadRailCategoryModel::GetModelId(DgnDbR db)
-    {
-    DgnCode partitionCode = DefinitionPartition::CreateCode(*db.Elements().GetRootSubject(), GetPartitionName());
-    return db.Models().QuerySubModelId(partitionCode);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadRailCategoryModelPtr RoadRailCategoryModel::GetModel(DgnDbR db)
-    {
-    RoadRailCategoryModelPtr model = db.Models().Get<RoadRailCategoryModel>(RoadRailCategoryModel::GetModelId(db));
-    BeAssert(model.IsValid());
-    return model;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadRailCategory::InsertDomainCategories(DgnDbR db)
+void RoadRailCategory::InsertDomainCategories(ConfigurationModelR configurationModel)
     {
-    auto modelPtr = RoadRailCategoryModel::GetModel(db);
-    if (modelPtr.IsNull())
-        {
-        BeAssert(false);
-        }
-
-    InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Road, ColorDef::MediumGrey());
-    InsertSpatialCategory(*modelPtr, BRRP_CATEGORY_Track, ColorDef::MediumGrey());
+    InsertSpatialCategory(configurationModel, BRRP_CATEGORY_Roadway, ColorDef::White());
+    InsertSpatialCategory(configurationModel, BRRP_CATEGORY_Railway, ColorDef::White());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -84,7 +35,7 @@ void RoadRailCategory::InsertSubCategory(DgnCategoryCR category, Utf8CP codeValu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SpatialCategoryCPtr RoadRailCategory::InsertSpatialCategory(DefinitionModelR model, Utf8CP codeValue, ColorDef const& color)
+SpatialCategoryCPtr RoadRailCategory::InsertSpatialCategory(ConfigurationModelR model, Utf8CP codeValue, ColorDef const& color)
     {
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
@@ -99,7 +50,7 @@ SpatialCategoryCPtr RoadRailCategory::InsertSpatialCategory(DefinitionModelR mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DrawingCategoryCPtr RoadRailCategory::InsertDrawingCategory(DefinitionModelR model, Utf8CP codeValue, ColorDef const& color)
+DrawingCategoryCPtr RoadRailCategory::InsertDrawingCategory(ConfigurationModelR model, Utf8CP codeValue, ColorDef const& color)
     {
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
@@ -115,9 +66,9 @@ DrawingCategoryCPtr RoadRailCategory::InsertDrawingCategory(DefinitionModelR mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId RoadRailCategory::QuerySpatialCategoryId(DgnDbR db, Utf8CP codeValue)
+DgnCategoryId RoadRailCategory::QuerySpatialCategoryId(SubjectCR subject, Utf8CP codeValue)
     {
-    auto modelPtr = RoadRailCategoryModel::GetModel(db);
+    auto modelPtr = ConfigurationModel::Query(subject);
     if (modelPtr.IsNull())
         return DgnCategoryId();
 
@@ -129,9 +80,9 @@ DgnCategoryId RoadRailCategory::QuerySpatialCategoryId(DgnDbR db, Utf8CP codeVal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId RoadRailCategory::QueryDrawingCategoryId(DgnDbR db, Utf8CP codeValue)
+DgnCategoryId RoadRailCategory::QueryDrawingCategoryId(SubjectCR subject, Utf8CP codeValue)
     {
-    auto modelPtr = RoadRailCategoryModel::GetModel(db);
+    auto modelPtr = ConfigurationModel::Query(subject);
     if (modelPtr.IsNull())
         return DgnCategoryId();
 
@@ -143,9 +94,9 @@ DgnCategoryId RoadRailCategory::QueryDrawingCategoryId(DgnDbR db, Utf8CP codeVal
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnSubCategoryId RoadRailCategory::QuerySubCategoryId(DgnDbR db, DgnCategoryId categoryId, Utf8CP codeValue)
+DgnSubCategoryId RoadRailCategory::QuerySubCategoryId(DgnDbR dgnDb, DgnCategoryId categoryId, Utf8CP codeValue)
     {
-    DgnSubCategoryId subCategoryId = DgnSubCategory::QuerySubCategoryId(db, DgnSubCategory::CreateCode(db, categoryId, codeValue));
+    DgnSubCategoryId subCategoryId = DgnSubCategory::QuerySubCategoryId(dgnDb, DgnSubCategory::CreateCode(dgnDb, categoryId, codeValue));
     BeAssert(subCategoryId.IsValid());
     return subCategoryId;
     }
@@ -153,5 +104,5 @@ DgnSubCategoryId RoadRailCategory::QuerySubCategoryId(DgnDbR db, DgnCategoryId c
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCategoryId RoadRailCategory::GetRoad(DgnDbR db)  { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Road);    BeAssert(categoryId.IsValid()); return categoryId; }
-DgnCategoryId RoadRailCategory::GetTrack(DgnDbR db) { DgnCategoryId categoryId = QuerySpatialCategoryId(db, BRRP_CATEGORY_Track);   BeAssert(categoryId.IsValid()); return categoryId; }
+DgnCategoryId RoadRailCategory::GetRoadway(SubjectCR subject)  { DgnCategoryId categoryId = QuerySpatialCategoryId(subject, BRRP_CATEGORY_Roadway);    BeAssert(categoryId.IsValid()); return categoryId; }
+DgnCategoryId RoadRailCategory::GetRailway(SubjectCR subject) { DgnCategoryId categoryId = QuerySpatialCategoryId(subject, BRRP_CATEGORY_Railway);   BeAssert(categoryId.IsValid()); return categoryId; }

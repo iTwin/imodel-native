@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "RoadRailPhysicalInternal.h"
+#include <RoadRailPhysical/RoadRailPhysicalDomain.h>
 #include <RoadRailPhysical/Pathway.h>
 #include <RoadRailPhysical/TypicalSectionPoint.h>
 
@@ -226,7 +227,8 @@ RoadwayPtr Roadway::Create(PhysicalModelR model)
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), RoadRailCategory::GetRoad(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
+        RoadRailCategory::GetRoadway(*RoadRailPhysicalDomain::GetParentSubject(model)));
 
     return new Roadway(createParams);
     }
@@ -239,7 +241,8 @@ RailwayPtr Railway::Create(PhysicalModelR model)
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), RoadRailCategory::GetTrack(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
+        RoadRailCategory::GetRailway(*RoadRailPhysicalDomain::GetParentSubject(model)));
 
     return new Railway(createParams);
     }

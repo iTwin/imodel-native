@@ -89,8 +89,8 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
-#define BRRP_CATEGORY_Track                                         "Track"
-#define BRRP_CATEGORY_Road                                          "Road"
+#define BRRP_CATEGORY_Railway                                       "Railway"
+#define BRRP_CATEGORY_Roadway                                       "Roadway"
 
 
 
