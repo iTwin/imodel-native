@@ -18,7 +18,7 @@ class DataSourceSession
         typedef int64_t                         SessionInstance;
         typedef std::wstring                    SessionKey;
 
-        typedef std::function<std::string(const Utf8String& docGuid)> KeyRemapFunction;
+        typedef std::function<std::string()> KeyRemapFunction;
 
     protected:
 

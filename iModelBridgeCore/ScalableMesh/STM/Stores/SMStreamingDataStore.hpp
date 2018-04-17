@@ -185,7 +185,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     DataSourceService                       *   service;
     DataSourceService::ServiceName              service_name;
     DataSource::SessionName                     session_name;
-    std::unique_ptr<std::function<string(const Utf8String& docGuid)>> sasCallback = nullptr;
+    std::unique_ptr<std::function<string()>> sasCallback = nullptr;
     Utf8String sslCertificatePath;
 
     if (settings->IsLocal() && settings->IsUsingCURL())
@@ -213,13 +213,13 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
     else if (settings->IsDataFromRDS() && settings->IsUsingCURL())
         {
         service_name = L"DataSourceServiceAzureCURL";
-        account_name = L"AzureCURLAccount";
+        account_name = L"RDS";
 
         session_name = WString(settings->GetUtf8GUID().c_str(), BentleyCharEncoding::Utf8).c_str(); // the key is the reality data guid
 
         account_key = L"";
 
-        sasCallback.reset(new std::function<string(const Utf8String& docGuid)>([this](const Utf8String& docGuid) -> std::string
+        sasCallback.reset(new std::function<string()>([this]() -> std::string
             {
             return m_smRDSProvider->GetToken().c_str();
             }));
@@ -231,9 +231,10 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         auto firstSeparatorPos = url.find(L".");
         account_identifier = DataSourceAccount::AccountIdentifier(url.substr(8, firstSeparatorPos - 8).c_str());
-
+        //account_identifier = DataSourceAccount::AccountIdentifier(WString(m_smRDSProvider->GetProjectID().c_str(), BentleyCharEncoding::Utf8).c_str());
         account_name += L"-";
-        account_name += account_identifier;
+        //account_name += account_identifier;
+        account_name += WString(m_smRDSProvider->GetProjectID().c_str(), BentleyCharEncoding::Utf8).c_str();
         }
     else if (settings->IsDataFromAzure() && settings->IsUsingCURL())
         {
@@ -297,7 +298,12 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         if ((accountCaching = serviceCaching->getOrCreateAccount(cacheAccountName, DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
-        accountCaching->setPrefixPath(DataSourceURL(L"C:\\Temp\\SMStreamingCache"));
+        BeFileName tempPath;
+        if (BeFileNameStatus::Success != BeFileName::BeGetTempPath(tempPath))
+            BeAssert(false); // Temp path couldn't be extracted
+
+        tempPath.AppendToPath(L"RealityDataCache");
+        accountCaching->setPrefixPath(DataSourceURL(tempPath.c_str()));
 
         account->setCaching(*accountCaching, DataSourceURL());
         }
