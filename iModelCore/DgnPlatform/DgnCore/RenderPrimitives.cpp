@@ -728,6 +728,15 @@ template<typename T> int compareResources(T const* lhs, T const* rhs)
 
     auto const& lhKey = lhs->GetKey();
     auto const& rhKey = rhs->GetKey();
+
+    bool lhValid = lhKey.IsValid(), rhValid = rhKey.IsValid();
+    if (!lhValid)
+        return rhValid ? -1 : 0;
+    else if (!rhValid)
+        return 1;
+
+    BeAssert(lhValid && rhValid);
+
     if (lhKey < rhKey)
         return -1;
     else if (rhKey < lhKey)

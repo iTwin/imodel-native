@@ -3230,7 +3230,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //  3: Fixed ordering of DisplayParams::operator<() to use stable IDs of materials and textures rather than addresses,
     //     to ensure same order when deserializing from cache data back into MeshBuilderMap.
     //  4: Prevent unused vertices from ending up in meshes due to degenerate triangles (detect degenerates *before* adding vertices)
-    return "4";
+    //  5: Ensure curved, stroked curve vectors are treated as curved
+    return "5";
     }
 
 /*---------------------------------------------------------------------------------**//**
