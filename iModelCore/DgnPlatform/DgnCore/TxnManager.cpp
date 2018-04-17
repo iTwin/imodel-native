@@ -141,6 +141,9 @@ DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, boo
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::SaveRebase(int64_t& id, Rebase const& rebase)
     {
+    if (!m_enableRebasers)
+        return BE_SQLITE_OK;
+
     BeAssert(0 != rebase.GetSize());
 
     CachedStatementPtr stmt = GetTxnStatement("INSERT INTO " DGN_TABLE_Rebase "(Rebase) VALUES(?)");
@@ -162,6 +165,12 @@ DbResult TxnManager::SaveRebase(int64_t& id, Rebase const& rebase)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult TxnManager::LoadRebases(Rebaser& rebaser, int64_t thruId)
     {
+    if (!m_enableRebasers)
+        {
+        BeAssert(false && "rebasers are not enabled for the DgnDb");
+        return BE_SQLITE_OK;
+        }
+
     CachedStatementPtr stmt = GetTxnStatement("SELECT Rebase FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
 
     stmt->BindInt64(1, thruId);
@@ -178,6 +187,9 @@ DbResult TxnManager::LoadRebases(Rebaser& rebaser, int64_t thruId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TxnManager::DeleteRebases(int64_t id)
     {
+    if (!m_enableRebasers)
+        return DgnDbStatus::Success;
+
     if (id == 0)
         return DgnDbStatus::Success;
     auto delStmt = GetTxnStatement("DELETE FROM " DGN_TABLE_Rebase " WHERE (Id <= ?)");
@@ -190,7 +202,7 @@ DgnDbStatus TxnManager::DeleteRebases(int64_t id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 int64_t TxnManager::QueryLastRebaseId()
     {
-    if (!m_dgndb.TableExists(DGN_TABLE_Rebase))
+    if (!m_enableRebasers || !m_dgndb.TableExists(DGN_TABLE_Rebase))
         return 0;
     auto queryLastRebaseId = GetTxnStatement("SELECT MAX(Id) FROM " DGN_TABLE_Rebase);
     return (BE_SQLITE_ROW == queryLastRebaseId->Step())? queryLastRebaseId->GetValueInt64(0): 0;
@@ -252,6 +264,8 @@ TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this)
 
     TxnId last = stmt.GetValueInt64(0); // this is where we left off last session
     m_curr = TxnId(SessionId(last.GetSession().GetValue()+1), 0); // increment the session id, reset to index to 0.
+
+    m_enableRebasers = m_dgndb.TableExists(DGN_TABLE_Rebase);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -377,7 +377,7 @@ $(o)SmartIBL$(oext) :                               $(DgnCoreDir)SmartIBL.cpp ${
 
 $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
 
-$(o)ThematicDisplay$(oext) :                          $(DgnCoreDir)ThematicDisplay.cpp $(DgnPlatformAPISrc)ThematicDisplay.h ${MultiCompileDepends}
+$(o)ThematicDisplay$(oext) :                          $(DgnCoreDir)ThematicDisplay.cpp $(DgnPlatformAPISrc)ThematicDisplay.h $(DgnPlatformAPISrc)ElementTileTree.h ${MultiCompileDepends} 
 
 #----------------------------------------------------------------------
 #   DgnBRep

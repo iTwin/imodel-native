@@ -13,6 +13,7 @@
 #include <DgnPlatform/DgnElement.h>
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/ThematicDisplay.h>
+#include <DgnPlatform/Render.h>
 
 #define BEGIN_ELEMENT_TILETREE_NAMESPACE BEGIN_BENTLEY_DGN_NAMESPACE namespace ElementTileTree {
 #define END_ELEMENT_TILETREE_NAMESPACE } END_BENTLEY_DGN_NAMESPACE
@@ -323,13 +324,13 @@ public:
 struct ThematicMeshBuilder : RefCountedBase
 {
 private:
-    Utf8String                      m_channel;
-    Render::TextureMapping          m_textureMapping;
-    Render::ThematicCookedRange     m_cookedRange;
+    Utf8String                              m_channel;
+    Render::TextureMapping                  m_textureMapping;
 
 public:
-    ThematicMeshBuilder(Utf8StringCR channel, Render::SystemCR system, DgnDbR db, Render::ThematicDisplaySettingsCR settings, Render::ThematicCookedRangeCR range);
-    bool                DoThematicDisplay(PolyfaceHeaderR mesh, Render::TextureMappingR textureMapping) const;
+                ThematicMeshBuilder(Utf8StringCR channel, Render::SystemCR system, DgnDbR db, Render::ThematicDisplaySettingsCR settings);
+    bool        DoThematicDisplay(PolyfaceHeaderR mesh, Render::TextureMappingR textureMapping) const;
+    void        BuildMeshAuxData(Render::MeshAuxDataR auxData, PolyfaceQueryCR mesh);
 
 };
 

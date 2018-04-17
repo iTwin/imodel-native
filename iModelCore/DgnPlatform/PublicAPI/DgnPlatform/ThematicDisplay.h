@@ -137,12 +137,17 @@ struct  ThematicCookedRange
     double                              m_minimum;
     double                              m_delta;
 
+                    ThematicCookedRange() : m_minimum(0.0), m_delta(-1.0)       { };
                     ThematicCookedRange(ThematicRangeCR range)                  { Set(range); }
                     ThematicCookedRange(double min, double max)                 { Set(min, max); }    
+                    ThematicCookedRange(DRange1dCR range)                       { Set(range.low, range.high); }
     void            Set (double min, double max)                                { m_minimum = min, m_delta =  (max > min) ? (max - min) : 1.0; }
-    void            Set (ThematicRange const& range)                            { Set (range.GetMin(), range.GetMax()); }
-    inline double   GetNormalizedValueFromRaw (double value)  const             { return (value - m_minimum) / (m_delta); }
-    inline double   GetRawValueFromNormalized (double normalizedValue) const    { return m_minimum + normalizedValue * (m_delta); }
+    void            Set (ThematicRange const& range)                            { Set(range.GetMin(), range.GetMax()); }
+    void            Set(DRange1dCR range)                                       { Set(range.low, range.high); }
+
+    double          GetNormalizedValueFromRaw (double value)  const             { return (value - m_minimum) / (m_delta); }
+    double          GetRawValueFromNormalized (double normalizedValue) const    { return m_minimum + normalizedValue * (m_delta); }
+    bool            IsNull() const                                              { return m_delta < 0.0; }
 
  };  // ThematicCookedRange
 
@@ -153,9 +158,9 @@ struct ThematicMeshColorMap
 {
     bvector<ColorDef>         m_colors;
 
-    void        Init (ThematicDisplaySettingsCR settings, size_t nColors);
-    ColorDef    Get (double value, double min, double max) const;
-    void        Get (ColorDef& color, double value);
+    void            Init (ThematicDisplaySettingsCR settings, size_t nColors);
+    ColorDef        Get (double value, double min, double max) const;
+    void            Get (ColorDef& color, double value);
 
 };  // ThematicMeshColorMap;
 

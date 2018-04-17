@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsSymbology.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -431,10 +431,13 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnD
         {
         LsInternalComponentCP internalComponent = (LsInternalComponentCP)topComponent;
         uint32_t lc = internalComponent->GetLineCode();
-        BeAssert(MIN_LINECODE < lc && lc <= MAX_LINECODE);
+        BeAssert(lc <= MAX_LINECODE); // 0 is valid, it's the "internal default" identifier that is affected by width overrides...
         LinePixels lp;
         switch(lc)
             {
+            case 0:
+                lp = LinePixels::Solid;
+                break;
             case 1:
                 lp = LinePixels::Code1;
                 break;
@@ -460,13 +463,16 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DgnD
                 return;
             }
 
-        Init(nameRec);  //  This is required.  The logic that tests UseLinePixels is skipped unless the LineStyleSymb is initialized with the nameRec
-        SetUseLinePixels((uint32_t)lp);
-        return;
+        if (LinePixels::Solid != lp)
+            {
+            Init(nameRec);  //  This is required.  The logic that tests UseLinePixels is skipped unless the LineStyleSymb is initialized with the nameRec
+            SetUseLinePixels((uint32_t)lp);
+            return;
+            }
         }
 
     // If the line style is continuous and has no width, leave now.
-    if (nameRec->IsContinuous() && (0 == (styleParams.modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH))))
+    if (nameRec->IsContinuous() && (0 == (styleParams.modifiers & (STYLEMOD_SWIDTH | STYLEMOD_EWIDTH | STYLEMOD_TRUE_WIDTH))) && !topComponent->_HasWidth())
         return;
 
     if (nameRec->IsHardware())
