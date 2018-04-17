@@ -671,9 +671,9 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
 //---------------------------------------------------------------------------------------
 BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR ecdb, KindOfQuantityCR koq)
     {
-    BeAssert(!koq.GetPresentationFormatList().empty());
+    BeAssert(!koq.GetPresentationFormats().empty());
     bvector<Utf8String> formatList;
-    for (NamedFormat const& format : koq.GetPresentationFormatList())
+    for (NamedFormat const& format : koq.GetPresentationFormats())
         {
         if (format.IsProblem())
             {

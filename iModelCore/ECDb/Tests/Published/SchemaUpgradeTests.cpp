@@ -7677,7 +7677,7 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantity)
         EXPECT_STRCASEEQ(persUnit, koq->GetPersistenceUnit()->GetQualifiedName(koq->GetSchema()).c_str()) << name;
         Utf8String actualPresentationFormats;
         bool isFirstFormat = true;
-        for (ECN::NamedFormatCR format : koq->GetPresentationFormatList())
+        for (ECN::NamedFormatCR format : koq->GetPresentationFormats())
             {
             if (!isFirstFormat)
                 actualPresentationFormats.append(";");

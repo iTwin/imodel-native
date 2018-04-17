@@ -1787,9 +1787,9 @@ TEST_F(SchemaManagerTests, GetKindOfQuantity)
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
         ASSERT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetFullName().c_str());
         ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
-        ASSERT_EQ(2, actualKoq.GetPresentationFormatList().size());
-        ASSERT_STREQ("u:FT(DefaultRealU)", actualKoq.GetPresentationFormatList()[0].GetName().c_str());
-        ASSERT_STREQ("u:IN(DefaultRealU)", actualKoq.GetPresentationFormatList()[1].GetName().c_str());
+        ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
+        ASSERT_STREQ("u:FT(DefaultRealU)", actualKoq.GetPresentationFormats()[0].GetName().c_str());
+        ASSERT_STREQ("u:IN(DefaultRealU)", actualKoq.GetPresentationFormats()[1].GetName().c_str());
         };
 
     std::vector<SchemaItem> testSchemas;
@@ -1869,9 +1869,9 @@ TEST_F(SchemaManagerTests, GetPreEC32KindOfQuantity)
         ASSERT_STREQ("My KindOfQuantity", actualKoq.GetDescription().c_str());
         ASSERT_STREQ("u:CM", actualKoq.GetPersistenceUnit()->GetFullName().c_str());
         ASSERT_DOUBLE_EQ(.5, actualKoq.GetRelativeError());
-        ASSERT_EQ(2, actualKoq.GetPresentationFormatList().size());
-        ASSERT_STREQ("u:FT(DefaultRealU)", actualKoq.GetPresentationFormatList()[0].GetName().c_str());
-        ASSERT_STREQ("u:IN(DefaultRealU)", actualKoq.GetPresentationFormatList()[1].GetName().c_str());
+        ASSERT_EQ(2, actualKoq.GetPresentationFormats().size());
+        ASSERT_STREQ("u:FT(DefaultRealU)", actualKoq.GetPresentationFormats()[0].GetName().c_str());
+        ASSERT_STREQ("u:IN(DefaultRealU)", actualKoq.GetPresentationFormats()[1].GetName().c_str());
         };
 
     std::vector<SchemaItem> testSchemas;

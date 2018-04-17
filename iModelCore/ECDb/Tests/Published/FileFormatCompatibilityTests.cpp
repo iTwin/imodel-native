@@ -2635,7 +2635,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
-    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
     }
 
     {
@@ -2644,7 +2644,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
-    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
     }
 
     {
@@ -2653,7 +2653,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
-    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
     }
 
     {
@@ -2662,7 +2662,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), false, "garbage");
-    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
     }
 
     {
@@ -2671,8 +2671,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
-    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
@@ -2681,8 +2681,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
-    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
@@ -2691,8 +2691,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
-    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
@@ -2701,8 +2701,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
-    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     //User defined EC3.2 units
@@ -2712,7 +2712,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), false, "myalias:myunit");
-    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
     }
 
     {
@@ -2721,7 +2721,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), false, "myunit");
-    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
     }
 
     {
@@ -2730,7 +2730,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), false, "myalias:myunit");
-    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
     }
 
     {
@@ -2739,8 +2739,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
-    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
@@ -2749,8 +2749,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
-    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     {
@@ -2759,9 +2759,9 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
-    ASSERT_EQ(2, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(1).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(1).GetName().c_str(), "f:defaultReal");
     }
 
     {
@@ -2770,9 +2770,9 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:CM");
-    ASSERT_EQ(2, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(1).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(1).GetName().c_str(), "f:defaultReal");
     }
 
     //standard units
@@ -2782,7 +2782,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
-    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
     }
 
     {
@@ -2791,7 +2791,7 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
-    EXPECT_TRUE(koq->GetPresentationFormatList().empty());
+    EXPECT_TRUE(koq->GetPresentationFormats().empty());
     }
 
     {
@@ -2800,9 +2800,9 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
-    ASSERT_EQ(2, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(1).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(1).GetName().c_str(), "f:defaultReal");
     }
 
     {
@@ -2811,9 +2811,9 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:KM");
-    ASSERT_EQ(2, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(1).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(1).GetName().c_str(), "f:defaultReal");
     }
 
     //standard units where ECName differs from unit name
@@ -2823,8 +2823,8 @@ TEST_F(FileFormatCompatibilityTests, ForwardCompatibilitySafeguards_KOQs)
     ASSERT_TRUE(koq != nullptr);
     EXPECT_EQ(koq, getPropertyKoq());
     assertUnit(*koq->GetPersistenceUnit(), true, "u:CM_PER_SEC");
-    ASSERT_EQ(1, koq->GetPresentationFormatList().size());
-    ASSERT_STRCASEEQ(koq->GetPresentationFormatList().at(0).GetName().c_str(), "f:defaultReal");
+    ASSERT_EQ(1, koq->GetPresentationFormats().size());
+    ASSERT_STRCASEEQ(koq->GetPresentationFormats().at(0).GetName().c_str(), "f:defaultReal");
     }
 
     }

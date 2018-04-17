@@ -601,16 +601,16 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
 
         if (colName.EqualsI("PresentationUnits"))
             {
-            if (expectedKoq.GetPresentationFormatList().empty())
+            if (expectedKoq.GetPresentationFormats().empty())
                 ASSERT_TRUE(val.IsNull()) << "KindOfQuantityDef.PresentationFormatList";
             else
                 {
-                ASSERT_EQ((int) expectedKoq.GetPresentationFormatList().size(), val.GetArrayLength()) << "KindOfQuantityDef.PresentationFormatList";
+                ASSERT_EQ((int) expectedKoq.GetPresentationFormats().size(), val.GetArrayLength()) << "KindOfQuantityDef.PresentationFormatList";
 
                 size_t i = 0;
                 for (IECSqlValue const& arrayElementVal : val.GetArrayIterable())
                     {
-                    ASSERT_STREQ(expectedKoq.GetPresentationFormatList()[i].GetName().c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.PresentationFormatList";
+                    ASSERT_STREQ(expectedKoq.GetPresentationFormats()[i].GetName().c_str(), arrayElementVal.GetText()) << "KindOfQuantityDef.PresentationFormatList";
                     i++;
                     }
                 }

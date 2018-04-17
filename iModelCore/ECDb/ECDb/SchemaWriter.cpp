@@ -857,7 +857,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(Context& ctx, KindOfQuantityCR 
         return ERROR;
 
     Utf8String presUnitsJsonStr;
-    if (!koq.GetPresentationFormatList().empty())
+    if (!koq.GetPresentationFormats().empty())
         {
         if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presUnitsJsonStr, ctx.GetECDb(), koq))
             return ERROR;
@@ -3030,7 +3030,7 @@ BentleyStatus SchemaWriter::UpdateKindOfQuantity(Context& ctx, KindOfQuantityCha
         {
         actualChanges++;
 
-        if (newKoq.GetPresentationFormatList().empty())
+        if (newKoq.GetPresentationFormats().empty())
             sqlUpdateBuilder.AddSetToNull("PresentationUnits");
         else
             {
