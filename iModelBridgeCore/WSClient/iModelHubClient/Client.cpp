@@ -265,6 +265,7 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR projectId, Utf8StringCR iModelI
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
+BEGIN_UNNAMED_NAMESPACE
 Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description)
     {
     Json::Value iModelCreation(Json::objectValue);
@@ -276,6 +277,7 @@ Json::Value iModelCreationJson(Utf8StringCR iModelName, Utf8StringCR description
     properties[ServerSchema::Property::iModelDescription] = description;
     return iModelCreation;
     }
+END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016

@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/CachingDataSource.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -84,7 +84,8 @@ struct CachingDataSource :
         BentleyStatus FinalizeOpen(CacheTransactionCR txn);
         ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr ct);
 
-        bool IsServerSchemaSupported(JsonValueCR schemaDef);
+        static bool IsServerSchemaSupported(CacheTransactionCR txn, JsonValueCR schemaDef);
+        static bool IsServerSchemaDeprecated(JsonValueCR schemaDef);
         static SchemaKey ExtractSchemaKey(JsonValueCR schemaDef);
 
         TempFilePtr GetTempFile(Utf8StringCR fileName, ObjectIdCR objectId); // TODO: create mockable file manager

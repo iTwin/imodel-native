@@ -22,16 +22,54 @@ ConnectAuthenticationHandler::ConnectAuthenticationHandler
 Utf8String urlBaseToAuth,
 std::shared_ptr<IConnectTokenProvider> customTokenProvider,
 IHttpHandlerPtr customHttpHandler,
-bool shouldUseSAMLAuthorization,
-bool legacyMode
+Utf8String tokenPrefix
 ) :
 AuthenticationHandler(customHttpHandler),
 m_urlBaseToAuth(urlBaseToAuth),
 m_tokenProvider(customTokenProvider ? customTokenProvider : std::make_shared<ConnectTokenProvider>(ImsClient::GetShared())),
 m_thread(WorkerThread::Create("ConnectAuthenticationHandler")),
-m_shouldUseSAMLAuthorization(shouldUseSAMLAuthorization),
-m_legacyMode(legacyMode)
+m_tokenPrefix(tokenPrefix),
+m_retryExpiredToken(false)
     {}
+
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<ConnectAuthenticationHandler> ConnectAuthenticationHandler::CreateLegacy
+(
+Utf8String urlBaseToAuth,
+std::shared_ptr<IConnectTokenProvider> customTokenProvider,
+IHttpHandlerPtr customHttpHandler,
+bool shouldUseSAMLAuthorization
+)
+    {
+    auto manager = std::shared_ptr<ConnectAuthenticationHandler>(new ConnectAuthenticationHandler(urlBaseToAuth, customTokenProvider, customHttpHandler, shouldUseSAMLAuthorization ? TOKENPREFIX_SAML : TOKENPREFIX_Token));
+    manager->EnableExpiredTokenRefresh();
+    return manager;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+std::shared_ptr<ConnectAuthenticationHandler> ConnectAuthenticationHandler::Create
+(
+Utf8String urlBaseToAuth,
+std::shared_ptr<IConnectTokenProvider> customTokenProvider,
+IHttpHandlerPtr customHttpHandler,
+Utf8String tokenPrefix
+)
+    {
+    return std::shared_ptr<ConnectAuthenticationHandler>(new ConnectAuthenticationHandler(urlBaseToAuth, customTokenProvider, customHttpHandler, tokenPrefix));
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConnectAuthenticationHandler::EnableExpiredTokenRefresh()
+    {
+    m_retryExpiredToken = true;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
@@ -76,25 +114,23 @@ AsyncTaskPtr<AuthenticationHandler::AuthorizationResult> ConnectAuthenticationHa
             return;
             }
 
-        //TODO: Update ConnectAuthenticationHandler to handle various diffrent Tokens (ToSAMLAuthorizationString)
-        SamlTokenPtr token = dynamic_pointer_cast<SamlToken>(m_tokenProvider->GetToken());
+        auto token = m_tokenProvider->GetToken();
 
         if (!IsTokenAuthorization(previousAttempt.GetAuthorization()) &&
             nullptr != token)
             {
-            finalResult->SetSuccess(m_shouldUseSAMLAuthorization ? token->ToSAMLAuthorizationString() : token->ToAuthorizationString());
+            finalResult->SetSuccess(GetTokenAuthorization(token));
             return;
             }
 
         m_tokenProvider->UpdateToken()->Then(m_thread, [=]  (ISecurityTokenPtr token)
             {
-            SamlTokenPtr samlToken = dynamic_pointer_cast<SamlToken>(token);
-            if (nullptr == samlToken)
+            if (nullptr == token)
                 {
                 finalResult->SetError(AsyncError("Failed to get new token"));
                 return;
                 }
-            finalResult->SetSuccess(m_shouldUseSAMLAuthorization ? samlToken->ToSAMLAuthorizationString() : samlToken->ToAuthorizationString());
+            finalResult->SetSuccess(GetTokenAuthorization(token));
             });
         })->Then<AuthenticationHandler::AuthorizationResult>([=]
             {
@@ -112,7 +148,7 @@ bool ConnectAuthenticationHandler::ShouldStopSendingToken(AttemptCR previousAtte
         return true;
         }
 
-    unsigned int expiredTokenRetryCount = m_legacyMode ? 1 : 0;
+    unsigned int expiredTokenRetryCount = m_retryExpiredToken ? 1 : 0;
 
     if (IsTokenAuthorization(previousAttempt.GetAuthorization()) &&
         previousAttempt.GetAttemptNumber() > expiredTokenRetryCount)
@@ -129,8 +165,15 @@ bool ConnectAuthenticationHandler::ShouldStopSendingToken(AttemptCR previousAtte
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ConnectAuthenticationHandler::IsTokenAuthorization(Utf8StringCR auth) const
     {
-    Utf8CP prefix = m_shouldUseSAMLAuthorization ? "SAML " : "token ";
-    if (0 == auth.compare(0, strlen(prefix), prefix))
+    if (0 == auth.compare(0, strlen( m_tokenPrefix.c_str()),  m_tokenPrefix.c_str()))
         return true; 
     return false;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ConnectAuthenticationHandler::GetTokenAuthorization(ISecurityTokenPtr token) const
+    {
+    return m_tokenPrefix + " " + token->ToAuthorizationString();
     }

@@ -340,7 +340,7 @@ TEST_P(ArgumentParserTests_DownloadSchemas, Parse_ValidParameters_FillsTestDataA
 
     ASSERT_EQ(param.resultSize, testData.size());
 
-    int it = param.inspectIndex;
+    size_t it = param.inspectIndex;
     EXPECT_EQ("URL", testData[it].downloadSchemas.serverUrl);
     EXPECT_EQ("RId", testData[it].downloadSchemas.id);
     EXPECT_EQ(Credentials(), testData[it].downloadSchemas.credentials);
@@ -657,7 +657,7 @@ TEST_P(ArgumentParserTests_CreateAndUpgradeWithDefaultParams, Parse_UpgradeCache
 
     ASSERT_EQ(param.resultSize, testData.size());
 
-    int it = param.inspectIndex;
+    size_t it = param.inspectIndex;
 
     EXPECT_TRUE(testData[it].create.IsValid());
     EXPECT_TRUE(testData[it].upgrade.IsValid());

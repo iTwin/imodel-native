@@ -470,7 +470,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                         return;
                         }
 
-                    if (!IsServerSchemaSupported(schemaDef))
+                    if (!IsServerSchemaSupported(txn, schemaDef))
                         continue;
 
                     Utf8String eTag = txn.GetCache().ReadFileCacheTag(schemaId);
@@ -552,7 +552,8 @@ bvector<ECN::ECSchemaCP> CachingDataSource::GetRepositorySchemas(CacheTransactio
         ECSchemaCP schema = txn.GetCache().GetAdapter().GetECSchema(schemaKey.m_schemaName.c_str());
         if (nullptr == schema)
             {
-            BeAssert(false);
+            LOG.errorv("Server schema '%s' not found in cache", schemaKey.m_schemaName.c_str());
+            BeAssert(false && "Schema not found in cache");
             continue;
             }
         schemas.push_back(schema);
@@ -575,7 +576,11 @@ bvector<SchemaKey> CachingDataSource::GetRepositorySchemaKeys(CacheTransactionCR
         }
 
     for (JsonValueCR schemaDef : schemaDefs)
+        {
+        if (IsServerSchemaDeprecated(schemaDef))
+            continue;
         keys.push_back(ExtractSchemaKey(schemaDef));
+        }
 
     return keys;
     }
@@ -611,21 +616,39 @@ TempFilePtr CachingDataSource::GetTempFileForSchema(SchemaKeyCR schemaKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CachingDataSource::IsServerSchemaSupported(JsonValueCR schemaDef)
+bool CachingDataSource::IsServerSchemaSupported(CacheTransactionCR txn, JsonValueCR schemaDef)
     {
-    Utf8String name = schemaDef[CLASS_ECSchemaDef_PROPERTY_Name].asString();
-    Utf8String prefix = schemaDef[CLASS_ECSchemaDef_PROPERTY_NameSpacePrefix].asString();
+    Utf8CP name = schemaDef[CLASS_ECSchemaDef_PROPERTY_Name].asCString();
+    Utf8CP prefix = schemaDef[CLASS_ECSchemaDef_PROPERTY_NameSpacePrefix].asCString();
 
     if (ECSchema::IsStandardSchema(name))
-        return false; // Avoid downgrading standard schemas. // TODO: import if standard schema version is higher than local, but not lower
+        {
+        if (txn.GetCache().GetAdapter().HasECSchema(name))
+             return false; // Avoid downgrading standard schemas. // TODO: import if standard schema version is higher than local, but not lower
+        return true;
+        }
 
-    if (name == "Contents" && prefix == "rest_cnt")
-        return false; // Deprecated, incompatible schema
-
-    if (name == "Views" && prefix == "rest_view")
-        return false; // Deprecated, incompatible schema
+    if (IsServerSchemaDeprecated(schemaDef))
+        return false;
 
     return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CachingDataSource::IsServerSchemaDeprecated(JsonValueCR schemaDef)
+    {
+    Utf8CP name = schemaDef[CLASS_ECSchemaDef_PROPERTY_Name].asCString();
+    Utf8CP prefix = schemaDef[CLASS_ECSchemaDef_PROPERTY_NameSpacePrefix].asCString();
+
+    if (0 == strcmp(name, "Contents") && 0 == strcmp(prefix, "rest_cnt"))
+        return true; // Deprecated, incompatible schema
+
+    if (0 == strcmp(name, "Views") && 0 == strcmp(prefix, "rest_view"))
+        return true; // Deprecated, incompatible schema
+
+    return false;
     }
 
 /*--------------------------------------------------------------------------------------+

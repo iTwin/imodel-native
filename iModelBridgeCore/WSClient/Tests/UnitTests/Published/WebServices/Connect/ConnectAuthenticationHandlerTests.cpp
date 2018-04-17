@@ -25,10 +25,10 @@ AuthenticationHandler::Attempt StubAttempt(Utf8StringCR url)
 TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_HttpAuthErrors_True)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("Foo", provider, GetHandlerPtr());
+    auto authHandler = ConnectAuthenticationHandler::Create("Foo", provider, GetHandlerPtr());
 
-    EXPECT_TRUE(authHandler._ShouldRetryAuthentication(StubHttpResponse(HttpStatus::Unauthorized)));
-    EXPECT_TRUE(authHandler._ShouldRetryAuthentication(StubHttpResponse(HttpStatus::Forbidden)));
+    EXPECT_TRUE(authHandler->_ShouldRetryAuthentication(StubHttpResponse(HttpStatus::Unauthorized)));
+    EXPECT_TRUE(authHandler->_ShouldRetryAuthentication(StubHttpResponse(HttpStatus::Forbidden)));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -37,11 +37,11 @@ TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_HttpAuthErr
 TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_HttpNonAuthErrors_False)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("Foo", provider, GetHandlerPtr());
+    auto authHandler = ConnectAuthenticationHandler::Create("Foo", provider, GetHandlerPtr());
 
-    EXPECT_FALSE(authHandler._ShouldRetryAuthentication(StubHttpResponse(HttpStatus::OK)));
-    EXPECT_FALSE(authHandler._ShouldRetryAuthentication(StubHttpResponse(HttpStatus::NotFound)));
-    EXPECT_FALSE(authHandler._ShouldRetryAuthentication(StubHttpResponse(ConnectionStatus::CouldNotConnect)));
+    EXPECT_FALSE(authHandler->_ShouldRetryAuthentication(StubHttpResponse(HttpStatus::OK)));
+    EXPECT_FALSE(authHandler->_ShouldRetryAuthentication(StubHttpResponse(HttpStatus::NotFound)));
+    EXPECT_FALSE(authHandler->_ShouldRetryAuthentication(StubHttpResponse(ConnectionStatus::CouldNotConnect)));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -50,10 +50,10 @@ TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_HttpNonAuth
 TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_DatasourceNotFoundError_True)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("Foo", provider, GetHandlerPtr());
+    auto authHandler = ConnectAuthenticationHandler::Create("Foo", provider, GetHandlerPtr());
 
     auto response = StubHttpResponse(HttpStatus::NotFound, R"({"errorId":"DatasourceNotFound"})");
-    EXPECT_TRUE(authHandler._ShouldRetryAuthentication(response));
+    EXPECT_TRUE(authHandler->_ShouldRetryAuthentication(response));
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -62,9 +62,9 @@ TEST_F(ConnectAuthenticationHandlerTests, _ShouldRetryAuthentication_DatasourceN
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_DifferentBaseUrl_ReturnsErrorToStopAuthentication)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://other.com", provider, GetHandlerPtr());
+    auto authHandler = ConnectAuthenticationHandler::Create("http://other.com", provider, GetHandlerPtr());
 
-    auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com/foo"))->GetResult();
+    auto result = authHandler->_RetrieveAuthorization(StubAttempt("http://test.com/foo"))->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());
     }
@@ -75,15 +75,15 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_DifferentBaseUr
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_SameBaseUrl_ReturnsExistingToken)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
+    auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "prefix");
 
     SamlTokenPtr token = StubSamlToken(100);
     EXPECT_CALL(*provider, GetToken()).WillRepeatedly(Return(token));
 
-    auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com/foo"))->GetResult();
+    auto result = authHandler->_RetrieveAuthorization(StubAttempt("http://test.com/foo"))->GetResult();
 
     EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ(token->ToAuthorizationString(), result.GetValue());
+    EXPECT_EQ("prefix " + token->ToAuthorizationString(), result.GetValue());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -92,34 +92,15 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_SameBaseUrl_Ret
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedToken_ReturnsToken)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
+    auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "prefix");
 
     SamlTokenPtr token = StubSamlToken(100);
     EXPECT_CALL(*provider, GetToken()).WillRepeatedly(Return(token));
 
-    auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
+    auto result = authHandler->_RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
 
     EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ(token->ToAuthorizationString(), result.GetValue());
-    EXPECT_NE(token->ToSAMLAuthorizationString(), result.GetValue());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedTokenWithSamlAuth_ReturnsSamlTokenStr)
-    {
-    auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), true);
-
-    SamlTokenPtr token = StubSamlToken(100);
-    EXPECT_CALL(*provider, GetToken()).WillRepeatedly(Return(token));
-
-    auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
-
-    EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ(token->ToSAMLAuthorizationString(), result.GetValue());
-    EXPECT_NE(token->ToAuthorizationString(), result.GetValue());
+    EXPECT_EQ("prefix " + token->ToAuthorizationString(), result.GetValue());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -128,12 +109,12 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedTokenW
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NoCachedTokenAndUpdateTokenFails_ReturnsError)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
+    auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr());
 
     EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
     EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(SamlTokenPtr())));
 
-    auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
+    auto result = authHandler->_RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());
     }
@@ -144,70 +125,33 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NoCachedTokenAn
 TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_TokenIsNotPersisted_UpdatesAndReturnsToken)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
+    auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "prefix");
 
     SamlTokenPtr newToken = StubSamlToken(100);
 
     EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
     EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(newToken)));
 
-    auto result = authHandler._RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
+    auto result = authHandler->_RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
 
     EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ(newToken->ToAuthorizationString(), result.GetValue());
+    EXPECT_EQ("prefix " +newToken->ToAuthorizationString(), result.GetValue());
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NonLegacyModeAttemptedOnceWithTokenAuth_ReturnsErrorToStopAuthentication)
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedOnce_ReturnsErrorToStopAuthentication)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
     ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
     ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
 
     bool legacyMode = false;
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), false, legacyMode);
+    auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "prefix");
 
-    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
-    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
-
-    EXPECT_FALSE(result.IsSuccess());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttemptedOnceWithTokenAuth_RetrievesNewTokenAndRetries)
-    {
-    auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), false); // default parameter legacyMode = true
-
-    SamlTokenPtr newToken = StubSamlToken(100);
-
-    EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
-    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(newToken)));
-
-    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
-    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
-
-    EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ(newToken->ToAuthorizationString(), result.GetValue());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttemptedTwiceWithTokenAuth_ReturnsErrorToStopAuthentication)
-    {
-    auto provider = std::make_shared<MockConnectTokenProvider>();
-    ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
-    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
-
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), false); // default parameter legacyMode = true
-
-    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 2);
-    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
+    AuthenticationHandler::Attempt attempt("http://test.com", "prefix SomeTestToken", DateTime(), 1);
+    auto result = authHandler->_RetrieveAuthorization(attempt)->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());
     }
@@ -215,73 +159,160 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttem
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NonLegacyModeAttemptedOnceWithSamlAuth_ReturnsErrorToStopAuthentication)
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedTwiceAndIsDifferentAuth_UsesExistingToken)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
-    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
-
-    bool legacyMode = false;
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), true, legacyMode);
-
-    AuthenticationHandler::Attempt attempt("http://test.com", "SAML SomeTestToken", DateTime(), 1);
-    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
-
-    EXPECT_FALSE(result.IsSuccess());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttemptedOnceWithSamlAuth_RetrievesNewTokenAndRetries)
-    {
-    auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), true); // default parameter legacyMode = true
-
-    SamlTokenPtr newToken = StubSamlToken(100);
-
-    EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
-    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(newToken)));
-
-    AuthenticationHandler::Attempt attempt("http://test.com", "SAML SomeTestToken", DateTime(), 1);
-    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
-
-    EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ(newToken->ToSAMLAuthorizationString(), result.GetValue());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttemptedTwiceWithSamlAuth_ReturnsErrorToStopAuthentication)
-    {
-    auto provider = std::make_shared<MockConnectTokenProvider>();
-    ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
-    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
-
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), true); // default parameter legacyMode = true
-
-    AuthenticationHandler::Attempt attempt("http://test.com", "SAML SomeTestToken", DateTime(), 2);
-    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
-
-    EXPECT_FALSE(result.IsSuccess());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    01/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedTwiceAndIsNotTokenAuth_UsesExistingToken)
-    {
-    auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
+    auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "prefix");
 
     SamlTokenPtr token = StubSamlToken(100);
     EXPECT_CALL(*provider, GetToken()).WillRepeatedly(Return(token));
 
     AuthenticationHandler::Attempt attempt("http://test.com", "TestOtherAuth", DateTime::GetCurrentTimeUtc(), 1);
-    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
+    auto result = authHandler->_RetrieveAuthorization(attempt)->GetResult();
 
     EXPECT_TRUE(result.IsSuccess());
-    EXPECT_EQ(token->ToAuthorizationString(), result.GetValue());
+    EXPECT_EQ("prefix " + token->ToAuthorizationString(), result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedTokenWithLegacyHandlerWithTokenAuth_ReturnsSamlTokenStr)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy("http://test.com", provider, GetHandlerPtr(), false);
+    SamlTokenPtr token = StubSamlToken(100);
+    EXPECT_CALL(*provider, GetToken()).WillRepeatedly(Return(token));
+
+    auto result = authHandler->_RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
+
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_EQ("token " + token->ToAuthorizationString(), result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_PersistedTokenWithLegacyHandlerWithSamlAuth_ReturnsSamlTokenStr)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy("http://test.com", provider, GetHandlerPtr(), true);
+    SamlTokenPtr token = StubSamlToken(100);
+    EXPECT_CALL(*provider, GetToken()).WillRepeatedly(Return(token));
+
+    auto result = authHandler->_RetrieveAuthorization(StubAttempt("http://test.com"))->GetResult();
+
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_EQ("SAML " + token->ToAuthorizationString(), result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyHandlerWithNonLegacyModeAttemptedOnceWithTokenAuth_ReturnsErrorToStopAuthentication)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
+    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
+
+    bool legacyMode = false;
+    auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "token");
+
+    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
+    auto result = authHandler->_RetrieveAuthorization(attempt)->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyHandlerWithLegacyModeAttemptedOnceWithTokenAuth_RetrievesNewTokenAndRetries)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy("http://test.com", provider, GetHandlerPtr(), false);
+
+    SamlTokenPtr newToken = StubSamlToken(100);
+
+    EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
+    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(newToken)));
+
+    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
+    auto result = authHandler->_RetrieveAuthorization(attempt)->GetResult();
+
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_EQ("token " + newToken->ToAuthorizationString(), result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyHandlerWithLegacyModeAttemptedTwiceWithTokenAuth_ReturnsErrorToStopAuthentication)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
+    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
+
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy("http://test.com", provider, GetHandlerPtr(), false);
+
+    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 2);
+    auto result = authHandler->_RetrieveAuthorization(attempt)->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyHandlerWithNonLegacyModeAttemptedOnceWithSamlAuth_ReturnsErrorToStopAuthentication)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
+    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
+
+    bool legacyMode = false;
+    auto authHandler = ConnectAuthenticationHandler::Create("http://test.com", provider, GetHandlerPtr(), "SAML");
+
+    AuthenticationHandler::Attempt attempt("http://test.com", "SAML SomeTestToken", DateTime(), 1);
+    auto result = authHandler->_RetrieveAuthorization(attempt)->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyHandlerWithLegacyModeAttemptedOnceWithSamlAuth_RetrievesNewTokenAndRetries)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy("http://test.com", provider, GetHandlerPtr(), true);
+
+    SamlTokenPtr newToken = StubSamlToken(100);
+
+    EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
+    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(newToken)));
+
+    AuthenticationHandler::Attempt attempt("http://test.com", "SAML SomeTestToken", DateTime(), 1);
+    auto result = authHandler->_RetrieveAuthorization(attempt)->GetResult();
+
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_EQ("SAML " + newToken->ToAuthorizationString(), result.GetValue());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    01/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyHandlerWithLegacyModeAttemptedTwiceWithSamlAuth_ReturnsErrorToStopAuthentication)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    ON_CALL(*provider, GetToken()).WillByDefault(Return(StubSamlToken()));
+    ON_CALL(*provider, UpdateToken()).WillByDefault(Return(CreateCompletedAsyncTask<ISecurityTokenPtr>(StubSamlToken())));
+
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy("http://test.com", provider, GetHandlerPtr(), true);
+
+    AuthenticationHandler::Attempt attempt("http://test.com", "SAML SomeTestToken", DateTime(), 2);
+    auto result = authHandler->_RetrieveAuthorization(attempt)->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
     }
 #endif

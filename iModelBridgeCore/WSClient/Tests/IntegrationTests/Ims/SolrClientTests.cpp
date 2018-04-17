@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/Ims/SolrClientTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -39,7 +39,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestWithTokenPreceededAuthentication
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
     auto result = client->SendGetRequest()->GetResult();
@@ -59,7 +59,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidBaseServerUrlForImsU
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, manager->GetTokenProvider(serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(serverUrl, manager->GetTokenProvider(serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(serverUrl, collection, StubValidClientInfo(), authHandler);
 
@@ -80,7 +80,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidCollectionString_Ret
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -100,7 +100,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidSelectParameterForIm
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -122,7 +122,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidFilterParameterForIm
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -144,7 +144,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidRowParameterAndRowsDefaultsT
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -170,7 +170,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidStartParameterAndStartDefaul
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -195,7 +195,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SendsVanillaRequestToGetAllTokenInforma
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -230,7 +230,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsSelectForUserIdForImsUserService_Ht
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -257,7 +257,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsMultiSelectForFirstNameAndLastNameF
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -286,7 +286,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestWithTokenPreceededAuthentication
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
     auto result = client->SendGetRequest()->GetResult();
@@ -305,7 +305,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidBaseServerUrlForNoti
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -325,7 +325,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidSelectParameterForNo
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -347,7 +347,7 @@ TEST_F(SolrClientTests, SendQueryRequest_RequestUsingInvalidFilterParameterForNo
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -369,7 +369,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidRowParameterAndRowsDefaultsT
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -395,7 +395,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidStartParameterAndStartDefaul
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -420,7 +420,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SendsVanillaRequestToGetAllTokenInforma
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -453,7 +453,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsSelectForUserIdForNotificationServi
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -481,7 +481,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsMultiSelectForUserIdAndSenderForNot
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -512,7 +512,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsRowsTo5ForNotificationService_HttpR
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -534,7 +534,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsRowsTo100ForNotificationService_Htt
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -556,7 +556,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsRowsTo100AndStartAt10ForNotificatio
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -579,7 +579,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsStartPastNumberOfUserNotificationFo
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -602,7 +602,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetIndentTrueForNotificationService_Htt
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 
@@ -624,7 +624,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetIndentFalseForNotificationService_Ht
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), m_proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(m_credentials)->GetResult().IsSuccess());
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(m_serverUrl, manager->GetTokenProvider(m_serverUrl), m_proxy, true);
 
     auto client = SolrClient::Create(m_serverUrl + "token", collection, StubValidClientInfo(), authHandler);
 

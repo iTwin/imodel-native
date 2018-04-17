@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingDataSourceProgressTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -266,4 +266,4 @@ TEST_F(CachingDataSourceProgressTests, NotEqualOperator_CompareSameObjectsExcept
     auto progress2 = ICachingDataSource::Progress(state, labelPtr, 0.99, StubECInstanceKey(50, 100), {100, 200});
     EXPECT_NE(progress1, progress2);
     }
-	
+    
