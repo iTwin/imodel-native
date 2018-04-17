@@ -758,9 +758,12 @@ ECObjectsStatus KindOfQuantity::UpdateFUSDescriptors(Utf8StringR unitName, bvect
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPersitenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR)> const& nameToUnitMapper)
+ECObjectsStatus KindOfQuantity::AddPersitenceUnitByName(Utf8StringCR unitName, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
     {
-    auto unit = nameToUnitMapper(unitName);
+    Utf8String alias;
+    Utf8String name;
+    ECClass::ParseClassName(alias, name, unitName);
+    auto unit = nameToUnitMapper(alias, name);
     
     if (nullptr == GetSchema().GetUnitsContext().LookupUnit(unitName.c_str()))
         {
@@ -775,7 +778,7 @@ ECObjectsStatus KindOfQuantity::AddPersitenceUnitByName(Utf8StringCR unitName, s
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR)> const& nameToUnitMapper)
+ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
     {
     bvector<Utf8String> tokens;
     BeStringUtilities::Split(formatString.c_str(), ";", tokens);
@@ -793,7 +796,7 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatsByString(Utf8StringCR form
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                  04/2018
 //--------------------------------------------------------------------------------------
-ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR)> const& nameToUnitMapper)
+ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR formatString, std::function<ECFormatCP(Utf8StringCR, Utf8StringCR)> const& nameToFormatMapper, std::function<ECUnitCP(Utf8StringCR, Utf8StringCR)> const& nameToUnitMapper)
     {
     Utf8String formatName;
     Nullable<int32_t> prec;
@@ -805,7 +808,12 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR forma
         return ECObjectsStatus::Error;
         }
 
-    auto format = nameToFormatMapper(formatName);
+    Utf8String alias;
+    Utf8String unqualifiedName;
+    ECClass::ParseClassName(alias, unqualifiedName, formatName);
+    if (alias.empty())
+        alias = GetSchema().GetAlias();
+    auto format = nameToFormatMapper(alias, unqualifiedName);
 
     if (nullptr == format)
         {
@@ -819,7 +827,10 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormatByString(Utf8StringCR forma
         int i = 0;
         for (const auto& u : unitNames)
             {
-            auto unit = nameToUnitMapper(u);
+            if (alias.empty())
+                alias = GetSchema().GetAlias();
+            ECClass::ParseClassName(alias, unqualifiedName, u);
+            auto unit = nameToUnitMapper(alias, unqualifiedName);
             if (nullptr == unit)
                 {
                 LOG.errorv("Presentation unit with name '%s' could not be looked up on KoQ '%s'", u.c_str(), GetFullName().c_str());

@@ -429,17 +429,17 @@ TEST_F(KindOfQuantityTest, UpdateFUSDescriptor)
 //--------------------------------------------------------------------------------------
 // @bsimethod                                  Kyle.Abramowitz                 04/2018
 //--------------------------------------------------------------------------------------
-TEST_F(KindOfQuantityTest, AddPersistenceUnitByName)
+TEST_F(KindOfQuantityTest, AddPersistenceUnitByNameTest)
     {
     KindOfQuantityP koq;
-    static const auto unitLookerUpper = [&](Utf8StringCR name)
+    static const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name)
         {
-        return koq->GetSchema().GetUnitsContext().LookupUnit(name.c_str());
+        return koq->GetSchema().GetUnitsContext().LookupUnit((alias + ":" + name).c_str());
         };
 
-    static const auto formatLookerUpper = [&](Utf8StringCR name)
+    static const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8String name)
         {
-        return koq->GetSchema().LookupFormat(name.c_str());
+        return koq->GetSchema().LookupFormat((alias + ":" + name).c_str());
         };
 
     {
@@ -467,14 +467,14 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     {
     KindOfQuantityP koq;
 
-    static const auto unitLookerUpper = [&](Utf8StringCR name)
+    static const auto unitLookerUpper = [&](Utf8StringCR alias, Utf8StringCR name)
         {
-        return koq->GetSchema().GetUnitsContext().LookupUnit(name.c_str());
+        return koq->GetSchema().GetUnitsContext().LookupUnit((alias + ":" + name).c_str());
         };
 
-    static const auto formatLookerUpper = [&](Utf8StringCR name)
+    static const auto formatLookerUpper = [&](Utf8StringCR alias, Utf8String name)
         {
-        return koq->GetSchema().LookupFormat(name.c_str());
+        return koq->GetSchema().LookupFormat((alias + ":" + name).c_str());
         };
 
     {
