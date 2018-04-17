@@ -24,7 +24,7 @@
 // #define POPULATE_ROOT_TILE
 
 // Uncomment to test selective tile repair
-#define WIP_TILE_REPAIR
+// #define WIP_TILE_REPAIR
 // Uncomment to always use tile repair when reading from cache, instead of only when tile contents invalidated.
 // (Must have WIP_TILE_REPAIR defined too!)
 // #define TEST_TILE_REPAIR
