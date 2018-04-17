@@ -21,15 +21,31 @@ struct RoadRailAlignmentDomain : Dgn::DgnDomain
 DOMAIN_DECLARE_MEMBERS(RoadRailAlignmentDomain, ROADRAILALIGNMENT_EXPORT)
 
 protected:
+    //! @private
     void _OnSchemaImported(Dgn::DgnDbR dgndb) const override;
 
 public:
+    //! @private
     RoadRailAlignmentDomain();
 
+    //! Query for the Alignment CodeSpecId
+    //! @param[in] dgndb The DgnDb to query
+    //! @return The CodeSpecId of the Alignment partition
     ROADRAILALIGNMENT_EXPORT static Dgn::CodeSpecId QueryAlignmentCodeSpecId(Dgn::DgnDbCR dgndb);
+
+    //! @private
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnModelCR scopeModel, Utf8StringCR value);
+
+    //! @private
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR subject, Utf8CP partitionName);
+
+    //! Query for the AlignmentModel
+    //! @param[in] parentSubject The parent subject of the model
+    //! @param[in] modelName The name of the model
+    //! @return The AlignmentModel that was queried for.  Caller must check .IsValid() on the returned AlignmentModelPtr.
     ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr QueryAlignmentModel(Dgn::SubjectCR parentSubject, Utf8CP modelName);
+    
+    //! The name of the partition containing the Alignments data
     static Utf8CP GetDefaultPartitionName() { return "Alignments"; }
 
 private:

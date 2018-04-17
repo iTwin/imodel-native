@@ -103,7 +103,9 @@ public:
     //! @return The main VerticalAlignment, or nullptr
     ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr QueryMainVertical() const;
 
-    //! TODO DIEGO
+    //! Query for the DgnElementIds of any/all VerticalAlignments that are included in this Alignment.
+    //! \ref QueryMainVertical()
+    //! @return A DgnElementIdSet containing the DgnElementIds of each VerticalAlignment in this Alignment
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryVerticalAlignmentIds() const;
     
     //! TODO DIEGO

@@ -81,7 +81,8 @@ public:
 }; // AlignmentStation
 
 //=======================================================================================
-//! Well-known station along an alignment.
+//! Handles the translation between a station, which may start at a non-zero value and accounts for any station equations,
+//! and a linear distance along an Alignment
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
 struct AlignmentStationingTranslator : RefCountedBase
@@ -93,15 +94,25 @@ private:
     AlignmentStationingTranslator(AlignmentCR alignment);
 
 public:
+    //! Create a new AlignmentStationingTranslator
+    //! @param[in] alignment The Alignment that will be used for translation
     ROADRAILALIGNMENT_EXPORT static AlignmentStationingTranslatorPtr Create(AlignmentCR alignment);
 
+    //! Translate a linear distance along the Alignment to a station value
+    //! @param[in] distanceAlongFromStart The linear distance along the Alignment, in meters, from the start of the Alignment
+    //! @return The station value corresponding to the \p distanceAlongFromStart
     ROADRAILALIGNMENT_EXPORT LinearReferencing::NullableDouble ToStation(double distanceAlongFromStart) const;
+
+    //! Translate a station along the Alignment to a linear distance along
+    //! @param[in] station The station, in meters, along the Alignment.
+    //! @return The linear distance along the alignment, in meters.
     ROADRAILALIGNMENT_EXPORT LinearReferencing::NullableDouble ToDistanceAlongFromStart(double station) const;
 }; // AlignmentStationingTranslator
 
 //=================================================================================
 //! ElementHandler for AlignmentReferent Elements
 //! @ingroup GROUP_RoadRailAlignment
+//! @private
 //=================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE LinearlyLocatedReferentElementHandler : Dgn::dgn_ElementHandler::SpatialLocation
 {
@@ -111,6 +122,7 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_LinearlyLocatedReferentElement, Linear
 //=================================================================================
 //! ElementHandler for AlignmentStation Elements
 //! @ingroup GROUP_RoadRailAlignment
+//! @private
 //=================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE AlignmentStationHandler : LinearlyLocatedReferentElementHandler
 {
