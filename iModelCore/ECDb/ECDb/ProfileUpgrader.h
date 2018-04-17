@@ -43,7 +43,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
                        "Numerator REAL," \
                        "Denominator REAL," \
                        "Offset REAL," \
-                       "IsConstant BOOLEAN NOT NULL," \
+                       "IsConstant BOOLEAN," \
                        "InvertingUnitId INTEGER REFERENCES " TABLE_Unit "(Id) ON DELETE NO ACTION);" \
                        "CREATE INDEX ix_ec_Unit_SchemaId ON " TABLE_Unit "(SchemaId);" \
                        "CREATE INDEX ix_ec_Unit_Name ON " TABLE_Unit "(Name);" \
