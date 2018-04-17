@@ -336,7 +336,6 @@ public:
 
     void ReInitialize(DgnElementId elemId, double rangeDiagonalSquared, TransformCR localToWorld);
     double GetRangeDiagonalSquared() const { return m_rangeDiagonalSquared; }
-
 };
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileBuilder);
@@ -374,6 +373,18 @@ static bool wantGlyphBoxes(double sizeInPixels)
     {
     constexpr double s_glyphBoxSizeThreshold = 3.0;
     return sizeInPixels <= s_glyphBoxSizeThreshold;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool setupForStyledCurveVector(GraphicBuilderR builder, CurveVectorCR curve)
+    {
+    BeAssert(nullptr != dynamic_cast<TileBuilderP>(&builder));
+    auto& tileBuilder = static_cast<TileBuilderR>(builder);
+    bool wasCurved = tileBuilder.IsAddingCurved();
+    tileBuilder.SetAddingCurved(curve.ContainsNonLinearPrimitive());
+    return wasCurved;
     }
 
 //=======================================================================================
@@ -426,6 +437,12 @@ protected:
     Render::SystemP _GetRenderSystem() const override { return m_loadContext.GetRenderSystem(); }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
     bool _WantGlyphBoxes(double sizeInPixels) const override { return wantGlyphBoxes(sizeInPixels); }
+    void _DrawStyledCurveVector(GraphicBuilderR builder, CurveVectorCR curve, GeometryParamsR params, bool doCook) override
+        {
+        bool wasCurved = setupForStyledCurveVector(builder, curve);
+        NullContext::_DrawStyledCurveVector(builder, curve, params, doCook);
+        static_cast<TileBuilderR>(builder).SetAddingCurved(wasCurved);
+        }
     bool _AnyPointVisible(DPoint3dCP pts, int nPts, double tolerance) override
         {
         DRange3d range = DRange3d::From(pts, nPts);
@@ -2018,6 +2035,12 @@ private:
     GraphicPtr _CreateBranch(GraphicBranch&, DgnDbR, TransformCR, ClipVectorCP) override { BeAssert(false); return nullptr; }
     double _GetPixelSizeAtPoint(DPoint3dCP) const override { return m_tolerance; }
     bool _WantGlyphBoxes(double sizeInPixels) const override { return wantGlyphBoxes(sizeInPixels); }
+    void _DrawStyledCurveVector(GraphicBuilderR builder, CurveVectorCR curve, GeometryParamsR params, bool doCook) override
+        {
+        bool wasCurved = setupForStyledCurveVector(builder, curve);
+        ViewContext::_DrawStyledCurveVector(builder, curve, params, doCook);
+        static_cast<TileBuilderR>(builder).SetAddingCurved(wasCurved);
+        }
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
@@ -3204,7 +3227,9 @@ Utf8CP TileCache::GetCurrentVersion()
     //  3: Fixed ordering of DisplayParams::operator<() to use stable IDs of materials and textures rather than addresses,
     //     to ensure same order when deserializing from cache data back into MeshBuilderMap.
     //  4: Prevent unused vertices from ending up in meshes due to degenerate triangles (detect degenerates *before* adding vertices)
-    return "4";
+    //  5: Ensure curved, stroked curve vectors are treated as curved
+    //  6: Treat transparency < 15 as opaque (affects mesh batching)
+    return "6";
     }
 
 /*---------------------------------------------------------------------------------**//**
