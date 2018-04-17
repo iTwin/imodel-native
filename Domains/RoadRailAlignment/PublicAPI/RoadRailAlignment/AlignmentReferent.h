@@ -29,15 +29,22 @@ protected:
     //! @private
     explicit LinearlyLocatedReferentElement(CreateParams const& params, double distanceAlong);
 
+    //! @private
     virtual LinearReferencing::ILinearlyLocatedElementCP _ToLinearlyLocatedElement() const { return this; }
+
+    //! @private
     virtual Dgn::DgnElementCR _IReferentToDgnElement() const override { return *this; }
+
+    //! @private
     virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override { return *this; }
 
+    //! @private
     virtual LinearReferencing::NullableDouble _GetRestartValue() const override { return LinearReferencing::NullableDouble(); }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(LinearlyLocatedReferentElement)
 
+    //! Convert this to a LinearlyLocatedElement.
     ROADRAILALIGNMENT_EXPORT LinearReferencing::ILinearlyLocatedElementCP ToLinearlyLocatedElement() const { return _ToLinearlyLocatedElement(); }
 }; // LinearlyLocatedReferentElement
 
@@ -57,13 +64,17 @@ protected:
     //! @private
     explicit AlignmentStation(CreateParams const& params, double distanceAlong, double station);
 
+    //! @private
     virtual LinearReferencing::NullableDouble _GetRestartValue() const override { return GetPropertyValueDouble("Station"); }
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentStation)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(AlignmentStation)
 
+    //! Returns the station, accounting for any StationEquations
     double GetStation() const { return GetRestartValue().Value(); }
+
+    //! @private
     void SetStation(double newStation) { SetPropertyValue("Station", newStation); }
 
     ROADRAILALIGNMENT_EXPORT static AlignmentStationPtr Create(AlignmentCR alignment, double distanceAlongFromStart, double station = 0.0);

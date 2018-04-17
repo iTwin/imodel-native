@@ -27,9 +27,13 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
-    //! Return the DgnCategoryId for alignment elements
+    //! Return the DgnCategoryId for the Alignment Category
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId Get(Dgn::DgnDbR);
+
+    //! Return the DgnCategoryId for the Horizontal Alignment Category
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetHorizontal(Dgn::DgnDbR);
+
+    //! Return the DgnCategoryId for the Vertical Alignment Category
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCategoryId GetVertical(Dgn::DgnDbR);
 }; // BridgePhysicalDomain
 
@@ -59,20 +63,32 @@ public:
     }; // CreateParams
 
 protected:
+    //! @private
     explicit AlignmentCategoryModel(CreateParams const& params) : T_Super(params) {}
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentCategoryModel)
+    //! Create a new AlignmentCategoryModel
     static AlignmentCategoryModelPtr Create(CreateParams const& params) { return new AlignmentCategoryModel(params); }
 
+    //! @private
     static void SetUp(Dgn::DgnDbR);
+    
+    //! @private
     static Dgn::DgnModelId GetDomainModelId(Dgn::DgnDbR);
+
+    //! Get the AlignmentCategoryModel from the DgnDb
+    //! @param[in] The DgnDb to get the AlignmentCategoryModel from 
+    //! @return The AlignmentCategoryModel from the DgnDb
     ROADRAILALIGNMENT_EXPORT static AlignmentCategoryModelPtr GetDomainModel(Dgn::DgnDbR);
+
+    //! @private
     static Utf8CP GetDomainPartitionName() { return "Alignment Domain Categories"; }
 }; // AlignmentCategoryModel
 
 //=======================================================================================
 //! The ModelHandler for AlignmentCategoryModel
+//! @private
 //=======================================================================================
 struct AlignmentCategoryModelHandler : Dgn::dgn_ModelHandler::Definition
 {
