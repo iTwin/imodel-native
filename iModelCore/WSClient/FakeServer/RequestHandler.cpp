@@ -9,12 +9,17 @@ USING_NAMESPACE_BENTLEY_IMODELHUB
 
 RequestHandler::RequestHandler()
     {
-    BeFileName documentsDir;
-    BeTest::GetHost().GetDocumentsRoot(documentsDir);
+    /*BeFileName documentsDir;
+    BeTest::GetHost().GetOutputRoot(documentsDir);
     documentsDir.AppendToPath(L"ImodelHubTestData");
     documentsDir.AppendToPath(L"iModelHubNativeTests");
-    serverPath = documentsDir.GetNameUtf8();
-    
+    serverPath = documentsDir.GetNameUtf8();*/
+    BeFileName outPath;
+    BeTest::GetHost().GetOutputRoot(outPath);
+    outPath.AppendToPath(L"iModelHubServer");
+    if (!outPath.DoesPathExist())
+        BeFileName::CreateNewDirectory(outPath);
+    serverPath = outPath.GetNameUtf8();
     }
 
 RequestHandler::~RequestHandler()
@@ -106,6 +111,7 @@ void RequestHandler::CheckDb()
     {
     BentleyB0200::BeSQLite::Db m_db;
     BeFileName dbPath = GetDbPath();
+    
     if (dbPath.DoesPathExist())
         {
         if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
@@ -119,6 +125,20 @@ void RequestHandler::CheckDb()
         if(!m_db.TableExists("SeedFile"))
             CreateTable("SeedFile", m_db, "Id STRING, FileName STRING, FileDescription STRING, FileSize INTEGER, iModelId STRING, IsUploaded BOOLEAN, UserUploaded STRING, UploadedDate STRING");
         
+        }
+    else
+        {
+        m_db.CreateNewDb(dbPath);
+        /*if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+            return;*/
+        if(!m_db.TableExists("Instances"))
+            CreateTable("Instances", m_db, "Id STRING, Name STRING, Description STRING, Briefcases INTEGER DEFAULT 1, UserCreated String, CreatedDate STRING, Initialized STRING");
+        if(!m_db.TableExists("Users"))
+            CreateTable("Users", m_db, "UserCreated STRING, CreatedDate STRING");
+        if(!m_db.TableExists("ChangeSets"))
+            CreateTable("ChangeSets", m_db, "Id STRING, Description STRING, iModelId STRING, FileSize INTEGER, BriefcaseId INTEGER, ParentId STRING, UserCreated STRING, CreatedDate STRING");
+        if(!m_db.TableExists("SeedFile"))
+            CreateTable("SeedFile", m_db, "Id STRING, FileName STRING, FileDescription STRING, FileSize INTEGER, iModelId STRING, IsUploaded BOOLEAN, UserUploaded STRING, UploadedDate STRING");
         }
     m_db.CloseDb();
     }
@@ -603,6 +623,20 @@ Response RequestHandler::GetiModels(Request req)
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }
     }
+void RequestHandler::DeleteTables(Utf8String tableName)
+    {
+    BeFileName dbPath = GetDbPath();
+    BentleyB0200::BeSQLite::Db m_db;
+    if (DbResult::BE_SQLITE_OK != m_db.OpenBeSQLiteDb(dbPath, BentleyB0200::BeSQLite::Db::OpenParams(BentleyB0200::BeSQLite::Db::OpenMode::ReadWrite, DefaultTxn::Yes)))
+        {
+        Statement stDropTable;
+        stDropTable.Prepare(m_db, "DROP table ?");
+        stDropTable.BindText(1, tableName, Statement::MakeCopy::No);
+        stDropTable.Step();
+        stDropTable.Finalize();
+        }
+    m_db.CloseDb();
+    }
 Response RequestHandler::DeleteiModels(Request req)
     {
     bvector<Utf8String> args = ParseUrl(req);
@@ -631,8 +665,11 @@ Response RequestHandler::DeleteiModels(Request req)
         instanceAfterChange[ServerSchema::SchemaName] = ServerSchema::Schema::Project;
         instanceAfterChange[ServerSchema::ClassName] = ServerSchema::Class::iModel;
 
+        m_db.DropTable("Instances");
+        m_db.DropTable("ChangeSets");
+        m_db.DropTable("SeedFile");
+        m_db.DropTable("Users");
         Utf8String contentToWrite(Json::FastWriter().write(instanceDeletion));
-        
         auto content = HttpResponseContent::Create(HttpStringBody::Create(contentToWrite));
         return Http::Response(content, req.GetUrl().c_str(), ConnectionStatus::OK, HttpStatus::OK);
         }

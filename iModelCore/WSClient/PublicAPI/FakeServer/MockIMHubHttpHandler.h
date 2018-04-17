@@ -15,6 +15,7 @@
 
 USING_NAMESPACE_BENTLEY_HTTP
 
+typedef std::shared_ptr<struct MockIMSHttpHandler> MockIMSHttpHandlerPtr;
 struct MockIMSHttpHandler : public Http::IHttpHandler
     {
     public:

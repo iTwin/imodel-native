@@ -55,14 +55,18 @@ class FakeServerFixture : public testing::Test
             Initialize();
             CreateInitialSeedDb();
 
-            BeTest::GetHost().GetOutputRoot(outPath);
+            /*BeTest::GetHost().GetOutputRoot(outPath);
             BeFileName seedFilePath = outPath;
-            seedFilePath.AppendToPath(L"iModelHub");
+            seedFilePath.AppendToPath(L"iModelHubServer");
+            ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(seedFilePath));*/
+
+
             }
         virtual void TearDown()
             {
             /*WCharCP serverPath = outPath.GetWCharCP();
             EXPECT_EQ(BeFileNameStatus::Success, FakeServer::DeleteAlliModels(serverPath));*/
+
             }
     };
 
@@ -152,6 +156,33 @@ TEST_F(FakeServerFixture, CreateiModel)
     
     response = reqUploadingSeed.PerformAsync()->GetResult();
     ASSERT_EQ(HttpStatus::Created, response.GetHttpStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Farhad.Kabir    02/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(FakeServerFixture, GetiModels)
+    {
+    Utf8String urlGetInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel");
+
+    Utf8String method = "GET";
+    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
+    Request request(urlGetInfo, method, handlePtr);
+    Response response = request.PerformAsync()->GetResult();
+    ASSERT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    HttpResponseContentPtr reqContent = response.GetContent();
+    HttpBodyPtr reqBody = reqContent->GetBody();
+
+    char readBuff[100000] ;
+    size_t buffSize = 100000;
+    reqBody->Read(readBuff, buffSize);
+    Utf8String reqBodyRead(readBuff);
+
+    Json::Reader reader;
+    Json::Value settings;
+    reader.Parse(reqBodyRead, settings);
+    BeGuid projGuid(true);
+    Utf8String name = Utf8String(settings["instances"][0]["className"].asString());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -286,8 +317,8 @@ TEST_F(FakeServerFixture, DownloadiModel)
 
     requestDownload.SetResponseBody(HttpFileBody::Create(fileDownloadPath));
 
-    //Response response = requestDownload.PerformAsync()->GetResult();
-    //ASSERT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    Response response = requestDownload.PerformAsync()->GetResult();
+    ASSERT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -324,32 +355,7 @@ TEST_F(FakeServerFixture, DeleteiModel)
     ASSERT_EQ(HttpStatus::OK, responseDelete.GetHttpStatus());
     }
 
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Farhad.Kabir    02/2018
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(FakeServerFixture, GetiModels)
-    {
-    Utf8String urlGetInfo("https://qa-imodelhubapi.bentley.com/v2.5/Repositories/Project--7dfb2388-92cf-4ec7-94a7-ff72853466df/ProjectScope/iModel");
 
-    Utf8String method = "GET";
-    IHttpHandlerPtr handlePtr = std::make_shared<MockIMSHttpHandler>();
-    Request request(urlGetInfo, method, handlePtr);
-    Response response = request.PerformAsync()->GetResult();
-    ASSERT_EQ(HttpStatus::OK, response.GetHttpStatus());
-    HttpResponseContentPtr reqContent = response.GetContent();
-    HttpBodyPtr reqBody = reqContent->GetBody();
-
-    char readBuff[100000] ;
-    size_t buffSize = 100000;
-    reqBody->Read(readBuff, buffSize);
-    Utf8String reqBodyRead(readBuff);
-
-    Json::Reader reader;
-    Json::Value settings;
-    reader.Parse(reqBodyRead, settings);
-    BeGuid projGuid(true);
-    Utf8String name = Utf8String(settings["instances"][0]["className"].asString());
-    }
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Farhad.Kabir    01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
