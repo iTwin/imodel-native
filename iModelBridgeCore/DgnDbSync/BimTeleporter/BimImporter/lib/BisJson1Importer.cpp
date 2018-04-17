@@ -28,6 +28,30 @@ struct PCQueue
         PCQueue() : m_objectQueue(65536) {}
     };
 
+struct DgnDbPtrHolder
+    {
+    public:
+        DgnDbPtr dgndb;
+        DgnDbPtrHolder(BeFileName outputPath);
+        void Finalize();
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnDbPtrHolder::DgnDbPtrHolder(BeFileName outputPath)
+    {
+    //Utf8String subjectName(m_outputPath.GetFileNameWithoutExtension());
+    Utf8String subjectName("TBD");
+
+    DbResult dbStatus;
+    Dgn::CreateDgnDbParams params;
+    params.SetOverwriteExisting(true);
+    params.SetRootSubjectName(subjectName.c_str());
+
+    dgndb = DgnDb::CreateDgnDb(&dbStatus, outputPath, params);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -48,37 +72,39 @@ BisJson1Importer::~BisJson1Importer()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            04/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-bool BisJson1Importer::CreateBim(folly::Future<bool>& exporterFuture)
+bool BisJson1Importer::CreateBim()
     {
-    //Utf8String subjectName(m_outputPath.GetFileNameWithoutExtension());
-    Utf8String subjectName("TBD");
 
-    DbResult dbStatus;
-    Dgn::CreateDgnDbParams params;
-    params.SetOverwriteExisting(true);
-    params.SetRootSubjectName(subjectName.c_str());
-
-    DgnDbPtr dgndb = DgnDb::CreateDgnDb(&dbStatus, m_outputPath, params);
-
-    if (!dgndb.IsValid())
+    m_holder = new DgnDbPtrHolder(m_outputPath);
+    if (!m_holder->dgndb.IsValid())
         {
         // Report Error
         return false;
         }
-    m_importer = new BisJson1ImporterImpl(dgndb.get());
+    m_importer = new BisJson1ImporterImpl(m_holder->dgndb.get());
     if (SUCCESS != m_importer->InitializeSchemas())
         return false;
 
     if (SUCCESS != m_importer->CreateAndAttachSyncInfo())
         return false;
-
-    if (SUCCESS != m_importer->ImportJson(m_queue->m_objectQueue, exporterFuture))
-        return false;
-    dgndb->CloseDb();
-    dgndb->Release();
     return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+bool BisJson1Importer::ImportJson(folly::Future<bool>& exporterFuture)
+    {
+    if (SUCCESS != m_importer->ImportJson(m_queue->m_objectQueue, exporterFuture))
+        return false;
+    m_holder->dgndb->CloseDb();
+    m_holder->dgndb->Release();
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2017
+//---------------+---------------+---------------+---------------+---------------+-------
 void BisJson1Importer::AddToQueue(const char* entry)
     {
     Json::Value record;
@@ -89,6 +115,9 @@ void BisJson1Importer::AddToQueue(const char* entry)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2017
+//---------------+---------------+---------------+---------------+---------------+-------
 void BisJson1Importer::SetDone()
     {
     while (nullptr == m_importer)

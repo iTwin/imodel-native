@@ -1,6 +1,6 @@
 #----------------------------------------------------------------------
 #     $Source: DgnV8/Converters/FontConverterApp.mke $
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 %include mdl.mki
 
@@ -32,7 +32,7 @@ LINKER_LIBRARIES + $(ContextSubpartsLibs)BeSQLite.lib
 LINKER_LIBRARIES + $(ContextSubpartsLibs)BeXml.lib
 LINKER_LIBRARIES + $(ContextSubpartsLibs)DgnPlatform.lib
 LINKER_LIBRARIES + $(ContextSubpartsLibs)DgnV8Converter.lib
-LINKER_LIBRARIES + $(ContextSubpartsLibs)V8RmgrTools.lib
+LINKER_LIBRARIES + $(ContextSubpartsLibs)RmgrTools.lib
 LINKER_LIBRARIES + $(ContextSubpartsLibs)freetype2.lib
 LINKER_LIBRARIES + $(guiLibs)
 

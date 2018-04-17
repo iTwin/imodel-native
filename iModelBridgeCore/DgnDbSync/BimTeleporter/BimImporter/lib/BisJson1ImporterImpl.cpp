@@ -11,6 +11,8 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <Logging/bentleylogging.h>
+#include <Planning/PlanningApi.h>
+#include <DgnView/DgnViewLib.h>
 
 #include <BimTeleporter/BisJson1Importer.h>
 #include "BisJson1ImporterImpl.h"
@@ -21,6 +23,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
+USING_NAMESPACE_BENTLEY_PLANNING
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
@@ -30,6 +33,7 @@ BEGIN_BIM_TELEPORTER_NAMESPACE
 BisJson1ImporterImpl::BisJson1ImporterImpl(DgnDb* dgndb) : m_dgndb(dgndb), DgnImportContext(*dgndb, *dgndb), m_isDone(false)
     {
     m_syncInfo = nullptr;
+    DgnDomains::RegisterDomain(Planning::PlanningDomain::GetDomain());
     //BeFileName db = m_dgndb->GetFileName();
     //BeFileName jsonPath(db.GetDirectoryName());
     //jsonPath.AppendString(db.GetFileNameWithoutExtension().c_str());
@@ -56,6 +60,7 @@ BentleyStatus BisJson1ImporterImpl::InitializeSchemas()
     m_schemaReadContext = ECN::ECSchemaReadContext::CreateContext();
     m_schemaReadContext->AddSchemaLocater(m_dgndb->GetSchemaLocater());
     m_schemaReadContext->SetResolveConflicts(true);
+    Planning::PlanningDomain::GetDomain().ImportSchema(*m_dgndb);
 
     bvector<ECSchemaCP> ecSchemas = m_dgndb->Schemas().GetSchemas();
     for (ECN::ECSchemaCP schema : ecSchemas)
@@ -66,7 +71,6 @@ BentleyStatus BisJson1ImporterImpl::InitializeSchemas()
 
     m_orthographicViewClass = nullptr;
     m_sheetViewClass = nullptr;
-
     return SUCCESS;
     }
 
@@ -117,7 +121,8 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(folly::ProducerConsumerQueue<Bent
                 {
                 auto jsonString = entry.toStyledString();
                 GetLogger().errorv("Failed to import:\n%s\n", jsonString.c_str());
-                //return ERROR;
+                FinalizeImport();
+                return ERROR;
                 }
             }
         }
@@ -197,12 +202,23 @@ BentleyStatus BisJson1ImporterImpl::ImportJson(Json::Value& entry)
         reader = new TextureReader(this);
     else if (objectType.Equals(JSON_TYPE_LineStyleElement))
         reader = new LineStyleReader(this);
-    else if (objectType.Equals(JSON_TYPE_ElementRefersToElement))
-        reader = new ElementRefersToElementReader(this);
+    else if (objectType.Equals(JSON_TYPE_LinkTable))
+        reader = new LinkTableReader(this);
     else if (objectType.Equals(JSON_TYPE_ElementGroupsMembers))
         reader = new ElementGroupsMembersReader(this);
     else if (objectType.Equals(JSON_TYPE_ElementHasLinks))
         reader = new ElementHasLinksReader(this);
+    else if (objectType.Equals(JSON_TYPE_WorkBreakdown))
+        reader = new WorkbreakdownReader(this);
+    else if (objectType.Equals(JSON_TYPE_Activity))
+        reader = new ActivityReader(this);
+    else if (objectType.Equals(JSON_TYPE_Plan))
+        reader = new PlanReader(this);
+    else if (objectType.Equals(JSON_TYPE_Baseline))
+        reader = new BaselineReader(this);
+    else if (objectType.Equals(JSON_TYPE_PropertyData))
+        reader = new PropertyDataReader(this);
+
     if (nullptr == reader)
         return ERROR;
 
@@ -221,8 +237,35 @@ void BisJson1ImporterImpl::FinalizeImport()
     {
     m_dgndb->GeoLocation().InitializeProjectExtents();
 //    m_dgndb->Schemas().CreateClassViewsInDb();
+
+    GenerateThumbnails();
     m_dgndb->SaveChanges();
+    m_dgndb->SaveSettings();
+
     delete m_syncInfo;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+void BisJson1ImporterImpl::GenerateThumbnails()
+    {
+    // Eventually these should come from a config file, but for now we use the defaults from the Converter
+    int resolution = 768;
+    // Initialize the graphics subsystem, to produce thumbnails.
+    DgnViewLib::GetHost().GetViewManager().Startup();
+
+    for (auto const& entry : ViewDefinition::MakeIterator(*m_dgndb))
+        {
+        auto view = ViewDefinition::Get(*m_dgndb, entry.GetId());
+        if (!view.IsValid() || view->IsPrivate())
+            continue;
+
+        BeDuration timeout = BeDuration::FromSeconds(30);
+        Point2d size = {resolution, resolution};
+
+        view->RenderAndSaveThumbnail(size, nullptr, timeout);
+        }
     }
 
 //---------------------------------------------------------------------------------------

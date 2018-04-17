@@ -60,19 +60,24 @@ $(Delivery)BeOpenSSL$(ApiNumber).dll : $(DgnDbDlls)BeOpenSSL$(ApiNumber).dll
 
 #$(Delivery)DgnView$(ApiNumber).dll : $(DgnDbDlls)DgnView$(ApiNumber).dll
 
-$(Delivery)libv8.dll : $(DgnDbDlls)libv8.dll
-
 #$(Delivery)qvision$(ApiNumber).dll : $(DgnDbDlls)qvision$(ApiNumber).dll
 
 $(Delivery)BeHttp$(ApiNumber).dll : $(DgnDbDlls)BeHttp$(ApiNumber).dll
 
 $(Delivery)BeFolly$(ApiNumber).dll : $(DgnDbDlls)BeFolly$(ApiNumber).dll
 
+%if "x64" == $(TARGET_PROCESSOR_ARCHITECTURE)
+$(Delivery)libv8.dll : $(DgnDbDlls)libv8.dll
+
 $(Delivery)bentleylog4cxx$(ApiNumber).dll : $(DgnDbDlls)bentleylog4cxx$(ApiNumber).dll
+
+%endif
 
 #$(Delivery)BeSecurity$(ApiNumber).dll : $(DgnDbDlls)BeSecurity$(ApiNumber).dll
 
 $(Delivery)Units$(ApiNumber).dll : $(DgnDbDlls)Units$(ApiNumber).dll
+
+$(Delivery)Planning$(ApiNumber).dll : $(DgnDbDlls)Planning$(ApiNumber).dll
 
 
 always:
@@ -93,6 +98,8 @@ $(DeliveryDgnDbPlatformLibs)BentleyGeomSerialization.lib : $(DgnDbDlls)BentleyGe
 $(DeliveryDgnDbPlatformLibs)DgnPlatform.lib : $(DgnDbDlls)DgnPlatform.lib
 
 $(DeliveryDgnDbPlatformLibs)BaseGeoCoord.lib : $(DgnDbDlls)BaseGeoCoord.lib
+
+$(DeliveryDgnDbPlatformLibs)Planning.lib : $(DgnDbDlls)Planning.lib
 
 $(DeliveryDgnDbPlatformLibs)BeXml.lib : $(DgnDbDlls)BeXml.lib
 

@@ -68,15 +68,25 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         ECN::ECClassCP      m_linkModelClass;
         ECN::ECClassCP      m_annotationTextStyle;
         ECN::ECClassCP      m_textureClass;
+        ECN::ECClassCP      m_planningModelClass;
+        ECN::ECClassCP      m_planningElementClass;
+        ECN::ECClassCP      m_workbreakDownClass;
+        ECN::ECClassCP      m_activityClass;
+        ECN::ECClassCP      m_timeSpanClass;
+        ECN::ECClassCP      m_cameraKeyFrameClass;
+        ECN::ECClassCP      m_elementAspectClass;
+        ECN::ECClassCP      m_elementClass;
 
         Dgn::DgnElementId        m_jobSubjectId;
         Dgn::DgnElementId        m_documentListModelId;
         Dgn::DgnElementId        m_sheetListModelId;
         Dgn::DgnElementId       m_jobDefinitionModelId;
         bmap<Utf8String, Utf8String> m_authorityIds;
+        bmap<Utf8String, Dgn::DgnElementId> m_discplineIds;
 
         bmap<DgnElementId, int> m_insertedElements;
-        bmap<DgnModelId, int> m_insertedModels;
+        bmap<BentleyApi::BeSQLite::EC::ECInstanceId, int> m_insertedAspects;
+        bmap<DgnModelId, DgnElementId> m_insertedModels;
         bmap<DgnCategoryId, DgnCategoryId> m_mappedDrawingCategories;
 
         BENTLEY_TRANSLATABLE_STRINGS_START(ProgressMessage, export_progress)
@@ -109,9 +119,13 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         BentleyStatus ExportElements(Json::Value& out);
         BentleyStatus ExportElements(Json::Value& out, DgnModelId parentModel);
         BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true, bool allowDuplicates = false);
+        BentleyStatus ExportElementAspects(Json::Value& out);
+        BentleyStatus ExportElementAspects(Json::Value& out, ECN::ECClassId classId, BentleyApi::BeSQLite::EC::ECInstanceId aspectId);
         BentleyStatus ExportNamedGroups(Json::Value& out);
         BentleyStatus ExportElementHasLinks(Json::Value& out);
-        BentleyStatus ExportV8Relationships(Json::Value& out);
+        BentleyStatus ExportConstraint(Json::Value& out, ECN::ECClassId constraintClassId, BentleyApi::BeSQLite::EC::ECInstanceId constraintId);
+        BentleyStatus ExportLinkTables(Json::Value& out, Utf8CP schemaName, Utf8CP className, Utf8CP newClassName = nullptr);
+        BentleyStatus ExportPropertyData(Json::Value& out);
         DgnElementId CreateCodeSpec(Json::Value& out, uint8_t codeSpecType, Utf8CP name);
         DgnElementId CreateSubjectElement(Utf8CP subjectName, Json::Value& out);
         DgnElementId CreatePartitionElement(DgnModelCR model, DgnElementId subject, Json::Value& out);
@@ -125,6 +139,9 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         BentleyStatus InitJobDefinitionModel(Json::Value& out);
         Utf8String RemapResourceAuthority(Json::Value& obj, ECN::ECClassCP elementClass);
         void HandleAnnotationTextStyle(Json::Value& obj, DgnElementId id);
+        
+        // Planning schema specific exports
+        BentleyStatus ExportTimelines(Json::Value& out);
 
         //! Report progress and detect if user has indicated that he wants to cancel.
         void ReportProgress() const;

@@ -2,7 +2,7 @@
 #
 #     $Source: BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.mke $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 
@@ -45,6 +45,7 @@ LINKER_LIBRARIES  + $(DgnDbLibs)BentleyGeom.lib
 LINKER_LIBRARIES  + $(DgnDbLibs)DgnPlatform.lib
 LINKER_LIBRARIES  + $(DgnDbLibs)BaseGeoCoord.lib
 LINKER_LIBRARIES  + $(DgnDbLibs)BeJsonCpp.lib
+LINKER_LIBRARIES  + $(DgnDbLibs)Planning.lib
 LINKER_LIBRARIES  + user32.lib
 
 %include $(sharedMki)LinkLibrary.mki

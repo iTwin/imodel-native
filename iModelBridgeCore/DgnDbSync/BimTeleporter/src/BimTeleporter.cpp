@@ -16,7 +16,10 @@
 #include "BimTeleporterInternal.h"
 #include <BimTeleporter/DgnDbToBimConverter.h>
 #include <DgnPlatform/DgnPlatformLib.h>
+#include <DgnPlatform/DgnIModel.h>
 #include <BeSQLite/L10N.h>
+#include <DgnView/DgnViewAPI.h>
+#include <DgnView/DgnViewLib.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY
@@ -66,12 +69,23 @@ struct KnownDesktopLocationsAdmin : BentleyB0200::Dgn::DgnPlatformLib::Host::IKn
     };
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+struct BimTeleporterViewManager : ViewManager
+    {
+    bool _DoesHostHaveFocus() override { return true; }
+    virtual Display::SystemContext* _GetSystemContext() override { return nullptr; }
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            04/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-struct BimTeleporterHost : BentleyB0200::Dgn::DgnPlatformLib::Host
+struct BimTeleporterHost : BentleyB0200::Dgn::DgnViewLib::Host
     {
     virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
     virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
+    ViewManager& _SupplyViewManager() override { return *new BimTeleporterViewManager(); }
+
     virtual BentleyB0200::BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
         BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
@@ -244,7 +258,7 @@ BentleyStatus BimTeleporter::_Initialize(int argc, WCharCP argv[])
     InitLogging(argv[0]);
 
     m_host = new BimTeleporterHost();
-    DgnPlatformLib::Initialize(*m_host, false);
+    DgnViewLib::Initialize(*m_host, false);
     return SUCCESS;
 
     }
@@ -301,6 +315,17 @@ int BimTeleporter::Run(int argc, WCharCP argv[])
         }
 
     bool converted = BentleyApi::DgnDbToBim::DgnDbToBimConverter::Convert(m_inputFileName.GetName(), m_outputPath.GetName());
+
+    if (!converted)
+        return 1;
+
+    CreateIModelParams createImodelParams;
+    createImodelParams.SetOverwriteExisting(true);
+    BeFileName bimName(m_outputPath);
+    BeFileName imodelName(bimName);
+    imodelName.OverrideNameParts(L".imodel");
+
+    BeSQLite::DbResult rc = DgnIModel::Create(imodelName, bimName, createImodelParams);
 
     return 0;
     }
