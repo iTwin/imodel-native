@@ -58,7 +58,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
                        "DisplayLabel TEXT," \
                        "Description TEXT," \
                        "NumericSpec TEXT," \
-                       "CompositeSpacer TEXT,);" \
+                       "CompositeSpacer TEXT);" \
                        "CREATE INDEX ix_ec_Format_SchemaId ON " TABLE_Format "(SchemaId);" \
                        "CREATE INDEX ix_ec_Format_Name ON " TABLE_Format "(Name);"
 

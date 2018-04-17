@@ -173,7 +173,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Format" relationshipName="FormatOwnsCompositeUnits" direction="backward"/>
         <ECProperty propertyName="Label" typeName="string"/>
-        <ECNavigationProperty propertyName="Unit" relationshipName="CompositeUnitRefersToUnit" direction="backward"/>
+        <ECNavigationProperty propertyName="Unit" relationshipName="CompositeUnitRefersToUnit" direction="forward"/>
         <ECProperty propertyName="Ordinal" typeName="int" description="Position of the Composite Unit in its Format"/>
     </ECEntityClass>
     <ECEntityClass typeName="PropertyCategoryDef" description="PropertyCategory" displayLabel="PropertyCategory" modifier="Sealed">

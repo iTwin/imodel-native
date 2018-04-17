@@ -672,9 +672,7 @@ BentleyStatus SchemaPersistenceHelper::DeserializeEnumerationValues(ECEnumeratio
 BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8StringR jsonStr, ECDbCR ecdb, KindOfQuantityCR koq)
     {
     BeAssert(!koq.GetPresentationFormatList().empty());
-    rapidjson::Document presFormatsJson(rapidjson::kArrayType);
-    rapidjson::MemoryPoolAllocator<>& jsonAllocator = presFormatsJson.GetAllocator();
-
+    bvector<Utf8String> formatList;
     for (NamedFormat const& format : koq.GetPresentationFormatList())
         {
         if (format.IsProblem())
@@ -690,7 +688,30 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8Strin
             return ERROR;
             }
 
-        presFormatsJson.PushBack(rapidjson::Value(formatStr.c_str(), (rapidjson::SizeType) formatStr.size(), jsonAllocator).Move(), jsonAllocator);
+        formatList.push_back(formatStr);
+        }
+
+    return SerializeKoqPresentationFormats(jsonStr, formatList);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  06/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8StringR jsonStr, bvector<Utf8String> const& presentationFormats)
+    {
+    BeAssert(!presentationFormats.empty());
+    rapidjson::Document presFormatsJson(rapidjson::kArrayType);
+    rapidjson::MemoryPoolAllocator<>& jsonAllocator = presFormatsJson.GetAllocator();
+
+    for (Utf8StringCR format : presentationFormats)
+        {
+        if (format.empty())
+            {
+            BeAssert(!format.empty());
+            return ERROR;
+            }
+
+        presFormatsJson.PushBack(rapidjson::Value(format.c_str(), (rapidjson::SizeType) format.size(), jsonAllocator).Move(), jsonAllocator);
         }
 
     rapidjson::StringBuffer jsonStrBuf;
@@ -699,7 +720,6 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationFormats(Utf8Strin
     jsonStr.assign(jsonStrBuf.GetString());
     return SUCCESS;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016

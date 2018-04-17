@@ -320,7 +320,7 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
     struct UpgradedUnitFormatStrings
         {
         Utf8String m_persistenceUnit;
-        Utf8String m_presentationFormats;
+        bvector<Utf8String> m_presentationFormats;
         };
 
     bmap<KindOfQuantityId, UpgradedUnitFormatStrings> koqs;
@@ -337,15 +337,32 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
         {
         UpgradedUnitFormatStrings& unitFormatStrings = koqs[stmt.GetValueId<KindOfQuantityId>(0)];
         ECSchemaId schemaId = stmt.GetValueId<ECSchemaId>(1);
-        if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(unitFormatStrings.m_persistenceUnit, unitFormatStrings.m_presentationFormats, stmt.GetValueText(2), stmt.GetValueText(3)))
+        if (!stmt.IsColumnNull(3))
             {
-            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
-            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            Json::Value presFusesJson;
+            if (!Json::Reader::Parse(stmt.GetValueText(3), presFusesJson))
+                {
+                LOG.error("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed. Could not parse the old presentation units.");
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                }
+
+            bvector<Utf8CP> presFuses;
+            for (Json::Value const& presFus : presFusesJson)
+                {
+                presFuses.push_back(presFus.asCString());
+                }
+
+            if (ECObjectsStatus::Success != KindOfQuantity::UpdateFUSDescriptors(unitFormatStrings.m_persistenceUnit, unitFormatStrings.m_presentationFormats, stmt.GetValueText(2), presFuses))
+                {
+                LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                }
             }
 
         schemasThatNeedUnitsReference.insert(schemaId);
         if (!unitFormatStrings.m_presentationFormats.empty())
             schemasThatNeedUnitsAndFormatsReference.insert(schemaId);
+
         }
 
     stmt.Finalize();
@@ -363,9 +380,31 @@ DbResult ProfileUpgrader_4002::UpgradeKoqs(ECDbCR ecdb)
 
     for (bpair<KindOfQuantityId, UpgradedUnitFormatStrings> const& kvPair : koqs)
         {
-        if (BE_SQLITE_OK != stmt.BindText(1, kvPair.second.m_persistenceUnit, Statement::MakeCopy::No) ||
-            BE_SQLITE_OK != stmt.BindText(2, kvPair.second.m_presentationFormats, Statement::MakeCopy::No) ||
-            BE_SQLITE_OK != stmt.BindId(3, kvPair.first) ||
+        if (BE_SQLITE_OK != stmt.BindText(1, kvPair.second.m_persistenceUnit, Statement::MakeCopy::No))
+            {
+            LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+            return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+            }
+
+        // Presentation Format list must be turned into a JSON array
+        const bool hasPresentationFormats = !kvPair.second.m_presentationFormats.empty();
+        if (hasPresentationFormats)
+            {
+            Utf8String presFormatJson;
+            if (SUCCESS != SchemaPersistenceHelper::SerializeKoqPresentationFormats(presFormatJson, kvPair.second.m_presentationFormats))
+                {
+                LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                }
+
+            if (BE_SQLITE_OK != stmt.BindText(2, presFormatJson, Statement::MakeCopy::Yes))
+                {
+                LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
+                return BE_SQLITE_ERROR_ProfileUpgradeFailed;
+                }
+            }
+
+        if (BE_SQLITE_OK != stmt.BindId(3, kvPair.first) ||
             BE_SQLITE_DONE != stmt.Step())
             {
             LOG.errorv("ECDb profile upgrade failed: Upgrading persistence unit and presentation formats in ec_KindOfQuantity to EC3.2 format failed: %s.", ecdb.GetLastError().c_str());
