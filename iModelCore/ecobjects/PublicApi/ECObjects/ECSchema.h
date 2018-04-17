@@ -2508,7 +2508,7 @@ enum class SchemaMatchType
 };
 
 //=======================================================================================
-//! Fully defines a schema with its name, read, write and minor versions, and a checksum
+//! Fully defines a schema with its name, read, write and minor versions.
 //! 
 //! The following table shows how schema version changes over time
 //! 
@@ -2553,23 +2553,22 @@ struct SchemaKey
     uint32_t      m_versionRead;
     uint32_t      m_versionWrite;
     uint32_t      m_versionMinor;
-    Utf8String      m_checkSum;
 
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
     //! @param[in]  read    The read portion of the version
     //! @param[in]  minor   The minor portion of the version
-    SchemaKey (Utf8CP name, uint32_t read, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(minor), m_checkSum(""){}
+    SchemaKey (Utf8CP name, uint32_t read, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(minor){}
 
     //! Creates a new SchemaKey with the given name and version information
     //! @param[in]  name    The name of the ECSchema
     //! @param[in]  read    The read portion of the version
     //! @param[in]  write   The write portion of the version
     //! @param[in]  minor   The minor portion of the version
-    SchemaKey(Utf8CP name, uint32_t read, uint32_t write, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(write), m_versionMinor(minor), m_checkSum("") {}
+    SchemaKey(Utf8CP name, uint32_t read, uint32_t write, uint32_t minor) : m_schemaName(name), m_versionRead(read), m_versionWrite(write), m_versionMinor(minor){}
 
     //! Default constructor
-    SchemaKey () : m_versionRead(DEFAULT_VERSION_READ), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR), m_checkSum("") {}
+    SchemaKey () : m_versionRead(DEFAULT_VERSION_READ), m_versionWrite(DEFAULT_VERSION_WRITE), m_versionMinor(DEFAULT_VERSION_MINOR){}
 
     Utf8StringCR GetName() const {return m_schemaName;}
 
@@ -2647,7 +2646,7 @@ struct SchemaKey
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
-    //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is less than the target's checksum.  If the checksum is not set, it falls through to the Exact match
+    //! @li SchemaMatchType::Identical - Falls through to the Exact match
     //! @li SchemaMatchType::Exact - This will first test the names, then the read version, and lastly the minor version
     //! @li SchemaMatchType::LatestReadCompatible - This will first test the names and then the read versions.
     //! @li SchemaMatchType::LatestWriteCompatible - This will first test the names and then the read and write versions.
@@ -2658,7 +2657,7 @@ struct SchemaKey
     //! @param[in]  rhs         The SchemaKey to compare to
     //! @param[in]  matchType   The type of match to compare for
     //! @returns The comparison is based on the SchemaMatchType, defined by:
-    //! @li SchemaMatchType::Identical - Returns whether the current schema's checksum is equal to the target's checksum.  If the checksum is not set, it falls through to the Exact match
+    //! @li SchemaMatchType::Identical - Falls through to the Exact match
     //! @li SchemaMatchType::Exact - Returns whether this schema's name, read version, and minor version are all equal to the target's.
     //! @li SchemaMatchType::LatestWriteCompatible - Returns whether this schema's name and read version are equal, and this schema's write version is greater than or equal to the target's.
     //! @li SchemaMatchType::LatestReadCompatible - Returns whether this schema's name and read version are equal, and this schema's write version is greater than or equal to the target's.
@@ -3438,7 +3437,7 @@ protected:
     CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::Schema;}
 
 public:
-    ECOBJECTS_EXPORT void ReComputeCheckSum ();
+    ECOBJECTS_EXPORT Utf8String ComputeCheckSum ();
     //! Intended to be called by ECDb or a similar system
     void SetId(ECSchemaId id) {BeAssert(!m_ecSchemaId.IsValid()); m_ecSchemaId = id;}
     bool HasId() const {return m_ecSchemaId.IsValid();}

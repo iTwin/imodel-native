@@ -759,7 +759,7 @@ SchemaReadStatus SchemaXmlReader::ReadSchemaStub(SchemaKey& schemaKey, uint32_t&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, Utf8String checkSum)
+SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
     StopWatch overallTimer("Overall schema de-serialization timer", true);
@@ -791,8 +791,6 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, Utf8String
     ECObjectsStatus createStatus = ECSchema::CreateSchema(schemaOut, schemaKey.GetName(), alias, schemaKey.GetVersionRead(), schemaKey.GetVersionWrite(), schemaKey.GetVersionMinor());
     if (ECObjectsStatus::Success != createStatus)
         return SchemaReadStatus::InvalidECSchemaXml;
-
-    schemaOut->m_key.m_checkSum = checkSum;
 
     schemaOut->m_originalECXmlVersionMajor = ecXmlMajorVersion;
     schemaOut->m_originalECXmlVersionMinor = ecXmlMinorVersion;
@@ -983,7 +981,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, Utf8String
     if (m_schemaContext.GetPreserveElementOrder())
         reader->PopulateSchemaElementOrder(schemaOut->m_serializationOrder, *schemaNode);
 
-    //Compute the schema checkSum
+    
     overallTimer.Stop();
     LOG.debugv("Overall schema de-serialization for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), overallTimer.GetElapsedSeconds());
 

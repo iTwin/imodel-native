@@ -995,6 +995,10 @@ TEST_F(ClassTest, ClassNotSubClassableInReferencingSchema_XML_WithExclusions)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(refingSchema, goodRefSchemaXml, *context));
     ASSERT_TRUE(refingSchema.IsValid());
 
+    context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, baseSchemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+
     Utf8CP badRefSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
             <ECSchema schemaName="RefingSchema" alias="RS" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="TestSchema" version="1.00.00" alias="ts"/>
