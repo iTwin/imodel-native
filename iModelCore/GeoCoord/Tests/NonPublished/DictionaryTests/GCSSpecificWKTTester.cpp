@@ -14,17 +14,25 @@
 
 using namespace ::testing;
 
+bool GCSSpecificWKTTester::s_initialized = false;
+
+
 GCSSpecificWKTTester::GCSSpecificWKTTester() 
     {
-    BeTest::Host& host = BeTest::GetHost();
+    if (!s_initialized)
+        {
+        BeTest::Host& host = BeTest::GetHost();
 
-    BeFileName path;
-    host.GetDgnPlatformAssetsDirectory(path);
+        BeFileName path;
+        host.GetDgnPlatformAssetsDirectory(path);
 
-    path.AppendToPath (L"DgnGeoCoord");
+        path.AppendToPath(L"DgnGeoCoord");
 
-    GeoCoordinates::BaseGCS::Initialize(path.c_str());
+        GeoCoordinates::BaseGCS::Initialize(path.c_str());
 
+        s_initialized = true;
+
+        }
     }
 
 

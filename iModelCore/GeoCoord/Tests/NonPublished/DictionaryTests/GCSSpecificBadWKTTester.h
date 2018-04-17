@@ -15,11 +15,12 @@
 // Preparation of required environment
 class GCSSpecificBadWKTTester : public ::testing::TestWithParam< WString >
     {   
+    private: 
+        static bool s_initialized;
+    public:
+        virtual void SetUp() {  };
+        virtual void TearDown() {};
 
-public:
-  virtual void SetUp() {  };
-  virtual void TearDown() {};
-
-    GCSSpecificBadWKTTester();
-    ~GCSSpecificBadWKTTester() {};
+        GCSSpecificBadWKTTester();
+        ~GCSSpecificBadWKTTester() {};
     };

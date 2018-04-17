@@ -15,13 +15,15 @@
 // Preparation of required environment
 class GCSUnaryTester : public ::testing::TestWithParam< WString >
     {   
+    private: 
+        static bool s_initialized;
+  //      static GeoCoordinates::BaseGCSPtr s_LL84GCS;
 
-public:
-  virtual void SetUp() {  };
-  virtual void TearDown() {};
+    public:
+        virtual void SetUp() {  };
+        virtual void TearDown() {};
 
-    GCSUnaryTester();
-    ~GCSUnaryTester() {};
+        GCSUnaryTester();
+        ~GCSUnaryTester() {};
 
-    GeoCoordinates::BaseGCSPtr m_LL84GCS;
     };

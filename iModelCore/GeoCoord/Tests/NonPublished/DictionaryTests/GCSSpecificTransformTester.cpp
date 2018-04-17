@@ -67,16 +67,23 @@ GeoCoordinates::BaseGCSCR DstGcs
     return status;
     }
 
+bool GCSSpecificTransformTester::s_initialized = false;
+
 GCSSpecificTransformTester::GCSSpecificTransformTester() 
     {
+    if (!s_initialized)
+        {
         BeTest::Host& host = BeTest::GetHost();
 
         BeFileName path;
         host.GetDgnPlatformAssetsDirectory(path);
 
-        path.AppendToPath (L"DgnGeoCoord");
+        path.AppendToPath(L"DgnGeoCoord");
 
         GeoCoordinates::BaseGCS::Initialize(path.c_str());
+
+        s_initialized = true;
+        }
     }
 
 
@@ -375,6 +382,22 @@ TEST_F (GCSSpecificTransformTester, KuwaitUtilityInstanciationFailureTest)
     EXPECT_TRUE(currentGCS.IsValid());
     }
 
+
+//==================================================================================
+// Domain
+//==================================================================================
+TEST_F (GCSSpecificTransformTester, InitFromEPSGFailureTest)
+    {
+    GeoCoordinates::BaseGCSPtr currentGCS;
+
+   
+    currentGCS = GeoCoordinates::BaseGCS::CreateGCS();
+
+    EXPECT_TRUE(SUCCESS == currentGCS->InitFromEPSGCode(NULL, NULL, 4326));
+
+
+    EXPECT_TRUE(currentGCS.IsValid());
+    }
     
 //==================================================================================
 // Domain

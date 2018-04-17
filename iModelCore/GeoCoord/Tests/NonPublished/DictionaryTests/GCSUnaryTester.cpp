@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: Tests/NonPublished/DictionaryTests/GCSUnaryTester.cpp $
 //:>
-//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -14,14 +14,29 @@
 
 using namespace ::testing;
 
+bool GCSUnaryTester::s_initialized = false;
+
+
 GCSUnaryTester::GCSUnaryTester() 
     {
-    //static bool initialised = false;
 
-    //if (!initialised)
-    //    GeoCoordinates::BaseGCS::Initialize(L".//Assets//DgnGeoCoord");
+    if (!s_initialized)
+        {
+        BeTest::Host& host = BeTest::GetHost();
 
-    m_LL84GCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
+        BeFileName path;
+        host.GetDgnPlatformAssetsDirectory(path);
+
+        path.AppendToPath(L"DgnGeoCoord");
+
+        GeoCoordinates::BaseGCS::Initialize(path.c_str());
+
+        s_initialized = true;
+
+    //    s_LL84GCS = GeoCoordinates::BaseGCS::CreateGCS(L"LL84");
+
+        }
+
 
     }
 

@@ -29,11 +29,12 @@ struct conversionTest
 // Preparation of required environement
 class GCSSpecificTransformTester : public ::testing::TestWithParam< conversionTest >
     {   
+    private: 
+        static bool s_initialized;
+    public:
+        virtual void SetUp() {  };
+        virtual void TearDown() {};
 
-public:
-  virtual void SetUp() {  };
-  virtual void TearDown() {};
-
-    GCSSpecificTransformTester();
-    ~GCSSpecificTransformTester() {};
+        GCSSpecificTransformTester();
+        ~GCSSpecificTransformTester() {};
     };
