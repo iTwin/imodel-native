@@ -26,7 +26,8 @@ class UrlProviderTests : public WSClientBaseTest, public ::testing::WithParamInt
                     {
                     {UrlProvider::Environment::Dev, "Dev"},
                     {UrlProvider::Environment::Qa, "Qa"},
-                    {UrlProvider::Environment::Release, "Release"}
+                    {UrlProvider::Environment::Release, "Release"},
+                    {UrlProvider::Environment::Perf, "Perf"}
                     };
 
                 auto urlDescriptor = ::testing::get<1>(info.param);

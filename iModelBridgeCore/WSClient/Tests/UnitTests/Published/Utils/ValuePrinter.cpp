@@ -414,7 +414,8 @@ void PrintTo(const UrlProvider::Environment& value, ::std::ostream* os)
         {
         TO_VALUE_STRING_PAIR(UrlProvider::Environment::Dev),
         TO_VALUE_STRING_PAIR(UrlProvider::Environment::Qa),
-        TO_VALUE_STRING_PAIR(UrlProvider::Environment::Release)
+        TO_VALUE_STRING_PAIR(UrlProvider::Environment::Release),
+        TO_VALUE_STRING_PAIR(UrlProvider::Environment::Perf)
         };
 
     Utf8String name = names[value];
