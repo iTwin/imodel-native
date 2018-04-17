@@ -261,7 +261,7 @@ ConfigurationModelPtr ConfigurationModel::Query(SubjectCR subject)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SubjectCPtr ConfigurationModel::GetParentSubject() const
     {
-    auto partitionCP = dynamic_cast<SpatialLocationPartitionCP>(GetModeledElement().get());
+    auto partitionCP = dynamic_cast<DefinitionPartitionCP>(GetModeledElement().get());
     BeAssert(partitionCP != nullptr);
 
     return GetDgnDb().Elements().Get<Subject>(partitionCP->GetParentId());

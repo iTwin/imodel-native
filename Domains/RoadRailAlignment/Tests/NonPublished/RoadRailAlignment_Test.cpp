@@ -8,6 +8,13 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     DgnDbPtr projectPtr = CreateProject(L"BasicAlignmentTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
+    auto configurationModelPtr = ConfigurationModel::Query(*projectPtr->Elements().GetRootSubject());
+    ASSERT_TRUE(configurationModelPtr.IsValid());
+
+    auto subjectCPtr = configurationModelPtr->GetParentSubject();
+    ASSERT_TRUE(subjectCPtr.IsValid());
+    ASSERT_EQ(projectPtr->Elements().GetRootSubjectId(), subjectCPtr->GetElementId());
+
     auto names = AlignmentModel::QueryAlignmentPartitionNames(*projectPtr->Elements().GetRootSubject());
     ASSERT_EQ(1, names.size());
 
