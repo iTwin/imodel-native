@@ -1649,6 +1649,9 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
     if (!oldVal.GetInvariantDescription().EqualsIAscii(newVal.GetInvariantDescription()))
         change.GetDescription().SetValue(oldVal.GetInvariantDescription(), newVal.GetInvariantDescription());
     
+    if (oldVal.HasNumeric() != newVal.HasNumeric())
+        change.GetHasNumeric().SetValue(oldVal.HasNumeric(), newVal.HasNumeric());
+
     if (oldVal.HasNumeric() && newVal.HasNumeric()) // Not valid without a numeric spec, don't do comparison
         { 
         auto oldNum = oldVal.GetNumericSpec();
@@ -1739,21 +1742,21 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
     if (oldVal.HasComposite() && newVal.HasComposite())
         {
         auto oldComp = oldVal.GetCompositeSpec();
-        auto newComp = oldVal.GetCompositeSpec();
+        auto newComp = newVal.GetCompositeSpec();
 
         if (oldComp->HasSpacer() && newComp->HasSpacer() && oldComp->GetSpacer() != newComp->GetSpacer())
             change.GetCompositeSpacer().SetValue(oldComp->GetSpacer(), newComp->GetSpacer());
         else if (!oldComp->HasSpacer() && newComp->HasSpacer())
             change.GetCompositeSpacer().SetValue(ValueId::New, newComp->GetSpacer());
-        else if (oldComp->HasSpacer() && newComp->HasSpacer())
+        else if (oldComp->HasSpacer() && !newComp->HasSpacer())
             change.GetCompositeSpacer().SetValue(ValueId::Deleted, oldComp->GetSpacer());
 
-        if (oldComp->HasMajorUnit() && newComp->HasMajorUnit() && oldComp->GetMajorUnit()->GetName() != newComp->GetMajorUnit()->GetName())
-            change.GetCompositeMajorUnit().SetValue(oldComp->GetMajorUnit()->GetName(), newVal.GetCompositeMajorUnit()->GetName());
+        if (oldComp->HasMajorUnit() && newComp->HasMajorUnit() && ((ECUnitCP)oldComp->GetMajorUnit())->GetFullName() != ((ECUnitCP)newComp->GetMajorUnit())->GetFullName())
+            change.GetCompositeMajorUnit().SetValue(((ECUnitCP)oldComp->GetMajorUnit())->GetFullName(), ((ECUnitCP)newComp->GetMajorUnit())->GetFullName());
         else if (!oldComp->HasMajorUnit() && newComp->HasMajorUnit())
-            change.GetCompositeMajorUnit().SetValue(ValueId::New, newComp->GetMajorUnit()->GetName());
+            change.GetCompositeMajorUnit().SetValue(ValueId::New, ((ECUnitCP)newComp->GetMajorUnit())->GetFullName());
         else if (oldComp->HasMajorUnit() && !newComp->HasMajorUnit())
-            change.GetCompositeMajorUnit().SetValue(ValueId::Deleted, oldComp->GetMajorUnit()->GetName());
+            change.GetCompositeMajorUnit().SetValue(ValueId::Deleted, ((ECUnitCP)oldComp->GetMajorUnit())->GetFullName());
 
         if (oldComp->HasMajorLabel() && newComp->HasMajorLabel() && oldComp->GetMajorLabel() != newComp->GetMajorLabel())
             change.GetCompositeMajorLabel().SetValue(oldComp->GetMajorLabel(), newComp->GetMajorLabel());
@@ -1762,12 +1765,12 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         else if (oldComp->HasMajorLabel() && !newComp->HasMajorLabel())
             change.GetCompositeMajorLabel().SetValue(ValueId::Deleted, oldComp->GetMajorLabel());
 
-        if (oldComp->HasMiddleUnit() && newComp->HasMiddleUnit() && oldComp->GetMiddleUnit()->GetName() != newComp->GetMiddleUnit()->GetName())
-            change.GetCompositeMiddleUnit().SetValue(oldComp->GetMiddleUnit()->GetName(), newVal.GetCompositeMiddleUnit()->GetName());
+        if (oldComp->HasMiddleUnit() && newComp->HasMiddleUnit() && ((ECUnitCP)oldComp->GetMiddleUnit())->GetFullName() != ((ECUnitCP)newComp->GetMiddleUnit())->GetFullName())
+            change.GetCompositeMiddleUnit().SetValue(((ECUnitCP)oldComp->GetMiddleUnit())->GetFullName(), ((ECUnitCP)newComp->GetMiddleUnit())->GetFullName());
         else if (!oldComp->HasMiddleUnit() && newComp->HasMiddleUnit())
-            change.GetCompositeMiddleUnit().SetValue(ValueId::New, newComp->GetMiddleUnit()->GetName());
+            change.GetCompositeMiddleUnit().SetValue(ValueId::New, ((ECUnitCP)newComp->GetMiddleUnit())->GetFullName());
         else if (oldComp->HasMiddleUnit() && !newComp->HasMiddleUnit())
-            change.GetCompositeMiddleUnit().SetValue(ValueId::Deleted, oldComp->GetMiddleUnit()->GetName());
+            change.GetCompositeMiddleUnit().SetValue(ValueId::Deleted, ((ECUnitCP)oldComp->GetMiddleUnit())->GetFullName());
 
         if (oldComp->HasMiddleLabel() && newComp->HasMiddleLabel() && oldComp->GetMiddleLabel() != newComp->GetMiddleLabel())
             change.GetCompositeMiddleLabel().SetValue(oldComp->GetMiddleLabel(), newComp->GetMiddleLabel());
@@ -1776,12 +1779,12 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         else if (oldComp->HasMiddleLabel() && !newComp->HasMiddleLabel())
             change.GetCompositeMiddleLabel().SetValue(ValueId::Deleted, oldComp->GetMiddleLabel());
 
-        if (oldComp->HasMinorUnit() && newComp->HasMinorUnit() && oldComp->GetMinorUnit()->GetName() != newComp->GetMinorUnit()->GetName())
-            change.GetCompositeMinorUnit().SetValue(oldComp->GetMinorUnit()->GetName(), newVal.GetCompositeMinorUnit()->GetName());
+        if (oldComp->HasMinorUnit() && newComp->HasMinorUnit() && ((ECUnitCP)oldComp->GetMinorUnit())->GetFullName() != ((ECUnitCP)newComp->GetMinorUnit())->GetFullName())
+            change.GetCompositeMinorUnit().SetValue(((ECUnitCP)oldComp->GetMinorUnit())->GetFullName(), ((ECUnitCP)newComp->GetMinorUnit())->GetFullName());
         else if (!oldComp->HasMinorUnit() && newComp->HasMinorUnit())
-            change.GetCompositeMinorUnit().SetValue(ValueId::New, newComp->GetMinorUnit()->GetName());
+            change.GetCompositeMinorUnit().SetValue(ValueId::New, ((ECUnitCP)newComp->GetMinorUnit())->GetFullName());
         else if (oldComp->HasMinorUnit() && !newComp->HasMinorUnit())
-            change.GetCompositeMinorUnit().SetValue(ValueId::Deleted, oldComp->GetMinorUnit()->GetName());
+            change.GetCompositeMinorUnit().SetValue(ValueId::Deleted, ((ECUnitCP)oldComp->GetMinorUnit())->GetFullName());
 
         if (oldComp->HasMinorLabel() && newComp->HasMinorLabel() && oldComp->GetMinorLabel() != newComp->GetMinorLabel())
             change.GetCompositeMinorLabel().SetValue(oldComp->GetMinorLabel(), newComp->GetMinorLabel());
@@ -1790,12 +1793,12 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         else if (oldComp->HasMinorLabel() && !newComp->HasMinorLabel())
             change.GetCompositeMinorLabel().SetValue(ValueId::Deleted, oldComp->GetMinorLabel());
 
-        if (oldComp->HasSubUnit() && newComp->HasSubUnit() && oldComp->GetSubUnit()->GetName() != newComp->GetSubUnit()->GetName())
-            change.GetCompositeSubUnit().SetValue(oldComp->GetSubUnit()->GetName(), newVal.GetCompositeSubUnit()->GetName());
+        if (oldComp->HasSubUnit() && newComp->HasSubUnit() && ((ECUnitCP)oldComp->GetSubUnit())->GetFullName() != ((ECUnitCP)newComp->GetSubUnit())->GetFullName())
+            change.GetCompositeSubUnit().SetValue(((ECUnitCP)oldComp->GetSubUnit())->GetFullName(), ((ECUnitCP)newComp->GetSubUnit())->GetFullName());
         else if (!oldComp->HasSubUnit() && newComp->HasSubUnit())
-            change.GetCompositeSubUnit().SetValue(ValueId::New, newComp->GetSubUnit()->GetName());
+            change.GetCompositeSubUnit().SetValue(ValueId::New, ((ECUnitCP)newComp->GetSubUnit())->GetFullName());
         else if (oldComp->HasSubUnit() && !newComp->HasSubUnit())
-            change.GetCompositeSubUnit().SetValue(ValueId::Deleted, oldComp->GetSubUnit()->GetName());
+            change.GetCompositeSubUnit().SetValue(ValueId::Deleted, ((ECUnitCP)oldComp->GetSubUnit())->GetFullName());
 
         if (oldComp->HasSubLabel() && newComp->HasSubLabel() && oldComp->GetSubLabel() != newComp->GetSubLabel())
             change.GetCompositeSubLabel().SetValue(oldComp->GetSubLabel(), newComp->GetSubLabel());
@@ -2501,7 +2504,6 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Enumerators: return "Enumerators";
             case SystemId::ExtendedTypeName: return "ExtendedTypeName";
             case SystemId::Format: return "Format";
-            case SystemId::FormatCompositeInputUnit: return "FormatCompositeInputUnit";
             case SystemId::FormatCompositeSpacer: return "FormatCompositeSpacer";
             case SystemId::FormatCompositeMajorUnit: return "FormatCompositeMajorUnit";
             case SystemId::FormatCompositeMajorLabel: return "FormatCompositeMajorLabel";
@@ -2511,6 +2513,8 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::FormatCompositeMinorLabel: return "FormatCompositeMinorLabel";
             case SystemId::FormatCompositeSubUnit: return "FormatCompositeSubUnit";
             case SystemId::FormatCompositeSubLabel: return "FormatCompositeSubLabel";
+            case SystemId::FormatHasComposite: return "FormatHasComposite";
+            case SystemId::FormatHasNumeric: return "FormatHasNumeric";
             case SystemId::Formats: return "Formats";
             case SystemId::FormatTraits: return "FormatTraits";
             case SystemId::FractionalPrecision: return "FractionalPrecision";

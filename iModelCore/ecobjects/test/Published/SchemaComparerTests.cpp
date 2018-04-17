@@ -322,7 +322,6 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     CreateFirstSchema();
     CreateSecondSchema();
     auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
-    comp.SetUnit(ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), 0);
     comp.SetMajorLabel("Apple");
     comp.SetMiddleLabel("Bannana");
     comp.SetMinorLabel("Carrot");
@@ -351,6 +350,445 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     comparer.Compare(changes, first, second);
 
     ASSERT_EQ(0, changes.Count()); //Identical
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      04/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsDeletedCompositeSpec)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    comp.SetMajorLabel("Apple");
+    comp.SetMiddleLabel("Banana");
+    comp.SetMinorLabel("Carrot");
+    comp.SetSubLabel("Dragonfruit");
+    comp.SetSpacer("Spacer1");
+    auto num = Formatting::NumericFormatSpec();
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
+    m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+    auto& formatChanges = changes.At(0).Formats();
+
+    ASSERT_EQ(1, formatChanges.Count());
+    auto& formatChange = formatChanges.At(0);
+
+    ASSERT_EQ(1, formatChange.ChangesCount());
+
+    EXPECT_TRUE(formatChange.GetHasComposite().GetOld().Value());
+    EXPECT_FALSE(formatChange.GetHasComposite().GetNew().Value());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      04/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyCompositeSpec)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    comp.SetMajorLabel("Apple");
+    comp.SetMiddleLabel("Banana");
+    comp.SetMinorLabel("Carrot");
+    comp.SetSubLabel("Dragonfruit");
+    comp.SetSpacer("Spacer1");
+    auto comp2 = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    auto num = Formatting::NumericFormatSpec();
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
+    m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp2);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+    auto& formatChanges = changes.At(0).Formats();
+
+    ASSERT_EQ(1, formatChanges.Count());
+    auto& formatChange = formatChanges.At(0);
+
+    ASSERT_EQ(8, formatChange.ChangesCount());
+
+    EXPECT_STRCASEEQ("UNITS:DM", formatChange.GetCompositeMiddleUnit().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMiddleUnit().GetNew().IsNull());
+    EXPECT_STRCASEEQ("UNITS:CM", formatChange.GetCompositeMinorUnit().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMinorUnit().GetNew().IsNull());
+    EXPECT_STRCASEEQ("UNITS:MM", formatChange.GetCompositeSubUnit().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeSubUnit().GetNew().IsNull());
+
+    EXPECT_STRCASEEQ("Spacer1", formatChange.GetCompositeSpacer().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeSpacer().GetNew().IsNull());
+
+    EXPECT_STRCASEEQ("Apple", formatChange.GetCompositeMajorLabel().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMajorLabel().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Banana", formatChange.GetCompositeMiddleLabel().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMiddleLabel().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Carrot", formatChange.GetCompositeMinorLabel().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMinorLabel().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Dragonfruit", formatChange.GetCompositeSubLabel().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeSubLabel().GetNew().IsNull());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      04/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsNewCompositeSpec)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    comp.SetMajorLabel("Apple");
+    comp.SetMiddleLabel("Banana");
+    comp.SetMinorLabel("Carrot");
+    comp.SetSubLabel("Dragonfruit");
+    comp.SetSpacer("Spacer1");
+    auto comp2 = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
+    auto num = Formatting::NumericFormatSpec();
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp2);
+    m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+    auto& formatChanges = changes.At(0).Formats();
+
+    ASSERT_EQ(1, formatChanges.Count());
+    auto& formatChange = formatChanges.At(0);
+
+    ASSERT_EQ(8, formatChange.ChangesCount());
+
+    EXPECT_STRCASEEQ("UNITS:DM", formatChange.GetCompositeMiddleUnit().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMiddleUnit().GetOld().IsNull());
+    EXPECT_STRCASEEQ("UNITS:CM", formatChange.GetCompositeMinorUnit().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMinorUnit().GetOld().IsNull());
+    EXPECT_STRCASEEQ("UNITS:MM", formatChange.GetCompositeSubUnit().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeSubUnit().GetOld().IsNull());
+
+    EXPECT_STRCASEEQ("Spacer1", formatChange.GetCompositeSpacer().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeSpacer().GetOld().IsNull());
+
+    EXPECT_STRCASEEQ("Apple", formatChange.GetCompositeMajorLabel().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMajorLabel().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Banana", formatChange.GetCompositeMiddleLabel().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMiddleLabel().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Carrot", formatChange.GetCompositeMinorLabel().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeMinorLabel().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Dragonfruit", formatChange.GetCompositeSubLabel().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetCompositeSubLabel().GetOld().IsNull());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      04/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsModifiedCompositeSpecs)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+    auto comp = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("DM"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
+    comp.SetMajorLabel("Apple");
+    comp.SetMiddleLabel("Banana");
+    comp.SetMinorLabel("Carrot");
+    comp.SetSubLabel("Dragonfruit");
+    comp.SetSpacer("Spacer1");
+
+    auto comp2 = Formatting::CompositeValueSpec(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MILE"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("YRD"), *ECTestFixture::GetUnitsSchema()->GetUnitCP("FT"),*ECTestFixture::GetUnitsSchema()->GetUnitCP("IN"));
+    comp2.SetMajorLabel("Dragonfruit");
+    comp2.SetMiddleLabel("Eggplant");
+    comp2.SetMinorLabel("Fig");
+    comp2.SetSubLabel("Grapefruit");
+    comp2.SetSpacer("Spacer2");
+
+    auto num = Formatting::NumericFormatSpec();
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp);
+    m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num, &comp2);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+    auto& formatChanges = changes.At(0).Formats();
+
+    ASSERT_EQ(1, formatChanges.Count());
+    auto& formatChange = formatChanges.At(0);
+
+    ASSERT_EQ(9, formatChange.ChangesCount());
+
+    EXPECT_STRCASEEQ("UNITS:M", formatChange.GetCompositeMajorUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:MILE", formatChange.GetCompositeMajorUnit().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:DM", formatChange.GetCompositeMiddleUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:YRD", formatChange.GetCompositeMiddleUnit().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:CM", formatChange.GetCompositeMinorUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:FT", formatChange.GetCompositeMinorUnit().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:MM", formatChange.GetCompositeSubUnit().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("UNITS:IN", formatChange.GetCompositeSubUnit().GetNew().Value().c_str());
+
+    EXPECT_STRCASEEQ("Spacer1", formatChange.GetCompositeSpacer().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Spacer2", formatChange.GetCompositeSpacer().GetNew().Value().c_str());
+
+    EXPECT_STRCASEEQ("Apple", formatChange.GetCompositeMajorLabel().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Dragonfruit", formatChange.GetCompositeMajorLabel().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Banana", formatChange.GetCompositeMiddleLabel().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Eggplant", formatChange.GetCompositeMiddleLabel().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Carrot", formatChange.GetCompositeMinorLabel().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Fig", formatChange.GetCompositeMinorLabel().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Dragonfruit", formatChange.GetCompositeSubLabel().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Grapefruit", formatChange.GetCompositeSubLabel().GetNew().Value().c_str());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      04/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsDeletedNumericSpec)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+
+    auto num = Formatting::NumericFormatSpec();
+    num.SetApplyRounding(true);
+    num.SetPresentationType(Formatting::PresentationType::Fractional);
+    num.SetPrecision(Formatting::FractionalPrecision::Over_128);
+    num.SetMinWidth(4);
+    num.SetUomSeparator("");
+    num.SetPrefixPadChar('0');
+    num.SetSignOption(Formatting::SignOption::NegativeParentheses);
+    num.SetDecimalSeparator(',');
+    num.SetThousandSeparator(',');
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num);
+    m_secondSchema->CreateFormat(format, "foo", "apple", "banana");
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+    auto& change = changes.At(0).Formats();
+
+    ASSERT_EQ(1, change.Count());
+    auto formatChange = change.At(0);
+
+    EXPECT_TRUE(formatChange.GetHasNumeric().GetOld().Value());
+    EXPECT_FALSE(formatChange.GetHasNumeric().GetNew().Value());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      04/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyNumericSpec)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+
+    auto num = Formatting::NumericFormatSpec();
+    num.SetApplyRounding(true);
+    num.SetPresentationType(Formatting::PresentationType::Fractional);
+    num.SetPrecision(Formatting::FractionalPrecision::Over_128);
+    num.SetMinWidth(4);
+    num.SetUomSeparator("");
+    num.SetPrefixPadChar('0');
+    num.SetSignOption(Formatting::SignOption::NegativeParentheses);
+    num.SetDecimalSeparator(',');
+    num.SetThousandSeparator(',');
+
+    auto num2 = Formatting::NumericFormatSpec();
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num);
+    m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num2);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+    auto& change = changes.At(0).Formats();
+
+    ASSERT_EQ(1, change.Count());
+    auto formatChange = change.At(0);
+
+    ASSERT_EQ(9, formatChange.ChangesCount());
+
+    EXPECT_STRCASEEQ("applyRounding", formatChange.GetFormatTraits().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetFormatTraits().GetNew().IsNull());
+    EXPECT_STRCASEEQ("Fractional", formatChange.GetPresentationType().GetOld().Value().c_str());
+    EXPECT_EQ(128, formatChange.GetFractionalPrecision().GetOld().Value());
+    EXPECT_EQ(4, formatChange.GetMinWidth().GetOld().Value());
+    EXPECT_TRUE(formatChange.GetMinWidth().GetNew().IsNull());
+    EXPECT_STRCASEEQ("", formatChange.GetUomSeparator().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetUomSeparator().GetNew().IsNull());
+    EXPECT_STRCASEEQ("0", formatChange.GetPrefixPadChar().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetPrefixPadChar().GetNew().IsNull());
+    EXPECT_STRCASEEQ("NegativeParentheses", formatChange.GetShowSignOption().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetShowSignOption().GetNew().IsNull());
+    EXPECT_STRCASEEQ(",", formatChange.GetDecimalSeparator().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetDecimalSeparator().GetNew().IsNull());
+    EXPECT_STRCASEEQ(",", formatChange.GetThousandsSeparator().GetOld().Value().c_str());
+    EXPECT_TRUE(formatChange.GetThousandsSeparator().GetNew().IsNull());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      04/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsNewNumericSpec)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+
+    auto num = Formatting::NumericFormatSpec();
+    num.SetApplyRounding(true);
+    num.SetPresentationType(Formatting::PresentationType::Fractional);
+    num.SetPrecision(Formatting::FractionalPrecision::Over_128);
+    num.SetMinWidth(4);
+    num.SetUomSeparator("");
+    num.SetPrefixPadChar('0');
+    num.SetSignOption(Formatting::SignOption::NegativeParentheses);
+    num.SetDecimalSeparator(',');
+    num.SetThousandSeparator(',');
+
+    auto num2 = Formatting::NumericFormatSpec();
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num2);
+    m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+    auto& change = changes.At(0).Formats();
+
+    ASSERT_EQ(1, change.Count());
+    auto formatChange = change.At(0);
+
+    ASSERT_EQ(9, formatChange.ChangesCount());
+
+    EXPECT_STRCASEEQ("applyRounding", formatChange.GetFormatTraits().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetFormatTraits().GetOld().IsNull());
+    EXPECT_STRCASEEQ("Fractional", formatChange.GetPresentationType().GetNew().Value().c_str());
+    EXPECT_EQ(128, formatChange.GetFractionalPrecision().GetNew().Value());
+    EXPECT_EQ(4, formatChange.GetMinWidth().GetNew().Value());
+    EXPECT_TRUE(formatChange.GetMinWidth().GetOld().IsNull());
+    EXPECT_STRCASEEQ("", formatChange.GetUomSeparator().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetUomSeparator().GetOld().IsNull());
+    EXPECT_STRCASEEQ("0", formatChange.GetPrefixPadChar().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetPrefixPadChar().GetOld().IsNull());
+    EXPECT_STRCASEEQ("NegativeParentheses", formatChange.GetShowSignOption().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetShowSignOption().GetOld().IsNull());
+    EXPECT_STRCASEEQ(",", formatChange.GetDecimalSeparator().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetDecimalSeparator().GetOld().IsNull());
+    EXPECT_STRCASEEQ(",", formatChange.GetThousandsSeparator().GetNew().Value().c_str());
+    EXPECT_TRUE(formatChange.GetThousandsSeparator().GetOld().IsNull());
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                Kyle.Abramowitz                      04/2018
+//---------------+---------------+---------------+---------------+---------------+--------
+TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec)
+    {
+    CreateFirstSchema();
+    CreateSecondSchema();
+
+    auto num = Formatting::NumericFormatSpec();
+    num.SetApplyRounding(true);
+    num.SetPresentationType(Formatting::PresentationType::Fractional);
+    num.SetPrecision(Formatting::FractionalPrecision::Over_128);
+    num.SetMinWidth(4);
+    num.SetUomSeparator("");
+    num.SetPrefixPadChar('0');
+    num.SetSignOption(Formatting::SignOption::NegativeParentheses);
+    num.SetDecimalSeparator(',');
+    num.SetThousandSeparator(',');
+
+    auto num2 = Formatting::NumericFormatSpec();
+    num2.SetExponentOnlyNegative(true);
+    num2.SetPresentationType(Formatting::PresentationType::Decimal);
+    num2.SetPrecision(Formatting::DecimalPrecision::Precision10);
+    num2.SetMinWidth(8);
+    num2.SetUomSeparator("smoot");
+    num2.SetPrefixPadChar('x');
+    num2.SetSignOption(Formatting::SignOption::OnlyNegative);
+    num2.SetDecimalSeparator('.');
+    num2.SetThousandSeparator('.');
+
+    ECFormatP format;
+    m_firstSchema->CreateFormat(format, "foo", "apple", "banana", &num);
+    m_secondSchema->CreateFormat(format, "foo", "apple", "banana", &num2);
+    SchemaComparer comparer;
+    SchemaChanges changes;
+    bvector<ECSchemaCP> first;
+    bvector<ECSchemaCP> second;
+    first.push_back(m_firstSchema.get());
+    second.push_back(m_secondSchema.get());
+    comparer.Compare(changes, first, second);
+
+    ASSERT_EQ(1, changes.Count());
+    auto& change = changes.At(0).Formats();
+
+    ASSERT_EQ(1, change.Count());
+    auto formatChange = change.At(0);
+
+    ASSERT_EQ(10, formatChange.ChangesCount());
+
+    EXPECT_STRCASEEQ("applyRounding", formatChange.GetFormatTraits().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("exponentOnlyNegative", formatChange.GetFormatTraits().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("Fractional", formatChange.GetPresentationType().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("Decimal", formatChange.GetPresentationType().GetNew().Value().c_str());
+    EXPECT_EQ(128, formatChange.GetFractionalPrecision().GetOld().Value());
+    EXPECT_EQ(64, formatChange.GetFractionalPrecision().GetNew().Value());
+    EXPECT_EQ(6, formatChange.GetDecimalPrecision().GetOld().Value());
+    EXPECT_EQ(10, formatChange.GetDecimalPrecision().GetNew().Value());
+    EXPECT_EQ(4, formatChange.GetMinWidth().GetOld().Value());
+    EXPECT_EQ(8, formatChange.GetMinWidth().GetNew().Value());
+    EXPECT_STRCASEEQ("", formatChange.GetUomSeparator().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("smoot", formatChange.GetUomSeparator().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("0", formatChange.GetPrefixPadChar().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("x", formatChange.GetPrefixPadChar().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("NegativeParentheses", formatChange.GetShowSignOption().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("OnlyNegative", formatChange.GetShowSignOption().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ(",", formatChange.GetDecimalSeparator().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ(".", formatChange.GetDecimalSeparator().GetNew().Value().c_str());
+    EXPECT_STRCASEEQ(",", formatChange.GetThousandsSeparator().GetOld().Value().c_str());
+    EXPECT_STRCASEEQ(".", formatChange.GetThousandsSeparator().GetNew().Value().c_str());
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

@@ -80,7 +80,6 @@ enum class SystemId
     Enumerators,
     ExtendedTypeName,
     Format,
-    FormatCompositeInputUnit,
     FormatCompositeSpacer,
     FormatCompositeMajorUnit,
     FormatCompositeMajorLabel,
@@ -91,6 +90,7 @@ enum class SystemId
     FormatCompositeSubUnit,
     FormatCompositeSubLabel,
     FormatHasComposite,
+    FormatHasNumeric,
     Formats,
     FormatTraits,
     FractionalPrecision,
@@ -1293,7 +1293,7 @@ struct FormatChange final : ECObjectChange
         StringChange& GetStationSeparator() {return Get<StringChange>(SystemId::StationSeparator);}
         UInt32Change& GetStationOffsetSize() {return Get<UInt32Change>(SystemId::StationOffsetSize);}
         BooleanChange& GetHasComposite() {return Get<BooleanChange>(SystemId::FormatHasComposite);}
-        StringChange& GetCompositeInputUnit() {return Get<StringChange>(SystemId::FormatCompositeInputUnit);}
+        BooleanChange& GetHasNumeric() {return Get<BooleanChange>(SystemId::FormatHasNumeric);}
         StringChange& GetCompositeSpacer() {return Get<StringChange>(SystemId::FormatCompositeSpacer);}
         StringChange& GetCompositeMajorUnit() {return Get<StringChange>(SystemId::FormatCompositeMajorUnit);}
         StringChange& GetCompositeMajorLabel() {return Get<StringChange>(SystemId::FormatCompositeMajorLabel);}
