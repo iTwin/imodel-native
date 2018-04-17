@@ -16,7 +16,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 INSTANTIATE_TEST_CASE_P(,
                         UrlProviderTests,
-                        ::testing::Combine(::testing::Values(UrlProvider::Environment::Dev, UrlProvider::Environment::Qa, UrlProvider::Environment::Release),
+                        ::testing::Combine(::testing::Values(UrlProvider::Environment::Dev, UrlProvider::Environment::Qa, UrlProvider::Environment::Release, UrlProvider::Environment::Perf),
                                            ::testing::ValuesIn(UrlProvider::GerUrlRegistry())),
                         UrlProviderTests::PrintToStringParamName());
 
