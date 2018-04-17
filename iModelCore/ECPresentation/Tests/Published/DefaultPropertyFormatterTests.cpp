@@ -107,8 +107,8 @@ TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesEnumString
 TEST_F(DefaultPropertyFormatterTests, GetFormattedPropertyValueHandlesPropertiesWithUnits)
     {
     ECPropertyCP prop = m_class->GetPropertyP("Prop4");
-    Formatting::FormatUnitSet fus = prop->GetKindOfQuantity()->GetDefaultPresentationUnit();
-    Utf8Char decimalSeparator = fus.GetNamedFormatSpec()->GetNumericSpec()->GetDecimalSeparator();
+    NamedFormatCP namedFormat = prop->GetKindOfQuantity()->GetDefaultPresentationFormat();
+    Utf8Char decimalSeparator = namedFormat->GetNumericSpec()->GetDecimalSeparator();
     ECValue value(123.0); // persistence value in meters; 123 m = 403.5433 ft
     Utf8String formattedValue;
     EXPECT_EQ(SUCCESS, m_formatter.GetFormattedPropertyValue(formattedValue, *prop, value));
