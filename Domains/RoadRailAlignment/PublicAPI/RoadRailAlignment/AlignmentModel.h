@@ -44,9 +44,10 @@ public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentModel)
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentsCPtr QueryHorizontalPartition() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryAlignmentIds() const;
+    ROADRAILALIGNMENT_EXPORT Dgn::SubjectCPtr GetParentSubject() const;
 
     ROADRAILALIGNMENT_EXPORT static bset<Utf8String> QueryAlignmentPartitionNames(Dgn::SubjectCR parentSubject);
-    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject, Utf8CP modelName = nullptr);
+    ROADRAILALIGNMENT_EXPORT static AlignmentModelPtr Query(Dgn::SubjectCR parentSubject);
     static AlignmentModelPtr Create(CreateParams const& params) { return new AlignmentModel(params); }
     static AlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< AlignmentModel >(id); }    
 }; // AlignmentModel
@@ -117,6 +118,7 @@ protected:
 
 public:
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(VerticalAlignmentModel)
+    ROADRAILALIGNMENT_EXPORT AlignmentCPtr GetAlignment() const;
 
     static VerticalAlignmentModelPtr Create(CreateParams const& params) { return new VerticalAlignmentModel(params); }
     static VerticalAlignmentModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get<VerticalAlignmentModel>(id); }

@@ -39,15 +39,26 @@ bset<Utf8String> AlignmentModel::QueryAlignmentPartitionNames(SubjectCR parentSu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-AlignmentModelPtr AlignmentModel::Query(Dgn::SubjectCR parentSubject, Utf8CP modelName)
+AlignmentModelPtr AlignmentModel::Query(Dgn::SubjectCR parentSubject)
     {
     DgnDbR db = parentSubject.GetDgnDb();
-    DgnCode partitionCode = SpatialLocationPartition::CreateCode(parentSubject, (modelName) ? modelName : RoadRailAlignmentDomain::GetDefaultPartitionName());
+    DgnCode partitionCode = SpatialLocationPartition::CreateCode(parentSubject, RoadRailAlignmentDomain::GetDefaultPartitionName());
     DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
     SpatialLocationPartitionCPtr partition = db.Elements().Get<SpatialLocationPartition>(partitionId);
     if (!partition.IsValid())
         return nullptr;
     return dynamic_cast<AlignmentModelP>(partition->GetSubModel().get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectCPtr AlignmentModel::GetParentSubject() const
+    {
+    auto partitionCP = dynamic_cast<SpatialLocationPartitionCP>(GetModeledElement().get());
+    BeAssert(partitionCP != nullptr);
+
+    return GetDgnDb().Elements().Get<Subject>(partitionCP->GetParentId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,4 +114,12 @@ DgnModelId HorizontalAlignmentModel::QueryBreakDownModelId(AlignmentModelCR mode
         return DgnModelId();
 
     return stmtPtr->GetValueId<DgnModelId>(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentCPtr VerticalAlignmentModel::GetAlignment() const
+    {
+    return Alignment::Get(GetDgnDb(), GetModeledElementId());
     }

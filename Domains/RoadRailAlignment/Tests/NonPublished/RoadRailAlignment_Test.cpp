@@ -172,18 +172,4 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     ASSERT_TRUE(alignmentPairPtr != nullptr);
     ASSERT_DOUBLE_EQ(150.0, alignmentPairPtr->LengthXY());
     ASSERT_TRUE(alignmentPairPtr->IsValidVertical());
-
-    // Setting up default views
-    auto displayStyle2dPtr = CreateDisplayStyle2d(projectPtr->GetDictionaryModel());
-    auto drawingCategorySelectorPtr = CreateDrawingCategorySelector(projectPtr->GetDictionaryModel());
-    ASSERT_EQ(BentleyStatus::SUCCESS, Create2dView(projectPtr->GetDictionaryModel(), "Test-2d", 
-        *drawingCategorySelectorPtr, alignmentPtr->QueryHorizontal()->GetModelId(), *displayStyle2dPtr));
-
-    auto displayStyle3dPtr = CreateDisplayStyle3d(projectPtr->GetDictionaryModel());
-    auto spatialCategorySelectorPtr = CreateSpatialCategorySelector(projectPtr->GetDictionaryModel());
-    auto model3dSelectorPtr = CreateModelSelector(projectPtr->GetDictionaryModel(), "Default-3d");
-    model3dSelectorPtr->AddModel(alignModelPtr->GetModelId());
-
-    ASSERT_EQ(BentleyStatus::SUCCESS, Create3dView(projectPtr->GetDictionaryModel(), "Test-3d", 
-        *spatialCategorySelectorPtr, *model3dSelectorPtr, *displayStyle3dPtr));
     }
