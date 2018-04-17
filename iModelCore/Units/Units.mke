@@ -72,6 +72,8 @@ $(o)NumericFormatUtils$(oext)  : $(formatSrcDir)NumericFormatUtils.cpp $(formatH
 
 $(o)FormatMappings$(oext)   : $(formatSrcDir)FormatMappings.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
+$(o)FormatMappings$(oext) : $(formatSrcDir)FormatMappings.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =
