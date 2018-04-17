@@ -74,23 +74,19 @@ BeSQLite::DbResult iModelInfo::WriteiModelProperties(Dgn::DgnDbR db) const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-StatusResult iModelInfo::WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledChangeSetId) const
+StatusResult iModelInfo::WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId) const
     {
     const Utf8String methodName = "iModelInfo::WriteiModelInfo";
     BeSQLite::DbResult status;
-    Utf8String parentChangeSetId = clearLastPulledChangeSetId ? "" : db.Revisions().GetParentRevisionId();
     status = db.SetAsBriefcase(briefcaseId);
 
     //Write the iModelInfo properties to the file
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
         status = WriteiModelProperties(db);
 
-    //ParentChangeSetId is reset when changing briefcase Id
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
-        status = db.SaveBriefcaseLocalValue(Db::Local::ParentChangeSetId, parentChangeSetId);
-
-    if (BeSQLite::DbResult::BE_SQLITE_DONE == status)
         return StatusResult::Success();
+
     auto error = Error(db, status);
     LogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
     return StatusResult::Error(error);
