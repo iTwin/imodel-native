@@ -735,28 +735,14 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationFormats(KindOfQ
 
     BeAssert(presFormatsJson.IsArray());
 
-    auto lookupFormat = [&schemaManager, &koq] (Utf8StringCR formatName)
+    auto lookupFormat = [&schemaManager] (Utf8String alias, Utf8StringCR formatName)
         {
-        Utf8String alias, name;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, name, formatName))
-            return (ECFormatCP) nullptr;
-
-        if (alias.empty())
-            alias.assign(koq.GetSchema().GetAlias());
-
-        return schemaManager.GetFormat(alias, name, SchemaLookupMode::ByAlias);
+        return schemaManager.GetFormat(alias, formatName, SchemaLookupMode::ByAlias);
         };
 
-    auto lookupUnit = [&schemaManager, &koq] (Utf8StringCR unitName)
+    auto lookupUnit = [&schemaManager] (Utf8String alias, Utf8StringCR unitName)
         {
-        Utf8String alias, name;
-        if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, name, unitName))
-            return (ECUnitCP) nullptr;
-
-        if (alias.empty())
-            alias.assign(koq.GetSchema().GetAlias());
-
-        return schemaManager.GetUnit(alias, name, SchemaLookupMode::ByAlias);
+        return schemaManager.GetUnit(alias, unitName, SchemaLookupMode::ByAlias);
         };
 
     for (rapidjson::Value const& presFormatJson : presFormatsJson.GetArray())
