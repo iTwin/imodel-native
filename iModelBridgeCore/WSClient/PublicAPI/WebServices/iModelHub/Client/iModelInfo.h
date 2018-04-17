@@ -53,7 +53,7 @@ private:
     static iModelInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id) { return iModelInfoPtr(new iModelInfo(serverUrl, id)); }
 public:
     IMODELHUBCLIENT_EXPORT static iModelResult ReadiModelInfo(Dgn::DgnDbCR db);
-    StatusResult WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId, bool clearLastPulledChangeSetId = false) const;
+    StatusResult WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId const& briefcaseId) const;
 
     Utf8StringCR GetDescription() const {return m_description;}
     Utf8StringCR GetServerURL() const {return m_serverUrl;}
