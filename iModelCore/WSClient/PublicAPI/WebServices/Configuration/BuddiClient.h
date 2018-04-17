@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Configuration/BuddiClient.h $
  |
- |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,18 +11,20 @@
 #include <WebServices/Client/WebServicesClient.h>
 #include <Bentley/Tasks/AsyncResult.h>
 #include <Bentley/Tasks/AsyncTask.h>
+#include <Bentley/Tasks/TaskScheduler.h>
 #include <BeHttp/HttpClient.h>
 #include <BeXml/BeXml.h>
 
 #include <WebServices/Configuration/BuddiError.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
 USING_NAMESPACE_BENTLEY_HTTP
+USING_NAMESPACE_BENTLEY_TASKS
 
 typedef std::shared_ptr<struct IBuddiClient> IBuddiClientPtr;
 typedef AsyncResult<bvector<struct BuddiRegion>, BuddiError> BuddiRegionsResult;
 typedef AsyncResult<Utf8String, BuddiError> BuddiUrlResult;
-typedef std::shared_ptr<ITaskScheduler> ITaskSchedulerPtr;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                 Julija.Semenenko    06/2015

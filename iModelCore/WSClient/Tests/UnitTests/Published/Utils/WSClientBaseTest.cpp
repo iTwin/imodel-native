@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WSClientBaseTest.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "WSClientBaseTest.h"
@@ -24,6 +24,7 @@ void WSClientBaseTest::SetUp()
 void WSClientBaseTest::TearDown()
     {
     TearDownTestCase();
+    BeTest::SetFailOnAssert(true);
     }
 
 void WSClientBaseTest::SetUpTestCase()

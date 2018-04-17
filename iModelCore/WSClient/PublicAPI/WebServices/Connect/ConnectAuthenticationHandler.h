@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/ConnectAuthenticationHandler.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,6 +17,8 @@
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
+#define TOKENPREFIX_Token               "token"
+#define TOKENPREFIX_SAML                "SAML"
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -26,21 +28,39 @@ struct ConnectAuthenticationHandler : public AuthenticationHandler
         Utf8String m_urlBaseToAuth;
         std::shared_ptr<IConnectTokenProvider> m_tokenProvider;
         std::shared_ptr<WorkerThread> m_thread;
-        bool m_shouldUseSAMLAuthorization;
-        bool m_legacyMode;
+        Utf8String m_tokenPrefix;
+        bool m_retryExpiredToken;
 
     private:
-        bool ShouldStopSendingToken(AttemptCR previousAttempt) const;
-        bool IsTokenAuthorization(Utf8StringCR auth) const;
-
-    public:
-        WSCLIENT_EXPORT ConnectAuthenticationHandler
+        ConnectAuthenticationHandler
             (
             Utf8String urlBaseToAuth,
             std::shared_ptr<IConnectTokenProvider> customTokenProvider = nullptr,
             IHttpHandlerPtr customHttpHandler = nullptr,
-            bool shouldUseSAMLAuthorization = false,
-            bool legacyMode = true
+            Utf8String tokenPrefix = TOKENPREFIX_Token
+            );
+
+        bool ShouldStopSendingToken(AttemptCR previousAttempt) const;
+        bool IsTokenAuthorization(Utf8StringCR auth) const;
+        Utf8String GetTokenAuthorization(ISecurityTokenPtr token) const;
+
+        void EnableExpiredTokenRefresh();
+
+    public:
+        WSCLIENT_EXPORT static std::shared_ptr<ConnectAuthenticationHandler> Create
+            (
+            Utf8String urlBaseToAuth,
+            std::shared_ptr<IConnectTokenProvider> customTokenProvider = nullptr,
+            IHttpHandlerPtr customHttpHandler = nullptr,
+            Utf8String tokenPrefix = TOKENPREFIX_Token
+            );
+
+        WSCLIENT_EXPORT static std::shared_ptr<ConnectAuthenticationHandler> CreateLegacy
+            (
+            Utf8String urlBaseToAuth,
+            std::shared_ptr<IConnectTokenProvider> customTokenProvider = nullptr,
+            IHttpHandlerPtr customHttpHandler = nullptr,
+            bool shouldUseSAMLAuthorization = false
             );
 
         WSCLIENT_EXPORT virtual ~ConnectAuthenticationHandler();

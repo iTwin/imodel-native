@@ -85,7 +85,7 @@ std::ostream* err
     TestRepositories* currentRepos = nullptr;
     TestRepository* currentRepo = nullptr;
     size_t argc = args.size();
-    for (int i = 0; i < argc; i++)
+    for (size_t i = 0; i < argc; i++)
         {
         auto& arg = args[i];
 
@@ -263,7 +263,7 @@ std::ostream* err
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ArgumentParser::GetArgValue(int argc, const bvector<Utf8String>& args, int& iInOut, Utf8CP& argValueOut, std::ostream* err)
+bool ArgumentParser::GetArgValue(size_t argc, const bvector<Utf8String>& args, size_t& iInOut, Utf8CP& argValueOut, std::ostream* err)
     {
     Utf8CP arg = args[iInOut].c_str();
     if (iInOut + 1 >= argc)

@@ -36,7 +36,7 @@ struct ArgumentParser
             std::ostream* err
             );
 
-        static bool GetArgValue(int argc, const bvector<Utf8String>&, int& iInOut, Utf8CP& argValueOut, std::ostream* err);
+        static bool GetArgValue(size_t argc, const bvector<Utf8String>&, size_t& iInOut, Utf8CP& argValueOut, std::ostream* err);
         static bool ParseAuth(Utf8CP auth, Utf8CP value, TestRepository& repo, std::ostream* err);
         static Credentials ParseCredentials(Utf8CP str, std::ostream* err);
         static SamlTokenPtr ParseTokenPath(Utf8CP path, std::ostream* err);

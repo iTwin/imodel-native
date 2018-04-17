@@ -187,7 +187,7 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
     auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
     auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(serverUrl, provider, proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
     persistence->SetCredentials(credentials);
@@ -216,7 +216,7 @@ TEST_F(WSRepositoryClientTests, SendGetChildrenRequest_NavigateConnectGlobalWith
     auto imsClient = ImsClient::Create(StubValidClientInfo(), proxy);
     auto persistence = ConnectAuthenticationPersistence::GetShared();
     auto provider = std::make_shared<ConnectTokenProvider>(imsClient, persistence);
-    auto authHandler = std::make_shared<ConnectAuthenticationHandler>(serverUrl, provider, proxy);
+    auto authHandler = ConnectAuthenticationHandler::CreateLegacy(serverUrl, provider, proxy);
 
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "wrongPassword");
     persistence->SetCredentials(credentials);

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -21,12 +21,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -235,9 +235,9 @@
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.cpp" />
     <ClCompile Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.cpp" />
-	<ClCompile Include="FakeServer\MockIMHubHttpHandler.cpp" />
-	<ClCompile Include="FakeServer\RequestHandler.cpp" />
-	<ClCompile Include="FakeServer\FakeServer.cpp" />
+    <ClCompile Include="FakeServer\MockIMHubHttpHandler.cpp" />
+    <ClCompile Include="FakeServer\RequestHandler.cpp" />
+    <ClCompile Include="FakeServer\FakeServer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Cache\CacheNavigationTask.h" />
@@ -475,10 +475,9 @@
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\AzureBlobStorageClientTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Azure\EventServiceClientTests.h" />
     <ClInclude Include="Tests\UnitTests\Published\WebServices\Client\DgnDbServerEventParserTests.h" />
-	<ClInclude Include="PublicAPI\FakeServer\RequestHandler.h" />
+    <ClInclude Include="PublicAPI\FakeServer\RequestHandler.h" />
     <ClInclude Include="PublicAPI\FakeServer\FakeServer.h" />
     <ClInclude Include="PublicAPI\FakeServer\MockIMHubHttpHandler.h" />
-
   </ItemGroup>
   <ItemGroup>
     <Xml Include="Cache\Persistence\ECSchemas\DataSourceSpecification.01.00.ecschema.xml" />
