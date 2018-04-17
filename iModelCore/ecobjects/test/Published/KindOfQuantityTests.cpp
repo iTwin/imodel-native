@@ -193,6 +193,13 @@ TEST_F(KindOfQuantityTest, GetReferencedFormats)
     EXPECT_EQ(2, kindOfQuantity->GetReferencedFormats().size());
     EXPECT_STRCASEEQ("f:Feet4U", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
     EXPECT_STRCASEEQ("f:InchesU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
+
+    //Should not return any duplicates if there are multiple overrides of the same ECFormat
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("InchesU"), 10));
+    EXPECT_EQ(3, kindOfQuantity->GetPresentationFormats().size());
+    EXPECT_EQ(2, kindOfQuantity->GetReferencedFormats().size());
+    EXPECT_STRCASEEQ("f:Feet4U", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
+    EXPECT_STRCASEEQ("f:InchesU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
     }
 
 //---------------------------------------------------------------------------------------

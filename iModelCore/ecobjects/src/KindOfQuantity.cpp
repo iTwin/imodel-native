@@ -184,8 +184,11 @@ bvector<ECFormatCP> const KindOfQuantity::GetReferencedFormats() const
     bvector<ECFormatCP> formats;
     formats.reserve(m_presentationFormats.size());
     for (auto const& f : m_presentationFormats)
-        formats.push_back(f.GetParentFormat());
-
+        {
+        if (formats.end() == std::find(formats.begin(), formats.end(), f.GetParentFormat()))
+            formats.push_back(f.GetParentFormat());
+        }
+    
     return formats;
     }
 
