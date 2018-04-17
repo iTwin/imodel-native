@@ -21,8 +21,8 @@ struct  ThematicCookedRange
     double                              m_delta;
 
                     ThematicCookedRange ()                                      { m_minimum = 0.0; m_delta = 1.0; }
+                    ThematicCookedRange(DRange1dCR range)                       { Set(range.low, range.high); }
     void            Set (double min, double max)                                { m_minimum = min, m_delta =  (max > min) ? (max - min) : 1.0; }
-    void            Set (ThematicRange const& range)                            { Set (range.GetMin(), range.GetMax()); }
     inline double   GetNormalizedValueFromRaw (double value)  const             { return (value - m_minimum) / (m_delta); }
     inline double   GetRawValueFromNormalized (double normalizedValue) const    { return m_minimum + normalizedValue * (m_delta); }
 
@@ -115,7 +115,7 @@ void   ElementTileTree::ThematicMeshBuilder::BuildMeshAuxData(MeshAuxDataR auxDa
                 for (auto inData : inDataVector)
                     range.Extend (inData->GetValues().data(), inData->GetValues().size());
                     
-                ThematicCookedRange         cookedRange(range.low, range.high);
+                ThematicCookedRange         cookedRange(range);
 
                 for (auto inData : inDataVector)
                     {
