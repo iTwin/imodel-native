@@ -46,27 +46,24 @@ private:
     Utf8String m_connectionId;
     Utf8String m_rulesetId;
     Utf8String m_displayType;
-    SelectionInfo const* m_selectionInfo;
+    SelectionInfoCPtr m_selectionInfo;
     Utf8String m_selectionSourceName;
 public:
     TaskDependencies(Utf8String connectionId = "", Utf8String rulesetId = "", Utf8CP displayType = nullptr, SelectionInfo const* selectionInfo = nullptr)
-        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_displayType(displayType), m_selectionInfo(selectionInfo ? new SelectionInfo(*selectionInfo) : nullptr)
+        : m_connectionId(connectionId), m_rulesetId(rulesetId), m_displayType(displayType), m_selectionInfo(selectionInfo)
         {}
     TaskDependencies(TaskDependencies const& other)
         : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_displayType(other.m_displayType), 
-        m_selectionInfo(other.m_selectionInfo ? new SelectionInfo(*other.m_selectionInfo) : nullptr)
+        m_selectionInfo(other.m_selectionInfo)
         {}
     TaskDependencies(TaskDependencies&& other)
         : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), 
-        m_displayType(std::move(other.m_displayType)), m_selectionInfo(other.m_selectionInfo)
-        {
-        other.m_selectionInfo = nullptr;
-        }
-    ~TaskDependencies() {DELETE_AND_CLEAR(m_selectionInfo);}
+        m_displayType(std::move(other.m_displayType)), m_selectionInfo(std::move(other.m_selectionInfo))
+        {}
     Utf8StringCR GetConnectionIdDependency() const {return m_connectionId;}
     Utf8StringCR GetRulesetIdDependency() const {return m_rulesetId;}
     Utf8StringCR GetDisplayTypeDependency() const {return m_displayType;}
-    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}
+    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
 };
 
 /*=================================================================================**//**
@@ -653,14 +650,14 @@ folly::Future<ContentDescriptorCPtr> RulesDrivenECPresentationManager::_GetConte
 
     TaskDependencies dependencies(primaryConnection.GetId(), ContentOptions(jsonOptions).GetRulesetId(), preferredDisplayType, selectionInfo);
     auto promise = CreateCancelablePromise<ContentDescriptorCPtr>(*m_cancelableTasks, "Content descriptor", dependencies);
-    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), displayType = (Utf8String)preferredDisplayType, input = KeySetCPtr(&inputKeys), selectionInfo, jsonOptions]()
+    folly::via(m_executor, [&, promise, connectionId = primaryConnection.GetId(), displayType = Utf8String(preferredDisplayType), input = KeySetCPtr(&inputKeys), selectionInfo = SelectionInfoCPtr(selectionInfo), jsonOptions]()
         {
         if (promise->IsCanceled())
             return;
 
         ContentOptions options(jsonOptions);
         IConnectionPtr connection = GetConnections().GetConnection(connectionId.c_str());
-        ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*connection, displayType.c_str(), *input, selectionInfo, options, promise->GetCancelationToken());
+        ContentDescriptorCPtr descriptor = m_impl->GetContentDescriptor(*connection, displayType.c_str(), *input, selectionInfo.get(), options, promise->GetCancelationToken());
         promise->SetValue(descriptor);
         });
 

@@ -25,48 +25,34 @@ BEGIN_BENTLEY_ECPRESENTATION_NAMESPACE
 //! @ingroup GROUP_Presentation_Content
 // @bsiclass                                    Grigas.Petraitis                04/2016
 //=======================================================================================
-struct SelectionInfo
+struct SelectionInfo : RefCountedBase
 {
 private:
     Utf8String m_selectionProviderName;
     bool m_isSubSelection;
     uint64_t m_timestamp;
 
+protected:
+    SelectionInfo(Utf8String providerName, bool isSubSelection, uint64_t timestamp)
+        : m_selectionProviderName(providerName), m_isSubSelection(isSubSelection), m_timestamp(timestamp)
+        {}
+    ~SelectionInfo() {}
+
 public:
-    //! Constructor.
+    //! Create a new instance of SelectionInfo
     //! @param[in] providerName Name of the selection provider which last changed the selection.
     //! @param[in] isSubSelection Did the last selection change happen in sub-selection.
     //! @param[in] timestamp Timestamp of when the selection event happened.
-    SelectionInfo(Utf8String providerName, bool isSubSelection, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
-        : m_selectionProviderName(providerName), m_isSubSelection(isSubSelection), m_timestamp(timestamp)
-        {}
-
-    //! Constructor. Initializes the instance from the provided selection event.
-    //! @param[in] selectionProvider The provider used to get the current selection.
-    //! @param[in] evt The last selection event.
-    ECPRESENTATION_EXPORT SelectionInfo(ISelectionProvider const& selectionProvider, SelectionChangedEventCR evt);
-
-    //! Move constructor.
-    SelectionInfo(SelectionInfo&& other)
-        : m_selectionProviderName(std::move(other.m_selectionProviderName)), m_isSubSelection(other.m_isSubSelection), m_timestamp(other.m_timestamp)
-        {}
-
-    //! Copy constructor.
-    SelectionInfo(SelectionInfo const& other)
-        : m_selectionProviderName(other.m_selectionProviderName), m_isSubSelection(other.m_isSubSelection), m_timestamp(other.m_timestamp)
-        {}
+    static SelectionInfoPtr Create(Utf8String providerName, bool isSubSelection, uint64_t timestamp = BeTimeUtilities::GetCurrentTimeAsUnixMillis())
+        {
+        return new SelectionInfo(providerName, isSubSelection, timestamp);
+        }
 
     //! Compare this selection event info object with the supplied one.
     ECPRESENTATION_EXPORT bool operator==(SelectionInfo const& other) const;
     
     //! Compare this selection event info object with the supplied one.
     ECPRESENTATION_EXPORT bool operator<(SelectionInfo const& other) const;
-    
-    //! Assignment operator.
-    ECPRESENTATION_EXPORT SelectionInfo& operator=(SelectionInfo const& other);
-
-    //! Move assignment operator.
-    ECPRESENTATION_EXPORT SelectionInfo& operator=(SelectionInfo&& other);
 
     //! Get the name of the selection source which caused the last selection change.
     Utf8StringCR GetSelectionProviderName() const {return m_selectionProviderName;}
@@ -946,7 +932,7 @@ private:
     Utf8String m_filterExpression;
     IConnectionCR m_connection;
     INavNodeKeysContainerCPtr m_inputKeys;
-    SelectionInfo const* m_selectionInfo;
+    SelectionInfoCPtr m_selectionInfo;
     Json::Value m_options;
 
 private:
@@ -996,9 +982,9 @@ public:
     //! Get content options which this descriptor is created using.
     JsonValueCR GetOptions() const {return m_options;}
     //! Get selection info which this descriptor is created with. (returns nullptr if no selection info was provided)
-    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}
+    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
     //! Set selection info which this descriptor is created with.
-    void SetSelectionInfo(SelectionInfo const& selectionInfo) {DELETE_AND_CLEAR(m_selectionInfo); m_selectionInfo = new SelectionInfo(selectionInfo);}
+    void SetSelectionInfo(SelectionInfo const& selectionInfo) {m_selectionInfo = &selectionInfo;}
     
     //! Get information about ECClasses which the descriptor consists from.
     bvector<SelectClassInfo> const& GetSelectClasses() const {return m_classes;}

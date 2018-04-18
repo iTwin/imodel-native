@@ -473,12 +473,12 @@ void SelectionSyncHandler::_OnSelectionChanged(SelectionChangedEventCR evt)
     Utf8CP contentDisplayType = _GetContentDisplayType();
 
     // create the selection info
-    SelectionInfo selection(*m_manager, evt);
+    SelectionInfoCPtr selectionInfo = SelectionInfo::Create(evt.GetSourceName(), evt.IsSubSelection());
     KeySetCPtr inputKeys = evt.IsSubSelection() ? m_manager->GetSubSelection(evt.GetConnection().GetECDb()) : m_manager->GetSelection(evt.GetConnection().GetECDb());
     bvector<ECInstanceKey> selectedKeys;
 
     // get the default content descriptor
-    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), contentDisplayType, *inputKeys, &selection, contentOptions).get();
+    ContentDescriptorCPtr defaultDescriptor = IECPresentationManager::GetManager().GetContentDescriptor(evt.GetConnection().GetECDb(), contentDisplayType, *inputKeys, selectionInfo.get(), contentOptions).get();
     if (defaultDescriptor.IsNull())
         {
         _SelectInstances(evt, selectedKeys);

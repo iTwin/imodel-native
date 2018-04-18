@@ -13,35 +13,27 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ContentProviderKey::ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, INavNodeKeysContainerCR inputNodeKeys,
-    SelectionInfo const* selectionInfo)
-    : m_connectionId(connectionId), m_rulesetId(rulesetId), m_preferredDisplayType(displayType), m_inputNodeKeys(&inputNodeKeys), m_selectionInfo(selectionInfo)
-    {
-    if (nullptr != selectionInfo)
-        m_selectionInfo = new SelectionInfo(*selectionInfo);
-    }
+ContentProviderKey::ContentProviderKey(Utf8String connectionId, Utf8String rulesetId, Utf8String displayType, 
+    INavNodeKeysContainerCR inputNodeKeys, SelectionInfo const* selectionInfo)
+    : m_connectionId(connectionId), m_rulesetId(rulesetId), m_preferredDisplayType(displayType), 
+    m_inputNodeKeys(&inputNodeKeys), m_selectionInfo(selectionInfo)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderKey::ContentProviderKey(ContentProviderKey const& other)
-    : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_preferredDisplayType(other.m_preferredDisplayType), m_inputNodeKeys(other.m_inputNodeKeys),
-    m_selectionInfo(other.m_selectionInfo)
-    {
-    if (nullptr != other.m_selectionInfo)
-        m_selectionInfo = new SelectionInfo(*other.m_selectionInfo);
-    }
+    : m_connectionId(other.m_connectionId), m_rulesetId(other.m_rulesetId), m_preferredDisplayType(other.m_preferredDisplayType), 
+    m_inputNodeKeys(other.m_inputNodeKeys), m_selectionInfo(other.m_selectionInfo)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderKey::ContentProviderKey(ContentProviderKey&& other)
     : m_connectionId(std::move(other.m_connectionId)), m_rulesetId(std::move(other.m_rulesetId)), m_preferredDisplayType(std::move(other.m_preferredDisplayType)),
-    m_inputNodeKeys(std::move(other.m_inputNodeKeys))
-    {
-    m_selectionInfo = other.m_selectionInfo;
-    other.m_selectionInfo = nullptr;
-    }
+    m_inputNodeKeys(std::move(other.m_inputNodeKeys)), m_selectionInfo(std::move(other.m_selectionInfo))
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                01/2018
@@ -52,7 +44,7 @@ ContentProviderKey& ContentProviderKey::operator=(ContentProviderKey const& othe
     m_rulesetId = other.m_rulesetId;
     m_preferredDisplayType = other.m_preferredDisplayType;
     m_inputNodeKeys = other.m_inputNodeKeys;
-    m_selectionInfo = (nullptr != other.m_selectionInfo) ? new SelectionInfo(*other.m_selectionInfo) : nullptr;
+    m_selectionInfo = other.m_selectionInfo;
     return *this;
     }
 
@@ -65,8 +57,7 @@ ContentProviderKey& ContentProviderKey::operator=(ContentProviderKey&& other)
     m_rulesetId = std::move(other.m_rulesetId);
     m_preferredDisplayType = std::move(other.m_preferredDisplayType);
     m_inputNodeKeys = std::move(other.m_inputNodeKeys);
-    m_selectionInfo = other.m_selectionInfo;
-    other.m_selectionInfo = nullptr;
+    m_selectionInfo = std::move(other.m_selectionInfo);
     return *this;
     }
 
@@ -99,11 +90,11 @@ bool ContentProviderKey::operator<(ContentProviderKey const& other) const
     if (inputNodeKeysCompareResult > 0)
         return false;
     
-    if (nullptr == m_selectionInfo && nullptr == other.m_selectionInfo)
+    if (m_selectionInfo.IsNull() && other.m_selectionInfo.IsNull())
         return false;
-    if (nullptr == m_selectionInfo && nullptr != other.m_selectionInfo)
+    if (m_selectionInfo.IsNull() && other.m_selectionInfo.IsValid())
         return true;
-    if (nullptr != m_selectionInfo && nullptr == other.m_selectionInfo)
+    if (m_selectionInfo.IsValid() && other.m_selectionInfo.IsNull())
         return false;
     return *m_selectionInfo < *other.m_selectionInfo;
     }
