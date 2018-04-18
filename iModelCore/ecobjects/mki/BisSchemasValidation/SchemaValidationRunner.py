@@ -6,9 +6,9 @@
 #  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
-import os, sys, subprocess, csv
+import os, sys, subprocess, csv, SchemaCheckup
 
-if (len(sys.argv) < 3): # Not enough arguments given
+if (len(sys.argv) < 4): # Not enough arguments given
     print("This script will call schemavalidator.exe against given directories containing schemas.")
     print("Example call: python SchemaValidationRunner.py D:/SchemaValidator/  D:/MySchemas1/;D:/MySchemas2/ -r D:/AdditionalSchemaRef/  -o D:/LogOut/")
     print("")
@@ -17,6 +17,7 @@ if (len(sys.argv) < 3): # Not enough arguments given
     print("DIR0[;DIR1;...;DIRN]    - The directory containing desired schemas to validate seperated by semicolon. ")
     print("")
     print("Other options:")
+    print("-xsd DIR                - The directory containing the XSD schema to validate schemas against.")
     print("-r DIR0[;DIR1;...;DIRN] - Any additional schema reference directories. By default, all given schema directories will be used")
     print("-o OUTPUT_LOG_DIR       - The desired output log directory. By default, the output log will be the location of this script + \\ValidationLogs\\")
     sys.exit(9)
@@ -37,25 +38,28 @@ def formattedFileName(fileName):
 validatorExeDir = sys.argv[1]
 schemaDirs = semiColonSeparatedToList(sys.argv[2])
 schemaRefList = schemaDirs[:] # By default, schema references should be all given schema dirs ([:] = shallow copy) 
-logOutputDir = sys.path[0] + '\ValidationLogs\\' # Default log output dir. May be overrid below
+logOutputDir = os.path.join(sys.path[0], 'ValidationLogs') # Default log output dir. May be overrid below
+xsdDir = None # optional, may be set below
 
 # Rather than call our SharePoint Wrapper directly,
 # we're going to write to a file that will later be parsed and uploaded to SharePoint
 
 # Parse optional args supplied
-if (len(sys.argv) > 4): 
-    if (sys.argv[3] == '-r'): # -r given
-        schemaRefList.extend(semiColonSeparatedToList(sys.argv[4]))
-        if (len(sys.argv) == 7): # and -o given
-            logOutputDir = sys.argv[6]
-    elif (sys.argv[3] == '-o'): # just -o given
-        logOutputDir = sys.argv[4]
+idx = 3
+if (idx+1 < len(sys.argv) and sys.argv[idx] == '-xsd'): # -xsd given
+    xsdDir = sys.argv[idx+1]
+    idx += 2
+if (idx+1 < len(sys.argv) and sys.argv[idx] == '-r'): # -r given
+    schemaRefList.extend(semiColonSeparatedToList(sys.argv[idx+1]))
+    idx += 2
+if (idx+1 < len(sys.argv) and sys.argv[idx] == '-o'): # -o given
+    logOutputDir = sys.argv[idx+1]
 
 if not os.path.exists(logOutputDir): # If validation log folder doesn't exist, create it
     os.makedirs(logOutputDir)
 
 schemaRefString = ' -r ' + ' '.join(schemaRefList)
-SCHEMA_EXTENSION = '.ecschema.xml';
+SCHEMA_EXTENSION = '.ecschema.xml'
 totalNumSchemasFailed = 0
 totalNumSchemasScanned = 0
 failedSchemasList = []
@@ -73,17 +77,17 @@ if os.path.isfile(validationFile):
     os.remove(validationFile)
 
 def writeToValidationFile(schemaName, validationResult, fileToUpload='None'):
-    if os.path.exists(logOutputDir + '\\' + 'Validation_results.csv'):
-        with open(logOutputDir + '\\' + 'Validation_results.csv', 'a+') as resultFile:
+    if os.path.exists(os.path.join(logOutputDir, 'Validation_results.csv')):
+        with open(os.path.join(logOutputDir, 'Validation_results.csv'), 'a+') as resultFile:
             writer = csv.writer(resultFile)
             writer.writerow([schemaName, validationResult, fileToUpload])
     else:
-        with open(logOutputDir + '\\' + 'Validation_results.csv', 'wb') as resultFile:
+        with open(os.path.join(logOutputDir, 'Validation_results.csv'), 'wb') as resultFile:
             writer = csv.writer(resultFile)
             writer.writerow(['Schema', 'Validation Result', 'File to Upload'])
             writer.writerow([schemaName, validationResult, fileToUpload])
 
-reportFile = logOutputDir + 'schema_report.log'
+reportFile = os.path.join(logOutputDir, 'schema_report.log')
 
 # ensure no old reportFiles exist
 if os.path.isfile(reportFile):
@@ -95,7 +99,7 @@ def writeReport(storage):
 
     totalFails = 0
     failureString = ""
-    with open(logOutputDir + '\\' + 'schema_report.log', 'w') as resultFile:
+    with open(reportFile, 'w') as resultFile:
         totalSchemaOut = "total schemas checked: {0}\n".format(str(reportsStorage["SchemasScanned"]))
         currentDir = ""
         
@@ -123,22 +127,31 @@ for dir in schemaDirs:
         print("The schema directory '" + dir + "' does not exist")
         sys.exit(-1)
 
-    if not os.path.exists(logOutputDir + getLastDirInPath(dir)): # Organize by schema dir
-        os.makedirs(logOutputDir + getLastDirInPath(dir))
+    if not os.path.exists(os.path.join(logOutputDir, getLastDirInPath(dir))): # Organize by schema dir
+        os.makedirs(os.path.join(logOutputDir, getLastDirInPath(dir)))
 
     for fileName in os.listdir(dir): # Loop through each file in each directory 
         if not fileName.endswith(SCHEMA_EXTENSION):
             continue
 
-        logFileName = logOutputDir + getLastDirInPath(dir) + fileName.replace(SCHEMA_EXTENSION,'.validation.log')
+        logFileName = os.path.join(logOutputDir, getLastDirInPath(dir), fileName.replace(SCHEMA_EXTENSION,'.validation.log'))
 
         with open(logFileName, 'w') as logFile: # Create log
+            # SchemaCheckup
+            checkupResult = True
+            if(xsdDir is not None):
+                xsdFile = os.path.join(xsdDir, "ECSchemaXML3.1.xsd")
+                xslFile = os.path.join(xsdDir, "convert-enumerations.xsl")
+                checkupResult = SchemaCheckup.validate(os.path.join(dir, fileName), xsdFile, xslFile, logFile)
+                logFile.seek(0,2) # seek to end of file
+            
+            # SchemaValidator
             os.chdir(validatorExeDir) # Change to appropriate dir to call validator exe. 
-            exeCall = 'schemavalidator.exe -i ' + dir + fileName + schemaRefString
+            exeCall = 'schemavalidator.exe -i ' + os.path.join(dir, fileName) + schemaRefString
             totalNumSchemasScanned += 1
             outCode = subprocess.call(exeCall, stdout = logFile) # Get success code and print output to logfile instead of console 
 
-            if (outCode != 0): # If an error occured, write to log file that an error occured 
+            if (checkupResult == False or outCode != 0): # If an error occured, write to log file that an error occured 
                 numSchemasFailed += 1
                 logFile.write("--------------------------------------------------------------------------------------------------------------------------\n")
                 logFile.write("The schema '" + fileName + "' FAILED validation. See ERRORs above for details.\n")
@@ -158,7 +171,7 @@ for dir in schemaDirs:
                 logFile.write("--------------------------------------------------------------------------------------------------------------------------\n")
                 logFile.write("The schema '" + fileName + "' SUCCEEDED validation.\n")
                 logFile.write("--------------------------------------------------------------------------------------------------------------------------\n")
-                print("[    OK   ] Validation of '" + fileName + "' was successful");
+                print("[    OK   ] Validation of '" + fileName + "' was successful")
                 
                 # add this result to our validation file for updating SharePoint at a later time.
                 writeToValidationFile(formattedFileName(fileName), 'Passed')

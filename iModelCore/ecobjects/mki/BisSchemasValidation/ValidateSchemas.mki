@@ -12,6 +12,7 @@
 # Required Macros:
 #    SCHEMA_VALIDATOR_EXE_DIRECTORY    - the directory where schemavalidator.exe exists
 #    SCHEMAS_DIRECTORY                 - directories containing schemas to validate seperated by semicolon
+#    XSD_DIRECTORY                     - directory containing XSD schema to validate against
 #
 # Optional Macros:
 #    SCHEMAS_REFERENCE_DIRECTORY       - directories containing reference schemas seperated by semicolon
@@ -32,7 +33,7 @@ SrcDir = $(_MakeFilePath)
 
 # (Using -r and -o with undefined macros is handled safely in the python script)
 always:
-    python $(SrcDir)SchemaValidationRunner.py $(SCHEMA_VALIDATOR_EXE_DIRECTORY) $(SCHEMAS_DIRECTORY) -r $(SCHEMAS_REFERENCE_DIRECTORY) -o $(LOG_DIRECTORY)
+    python $(SrcDir)SchemaValidationRunner.py $(SCHEMA_VALIDATOR_EXE_DIRECTORY) $(SCHEMAS_DIRECTORY) -xsd $(XSD_DIRECTORY) -r $(SCHEMAS_REFERENCE_DIRECTORY) -o $(LOG_DIRECTORY)
 
 %if defined (SHAREPOINT_SCRIPT_LOCATION)
     always:
@@ -40,4 +41,4 @@ always:
 %endif
 
 always:
-    python $(SrcDir)SchemaValidationReporter.py $(LOG_DIRECTORY)/schema_report.log
+    python $(SrcDir)SchemaValidationReporter.py $(LOG_DIRECTORY)schema_report.log

@@ -467,6 +467,7 @@
 
     <Part Name="ValidateSchemas" BentleyBuildMakeFile="mki/BisSchemasValidation/SchemaValidatorSetup.mke" OnlyPlatforms="x64">
         <SubPart PartName="BisSchemas" PartFile="BisSchemas" Repository="BisSchemas"/>
+        <SubPart PartName="V3_1ValidationSchemas" PartFile="ECStandards" Repository="ECStandards"/>
         <SubPart PartName="SchemaValidator"/>
     </Part>
 

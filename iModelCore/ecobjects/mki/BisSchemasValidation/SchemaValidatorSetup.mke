@@ -19,6 +19,8 @@ SCHEMAS_DIRECTORY =  $(pathToSchemas1);$(pathToSchemas2)
 SCHEMAS_REFERENCE_DIRECTORY = $(pathToRefSchemas1);$(pathToRefSchemas2)
 LOG_DIRECTORY = $(pathToOutputLogs)
 
+XSD_DIRECTORY = $(productDir)Assets/ECSchemas/xsd/
+
 SHAREPOINT_SITE_URL = https:\/\/bentley.sharepoint.com\/sites\/BIS\/ 
 SHAREPOINT_LIST_NAME = "Schema Development Status"
 
