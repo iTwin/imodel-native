@@ -318,7 +318,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 			subMeshNode->ReadFeatureDefinitions(polylinesNode, typesNode);
 
 			for (auto& type : typesNode)
-				if (type == DTMFeatureType::Hull)
+				if (type == DTMFeatureType::Hull || type == DTMFeatureType::TinHull)
 					anyHull[indexNodes] = true;
 
 			types.insert(types.end(), typesNode.begin(), typesNode.end());
@@ -546,15 +546,18 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
             {
 		    for (size_t i = polylines.size() - 1; i > 0; i--)
 		        {
+                newTypes.clear();
+                otherNewTypes.clear();
+                newLines.clear();
 			    bvector<bvector<DPoint3d>> defsHull;
 			    defsHull.push_back(polylines[i]);
 			    defsHull.push_back(polylines[i - 1]);
-			    MergePolygonSets(defsHull, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
+			    MergePolygonSets(defsHull, [&newTypes, &newLines, &types, &i](const size_t j, const bvector<DPoint3d>& vec)
 			        {
-				    if (types[i] != DTMFeatureType::Hull)
+				    if (types[i-j] != DTMFeatureType::Hull &&  types[i-j] != DTMFeatureType::TinHull)
 				        {
 					    newLines.push_back(vec);
-					    newTypes.push_back(types[i]);
+					    newTypes.push_back(types[i-j]);
 					    return false;
 				    }
 				    else return true;
@@ -591,7 +594,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		    std::transform(polylines.begin(), polylines.end(), newLines.begin(), polylines.begin(),
 			    [&types, &polylines](const bvector<DPoint3d>&vec, const bvector<DPoint3d>& vec2)
 		        {
-			    if (types[&vec - &polylines[0]] == DTMFeatureType::Hull)
+			    if (types[&vec - &polylines[0]] == DTMFeatureType::Hull || types[&vec - &polylines[0]] == DTMFeatureType::TinHull)
 				    return vec2;
 			    else return vec;
 		        });
