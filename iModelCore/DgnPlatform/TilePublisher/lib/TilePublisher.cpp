@@ -3780,24 +3780,48 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     {
     DgnModelIdSet viewedModels;
 
+    // TFS#881783: Always publish all spatial models regardless of presence in any view's model selector...
+    bool haveSpatial = false;
     bool includeAttachments = T_HOST._IsFeatureEnabled("TilePublisher.PublishViewAttachments");
     for (auto const& viewId : m_viewIds)
-        GetViewedModelsFromView (viewedModels, viewId, includeAttachments);
+        {
+        auto spatialView = GetDgnDb().Elements().Get<SpatialViewDefinition>(viewId);
+        if (spatialView.IsValid())
+            {
+            if (!haveSpatial)
+                {
+                ModelIterator modelIter = GetDgnDb().Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
+                for (auto const& entry : modelIter)
+                    {
+                    BeAssert(GetDgnDb().Models().Get<SpatialModel>(entry.GetModelId()).IsValid());
+                    viewedModels.insert(entry.GetModelId());
+                    }
+
+                haveSpatial = true;
+                }
+            }
+        else
+            {
+            GetViewedModelsFromView (viewedModels, viewId, includeAttachments);
+            }
+        }
 
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)
         return ConvertStatus(status);
 
-    rootRange = DRange3d::NullRange();
+    bool noGeometry = true;
     for (auto const& kvp : m_modelRanges)
         {
         auto model = GetDgnDb().Models().GetModel(kvp.first);
-
-        if (model->IsSpatialModel())
-            rootRange.Extend(kvp.second.m_range);
+        if (!kvp.second.m_range.IsNull())
+            {
+            noGeometry = false;
+            break;
+            }
         }
 
-    if (rootRange.IsNull())
+    if (noGeometry)
         return ConvertStatus(TileGeneratorStatus::NoGeometry);
 
     return PublishClassifiers(viewedModels, generator, toleranceInMeters, progressMeter);

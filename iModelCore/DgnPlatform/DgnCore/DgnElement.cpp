@@ -3603,7 +3603,7 @@ DgnDbStatus DgnEditElementCollector::Write(bool* anyInserts)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void getChildElementIdSet(DgnElementIdSet& assemblyIdSet, DgnElementId parentId, DgnDbR dgnDb)
+void ElementAssemblyUtil::GetChildElementIdSet(DgnElementIdSet& assemblyIdSet, DgnElementId parentId, DgnDbR dgnDb)
     {
     DgnElementCPtr  parentEl = dgnDb.Elements().GetElement(parentId);
 
@@ -3615,7 +3615,7 @@ static void getChildElementIdSet(DgnElementIdSet& assemblyIdSet, DgnElementId pa
     assemblyIdSet.insert(parentIdSet.begin(), parentIdSet.end());
 
     for (DgnElementId childId : parentIdSet)
-        getChildElementIdSet(assemblyIdSet, childId, dgnDb);
+        ElementAssemblyUtil::GetChildElementIdSet(assemblyIdSet, childId, dgnDb);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3683,7 +3683,7 @@ DgnElementIdSet ElementAssemblyUtil::GetAssemblyElementIdSet(DgnElementCR el)
     DgnElementIdSet assemblyIdSet;
 
     assemblyIdSet.insert(parentId); // Include parent...
-    getChildElementIdSet(assemblyIdSet, parentId, el.GetDgnDb());
+    GetChildElementIdSet(assemblyIdSet, parentId, el.GetDgnDb());
 
     if (assemblyIdSet.size() < 2)
         assemblyIdSet.clear();

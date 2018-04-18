@@ -66,8 +66,7 @@ static void collectCurveStrokes (Strokes::PointLists& strokes, CurveVectorCR cur
             if (nullptr != transform)
                 transform->Multiply(loopStrokes, loopStrokes);
 
-            DRange3d    range = DRange3d::From(loopStrokes);
-            strokes.push_back (Strokes::PointList(std::move(loopStrokes), DPoint3d::FromInterpolate(range.low, .5, range.high)));
+            strokes.push_back(Strokes::PointList(std::move(loopStrokes)));
             }
         }
     }
@@ -489,6 +488,7 @@ DisplayParams DisplayParams::ForType(Type type, GraphicParamsCR gf, GeometryPara
 void DisplayParams::InitText(ColorDef lineColor, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
     {
     InitGeomParams(catId, subCatId, geomClass);
+    lineColor = AdjustTransparency(lineColor);
     m_type = Type::Text;
     m_lineColor = m_fillColor = lineColor;
     m_ignoreLighting = true;
@@ -519,6 +519,7 @@ DisplayParams DisplayParams::ForText(GraphicParamsCR gf, GeometryParamsCP geom)
 void DisplayParams::InitLinear(ColorDef lineColor, uint32_t width, LinePixels pixels, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
     {
     InitGeomParams(catId, subCatId, geomClass);
+    lineColor = AdjustTransparency(lineColor);
     m_type = Type::Linear;
     m_lineColor = m_fillColor = lineColor;
     m_width = width;
@@ -551,8 +552,8 @@ void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t wi
     {
     InitGeomParams(catId, subCatId, geomClass);
     m_type = Type::Mesh;
-    m_lineColor = lineColor;
-    m_fillColor = fillColor;
+    m_lineColor = AdjustTransparency(lineColor);
+    m_fillColor = AdjustTransparency(fillColor);
     m_fillFlags = fillFlags;
     m_material = mat;
     m_gradient = grad;
@@ -712,6 +713,56 @@ template<> int compareValues(bool const& lhs, bool const& rhs)
     return compareValues(static_cast<uint8_t>(lhs), static_cast<uint8_t>(rhs));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* NB: We used to compare material and texture by address. When reading MeshBuilderMaps back from the tile cache data,
+* we want to preserve order - so must compare by stable identifiers instead.
+* (Materials/textures without stable identifiers are never serialized to cache, so safe to compare those by address).
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> int compareResources(T const* lhs, T const* rhs)
+    {
+    bool lhNull = nullptr == lhs, rhNull = nullptr == rhs;
+
+    if (lhNull)
+        return rhNull ? 0 : -1;
+    else if (rhNull)
+        return 1;
+
+    auto const& lhKey = lhs->GetKey();
+    auto const& rhKey = rhs->GetKey();
+
+    bool lhValid = lhKey.IsValid(), rhValid = rhKey.IsValid();
+    if (!lhValid)
+        return rhValid ? -1 : 0;
+    else if (!rhValid)
+        return 1;
+
+    BeAssert(lhValid && rhValid);
+
+    if (lhKey < rhKey)
+        return -1;
+    else if (rhKey < lhKey)
+        return 1;
+    else
+        return 0;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> int compareValues(MaterialP const& lhs, MaterialP const& rhs)
+    {
+    return compareResources(lhs, rhs);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+template<> int compareValues(TextureCP const& lhs, TextureCP const& rhs)
+    {
+    return compareResources(lhs, rhs);
+    }
+
 #define TEST_LESS_THAN(MEMBER) \
     { \
     int cmp = compareValues(MEMBER, rhs.MEMBER); \
@@ -737,11 +788,11 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetType());
     TEST_LESS_THAN(IgnoresLighting());
     TEST_LESS_THAN(GetLineWidth());
-    TEST_LESS_THAN(GetMaterial());
     TEST_LESS_THAN(GetLinePixels());
     TEST_LESS_THAN(GetFillFlags());
     TEST_LESS_THAN(HasRegionOutline());
-    TEST_LESS_THAN(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
+    TEST_LESS_THAN(GetMaterial());
+    TEST_LESS_THAN(GetTextureMapping().GetTexture());
 
     if (ComparePurpose::Merge == purpose)
         {
@@ -965,12 +1016,14 @@ uint32_t Mesh::AddVertex(QPoint3dCR vert, OctEncodedNormalCP normal, DPoint2dCP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    Mesh::AddAuxChannel(PolyfaceAuxChannelCR channel, size_t index)
+void    Mesh::AddAuxChannel(MeshAuxDataCR auxData, size_t index)
     {
-    if (!m_auxChannel.IsValid())
-        m_auxChannel = channel.CloneWithoutData();
+    if (auxData.m_displacementChannel.IsValid())
+        auxData.m_displacementChannel->AppendDataByIndex(m_auxData.m_displacementChannel, index);
 
-    m_auxChannel->AppendDataByIndex(channel, index);
+    if (auxData.m_paramChannel.IsValid())
+        auxData.m_paramChannel->AppendDataByIndex(m_auxData.m_paramChannel, index);
+        
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1179,8 +1232,8 @@ bool VertexKey::operator<(VertexKeyCR rhs) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshBuilder::AddTriangle(TriangleCR triangle)
     {
-    if (triangle.IsDegenerate())
-        return;
+    // Prefer to avoid adding vertices originating from degenerate triangles before we get here...
+    BeAssert(!triangle.IsDegenerate());
 
     TriangleKey key(triangle);
 
@@ -1191,7 +1244,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, Utf8CP auxChannelName)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool includeParams, uint32_t fillColor, bool requireNormals, MeshAuxDataCP auxData)
     {
     if (visitor.Point().size() < 3)
         return;
@@ -1199,11 +1252,6 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
     size_t          nTriangles = points.size() - 2;
-
-    PolyfaceAuxChannelCPtr auxChannel;
-    
-    if (nullptr != auxChannelName && visitor.GetAuxDataCP().IsValid())
-        auxChannel = visitor.GetAuxDataCP()->GetChannel(auxChannelName);
 
     if (requireNormals && visitor.Normal().size() < points.size())
         return; // TFS#790263: Degenerate triangle - no normals.
@@ -1235,22 +1283,35 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
                 BeAssert(false && "ComputeUVParams() failed");
             }
 
+        auto computeIndex   = [=](size_t i) { return (0 == i) ? 0 : iTriangle + i; };
+        auto makeVertexKey  = [&](size_t index)
+            {
+            return VertexKey(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr); 
+            };
+
+        size_t indices[3]       = { computeIndex(0), computeIndex(1), computeIndex(2) };
+        VertexKey vertices[3]   = { makeVertexKey(indices[0]), makeVertexKey(indices[1]), makeVertexKey(indices[2]) };
+
+        // Previously we would add all 3 vertices to our map, then detect degenerate triangles in AddTriangle().
+        // This led to unused vertex data, and caused mismatch in # of vertices when recreating the MeshBuilder from the data in the tile cache.
+        // Detect beforehand instead.
+        if (vertices[0].GetPosition() == vertices[1].GetPosition() || vertices[0].GetPosition() == vertices[2].GetPosition() || vertices[1].GetPosition() == vertices[2].GetPosition())
+            continue;
+
         for (size_t i = 0; i < 3; i++)
             {
-            size_t      index = (0 == i) ? 0 : iTriangle + i; 
-            VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), requireNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
-
-            if (auxChannel.IsValid())
+            size_t index = indices[i];
+            VertexKey const& vertex = vertices[i];
+            if (nullptr != auxData && visitor.GetAuxDataCP().IsValid())
                 {
                 // No deduplication with auxData (for now...)
                 newTriangle[i] = m_mesh->AddVertex(vertex.GetPosition(), vertex.GetNormal(), vertex.GetParam(), vertex.GetFillColor(), vertex.GetFeature());
-                m_mesh->AddAuxChannel(*auxChannel, index);
+                m_mesh->AddAuxChannel(*auxData, visitor.GetAuxDataCP()->GetIndices().at(index));
                 }
             else
                 {
                 newTriangle[i] = AddVertex(vertex);
                 }
-
 
             if (m_currentPolyface.IsValid())
                 m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[index]);
@@ -1263,9 +1324,9 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR  rangeCenter)
+void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature, uint32_t fillColor, double startDistance)
     {
-    MeshPolyline    newPolyline(startDistance, rangeCenter);
+    MeshPolyline    newPolyline(startDistance);
 
     for (auto& point : points)
         {
@@ -1279,9 +1340,9 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter)
+void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance)
     {
-    MeshPolyline newPolyline(startDistance, rangeCenter);
+    MeshPolyline newPolyline(startDistance);
     for (auto const& point : points)
         {
         VertexKey key(point, feature, fillColor, nullptr, nullptr);
@@ -1294,13 +1355,13 @@ void MeshBuilder::AddPolyline(bvector<QPoint3d> const& points, FeatureCR feature
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddPointString(bvector<DPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter)
+void MeshBuilder::AddPointString(bvector<DPoint3d> const& points, FeatureCR feature, uint32_t fillColor, double startDistance)
     {
     // Assume no duplicate points in point strings (or, too few to matter).
     // Why? Because drawGridDots() potentially sends us tens of thousands of points (up to 83000 on my large monitor in top view), and wants to do so every frame.
     // The resultant map lookups/inserts/rebalancing kill performance in non-optimized builds.
-    // NB: rangeCenter and startDistance unused...
-    MeshPolyline polyline(startDistance, rangeCenter);
+    // NB: startDistance currently unused - Ray claims they will be used in future for non-cosmetic line styles? If not let's jettison them...
+    MeshPolyline polyline(startDistance);
     for (auto const& point : points)
         {
         QPoint3d qpoint(point, m_mesh->Verts().GetParams());
@@ -1877,7 +1938,9 @@ bool GeometryAccumulator::Add(CurveVectorR curves, bool filled, DisplayParamsCR 
     if (m_surfacesOnly && !curves.IsAnyRegionType())
         return true;    // ignore...
 
-    bool isCurved = curves.ContainsNonLinearPrimitive();
+    // NB: If we're stroking a styled curve vector, we have set m_addingCurved based on whether the input curve vector was curved - the
+    // stroked components may not be.
+    bool isCurved = m_addingCurved || curves.ContainsNonLinearPrimitive();
     IGeometryPtr geom = IGeometry::Create(CurveVectorPtr(&curves));
     return AddGeometry(*geom, isCurved, displayParams, transform, clip, disjoint);
     }
@@ -1978,27 +2041,19 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
     // This ensures the builder map is organized in the same order as the geometry list, and no meshes are merged.
     // This is required to make overlay decorations render correctly.
     uint16_t    order = 0;
-    Utf8CP      activeAuxChannel =  context.GetActiveAuxChannel().empty() ? nullptr : context.GetActiveAuxChannel().c_str();
     for (auto const& geom : m_geometries)                                                                        
         {
         auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode, context);
         for (auto const& tilePolyface : polyfaces)
             {
-            Utf8CP      auxChannel = nullptr;
-
             PolyfaceHeaderPtr polyface = tilePolyface.m_polyface;
             if (polyface.IsNull() || 0 == polyface->GetPointCount())
                 continue;
 
-            if (nullptr != activeAuxChannel &&
-                polyface->GetAuxDataCP().IsValid() &&
-                polyface->GetAuxDataCP()->GetChannel(activeAuxChannel).IsValid())
-                auxChannel = activeAuxChannel;
-
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
-            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar, auxChannel);
+            MeshBuilderMap::Key key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
             if (options.WantPreserveOrder())
                 key.SetOrder(order++);
 
@@ -2009,7 +2064,7 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
 
             uint32_t fillColor = displayParams->GetFillColor();
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), auxChannel);
+                meshBuilder.AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), hasTexture, fillColor, nullptr != polyface->GetNormalCP(), nullptr);
 
             meshBuilder.EndPolyface();
             }
@@ -2029,9 +2084,9 @@ MeshBuilderMap GeometryAccumulator::ToMeshBuilderMap(GeometryOptionsCR options, 
                 for (auto& strokePoints : tileStrokes.m_strokes)
                     {
                     if (tileStrokes.m_disjoint)
-                        builder.AddPointString(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                        builder.AddPointString(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance);
                     else
-                        builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance, strokePoints.m_rangeCenter);
+                        builder.AddPolyline(strokePoints.m_points, geom->GetFeature(), fillColor, strokePoints.m_startDistance);
                     }
                 }
             }
@@ -2127,6 +2182,23 @@ void ColorTable::ToColorIndex(ColorIndex& index, bvector<uint32_t>& colors, bvec
 
         index.SetNonUniform(GetNumIndices(), colors.data(), indices.data(), m_hasAlpha);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ColorTable::FindByIndex(ColorDef& color, uint16_t index) const
+    {
+    for (auto const& kvp : *this)
+        {
+        if (kvp.second == index)
+            {
+            color = ColorDef(kvp.first);
+            return true;
+            }
+        }
+
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2307,10 +2379,7 @@ void GlyphCache::GetGeometry(StrokesList* strokes, PolyfaceList* polyfaces, Text
             if (!points.empty())
                 {
                 for (auto& loop : points)
-                    {
                     glyphTransform.Multiply(loop.m_points, loop.m_points);
-                    glyphTransform.Multiply(loop.m_rangeCenter);
-                    }
 
                 strokes->push_back(Strokes(geom.GetDisplayParams(), std::move(points), false, true));
                 }
@@ -2497,6 +2566,7 @@ bool MeshArgs::Init(MeshCR mesh)
         }
 
     m_edges.m_polylines.Init(m_polylineEdges);
+    m_auxData = mesh.GetAuxData();
 
     return true;
     }
@@ -3455,6 +3525,26 @@ DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+uint8_t DisplayParams::GetMinTransparency()
+    {
+    // Threshold below which we consider a color fully opaque.
+    return 15;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef DisplayParams::AdjustTransparency(ColorDef color)
+    {
+    if (color.GetAlpha() < GetMinTransparency())
+        color.SetAlpha(0);
+
+    return color;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshBuilderR MeshBuilderMap::operator[](Key const& key)
@@ -3462,7 +3552,7 @@ MeshBuilderR MeshBuilderMap::operator[](Key const& key)
     auto found = m_map.find(key);
     if (m_map.end() == found)
         {
-        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar, key.m_auxChannel);
+        MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, m_featureTable, key.m_type, m_range, m_is2d, key.m_isPlanar);
         found = m_map.Insert(key, builder).first;
         }
 

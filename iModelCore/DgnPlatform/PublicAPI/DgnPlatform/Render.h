@@ -1044,34 +1044,82 @@ struct GradientSymb : RefCountedBase
 
     enum Flags : Byte
     {
-        None         = 0,
-        Invert       = (1 << 0),
-        Outline      = (1 << 1),
-        Deprecated   = (1 << 2), //!< Was AlwaysFilled, now controlled by FillDisplay...
+        None                = 0,
+        Invert              = (1 << 0),
+        Outline             = (1 << 1),
+        Deprecated          = (1 << 2), //!< Was AlwaysFilled, now controlled by FillDisplay...
     };
 
     enum class Mode : Byte
     {
-        None          = 0,
-        Linear        = 1,
-        Curved        = 2,
-        Cylindrical   = 3,
-        Spherical     = 4,
-        Hemispherical = 5,
+        None                = 0,
+        Linear              = 1,
+        Curved              = 2,
+        Cylindrical         = 3,
+        Spherical           = 4,
+        Hemispherical       = 5,
+        Thematic            = 6,
     };
 
+    
+    struct ThematicSettings
+        {
+        enum class ColorScheme
+            {
+            BlueRed     = 0,
+            RedBlue     = 1,
+            Monochrome  = 2,
+            Topographic = 3,
+            SeaMountain = 4,
+            Custom      = 5,
+            };
+        enum class Mode
+            {
+            Smooth,
+            Stepped,
+            SteppedWithDelimiter,
+            Isolines,
+            };
+
+        private:
+        uint32_t        m_stepCount = 10;
+        double          m_margin = .05;
+        ColorDef        m_marginColor = ColorDef(0x3f, 0x3f, 0x3f);
+        Mode            m_mode = Mode::Smooth;
+        ColorScheme     m_colorScheme = ColorScheme::BlueRed;
+
+        public:
+        Json::Value ToJson() const;
+        void FromJson(Json::Value const& value);
+        double GetMargin() const { return m_margin; }
+        void SetMargin(double margin) { m_margin = margin; }
+        uint32_t GetStepCount() const { return m_stepCount; }
+        void SetStepCount(uint32_t stepCount) { m_stepCount = stepCount; }
+        ColorDef GetMarginColor() const { return m_marginColor; }
+        void SetMarginColor (ColorDefCR color) { m_marginColor = color; }
+        Mode GetMode() const { return m_mode; ; }
+        void SetMode(Mode mode) { m_mode = mode; }
+        ColorScheme GetColorScheme() const { return m_colorScheme; }
+        void SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
+        };
+
 protected:
-    Mode m_mode = Mode::None;
-    Flags m_flags = Flags::None;
-    uint32_t m_nKeys = 0;
-    double m_angle = 0.0;
-    double m_tint = 0.0;
-    double m_shift = 0.0;
-    ColorDef m_colors[MAX_GRADIENT_KEYS];
-    double m_values[MAX_GRADIENT_KEYS];
+    Mode        m_mode = Mode::None;
+    Flags       m_flags = Flags::None;
+    uint32_t    m_nKeys = 0;
+    double      m_angle = 0.0;
+    double      m_tint = 0.0;
+    double      m_shift = 0.0;
+    ColorDef    m_colors[MAX_GRADIENT_KEYS];
+    double      m_values[MAX_GRADIENT_KEYS];
+
+    // For Thematic only...
+    ThematicSettings    m_thematicSettings;
 
 public:
     GradientSymb() {}
+    // For thematic display....
+    DGNPLATFORM_EXPORT GradientSymb(ThematicSettings const& thematicSettings);
 
     DGNPLATFORM_EXPORT void CopyFrom(GradientSymbCR);
 
@@ -1095,14 +1143,19 @@ public:
     void SetAngle(double angle) {m_angle = angle;}
     void SetTint(double tint) {m_tint = tint;}
     void SetShift(double shift) {m_shift = shift;}
-    BentleyStatus GetKey(ColorDef& color, double& value, uint32_t iKey) const;
     DGNPLATFORM_EXPORT void SetKeys(uint32_t nKeys, ColorDef const* colors, double const* values);
     ColorDef MapColor(double value) const;
     DGNPLATFORM_EXPORT bool HasTransparency() const;
     DGNPLATFORM_EXPORT Image GetImage(uint32_t width, uint32_t height) const;
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT BentleyStatus FromJson(Json::Value const& json);
+    BentleyStatus GetKey(ColorDef& color, double& value, uint32_t iKey) const;
+    // Thematic display.
+    bool IsThematic() const { return m_mode == Mode::Thematic; } 
+    ThematicSettings const& GetThematicSettings() const { return m_thematicSettings; }
+    ThematicSettings& GetThematicSettings() { return m_thematicSettings; }
 };
+
 
 //=======================================================================================
 //! This structure holds the displayable parameters of a GeometrySource
@@ -2359,18 +2412,15 @@ struct MeshPolyline
 {
 private:
     bvector<uint32_t>   m_indices;
-    DPoint3d            m_rangeCenter;
     double              m_startDistance;
-
 public:
     MeshPolyline () : m_startDistance(0.0) { }
-    MeshPolyline (double startDistance, DPoint3dCR rangeCenter) : m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
-    MeshPolyline (double startDistance, DPoint3dCR rangeCenter, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_rangeCenter(rangeCenter), m_indices(std::move(indices)) { }
+    explicit MeshPolyline (double startDistance) : m_startDistance(startDistance) { }
+    MeshPolyline (double startDistance, bvector<uint32_t>&& indices) : m_startDistance(startDistance), m_indices(std::move(indices)) { }
 
     bvector<uint32_t> const& GetIndices() const { return m_indices; }
     bvector<uint32_t>& GetIndices() { return m_indices; }
     double GetStartDistance() const { return m_startDistance; }
-    DPoint3dCR GetRangeCenter() const { return m_rangeCenter; }
     
     void AddIndex(uint32_t index)  { if (m_indices.empty() || m_indices.back() != index) m_indices.push_back(index); }
     void Clear() { m_indices.clear(); }
@@ -2388,10 +2438,9 @@ struct IndexedPolylineArgs
         uint32_t const* m_vertIndex = nullptr;
         uint32_t        m_numIndices = 0;
         double          m_startDistance = 0.0;
-        DPoint3d        m_rangeCenter;
 
         Polyline() { }
-        Polyline(uint32_t const* indices, uint32_t numIndices, double startDistance, DPoint3dCR rangeCenter) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance), m_rangeCenter(rangeCenter) { }
+        Polyline(uint32_t const* indices, uint32_t numIndices, double startDistance) : m_vertIndex(indices), m_numIndices(numIndices), m_startDistance(startDistance) { }
 
         bool IsValid() const { return 0 < m_numIndices; }
         void Reset() { m_numIndices = 0; m_vertIndex = nullptr; m_startDistance = 0.0; }
@@ -2400,7 +2449,6 @@ struct IndexedPolylineArgs
             m_numIndices = static_cast<uint32_t>(polyline.GetIndices().size());
             m_vertIndex = 0 < m_numIndices ? polyline.GetIndices().data() : nullptr;
             m_startDistance = polyline.GetStartDistance();
-            m_rangeCenter = polyline.GetRangeCenter();
             return IsValid();
             }
     };
@@ -2467,6 +2515,76 @@ struct MeshEdges : RefCountedBase
     MeshEdges() { }
 };
 
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2018
+//=======================================================================================
+template <typename T_Data>  struct AuxChannel : RefCountedBase
+{
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(Data);
+    DEFINE_REF_COUNTED_PTR(Data);
+
+    struct Data : RefCountedBase
+        { 
+        private:
+        float               m_input;
+        bvector<T_Data>     m_values;
+
+        public:
+        float                       GetInput() const                     { return m_input; }
+        bvector<T_Data> const&      GetValues() const                    { return m_values; }
+        bvector<T_Data>&            GetValues()                          { return m_values; }
+        T_Data const&               GetValue(size_t i) const             { return m_values.at(i); }
+        size_t                      GetValueByteCount() const            { return m_values.size() * sizeof(T_Data); }
+        Data(float input, bvector<T_Data>&& values) : m_input(input), m_values(values) { }
+        };
+private:
+    bvector<DataPtr>         m_data;    
+
+public:
+        AuxChannel( bvector<DataPtr>&& data) : m_data(std::move(data)) { }
+        void AppendDataByIndex(RefCountedPtr<AuxChannel>& output, size_t index)
+            {
+            if (!output.IsValid())
+                output =  CloneWithoutData();
+
+            for (size_t i=0; i<m_data.size(); i++)
+                output->m_data[i]->GetValues().push_back(m_data[i]->GetValue(index));
+            }
+        AuxChannel* CloneWithoutData()
+            {
+            bvector<DataPtr>    dataVector;
+
+            for (auto& data : m_data)
+                {
+                bvector<T_Data>     values;
+                dataVector.push_back (new Data(data->GetInput(), std::move(values)));
+                }
+                
+            return new AuxChannel(std::move(dataVector));
+            }
+        bvector<DataPtr> const& GetData() const { return m_data; }
+};
+
+using AuxDisplacementChannel = AuxChannel<FPoint3d>;
+using AuxParamChannel = AuxChannel<FPoint2d>;
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(AuxDisplacementChannel);
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(AuxParamChannel);
+DEFINE_REF_COUNTED_PTR(AuxDisplacementChannel);
+DEFINE_REF_COUNTED_PTR(AuxParamChannel);
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     04/2018
+//=======================================================================================
+struct MeshAuxData 
+{
+    AuxDisplacementChannelPtr       m_displacementChannel;
+    AuxParamChannelPtr              m_paramChannel;
+
+    bool IsValid() const { return m_displacementChannel.IsValid() || m_paramChannel.IsValid(); }
+};  
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshAuxData);
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     04/2017
 //=======================================================================================
@@ -2548,6 +2666,8 @@ struct TriMeshArgs
     FillFlags                       m_fillFlags = FillFlags::None;
     bool                            m_isPlanar = false;
     bool                            m_is2d = false;
+    MeshAuxData                     m_auxData;
+
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };

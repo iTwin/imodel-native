@@ -586,7 +586,7 @@ void MeshBuilderTest::ExpectEqualPolylineLists(PolylineList const& basePolylines
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool MeshBuilderTest::AreEqualPolylines(MeshPolyline const& base, MeshPolyline const& comp, MeshCR baseMesh, MeshCR compMesh)
     {
-    if (base.GetStartDistance() != comp.GetStartDistance() || !AreEqualPoints(base.GetRangeCenter(), comp.GetRangeCenter()))
+    if (base.GetStartDistance() != comp.GetStartDistance())
         return false;
 
     return AreEqualVertexLists(base.GetIndices(), comp.GetIndices(), baseMesh, compMesh);

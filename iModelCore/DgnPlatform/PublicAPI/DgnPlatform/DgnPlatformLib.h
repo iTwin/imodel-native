@@ -72,10 +72,10 @@ public:
     public:
         struct SessionSettingsAdmin : IHostObject
             {
-            virtual bool _GetAssemblyLock() const {return false;}       //!< Apply operation such as transform, copy or delete to all members of an assembly.
             virtual bool _GetGridLock() const {return false;}           //!< If Grid Lock is on, project data points to grid.
             virtual bool _GetACSPlaneSnapLock() const {return false;}   //!< If ACS Snap Lock is on, project snap points to the ACS plane.
             virtual bool _GetACSContextLock() const {return false;}     //!< If ACS Plane Lock is on, standard view rotations are relative to the ACS instead of global.
+            virtual SelectionScope _GetActiveSelectionScope() const {return SelectionScope::Element;}     //!< Selection scope used when locating elements.
             };
 
         //! Provides access to a BeJsContext on threads other than the UI thread.

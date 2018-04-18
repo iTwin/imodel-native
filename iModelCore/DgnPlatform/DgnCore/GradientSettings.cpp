@@ -18,6 +18,7 @@ void GradientSymb::CopyFrom(GradientSymb const& other)
     m_angle = other.m_angle;
     m_tint  = other.m_tint;
     m_shift = other.m_shift;
+    m_thematicSettings = other.m_thematicSettings;
 
     memcpy(m_colors, other.m_colors, m_nKeys * sizeof(m_colors[0]));
     memcpy(m_values, other.m_values, m_nKeys * sizeof(m_values[0]));
@@ -156,6 +157,12 @@ ColorDef GradientSymb::MapColor(double value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
     {
+    constexpr   uint32_t        s_thematicImageHeight = 8192;
+    if (IsThematic())       // If Thematic override for maximum resolution --- TBD - Check on devices that require square texture.
+        {
+        width = 1;          
+        height = s_thematicImageHeight;
+        }
     double                  cosA = cos(GetAngle()), sinA = sin(GetAngle());
     double                  d, f, r, x, y, xr, yr, xs, ys;
     double                  dMin, dMax;
@@ -260,6 +267,50 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                 }
             break;
             }
+    
+        case GradientSymb::Mode::Thematic:
+            {
+            ThematicSettings const&     settings = GetThematicSettings();
+
+            // TBD -- Stepped and isolines...
+            for (size_t j = 0; j < height; j++)
+                {
+                f = 1.0 - (double) j / height;
+                uint32_t    color = 0;
+
+                if (f < settings.GetMargin() || f > 1.0 - settings.GetMargin())
+                    {
+                    color = settings.GetMarginColor().GetValue();
+                    }
+                else
+                    {
+                    f = (f - settings.GetMargin()) / (1.0 - 2.0 * settings.GetMargin());
+                    switch (settings.GetMode())
+                        {
+                        case ThematicSettings::Mode::SteppedWithDelimiter:
+                        case ThematicSettings::Mode::Stepped:
+                            if (0 != settings.GetStepCount())
+                                {
+                                double fStep = floor (f * (double) settings.GetStepCount() + .99999) /  ((double) (settings.GetStepCount()));
+                                static double  s_delimitFraction = 1.0 / 1024.0;
+
+                                if (ThematicSettings::Mode::SteppedWithDelimiter == settings.GetMode() && fabs(fStep - f) < s_delimitFraction)
+                                    color = 0xff000000;
+                                else
+                                    color = MapColor(fStep).GetValue();
+                                }
+                            break;
+
+                        case ThematicSettings::Mode::Smooth:
+                            color = MapColor (f).GetValue();
+                            break;
+                        }
+                    }
+
+                for (size_t i = 0; i < width; i++)
+                    *--pImage = color;
+                }
+            }
 
         }
     Render::Image image (width, height, std::move(imageBytes), Image::Format::Rgba);
@@ -317,6 +368,7 @@ BentleyStatus   GradientSymb::FromJson(Json::Value const& json)
     m_tint  = json["tint"].asDouble();
     m_shift = json["shift"].asDouble(); 
     
+
     m_nKeys = std::min((uint32_t) json["keys"].size(), (uint32_t) MAX_GRADIENT_KEYS);
 
     for (uint32_t i=0; i<m_nKeys; i++)
@@ -324,6 +376,9 @@ BentleyStatus   GradientSymb::FromJson(Json::Value const& json)
         m_colors[i] = ColorDef(json["keys"][i]["color"].asUInt());
         m_values[i] = json["keys"][i]["value"].asDouble();
         }
+
+    if (m_mode == Mode::Thematic)
+        m_thematicSettings.FromJson(json["thematicSettings"]);
 
     return SUCCESS;
     }
@@ -353,8 +408,79 @@ Json::Value     GradientSymb::ToJson () const
 
         value["keys"].append(keyJson);
         }
+    if (GetMode() == Mode::Thematic)
+        value["thematicSettings"] = m_thematicSettings.ToJson();
     
     return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value     GradientSymb::ThematicSettings::ToJson () const
+    {
+    Json::Value value;
+
+    value["mode"] = (uint32_t) GetMode();
+    value["stepCount"] = GetStepCount();
+    value["margin"] = GetMargin();
+    value["marginColor"] = GetMarginColor().GetValue();
+    value["colorScheme"] = (uint32_t) GetColorScheme();
+
+    return value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void     GradientSymb::ThematicSettings::FromJson (Json::Value const& value) 
+    {
+    m_stepCount = value["stepCount"].asUInt();
+    m_margin = value["margin"].asDouble();
+    m_marginColor = ColorDef(value["marginColor"].asUInt());
+    m_mode = (Mode) value["mode"].asUInt();
+    m_colorScheme = (ColorScheme) value["colorScheme"].asUInt();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+GradientSymb::GradientSymb(ThematicSettings const& settings) : m_thematicSettings(settings)
+    {
+    struct  SchemeKey
+        {
+        double          m_value;
+        uint8_t         m_red;
+        uint8_t         m_blue;
+        uint8_t         m_green;
+        };
+
+    static const   bvector<bvector<SchemeKey>> s_keys =
+        {  
+           { {0.0, 0,   255, 0}, {0.25, 0,   255, 255}, {0.5, 0, 0, 255}, {0.75, 255, 0,   255}, {1.0, 255, 0,   0}},
+           { {0.0, 255, 0,   0}, {0.25, 255, 0,   255}, {0.5, 0, 0, 255}, {0.75, 0,   255, 255}, {1.0, 0,   255, 0}},
+           { {0.0, 0,   0,   0}, {1.0,  255, 255, 255}},
+
+           //Based off of the topographic gradients in Point Clouds
+           { {0.0, 152, 148, 188}, {0.5, 204, 160, 204}, {1.0, 152, 72, 128}},
+
+           //Based off of the sea-mountain gradient in Point Clouds
+           { {0.0, 0, 255, 0}, {0.2, 72, 96, 160}, {0.4, 152, 96, 160}, {0.6, 128, 32, 104}, {0.7, 148, 180, 128}, {1.0, 240, 240, 240}}
+        };
+
+    if (settings.GetColorScheme() < ThematicSettings::ColorScheme::Custom)
+        {
+        auto&   schemeKeys = s_keys[(uint32_t) settings.GetColorScheme()];
+
+        m_mode = Mode::Thematic;
+        m_nKeys = 2 + schemeKeys.size();
+    
+        for (size_t i=0; i<schemeKeys.size(); i++)
+            {
+            m_colors[i] = ColorDef(schemeKeys[i].m_red, schemeKeys[i].m_green, schemeKeys[i].m_blue);
+            m_values[i] = schemeKeys[i].m_value;
+            }
+        }
     }
 
 
