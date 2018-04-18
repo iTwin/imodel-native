@@ -90,6 +90,9 @@
     <ClCompile Include="Published\NumericFormatSpecTests.cpp">
       <Filter>Published\Formatting</Filter>
     </ClCompile>
+    <ClCompile Include="Published\MappingTests.cpp">
+      <Filter>Published\Formatting</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestFixture\UnitsTestFixture.h">

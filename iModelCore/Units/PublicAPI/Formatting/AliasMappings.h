@@ -73,6 +73,13 @@ private:
         m_formatToNameMapping[formatString] = name;
         }
 
+    //! Used for a FormatString that has multiple legacy names
+    //! To map a Name to a FormatString (hence will be default for that FormatString) use the AddMapping()
+    void AddLegacyNameToFormatStringMapping(Utf8CP name, Utf8CP formatString)
+        {
+        m_nameToFormatMapping[name] = formatString;
+        }
+
     static LegacyNameMappings * GetMappings();
 
 public:

@@ -198,11 +198,15 @@ Utf8CP LegacyNameMappings::TryGetFormatStringFromLegacyName(Utf8CP name)
 void LegacyNameMappings::AddMappings()
     {
     AddMapping("DefaultReal", "f:DefaultReal");
+    // Duplicates names of DefaultReal
+    AddLegacyNameToFormatStringMapping("Real", "f:DefaultReal");
+    AddLegacyNameToFormatStringMapping("DefaultInt", "f:DefaultReal");
+
     AddMapping("DefaultRealU", "f:DefaultRealU");
-    //AddMapping("RealU", "f:DefaultRealU"); These are duplicates of DefaultRealU or DefaultReal
-    //AddMapping("Real6U", "f:DefaultRealU");
-    //AddMapping("Real", "f:DefaultReal");
-    //AddMapping("DefaultInt", "f:DefaultReal");
+    // Duplicates names of f:DefaultRealU
+    AddLegacyNameToFormatStringMapping("RealU", "f:DefaultRealU");
+    AddLegacyNameToFormatStringMapping("Real6U", "f:DefaultRealU");
+    
     AddMapping("Real2", "f:DefaultReal(2)");
     AddMapping("Real3", "f:DefaultReal(3)");
     AddMapping("Real4", "f:DefaultReal(4)");
@@ -214,28 +218,31 @@ void LegacyNameMappings::AddMappings()
     AddMapping("Real4UNS", "f:DefaultRealUNS(4)");
     AddMapping("Real6UNS", "f:DefaultRealUNS");
 
-    // TODO Stations
     AddMapping("Stop100-2", "f:Station_100");
     AddMapping("Stop100-2u", "f:StationU_100");
     AddMapping("Stop100-2uz", "f:StationUZ_100");
 
-    // AddMapping("Stop100-2-2z", "");
-    // AddMapping("Stop100-4", "");
-    // AddMapping("Stop100-4u", "");
+    AddMapping("Stop100-2-2z", "f:StationZ_100_2");
+
+    AddMapping("Stop100-2-4", "f:Station_100_4");
+    AddMapping("Stop100-2-4u", "f:StationU_100_4");
 
     AddMapping("Stop1000-2", "f:Station_1000");
     AddMapping("Stop1000-2u", "f:StationU_1000");
 
-    // AddMapping("Stop1000-2-3z", "");
-    // AddMapping("Stop1000-2-4", "");
-    // AddMapping("Stop1000-2-4u", "");
-    //
+    AddMapping("Stop1000-2-3z", "f:StationZ_1000_3");
+    AddMapping("Stop1000-2-4", "f:Station_1000_4");
+    AddMapping("Stop1000-2-4u", "f:StationU_1000_4");
 
     AddMapping("SignedReal", "f:SignedReal");
     AddMapping("ParenthsReal", "f:ParensReal");
 
     AddMapping("DefaultFractional", "f:Fractional");
+    AddLegacyNameToFormatStringMapping("Fractional64", "f:Fractional"); // Duplicate name of f:Fractional
+
     AddMapping("DefaultFractionalU", "f:FractionalU");
+    AddLegacyNameToFormatStringMapping("Fractional64U", "f:FractionalU"); // Duplicate name of f:FractionalU
+
     AddMapping("SignedFractional", "f:SignedFractional");
 
     AddMapping("Fractional4", "f:Fractional(4)");
@@ -246,8 +253,6 @@ void LegacyNameMappings::AddMappings()
     AddMapping("Fractional16U", "f:FractionalU(16)");
     AddMapping("Fractional32", "f:Fractional(32)");
     AddMapping("Fractional32U", "f:FractionalU(32)");
-    AddMapping("Fractional64", "f:Fractional");
-    AddMapping("Fractional64U", "f:FractionalU");
     AddMapping("Fractional128", "f:Fractional(128)");
     AddMapping("Fractional128U", "f:FractionalU(128)");
 
@@ -256,8 +261,11 @@ void LegacyNameMappings::AddMappings()
     AddMapping("NormalizedExp", "f:ScientificNormal");
 
     AddMapping("AngleDMS", "f:AngleDMS");
+    AddLegacyNameToFormatStringMapping("CAngleDMS", "f:AngleDMS"); // Duplicate name of f:AngleDMS
     AddMapping("AngleDMS8", "f:AngleDMS(8)");
+    AddLegacyNameToFormatStringMapping("CAngleDMS8", "f:AngleDMS(8)"); // Duplicate name of f:AngleDMS(8)
     AddMapping("AngleDM8", "f:AngleDM");
+    AddLegacyNameToFormatStringMapping("CAngleDM8", "f:AngleDM"); // Duplicate name of f:AngleDM
 
     AddMapping("HMS", "f:HMS");
 
@@ -269,18 +277,16 @@ void LegacyNameMappings::AddMappings()
 
     AddMapping("AmerYFI8", "f:AmerYFI");
 
-    AddMapping("Meters4u", "f:Meters4u");
-    AddMapping("Feet4u", "f:Feet4U");
-    AddMapping("Inches4u", "f:InchesU");
-    AddMapping("Inches8u", "f:InchesU(8)");
+    AddMapping("Meters4u", "f:DefaultRealUNS(4)[u:M|m]");
+    AddMapping("Feet4u", "f:DefaultRealUNS(4)[u:FT|']");
+    AddMapping("Inches4u", "f:DefaultRealUNS(4)[u:IN|&quot;]");
 
-    AddMapping("DecimalDeg4", "f:DecimalDeg4");
-    AddMapping("StationFt2", "f:StationFt2");
-    AddMapping("StationM4", "f:StationM4");
+    // The name is incorrect here. The actual precision is 8.
+    AddMapping("Inches18u", "f:DefaultRealUNS(8)[u:IN|&quot;]");
 
-    AddMapping("CAngleDMS", "f:AngleDMS");
-    AddMapping("CAngleDMS8", "f:AngleDMS(8)");
-    AddMapping("CAngleDM8", "f:AngleDM");
+    AddMapping("DecimalDeg4", "f:DefaultRealUNS(4)[u:ARC_DEG|\xC2\xB0]");
+    AddMapping("StationFt2", "f:StationUNS_100[u:FT|']");
+    AddMapping("StationM4", "f:StationU_1000_4[u:M|m]");
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE

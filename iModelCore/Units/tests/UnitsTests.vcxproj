@@ -36,6 +36,7 @@
     <ClCompile Include="Published\FormattingTests.cpp" />
     <ClCompile Include="Published\LocaleTests.cpp" />
     <ClCompile Include="Published\NumericFormatSpecTests.cpp" />
+    <ClCompile Include="Published\MappingTests.cpp" />
     <ClCompile Include="Published\UnitConversionTests.cpp" />
     <ClCompile Include="Published\UnitRegistryTests.cpp" />
     <ClCompile Include="TestFixture\FormattingTestFixture.cpp" />
