@@ -1,9 +1,9 @@
-@ECHO OFF
-SETLOCAL
+ECHO ON
+rem SETLOCAL
 
 rem ------------------------------------------------------------------------------------
 rem      $Source: DgnCore/CompileElementGraphics.bat $
-rem   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+rem   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 rem ------------------------------------------------------------------------------------
 
 SET BaseName=ElementGraphics
@@ -22,7 +22,7 @@ rem ****************************************************************************
 
 IF NOT EXIST %OutDir% MKDIR %OutDir% || (
     ECHO Could not create '%OutDir%'
-    EXIT 1
+    GOTO:EOF
     )
 
 rem ***********************************************************************************************
@@ -31,10 +31,10 @@ ECHO Compiling '%SrcFile%'...
 
 %CompileCmd% %SrcFile% || (
     ECHO Compile failed
-    EXIT 1
+    GOTO:EOF
     )
 
-IF NOT EXIST %GeneratedFile% ECHO Failed to generate '%GeneratedFile%' && EXIT 1
+IF NOT EXIST %GeneratedFile% ECHO Failed to generate '%GeneratedFile%' && GOTO:EOF
 
 ECHO.    Done.
 rem ***********************************************************************************************
@@ -43,7 +43,7 @@ ECHO Moving '%GeneratedFile% to %OutFile%'...
 
 MOVE %GeneratedFile% %OutFile% > NUL || (
     ECHO Could not move header '%GeneratedFile%' -> '%OutFile%'
-    EXIT 1
+    GOTO:EOF
     )
 
 ECHO.    Done.

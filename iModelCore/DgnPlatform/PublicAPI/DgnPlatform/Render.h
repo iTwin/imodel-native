@@ -1064,7 +1064,7 @@ struct GradientSymb : RefCountedBase
     
     struct ThematicSettings
         {
-        enum ColorScheme
+        enum class ColorScheme
             {
             BlueRed     = 0,
             RedBlue     = 1,
@@ -1073,12 +1073,20 @@ struct GradientSymb : RefCountedBase
             SeaMountain = 4,
             Custom      = 5,
             };
+        enum class Mode
+            {
+            Smooth,
+            Stepped,
+            SteppedWithDelimiter,
+            Isolines,
+            };
+
         private:
         uint32_t        m_stepCount = 10;
         double          m_margin = .05;
         ColorDef        m_marginColor = ColorDef(0x3f, 0x3f, 0x3f);
-        bool            m_stepped = false;
-        ColorScheme     m_colorScheme = BlueRed;
+        Mode            m_mode = Mode::Smooth;
+        ColorScheme     m_colorScheme = ColorScheme::BlueRed;
 
         public:
         Json::Value ToJson() const;
@@ -1089,8 +1097,8 @@ struct GradientSymb : RefCountedBase
         void SetStepCount(uint32_t stepCount) { m_stepCount = stepCount; }
         ColorDef GetMarginColor() const { return m_marginColor; }
         void SetMarginColor (ColorDefCR color) { m_marginColor = color; }
-        bool GetStepped() const { return m_stepped; }
-        void SetStepped(bool stepped) { m_stepped = stepped; }
+        Mode GetMode() const { return m_mode; ; }
+        void SetMode(Mode mode) { m_mode = mode; }
         ColorScheme GetColorScheme() const { return m_colorScheme; }
         void SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
         };

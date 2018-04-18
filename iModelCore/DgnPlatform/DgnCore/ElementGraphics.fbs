@@ -1,6 +1,6 @@
 //--------------------------------------------------------------------------------------
 //     $Source: DgnCore/ElementGraphics.fbs $
-//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 //--------------------------------------------------------------------------------------
 
 namespace BentleyB0200.Dgn.FB;
@@ -148,6 +148,24 @@ table Material
 
     } // Material
 
+enum ThematicColorScheme : byte { BlueRed, RedBlue, Monochrome, Topographic, SeaMountain, Custom }
+enum ThematicMode : byte { Smooth, Stepped, SteppedWithDelimiter, Isolines }
+
+
+
+//=======================================================================================
+// @bsiclass                                                    
+//=======================================================================================
+table ThematicSettings
+    {
+	stepCount:uint;
+	margin:double;
+    marginColor:uint;
+    mode:ThematicMode;
+	colorScheme:ThematicColorScheme;
+	}   // ThematicSettings
+
+
 //=======================================================================================
 // @bsiclass                                                    
 //=======================================================================================
@@ -165,7 +183,7 @@ table AreaFill
     shift:double;
     colors:[uint];
     values:[double];
-
+    thematicSettings:ThematicSettings;
     } // AreaFill
 
 //=======================================================================================
@@ -177,7 +195,6 @@ table DwgHatchDefLine
     through:DPoint2d;
     offset:DPoint2d;
     dashes:[double];
-
     } // DwgHatchDefLine
 
 //=======================================================================================
