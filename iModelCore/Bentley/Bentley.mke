@@ -47,7 +47,7 @@ dirToSearch = $(BuildContext)VendorAPI/icu4c/
 #Ignore unknown pragmas (i.e. pragma mark)
 LLVMCommonCompOpts  + -Wno-unknown-pragmas
 
-o = $(OutputRootDir)build/$(appName)/
+o = $(PartBuildDir)
 
 always:
     !~@mkdir $(o)
