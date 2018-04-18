@@ -1275,6 +1275,7 @@ Utf8String RealityDataServiceUpload::PackageProperties(bmap<RealityDataField, Ut
 //=====================================================================================
 BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
     {
+    BentleyStatus status = BentleyStatus::SUCCESS;
     if(m_id.length() == 0)
         {
         RealityDataCreateRequest createRequest = RealityDataCreateRequest(m_id, properties);
@@ -1293,13 +1294,22 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
             ReportStatus(0, nullptr, -1, "RealityData creation failed\n");
             ReportStatus(0, nullptr, -1, Utf8PrintfString("with error %s\n", createResponse.body).c_str());
             ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", createResponse.responseCode).c_str());
-            return BentleyStatus::ERROR;
+            status = BentleyStatus::ERROR;
             }
         }
     else
         {
-        //RealityDataByIdRequest* getRequest = new RealityDataByIdRequest(m_id);
-        WSGNavNodeRequest* getRequest = new WSGNavNodeRequest(RealityDataService::GetServerName(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), m_id);
+        Utf8String navString = m_id;
+        if(!navString.Contains(RealityDataService::GetSchemaName()))
+            {
+            navString = GetGuidFromId(m_id);
+            Utf8String navPath = m_serverPath;
+            navPath.ReplaceAll("/", "~2F");
+            navString.append(navPath);
+            NavNode navNode(RealityDataService::GetSchemaName(), navString, "ECObjects", "");
+            navString = navNode.GetNavString();
+            }
+        WSGNavNodeRequest* getRequest = new WSGNavNodeRequest(RealityDataService::GetServerName(), RealityDataService::GetWSGProtocol(), RealityDataService::GetRepoName(), navString);
         RawServerResponse idResponse;
         if ((idResponse = RealityDataService::BasicRequest((RealityDataUrl*)getRequest)).status == RequestStatus::BADREQ) //file does not exist, need POST Create
             {
@@ -1310,20 +1320,19 @@ BentleyStatus RealityDataServiceUpload::CreateUpload(Utf8String properties)
                 {
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("Creation Error message : %s\n", createResponse.body).c_str());
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", createResponse.responseCode).c_str());
-                return BentleyStatus::ERROR;
+                status = BentleyStatus::ERROR;
                 }
             if ((idResponse = RealityDataService::BasicRequest((RealityDataUrl*)getRequest)).status == RequestStatus::BADREQ)
                 {
                 ReportStatus(0, nullptr, -1, "Unable to create RealityData with specified parameters\n");
                 ReportStatus(0, nullptr, -1, Utf8PrintfString("server code : %lu\n", idResponse.responseCode).c_str());
-                return BentleyStatus::ERROR;
+                status = BentleyStatus::ERROR;
                 }
-            
             }
         else if (!m_overwrite)
             {
             ReportStatus(0, nullptr, -1, "RealityData with specified GUID already exists on server. Overwrite variable not specified, aborting operation");
-            return BentleyStatus::ERROR;
+            status = BentleyStatus::ERROR;
             }
         delete getRequest;
         }
@@ -1491,6 +1500,39 @@ RealityDataServiceUpload::RealityDataServiceUpload
     RealityDataServiceUpload(uploadPath, "", properties, overwrite, true, pi_func, colorList, isBlackList, proxyUrl, proxyCreds)
     {}
 
+
+Utf8String RealityDataServiceUpload::GetGuidFromId(Utf8String id)
+    {
+    if (id.length() > 36)
+        {
+        Utf8String guid;
+        bvector<Utf8String> parts = bvector<Utf8String>();
+        BeStringUtilities::Split(id.c_str(), "~", parts);
+        guid = parts[0];
+        if (parts.size() > 1)
+            {
+            m_serverPath = id;
+            m_serverPath.ReplaceAll(guid.c_str(), "");
+            m_serverPath.ReplaceAll("~2F", "/");
+            }
+
+        parts.clear();
+        BeStringUtilities::Split(guid.c_str(), "-", parts);
+
+        bvector<Utf8String> guidParts = bvector<Utf8String>();
+        for (size_t i = parts.size() - 1; i > 0; i--)
+            {
+            if (parts[i].length() > 0)
+                guidParts.push_back(parts[i]);
+            if (guidParts.size() >= 5)
+                break;
+            }
+
+        id = Utf8PrintfString("%s-%s-%s-%s-%s", guidParts[4], guidParts[3], guidParts[2], guidParts[1], guidParts[0]);
+        }
+    return id;
+    }
+
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
@@ -1530,33 +1572,7 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     if (CreateUpload(properties) != BentleyStatus::SUCCESS)
         return;
 
-    if(m_id.length() > 36) // if m_id is a navString instead of a guid
-        {
-        Utf8String guid;
-        bvector<Utf8String> parts = bvector<Utf8String>();
-        BeStringUtilities::Split(m_id.c_str(), "~", parts);
-        guid = parts[0];
-        if(parts.size() > 1)
-            {
-            m_serverPath = m_id;
-            m_serverPath.ReplaceAll(guid.c_str(),"");
-            m_serverPath.ReplaceAll("~2F", "/");
-            }
-
-        parts.clear();
-        BeStringUtilities::Split(guid.c_str(), "-", parts);
-
-        bvector<Utf8String> guidParts = bvector<Utf8String>();
-        for(size_t i = parts.size() - 1; i > 0; i--)
-            {
-            if(parts[i].length() > 0)
-                guidParts.push_back(parts[i]);
-            if(guidParts.size() >= 5)
-                break;
-            }
-
-        m_id = Utf8PrintfString("%s-%s-%s-%s-%s", guidParts[4], guidParts[3], guidParts[2], guidParts[1], guidParts[0]);
-        }
+    m_id = GetGuidFromId(m_id);
 
     m_handshakeRequest = new AzureHandshake(m_id, true);
     GetAzureToken();

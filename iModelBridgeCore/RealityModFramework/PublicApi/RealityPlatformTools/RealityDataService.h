@@ -930,6 +930,7 @@ struct RealityDataServiceUpload : public RealityDataServiceTransfer
 protected:
     BentleyStatus CreateUpload(Utf8String properties);
     Utf8String GetAzureToken() override;
+    Utf8String GetGuidFromId(Utf8String id);
 
 private:
     bool                        m_overwrite;
