@@ -4405,6 +4405,197 @@ Json::Value GeometryCollection::ToJson(JsonValueCR opts) const
                 break;
                 }
 
+            case GeometryStreamIO::OpCode::LineStyleModifiers:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::LineStyleModifiers>(egOp.m_data);
+                Json::Value value;
+                uint32_t modifiers = ppfb->modifiers();
+
+                if (0 != (STYLEMOD_SCALE & modifiers) && 0.0 != ppfb->scale())
+                    value["scale"] = Json::Value(ppfb->scale());
+
+                if (0 != (STYLEMOD_DSCALE & modifiers) && 0.0 != ppfb->dashScale())
+                    value["dashScale"] = Json::Value(ppfb->dashScale());
+
+                if (0 != (STYLEMOD_GSCALE & modifiers) && 0.0 != ppfb->gapScale())
+                    value["gapScale"] = Json::Value(ppfb->gapScale());
+
+                if (0 != (STYLEMOD_SWIDTH & modifiers))
+                    value["startWidth"] = Json::Value(ppfb->startWidth());
+
+                if (0 != (STYLEMOD_EWIDTH & modifiers))
+                    value["endWidth"] = Json::Value(ppfb->endWidth());
+
+                if (0 != (STYLEMOD_DISTPHASE & modifiers))
+                    value["distPhase"] = Json::Value(ppfb->distPhase());
+
+                if (0 != (STYLEMOD_FRACTPHASE & modifiers))
+                    value["fractPhase"] = Json::Value(ppfb->fractPhase());
+
+                if (0 != (STYLEMOD_CENTERPHASE & modifiers))
+                    value["centerPhase"] = Json::Value(true);
+
+                if (0 != (STYLEMOD_NOSEGMODE & modifiers))
+                    value["segmentMode"] = Json::Value(false);
+                else if (0 != (STYLEMOD_SEGMODE & modifiers))
+                    value["segmentMode"] = Json::Value(true);
+
+                if (0 != (STYLEMOD_TRUE_WIDTH & modifiers))
+                    value["physicalWidth"] = Json::Value(true);
+
+                if (0 != (STYLEMOD_NORMAL & modifiers))
+                    JsonUtils::DPoint3dToJson(value["normal"], *(DPoint3dCP) ppfb->normal());
+
+                if (0 != (STYLEMOD_RMATRIX & modifiers))
+                    value["rotation"] = JsonUtils::YawPitchRollToJson(YawPitchRollAngles(AngleInDegrees::FromDegrees(ppfb->yaw()), AngleInDegrees::FromDegrees(ppfb->pitch()), AngleInDegrees::FromDegrees(ppfb->roll())));
+
+                Json::Value styleValue;
+                styleValue["styleMod"] = value;
+                output.append(styleValue);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::AreaFill:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::AreaFill>(egOp.m_data);
+                Json::Value value;
+
+                value["display"] = Json::Value(ppfb->fill());
+
+                if (0 != ppfb->fill())
+                    {
+                    value["transparency"] = Json::Value(ppfb->transparency());
+
+                    if (0 == ppfb->mode())
+                        {
+                        if (ppfb->useColor())
+                            value["color"] = Json::Value(ppfb->color());
+                        else if (0 != ppfb->backgroundFill())
+                            value["backgroundFill"] = Json::Value(ppfb->backgroundFill());
+                        }
+                    else
+                        {
+                        GradientSymbPtr gradientPtr = GradientSymb::Create();
+
+                        gradientPtr->SetMode((GradientSymb::Mode)ppfb->mode());
+                        gradientPtr->SetFlags((GradientSymb::Flags)ppfb->flags());
+                        gradientPtr->SetShift(ppfb->shift());
+                        gradientPtr->SetTint(ppfb->tint());
+                        gradientPtr->SetAngle(ppfb->angle());
+
+                        uint32_t nColors = ppfb->colors()->Length();
+                        uint32_t* colors = (uint32_t*) ppfb->colors()->Data();
+                        bvector<ColorDef> keyColors;
+
+                        for (uint32_t iColor=0; iColor < nColors; ++iColor)
+                            keyColors.push_back(ColorDef(colors[iColor]));
+
+                        gradientPtr->SetKeys((uint32_t) keyColors.size(), &keyColors.front(), (double*) ppfb->values()->Data());
+                        value["gradient"] = gradientPtr->ToJson();
+                        }
+                    }
+
+                Json::Value fillValue;
+                fillValue["fill"] = value;
+                output.append(fillValue);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::Pattern:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::AreaPattern>(egOp.m_data);
+                Json::Value value;
+
+                if (ppfb->has_origin())
+                    JsonUtils::DPoint3dToJson(value["origin"], *(DPoint3dCP) ppfb->origin());
+
+                if (ppfb->has_rotation())
+                    {
+                    YawPitchRollAngles angles;
+                    YawPitchRollAngles::TryFromRotMatrix(angles, *((RotMatrixCP) ppfb->rotation())); // Is this ok?
+                    value["rotation"] = JsonUtils::YawPitchRollToJson(angles);
+                    }
+
+                value["space1"] = Json::Value(ppfb->space1());
+                value["space2"] = Json::Value(ppfb->space2());
+                value["angle1"] = JsonUtils::FromAngle(Angle::FromRadians(ppfb->angle1()));
+                value["angle2"] = JsonUtils::FromAngle(Angle::FromRadians(ppfb->angle2()));
+                value["scale"]  = Json::Value(ppfb->scale());
+
+                if (ppfb->useColor())
+                    value["color"] = Json::Value(ppfb->color());
+
+                if (ppfb->useWeight())
+                    value["weight"] = Json::Value(ppfb->weight());
+
+                value["invisibleBoundary"] = Json::Value(TO_BOOL(ppfb->invisibleBoundary()));
+                value["snappable"] = Json::Value(TO_BOOL(ppfb->snappable()));
+
+                DgnGeometryPartId symbolId = DgnGeometryPartId((uint64_t) ppfb->symbolId());
+                if (symbolId.IsValid())
+                    value["symbolId"] = symbolId.ToHexStr();
+
+                if (ppfb->has_defLine())
+                    {
+                    flatbuffers::Vector<flatbuffers::Offset<FB::DwgHatchDefLine>> const* fbDefLineOffsets = ppfb->defLine();
+
+                    for (auto const& fbDefLine : *fbDefLineOffsets)
+                        {
+                        Json::Value defLine;
+
+                        defLine["angle"] = JsonUtils::FromAngle(Angle::FromRadians(fbDefLine.angle()));
+                        JsonUtils::DPoint2dToJson(defLine["through"], *((DPoint2dCP) fbDefLine.through()));
+                        JsonUtils::DPoint2dToJson(defLine["offset"], *((DPoint2dCP) fbDefLine.offset()));
+
+                        uint32_t nDashes = fbDefLine.dashes()->Length();
+                        double* dashes = (double*) fbDefLine.dashes()->Data();
+
+                        for (uint32_t iDash=0; iDash < nDashes; ++iDash)
+                            defLine["dashes"].append(Json::Value(dashes[iDash]));
+
+                        value["defLines"].append(defLine);
+                        }
+                    }
+
+                Json::Value patternValue;
+                patternValue["pattern"] = value;
+                output.append(patternValue);                
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::Material:
+                {
+                auto ppfb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
+                Json::Value value;
+
+                if (ppfb->useMaterial())
+                    {
+                    RenderMaterialId material((uint64_t)ppfb->materialId());
+                    value["materialId"] = material.ToHexStr();
+                    }
+
+                Json::Value materialValue;
+                materialValue["material"] = value;
+                output.append(materialValue);
+                break;
+                }
+
+            case GeometryStreamIO::OpCode::SubGraphicRange:
+                {
+                DRange3d range;
+
+                if (!reader.Get(egOp, range))
+                    break;
+
+                Json::Value value;
+                JsonUtils::DRange3dToJson(value, range);
+
+                Json::Value rangeValue;
+                rangeValue["subRange"] = value;
+                output.append(rangeValue);
+                break;
+                }
+
             case GeometryStreamIO::OpCode::GeometryPartInstance:
                 {
                 auto ppfb = flatbuffers::GetRoot<FB::GeometryPart>(egOp.m_data);
@@ -5796,10 +5987,10 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
                 }
 
             if (!appearance["color"].isNull())
-                params.SetLineColor(ColorDef(appearance["color"].asInt()));
+                params.SetLineColor(ColorDef(appearance["color"].asUInt()));
 
             if (!appearance["weight"].isNull())
-                params.SetWeight(appearance["weight"].asInt());
+                params.SetWeight(appearance["weight"].asUInt());
 
             if (!appearance["style"].isNull())
                 {
@@ -5825,7 +6016,232 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
                 params.SetDisplayPriority(appearance["displayPriority"].asInt());
 
             if (!appearance["geometryClass"].isNull())
-                params.SetGeometryClass((Render::DgnGeometryClass) (appearance["geometryClass"].asInt()));
+                params.SetGeometryClass((Render::DgnGeometryClass) (appearance["geometryClass"].asUInt()));
+            }
+        else if (entry.isMember("styleMod"))
+            {
+            Json::Value styleMod = entry["styleMod"];
+            LineStyleParams styleParams;
+
+            styleParams.Init();
+
+            if (!styleMod["scale"].isNull())
+                {
+                styleParams.scale = styleMod["scale"].asDouble();
+                styleParams.modifiers |= STYLEMOD_SCALE;
+                }
+
+            if (!styleMod["dashScale"].isNull())
+                {
+                styleParams.dashScale = styleMod["dashScale"].asDouble();
+                styleParams.modifiers |= STYLEMOD_DSCALE;
+                }
+
+            if (!styleMod["gapScale"].isNull())
+                {
+                styleParams.gapScale = styleMod["gapScale"].asDouble();
+                styleParams.modifiers |= STYLEMOD_GSCALE;
+                }
+
+            if (!styleMod["startWidth"].isNull())
+                {
+                styleParams.startWidth = styleMod["startWidth"].asDouble();
+                styleParams.modifiers |= STYLEMOD_SWIDTH;
+                }
+
+            if (!styleMod["endWidth"].isNull())
+                {
+                styleParams.endWidth = styleMod["endWidth"].asDouble();
+                styleParams.modifiers |= STYLEMOD_EWIDTH;
+                }
+
+            if (!styleMod["distPhase"].isNull())
+                {
+                styleParams.distPhase = styleMod["distPhase"].asDouble();
+                styleParams.modifiers |= STYLEMOD_DISTPHASE;
+                }
+
+            if (!styleMod["fractPhase"].isNull())
+                {
+                styleParams.fractPhase = styleMod["fractPhase"].asDouble();
+                styleParams.modifiers |= STYLEMOD_FRACTPHASE;
+                }
+
+            if (!styleMod["centerPhase"].isNull())
+                styleParams.modifiers |= STYLEMOD_CENTERPHASE;
+
+            if (!styleMod["segmentMode"].isNull())
+                {
+                if (styleMod["segmentMode"].asBool())
+                    styleParams.modifiers |= STYLEMOD_SEGMODE;
+                else
+                    styleParams.modifiers |= STYLEMOD_NOSEGMODE;
+                }
+
+            if (!styleMod["physicalWidth"].isNull())
+                styleParams.modifiers |= STYLEMOD_TRUE_WIDTH;
+
+            if (!styleMod["normal"].isNull())
+                {
+                JsonUtils::DPoint3dFromJson(styleParams.normal, styleMod["normal"]);
+                styleParams.modifiers |= STYLEMOD_NORMAL;
+                }
+
+            if (!styleMod["rotation"].isNull())
+                {
+                YawPitchRollAngles angles = JsonUtils::YawPitchRollFromJson(styleMod["rotation"]);
+
+                styleParams.rMatrix = angles.ToRotMatrix();
+                styleParams.modifiers |= STYLEMOD_RMATRIX;
+                }
+
+            DgnStyleId      styleId;
+            LineStyleInfoCP currentLsInfo = params.GetLineStyle();
+
+            if (nullptr != currentLsInfo)
+                styleId = currentLsInfo->GetStyleId();
+
+            LineStyleInfoPtr lsInfo = LineStyleInfo::Create(styleId, &styleParams);
+            params.SetLineStyle(lsInfo.get());
+            }
+        else if (entry.isMember("fill"))
+            {
+            Json::Value fill = entry["fill"];
+
+            if (fill["display"].isNull())
+                continue;
+
+            FillDisplay fillDisplay = (FillDisplay) fill["display"].asUInt();
+
+            params.SetFillDisplay(fillDisplay);
+
+            if (FillDisplay::Never == fillDisplay)
+                continue;
+
+            if (!fill["transparency"].isNull())
+                params.SetFillTransparency(fill["transparency"].asDouble());
+
+            if (!fill["gradient"].isNull())
+                {
+                GradientSymbPtr gradientPtr = GradientSymb::Create();
+
+                if (SUCCESS == gradientPtr->FromJson(fill["gradient"]))
+                    {
+                    params.SetGradient(gradientPtr.get());
+                    continue;
+                    }
+                }
+
+            if (!fill["backgroundFill"].isNull())
+                {
+                BackgroundFill bgFill = (BackgroundFill) fill["backgroundFill"].asUInt();
+
+                if (BackgroundFill::None == bgFill)
+                    {
+                    if (!fill["color"].isNull())
+                        params.SetFillColor(ColorDef(fill["color"].asUInt()));
+                    else
+                        params.SetFillColorToSubCategoryAppearance();
+                    }
+                else
+                    {
+                    params.SetFillColorFromViewBackground(BackgroundFill::Outline == bgFill);                
+                    }
+                }
+            else if (!fill["color"].isNull())
+                {
+                params.SetFillColor(ColorDef(fill["color"].asUInt()));
+                }
+            }
+        else if (entry.isMember("pattern"))
+            {
+            Json::Value pattern = entry["pattern"];
+            PatternParamsPtr patternParams = PatternParams::Create();
+
+            if (!pattern["origin"].isNull())
+                {
+                DPoint3d origin;
+
+                JsonUtils::DPoint3dFromJson(origin, pattern["origin"]);
+                patternParams->SetOrigin(origin);
+                }
+
+            if (!pattern["rotation"].isNull())
+                {
+                YawPitchRollAngles angles = JsonUtils::YawPitchRollFromJson(pattern["rotation"]);
+                RotMatrix rMatrix = angles.ToRotMatrix();
+
+                patternParams->SetOrientation(rMatrix);
+                }
+
+            if (!pattern["space1"].isNull())
+                patternParams->SetPrimarySpacing(pattern["space1"].asDouble());
+
+            if (!pattern["space2"].isNull())
+                patternParams->SetSecondarySpacing(pattern["space2"].asDouble());
+
+            if (!pattern["angle1"].isNull())
+                patternParams->SetPrimaryAngle(JsonUtils::ToAngle(pattern["angle1"]).Radians());
+
+            if (!pattern["angle2"].isNull())
+                patternParams->SetSecondaryAngle(JsonUtils::ToAngle(pattern["angle2"]).Radians());
+
+            if (!pattern["scale"].isNull())
+                patternParams->SetScale(pattern["scale"].asDouble());
+
+            if (!pattern["color"].isNull())
+                patternParams->SetColor(ColorDef(pattern["color"].asUInt()));
+
+            if (!pattern["weight"].isNull())
+                patternParams->SetWeight(pattern["weight"].asUInt());
+
+            patternParams->SetInvisibleBoundary(pattern["invisibleBoundary"].asBool());
+            patternParams->SetSnappable(pattern["snappable"].asBool());
+
+            if (!pattern["symbolId"].isNull())
+                {
+                DgnGeometryPartId symbolId;
+                symbolId.FromJson(pattern["symbolId"]);
+                if (symbolId.IsValid())
+                    patternParams->SetSymbolId(symbolId);
+                }
+
+            if (!pattern["defLines"].isNull() && pattern["defLines"].isArray())
+                {
+                bvector<DwgHatchDefLine> defLines;
+                uint32_t nDefLines = (uint32_t) pattern["defLines"].size();
+
+                for (uint32_t i=0; i < nDefLines; i++)
+                    {
+                    DwgHatchDefLine line;
+
+                    line.m_angle = JsonUtils::ToAngle(pattern["defLines"][i]["angle"]).Radians();
+                    JsonUtils::DPoint2dFromJson(line.m_through, pattern["defLines"][i]["through"]);
+                    JsonUtils::DPoint2dFromJson(line.m_through, pattern["defLines"][i]["offset"]);
+                    line.m_nDashes = std::min((short) pattern["defLines"][i]["dashes"].size(), (short) MAX_DWG_HATCH_LINE_DASHES);
+
+                    for (short iDash=0; iDash < line.m_nDashes; iDash++)
+                        line.m_dashes[iDash] = pattern["defLines"][i]["dashes"][iDash].asDouble();
+
+                    defLines.push_back(line);
+                    }
+
+                patternParams->SetDwgHatchDef(defLines);
+                }
+
+            params.SetPatternParams(patternParams.get());
+            }
+        else if (entry.isMember("material"))
+            {
+            Json::Value material = entry["material"];
+
+            if (material["materialId"].isNull())
+                return false; // A material id (could be invalid to override sub-cateogory with none) is required...
+
+            RenderMaterialId materialId;
+            materialId.FromJson(material["materialId"]);
+
+            params.SetMaterialId(materialId);
             }
         else if (entry.isMember("geomPart"))
             {
@@ -5861,6 +6277,11 @@ bool GeometryBuilder::FromJson(JsonValueCR input, JsonValueCR opts)
 
             if (!Append(partId, geomToSource))
                 return false;
+            }
+        else if (entry.isMember("subRange"))
+            {
+            // Don't care about values, presence of subRange used to trigger creation of sub-graphics with local ranges to optimize picking/range testing...
+            SetAppendAsSubGraphics();
             }
         else if (entry.isMember("textString"))
             {
