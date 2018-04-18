@@ -33,10 +33,7 @@ protected:
     Dgn::DisplayStyle3dPtr CreateDisplayStyle3d(Dgn::DefinitionModelR);
     BentleyStatus Create2dView(Dgn::DefinitionModelR, Dgn::CategorySelectorR, Dgn::DgnModelId, Dgn::DisplayStyle2dR);
     BentleyStatus Create3dView(Dgn::DefinitionModelR, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR);
-    Utf8String ComputeJobSubjectName(Utf8StringCR docId);
-    Utf8String ComputeJobSubjectName();
 
-    Dgn::SubjectCPtr CreateAndInsertJobSubject(Dgn::DgnDbR db, Utf8CP jobName);
     Dgn::SubjectCPtr QueryJobSubject(Dgn::DgnDbR db, Utf8CP jobName);
     Dgn::iModelBridge::Params& _GetParams() override { return m_params; }
 

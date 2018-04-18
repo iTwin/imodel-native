@@ -95,60 +95,6 @@ BentleyStatus ORDBridge::_OpenSource()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::SubjectCPtr ORDBridge::CreateAndInsertJobSubject(DgnDbR db, Utf8CP jobName)
-    {
-    db.Schemas().CreateClassViewsInDb();
-
-    auto subjectObj = Subject::Create(*db.Elements().GetRootSubject(), jobName);
-
-    Json::Value jobProps(Json::nullValue);
-    jobProps["Converter"] = "OpenRoads/Rail Designer BIM Bridge";
-    jobProps["InputFile"] = Utf8String(_GetParams().GetInputFileName());
-
-    subjectObj->SetSubjectJsonProperties(Subject::json_Job(), jobProps);
-
-    return subjectObj->InsertT<Subject>();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-Dgn::SubjectCPtr ORDBridge::QueryJobSubject(DgnDbR db, Utf8CP jobName)
-    {
-    DgnCode jobCode = Subject::CreateCode(*db.Elements().GetRootSubject(), jobName);
-    auto jobId = db.Elements().QueryElementIdByCode(jobCode);
-    return db.Elements().Get<Subject>(jobId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-Utf8String ORDBridge::ComputeJobSubjectName(Utf8StringCR docId)
-    {
-    Utf8String name(GetRegistrySubKey());
-    name.append(":");
-    name.append(docId.c_str());
-    return name;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-Utf8String ORDBridge::ComputeJobSubjectName()
-    {
-    Utf8String docId;
-    BeSQLite::BeGuid docGuid = QueryDocumentGuid(_GetParams().GetInputFileName());
-    if (docGuid.IsValid())
-        docId = docGuid.ToString();                                 // Use the document GUID, if available, to ensure a stable and unique Job subject name.
-    else
-        docId = Utf8String(_GetParams().GetInputFileName());        // fall back on using local file name -- not as stable!
-
-    return ComputeJobSubjectName(docId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
 SubjectCPtr ORDBridge::_FindJob()
     {
     auto status = m_converter->FindJob();
@@ -259,6 +205,9 @@ void ORDBridge::_OnDocumentDeleted(Utf8StringCR documentId, Dgn::iModelBridgeSyn
 BentleyStatus ORDBridge::_MakeSchemaChanges()
     {
     auto status = m_converter->MakeSchemaChanges();
+
+    GetDgnDbR().Schemas().CreateClassViewsInDb(); // For debugging purposes
+
     return ((BSISUCCESS != status) || m_converter->WasAborted()) ? BSIERROR : BSISUCCESS;
     }
 
