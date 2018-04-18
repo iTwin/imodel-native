@@ -228,7 +228,7 @@ RoadwayPtr Roadway::Create(PhysicalModelR model)
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
-        RoadRailCategory::GetRoadway(*RoadRailPhysicalDomain::GetParentSubject(model)));
+        RoadRailCategory::GetRoadway(model.GetDgnDb()));
 
     return new Roadway(createParams);
     }
@@ -242,7 +242,7 @@ RailwayPtr Railway::Create(PhysicalModelR model)
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
-        RoadRailCategory::GetRailway(*RoadRailPhysicalDomain::GetParentSubject(model)));
+        RoadRailCategory::GetRailway(model.GetDgnDb()));
 
     return new Railway(createParams);
     }

@@ -39,6 +39,7 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(ThruwayPortionHandler::GetHandler());
     RegisterHandler(ThruwaySeparationPortionHandler::GetHandler());
 
+    RegisterHandler(RailwayStandardsModelHandler::GetHandler());
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
 
     RegisterHandler(RailwayHandler::GetHandler());
@@ -98,7 +99,7 @@ DgnDbStatus createRoadwayStandardsPartition(SubjectCR subject)
     {
     DgnDbStatus status;
 
-    auto roadwayStandardsPartitionPtr = DefinitionPartition::Create(subject, RoadRailPhysicalDomain::GetDefaultStandardsPartitionName());
+    auto roadwayStandardsPartitionPtr = DefinitionPartition::Create(subject, RoadRailPhysicalDomain::GetRoadwayStandardsPartitionName());
     if (roadwayStandardsPartitionPtr->Insert(&status).IsNull())
         return status;
 
@@ -114,9 +115,32 @@ DgnDbStatus createRoadwayStandardsPartition(SubjectCR subject)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus createRailwayStandardsPartition(SubjectCR subject)
+    {
+    DgnDbStatus status;
+
+    auto railwayStandardsPartitionPtr = DefinitionPartition::Create(subject, RoadRailPhysicalDomain::GetRailwayStandardsPartitionName());
+    if (railwayStandardsPartitionPtr->Insert(&status).IsNull())
+        return status;
+
+    auto railwayStandardsModelPtr = RailwayStandardsModel::Create(
+        RailwayStandardsModel::CreateParams(subject.GetDgnDb(), railwayStandardsPartitionPtr->GetElementId()));
+
+    if (DgnDbStatus::Success != (status = railwayStandardsModelPtr->Insert()))
+        return status;
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject)
     {
     DgnDbStatus status;
+
+    if (DgnDbStatus::Success != (status = createRailwayStandardsPartition(subject)))
+        return status;
 
     if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(subject)))
         return status;
@@ -124,8 +148,6 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject)
     if (DgnDbStatus::Success != (status = createPhysicalPartition(subject, GetDefaultPhysicalPartitionName())))
         return status;
     
-    RoadRailCategory::InsertDomainCategories(*ConfigurationModel::Query(subject));
-
     return status;
     }
 
@@ -165,6 +187,7 @@ void createCodeSpecs(DgnDbR dgndb)
 void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     createCodeSpecs(dgndb);
+    RoadRailCategory::InsertDomainCategories(dgndb);
     }
 
 //---------------------------------------------------------------------------------------
@@ -179,9 +202,9 @@ CategorySelectorPtr getSpatialCategorySelector(ConfigurationModelR model, bvecto
         return selectorPtr;
 
     selectorPtr = new CategorySelector(model, selectorName);
-    selectorPtr->AddCategory(AlignmentCategory::GetAlignment(*model.GetParentSubject()));
-    selectorPtr->AddCategory(RoadRailCategory::GetRoadway(*model.GetParentSubject()));
-    selectorPtr->AddCategory(RoadRailCategory::GetRailway(*model.GetParentSubject()));
+    selectorPtr->AddCategory(AlignmentCategory::GetAlignment(model.GetDgnDb()));
+    selectorPtr->AddCategory(RoadRailCategory::GetRoadway(model.GetDgnDb()));
+    selectorPtr->AddCategory(RoadRailCategory::GetRailway(model.GetDgnDb()));
 
     if (additionalCategories)
         {
@@ -204,8 +227,8 @@ CategorySelectorPtr getDrawingCategorySelector(ConfigurationModelR model)
         return selectorPtr;
 
     selectorPtr = new CategorySelector(model, selectorName);
-    selectorPtr->AddCategory(AlignmentCategory::GetHorizontal(*model.GetParentSubject()));
-    selectorPtr->AddCategory(AlignmentCategory::GetVertical(*model.GetParentSubject()));
+    selectorPtr->AddCategory(AlignmentCategory::GetHorizontal(model.GetDgnDb()));
+    selectorPtr->AddCategory(AlignmentCategory::GetVertical(model.GetDgnDb()));
     return selectorPtr;
     }
 

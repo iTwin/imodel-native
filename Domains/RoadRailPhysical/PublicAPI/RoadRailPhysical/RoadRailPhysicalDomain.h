@@ -31,7 +31,8 @@ public:
     ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryPhysicalModel(Dgn::SubjectCR parentSubject);
     ROADRAILPHYSICAL_EXPORT static Dgn::SubjectCPtr GetParentSubject(Dgn::PhysicalModelCR model);
     static Utf8CP GetDefaultPhysicalPartitionName() { return "Road/Rail Physical"; }
-    static Utf8CP GetDefaultStandardsPartitionName() { return "Roadway Standards"; }
+    static Utf8CP GetRailwayStandardsPartitionName() { return "Railway Standards"; }
+    static Utf8CP GetRoadwayStandardsPartitionName() { return "Roadway Standards"; }    
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetGeometricElementAsBoundingContentForSheet(Dgn::GeometricElementCR boundingElm, Dgn::Sheet::ElementCR sheet);
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnElementIdSet QueryElementIdsBoundingContentForSheets(Dgn::DgnDbCR dgnDb);
