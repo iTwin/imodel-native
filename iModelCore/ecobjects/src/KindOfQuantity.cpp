@@ -686,6 +686,7 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
                 LOG.errorv("On KOQ '%s' could not find unit '%s' being added as a presentation unit override", GetFullName().c_str(), name.c_str());
                 return ECObjectsStatus::Error;
                 }
+            i++;
             }
 
         ECObjectsStatus status = AddPresentationFormat(*format, precision, &unitsAndLabels, shouldBeDefault);
