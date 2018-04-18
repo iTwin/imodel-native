@@ -1105,7 +1105,7 @@ struct GradientSymb : RefCountedBase
         Mode GetMode() const { return m_mode; ; }
         void SetMode(Mode mode) { m_mode = mode; }
         ColorScheme GetColorScheme() const { return m_colorScheme; }
-        void SetColorSchene(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
+        void SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
         bool operator==(ThematicSettings const& rhs) const;
         bool operator<(ThematicSettings const& rhs) const;
 
