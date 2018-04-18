@@ -7,29 +7,17 @@
 # KNOWN issues
 #--------------------------------------------------------------------------------
 
-# Graphite05x ECDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
-DataSourceCacheUpgradeTests.CachingDataSource_OpenOrCreate_V5*
-DataSourceCacheUpgradeTests.Open_V5*
-DataSourceCacheUpgradeTests.Open_V7*
-DataSourceCacheUpgradeTests.Open_V8*
-DataSourceCacheUpgradeTests.Open_V9*
-DataSourceCacheUpgradeTests.Open_V1*
-# DgnDb0601-Q4 -> BIM0200 ECDb upgrade not supported.
-DataSourceCacheUpgradeTests.Open_V20*
+# Reproduceable hang that break DEV runs
+BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
+    # bim0200, NDEBUG, x64, random
+    # Hang on line 192 of the test body: while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
 
 # Tests that fail for know reasons and require larger fixes
 *_KnownIssue*
 
-# Following tests were disabled and are added to ignore list instead
-ChangeManagerTests.GetObjectChangeStatus_ObjectDeleted_Deleted
-ChangeManagerTests.GetObjectChangeStatus_CreatedObjectDeleted_Deleted
-CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported
-CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds
-CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds
-WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString
-
 #Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
 *ConnectWebServicesClientCTests*
+
 #----------------------------------------------------------------------------------------
 #   Test that fail becouse of issue with Web Api version 2.7
 #----------------------------------------------------------------------------------------
@@ -41,10 +29,6 @@ WSRepositoryClientTests.SendUpdateFileRequest_EnableJobsWebApiV2JobSucceedsRespo
 #--------------------------------------------------------------------------------
 # RANDOM reproduceable crashes/hangs that break DEV builds
 #--------------------------------------------------------------------------------
-
-BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
-    # bim0200, NDEBUG, x64, random
-    # Hang on line 192 of the test body: while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
 
 #--------------------------------------------------------------------------------
 # RANDOM crashes/hangs on PRG/FIREBUG (usually can be ran on DEV x64 builds with no problems)
