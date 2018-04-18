@@ -47,6 +47,7 @@ ECDbTestProject* RulesDrivenECPresentationManagerMultithreadingTestsBase::s_proj
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUpTestCase()
     {
+    Localization::Init();
     s_project = new ECDbTestProject();
     s_project->Create(s_projectName, "RulesEngineTest.01.00.ecschema.xml");
     }
@@ -57,6 +58,7 @@ void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUpTestCase()
 void RulesDrivenECPresentationManagerMultithreadingTestsBase::TearDownTestCase()
     {
     DELETE_AND_CLEAR(s_project);
+    Localization::Terminate();
     }
 
 /*---------------------------------------------------------------------------------**//**

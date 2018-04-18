@@ -62,6 +62,7 @@ ECDbTestProject* RulesDrivenECPresentationManagerImplTests::s_project = nullptr;
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerImplTests::SetUpTestCase()
     {
+    Localization::Init();
     s_project = new ECDbTestProject();
     s_project->Create("RulesDrivenECPresentationManagerImplTests");
     }
@@ -72,6 +73,7 @@ void RulesDrivenECPresentationManagerImplTests::SetUpTestCase()
 void RulesDrivenECPresentationManagerImplTests::TearDownTestCase()
     {
     DELETE_AND_CLEAR(s_project);
+    Localization::Terminate();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -80,7 +82,6 @@ void RulesDrivenECPresentationManagerImplTests::TearDownTestCase()
 void RulesDrivenECPresentationManagerImplTests::SetUp()
     {
     ECPresentationTest::SetUp();
-    Localization::Init();
     m_impl = new RulesDrivenECPresentationManagerImpl(RulesDrivenECPresentationManagerDependenciesFactory(), m_connections,
         RulesEngineTestHelpers::GetPaths(BeTest::GetHost()), true);
     m_impl->SetCategorySupplier(&m_categorySupplier);
@@ -100,7 +101,6 @@ void RulesDrivenECPresentationManagerImplTests::TearDown()
     {
     m_connection = nullptr;
     DELETE_AND_CLEAR(m_impl);
-    Localization::Terminate();
     }
 
 /*=================================================================================**//**

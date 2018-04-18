@@ -183,6 +183,7 @@ public:
         T_Super::setInterruptHandler([&](folly::exception_wrapper const& e)
             {
             BeAssert(e.is_compatible_with<folly::FutureCancellation>() && "Only cancellation exceptions are supported");
+            BeMutexHolder lock(m_mutex);
             m_cancelationToken->SetCanceled(true);
             m_cancelableTasks.Remove(*this);
             T_Super::setException(e);
@@ -196,6 +197,7 @@ public:
         }
     template<class M> void SetValue(M&& value)
         {
+        BeMutexHolder lock(m_mutex);
         if (!T_Super::isFulfilled())
             T_Super::setValue(std::forward<M>(value));
         m_cancelableTasks.Remove(*this);
