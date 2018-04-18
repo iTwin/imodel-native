@@ -979,13 +979,71 @@ TEST_F(SchemaCopyTest, CopyStandardUnitsSchema)
     {
     ECTestFixture::GetUnitsSchema()->CopySchema(m_targetSchema);
     PhenomenonCP length = m_targetSchema->GetPhenomenonCP("LENGTH");
-    UnitSystemCP si = m_targetSchema->GetUnitSystemCP("SI");
+    ECUnitCP m = m_targetSchema->GetUnitCP("M");
+    ECUnitCP pi = m_targetSchema->GetConstantCP("PI");
 
-    ASSERT_NE(nullptr, length);
-    ASSERT_NE(nullptr, si);
+    EXPECT_TRUE(Units::Phenomenon::AreEqual(length, ECTestFixture::GetUnitsSchema()->GetPhenomenonCP("LENGTH")));
+    EXPECT_TRUE(Units::Unit::AreEqual(m, ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
+    EXPECT_TRUE(Units::Unit::AreEqual(pi, ECTestFixture::GetUnitsSchema()->GetConstantCP("PI")));
+    }
 
-    ASSERT_NE(nullptr, ECTestFixture::GetUnitsSchema(true)->GetPhenomenonCP("LENGTH")->GetSIUnit());
-    ASSERT_NE(nullptr, length->GetSIUnit());
+//---------------------------------------------------------------------------------------
+// @bsimethod                          Kyle.Abramowitz                           03/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopyStandardFormatsSchema)
+    {
+    ECTestFixture::GetFormatsSchema()->CopySchema(m_targetSchema);
+    ECFormatCP def = m_targetSchema->GetFormatCP("DefaultRealU");
+    ECFormatCP amer = m_targetSchema->GetFormatCP("AmerFI");
+
+    ASSERT_NE(nullptr, def);
+    ASSERT_NE(nullptr, amer);
+    auto referenceDefault = ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU")->GetNumericSpec();
+    auto defNum = def->GetNumericSpec();
+
+    EXPECT_EQ(referenceDefault->GetDecimalPrecision(), defNum->GetDecimalPrecision());
+    EXPECT_EQ(referenceDefault->GetDecimalSeparator(), defNum->GetDecimalSeparator());
+    EXPECT_EQ(referenceDefault->GetFormatTraits(), defNum->GetFormatTraits());
+    EXPECT_EQ(referenceDefault->GetMinWidth(), defNum->GetMinWidth());
+    EXPECT_EQ(referenceDefault->GetPrefixPadChar(), defNum->GetPrefixPadChar());
+    EXPECT_EQ(referenceDefault->GetPresentationType(), defNum->GetPresentationType());
+    EXPECT_DOUBLE_EQ(referenceDefault->GetRoundingFactor(), defNum->GetRoundingFactor());
+    EXPECT_EQ(referenceDefault->GetSignOption(), defNum->GetSignOption());
+    EXPECT_EQ(referenceDefault->GetStationOffsetSize(), defNum->GetStationOffsetSize());
+    EXPECT_EQ(referenceDefault->GetStationSeparator(), defNum->GetStationSeparator());
+    EXPECT_EQ(referenceDefault->GetThousandSeparator(), defNum->GetThousandSeparator());
+    EXPECT_STREQ(referenceDefault->GetUomSeparator(), defNum->GetUomSeparator());
+    EXPECT_FALSE(def->HasComposite());
+
+    auto refAmerFiNum = ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI")->GetNumericSpec();
+    auto refAmerFIComp = ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI")->GetCompositeSpec();
+
+    auto amerFiNum = amer->GetNumericSpec();
+    auto amerFiComp = amer->GetCompositeSpec();
+
+    ASSERT_TRUE(amer->HasComposite());
+    EXPECT_EQ(refAmerFiNum->GetDecimalPrecision(), amerFiNum->GetDecimalPrecision());
+    EXPECT_EQ(refAmerFiNum->GetDecimalSeparator(), amerFiNum->GetDecimalSeparator());
+    EXPECT_EQ(refAmerFiNum->GetFormatTraits(), amerFiNum->GetFormatTraits());
+    EXPECT_EQ(refAmerFiNum->GetMinWidth(), amerFiNum->GetMinWidth());
+    EXPECT_EQ(refAmerFiNum->GetPrefixPadChar(), amerFiNum->GetPrefixPadChar());
+    EXPECT_EQ(refAmerFiNum->GetPresentationType(), amerFiNum->GetPresentationType());
+    EXPECT_DOUBLE_EQ(refAmerFiNum->GetRoundingFactor(), amerFiNum->GetRoundingFactor());
+    EXPECT_EQ(refAmerFiNum->GetSignOption(), amerFiNum->GetSignOption());
+    EXPECT_EQ(refAmerFiNum->GetStationOffsetSize(), amerFiNum->GetStationOffsetSize());
+    EXPECT_EQ(refAmerFiNum->GetStationSeparator(), amerFiNum->GetStationSeparator());
+    EXPECT_EQ(refAmerFiNum->GetThousandSeparator(), amerFiNum->GetThousandSeparator());
+    EXPECT_STREQ(refAmerFiNum->GetUomSeparator(), amerFiNum->GetUomSeparator());
+
+    EXPECT_STRCASEEQ(refAmerFIComp->GetSpacer().c_str(), amerFiComp->GetSpacer().c_str());
+    EXPECT_STRCASEEQ(refAmerFIComp->GetMajorLabel().c_str(), amerFiComp->GetMajorLabel().c_str());
+    EXPECT_EQ(refAmerFIComp->GetMajorUnit(), amerFiComp->GetMajorUnit());
+    EXPECT_STRCASEEQ(refAmerFIComp->GetMiddleLabel().c_str(), amerFiComp->GetMiddleLabel().c_str());
+    EXPECT_EQ(refAmerFIComp->GetMiddleUnit(), amerFiComp->GetMiddleUnit());
+    EXPECT_STRCASEEQ(refAmerFIComp->GetMinorLabel().c_str(), amerFiComp->GetMinorLabel().c_str());
+    EXPECT_EQ(refAmerFIComp->GetMinorUnit(), amerFiComp->GetMinorUnit());
+    EXPECT_STRCASEEQ(refAmerFIComp->GetSubLabel().c_str(), amerFiComp->GetSubLabel().c_str());
+    EXPECT_EQ(refAmerFIComp->GetSubUnit(), amerFiComp->GetSubUnit());
     }
 
 //=======================================================================================
