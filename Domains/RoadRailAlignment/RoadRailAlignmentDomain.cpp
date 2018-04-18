@@ -211,12 +211,6 @@ void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
         codeSpec->Insert();
         BeAssert(codeSpec->GetCodeSpecId().IsValid());
         }
-
-    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject());
-    if (DgnDbStatus::Success != status)
-        {
-        BeAssert(false);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
