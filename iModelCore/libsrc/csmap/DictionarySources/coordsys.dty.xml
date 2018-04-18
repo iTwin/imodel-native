@@ -498,88 +498,46 @@
                 <Name>Libya</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:2068</KeyName>
+                    <KeyName>ELD1979.Libya-5</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2069</KeyName>
+                    <KeyName>ELD1979.Libya-6</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2070</KeyName>
+                    <KeyName>ELD1979.Libya-7</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2071</KeyName>
+                    <KeyName>ELD1979.Libya-8</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2072</KeyName>
+                    <KeyName>ELD1979.Libya-9</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2073</KeyName>
+                    <KeyName>ELD1979.Libya-10</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2074</KeyName>
+                    <KeyName>ELD1979.Libya-11</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2075</KeyName>
+                    <KeyName>ELD1979.Libya-12</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2076</KeyName>
+                    <KeyName>ELD1979.Libya-13</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2077</KeyName>
+                    <KeyName>ELD1979.UTM-32N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2078</KeyName>
+                    <KeyName>ELD1979.UTM-33N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2079</KeyName>
+                    <KeyName>ELD1979.UTM-34N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2080</KeyName>
+                    <KeyName>ELD1979.UTM-35N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:2087</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-5</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-6</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-7</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-8</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-9</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-10</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-11</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-12</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.Libya-13</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.UTM-32N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.UTM-33N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.UTM-34N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.UTM-35N</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>ELD79.TM-12NE</KeyName>
+                    <KeyName>ELD1979.TM-12NE</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Libyan2006.Libya/TM</KeyName>
@@ -3579,10 +3537,10 @@
                     <KeyName>EPSG:3414</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Kertau.SingaporeGrid</KeyName>
+                    <KeyName>KertauGC.SingaporeGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:24500</KeyName>
+                    <KeyName>Kertau.SingaporeGrid</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -6197,7 +6155,7 @@
                 <Name>Czechoslovakia</Name>
                 <Members>
                   <Member>
-                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
+                    <KeyName>CzechJTSK/05.Krovak</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Czech/JTSK.Krovak</KeyName>
@@ -8709,6 +8667,319 @@
 
               <Group>
                 <Name>UK</Name>
+                <Groups>
+                  <Group>
+                    <Name>England Highway</Name>
+                    <Members>
+                      <Member>
+                        <KeyName>EnglandHighway-A1H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A2H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A3H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A3H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A4H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A5H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A5H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A6H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A6H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A7H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A7H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A8H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A8H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A9H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A9H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A10H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A10H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A11H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A11H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A11H3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A12H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A12H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A12H3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A13H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A13H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A14H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A14H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A15H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A15H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A16H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A16H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A17H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A17H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A18H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A18H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A19H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A19H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A20H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A20H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A21H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A21H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A22H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A22H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A23H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A23H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A24H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A24H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A25H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A25H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A26H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A26H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A27H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A27H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A28H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A28H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A29H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-A30H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B15H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B15H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B15H3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B16H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B16H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B16H3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B16H4</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B17H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B17H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B18H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B18H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B19H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B20H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B21H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B22H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B23H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B24H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B25H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B26H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B27H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B28H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B29H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B30H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B31H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-B32H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C13H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C14H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C14H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C14H3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C14H4</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C15H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C15H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C15H3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C15H4</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C15H5</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C16H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C16H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C16H3</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C16H4</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C17H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C17H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C18H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C18H2</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C19H1</KeyName>
+                      </Member>
+                      <Member>
+                        <KeyName>EnglandHighway-C19H2</KeyName>
+                      </Member>
+                    </Members>
+                  </Group>
+                </Groups>
                 <Members>
                   <Member>
                     <KeyName>OSGB-GPS-1997</KeyName>
@@ -8720,10 +8991,13 @@
                     <KeyName>BritishNatGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:27700</KeyName>
+                    <KeyName>OSGB-7P.BritishNatGrid</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>OrdnanceSurvey</KeyName>
+                    <KeyName>OSTN02.BritishNatGrid</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OSTN15.BritishNatGrid</KeyName>
                   </Member>
                   <Member>
                     <KeyName>LondonGrid</KeyName>
@@ -9979,10 +10253,10 @@
                 <Name>Syria</Name>
                 <Members>
                   <Member>
-                    <KeyName>DeirEzZor.Syria</KeyName>
+                    <KeyName>DeirEzZor_2.Syria</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:22770</KeyName>
+                    <KeyName>DeirEzZor-7P.Syria</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -10051,7 +10325,10 @@
                 <Name>Others</Name>
                 <Members>
                   <Member>
-                    <KeyName>DeirEzZor.Levant</KeyName>
+                    <KeyName>DeirEzZor_2.Levant</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>DeirEzZor-7P.Levant</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:22780</KeyName>
@@ -28479,6 +28756,9 @@
             <Name>Legacy</Name>
             <Members>
               <Member>
+                <KeyName>DeirEzZor.Levant</KeyName>
+              </Member>
+              <Member>
                 <KeyName>EPSG:3994</KeyName>
               </Member>
               <Member>
@@ -29534,6 +29814,14 @@
             </Members>
             <Groups>
               <Group>
+                <Name>Czechoslovakia</Name>
+                <Members>
+                  <Member>
+                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>South Africa</Name>
                 <Members>
                   <Member>
@@ -30291,6 +30579,95 @@
                 </Members>
               </Group>
               <Group>
+                <Name>Libya</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:2068</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2069</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2070</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2071</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2072</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2073</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2074</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2075</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2076</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2077</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2078</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2079</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2080</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:2087</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-5</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-6</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-7</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-8</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-9</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-10</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-11</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-12</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.Libya-13</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.UTM-32N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.UTM-33N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.UTM-34N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.UTM-35N</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>ELD79.TM-12NE</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
                 <Name>Morocco</Name>
                 <Members>
                   <Member>
@@ -30324,6 +30701,14 @@
                    <Member>
                      <KeyName>Pulkovo/58.Poland-I</KeyName>
                    </Member>
+                </Members>
+              </Group>
+              <Group>
+                <Name>Singapore</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:24500</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -30407,6 +30792,17 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:21782</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
+                <Name>Syria</Name>
+                <Members>
+                  <Member>
+                    <KeyName>DeirEzZor.Syria</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>EPSG:22770</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -30499,10 +30895,21 @@
                   </Member>
                 </Members>
               </Group>
-			  <Group>
-			    <Name>United States of America</Name>
-                <Groups>
-				  <Group>
+              <Group>
+                <Name>UK</Name>
+                <Members>
+                  <Member>
+                    <KeyName>EPSG:27700</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OrdnanceSurvey</KeyName>
+                  </Member>
+                </Members>
+              </Group>
+              <Group>
+                <Name>United States of America</Name>
+               <Groups>
+                  <Group>
                      <Name>Alabama</Name>
                      <Members>
                        <Member>
@@ -32332,10 +32739,7 @@
                     <KeyName>EPSG:4754</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4159</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EuropLibyan79.LL</KeyName>
+                    <KeyName>ELD1979.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -33237,7 +33641,7 @@
                 <Name>Czechoslovakia</Name>
                 <Members>
                   <Member>
-                    <KeyName>CzechJTSK/5b.LL</KeyName>
+                    <KeyName>CzechJTSK/05.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Czech/JTSK.LL</KeyName>
@@ -33748,6 +34152,15 @@
                 <Name>UK</Name>
                 <Members>
                   <Member>
+                    <KeyName>OSGB-7P.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OSGB/OSTN02.LL</KeyName>
+                  </Member>
+                  <Member>
+                    <KeyName>OSGB/OSTN15.LL</KeyName>
+                  </Member>
+                  <Member>
                     <KeyName>LLOSGB-7P</KeyName>
                   </Member>
                   <Member>
@@ -33767,9 +34180,6 @@
                   </Member>
                   <Member>
                     <KeyName>EPSG:4173</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4277</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4278</KeyName>
@@ -33846,7 +34256,10 @@
                  <KeyName>EPSG:4204</KeyName>
                </Member>
                <Member>
-                 <KeyName>DeirEzZor.LL</KeyName>
+                 <KeyName>DeirEzZor_2.LL</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>DeirEzZor-7P.LL</KeyName>
                </Member>
                <Member>
                  <KeyName>EPSG:4227</KeyName>
@@ -34418,10 +34831,7 @@
                     <KeyName>NZGD49-7P.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Chatham1979.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4673</KeyName>
+                    <KeyName>Chatham1979a.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:104108</KeyName>
@@ -34804,9 +35214,6 @@
                   </Member>
                   <Member>
                     <KeyName>Chua.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4224</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Corrego.LL</KeyName>
@@ -35817,6 +36224,30 @@
               <Member>
                 <KeyName>DHDN/BeTA2010.LL</KeyName>
               </Member>
+              <Member>
+                <KeyName>CzechJTSK/5b.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4277</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Chatham1979.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4673</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4224</KeyName>
+              </Member>
+               <Member>
+                 <KeyName>DeirEzZor.LL</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>EPSG:4159</KeyName>
+               </Member>
+               <Member>
+                 <KeyName>EuropLibyan79.LL</KeyName>
+               </Member>
             </Members>
           </Group>
         </Groups>
