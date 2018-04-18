@@ -306,11 +306,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 	bvector<int> beginIdx(numSubNodes, -1);
 	for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
 	{
-		if (subNodes[indexNodes] != NULL)
+		if (subNodes[indexNodes] != NULL) 
 		{
 			RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
 			totalNumberOfPoints += subNodePointsPtr->size();
-
+        
 			HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
 
 			bvector<bvector<DPoint3d>> polylinesNode;
@@ -337,12 +337,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		DRange3d extent = DRange3d::NullRange();
 		parentPointsPtr->clear();
 		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-		{
-			extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
-
+		{            			
 			if (subNodes[indexNodes] != NULL)
 			{
 				if (subNodes[indexNodes]->GetNbObjects() == 0) continue;
+
+                extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
 
 				RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodesPointsPtr(subNodes[indexNodes]->GetPointsPtr());
 				parentPointsPtr->push_back(&(*subNodesPointsPtr)[0], subNodesPointsPtr->size());
@@ -382,7 +382,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 					}
 				}
 			}
-		}
+		}   
 		if (!extent.IsNull()) parentNode->m_nodeHeader.m_contentExtent = extent;
 		if (pParentMeshNode->m_nodeHeader.m_contentExtent.low.x == 0 && pParentMeshNode->m_nodeHeader.m_contentExtent.high.x != 0)
 		{
