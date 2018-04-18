@@ -24,6 +24,12 @@ struct CurveVectorDynamicState : DynamicStateBase
 
         CurveVectorDynamicState(bvector<StatePair> const& state) : m_state(state) {}
 
+    protected:
+        DynamicStateBasePtr _Clone() const override
+            {
+            return Create(m_state);
+            }
+
     public:
         static CurveVectorDynamicStatePtr Create(bvector<StatePair> const& state) { return new CurveVectorDynamicState(state); }
         bvector<StatePair> const& GetState() const { return m_state; }
@@ -801,8 +807,8 @@ void CurveVectorManipulationStrategy::_SetDynamicState
     DynamicStateBaseCR state
 )
     {
-    BooleanDynamicStateCPtr booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
-    if (booleanState.IsValid())
+    BooleanDynamicStateCP booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
+    if (nullptr != booleanState)
         {
         for (CurvePrimitiveManipulationStrategyPtr const& strategy : m_primitiveStrategyContainer.GetManipulationStrategies())
             {
@@ -812,8 +818,8 @@ void CurveVectorManipulationStrategy::_SetDynamicState
         return;
         }
 
-    CurveVectorDynamicStateCPtr cvState = dynamic_cast<CurveVectorDynamicStateCP>(&state);
-    if (cvState.IsNull())
+    CurveVectorDynamicStateCP cvState = dynamic_cast<CurveVectorDynamicStateCP>(&state);
+    if (nullptr == cvState)
         return;
 
     for (CurveVectorDynamicState::StatePair const& innerState : cvState->GetState())

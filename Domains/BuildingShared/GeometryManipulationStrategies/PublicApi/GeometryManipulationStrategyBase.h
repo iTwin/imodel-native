@@ -37,6 +37,11 @@ struct DynamicStateBase : RefCountedBase
     protected:
         DynamicStateBase() {}
         virtual ~DynamicStateBase() {}
+
+        virtual DynamicStateBasePtr _Clone() const = 0;
+
+    public:
+        DynamicStateBasePtr Clone() const;
     };
 
 //=======================================================================================
@@ -48,6 +53,9 @@ struct BooleanDynamicState : DynamicStateBase
         bool m_state;
 
         BooleanDynamicState(bool state) : m_state(state) {}
+
+    protected:
+        DynamicStateBasePtr _Clone() const override { return Create(m_state); }
 
     public:
         static BooleanDynamicStatePtr Create(bool state) { return new BooleanDynamicState(state); }

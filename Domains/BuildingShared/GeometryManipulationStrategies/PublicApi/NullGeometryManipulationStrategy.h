@@ -22,6 +22,9 @@ struct NullGeometryManipulationStrategy final : public GeometryManipulationStrat
             private:
                 NullDynamicState() {}
 
+            protected:
+                DynamicStateBasePtr _Clone() const override { return Create(); }
+
             public:
                 static RefCountedPtr<NullDynamicState> Create() { return new NullDynamicState(); }
             };

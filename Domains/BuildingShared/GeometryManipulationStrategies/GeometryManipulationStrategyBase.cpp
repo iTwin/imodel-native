@@ -12,6 +12,14 @@ USING_NAMESPACE_BUILDING_SHARED
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Mindaugas.Butkus                04/2018
 //---------------+---------------+---------------+---------------+---------------+------
+DynamicStateBasePtr DynamicStateBase::Clone() const
+    {
+    return _Clone();
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Mindaugas.Butkus                04/2018
+//---------------+---------------+---------------+---------------+---------------+------
 DynamicStateBaseCPtr IResettableDynamic::GetDynamicState() const
     {
     return _GetDynamicState();
