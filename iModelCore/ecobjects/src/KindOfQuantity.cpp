@@ -296,10 +296,10 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
                     continue;
                     }
                 bvector<Utf8String> tokens;
-                BeStringUtilities::Split(format.GetQualifiedName(GetSchema()).c_str(), "[", tokens);
+                BeStringUtilities::Split(format.GetName().c_str(), "[", tokens);
                 BeAssert(tokens.size() > 0);
                 Utf8String split = tokens[0];
-                Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(split.c_str());
+                Utf8CP mapped = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + split).c_str());
                 mapped = Formatting::AliasMappings::TryGetAliasFromName(mapped);
                 if (nullptr == mapped)
                     {
@@ -448,6 +448,15 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
         {
         mappedName = Formatting::AliasMappings::TryGetNameFromAlias(formatName.c_str());
         mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName((nullptr == mappedName) ? formatName.c_str() : mappedName);
+        if (nullptr == mappedName)
+            {
+            LOG.errorv("Failed to find format mapping for format with name '%s' in legacy format mappings", mappedName);
+            return ECObjectsStatus::InvalidFormat;
+            }
+        Utf8String alias;
+        Utf8String name;
+        ECClass::ParseClassName(alias, name, mappedName);
+        mappedName = ("f:" + name).c_str();
         }
 
     if (nullptr == mappedName)
@@ -591,7 +600,6 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
         if (!Utf8String::IsNullOrEmpty(formatName.c_str()))
             {
             Utf8String localformatName;
-
             bvector<Utf8String> localUnitNames;
             bvector<Nullable<Utf8String>> localUnitLabels;
             if (SUCCESS != Formatting::Format::ParseFormatString(localformatName, precision, localUnitNames, localUnitLabels, formatName))
@@ -609,7 +617,13 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
         else
             {
             // Assuming since there was previously a format that it should contain the Unit with it.
-            format = GetSchema().LookupFormat(Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(oldDefaultFormatName));
+            Utf8String alias;
+            Utf8String localFormatName;
+            Utf8CP mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(oldDefaultFormatName);
+            BeAssert(nullptr != mappedName); // Default should always map
+            ECClass::ParseClassName(alias, localFormatName, mappedName);
+            Utf8String lookupFormat = "f:" + localFormatName;
+            format = GetSchema().LookupFormat(lookupFormat.c_str());
             BeAssert(nullptr != format);
             LOG.warningv("Setting format to DefaultRealU for FormatUnitSet '%s' on KindOfQuantity '%s'.", descriptor, GetFullName().c_str());
             }
