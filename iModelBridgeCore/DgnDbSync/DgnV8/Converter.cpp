@@ -2139,8 +2139,7 @@ BentleyStatus Converter::ConvertElement(ElementConversionResults& results, DgnV8
         {
         if (nullptr == m_elementConverter)
             m_elementConverter = new ElementConverter(*this);
-        if (BentleyApi::SUCCESS != m_elementConverter->ConvertToElementItem(results, ecContent.m_primaryV8Instance.get(), &ecContent.m_elementConversionRule))
-            return BSIERROR;
+        m_elementConverter->ConvertToElementItem(results, ecContent.m_primaryV8Instance.get(), &ecContent.m_elementConversionRule);
 
         Bentley::WString displayLabel;
         ecContent.m_primaryV8Instance->GetDisplayLabel(displayLabel);
