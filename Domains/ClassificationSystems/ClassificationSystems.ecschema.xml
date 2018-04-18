@@ -18,12 +18,12 @@
         <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
     </ECEntityClass>
   
-    <ECEntityClass typeName="ClassificationSystemClassDefinition" modifier="Abstract" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
+    <ECEntityClass typeName="Classification" modifier="Abstract" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
         <BaseClass>bis:DefinitionElement</BaseClass>
-        <ECNavigationProperty propertyName="Group" relationshipName="ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup" direction="Forward" description="Group this definition belong to" />
+        <ECNavigationProperty propertyName="Group" relationshipName="ClassificationIsInClassificationGroup" direction="Forward" description="Group this definition belong to" />
     </ECEntityClass>
     
-    <ECEntityClass typeName="ClassificationSystemClassDefinitionGroup" displayLabel="ClassificationSystem ClassDefinition group" description="The ClassDefinition group element">
+    <ECEntityClass typeName="ClassificationGroup" displayLabel="ClassificationSystem ClassDefinition group" description="The ClassDefinition group element">
         <BaseClass>bis:GroupInformationElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
@@ -31,17 +31,17 @@
         <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
     </ECEntityClass>
         
-    <ECRelationshipClass typeName="ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup" modifier="None" strength="referencing" description="a relationship to map classificationSystemClassDefinition to its' group">
+    <ECRelationshipClass typeName="ClassificationIsInClassificationGroup" modifier="None" strength="referencing" description="a relationship to map Classification to its' group">
         <Source multiplicity="(0..*)" roleLabel="is grouped in" polymorphic="true">
-            <Class class="ClassificationSystemClassDefinition"/>
+            <Class class="Classification"/>
         </Source>
         <Target multiplicity="(1..1)" roleLabel="groups" polymorphic="true">
-            <Class class="ClassificationSystemClassDefinitionGroup"/>
+            <Class class="ClassificationGroup"/>
         </Target>
     </ECRelationshipClass>
     
     <ECEntityClass typeName="CIBSEClassDefinition" displayLabel="CIBSE ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem data">
-        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
+        <BaseClass>Classification</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
@@ -49,7 +49,7 @@
     </ECEntityClass>
 
     <ECEntityClass typeName="ASHRAEClassDefinition" displayLabel="ASHRAE ClassDefinition" modifier="Abstract" description="The ClassDefinition used to store ASHRAE classificationSystem type data">
-        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
+        <BaseClass>Classification</BaseClass>
         <ECProperty propertyName="Name" typeName="string" displayLabel="Name"/>
     </ECEntityClass>
 
@@ -68,7 +68,7 @@
     </ECEntityClass>
     
     <ECEntityClass typeName="OmniClassClassDefinition" displayLabel="OmniClass ClassDefinition" description="The ClassDefinition used to store OmniClass classificationSystem data">
-        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
+        <BaseClass>Classification</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
@@ -78,7 +78,7 @@
     </ECEntityClass>
     
     <ECEntityClass typeName="MasterFormatClassDefinition" displayLabel="MasterFormat ClassDefinition" description="The ClassDefinition used to store MasterFormat classificationSystem data">
-        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
+        <BaseClass>Classification</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
@@ -87,7 +87,7 @@
     </ECEntityClass>
     
     <ECEntityClass typeName="UniFormatClassDefinition" displayLabel="UniFormat ClassDefinition" description="The ClassDefinition used to store UniFormat classificationSystem data">
-        <BaseClass>ClassificationSystemClassDefinition</BaseClass>
+        <BaseClass>Classification</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>

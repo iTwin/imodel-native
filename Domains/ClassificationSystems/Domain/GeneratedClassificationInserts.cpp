@@ -12,7 +12,7 @@
 void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const
     {
     ClassificationSystemPtr system;
-    ClassificationSystemClassDefinitionGroupPtr group;
+    ClassificationGroupPtr group;
     system = InsertSystem(db, "ASHRAE2004");
     group = InsertGroup(*system, "Recreation & Entertainment");
     InsertASHRAE2004(*system, *group, "Atrium - Each additional floor");

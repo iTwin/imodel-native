@@ -70,8 +70,8 @@
 // ECClass names (combine with CLASSIFICATIONSYSTEMS_ECCHEMA_NAME macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem                                    "ClassificationSystem"
-#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinition                     "ClassificationSystemClassDefinition"
-#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinitionGroup                "ClassificationSystemClassDefinitionGroup"
+#define CLASSIFICATIONSYSTEMS_CLASS_Classification                                          "Classification"
+#define CLASSIFICATIONSYSTEMS_CLASS_ClassificationGroup                                     "ClassificationGroup"
 #define CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition                                    "CIBSEClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition                                "OmniClassClassDefinition"
 #define CLASSIFICATIONSYSTEMS_CLASS_ASHRAEClassDefinition                                   "ASHRAEClassDefinition"
@@ -81,4 +81,4 @@
 #define CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition                                "UniFormatClassDefinition"
 
 
-#define CLASSIFICATIONSYSTEMS_REL_ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup                            "ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup"
+#define CLASSIFICATIONSYSTEMS_REL_ClassificationIsInClassificationGroup                            "ClassificationIsInClassificationGroup"

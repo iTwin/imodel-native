@@ -12,8 +12,8 @@
 BEGIN_CLASSIFICATIONSYSTEMS_NAMESPACE
 
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystem)
-DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinition)
-DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinitionGroup)
+DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(Classification)
+DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationGroup)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(CIBSEClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(OmniClassClassDefinition)
 DEFINE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ASHRAEClassDefinition)
@@ -68,7 +68,7 @@ void ClassificationSystem::_OnInserted(Dgn::DgnElementP copiedFrom) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassificationSystemClassDefinitionGroup::ClassificationSystemClassDefinitionGroup
+ClassificationGroup::ClassificationGroup
 (
 CreateParams const& params,
 Utf8CP name
@@ -81,7 +81,7 @@ Utf8CP name
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Martynas.Saulius               04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassificationSystemClassDefinitionGroupPtr ClassificationSystemClassDefinitionGroup::Create
+ClassificationGroupPtr ClassificationGroup::Create
 (
 ClassificationSystemCR system,
 Utf8CP name
@@ -89,7 +89,7 @@ Utf8CP name
     {
     Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
     Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetSubModelId(), classId);
-    ClassificationSystemClassDefinitionGroupPtr group = new ClassificationSystemClassDefinitionGroup(params, name);
+    ClassificationGroupPtr group = new ClassificationGroup(params, name);
     return group;
     }
 
@@ -97,19 +97,19 @@ Utf8CP name
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void                            ClassificationSystemClassDefinition::SetGroupId
+void                            Classification::SetGroupId
 (
 Dgn::DgnElementId groupId
 )
     {
-    SetPropertyValue(prop_Group(), groupId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSystemClassDefinitionIsInClassificationSystemClassDefinitionGroup));
+    SetPropertyValue(prop_Group(), groupId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationIsInClassificationGroup));
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnElementId               ClassificationSystemClassDefinition::GetGroupId
+Dgn::DgnElementId               Classification::GetGroupId
 (
 ) const
     {
@@ -123,7 +123,7 @@ CIBSEClassDefinition::CIBSEClassDefinition
 (
 CreateParams const& params,
 Utf8CP name,
-ClassificationSystemClassDefinitionGroupCR group
+ClassificationGroupCR group
 ) : T_Super(params)
     {
     SetName(name);
@@ -136,7 +136,7 @@ ClassificationSystemClassDefinitionGroupCR group
 CIBSEClassDefinitionPtr CIBSEClassDefinition::Create
 (
 ClassificationSystemCR system,
-ClassificationSystemClassDefinitionGroupCR group,
+ClassificationGroupCR group,
 Utf8CP name
 )
     {

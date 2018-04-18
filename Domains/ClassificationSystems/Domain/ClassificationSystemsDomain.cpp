@@ -26,7 +26,7 @@ DOMAIN_DEFINE_MEMBERS(ClassificationSystemsDomain)
 ClassificationSystemsDomain::ClassificationSystemsDomain () : Dgn::DgnDomain(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, "ClassificationSystems Domain", 1)
     {
     RegisterHandler(ClassificationSystemHandler::GetHandler());
-    RegisterHandler(ClassificationSystemClassDefinitionGroupHandler::GetHandler());
+    RegisterHandler(ClassificationGroupHandler::GetHandler());
     RegisterHandler(CIBSEClassDefinitionHandler::GetHandler());
     RegisterHandler(OmniClassClassDefinitionHandler::GetHandler());
     RegisterHandler(ASHRAE2004ClassDefinitionHandler::GetHandler());
@@ -72,14 +72,14 @@ ClassificationSystemPtr ClassificationSystemsDomain::InsertSystem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
-ClassificationSystemClassDefinitionGroupPtr ClassificationSystemsDomain::InsertGroup
+ClassificationGroupPtr ClassificationSystemsDomain::InsertGroup
 (
     ClassificationSystemCR system,
     Utf8CP name
 ) const
     {
-    ClassificationSystemClassDefinitionGroupPtr classDefinitionGroup = ClassificationSystemClassDefinitionGroup::Create(system, name);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinitionGroup.get(), BeSQLite::DbOpcode::Insert, "ClassificationSystemClassDefinitionGroup : Insertion"))
+    ClassificationGroupPtr classDefinitionGroup = ClassificationGroup::Create(system, name);
+    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinitionGroup.get(), BeSQLite::DbOpcode::Insert, "ClassificationGroup : Insertion"))
         {
         classDefinitionGroup->Insert();
         return classDefinitionGroup;
@@ -93,7 +93,7 @@ ClassificationSystemClassDefinitionGroupPtr ClassificationSystemsDomain::InsertG
 void ClassificationSystemsDomain::InsertCIBSE 
 (
     ClassificationSystemCR system,
-    ClassificationSystemClassDefinitionGroupCR group,
+    ClassificationGroupCR group,
     Utf8CP name
 ) const
     {
@@ -109,7 +109,7 @@ void ClassificationSystemsDomain::InsertCIBSE
 void ClassificationSystemsDomain::InsertASHRAE2004 
 (
     ClassificationSystemCR system,
-    ClassificationSystemClassDefinitionGroupCR group,
+    ClassificationGroupCR group,
     Utf8CP name
 ) const
     {
@@ -120,7 +120,7 @@ void ClassificationSystemsDomain::InsertASHRAE2004
 void ClassificationSystemsDomain::InsertASHRAE2007 
 (
     ClassificationSystemCR system,
-    ClassificationSystemClassDefinitionGroupCR group,
+    ClassificationGroupCR group,
     Utf8CP name
 ) const
     {
@@ -131,7 +131,7 @@ void ClassificationSystemsDomain::InsertASHRAE2007
 void ClassificationSystemsDomain::InsertASHRAE2010 
 (
     ClassificationSystemCR system,
-    ClassificationSystemClassDefinitionGroupCR group,
+    ClassificationGroupCR group,
     Utf8CP name
 ) const
     {

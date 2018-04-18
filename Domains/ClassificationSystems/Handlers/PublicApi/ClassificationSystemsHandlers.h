@@ -14,9 +14,9 @@ struct ClassificationSystemHandler : Dgn::dgn_ElementHandler::Definition
     ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystem, ClassificationSystem, ClassificationSystemHandler, Dgn::dgn_ElementHandler::Definition, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
     };
 
-struct ClassificationSystemClassDefinitionGroupHandler : Dgn::dgn_ElementHandler::GroupInformation
+struct ClassificationGroupHandler : Dgn::dgn_ElementHandler::GroupInformation
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinitionGroup, ClassificationSystemClassDefinitionGroup, ClassificationSystemClassDefinitionGroupHandler, Dgn::dgn_ElementHandler::GroupInformation, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationGroup, ClassificationGroup, ClassificationGroupHandler, Dgn::dgn_ElementHandler::GroupInformation, CLASSIFICATIONSYSTEMSHANDLERS_EXPORT)
     };
 
 struct CIBSEClassDefinitionHandler : Dgn::dgn_ElementHandler::Definition

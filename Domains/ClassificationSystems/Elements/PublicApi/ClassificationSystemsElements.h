@@ -10,8 +10,8 @@
 
 //__PUBLISH_SECTION_START__
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystem)
-CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystemClassDefinition)
-CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationSystemClassDefinitionGroup)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(Classification)
+CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ClassificationGroup)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(CIBSEClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(OmniClassClassDefinition)
 CLASSIFICATIONSYSTEMS_REFCOUNTED_PTR_AND_TYPEDEFS(ASHRAEClassDefinition)
@@ -63,58 +63,58 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystem : Dgn::DefinitionElement
 //=======================================================================================
 //! A ClassificationSystem Class Definition element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinition : Dgn::DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
     {
     DEFINE_T_SUPER(Dgn::DefinitionElement);
     private:
         BE_PROP_NAME(Group)
 
     protected:
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystemClassDefinition(CreateParams const& params) : T_Super(params) {}
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Classification(CreateParams const& params) : T_Super(params) {}
 
-        //! Sets ClassificationSystemClassDefinition group Id
+        //! Sets Classification group Id
         //! @param[in] groupId to set
         void SetGroupId(Dgn::DgnElementId groupId);
 
     public:
-        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinition, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(Classification, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
-        //!Returns id of group that has this ClassificationSystemClassDefinition
-        //! @return group id of the ClassificationSystemClassDefinition
+        //!Returns id of group that has this Classification
+        //! @return group id of the Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetGroupId() const;
 
     };
 //=======================================================================================
 //! A ClassificationSystem Class Definition Group element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinitionGroup : Dgn::GroupInformationElement
+struct EXPORT_VTABLE_ATTRIBUTE ClassificationGroup : Dgn::GroupInformationElement
     {
-    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationSystemClassDefinitionGroup, Dgn::GroupInformationElement);
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_ClassificationGroup, Dgn::GroupInformationElement);
     private:
         BE_PROP_NAME(Name)
     protected:
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystemClassDefinitionGroup(CreateParams const& params) : T_Super(params) {}
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationSystemClassDefinitionGroup(CreateParams const& params, Utf8CP name);
-        friend struct ClassificationSystemClassDefinitionGroupHandler;
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationGroup(CreateParams const& params) : T_Super(params) {}
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT ClassificationGroup(CreateParams const& params, Utf8CP name);
+        friend struct ClassificationGroupHandler;
         friend struct ClassificationSystemsDomain;
 
-        //! Sets the name of this ClassificationSystemClassDefinitionGroup
-        //! @param[in]  name   new name for this ClassificationSystemClassDefinitionGroup
+        //! Sets the name of this ClassificationGroup
+        //! @param[in]  name   new name for this ClassificationGroup
         void SetName(Utf8CP name) { SetPropertyValue(prop_Name(), name); }
 
     public:
-        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationSystemClassDefinitionGroup, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
+        DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(ClassificationGroup, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
         //---------------------------------------------------------------------------------------
         // Creation
         //---------------------------------------------------------------------------------------
-        //! Creates a ClassificationSystemClassDefinitionGroup
+        //! Creates a ClassificationGroup
         //! @param[in]  db          db to insert class definition group in
         //! @param[in]  name        name of the ClassificationSystem class definition group
-        //! @return     a ptr to created ClassificationSystemClassDefinitionGroup
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemClassDefinitionGroupPtr Create(ClassificationSystemCR system, Utf8CP name);
+        //! @return     a ptr to created ClassificationGroup
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationGroupPtr Create(ClassificationSystemCR system, Utf8CP name);
         
-        //! Gets the name of this ClassificationSystemClassDefinitionGroup
+        //! Gets the name of this ClassificationGroup
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
     };
     
@@ -122,16 +122,16 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinitionGroup : Dgn::G
 //=======================================================================================
 //! A CIBSE Class Definition element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassDefinition
+struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : Classification
     {
-    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition, ClassificationSystemClassDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_CIBSEClassDefinition, Classification);
     private:
        BE_PROP_NAME(Name)
        BE_PROP_NAME(Category)
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT CIBSEClassDefinition(CreateParams const& params) : T_Super(params) {}
-        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT CIBSEClassDefinition(CreateParams const& params, Utf8CP name, ClassificationSystemClassDefinitionGroupCR group);
+        explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT CIBSEClassDefinition(CreateParams const& params, Utf8CP name, ClassificationGroupCR group);
         friend struct CIBSEClassDefinitionHandler;
         friend struct ClassificationSystemsDomain;
 
@@ -143,7 +143,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         //! @param[in]  name        name of the CIBSE Class definition
         //! @param[in]  Category    Category of the CIBSE Class definition
         //! @return     a ptr to created CIBSEClassDefinition
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static CIBSEClassDefinitionPtr Create(ClassificationSystemCR system, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static CIBSEClassDefinitionPtr Create(ClassificationSystemCR system, ClassificationGroupCR group, Utf8CP name);
 
         //! Sets the name of this CIBSEClassDefinition
         //! @param[in]  name   new name for this CIBSEClassDefinition
@@ -167,9 +167,9 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
 //=======================================================================================
 //! A Omni Class Definition element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE OmniClassClassDefinition : ClassificationSystemClassDefinition
+struct EXPORT_VTABLE_ATTRIBUTE OmniClassClassDefinition : Classification
     {
-    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition, ClassificationSystemClassDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_OmniClassClassDefinition, Classification);
     private:
         BE_PROP_NAME(Name)
         BE_PROP_NAME(OmniClassID)
@@ -221,9 +221,9 @@ struct EXPORT_VTABLE_ATTRIBUTE OmniClassClassDefinition : ClassificationSystemCl
 //=======================================================================================
 //! A ASHRAE Class Definition element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ASHRAEClassDefinition : ClassificationSystemClassDefinition
+struct EXPORT_VTABLE_ATTRIBUTE ASHRAEClassDefinition : Classification
     {
-    DEFINE_T_SUPER(ClassificationSystemClassDefinition);
+    DEFINE_T_SUPER(Classification);
     private:
         BE_PROP_NAME(Name)
         BE_PROP_NAME(Category)
@@ -304,9 +304,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ASHRAE2010ClassDefinition : ASHRAEClassDefinition
 //=======================================================================================
 //! A MasterFormat Class Definition element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE MasterFormatClassDefinition : ClassificationSystemClassDefinition
+struct EXPORT_VTABLE_ATTRIBUTE MasterFormatClassDefinition : Classification
     {
-    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_MasterFormatClassDefinition, ClassificationSystemClassDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_MasterFormatClassDefinition, Classification);
     private:
         BE_PROP_NAME(Name)
         BE_PROP_NAME(Description)
@@ -349,9 +349,9 @@ struct EXPORT_VTABLE_ATTRIBUTE MasterFormatClassDefinition : ClassificationSyste
 //=======================================================================================
 //! A UniFormat Class Definition element
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE UniFormatClassDefinition : ClassificationSystemClassDefinition
+struct EXPORT_VTABLE_ATTRIBUTE UniFormatClassDefinition : Classification
     {
-    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition, ClassificationSystemClassDefinition);
+    DGNELEMENT_DECLARE_MEMBERS(CLASSIFICATIONSYSTEMS_CLASS_UniFormatClassDefinition, Classification);
     private:
         BE_PROP_NAME(Name)
         BE_PROP_NAME(Description)
