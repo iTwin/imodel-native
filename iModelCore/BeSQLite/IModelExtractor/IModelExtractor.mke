@@ -2,7 +2,7 @@
 #
 #  $Source: IModelExtractor/IModelExtractor.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 %include mdl.mki
@@ -10,7 +10,7 @@
 %include $(BuildContext)SubParts/mki/BeSQLiteRequiredLibs.mki
 
 srcDir              = $(_MakeFilePath)
-o                   = $(OutputRootDir)Build/IModelExtractor/
+o                   = $(PartBuildDir)
 appName             = imodel
 
 always:

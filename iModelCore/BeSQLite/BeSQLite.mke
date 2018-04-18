@@ -37,7 +37,7 @@ cDefs +% -D__BE_SQLITE_HOST_DLL__
 baseDir = $(_MakeFilePath)
 SQLiteDir = $(baseDir)SQLite/
 SubpartLibs = $(BuildContext)SubParts/Libs/
-o = $(OutBuildDir)BeSQLite/
+o = $(PartBuildDir)
 
 # DLM_NAME, LIB_NAME, and CCompPDBName must all be the same.
 appName = BeSQLite
