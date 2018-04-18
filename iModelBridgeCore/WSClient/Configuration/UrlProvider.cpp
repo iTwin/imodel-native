@@ -118,7 +118,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
     );
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
-    "Mobile.ConnectWsgProjectShare",
+    "ProjectShare.Url",
     "https://dev-projectsharestorage-eus.cloudapp.net",
     "https://qa-connect-projectsharestorage.bentley.com",
     "https://connect-projectsharestorage.bentley.com",
@@ -305,6 +305,15 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::RecommendationServiceUrl(
     "https://dev-recommendation-eus.cloudapp.net",
     &s_urlRegistry
     );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectSharedFederatedUIURL(
+    "ProjectSharedFederatedUI.URL",
+    "https://dev-projectshareportal.bentley.com/",
+    "https://qa-projectshareportal.bentley.com/",
+    "https://projectshareportal.bentley.com/",
+    &s_urlRegistry
+    );
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                julius.cepukenas   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -316,11 +325,21 @@ const bset<UrlProvider::UrlDescriptor*> UrlProvider::GerUrlRegistry()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Brad.Hadden   11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, IJsonLocalState* localState, IBuddiClientPtr customBuddi, IHttpHandlerPtr customHandler)
+void UrlProvider::Initialize
+(
+Environment env,
+int64_t cacheTimeoutMs,
+IJsonLocalState* localState,
+IBuddiClientPtr customBuddi,
+IHttpHandlerPtr customHandler,
+ITaskSchedulerPtr customScheduler
+)
     {
     BeAssert (nullptr != localState);
 
-    s_thread = WorkerThread::Create("UrlProvider");
+    s_thread = customScheduler;
+    if (nullptr == s_thread)
+        s_thread = WorkerThread::Create("UrlProvider");
 
     s_localState = localState;
     s_customHandler = customHandler;
@@ -374,7 +393,7 @@ Utf8String UrlProvider::GetUrl(Utf8StringCR urlName, const Utf8String* defaultUr
         if (!cachedUrl.empty() && ((currentTime - timeCached) >= s_cacheTimeoutMs))
             {
             // Refresh in background
-            AsyncTasksManager::GetDefaultScheduler()->ExecuteAsyncWithoutAttachingToCurrentTask([=]
+            s_thread->ExecuteAsyncWithoutAttachingToCurrentTask([=]
                 {
                 CacheBuddiUrl(urlName);
                 });

@@ -61,6 +61,7 @@ struct IWSRepositoryClient
     public:
         WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
 
+    public:
         struct Timeout
             {
             struct Connection
@@ -73,9 +74,9 @@ struct IWSRepositoryClient
                 WSCLIENT_EXPORT static const uint32_t GetObjects;
                 WSCLIENT_EXPORT static const uint32_t FileDownload;
                 WSCLIENT_EXPORT static const uint32_t Upload;
-                WSCLIENT_EXPORT static const uint32_t UploadProcessing;
                 WSCLIENT_EXPORT static const uint32_t Default;
                 WSCLIENT_EXPORT static const uint32_t LongUpload;
+                WSCLIENT_EXPORT static const uint32_t UploadProcessing;
                 };
             };
 
@@ -365,14 +366,14 @@ struct IWSRepositoryClient::RequestOptions
 
     public:
         WSCLIENT_EXPORT RequestOptions();
-        virtual ~RequestOptions() {}
+        virtual ~RequestOptions() {};
+
+        void SetTransferTimeOut(uint64_t timeOut) {m_transferTimeOut = timeOut;}
+        uint64_t GetTransferTimeOut() const {return m_transferTimeOut;}
 
         //! Retrieve options required for WSG asynchronous job operations
         //! Jobs API can be enabled through these options
         JobOptionsPtr GetJobOptions() { return m_jobOptions; }
-
-        void SetTransferTimeOut(uint64_t timeOut) {m_transferTimeOut = timeOut;}
-        uint64_t GetTransferTimeOut() const {return m_transferTimeOut;}
     };
 
 /*--------------------------------------------------------------------------------------+

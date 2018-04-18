@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/Utils/WSClientBaseTest.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,9 @@
 #include "TestAppPathProvider.h"
 
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
+
+#define LOGGER_NAMESPACE_WSCLIENT_TESTS "WSClient.Tests"
+#define TESTLOG (*Bentley::NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_WSCLIENT_TESTS))
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014

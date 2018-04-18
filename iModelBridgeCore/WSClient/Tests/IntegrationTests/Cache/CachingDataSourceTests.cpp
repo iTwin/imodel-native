@@ -111,37 +111,6 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobalDev_Succeeds)
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-
-    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
-    Utf8String repositoryId = "BentleyCONNECT.SharedContent--CONNECT.SharedContent";
-    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
-    BeFileName cachePath = GetTestCachePath();
-
-    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
-    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
-    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
-
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
-    auto ds = result.GetValue();
-
-    auto txn = ds->StartCacheTransaction();
-    CachedResponseKey key(txn.GetCache().FindOrCreateRoot(nullptr), "Foo");
-    txn.Commit();
-
-    auto objResult = ds->GetObjects(key, WSQuery("SharedContentSchema", "Project"),
-        ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
-    ASSERT_TRUE(objResult.IsSuccess());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -220,29 +189,6 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFi
     auto path = fileResult.GetValue().GetFilePath();
     EXPECT_EQ(fileContent, SimpleReadFile(path));
     EXPECT_EQ(fileName, Utf8String(path.GetFileNameAndExtension()));
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-// FAIL: eB schema incomaptible to BIM02
-// SOLUTION: redesign eB schema in new WSG 2.6+ release, no fix for ProjectContent?
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectSyncServiceShare_Succeeds_KnownIssue_NeedsServerFix)
-    {
-    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
-    Utf8String serverUrl = "https://qa-connect-wsg20.bentley.com";
-    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--238f67b9-b6db-4b37-810e-bfdc0ab5e0b0"; // QA project "MOBILE-ATP-06-Shares"
-    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
-    BeFileName cachePath = GetTestCachePath();
-
-    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
-    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
-    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
-
-    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
-
-    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
-    ASSERT_FALSE(nullptr == result.GetValue());
     }
 
 /*--------------------------------------------------------------------------------------+

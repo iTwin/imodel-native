@@ -21,9 +21,9 @@ const uint32_t IWSRepositoryClient::Timeout::Transfer::GetObject = 30;
 const uint32_t IWSRepositoryClient::Timeout::Transfer::GetObjects = 120; // Some repositories take a lot of time to create many full ECInstances
 const uint32_t IWSRepositoryClient::Timeout::Transfer::FileDownload = 30;
 const uint32_t IWSRepositoryClient::Timeout::Transfer::Upload = 30;
-const uint32_t IWSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; // Longer timeout for server file processing to finish
 const uint32_t IWSRepositoryClient::Timeout::Transfer::Default = 60;
 const uint32_t IWSRepositoryClient::Timeout::Transfer::LongUpload = 120;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::UploadProcessing = 300; // Longer timeout for server file processing to finish
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    julius.cepukenas 12/2016

@@ -103,7 +103,7 @@ ICancellationTokenPtr ct
             if (!wsJob.IsValid() && !wsJob.HasResponseContent())
                 {
                 LOG.warning("Bad response format of the successful job");
-                return HttpJobResult::Error(WSError(WSError::Id::ServerError));
+                return HttpJobResult::Error(WSError::Id::ServerError);
                 }
 
             return HttpJobResult::Success(wsJob.GetResponse());
@@ -189,7 +189,7 @@ std::shared_ptr<HttpJobResult> finalResultOut
 +--------------------------------------------------------------------------------------*/
 bool JobApi::AddJobHeaderTo(HttpRequestHeadersR headers, WSInfoCR info, IWSRepositoryClient::JobOptionsPtr options) const
     {
-    if (!options || !options->IsJobsApiEnabled() || info.GetVersion() < BeVersion(2,6,7,0))
+    if (!options || !options->IsJobsApiEnabled() || info.GetVersion() < BeVersion(2,6,6,0))
         return false;
 
     headers.AddValue(HEADER_MasAsyncJob, VALUE_Allow);

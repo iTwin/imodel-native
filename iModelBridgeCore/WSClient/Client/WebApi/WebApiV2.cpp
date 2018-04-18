@@ -538,12 +538,9 @@ ICancellationTokenPtr ct
     Utf8String url = GetUrl("$changeset");
     Http::Request request = m_configuration->GetHttpClient().CreatePostRequest(url);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
-    request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Default);
-
+    request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
     if (nullptr != options)
-        {
         request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
-        }
 
     request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
 
@@ -633,6 +630,8 @@ ICancellationTokenPtr ct
         }
 
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
+    if (nullptr != options)
+        request.SetUploadTransferTime(options->GetTransferTimeOut());
 
     request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), "application/json");
     if (!filePath.empty())
@@ -678,7 +677,8 @@ ICancellationTokenPtr ct
 
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
-
+    if (nullptr != options)
+        request.SetUploadTransferTime(options->GetTransferTimeOut());
     // WSG 2.x does not support instance validation in update request
     // TODO: implement WSG side or Client side validation
     //if (!eTag.empty ())
@@ -726,7 +726,9 @@ ICancellationTokenPtr ct
     Utf8String url = GetUrl(CreateObjectSubPath(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreateRequest(url, "DELETE");
     request.SetCancellationToken(ct);
-
+    if (nullptr != options)
+        request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
+        
     return m_jobApi->ExecuteViaJob(request, m_info, options ? options->GetJobOptions() : nullptr, ct)
         ->Then<WSDeleteObjectResult>([=] (HttpJobResult& response)
         {
@@ -764,6 +766,8 @@ ICancellationTokenPtr ct
 
     Utf8String url = GetUrl(CreateFileSubPath(objectId));
     ChunkedUploadRequest request("PUT", url, m_configuration->GetHttpClient());
+    if (nullptr != options)
+        request.SetUploadTransferTime(options->GetTransferTimeOut());
 
     request.SetRequestBody(HttpFileBody::Create(filePath), Utf8String(filePath.GetFileNameAndExtension()));
     request.SetCancellationToken(ct);
@@ -774,6 +778,10 @@ ICancellationTokenPtr ct
         request.GetHandshakeRequest().GetHeaders().SetValue(HEADER_MasAllowRedirect, VALUE_True);
         request.GetHandshakeRequest().SetFollowRedirects(false);
         }
+
+    //TODO TFS#866928 SendUpdateFileRequest temporary disabled
+    if (options && options->GetJobOptions()->IsJobsApiEnabled())
+        options->GetJobOptions()->DisableJobs();
 
     auto finalResult = std::make_shared<WSUpdateFileResult>();
     return m_jobApi

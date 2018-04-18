@@ -41,6 +41,8 @@ struct ChunkedUploadRequest
         Utf8String          m_mainBodyFileName;
         Utf8String          m_etag;
         HttpRequestHeaders  m_lastRequestHeaders;
+        uint32_t            m_uploadTransferTime;
+
 
         ETagRetrievedCallback           m_etagRetrievedCallback;
         ICancellationTokenPtr           m_cancellationToken;
@@ -79,6 +81,11 @@ struct ChunkedUploadRequest
 
         //! Return true from callback when request needs to be canceled
         WSCLIENT_EXPORT void SetCancellationToken(ICancellationTokenPtr token);
+
+        WSCLIENT_EXPORT void SetUploadTransferTime(uint32_t time);
+
+        WSCLIENT_EXPORT uint32_t GetUploadTransferTime();
+
 
         //! Used to assign headers for final upload request
         WSCLIENT_EXPORT HttpRequestHeadersR GetLastRequestHeaders();
