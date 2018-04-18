@@ -14,7 +14,7 @@
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 //=======================================================================================
-//! Model for Design-Speed Definition Table elements.
+//! Model for Roadway Standards definition elements.
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RoadwayStandardsModel : Dgn::DefinitionModel
 {
@@ -23,20 +23,20 @@ friend struct RoadwayStandardsModelHandler;
 
 public:
     struct CreateParams : T_Super::CreateParams
-        {
-        DEFINE_T_SUPER(RoadwayStandardsModel::T_Super::CreateParams);
+    {
+    DEFINE_T_SUPER(RoadwayStandardsModel::T_Super::CreateParams);
 
-        //! Parameters to create a new instance of an RoadwayStandardsModel.
-        //! @param[in] dgndb The DgnDb for the new DgnModel
-        //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
-        CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnElementId modeledElementId)
-            : T_Super(dgndb, RoadwayStandardsModel::QueryClassId(dgndb), modeledElementId)
-            {}
+    //! Parameters to create a new instance of an RoadwayStandardsModel.
+    //! @param[in] dgndb The DgnDb for the new DgnModel
+    //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
+    CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnElementId modeledElementId)
+        : T_Super(dgndb, RoadwayStandardsModel::QueryClassId(dgndb), modeledElementId)
+        {}
 
-        //! @private
-        //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
-        CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
-        }; // CreateParams
+    //! @private
+    //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
+    CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
+    }; // CreateParams
 
 protected:
     explicit RoadwayStandardsModel(CreateParams const& params) : T_Super(params) { }
@@ -50,6 +50,43 @@ public:
     ROADRAILPHYSICAL_EXPORT static RoadwayStandardsModelPtr Query(Dgn::SubjectCR parentSubject);
 }; // RoadwayStandardsModel
 
+//=======================================================================================
+//! Model for Railway Standards definition elements.
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RailwayStandardsModel : Dgn::DefinitionModel
+{
+DGNMODEL_DECLARE_MEMBERS(BRRP_CLASS_RailwayStandardsModel, Dgn::DefinitionModel);
+friend struct RailwayStandardsModelHandler;
+
+public:
+    struct CreateParams : T_Super::CreateParams
+    {
+    DEFINE_T_SUPER(RailwayStandardsModel::T_Super::CreateParams);
+
+    //! Parameters to create a new instance of an RailwayStandardsModel.
+    //! @param[in] dgndb The DgnDb for the new DgnModel
+    //! @param[in] modeledElementId The DgnElementId of the element this this DgnModel is describing/modeling
+    CreateParams(Dgn::DgnDbR dgndb, Dgn::DgnElementId modeledElementId)
+        : T_Super(dgndb, RailwayStandardsModel::QueryClassId(dgndb), modeledElementId)
+        {}
+
+    //! @private
+    //! This constructor is used only by the model handler to create a new instance, prior to calling ReadProperties on the model object
+    CreateParams(DgnModel::CreateParams const& params) : T_Super(params) {}
+    }; // CreateParams
+
+protected:
+    explicit RailwayStandardsModel(CreateParams const& params) : T_Super(params) { }
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RailwayStandardsModel)
+
+    static RailwayStandardsModelPtr Create(CreateParams const& params) { return new RailwayStandardsModel(params); }
+    static RailwayStandardsModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< RailwayStandardsModel >(id); }
+
+    ROADRAILPHYSICAL_EXPORT static RailwayStandardsModelPtr Query(Dgn::SubjectCR parentSubject);
+}; // RailwayStandardsModel
+
 
 //=======================================================================================
 //! The ModelHandler for RoadwayStandards Models
@@ -58,5 +95,13 @@ struct EXPORT_VTABLE_ATTRIBUTE RoadwayStandardsModelHandler : Dgn::dgn_ModelHand
 {
 MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadwayStandardsModel, RoadwayStandardsModel, RoadwayStandardsModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
 }; // RoadwayStandardsModelHandler
+
+//=======================================================================================
+//! The ModelHandler for RailwayStandards Models
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RailwayStandardsModelHandler : Dgn::dgn_ModelHandler::Definition
+{
+MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RailwayStandardsModel, RailwayStandardsModel, RailwayStandardsModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
+}; // RailwayStandardsModelHandler
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

@@ -228,7 +228,7 @@ RoadwayPtr Roadway::Create(PhysicalModelR model)
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
-        RoadRailCategory::GetRoadway(*RoadRailPhysicalDomain::GetParentSubject(model)));
+        RoadRailCategory::GetRoadway(model.GetDgnDb()));
 
     return new Roadway(createParams);
     }
@@ -242,7 +242,7 @@ RailwayPtr Railway::Create(PhysicalModelR model)
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
-        RoadRailCategory::GetRailway(*RoadRailPhysicalDomain::GetParentSubject(model)));
+        RoadRailCategory::GetRailway(model.GetDgnDb()));
 
     return new Railway(createParams);
     }
@@ -355,6 +355,27 @@ ThruwaySeparationPortionPtr ThruwaySeparationPortion::Create(PathwayElementCR pa
     ThruwaySeparationPortionPtr ptr(new ThruwaySeparationPortion(params));
     ptr->SetMainLinearElement(&linearElement);
     return ptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PathwayPortionElementCPtr ILinearElementUtilities::QueryRelatedPathwayPortion(ILinearElementCR linearElement,
+    DgnElementId& significantPointDefId)
+    {
+    auto& linearElementCR = linearElement.ToElement();
+    auto stmtPtr = linearElementCR.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId, SignificantPointDef.Id FROM "
+        BRRP_SCHEMA(BRRP_REL_ILinearElementRelatesToPathwayPortion) " WHERE SourceECInstanceId = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, linearElementCR.GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        {
+        significantPointDefId = stmtPtr->GetValueId<DgnElementId>(1);
+        return PathwayPortionElement::Get(linearElementCR.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+        }
+
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

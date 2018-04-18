@@ -238,6 +238,9 @@ public:
 struct ILinearElementUtilities : NonCopyableClass
 {
 public:
+    ROADRAILPHYSICAL_EXPORT static PathwayPortionElementCPtr QueryRelatedPathwayPortion(LinearReferencing::ILinearElementCR linearElement, 
+        Dgn::DgnElementId& significantPointDefId);
+
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetRelatedPathwayPortion(LinearReferencing::ILinearElementCR linearElement, 
         PathwayPortionElementCR pathwayPortion, SignificantPointDefinitionCR significantPointDef);
 }; // ILinearElementUtilities

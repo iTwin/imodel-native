@@ -43,11 +43,15 @@ public:
     //! @param[in] model The PhysicalModel who's parent is being queried for.
     //! @return The Subject of the \p model
     ROADRAILPHYSICAL_EXPORT static Dgn::SubjectCPtr GetParentSubject(Dgn::PhysicalModelCR model);
+    
     //! The name of the default Physical partition
-    static Utf8CP GetDefaultPhysicalPartitionName() { return "Roads/Rail Physical"; }
+    static Utf8CP GetDefaultPhysicalPartitionName() { return "Road/Rail Physical"; }
+
+    //! The name of the RailwayStandards Partition
+    static Utf8CP GetRailwayStandardsPartitionName() { return "Railway Standards"; }
 
     //! The name of the default Standards Partition
-    static Utf8CP GetDefaultStandardsPartitionName() { return "Roadway Standards"; }
+    static Utf8CP GetRoadwayStandardsPartitionName() { return "Roadway Standards"; }    
 
     //! @private
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetGeometricElementAsBoundingContentForSheet(Dgn::GeometricElementCR boundingElm, Dgn::Sheet::ElementCR sheet);
