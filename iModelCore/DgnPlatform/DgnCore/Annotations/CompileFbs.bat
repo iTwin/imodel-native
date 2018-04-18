@@ -2,7 +2,7 @@
 
 rem ------------------------------------------------------------------------------------
 rem      $Source: DgnCore/Annotations/CompileFbs.bat $
-rem   $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+rem   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 rem ------------------------------------------------------------------------------------
 
 SET BaseName=Annotations
@@ -14,7 +14,14 @@ SET GeneratedFile=%GeneratedDir%%GeneratedFileName%
 SET OutDir=%SrcRoot%DgnPlatform\PrivateApi\DgnPlatformInternal\DgnCore\Annotations\
 SET OutFile=%OutDir%%BaseName%.fb.h
 
-SET CompileCmd=%SrcRoot%libsrc\flatbuffers\bin\beflatc.exe -c
+REM flatbuffers comes from nuget now... just use the latest we can find:
+for /f %%i IN ('dir "%SrcRoot%nuget\FlatBuffersNuget_x64*" /ad /b /on') DO (
+set latestFBNugetDir=%SrcRoot%nuget\%%i
+)
+
+SET CompileExe=%latestFBNugetDir%\native\bin\beflatc.exe
+SET CompileCmd=%CompileExe% -c
+ECHO Using compiler at '%CompileExe%'
 
 rem ***********************************************************************************************
 rem ***********************************************************************************************
