@@ -113,8 +113,8 @@
       "persistenceUnit": "u:MM",
       "precision": 3.0,
       "presentationUnits": [
-        "f:InchesU", 
-        "f:Feet4U",
+        "f:DefaultRealU", 
+        "f:DefaultReal",
         "f:AmerFI"
       ]
     },

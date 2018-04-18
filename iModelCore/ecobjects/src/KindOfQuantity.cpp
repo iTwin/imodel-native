@@ -278,7 +278,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
 
             if(ecXmlVersion < ECVersion::V3_2)
                 {
-                if (!format.HasComposite() || !format.GetCompositeSpec()->HasMajorLabel())
+                if (!format.HasComposite() || !format.GetCompositeSpec()->HasMajorUnit())
                     {
                     LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
                     continue;
@@ -594,7 +594,11 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
 
             bvector<Utf8String> localUnitNames;
             bvector<Nullable<Utf8String>> localUnitLabels;
-            Formatting::Format::ParseFormatString(localformatName, precision, localUnitNames, localUnitLabels, formatName);
+            if (SUCCESS != Formatting::Format::ParseFormatString(localformatName, precision, localUnitNames, localUnitLabels, formatName))
+                {
+                LOG.errorv("Failed to parse format string '%s' on KoQ '%s'", descriptor, GetFullName().c_str());
+                return ECObjectsStatus::Error;
+                }
             format = GetSchema().LookupFormat(localformatName.c_str());
             if (nullptr == format)
                 {
@@ -628,8 +632,10 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
             LOG.errorv("On KOQ '%s' presentation unit '%s' is incompatible with persistence unit '%s'", GetFullName().c_str(), unit->GetFullName().c_str(), m_persistenceUnit->GetFullName().c_str());
             return ECObjectsStatus::Error;
             }
-
-        AddPresentationFormatSingleUnitOverride(*format, precision, format->HasCompositeMajorUnit() ? nullptr : unit, nullptr, shouldBeDefault);
+        ECUnitCP unitOverride = format->HasCompositeMajorUnit() ? nullptr : unit;
+        ECObjectsStatus status = AddPresentationFormatSingleUnitOverride(*format, precision, unitOverride, nullptr, shouldBeDefault);
+        if (ECObjectsStatus::Success != status)
+            return status;
         }
     else // >= 3.2
         {
@@ -637,7 +643,11 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
         bvector<Nullable<Utf8String>> unitLabels;
         Nullable<int32_t> precision;
         Utf8String formatName;
-        Formatting::Format::ParseFormatString(formatName, precision, names, unitLabels, descriptor);
+        if (SUCCESS != Formatting::Format::ParseFormatString(formatName, precision, names, unitLabels, descriptor))
+            {
+            LOG.errorv("Failed to parse format string '%s' on KoQ '%s'", descriptor, GetFullName().c_str());
+            return ECObjectsStatus::Error;
+            }
         ECFormatCP format = GetSchema().LookupFormat(formatName.c_str());
         if (nullptr == format)
             {
@@ -663,7 +673,10 @@ ECObjectsStatus KindOfQuantity::ParsePresentationUnit(Utf8CP descriptor, ECSchem
                 return ECObjectsStatus::Error;
                 }
             }
-        AddPresentationFormat(*format, precision, &unitsAndLabels, shouldBeDefault);
+
+        ECObjectsStatus status = AddPresentationFormat(*format, precision, &unitsAndLabels, shouldBeDefault);
+        if (ECObjectsStatus::Success != status)
+            return status;
         }
     return ECObjectsStatus::Success;
     }
@@ -975,12 +988,14 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
     Utf8String out;
     CreateOverrideString(out, parent, precisionOverride, unitsAndLabels);
 
+    NamedFormatP nfp = nullptr;
     if (isDefault)
-        m_presentationFormats.emplace(m_presentationFormats.begin(), out, &parent);
+        nfp = m_presentationFormats.emplace(m_presentationFormats.begin(), out, &parent);
     else
+        {
         m_presentationFormats.emplace_back(out, &parent);
-
-    auto nfp = &m_presentationFormats.back();
+        nfp = &m_presentationFormats.back();
+        }
     if (precisionOverride.IsValid())
         {
         if (Formatting::PresentationType::Fractional == nfp->GetPresentationType())
@@ -1070,9 +1085,16 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
 ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
     {
     UnitAndLabelPairs units;
+    if (nullptr == inputUnitOverride && nullptr != labelOverride)
+        {
+        if (parent.HasCompositeMajorUnit())
+            inputUnitOverride = (ECUnitCP)parent.GetCompositeMajorUnit();
+        else
+            return ECObjectsStatus::Error;
+        }
     if (nullptr != inputUnitOverride)
         { 
-        units= UnitAndLabelPairs();
+        units = UnitAndLabelPairs();
         units.push_back(make_bpair(inputUnitOverride, labelOverride));
         }
 

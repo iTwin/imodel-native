@@ -184,13 +184,13 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchema)
     m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     m_firstSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     m_secondSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
 
     SchemaComparer comparer;
     SchemaChanges changes;
@@ -223,13 +223,13 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
     m_secondSchema->AddReferencedSchema(*ref);
     EC_ASSERT_SUCCESS(ref->CreateUnit(unit, "M", "SMOOT", *phenom, *system, "SMOOT", "SMOOT"));
     auto num = Formatting::NumericFormatSpec();
-    EC_ASSERT_SUCCESS(ref->CreateFormat(format, "Feet4U", nullptr, nullptr, &num));
+    EC_ASSERT_SUCCESS(ref->CreateFormat(format, "AmerFI", nullptr, nullptr, &num));
 
     EC_ASSERT_SUCCESS(m_firstSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     m_firstSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     koq->SetPersistenceUnit(*unit);
@@ -258,10 +258,10 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsWithSameNameInDifferen
     ASSERT_EQ(1, pres.Count());
 
     EXPECT_FALSE(pres.At(0).GetOld().IsNull());
-    EXPECT_STRCASEEQ("f:Feet4U", pres.At(0).GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("f:AmerFI", pres.At(0).GetOld().Value().c_str());
 
     EXPECT_FALSE(pres.At(0).GetNew().IsNull());
-    EXPECT_STRCASEEQ("r:Feet4U", pres.At(0).GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("r:AmerFI", pres.At(0).GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------
@@ -277,14 +277,14 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     EC_ASSERT_SUCCESS(m_firstSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success,koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
-    EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU")));
+    EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU")));
     ASSERT_EQ(1, koq->GetPresentationFormats().size());
 
     EC_ASSERT_SUCCESS(m_secondSchema->CreateKindOfQuantity(koq, "KindOfSmoot"));
     EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema()));
     EC_ASSERT_SUCCESS(m_secondSchema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema()));
     ASSERT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
-    EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U")));
+    EC_ASSERT_SUCCESS(koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal")));
     ASSERT_EQ(1, koq->GetPresentationFormats().size());
 
     SchemaComparer comparer;
@@ -308,10 +308,10 @@ TEST_F(SchemaCompareTest, CompareKindOfQuantitiesWithUnitsInReferencedSchemaWith
     ASSERT_EQ(1, pres.Count());
 
     ASSERT_FALSE(pres.At(0).GetOld().IsNull());
-    EXPECT_STRCASEEQ("f:InchesU", pres.At(0).GetOld().Value().c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU", pres.At(0).GetOld().Value().c_str());
 
     ASSERT_FALSE(pres.At(0).GetNew().IsNull());
-    EXPECT_STRCASEEQ("f:Feet4U", pres.At(0).GetNew().Value().c_str());
+    EXPECT_STRCASEEQ("f:DefaultReal", pres.At(0).GetNew().Value().c_str());
     }
 
 //----------------------------------------------------------------------------------------

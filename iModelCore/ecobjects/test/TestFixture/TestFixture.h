@@ -64,6 +64,8 @@ public:
     static ECN::ECSchemaPtr GetFormatsSchema(bool recreate = false);
 
     static void DeserializeSchema(ECN::ECSchemaPtr& schema, ECN::ECSchemaReadContextR context, SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::Success, Utf8CP failureMessage = "");
+    static void ExpectSchemaDeserializationSuccess(Utf8CP schemaXml, Utf8CP failureMessage = "")
+        {ExpectSchemaDeserializationFailure(SchemaItem(schemaXml), ECN::SchemaReadStatus::Success, failureMessage);}
     static void ExpectSchemaDeserializationFailure(SchemaItem const& schemaItem, ECN::SchemaReadStatus expectedStatus = ECN::SchemaReadStatus::InvalidECSchemaXml, Utf8CP failureMessage = "");
     static void ExpectSchemaDeserializationFailure(Utf8CP schemaXml, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml, Utf8CP failureMessage = "")
         {ExpectSchemaDeserializationFailure(SchemaItem(schemaXml), expectedError, failureMessage);}
