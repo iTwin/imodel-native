@@ -52,7 +52,7 @@ for standardRoom in root.find('List').findall('StandardRoom'):
     #output+="(db, \""+name+"\", \""+category+"\");\n"
     #f.write(output)
 for standard in roomDict:
-    output = "    system = ClassificationSystem::Create(db, \""+standard+"\");\n"
+    output = "    system = InsertSystem(db, \""+standard+"\");\n"
     f.write(output);
     for category in roomDict[standard]:
         output = "    group = InsertGroup(*system, \""+category+"\");\n"
