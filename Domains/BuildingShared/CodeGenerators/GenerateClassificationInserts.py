@@ -35,12 +35,10 @@ f.write('''/*-------------------------------------------------------------------
 f.write('void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const\n')
 f.write('    {\n')
 f.write('    ClassificationSystemPtr system;\n')
-f.write('    ClassificationSystemClassDefinitionGroupPtr group;\n')
+f.write('    ClassificationGroupPtr group;\n')
 
 roomDict = {}
-#TODO db from classificationsystem (getDgnDb()), fix the whole bloody domain.
 for standardRoom in root.find('List').findall('StandardRoom'):
-    #output = '    '
     name = standardRoom.find('Name').text
     category = standardRoom.find('Category').text
     calcStandard = standardRoom.find('CalculationStandard').text
@@ -49,8 +47,6 @@ for standardRoom in root.find('List').findall('StandardRoom'):
     elif calcStandard == 'eASHRAE':
         catalogue = standardRoom.find('Catalogue').text
         Insert(roomDict, ('ASHRAE'+catalogue), name, category)
-    #output+="(db, \""+name+"\", \""+category+"\");\n"
-    #f.write(output)
 for standard in roomDict:
     output = "    system = InsertSystem(db, \""+standard+"\");\n"
     f.write(output);
