@@ -1556,7 +1556,7 @@ void GeometryStreamIO::Writer::Append(GeometryParamsCR elParams, bool ignoreSubC
             flatbuffers::Offset<FB::ThematicSettings>   thematicSettingsOffset = 0;
             if (gradient.GetMode() == GradientSymb::Mode::Thematic)
                 {
-                auto&       thematicSettings = gradient.GetThematicSettingsR();
+                auto& thematicSettings = gradient.GetThematicSettings();
 
                 thematicSettingsOffset = FB::CreateThematicSettings(fbb,
                                                                    thematicSettings.GetStepCount(), 
