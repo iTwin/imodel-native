@@ -1036,4 +1036,18 @@ public:
     static ColorDef VersionCompareBackground()  {return ColorDef(0xEA,0xE4,0xE4);} //<! Grey for background elements
 };
 
+/*=================================================================================**//**
+//! Possible Selection scopes used to locate elements.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+enum class SelectionScope
+    {
+    Element = 0,         //!< Single Element Selection
+    Assembly = 1,        //!< Select all members of parent Assembly
+    TopAssembly = 2,     //!< Select all members of top-most parent Assembly 
+    Category = 3,        //!< All elements that match Category of selected element
+    Model = 4,           //!< All elements in same model as selected element
+    };
+
+
 END_BENTLEY_DGN_NAMESPACE

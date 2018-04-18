@@ -59,6 +59,7 @@ enum class ParamId
     GlobeOff,
     OnlyHistory,
     AddHistory,
+    NoFinalStatistics,
     Invalid,
 };
 
@@ -101,6 +102,7 @@ static CommandParam s_paramTable[] =
         { L"gl0", L"globeOff", L"Force globe off in all views", false, true },
         { L"hi",  L"historyOnly", L"Publish only history", false, true },
         { L"h+",  L"history", L"Publish history and TIP", false, true },
+        { L"nf", L"nofinalstats", L"Disable output of final statistics when publishing completes", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -336,6 +338,9 @@ bool Params::ParseArgs(int ac, wchar_t const** av)
                 break;
             case ParamId::VerboseStatistics:
                 m_verbose = true;
+                break;
+            case ParamId::NoFinalStatistics:
+                m_outputFinalStatistics = false;
                 break;
             case ParamId::GeographicLocation:
                 if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.longitude, &m_geoLocation.latitude))

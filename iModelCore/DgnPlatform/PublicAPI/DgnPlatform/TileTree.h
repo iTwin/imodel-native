@@ -325,7 +325,7 @@ public:
     virtual void _UpdateRange(DRange3dCR prevParentRange, DRange3dCR newParentRange) { }
 
     virtual bool _IsPartial() const { return false; }
-    bool IsEmpty() const { return IsDisplayable() && IsReady() && !_HasGraphics(); }
+    bool IsEmpty() const;
 	
     //! Returns custom metadata extracted from the model
     virtual void GetCustomMetadata(Utf8StringR name, Json::Value& data) const { _GetCustomMetadata(name, data); };
@@ -536,6 +536,8 @@ public:
 
     //! Return false if m_tileBytes contains invalid data and should be updated from source.
     virtual bool _IsValidData() { return true; }
+    //! Return true if m_tileBytes contains complete tile data; false if data must be further processed by _GetFromSource()
+    virtual bool _IsCompleteData() { return true; }
 
     struct LoadFlag
         {

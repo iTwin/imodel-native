@@ -61,6 +61,7 @@ protected:
     bool                            m_verbose = false;
     bool                            m_overwriteExisting = true;
     bool                            m_wantProgressOutput = true;
+    bool                            m_outputFinalStatistics = true;
     PublisherContext::GlobeMode     m_globeMode = PublisherContext::GlobeMode::FromDisplayStyle;
     BeFileName                      m_bimiumDistDir;
 
@@ -88,6 +89,7 @@ public:
     uint32_t GetDepth() const { return m_depth; }
     bool SurfacesOnly() const { return m_surfacesOnly; }
     bool WantVerboseStatistics() const { return m_verbose; }
+    bool WantOutputFinalStatistics() const { return m_outputFinalStatistics; }
     bool WantProgressOutput() const { return m_wantProgressOutput; }
     GeoPointCP GetGeoLocation() const { return m_geoLocated ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
@@ -103,8 +105,7 @@ public:
     TILEPUBLISHER_EXPORT UnitSystem GetUnitSystem(DgnDbR db, DgnViewId defaultViewId) const;
     iModel::Hub::ClientPtr GetClient() const { return m_client; }
     void SetClient(iModel::Hub::ClientPtr& client) { m_client = client; }
-
-
+    void SetOutputFinalStatistics(bool output) { m_outputFinalStatistics = output; }
 };
 
 //=======================================================================================
