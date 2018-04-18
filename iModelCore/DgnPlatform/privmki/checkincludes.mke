@@ -2,7 +2,7 @@
 #
 #     $Source: privmki/checkincludes.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 appName = CheckIncludes
@@ -11,7 +11,7 @@ appName = CheckIncludes
 
 baseDir = $(_MakeFilePath)
 
-o = $(OutBuildDir)CheckIncludes/
+o = $(PartBuildDir)
 
 always:
     ~mkdir $(o)
