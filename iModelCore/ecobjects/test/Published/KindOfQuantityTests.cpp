@@ -547,14 +547,16 @@ TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingName)
     // Missing name
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
                                             <KindOfQuantity description="Kind of a Description here"
-                                                displayLabel="best quantity of all times" persistenceUnit="CM" relativeError="10e-3"/>
+                                                displayLabel="best quantity of all times" persistenceUnit="u:CM" relativeError="10e-3"/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a missing name");
     // Empty name
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
                                             <KindOfQuantity typeName="" description="Kind of a Description here"
-                                                displayLabel="best quantity of all times" persistenceUnit="CM" relativeError="10e-3"/>
+                                                displayLabel="best quantity of all times" persistenceUnit="u:CM" relativeError="10e-3"/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an empty name");
     }
 
@@ -566,14 +568,16 @@ TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingRelativeError)
     // Missing relative error
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
                                             <KindOfQuantity typeName="TestKOQ" description="Kind of a Description here"
-                                                displayLabel="best quantity of all times" persistenceUnit="CM"/>
+                                                displayLabel="best quantity of all times" persistenceUnit="u:CM"/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a missing relative error");
     // Empty relative error
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
                                             <KindOfQuantity typeName="TestKOQ" description="Kind of a Description here"
-                                                displayLabel="best quantity of all times" persistenceUnit="CM" relativeError=""/>
+                                                displayLabel="best quantity of all times" persistenceUnit="u:CM" relativeError=""/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with an empty relative error");
     }
 
@@ -603,8 +607,9 @@ TEST_F(KindOfQuantityDeserializationTest, TestConstantAsPersistanceUnit)
     {
     ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
+                                            <ECSchemaReference name="Units" version="01.00" alias="u"/>
                                             <KindOfQuantity typeName="MyKindOfQuantity" description="Kind of a Description here"
-                                                displayLabel="best quantity of all times" persistenceUnit="PI" relativeError="10e-3"/>
+                                                displayLabel="best quantity of all times" persistenceUnit="u:PI" relativeError="10e-3"/>
                                         </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail to deserialize with a constant as a persistence unit");
     }
 
