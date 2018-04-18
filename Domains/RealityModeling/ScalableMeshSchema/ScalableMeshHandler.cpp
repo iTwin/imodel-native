@@ -384,7 +384,7 @@ Tile::ChildTiles const* SMNode::_GetChildren(bool load) const
         }
 
     if (m_children.size() == 0)
-        return nullptr;
+        return nullptr;    
 
     return &m_children;
     }
@@ -685,11 +685,9 @@ bool SMNode::ReadHeader(Transform& locationTransform)
 
     m_scalableMeshNodePtr->GetResolutions(geometricResolution, textureResolution);
         
-    //m_maxDiameter = m_range.low.Distance(m_range.high) / std::min(geometricResolution, textureResolution) / s_maxDiamFactor;
-    m_maxDiameter = s_constantFactor / std::min(geometricResolution, textureResolution);
+	//The formula below should give the same value as maxScreenDiameter in the 3mxb.
+    m_maxDiameter = m_range.low.Distance(m_range.high) / std::min(geometricResolution, textureResolution);
 	
-	//m_maxDiameter = 1000 / std::min(geometricResolution, textureResolution);
-
     /*
        if (!readVectorEntry(pt, "resources", nodeResources))
        {
