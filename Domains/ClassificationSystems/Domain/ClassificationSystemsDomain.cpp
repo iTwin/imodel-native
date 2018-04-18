@@ -57,13 +57,11 @@ void ClassificationSystemsDomain::_OnSchemaImported(Dgn::DgnDbR db) const
 //---------------------------------------------------------------------------------------
 ClassificationSystemClassDefinitionGroupPtr ClassificationSystemsDomain::InsertGroup
 (
-    Dgn::DgnDbR db,
+    ClassificationSystemCR system,
     Utf8CP name
 ) const
     {
-
-    //TODO
-    ClassificationSystemClassDefinitionGroupPtr classDefinitionGroup = ClassificationSystemClassDefinitionGroup::Create(db, name);
+    ClassificationSystemClassDefinitionGroupPtr classDefinitionGroup = ClassificationSystemClassDefinitionGroup::Create(system, name);
     if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinitionGroup.get(), BeSQLite::DbOpcode::Insert, "CIBSEClassDefinition : Insertion"))
         {
         classDefinitionGroup->Insert();
@@ -77,12 +75,12 @@ ClassificationSystemClassDefinitionGroupPtr ClassificationSystemsDomain::InsertG
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsDomain::InsertCIBSE 
 (
-    Dgn::DgnDbR db,
+    ClassificationSystemCR system,
     ClassificationSystemClassDefinitionGroupCR group,
     Utf8CP name
 ) const
     {
-    CIBSEClassDefinitionPtr classDefinition = CIBSEClassDefinition::Create(db, name, group);
+    CIBSEClassDefinitionPtr classDefinition = CIBSEClassDefinition::Create(system, group, name);
     if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinition.get(), BeSQLite::DbOpcode::Insert, "CIBSEClassDefinition : Insertion"))
         {
         classDefinition->Insert();
@@ -93,7 +91,7 @@ void ClassificationSystemsDomain::InsertCIBSE
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsDomain::InsertASHRAE2004 
 (
-    Dgn::DgnDbR db,
+    ClassificationSystemCR system,
     ClassificationSystemClassDefinitionGroupCR group,
     Utf8CP name
 ) const
@@ -104,7 +102,7 @@ void ClassificationSystemsDomain::InsertASHRAE2004
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsDomain::InsertASHRAE2007 
 (
-    Dgn::DgnDbR db,
+    ClassificationSystemCR system,
     ClassificationSystemClassDefinitionGroupCR group,
     Utf8CP name
 ) const
@@ -115,7 +113,7 @@ void ClassificationSystemsDomain::InsertASHRAE2007
 //---------------------------------------------------------------------------------------
 void ClassificationSystemsDomain::InsertASHRAE2010 
 (
-    Dgn::DgnDbR db,
+    ClassificationSystemCR system,
     ClassificationSystemClassDefinitionGroupCR group,
     Utf8CP name
 ) const

@@ -112,7 +112,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ClassificationSystemClassDefinitionGroup : Dgn::G
         //! @param[in]  db          db to insert class definition group in
         //! @param[in]  name        name of the ClassificationSystem class definition group
         //! @return     a ptr to created ClassificationSystemClassDefinitionGroup
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemClassDefinitionGroupPtr Create(Dgn::DgnDbR db, Utf8CP name);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static ClassificationSystemClassDefinitionGroupPtr Create(ClassificationSystemCR system, Utf8CP name);
         
         //! Gets the name of this ClassificationSystemClassDefinitionGroup
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Utf8CP GetName() const { return GetPropertyValueString(prop_Name()).c_str(); }
@@ -143,7 +143,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CIBSEClassDefinition : ClassificationSystemClassD
         //! @param[in]  name        name of the CIBSE Class definition
         //! @param[in]  Category    Category of the CIBSE Class definition
         //! @return     a ptr to created CIBSEClassDefinition
-        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static CIBSEClassDefinitionPtr Create(Dgn::DgnDbR db, Utf8CP name, ClassificationSystemClassDefinitionGroupCR group);
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT static CIBSEClassDefinitionPtr Create(ClassificationSystemCR system, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name);
 
         //! Sets the name of this CIBSEClassDefinition
         //! @param[in]  name   new name for this CIBSEClassDefinition

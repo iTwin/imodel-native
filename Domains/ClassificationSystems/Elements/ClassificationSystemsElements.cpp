@@ -83,12 +83,12 @@ Utf8CP name
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClassificationSystemClassDefinitionGroupPtr ClassificationSystemClassDefinitionGroup::Create
 (
-Dgn::DgnDbR db,
+ClassificationSystemCR system,
 Utf8CP name
 )
     {
-    Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
+    Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetSubModelId(), classId);
     ClassificationSystemClassDefinitionGroupPtr group = new ClassificationSystemClassDefinitionGroup(params, name);
     return group;
     }
@@ -135,13 +135,13 @@ ClassificationSystemClassDefinitionGroupCR group
 +---------------+---------------+---------------+---------------+---------------+------*/
 CIBSEClassDefinitionPtr CIBSEClassDefinition::Create
 (
-Dgn::DgnDbR db,
-Utf8CP name,
-ClassificationSystemClassDefinitionGroupCR group
+ClassificationSystemCR system,
+ClassificationSystemClassDefinitionGroupCR group,
+Utf8CP name
 )
     {
-    Dgn::DgnClassId classId = QueryClassId(db);
-    Dgn::DgnElement::CreateParams params(db, db.GetDictionaryModel().GetModelId(), classId);
+    Dgn::DgnClassId classId = QueryClassId(system.GetDgnDb());
+    Dgn::DgnElement::CreateParams params(system.GetDgnDb(), system.GetSubModelId(), classId);
     CIBSEClassDefinitionPtr definition = new CIBSEClassDefinition(params, name, group);
     return definition;
     }

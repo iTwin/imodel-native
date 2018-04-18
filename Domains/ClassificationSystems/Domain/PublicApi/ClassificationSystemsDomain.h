@@ -27,11 +27,11 @@ private:
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
 
     void InsertDefinitionSystems(Dgn::DgnDbR db) const;
-    ClassificationSystemClassDefinitionGroupPtr InsertGroup(Dgn::DgnDbR db, Utf8CP name) const;
-    void InsertCIBSE(Dgn::DgnDbR db, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name) const;
-    void InsertASHRAE2004(Dgn::DgnDbR db, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name) const;
-    void InsertASHRAE2007(Dgn::DgnDbR db, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name) const;
-    void InsertASHRAE2010(Dgn::DgnDbR db, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name) const;
+    ClassificationSystemClassDefinitionGroupPtr InsertGroup(ClassificationSystemCR system, Utf8CP name) const;
+    void InsertCIBSE(ClassificationSystemCR system, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name) const;
+    void InsertASHRAE2004(ClassificationSystemCR system, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name) const;
+    void InsertASHRAE2007(ClassificationSystemCR system, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name) const;
+    void InsertASHRAE2010(ClassificationSystemCR system, ClassificationSystemClassDefinitionGroupCR group, Utf8CP name) const;
 //__PUBLISH_SECTION_END__
 
 //__PUBLISH_SECTION_START__
