@@ -18,6 +18,7 @@ void GradientSymb::CopyFrom(GradientSymb const& other)
     m_angle = other.m_angle;
     m_tint  = other.m_tint;
     m_shift = other.m_shift;
+    m_thematicSettings = other.m_thematicSettings;
 
     memcpy(m_colors, other.m_colors, m_nKeys * sizeof(m_colors[0]));
     memcpy(m_values, other.m_values, m_nKeys * sizeof(m_values[0]));
@@ -156,6 +157,12 @@ ColorDef GradientSymb::MapColor(double value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
     {
+    constexpr   uint32_t        s_thematicImageHeight = 8192;
+    if (IsThematic())       // If Thematic override for maximum resolution --- TBD - Check on devices that require square texture.
+        {
+        width = 1;          
+        height = s_thematicImageHeight;
+        }
     double                  cosA = cos(GetAngle()), sinA = sin(GetAngle());
     double                  d, f, r, x, y, xr, yr, xs, ys;
     double                  dMin, dMax;
@@ -269,7 +276,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
             for (size_t j = 0; j < height; j++)
                 {
                 f = 1.0 - (double) j / height;
-                uint32_t    color;
+                uint32_t    color = 0;
 
                 if (f < settings.GetMargin() || f > 1.0 - settings.GetMargin())
                     {
@@ -278,11 +285,26 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
                 else
                     {
                     f = (f - settings.GetMargin()) / (1.0 - 2.0 * settings.GetMargin());
+                    switch (settings.GetMode())
+                        {
+                        case ThematicSettings::Mode::SteppedWithDelimiter:
+                        case ThematicSettings::Mode::Stepped:
+                            if (0 != settings.GetStepCount())
+                                {
+                                double fStep = floor (f * (double) settings.GetStepCount() + .99999) /  ((double) (settings.GetStepCount()));
+                                static double  s_delimitFraction = 1.0 / 1024.0;
 
-                    if (settings.GetStepped() && 0 != settings.GetStepCount())
-                        f = floor (f * (double) settings.GetStepCount() + .99999) /  ((double) (settings.GetStepCount()));
+                                if (ThematicSettings::Mode::SteppedWithDelimiter == settings.GetMode() && fabs(fStep - f) < s_delimitFraction)
+                                    color = 0xff000000;
+                                else
+                                    color = MapColor(fStep).GetValue();
+                                }
+                            break;
 
-                    color = MapColor (f).GetValue();
+                        case ThematicSettings::Mode::Smooth:
+                            color = MapColor (f).GetValue();
+                            break;
+                        }
                     }
 
                 for (size_t i = 0; i < width; i++)
@@ -399,10 +421,11 @@ Json::Value     GradientSymb::ThematicSettings::ToJson () const
     {
     Json::Value value;
 
-    value["stepped"] = GetStepped();
+    value["mode"] = (uint32_t) GetMode();
     value["stepCount"] = GetStepCount();
     value["margin"] = GetMargin();
     value["marginColor"] = GetMarginColor().GetValue();
+    value["colorScheme"] = (uint32_t) GetColorScheme();
 
     return value;
     }
@@ -410,14 +433,13 @@ Json::Value     GradientSymb::ThematicSettings::ToJson () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     GradientSymb::ThematicSettings::FromJson (Json::Value const&) 
+void     GradientSymb::ThematicSettings::FromJson (Json::Value const& value) 
     {
-    Json::Value value;
-
     m_stepCount = value["stepCount"].asUInt();
     m_margin = value["margin"].asDouble();
     m_marginColor = ColorDef(value["marginColor"].asUInt());
-    m_stepped = value["stepped"].asBool();
+    m_mode = (Mode) value["mode"].asUInt();
+    m_colorScheme = (ColorScheme) value["colorScheme"].asUInt();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -446,9 +468,9 @@ GradientSymb::GradientSymb(ThematicSettings const& settings) : m_thematicSetting
            { {0.0, 0, 255, 0}, {0.2, 72, 96, 160}, {0.4, 152, 96, 160}, {0.6, 128, 32, 104}, {0.7, 148, 180, 128}, {1.0, 240, 240, 240}}
         };
 
-    if (settings.GetColorScheme() < ThematicSettings::Custom)
+    if (settings.GetColorScheme() < ThematicSettings::ColorScheme::Custom)
         {
-        auto&   schemeKeys = s_keys[settings.GetColorScheme()];
+        auto&   schemeKeys = s_keys[(uint32_t) settings.GetColorScheme()];
 
         m_mode = Mode::Thematic;
         m_nKeys = 2 + schemeKeys.size();
