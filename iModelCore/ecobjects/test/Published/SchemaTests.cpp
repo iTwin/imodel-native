@@ -1825,18 +1825,72 @@ TEST_F(SchemaCacheTest, DropSchema)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaChecksumTest, ComputeSchemaXmlStringCheckSum)
+TEST_F(SchemaChecksumTest, RawSchemaXmlStringCheckSum)
     {
-    Utf8String schemaXml =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"Widgets\" version=\"09.06\" displayLabel=\"Widgets Display Label\" description=\"Widgets Description\" nameSpacePrefix=\"wid\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ec=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\" xmlns:ods=\"Bentley_ODS.01.02\">"
-        "    <ECClass typeName=\"ecProject\" description=\"Project ECClass\" displayLabel=\"Project\" isDomainClass=\"True\">"
-        "       <ECProperty propertyName=\"Name\" typename=\"string\" displayLabel=\"Project Name\" />"
-        "    </ECClass>"
-        "</ECSchema>";
-
-    EXPECT_TRUE(ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml.c_str(), schemaXml.length()).EqualsIAscii("FE5F221C4D0349739454F47C18C4F7BC6A56E255"));
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
+            <ECEntityClass typeName="TestClass">
+            </ECEntityClass>
+        </ECSchema>)xml";
+    
+    Utf8String checksum = ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, Utf8String(schemaXml).length());
+    EXPECT_TRUE(checksum.EqualsIAscii("dadb691ddd3c751b5de803094d00c610eb142dee"));
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Joseph.Urbano    04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaChecksumTest, RawSchemaXmlStringCheckSumSameAsSerializedXmlStringCheckSum)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
+            <ECEntityClass typeName="TestClass">
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8String rawXmlChecksum = ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, Utf8String(schemaXml).length());
+    EXPECT_TRUE(rawXmlChecksum.EqualsIAscii("dadb691ddd3c751b5de803094d00c610eb142dee"));
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+
+    Utf8String serializedXml;
+    schema->WriteToXmlString(serializedXml);
+    Utf8String serializedXmlChecksum = ECSchema::ComputeSchemaXmlStringCheckSum(serializedXml.c_str(), serializedXml.length());
+
+    EXPECT_TRUE(rawXmlChecksum.EqualsIAscii(serializedXmlChecksum)) << "Actually, we cannot expect the raw xml checksum to be the same as the serialized xml checksum, so this will fail";
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                  Joseph.Urbano    04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaChecksumTest, ComputeCheckSumSameAsSerializedXmlStringCheckSum)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="CoreCustomAttributes" version="1.00.00" alias="CoreCA"/>
+            <ECEntityClass typeName="TestClass">
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+
+    Utf8String serializedXml;
+    schema->WriteToXmlString(serializedXml);
+    Utf8String serializedXmlChecksum = ECSchema::ComputeSchemaXmlStringCheckSum(serializedXml.c_str(), serializedXml.length());
+    EXPECT_TRUE(serializedXmlChecksum.EqualsIAscii("BF547FE16A005415B700CFECAD18E25D2CC3619B"));
+
+    Utf8String checksum = schema->ComputeCheckSum();
+    EXPECT_TRUE(checksum.EqualsIAscii(serializedXmlChecksum));
+    }
+
 
 //=======================================================================================
 //! SchemaImmutableTest
