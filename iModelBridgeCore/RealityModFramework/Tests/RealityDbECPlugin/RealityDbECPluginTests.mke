@@ -1,6 +1,6 @@
 #--------------------------------------------------------------------------------------
 #      $Source: Tests/RealityDbECPlugin/RealityDbECPluginTests.mke $
-#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #--------------------------------------------------------------------------------------
 %include  mdl.mki
 
@@ -74,7 +74,6 @@ ASSEMBLY_MAKE_DOCS = 1
 ASSEMBLY_TITLE = Bentley RealityDbECPluginTests
 ASSEMBLY_DESCRIPTION = Bentley RealityDbECPluginTests
 ASSEMBLY_VERSION = 1.0.0.0
-ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Common/SetupHelpers.cs \
