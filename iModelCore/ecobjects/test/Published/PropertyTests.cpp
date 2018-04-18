@@ -1606,12 +1606,12 @@ TEST_F(PropertyOverrideTests, TestKOQOverride)
 
     // Phenomenon Length
     feet->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
-    feet->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
+    feet->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
     feet->SetRelativeError(10e-3);
 
     // Phenomenon Length
     inch->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M"));
-    inch->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Meters4U"));
+    inch->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
     inch->SetRelativeError(10e-4);
     
     // Phenomenon Temperature

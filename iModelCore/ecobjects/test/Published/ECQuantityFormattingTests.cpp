@@ -116,17 +116,17 @@ TEST_F(ECQuantityFormattingTest, TestWithOnlyMajorUnit)
     schema->AddReferencedSchema(*ECTestFixture::GetUnitsSchema());
     schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
 
-    ECUnitCP meter = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
-    ECFormatCP fi = ECTestFixture::GetFormatsSchema()->GetFormatCP("Meters4U");
+    ECUnitCP ft = ECTestFixture::GetUnitsSchema()->GetUnitCP("FT");
+    ECFormatCP fi = ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFi");
 
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "Test");
-    koq->SetPersistenceUnit(*meter);
+    koq->SetPersistenceUnit(*ft);
     koq->SetDefaultPresentationFormat(*fi);
 
     Formatting::FormatProblemCode problem;
     BEU::Quantity newQuantity = ECQuantityFormatting::CreateQuantity("5", *fi, &problem);
-    EXPECT_TRUE(ECUnit::AreEqual(meter, newQuantity.GetUnit()));
+    EXPECT_TRUE(ECUnit::AreEqual(ft, newQuantity.GetUnit()));
     EXPECT_EQ(5, newQuantity.GetMagnitude());
     }
 

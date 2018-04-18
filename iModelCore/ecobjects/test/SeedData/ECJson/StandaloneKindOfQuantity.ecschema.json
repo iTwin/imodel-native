@@ -7,8 +7,8 @@
   "precision": 3.0,
   "persistenceUnit": "u:MM",
   "presentationUnits": [
-       "f:InchesU",
-       "f:Feet4U",
+       "f:DefaultRealU",
+       "f:DefaultReal",
        "f:AmerFI"
   ]
 }

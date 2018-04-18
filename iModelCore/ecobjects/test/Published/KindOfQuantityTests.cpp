@@ -94,20 +94,20 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
     EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM")));
     EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetConstantCP("PI"))); // constant
     kindOfQuantity->SetRelativeError(10e-3);
-    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("InchesU")));
-    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U")));
+    EXPECT_EQ(ECObjectsStatus::Success, kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultReal")));
     EXPECT_NE(ECObjectsStatus::Success, kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("AngleDM")));
     }
 
     {
     KindOfQuantityP koq = schema->GetKindOfQuantityP("MyKindOfQuantity");
     ASSERT_NE(nullptr, koq);
-    EXPECT_STREQ("InchesU", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU", koq->GetDefaultPresentationFormat()->GetName().c_str());
     auto const& presUnitList = koq->GetPresentationFormats();
 
     EXPECT_EQ(2, presUnitList.size());
-    EXPECT_STREQ("InchesU", presUnitList.at(0).GetName().c_str());
-    EXPECT_STREQ("Feet4U", presUnitList.at(1).GetName().c_str());
+    EXPECT_STREQ("DefaultRealU", presUnitList.at(0).GetName().c_str());
+    EXPECT_STREQ("DefaultReal", presUnitList.at(1).GetName().c_str());
     }
 
     {
@@ -117,7 +117,7 @@ TEST_F(KindOfQuantityTest, AddRemovePresentationFormats)
 
     koq->RemovePresentationFormat(presUnitList.at(1));
     EXPECT_EQ(1, presUnitList.size());
-    EXPECT_STRCASEEQ("Feet4U", presUnitList.at(0).GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", presUnitList.at(0).GetName().c_str());
 
     koq->RemovePresentationFormat(presUnitList.at(0));
     EXPECT_EQ(0, presUnitList.size());
@@ -145,13 +145,13 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationFormats)
     
     EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
 
-    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU")));
     EXPECT_EQ(1, kindOfQuantity->GetPresentationFormats().size());
     kindOfQuantity->RemoveAllPresentationFormats();
     EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
 
-    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U")));
-    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("InchesU")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultReal")));
     EXPECT_EQ(2, kindOfQuantity->GetPresentationFormats().size());
 
     kindOfQuantity->RemoveAllPresentationFormats();
@@ -180,26 +180,26 @@ TEST_F(KindOfQuantityTest, GetReferencedFormats)
     EXPECT_EQ(0, kindOfQuantity->GetReferencedFormats().size());
     EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
 
-    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U"), 3, nullptr, "banana"));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU"), 11, ECTestFixture::GetUnitsSchema()->GetUnitCP("M"), "banana"));
     EXPECT_EQ(1, kindOfQuantity->GetPresentationFormats().size());
     EXPECT_EQ(1, kindOfQuantity->GetReferencedFormats().size());
-    EXPECT_STRCASEEQ("f:Feet4U", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
     kindOfQuantity->RemoveAllPresentationFormats();
     EXPECT_EQ(0, kindOfQuantity->GetPresentationFormats().size());
 
-    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("Feet4U")));
-    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("InchesU")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("AmerFI")));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->LookupFormat("DefaultRealU")));
     EXPECT_EQ(2, kindOfQuantity->GetPresentationFormats().size());
     EXPECT_EQ(2, kindOfQuantity->GetReferencedFormats().size());
-    EXPECT_STRCASEEQ("f:Feet4U", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
-    EXPECT_STRCASEEQ("f:InchesU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
+    EXPECT_STRCASEEQ("f:AmerFI", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
 
     //Should not return any duplicates if there are multiple overrides of the same ECFormat
-    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("InchesU"), 10));
+    EC_EXPECT_SUCCESS(kindOfQuantity->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->LookupFormat("AmerFI"), 4));
     EXPECT_EQ(3, kindOfQuantity->GetPresentationFormats().size());
     EXPECT_EQ(2, kindOfQuantity->GetReferencedFormats().size());
-    EXPECT_STRCASEEQ("f:Feet4U", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
-    EXPECT_STRCASEEQ("f:InchesU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
+    EXPECT_STRCASEEQ("f:AmerFI", kindOfQuantity->GetReferencedFormats().front()->GetQualifiedName(*schema).c_str());
+    EXPECT_STRCASEEQ("f:DefaultRealU", kindOfQuantity->GetReferencedFormats().at(1)->GetQualifiedName(*schema).c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -216,7 +216,7 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationFormats)
     ECUnitCP meterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("M");
     ECUnitCP centimeterUnit = ECTestFixture::GetUnitsSchema()->GetUnitCP("CM");
     ECFormatCP angleDm = ECTestFixture::GetFormatsSchema()->GetFormatCP("AngleDMS");
-    ECFormatCP feet4u = ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U");
+    ECFormatCP amerFI = ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI");
     KindOfQuantityP koq;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
     EXPECT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*meterUnit));
@@ -229,14 +229,14 @@ TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationFormats)
 
     KindOfQuantityP koq3;
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq3, "MyKindOfQuantity3"));
-    EC_EXPECT_SUCCESS(koq->AddPresentationFormat(*feet4u));
+    EC_EXPECT_SUCCESS(koq->AddPresentationFormat(*amerFI));
     EXPECT_EQ(ECObjectsStatus::Success, koq3->SetPersistenceUnit(*centimeterUnit));
     EXPECT_NE(ECObjectsStatus::Success, koq3->AddPresentationFormat(*angleDm)) << "The input unit ARC_DEG is from a different phenomeonon than the Persistence Unit and presentation unit.";
 
     KindOfQuantityP koq4;
     EC_EXPECT_SUCCESS(schema->CreateKindOfQuantity(koq4, "MyKindOfQuantity4"));
     EC_EXPECT_SUCCESS(koq4->AddPresentationFormat(*angleDm));
-    EXPECT_NE(ECObjectsStatus::Success, koq4->AddPresentationFormat(*feet4u)) << "The input Unit FT is from the LENGTH Phenomenon which is different than the existing Presentation Unit.";
+    EXPECT_NE(ECObjectsStatus::Success, koq4->AddPresentationFormat(*amerFI)) << "The input Unit FT is from the LENGTH Phenomenon which is different than the existing Presentation Unit.";
     }
 
 //--------------------------------------------------------------------------------------
@@ -263,17 +263,17 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
     m_schema->CreateKindOfQuantity(koq, "Inch_In_RefSchema_Without_Format");
     koq->SetPersistenceUnit(*ftUnit);
 
-    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
-    EXPECT_STREQ("InchesU", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name";
+    EXPECT_STREQ("AmerFI", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name";
     }
     {
     KindOfQuantityP koq;
     m_schema->CreateKindOfQuantity(koq, "Inch_In_RefSchema_With_Format");
     koq->SetPersistenceUnit(*ftUnit);
-    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"), 8, unitSchema->GetUnitCP("IN"), "banana");
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), 8, unitSchema->GetUnitCP("FT"), "banana");
 
-    EXPECT_STREQ("InchesU(8)[u:IN|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name and the format name";
+    EXPECT_STREQ("DefaultRealU(8)[u:FT|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation format name and the format name";
     }
     {
     KindOfQuantityP koq;
@@ -302,9 +302,9 @@ TEST_F(KindOfQuantityTest, PresentationUnitDescriptor)
     m_schema->CreateKindOfQuantity(koq, "Multiple_Units_and_Format");
     koq->SetPersistenceUnit(*ftUnit);
     koq->AddPresentationFormatSingleUnitOverride(*format, nullptr, smoot, "banana");
-    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"), 8, unitSchema->GetUnitCP("IN"), "banana");
+    koq->AddPresentationFormatSingleUnitOverride(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"), 8, unitSchema->GetUnitCP("IN"), "banana");
 
-    EXPECT_STREQ("SmootFormat[Smoot|banana];InchesU(8)[u:IN|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
+    EXPECT_STREQ("SmootFormat[Smoot|banana];DefaultRealU(8)[u:IN|banana]", koq->GetPresentationUnitDescriptor().c_str()) << "The descriptor should use the qualified presentation unit name and the format name";
     }
     }
 
@@ -482,8 +482,8 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
-    koq->AddPresentationFormatsByString("f:InchesU", formatLookerUpper, unitLookerUpper);
-    EXPECT_STRCASEEQ("InchesU", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    koq->AddPresentationFormatsByString("f:DefaultRealU", formatLookerUpper, unitLookerUpper);
+    EXPECT_STRCASEEQ("DefaultRealU", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
 
     {
@@ -491,8 +491,8 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->AddReferencedSchema(*ECTestFixture::GetFormatsSchema());
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
-    koq->AddPresentationFormatsByString("f:InchesU(8)", formatLookerUpper, unitLookerUpper);
-    EXPECT_STRCASEEQ("InchesU(8)", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    koq->AddPresentationFormatsByString("f:DefaultRealU(8)", formatLookerUpper, unitLookerUpper);
+    EXPECT_STRCASEEQ("DefaultRealU(8)", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
 
     {
@@ -501,8 +501,8 @@ TEST_F(KindOfQuantityTest, AddPresentationFormatByString)
     m_schema->CreateKindOfQuantity(koq, "KindOfAwesome");
     EXPECT_EQ(nullptr, koq->GetDefaultPresentationFormat());
     koq->SetPersistenceUnit(*m_schema->GetUnitsContext().LookupUnit("u:M"));
-    koq->AddPresentationFormatsByString("f:InchesU(8)[u:IN|inch(es)]", formatLookerUpper, unitLookerUpper);
-    EXPECT_STRCASEEQ("InchesU(8)[u:IN|inch(es)]", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    koq->AddPresentationFormatsByString("f:DefaultRealU(8)[u:IN|inch(es)]", formatLookerUpper, unitLookerUpper);
+    EXPECT_STRCASEEQ("DefaultRealU(8)[u:IN|inch(es)]", koq->GetDefaultPresentationFormat()->GetName().c_str());
     }
 
     }
@@ -519,8 +519,8 @@ TEST_F(KindOfQuantityTest, SerializeStandaloneItemKindOfQuantity)
     KindOfQuantityP koq;
     schema->CreateKindOfQuantity(koq, "ExampleKoQ");
     koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("MM"));
-    koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
-    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
+    koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
+    koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
     koq->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
     koq->SetRelativeError(3);
 
@@ -846,8 +846,8 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     kindOfQuantity->SetDisplayLabel("DL");
     kindOfQuantity->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("CM"));
     kindOfQuantity->SetRelativeError(10e-3);
-    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("Feet4U"));
-    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU"));
+    kindOfQuantity->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU"));
+    kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultReal"));
     kindOfQuantity->AddPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("AmerFI"));
 
     ECEntityClassP entityClass;
@@ -876,10 +876,10 @@ TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuanti
     EXPECT_STREQ("CM", deserializedKindOfQuantity->GetPersistenceUnit()->GetName().c_str());
     EXPECT_EQ(10e-3, deserializedKindOfQuantity->GetRelativeError());
 
-    EXPECT_STREQ("Feet4U", deserializedKindOfQuantity->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STREQ("DefaultRealU", deserializedKindOfQuantity->GetDefaultPresentationFormat()->GetName().c_str());
     auto& resultAltUnits = deserializedKindOfQuantity->GetPresentationFormats();
     EXPECT_EQ(3, resultAltUnits.size()); // Default presentation unit is included in list of presentation units
-    EXPECT_STREQ("InchesU", resultAltUnits[1].GetName().c_str());
+    EXPECT_STREQ("DefaultReal", resultAltUnits[1].GetName().c_str());
     EXPECT_STREQ("AmerFI", resultAltUnits[2].GetName().c_str());
 
     ECClassCP deserializedClass = deserializedSchema->GetClassCP("EntityClass");
@@ -1094,7 +1094,7 @@ Utf8CP KindOfQuantitySerializationTest::s_testSchemaXml = R"xml(<?xml version="1
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
         <ECSchemaReference name="Units" version="01.00" alias="u"/>
         <ECSchemaReference name="Formats" version="01.00" alias="f"/>
-        <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="u:M" presentationUnits="f:InchesU" />
+        <KindOfQuantity typeName="TestKoQ" relativeError="10e-3" persistenceUnit="u:M" presentationUnits="f:DefaultRealU" />
     </ECSchema>)xml";
 
 //---------------------------------------------------------------------------------------
@@ -1120,7 +1120,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto persist = koq->GetPersistenceUnit();
     auto pres = koq->GetDefaultPresentationFormat();
     EXPECT_STRCASEEQ("M", persist->GetName().c_str());
-    EXPECT_STRCASEEQ("InchesU", pres->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", pres->GetName().c_str());
     }
 
     // EC3.1
@@ -1136,7 +1136,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto persist = koq->GetPersistenceUnit();
     auto pres = koq->GetDefaultPresentationFormat();
     EXPECT_STRCASEEQ("M", persist->GetName().c_str());
-    EXPECT_STRCASEEQ("InchesU", pres->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", pres->GetName().c_str());
     }
 
     // EC3.2
@@ -1153,7 +1153,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto pres = koq->GetDefaultPresentationFormat();
     EXPECT_STRCASEEQ("M", persist->GetName().c_str());
     ASSERT_NE(nullptr, persist);
-    EXPECT_STRCASEEQ("InchesU", pres->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", pres->GetName().c_str());
     }
 
     // Latest EC Version
@@ -1165,7 +1165,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     KindOfQuantityP koq;
     EC_ASSERT_SUCCESS(origSchema->CreateKindOfQuantity(koq, "ExampleKoQ"));
     EXPECT_EQ(ECObjectsStatus::Success, koq->SetPersistenceUnit(*ECTestFixture::GetUnitsSchema()->GetUnitCP("M")));
-    EXPECT_EQ(ECObjectsStatus::Success, koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("InchesU")));
+    EXPECT_EQ(ECObjectsStatus::Success, koq->SetDefaultPresentationFormat(*ECTestFixture::GetFormatsSchema()->GetFormatCP("DefaultRealU")));
 
     Utf8String xmlString;
     ASSERT_EQ(SchemaWriteStatus::Success, origSchema->WriteToXmlString(xmlString, ECVersion::Latest));
@@ -1177,8 +1177,7 @@ TEST_F(KindOfQuantitySerializationTest, WriteXmlUsesProperUnitNameMappings)
     auto persist = koq2->GetPersistenceUnit();
     auto pres = koq2->GetDefaultPresentationFormat();
     EXPECT_STRCASEEQ("M", persist->GetName().c_str());
-    EXPECT_STRCASEEQ("InchesU", pres->GetName().c_str());
-    EXPECT_STRCASEEQ("IN", pres->GetCompositeMajorUnit()->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", pres->GetName().c_str());
     }
     }
 
@@ -1198,7 +1197,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec31_roundTrip)
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationUnits="f:InchesU(9)[u:IN|banana];f:InchesU" />
+                        presentationUnits="f:DefaultRealU(9)[u:IN|banana];f:DefaultRealU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1225,7 +1224,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTripShouldDropUnknownPresentationF
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationUnits="f:InchesU(9)[u:IN|banana];f:InchesU" />
+                        presentationUnits="f:DefaultRealU(9)[u:IN|banana];f:AmerFI" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1253,7 +1252,7 @@ TEST_F(KindOfQuantityRoundTripTest, Fail_ec30_roundTrip)
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationUnits="f:InchesU(9)[u:IN|banana];f:InchesU" />
+                        presentationUnits="f:DefaultRealU(9)[u:IN|banana];f:DefaultRealU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1280,7 +1279,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTripShouldDropUnknownPresentationF
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationUnits="f:InchesU(9)[u:IN|banana];f:InchesU" />
+                        presentationUnits="f:DefaultRealU(9)[u:IN|banana];f:AmerFI" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1307,7 +1306,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTrip)
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationUnits="f:AmerFI;f:InchesU" />
+                        presentationUnits="f:AmerFI;f:DefaultRealU[u:M]" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1322,7 +1321,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec31_roundTrip)
     auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("AmerFI", koq->GetPresentationFormats()[0].GetName().c_str());
-    EXPECT_STRCASEEQ("InchesU", koq->GetPresentationFormats()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:M]", koq->GetPresentationFormats()[1].GetName().c_str());
     EXPECT_DOUBLE_EQ(0.5, koq->GetRelativeError());
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDescription().c_str());
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
@@ -1339,7 +1338,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:FT" relativeError=".5"
-                        presentationUnits="f:AmerFI;f:InchesU" />
+                        presentationUnits="f:AmerFI;f:DefaultRealU[u:M]" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1354,7 +1353,7 @@ TEST_F(KindOfQuantityRoundTripTest, ec30_roundTrip)
     auto koq = schema->GetKindOfQuantityCP("MyKindOfQuantity");
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("AmerFI", koq->GetPresentationFormats()[0].GetName().c_str());
-    EXPECT_STRCASEEQ("InchesU", koq->GetPresentationFormats()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU[u:M]", koq->GetPresentationFormats()[1].GetName().c_str());
     EXPECT_DOUBLE_EQ(0.5, koq->GetRelativeError());
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDescription().c_str());
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
@@ -1467,7 +1466,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                        presentationUnits="f:AmerFI;f:InchesU" />
+                        presentationUnits="f:AmerFI;f:DefaultRealU" />
         </ECSchema>)xml");
 
     SchemaItem schemaItem = SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
@@ -1499,7 +1498,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInReferencedSche
     EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str());
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("AmerFI", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STRCASEEQ("InchesU", koq->GetPresentationFormats()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", koq->GetPresentationFormats()[1].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
@@ -1520,7 +1519,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInSchema)
             <ECSchemaReference name="Formats" version="1.0" alias="f"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="u:CM" relativeError=".5"
-                        presentationUnits="f:InchesU;f:Feet4U" />
+                        presentationUnits="f:AmerFI;f:DefaultRealU" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1541,8 +1540,8 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityInSchema)
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
     EXPECT_STRCASEEQ("CM", koq->GetPersistenceUnit()->GetName().c_str());
     ASSERT_EQ(2, koq->GetPresentationFormats().size());
-    EXPECT_STRCASEEQ("InchesU", koq->GetDefaultPresentationFormat()->GetName().c_str());
-    EXPECT_STRCASEEQ("Feet4U", koq->GetPresentationFormats()[1].GetName().c_str());
+    EXPECT_STRCASEEQ("AmerFI", koq->GetDefaultPresentationFormat()->GetName().c_str());
+    EXPECT_STRCASEEQ("DefaultRealU", koq->GetPresentationFormats()[1].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");
@@ -1564,7 +1563,7 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityWithUnitsInSchem
             <Unit typeName="TestUnit" phenomenon="u:LENGTH" unitSystem="u:SI" displayLabel="Unit" definition="M" description="This is an awesome new Unit"/>
             <KindOfQuantity typeName="MyKindOfQuantity" description="My KindOfQuantity"
                         displayLabel="My KindOfQuantity" persistenceUnit="TestUnit" relativeError=".5"
-                        presentationUnits="f:DefaultRealU[TestUnit];f:AmerFI;f:InchesU" />
+                        presentationUnits="f:DefaultRealU[TestUnit];f:AmerFI;" />
             <ECEntityClass typeName="Foo" >
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="MyKindOfQuantity" />
                 <ECProperty propertyName="Homepage" typeName="string" extendedTypeName="URL" />
@@ -1584,10 +1583,9 @@ TEST_F(KindOfQuantityCompatibilityTest, ec33_ValidKindOfQuantityWithUnitsInSchem
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDescription().c_str());
     EXPECT_STRCASEEQ("My KindOfQuantity", koq->GetInvariantDisplayLabel().c_str());
     EXPECT_STRCASEEQ("TestUnit", koq->GetPersistenceUnit()->GetName().c_str());
-    ASSERT_EQ(3, koq->GetPresentationFormats().size());
+    ASSERT_EQ(2, koq->GetPresentationFormats().size());
     EXPECT_STRCASEEQ("DefaultRealU[TestUnit]", koq->GetDefaultPresentationFormat()->GetName().c_str());
     EXPECT_STRCASEEQ("AmerFI", koq->GetPresentationFormats()[1].GetName().c_str());
-    EXPECT_STRCASEEQ("InchesU", koq->GetPresentationFormats()[2].GetName().c_str());
     auto entityClass = schema->GetClassCP("Foo");
     auto propWithKoq = entityClass->GetPropertyP("Length");
     auto arrayPropWithKoq = entityClass->GetPropertyP("AlternativeLengths");

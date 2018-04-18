@@ -278,7 +278,7 @@ SchemaWriteStatus KindOfQuantity::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecX
 
             if(ecXmlVersion < ECVersion::V3_2)
                 {
-                if (!format.HasComposite() || !format.GetCompositeSpec()->HasMajorLabel())
+                if (!format.HasComposite() || !format.GetCompositeSpec()->HasMajorUnit())
                     {
                     LOG.warningv("Dropping presentation format for KindOfQuantity '%s because it does not have an input unit which is required to serialize to version < v3_2.", GetFullName().c_str());
                     continue;
@@ -1085,9 +1085,16 @@ ECObjectsStatus KindOfQuantity::AddPresentationFormat(ECFormatCR parent, Nullabl
 ECObjectsStatus KindOfQuantity::AddPresentationFormatSingleUnitOverride(ECFormatCR parent, Nullable<int32_t> precisionOverride, ECUnitCP inputUnitOverride, Utf8CP labelOverride, bool isDefault)
     {
     UnitAndLabelPairs units;
+    if (nullptr == inputUnitOverride && nullptr != labelOverride)
+        {
+        if (parent.HasCompositeMajorUnit())
+            inputUnitOverride = (ECUnitCP)parent.GetCompositeMajorUnit();
+        else
+            return ECObjectsStatus::Error;
+        }
     if (nullptr != inputUnitOverride)
         { 
-        units= UnitAndLabelPairs();
+        units = UnitAndLabelPairs();
         units.push_back(make_bpair(inputUnitOverride, labelOverride));
         }
 
