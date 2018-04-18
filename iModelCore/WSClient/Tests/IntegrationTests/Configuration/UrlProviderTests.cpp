@@ -34,17 +34,6 @@ struct StubTaskScheduler : ITaskScheduler
     AsyncTaskPtr<void> OnEmpty() const { ADD_FAILURE(); return CreateCompletedAsyncTask(); };
     };
 
-class UrlProviderTests : public WSClientBaseTest
-    {
-    void Reset()
-        {
-        AsyncTasksManager::SetDefaultScheduler(nullptr);
-        UrlProvider::Uninitialize();
-        }
-    void SetUp() { Reset(); }
-    void TearDown() { Reset(); }
-    };
-
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -75,16 +64,17 @@ TEST_F(UrlProviderTests, Get_WithCustomDefaultSheduler_DoesNotUseDefaultSheduler
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-INSTANTIATE_TEST_CASE_P(,
-                        UrlProviderTests,
-                        ::testing::Combine(::testing::Values(UrlProvider::Environment::Dev, UrlProvider::Environment::Qa, UrlProvider::Environment::Release, UrlProvider::Environment::Perf),
-                                           ::testing::ValuesIn(UrlProvider::GerUrlRegistry())),
-                        UrlProviderTests::PrintToStringParamName());
+INSTANTIATE_TEST_CASE_P(,UrlProviderParamTests,
+    ::testing::Combine(
+        ::testing::Values(UrlProvider::Environment::Dev, UrlProvider::Environment::Qa, UrlProvider::Environment::Release, UrlProvider::Environment::Perf),
+        ::testing::ValuesIn(UrlProvider::GerUrlRegistry())
+    ),
+    UrlProviderParamTests::PrintToStringParamName());
 
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    julius.cepukenas                   02/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_P(UrlProviderTests, VerifyClientConnection_Success)
+TEST_P(UrlProviderParamTests, VerifyClientConnection_Success)
     {
     auto ls = WSLocalState();
     UrlProvider::Environment enviroment = ::testing::get<0>(GetParam());

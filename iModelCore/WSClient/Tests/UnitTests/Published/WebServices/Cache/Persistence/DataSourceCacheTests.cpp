@@ -262,7 +262,7 @@ BeFileName GetSchemaPath(Utf8StringR schemaXml, WCharCP fileName, ECSchemaReadCo
     {
     BeFileName schemaPath(GetTestsTempDir().AppendToPath(fileName));
     SchemaWriteStatus status = CreateSchema(schemaXml, context)->WriteToXmlFile(schemaPath);
-    EXPECT_EQ(SCHEMA_WRITE_STATUS_Success, status); 
+    EXPECT_EQ(SchemaWriteStatus::Success, status);
     return schemaPath;
     }
     
@@ -270,7 +270,7 @@ SchemaReadStatus LoadSchema(std::shared_ptr<DataSourceCache> cache, BeFileNameCR
     {
     auto context = ECSchemaReadContext::CreateContext();
     context->AddSchemaPath(schemaPath.GetDirectoryName());
-    context->AddSchemaLocater(cache->GetAdapter().GetECDb().GetEC().GetSchemaLocater());
+    context->AddSchemaLocater(cache->GetAdapter().GetECDb().GetSchemaLocater());
 
     SchemaReadStatus status = ECSchema::ReadFromXmlFile(loadedSchemaOut, schemaPath.GetName(), *context);
     return status;
@@ -294,7 +294,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DerivedSchemasWithAddedPropertyPassed
 
     ECSchemaPtr baseSchema;
     auto baseSchemaPath = GetSchemaPath(baseSchemaXml, L"BaseSchema", *context);
-    ASSERT_EQ(SCHEMA_READ_STATUS_Success, LoadSchema(cache, baseSchemaPath, baseSchema));
+    ASSERT_EQ(SchemaReadStatus::Success, LoadSchema(cache, baseSchemaPath, baseSchema));
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {baseSchema}));
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("BaseSchema"));
 
@@ -310,7 +310,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DerivedSchemasWithAddedPropertyPassed
 
     ECSchemaPtr derivedSchema;
     auto derivedSchemaPath = GetSchemaPath(derivedSchema1Xml, L"DynamicSchema", *context);
-    ASSERT_EQ(SCHEMA_READ_STATUS_Success, LoadSchema(cache, derivedSchemaPath, derivedSchema));
+    ASSERT_EQ(SchemaReadStatus::Success, LoadSchema(cache, derivedSchemaPath, derivedSchema));
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {derivedSchema}));
     ASSERT_TRUE(nullptr != cache->GetAdapter().GetECSchema("DynamicSchema"));
     
@@ -336,7 +336,7 @@ TEST_F(DataSourceCacheTests, UpdateSchemas_DerivedSchemasWithAddedPropertyPassed
     
     ECSchemaPtr derivedSchema2;
     auto derivedSchema2Path = GetSchemaPath(derivedSchema2Xml, L"DynamicSchema", *context);
-    ASSERT_EQ(SCHEMA_READ_STATUS_Success, LoadSchema(cache, derivedSchema2Path, derivedSchema2));
+    ASSERT_EQ(SchemaReadStatus::Success, LoadSchema(cache, derivedSchema2Path, derivedSchema2));
     ASSERT_EQ(SUCCESS, cache->UpdateSchemas(std::vector<ECSchemaPtr> {derivedSchema2}));
     EXPECT_TRUE(nullptr != cache->GetAdapter().GetECSchema("DynamicSchema"));
     

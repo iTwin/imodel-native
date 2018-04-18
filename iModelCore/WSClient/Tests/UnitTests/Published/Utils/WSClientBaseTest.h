@@ -13,7 +13,7 @@
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
 #define LOGGER_NAMESPACE_WSCLIENT_TESTS "WSClient.Tests"
-#define TESTLOG (*Bentley::NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_WSCLIENT_TESTS))
+#define TESTLOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (LOGGER_NAMESPACE_WSCLIENT_TESTS))
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
