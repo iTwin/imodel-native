@@ -19,7 +19,7 @@
 #include "ExportMacros.h"
 #include <Geom/GeomApi.h>
 #include <Bentley/NonCopyableClass.h>
-#include <Bentley/bvector.h>
+#include <Bentley/bvector.h>                                                          
 #include "DgnPlatform.r.h"
 #include "DgnPlatformErrors.h"
 #include "DgnHost.h"
