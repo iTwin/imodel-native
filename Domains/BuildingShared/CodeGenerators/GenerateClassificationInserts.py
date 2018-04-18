@@ -34,10 +34,11 @@ f.write('''/*-------------------------------------------------------------------
 //===========================================================================================\n''')
 f.write('void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const\n')
 f.write('    {\n')
+f.write('    ClassificationSystemPtr system;\n')
 f.write('    ClassificationSystemClassDefinitionGroupPtr group;\n')
 
 roomDict = {}
-
+#TODO db from classificationsystem (getDgnDb()), fix the whole bloody domain.
 for standardRoom in root.find('List').findall('StandardRoom'):
     #output = '    '
     name = standardRoom.find('Name').text
@@ -51,11 +52,13 @@ for standardRoom in root.find('List').findall('StandardRoom'):
     #output+="(db, \""+name+"\", \""+category+"\");\n"
     #f.write(output)
 for standard in roomDict:
+    output = "    system = ClassificationSystem::Create(db, \""+standard+"\");\n"
+    f.write(output);
     for category in roomDict[standard]:
-        output = "    group = InsertGroup(db, \""+category+"\");\n"
+        output = "    group = InsertGroup(*system, \""+category+"\");\n"
         f.write(output);
         for name in roomDict[standard][category]:
-            output = "    Insert"+standard+"(db, *group, \""+name+"\");\n"
+            output = "    Insert"+standard+"(*system, *group, \""+name+"\");\n"
             f.write(output);
 f.write('    }\n')
 f.close()
