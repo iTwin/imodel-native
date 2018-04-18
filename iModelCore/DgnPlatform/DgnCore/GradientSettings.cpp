@@ -364,7 +364,7 @@ BentleyStatus   GradientSymb::FromJson(Json::Value const& json)
     
     m_mode  = (Mode) json["mode"].asUInt();
     m_flags = (Flags) json["flags"].asUInt();
-    m_angle = json["angle"].asDouble(); 
+    m_angle = JsonUtils::ToAngle(json["angle"]).Radians();
     m_tint  = json["tint"].asDouble();
     m_shift = json["shift"].asDouble(); 
     
@@ -392,8 +392,8 @@ Json::Value     GradientSymb::ToJson () const
 
     value["mode"]  = (int) GetMode();
     value["flags"] = (int) GetFlags();
-    value["angle"] = GetAngle(); 
-    value["tint"] = GetTint();
+    value["angle"] = JsonUtils::FromAngle(Angle::FromRadians(GetAngle()));
+    value["tint"]  = GetTint();
     value["shift"] = GetShift();
 
     ColorDef    color;

@@ -1153,7 +1153,7 @@ public:
     // Thematic display.
     bool IsThematic() const { return m_mode == Mode::Thematic; } 
     ThematicSettings const& GetThematicSettings() const { return m_thematicSettings; }
-    ThematicSettings& GetThematicSettings() { return m_thematicSettings; }
+    ThematicSettings& GetThematicSettingsR() { return m_thematicSettings; }
 };
 
 
