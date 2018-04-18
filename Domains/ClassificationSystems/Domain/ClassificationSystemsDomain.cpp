@@ -113,6 +113,11 @@ void ClassificationSystemsDomain::InsertASHRAE2004
     Utf8CP name
 ) const
     {
+    ASHRAE2004ClassDefinitionPtr classDefinition = ASHRAE2004ClassDefinition::Create(system, group, name);
+    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinition.get(), BeSQLite::DbOpcode::Insert, "ASHRAE2004ClassDefinition : Insertion"))
+        {
+        classDefinition->Insert();
+        }
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              03/2018
@@ -135,6 +140,11 @@ void ClassificationSystemsDomain::InsertASHRAE2010
     Utf8CP name
 ) const
     {
+    ASHRAE2010ClassDefinitionPtr classDefinition = ASHRAE2010ClassDefinition::Create(system, group, name);
+    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinition.get(), BeSQLite::DbOpcode::Insert, "ASHRAE2010ClassDefinition : Insertion"))
+        {
+        classDefinition->Insert();
+        }
     }
 
 #include "GeneratedClassificationInserts.cpp"
