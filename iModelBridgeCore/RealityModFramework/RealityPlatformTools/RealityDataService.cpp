@@ -1213,6 +1213,23 @@ void AzureHandshake::_PrepareHttpRequestStringAndPayload() const
     }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              04/2018
+//=====================================================================================
+bool TransferReport::AllTransferedSuccessfully() const
+    {
+    bool success = true;
+    for(bmap<Utf8String, bool>::iterator iter = transferSuccessMap.begin(); iter != transferSuccessMap.end(); ++iter)
+        {
+        if(!iter->second)
+            {
+            success = false;
+            break;
+            }
+        }
+    return success;
+    }
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
 void TransferReport::ToXml(Utf8StringR report) const
@@ -1438,6 +1455,7 @@ void RealityDataServiceTransfer::ReportStatus(int index, void *pClient, int Erro
         return;
 
     m_filesToTransfer[pEntry->m_index] = nullptr;
+    m_report.transferSuccessMap[pEntry->GetFilename()] = (ErrorCode == 0);
     delete pEntry;
     }
 
@@ -1572,7 +1590,33 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
     if (CreateUpload(properties) != BentleyStatus::SUCCESS)
         return;
 
-    m_id = GetGuidFromId(m_id);
+    if(m_id.length() > 36) // if m_id is a navString instead of a guid
+        {
+        Utf8String guid;
+        bvector<Utf8String> parts = bvector<Utf8String>();
+        BeStringUtilities::Split(m_id.c_str(), "~", parts);
+        guid = parts[0];
+        if(parts.size() > 1)
+            {
+            m_serverPath = m_id;
+            m_serverPath.ReplaceAll(guid.c_str(),"");
+            m_serverPath.ReplaceAll("~2F", "/");
+            }
+
+        parts.clear();
+        BeStringUtilities::Split(guid.c_str(), "-", parts);
+
+        bvector<Utf8String> guidParts = bvector<Utf8String>();
+        for(size_t i = parts.size() - 1; i > 0; i--)
+            {
+            if(parts[i].length() > 0)
+                guidParts.push_back(parts[i]);
+            if(guidParts.size() >= 5)
+                break;
+            }
+
+        m_id = Utf8PrintfString("%s-%s-%s-%s-%s", guidParts[4], guidParts[3], guidParts[2], guidParts[1], guidParts[0]);
+        }
 
     m_handshakeRequest = new AzureHandshake(m_id, true);
     GetAzureToken();

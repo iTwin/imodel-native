@@ -324,12 +324,7 @@
         <SubPart PartName="RealityDataServiceUploader"/>
         <SubPart PartName="RealityDataServiceDownloader"/>
         <SubPart PartName="RealityDataServiceConsole"/>
-        <SubPart PartName="RealityDbECPlugin"/>
-        <SubPart PartName="RealityDbECPluginC"/>
-        <!--<SubPart PartName="UsageDataExtractor"/>-->
         <SubPart PartName="CrawlerLibExample"/>
-        <SubPart PartName="RealityDbECPluginInstaller" />
-        <!--<SubPart PartName="DataHandlerTool" />-->
         <SubPart PartName="RealityServicesNet"/>
     </Part>
     
@@ -342,96 +337,6 @@
         <SubPart PartName="RDSLoadTest"/>
         <SubPart PartName="3CSLoadTest"/>
         <SubPart PartName="RealityDataServicePerformanceTests"/>
-    </Part>
-
-    <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
-        <SubPart PartName="RealityServicesNet"/>
-        <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
-        <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
-        <Bindings>
-            <Assemblies>Delivery/Bentley.RealityDbECPlugin.dll</Assemblies>
-        </Bindings>
-    </Part>
-    
-    <Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1 -dCONNECTENV=1" OnlyPlatforms="x86,x64">
-    <!--<Part Name="RealityDbECPluginC" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" BMakeOptions="-dIMSOFF=1" OnlyPlatforms="x86,x64">-->
-        <SubPart PartName="RealityDbECPluginNuGetPackages"/>
-        <SubPart PartName="RealityServicesNet"/>
-        <SubPart PartName="ECServices"          PartFile="ecf"            Repository="ecf" />
-        <SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />
-        <Bindings>
-            <Assemblies>Delivery/Bentley.RealityDbECPluginC.dll</Assemblies>
-        </Bindings>
-    </Part>
-    
-    <Part Name="UsageDataExtractor" BMakeFile="RealityDbECPlugin\UsageDataExtractor\UsageDataExtractor.mke" OnlyPlatforms="x64">
-        <RequiredRepository>BCC-IdentityModel</RequiredRepository>
-        <!--<SubPart PartName="BentleyDesktopClientNETApi"  PartFile="SdkSources" Repository="bsicommon" />-->
-        <SubPart PartName="RequiredNugets" />
-        <!--<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />-->
-        <Bindings>
-            <Assemblies>Delivery/UsageDataExtractor.exe</Assemblies>    
-            <Files ProductDirectoryName="Assemblies">Delivery/UsageDataExtractor.exe.config</Files>
-        </Bindings>
-    </Part>
-    
-    <Part Name="RealityDbECPluginNuGetPackages">     
-        <!--
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECAbstractUI</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECF</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECObjects</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPersistence</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPluginBuilder</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPresentation</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECSystem</NuGetPackage>
-        -->
-        
-        <NuGetPackage targetFramework=".NETFramework4.0">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.SelectServer.SaaS.Client</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.Discovery.Buddi.Client</NuGetPackage>
-        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging</NuGetPackage>-->
-        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging.Core</NuGetPackage>-->
-
-        <RequiredRepository>Bsitools-NuGet</RequiredRepository>  
-
-        <!--
-        <SubPart PartName="LoggingManaged"  PartFile="LoggingSDK"   Repository="loggingsdk" />
-        <SubPart PartName="Exceptions"           PartFile="platformtech"       Repository="platformtech" />
-        <SubPart PartName="ExtensionDiscovery"   PartFile="platformtech"       Repository="platformtech" />
-        <SubPart PartName="Platform"             PartFile="platformtech"       Repository="platformtech" />
-        <SubPart PartName="General"              PartFile="platformtech"       Repository="platformtech" />
-        <SubPart PartName="GeometryStructsNET"   PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet" />
-        <SubPart PartName="BentleyGeometryNETFB" PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet" />
-        <SubPart PartName="GeometryCommon"       PartFile="BentleyGeometryNet" Repository="BentleyGeometryNet" />
-        <SubPart PartName="UI"                   PartFile="platformtech"       Repository="platformtech" />
-        -->
-        
-        <!-- The following subparts have been added because BentleyDesktopClient already has a part for it. We have to get 
-        this dll from that particular subpart, or else we have a conflict when building with RealityModFramework BuildStrategy 
-        when using the commented lines below instead. If we do not get it from any source, we have a problem building 
-        RealityContextServices BuildStrategy. If we ever get rid of BentleyDesktopClient from our other parts, 
-        we'll be able to remove these subparts below and use the commented lines instead.-->
-        <!--
-        <SubPart PartName="Common.Logging"          PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
-        <SubPart PartName="Common.Logging.core"     PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
-        -->
-        <!--<SubPart PartName="BentleyDesktopClientNETApi"  PartFile="SdkSources" Repository="bsicommon" />-->
-        
-        <Bindings>
-            <Assemblies>NuGet\net40\Microsoft.WindowsAzure.Configuration.dll</Assemblies> 
-            <Assemblies>NuGet\net45\Bentley.SelectServer.SaaS.Client.dll</Assemblies> 
-            <Assemblies>NuGet\net45-full\Microsoft.ServiceBus.dll</Assemblies> 
-            <Assemblies>NuGet\net45\Bentley.Discovery.Buddi.Client.dll</Assemblies> 
-            <!--<Assemblies>NuGet\net452\Bentley.EC.AbstractUI3.dll</Assemblies>
-            <Assemblies>NuGet\net452\Bentley.EC.Persistence3.dll</Assemblies>
-            <Assemblies>NuGet\net452\Bentley.EC.PluginBuilder3.dll</Assemblies>
-            <Assemblies>NuGet\net452\Bentley.EC.Presentation3.dll</Assemblies>
-            <Assemblies>NuGet\net452\Bentley.ECObjects3.dll</Assemblies>
-            <Assemblies>NuGet\net452\Bentley.ECSystem3.dll</Assemblies>-->
-            <Assemblies>NuGet\net40\Common.Logging.dll</Assemblies>
-            <Assemblies>NuGet\net40\Common.Logging.Core.dll</Assemblies>
-        </Bindings>
     </Part>
     
     <Part Name="RequiredNugets" BentleyBuildMakeFile="RequiredNugets.prewire.mke">
@@ -452,14 +357,6 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityDbECPluginCNuGet" BMakeFile="RealityDbECPlugin\NuGet\RealityDbECPluginC.NuGetPackage.mke">
-        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
-        <SubPart PartName="RealityDbECPluginC" />
-        <Bindings>
-            <Files ProductDirectoryName="RealityDbECPluginNuGetPackages" Required="false">Install\Bentley.RealityDbECPluginC\Bentley.RealityDbECPluginC.*.nupkg</Files>
-        </Bindings>
-    </Part>
-    
     <Part Name="BentleyWMSPackageNet" BMakeFile="BentleyWMSPackageNet\BentleyWMSPackageNet.mke" BMakeOptions="-dTranskitLink=1">
         <SubPart PartName="TranskitTools"    PartFile="TransKitTools" Repository="TransKitTools" />
         <SubPart PartName="RealityPlatform"/>
@@ -469,16 +366,6 @@
         <Bindings>
             <Assemblies>Delivery/BentleyWMSPackageNet$(shlibext)</Assemblies>
         </Bindings>
-    </Part>
-
-    <Part Name="RealityDbECPluginInstaller" BMakeFile="RealityDbECPlugin/Install/Install.mke">
-      <RequiredRepository>bsitools-wix_3.10.2103.0</RequiredRepository>
-      <RequiredRepository>Miscdev-Eula</RequiredRepository>
-      <RequiredRepository>Mergemodule-Microsoft_VC_14.0</RequiredRepository>
-      <SubPart PartName="RealityDbECPlugin"/>
-      <Bindings>
-        <Files ProductDirectoryName="ApplicationInstallRoot" Required="true" IfNotPresent="Warn">Delivery/Setup_RealityDbECPlugin.msi</Files>
-      </Bindings>
     </Part>
 
     <Part Name="WMSCapabilitiesNET" BentleyBuildMakeFile="WMSCapabilitiesNET\WMSCapabilitiesNET.mke">
@@ -534,24 +421,17 @@
         <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
         <ProductDirectory Name="BentleyDesktopClientApi"        Path=""/>
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""/>
-
-        <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="applicationroot"/>
-        <ProductDirectory Name="RealityDbECPluginNuGetPackages" Path="Install" />
     </ProductDirectoryList>
     
     <Product Name="RealityModFramework">
         <SubPart PartName="Reality-Examples"/>
         <SubPart PartName="RealityAdmin-Applications"/>
-        <SubPart PartName="RealityDbECPluginCNuGet"/>
         <SubPart PartName="RealityModFrameworkTested"/>
         <SubPart PartName="RealityPlatformToolsLight"/>
       <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
     <Product Name="RealityContextServices" PrgOutputDir="RealityContextServices">
-        <SubPart PartName="RealityDbECPluginCNuGet"/>
-        <!--<SubPart PartName="UsageDataExtractor"/>-->
-        <!--<SubPart PartName="RealityModelingFramework-Minimal-WinX64-Only"/>-->
         <Directories DirectoryListName="RealityModFrameworkDirList" />
     </Product>
 
@@ -614,91 +494,12 @@
     <!-- ********************************************************************************************** -->
     <!-- Nunit tests -->
     <!-- ********************************************************************************************** -->
-    <ProductDirectoryList ListName="RealityDbECPluginTestsDirList" >
-        <ProductDirectory Name="applicationroot"            Path=""/>
-        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
-        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
-
-        <!--notices/ review if notices need to be delivered--> 
-        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
-        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
-
-        <!--needed for the moment from LkgsVancouver -->
-        <ProductDirectory Name="LoggingNativeAssemblies"        Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"       Deliver="false"/>
-        <ProductDirectory Name="managedtests"                   Deliver="false"/>
-        <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
-        <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
-        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
-        <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies"      Path=""/>
-        <ProductDirectory Name="PPNativeAssemblies"             Path="" />
-        <ProductDirectory Name="ECObjectsNativeAssemblies"      Path="" />
-        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
-        <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
-        <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
-        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
-
-        <ProductDirectory Name="NUnit 2.6.4 binaries"           Path=""/>
-        <ProductDirectory Name="NUnit 2.6.4 core references"    Path=""/>
-        <ProductDirectory Name="managedtests"                   Path=""/>
-        <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
-        <ProductDirectory Name="RhinoMockAssemblies"            Path=""/>
-    </ProductDirectoryList>
-
-
-    <Part Name="RealityDbECPluginUnitTests" BMakeFile="Tests/RealityDbECPlugin/RealityDbECPluginTests.mke">
-        <SubPart PartName="RealityDbECPluginC" />
-        <SubPart PartName="nunit_2.6.4" PartFile="${SrcRoot}bsicommon/CvsPartFiles\bsitools" Repository="Bsitools-Nunit_2.6.4" />
-        <SubPart PartName="rhinomocks_3.5" PartFile="${SrcRoot}bsicommon/CvsPartFiles\bsitools" Repository="Bsitools-Rhinomocks_3.5" />
-        <Bindings>
-            <Assemblies ProductDirectoryName="managedtests">
-                Delivery\Bentley.RealityDbECPlugin.Tests.dll
-            </Assemblies>
-        </Bindings>
-    </Part>
-
-    <Part Name="RunRealityDbECPluginTests" BMakeFile="Tests\RealityDbECPlugin\RunRealityDbECPluginTests.mke">
-        <SubPart PartName="RealityDbECPluginUnitTests"/>
-    </Part>
-
     <Product Name="RealityContextServicesTests">
         <SubProduct ProductName="RealityContextServices"/>
-        <SubPart PartName="RealityDbECPluginUnitTests"/>
-        <Directories DirectoryListName="RealityDbECPluginTestsDirList" />
     </Product>
-
-    <ProductDirectoryList ListName="RealityDbECPluginUnitTested">
-        <ProductDirectory Name="applicationroot"            Path=""/>
-        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot"/>
-        <ProductDirectory Name="Assets"                     Path="Assets" RelativeTo="applicationroot" LibType="static"/>
-        <ProductDirectory Name="Assemblies"                 RelativeTo="applicationroot"/>
-
-        <!--notices/ review if notices need to be delivered--> 
-        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="dynamic"   Path="notices"/>
-        <ProductDirectory Name="VendorNotices"   Deliver="false"    LibType="static"    Path="notices"/>
-        
-        <!--needed for the moment from LkgsVancouver -->
-        <ProductDirectory Name="JsonNetAssemblies"              Path=""/>
-        <ProductDirectory Name="IdentityModelAssemblies"        Path=""/>
-        <ProductDirectory Name="BentleyGeometryNetAssemblies"   Path=""/>
-        <ProductDirectory Name="PlatformTechAssemblies"         Path=""/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies"      Path=""/>
-        <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
-        <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
-        <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
-        <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
-        <ProductDirectory Name="LoggingNativeAssemblies"        Path="" Deliver="false"/>
-        <ProductDirectory Name="managedtests"                   Path=""/>
-        
-        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
-    </ProductDirectoryList>
 
     <Product Name="RealityContextServicesTested" PrgOutputDir="RealityContextServices">
         <SubProduct ProductName="RealityContextServicesTests" />
-        <SubPart PartName="RunRealityDbECPluginTests" />
-        <Directories DirectoryListName="RealityDbECPluginUnitTested" />
     </Product>
 
     <!-- ********************************************************************************************** -->
@@ -853,7 +654,6 @@
     <!-- This part runs RealityModFrameworkTests on platforms that support it. -->
     <Part Name="RealityModFrameworkTested">
         <SubPart PartName="RunGtest" />
-        <SubPart PartName="RealityDbECPluginUnitTests" />
     </Part>
 
 </BuildContext>

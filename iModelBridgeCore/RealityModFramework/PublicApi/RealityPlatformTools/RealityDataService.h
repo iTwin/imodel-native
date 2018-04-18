@@ -756,11 +756,15 @@ struct TransferResult
 struct TransferReport
     {
     bvector<TransferResult*>  results;
+    mutable bmap<Utf8String, bool>    transferSuccessMap;
     ~TransferReport()
         {
         for(TransferResult* result : results)
             delete result;
         }
+
+    //! Returns whether every file has been properly transfered
+    REALITYDATAPLATFORM_EXPORT bool AllTransferedSuccessfully() const;
 
     //! Writes the contents of each TranferResult as an attribute of and XML string
     REALITYDATAPLATFORM_EXPORT void ToXml(Utf8StringR report) const;

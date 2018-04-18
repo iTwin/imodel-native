@@ -56,11 +56,15 @@ bvector<Utf8String> selectionCallbackFunction(bvector<GeoPoint2d> footprint, Spa
 
 int main(int argc, char *argv[])
     {
+    //must perform Setup before using the GCSRequestManager. It will setup
     GCSRequestManager::Setup();
 
+    //to get a bingkey and its expiration date
     Utf8String bingKey, expirationDate;
     GCSRequestManager::SimpleBingKeyRequest("1000", bingKey, expirationDate);
 
+    //to get a list of terrain and imagery files, first create a Geopoint vector that
+    //represents the polygon of interest. The final point must be the same as the first
     bvector<GeoPoint2d> space = bvector<GeoPoint2d>();
     space.push_back(GeoPoint2d::From(115.73, 49.44));
     space.push_back(GeoPoint2d::From(115.73, 50.18));
@@ -68,6 +72,8 @@ int main(int argc, char *argv[])
     space.push_back(GeoPoint2d::From(116.53, 49.44));
     space.push_back(GeoPoint2d::From(115.73, 49.44));
 
+    //you must also select what kind of files you're looking for
+    // IMAGERY, TERRAIN, MODEL, and/or PINNED
     bvector<RealityDataBase::Classification> classes = bvector<RealityDataBase::Classification>();
     classes.push_back(RealityDataBase::Classification::IMAGERY);
     classes.push_back(RealityDataBase::Classification::TERRAIN);
@@ -87,6 +93,8 @@ int main(int argc, char *argv[])
     BeFileName caBundlePath(exeDir);
     caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"cabundle.pem");
 
+    //then you can launch the download, with the polygon points, the file types you want, a callback to a selection function
+    //the existing directory in which to put the files and the path to the certificate file you wish to use
     GCSRequestManager::SimplePackageDownload(space, classes, selectionCallbackFunction, outDir, caBundlePath);
 
     //files will have been downloaded at this point. You can break, if you want to check

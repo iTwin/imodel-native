@@ -81,7 +81,6 @@ DLM_NO_SIGN         = 1
 
 LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)BentleyGeom$(libext) \
-                       $(ContextSubpartsLibs)BaseGeoCoord$(libext) \
                        $(ContextSubPartsStaticLibs)$(libprefix)BeZLib$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
