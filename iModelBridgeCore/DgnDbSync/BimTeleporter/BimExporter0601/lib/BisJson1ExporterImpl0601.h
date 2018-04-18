@@ -82,7 +82,8 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         Dgn::DgnElementId        m_sheetListModelId;
         Dgn::DgnElementId       m_jobDefinitionModelId;
         bmap<Utf8String, Utf8String> m_authorityIds;
-        bmap<Utf8String, Dgn::DgnElementId> m_discplineIds;
+        bmap<Utf8String, Dgn::DgnElementId> m_disciplineIds;
+        bmap<Utf8String, Dgn::DgnElementId> m_namespaceDefinitionModels;
 
         bmap<DgnElementId, int> m_insertedElements;
         bmap<BentleyApi::BeSQLite::EC::ECInstanceId, int> m_insertedAspects;
@@ -132,6 +133,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         DgnElementId CreatePartitionElement(Utf8CP partitionName, Utf8CP partitionType, DgnElementId subject, Json::Value& out);
         DgnElementId CreateDrawingElement(Json::Value& out, Utf8CP name);
         DgnElementId CreateSheetElement(Json::Value& out, DgnModelCR model);
+        DgnElementId CreateDefinitionModel(Json::Value& out, Utf8CP modelName);
         BentleyStatus ExportSchemas(Json::Value& out) const;
         DgnElementId InitListModel(Json::Value& out, Utf8CP name);
         BentleyStatus InitDrawingListModel(Json::Value& out);

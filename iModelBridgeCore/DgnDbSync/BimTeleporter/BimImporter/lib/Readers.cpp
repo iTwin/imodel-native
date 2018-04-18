@@ -1155,6 +1155,12 @@ BentleyStatus CategoryReader::_Read(Json::Value& category)
     if (!m_instanceId.IsValid())
         return ERROR;
 
+    if (SUCCESS != RemapPropertyElementId(*ecInstance, BIS_ELEMENT_PROP_CodeScope))
+        {
+        GetLogger().errorv("Failed to map CodeScopeId for %s instance.", _GetElementType());
+        return ERROR;
+        }
+
     DgnDbStatus stat;
     DgnElementPtr dgnElement = GetDgnDb()->Elements().CreateElement(*ecInstance, false, &stat);
 
