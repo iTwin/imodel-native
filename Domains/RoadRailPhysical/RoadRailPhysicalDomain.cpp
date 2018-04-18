@@ -164,12 +164,6 @@ void createCodeSpecs(DgnDbR dgndb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
-    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject());
-    if (DgnDbStatus::Success != status)
-        {
-        BeAssert(false);
-        }
-
     createCodeSpecs(dgndb);
     }
 

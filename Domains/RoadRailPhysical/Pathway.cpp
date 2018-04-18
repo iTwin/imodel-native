@@ -358,6 +358,27 @@ ThruwaySeparationPortionPtr ThruwaySeparationPortion::Create(PathwayElementCR pa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+PathwayPortionElementCPtr ILinearElementUtilities::QueryRelatedPathwayPortion(ILinearElementCR linearElement,
+    DgnElementId& significantPointDefId)
+    {
+    auto& linearElementCR = linearElement.ToElement();
+    auto stmtPtr = linearElementCR.GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId, SignificantPointDef.Id FROM "
+        BRRP_SCHEMA(BRRP_REL_ILinearElementRelatesToPathwayPortion) " WHERE SourceECInstanceId = ?;");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, linearElementCR.GetElementId());
+    if (DbResult::BE_SQLITE_ROW == stmtPtr->Step())
+        {
+        significantPointDefId = stmtPtr->GetValueId<DgnElementId>(1);
+        return PathwayPortionElement::Get(linearElementCR.GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      03/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ILinearElementUtilities::SetRelatedPathwayPortion(ILinearElementCR linearElement, PathwayPortionElementCR pathwayPortion,
