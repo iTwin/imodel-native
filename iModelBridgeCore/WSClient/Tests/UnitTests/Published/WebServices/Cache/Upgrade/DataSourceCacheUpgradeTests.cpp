@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Upgrade/DataSourceCacheUpgradeTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -18,6 +18,12 @@
 //    bb -r WSClient -f WSClient -p Tests re WSClientTestAssets
 // 4. Write Open_Vx... test case to test upgrade. 
 // 5. Use GetSeedPaths() to get paths to extracted files.
+//--------------------------------------------------------------------------------------+
+
+//--------------------------------------------------------------------------------------+
+// KNOWN ISSUES:
+// V9 and lower - Graphite05x ECDb upgrade is not yet supported or will not be.
+// V20 - DgnDb0601 - Q4->BIM0200 ECDb upgrade not supported.
 //--------------------------------------------------------------------------------------+
 
 #include "DataSourceCacheUpgradeTests.h"
@@ -110,7 +116,7 @@ BeFileName GetSeedFilePath(BeFileName cachePath, Utf8StringCR fileName)
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V5Empty_Success_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V5Empty_Success_KnownIssue_UpgradeNotSupported)
     {
     auto paths = GetSeedPaths(5, "empty");
 
@@ -121,7 +127,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5Empty_Success_KnownIssue)
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V5Data_SuccessAndContainsOldData_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V5Data_SuccessAndContainsOldData_KnownIssue_UpgradeNotSupported)
     {
     auto paths = GetSeedPaths(5, "data");
 
@@ -135,7 +141,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5Data_SuccessAndContainsOldData_KnownI
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted1BeforeSettingNewCacheUpgradedFlag_SuccessAndContainsOldData_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted1BeforeSettingNewCacheUpgradedFlag_SuccessAndContainsOldData_KnownIssue_UpgradeNotSupported)
     {
     // *-upgrade-new is finalized but has not set upgraded flag - should upgrade again
     auto paths = GetSeedPaths(5, "interrupted1");
@@ -150,7 +156,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted1BeforeSettingN
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted2AfterSettingNewCacheUpgradedFlag_SuccessAndContainsOldData_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted2AfterSettingNewCacheUpgradedFlag_SuccessAndContainsOldData_KnownIssue_UpgradeNotSupported)
     {
     // *-upgrade-new is finalized and has set upgraded flag - should copy file and return
     auto paths = GetSeedPaths(5, "interrupted2");
@@ -165,7 +171,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V5DataUpgradeInterrupted2AfterSettingNe
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_ServerInfoSetDoDefaultAndSchemasAreValid_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_ServerInfoSetDoDefaultAndSchemasAreValid_KnownIssue_UpgradeNotSupported)
     {
     auto paths = GetSeedPaths(5, "data");
     auto client = MockWSRepositoryClient::Create();
@@ -181,7 +187,7 @@ TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5Data_Server
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5UpgradeInterrupted1_SuccessAndContainsOldData_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, CachingDataSource_OpenOrCreate_V5UpgradeInterrupted1_SuccessAndContainsOldData_KnownIssue_UpgradeNotSupported)
     {
     auto paths = GetSeedPaths(5, "interrupted1");
     auto client = MockWSRepositoryClient::Create();
@@ -428,7 +434,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_CurrentVersionDb_Success)
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstance_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstance_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue_UpgradeNotSupported)
     {
     auto paths = GetSeedPaths(7, "data");
 
@@ -454,7 +460,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstance_ReadModifiedProperti
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstanceModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstanceModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue_UpgradeNotSupported)
     {
     auto paths = GetSeedPaths(7, "data");
 
@@ -480,7 +486,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedInstanceModifiedAgain_ReadMod
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadModifiedPropertiesTreatsAllInstancePropertiesAsModified_KnownIssue_UpgradeNotSupported)
     {
     auto paths = GetSeedPaths(7, "data");
 
@@ -543,7 +549,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V7ModifiedPropertyModifiedAgain_ReadMod
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalDeletionsRemovesThem_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalDeletionsRemovesThem_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(8, "data");
@@ -606,7 +612,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalD
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V9_ResponsesAreStillCached_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V9_ResponsesAreStillCached_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(9, "data");
@@ -653,7 +659,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9_ResponsesAreStillCached_KnownIssue)
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V9RemovingResponses_InstancesAreRemoved_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V9RemovingResponses_InstancesAreRemoved_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(9, "data");
@@ -693,7 +699,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9RemovingResponses_InstancesAreRemoved
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(9, "data");
@@ -753,7 +759,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V9CachingNewPagedData_WorksFine_KnownIs
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingResponse_WorksFine_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingResponse_WorksFine_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(10, "data");
@@ -808,7 +814,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V10AddingAdditionalInstanceToExistingRe
 /*--------------------------------------------------------------------------------------+
 * @bsitest                              Benediktas.Lipnickas                     02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChanges_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChanges_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(11, "data");
@@ -872,7 +878,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V11DetectFileModification_DetectsChange
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V12WithCachedResponses_ResponseTagsRemovedSoSyncWouldBeForced_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V12WithCachedResponses_ResponseTagsRemovedSoSyncWouldBeForced_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(12, "data");
@@ -893,7 +899,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12WithCachedResponses_ResponseTagsRemo
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData_KnownIssue)
+TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(12, "data");
@@ -982,7 +988,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V12CacheTemporaryResponsesWithFullAndPa
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V20WithCachedResponses_ResponseTagsRemovedSoSyncWouldBeForced)
+TEST_F(DataSourceCacheUpgradeTests, Open_V20WithCachedResponses_ResponseTagsRemovedSoSyncWouldBeForced_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(20, "data");
@@ -1003,7 +1009,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V20WithCachedResponses_ResponseTagsRemo
 /*--------------------------------------------------------------------------------------+
 * @bsitest                                    Vincas.Razma                     10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataSourceCacheUpgradeTests, Open_V20CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData)
+TEST_F(DataSourceCacheUpgradeTests, Open_V20CacheTemporaryResponsesWithFullAndPartialInstance_InvalidatesFullResponsesWhenOverridenWithPartialData_KnownIssue_UpgradeNotSupported)
     {
     // Arrange
     auto paths = GetSeedPaths(20, "data");
