@@ -4319,7 +4319,15 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels)
     {
+    // TFS#881783: Add all spatial models to the "models" list, if they produced tiles, regardless of whether or not they appear in any model selector...
     DgnModelIdSet allModels = all2dModels;
+    ModelIterator modelIter = GetDgnDb().Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
+    for (auto const& entry : modelIter)
+        {
+        if (IsModelPublished(entry.GetModelId()))
+            allModels.insert(entry.GetModelId());
+        }
+
     Json::Value& selectorsJson = (json["modelSelectors"] = Json::objectValue);
     for (auto const& selectorId : allModelSelectors)
         {
@@ -4333,10 +4341,7 @@ void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const&
                     publishedModels.insert(modelId);
 
             if (!publishedModels.empty())
-                {
                 selectorsJson[selectorId.ToString()] = IdSetToJson(publishedModels);
-                allModels.insert(publishedModels.begin(), publishedModels.end());
-                }
             }
         }
 
