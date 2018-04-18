@@ -17,8 +17,8 @@ void CurvePrimitiveManipulationStrategy::_SetDynamicState
     DynamicStateBaseCR state
 )
     {
-    BooleanDynamicStateCPtr booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
-    if (booleanState.IsNull())
+    BooleanDynamicStateCP booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
+    if (nullptr == booleanState)
         return;
 
     m_dynamicKeyPointSet = booleanState->GetState();

@@ -210,7 +210,7 @@ CategorySelectorPtr  BuildingUtils::CreateSiteViewCategorySelector (DgnDbR db)
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_BuildableVolume));
     categories.insert (SpatialCategory::QueryCategoryId(db.GetDictionaryModel(), BUILDING_SPACEPLANNING_CATEGORY_CODE_Building));
     addParkingCategories (categories, db);
-    categories.insert (RoadRailPhysical::RoadRailCategory::GetRoad (db));
+    categories.insert (RoadRailPhysical::RoadRailCategory::GetRoadway (*db.Elements().GetRootSubject()));
 
     CategorySelector catSel (db.GetDictionaryModel (), SITE_VIEW_CATEGORY_SELECTOR_NAME);
     catSel.SetCategories (categories);

@@ -21,10 +21,16 @@ struct ExtrusionDynamicState : DynamicStateBase
         bool m_sweepState;
 
         ExtrusionDynamicState(DynamicStateBaseCR baseState, bool heightState, bool sweepState)
-            : m_baseState(&baseState)
+            : m_baseState(baseState.Clone())
             , m_heightState(heightState)
             , m_sweepState(sweepState)
             {}
+
+    protected:
+        DynamicStateBasePtr _Clone() const override
+            {
+            return Create(*m_baseState, m_heightState, m_sweepState);
+            }
 
     public:
         static ExtrusionDynamicStatePtr Create(DynamicStateBaseCR baseState, bool heightState, bool sweepState)
@@ -446,8 +452,8 @@ void ExtrusionManipulationStrategy::_SetDynamicState
     DynamicStateBaseCR state
 )
     {
-    BooleanDynamicStateCPtr booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
-    if (booleanState.IsValid())
+    BooleanDynamicStateCP booleanState = dynamic_cast<BooleanDynamicStateCP>(&state);
+    if (nullptr != booleanState)
         {
         m_baseShapeManipulationStrategy->SetDynamicState(state);
         m_dynamicHeightSet = booleanState->GetState();
@@ -455,10 +461,10 @@ void ExtrusionManipulationStrategy::_SetDynamicState
         return;
         }
 
-    ExtrusionDynamicStateCPtr extrusionState = dynamic_cast<ExtrusionDynamicStateCP>(&state);
-    if (extrusionState.IsNull())
+    ExtrusionDynamicStateCP extrusionState = dynamic_cast<ExtrusionDynamicStateCP>(&state);
+    if (nullptr == extrusionState)
         {
-        BeAssert(extrusionState.IsValid());
+        BeAssert(nullptr != extrusionState);
         return;
         }
 
