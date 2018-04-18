@@ -25,6 +25,7 @@ HANDLER_DEFINE_MEMBERS(ConfigurationModelHandler)
 RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME, "Bentley RoadRailAlignment Domain", 1)
     {
     RegisterHandler(ConfigurationModelHandler::GetHandler());
+    RegisterHandler(RoadRailCategoryModelHandler::GetHandler());
     RegisterHandler(AlignmentModelHandler::GetHandler());
     RegisterHandler(AlignmentHandler::GetHandler());
     RegisterHandler(HorizontalAlignmentModelHandler::GetHandler());
@@ -166,8 +167,6 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject)
         BeAssert(false);
         }
 
-    AlignmentCategory::InsertDomainCategories(*configModelPtr);
-
     auto alignmentPartitionPtr = SpatialLocationPartition::Create(subject, GetDefaultPartitionName());
     if (alignmentPartitionPtr->Insert(&status).IsNull())
         return status;
@@ -192,9 +191,31 @@ DgnDbStatus RoadRailAlignmentDomain::SetUpModelHierarchy(SubjectCR subject)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
+* @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
+void createDomainCategoriesPartition(DgnDbR db)
+    {
+    DgnDbStatus status;
+    auto categoryPartitionPtr = DefinitionPartition::Create(*db.Elements().GetRootSubject(), RoadRailAlignmentDomain::GetDomainCategoriesPartitionName());
+    if (categoryPartitionPtr->Insert(&status).IsNull())
+        {
+        BeAssert(false);
+        }
+
+    auto modelPtr = RoadRailCategoryModel::Create(RoadRailCategoryModel::CreateParams(db, categoryPartitionPtr->GetElementId()));
+
+    if (!modelPtr.IsValid() || (DgnDbStatus::Success != modelPtr->Insert()))
+        {
+        BeAssert(false);
+        }
+
+    AlignmentCategory::InsertDomainCategories(db);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void createCodeSpecs(DgnDbR dgndb)
     {
     auto codeSpec = CodeSpec::Create(dgndb, BRRA_CODESPEC_Alignment, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpec.IsValid());
@@ -211,6 +232,15 @@ void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
         codeSpec->Insert();
         BeAssert(codeSpec->GetCodeSpecId().IsValid());
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
+    {
+    createCodeSpecs(dgndb);
+    createDomainCategoriesPartition(dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**

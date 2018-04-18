@@ -38,6 +38,7 @@ public:
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnModelCR scopeModel, Utf8StringCR value);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR subject);    
     static Utf8CP GetDefaultPartitionName() { return "Road/Rail Alignments"; }
+    static Utf8CP GetDomainCategoriesPartitionName() { return "Road/Rail Domain Categories"; }
 
 private:
     WCharCP _GetSchemaRelativePath() const override { return BRRA_SCHEMA_PATH; }

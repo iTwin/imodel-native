@@ -59,6 +59,11 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // ECClass names
 //-----------------------------------------------------------------------------------------
 
+// Models
+#define BRRA_CLASS_RoadRailCategoryModel                            "RoadRailCategoryModel"
+
+
+
 // Elements
 #define BRRA_CLASS_Alignment                                        "Alignment"
 #define BRRA_CLASS_AlignmentModel                                   "AlignmentModel"
@@ -153,6 +158,7 @@ ROADRAILALIGNMENT_TYPEDEFS(AlignmentXSViewDefinition)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignment)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignments)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentModel)
+ROADRAILALIGNMENT_TYPEDEFS(RoadRailCategoryModel)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignment)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignmentModel)
 
@@ -166,5 +172,6 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(ConfigurationModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignments)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentModel)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadRailCategoryModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignmentModel)

@@ -29,7 +29,7 @@ AlignmentPtr Alignment::Create(AlignmentModelCR model)
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    AlignmentPtr retVal(new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), AlignmentCategory::GetAlignment(*model.GetParentSubject()))));
+    AlignmentPtr retVal(new Alignment(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), AlignmentCategory::GetAlignment(model.GetDgnDb()))));
     retVal->SetStartValue(0.0);
     retVal->SetStartStation(0.0);
     return retVal;
@@ -556,9 +556,8 @@ HorizontalAlignmentsCPtr HorizontalAlignments::Insert(AlignmentModelCR model)
         return nullptr;
 
     CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), 
-        AlignmentCategory::GetAlignment(*model.GetParentSubject()));
-    auto alignmentPartitionCode = model.GetModeledElement()->GetCode();
-    createParams.m_code = CreateCode(*dynamic_cast<SpatialLocationPartitionCP>(model.GetModeledElement().get()), alignmentPartitionCode.GetValueUtf8());
+        AlignmentCategory::GetAlignment(model.GetDgnDb()));
+    createParams.m_code = CreateCode(*dynamic_cast<SpatialLocationPartitionCP>(model.GetModeledElement().get()), "Horizontal Alignments");
 
     HorizontalAlignmentsPtr newPtr(new HorizontalAlignments(createParams));
     return model.GetDgnDb().Elements().Insert<HorizontalAlignments>(*newPtr);
@@ -588,7 +587,7 @@ HorizontalAlignmentPtr HorizontalAlignment::Create(AlignmentCR alignment, CurveV
     auto breakDownModelCPtr = HorizontalAlignmentModel::Get(alignment.GetDgnDb(), horizontalModelId);
 
     CreateParams createParams(alignment.GetDgnDb(), breakDownModelCPtr->GetModelId(),
-        QueryClassId(alignment.GetDgnDb()), AlignmentCategory::GetAlignment(*alignment.GetAlignmentModel()->GetParentSubject()));
+        QueryClassId(alignment.GetDgnDb()), AlignmentCategory::GetAlignment(alignment.GetDgnDb()));
     return new HorizontalAlignment(createParams, alignment, horizontalGeometry);
     }
 
@@ -687,7 +686,7 @@ void HorizontalAlignment::_CopyFrom(Dgn::DgnElementCR source)
 VerticalAlignmentPtr VerticalAlignment::Create(VerticalAlignmentModelCR breakDownModel, CurveVectorCR verticalGeometry)
     {
     CreateParams createParams(breakDownModel.GetDgnDb(), breakDownModel.GetModelId(), 
-        QueryClassId(breakDownModel.GetDgnDb()), AlignmentCategory::GetVertical(*breakDownModel.GetAlignment()->GetAlignmentModel()->GetParentSubject()));
+        QueryClassId(breakDownModel.GetDgnDb()), AlignmentCategory::GetVertical(breakDownModel.GetAlignment()->GetDgnDb()));
     return new VerticalAlignment(createParams, verticalGeometry);
     }
 
