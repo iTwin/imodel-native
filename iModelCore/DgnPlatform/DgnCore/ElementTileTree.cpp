@@ -3228,7 +3228,8 @@ Utf8CP TileCache::GetCurrentVersion()
     //     to ensure same order when deserializing from cache data back into MeshBuilderMap.
     //  4: Prevent unused vertices from ending up in meshes due to degenerate triangles (detect degenerates *before* adding vertices)
     //  5: Ensure curved, stroked curve vectors are treated as curved
-    return "5";
+    //  6: Treat transparency < 15 as opaque (affects mesh batching)
+    return "6";
     }
 
 /*---------------------------------------------------------------------------------**//**

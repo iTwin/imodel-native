@@ -179,6 +179,9 @@ public:
 
 
     DGNPLATFORM_EXPORT Utf8String ToDebugString() const; //!< @private
+
+    DGNPLATFORM_EXPORT static uint8_t GetMinTransparency();
+    DGNPLATFORM_EXPORT static ColorDef AdjustTransparency(ColorDef);
 };
 
 //=======================================================================================

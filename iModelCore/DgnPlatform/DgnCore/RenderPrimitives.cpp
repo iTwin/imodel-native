@@ -488,6 +488,7 @@ DisplayParams DisplayParams::ForType(Type type, GraphicParamsCR gf, GeometryPara
 void DisplayParams::InitText(ColorDef lineColor, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
     {
     InitGeomParams(catId, subCatId, geomClass);
+    lineColor = AdjustTransparency(lineColor);
     m_type = Type::Text;
     m_lineColor = m_fillColor = lineColor;
     m_ignoreLighting = true;
@@ -518,6 +519,7 @@ DisplayParams DisplayParams::ForText(GraphicParamsCR gf, GeometryParamsCP geom)
 void DisplayParams::InitLinear(ColorDef lineColor, uint32_t width, LinePixels pixels, DgnCategoryId catId, DgnSubCategoryId subCatId, DgnGeometryClass geomClass)
     {
     InitGeomParams(catId, subCatId, geomClass);
+    lineColor = AdjustTransparency(lineColor);
     m_type = Type::Linear;
     m_lineColor = m_fillColor = lineColor;
     m_width = width;
@@ -550,8 +552,8 @@ void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t wi
     {
     InitGeomParams(catId, subCatId, geomClass);
     m_type = Type::Mesh;
-    m_lineColor = lineColor;
-    m_fillColor = fillColor;
+    m_lineColor = AdjustTransparency(lineColor);
+    m_fillColor = AdjustTransparency(fillColor);
     m_fillFlags = fillFlags;
     m_material = mat;
     m_gradient = grad;
@@ -3520,6 +3522,26 @@ DisplayParamsCPtr DisplayParams::Create(Type type, DgnCategoryId catId, DgnSubCa
             BeAssert(false);
             return nullptr;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+uint8_t DisplayParams::GetMinTransparency()
+    {
+    // Threshold below which we consider a color fully opaque.
+    return 15;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef DisplayParams::AdjustTransparency(ColorDef color)
+    {
+    if (color.GetAlpha() < GetMinTransparency())
+        color.SetAlpha(0);
+
+    return color;
     }
 
 /*---------------------------------------------------------------------------------**//**

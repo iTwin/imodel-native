@@ -2,7 +2,7 @@
 #
 #     $Source: DgnHandlers/Dimension/DimStyleSchemaGenerator/DimStyleSchemaGenerator.mke $
 #
-#  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
@@ -11,7 +11,7 @@ schemaLinkDir    = $(BuildContext)GeneratedSchemas/
 
 %include mdl.mki
 
-o = $(OutputRootDir)Build/DimStyleSchemaGenerator/
+o = $(PartBuildDir)
 
 $(schemaOutDir)DimensionStyleSchema.01.00.ecschema.xml : $(_makefilespace)
     !~@mkdir $(schemaOutDir)
