@@ -46,7 +46,7 @@ Json::Value StubWSObjectCreationJson()
             })");
     }
 
-void Expect4_jSrS(MockHttpHandler& handler)
+void Expect4_jSrS(MockHttpHandler& handler, HttpStatus status)
     {
     handler.ExpectRequests(4);
     handler.ForRequest(1, StubWSInfoHttpResponseWebApi27());
@@ -65,14 +65,14 @@ void Expect4_jSrS(MockHttpHandler& handler)
                 "className": "Job",
                 "properties" :
                     {
-                    "ResponseStatusCode":200,
+                    "ResponseStatusCode":%i,
                     "ResponseContent":"Good Content",
                     "ResponseHeaders":"",
                     "ScheduleTime": "%s",
                     "Status":"Succeeded"
                     }
                 }]
-            })", scheduleTime.c_str());
+            })", status, scheduleTime.c_str());
 
     handler.ForRequest(3, StubHttpResponse(HttpStatus::OK, body, headers));
     handler.ForRequest(4, StubHttpResponse(HttpStatus::OK));
@@ -1690,9 +1690,12 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV25WithRelatedObje
         EXPECT_STREQ("POST", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.5/Repositories/foo/RelatedObjectSchema/RelatedObjectClass/RelatedObjectId/TargetObjectClass", request.GetUrl().c_str());
         EXPECT_EQ(objectCreationJson, ToJson(request.GetRequestBody()->AsString()));
-        return StubHttpResponse(ConnectionStatus::OK);
+        return StubHttpResponse(HttpStatus::Created);
         });
-    client->SendCreateObjectRequest(relatedObject, objectCreationJson)->Wait();
+    client->SendCreateObjectRequest(relatedObject, objectCreationJson)->Then([=] (WSCreateObjectResult result)
+        {
+        EXPECT_TRUE(result.IsSuccess());
+        })->Wait();
     }
    
 /*--------------------------------------------------------------------------------------+
@@ -2105,7 +2108,7 @@ TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_EnableJobsWebApiV2JobSuc
 
     auto relatedObject = ObjectId("RelatedObjectSchema", "RelatedObjectClass", "RelatedObjectId");
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::Created);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
@@ -2296,13 +2299,74 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_Suc
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsitest                                    julius.cepukenas                    02/18
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_RequestOptionsNotIncluded_RequestTimeOutsAreDefaults)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, [=](HttpRequestCR request)
+        {
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::GetObject, request.GetTransferTimeoutSeconds());
+        return StubHttpResponse();
+        });
+
+    client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaRequestOptions_RequestTrasferTimeOutIsSet)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, [=](HttpRequestCR request)
+        {
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
+        EXPECT_EQ(1111, request.GetTransferTimeoutSeconds());
+        return StubHttpResponse();
+        });
+
+    auto options = std::make_shared<IWSRepositoryClient::RequestOptions>();
+    options->SetTransferTimeOut(1111);
+    client->SendChangesetRequestWithOptions(HttpStringBody::Create(""), nullptr, options, nullptr)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaDefaultRequestOptions_RequestTrasferTimeOutIsSet)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+    auto options = std::make_shared<WSRepositoryClient::RequestOptions>();
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, [=](HttpRequestCR request)
+        {
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
+        EXPECT_EQ(options->GetTransferTimeOut(), request.GetTransferTimeoutSeconds());
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::Default, options->GetTransferTimeOut());
+        return StubHttpResponse();
+        });
+
+    client->SendChangesetRequestWithOptions(HttpStringBody::Create(""), nullptr, options, nullptr)->Wait();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsitest                                    Vincas.Razma                     07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_EnableJobsWebApiV2JobSucceedsResponseSucceeds_SuccessAndReturnsBody)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::OK);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
@@ -2543,7 +2607,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_EnableJobsWebApiV2JobSuc
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::OK);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
@@ -2886,7 +2950,7 @@ TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_EnableJobsWebApiV2JobSuc
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::OK);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();
@@ -3323,7 +3387,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucce
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    Expect4_jSrS(GetHandler());
+    Expect4_jSrS(GetHandler(), HttpStatus::OK);
 
     IWSRepositoryClient::RequestOptionsPtr options = std::make_shared<IWSRepositoryClient::RequestOptions>();
     options->GetJobOptions()->EnableJobsIfPossible();

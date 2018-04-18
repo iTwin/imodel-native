@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/TestUtils/TestMain.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,5 +20,7 @@ int main(int argc, char** argv)
 
     BeTest::SetAssertionFailureHandler([](WCharCP msg) {FAIL() << msg;});
 
-    return RUN_ALL_TESTS();
+    auto status = RUN_ALL_TESTS();
+    HttpClient::Uninitialize();
+    return status;
     }

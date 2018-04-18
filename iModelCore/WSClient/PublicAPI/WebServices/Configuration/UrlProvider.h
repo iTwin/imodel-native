@@ -87,7 +87,8 @@ struct UrlProvider
             int64_t cacheTimeoutMs = DefaultTimeout,
             IJsonLocalState* customlocalState = nullptr,
             IBuddiClientPtr customBuddi = nullptr,
-            IHttpHandlerPtr customHandler = nullptr
+            IHttpHandlerPtr customHandler = nullptr,
+            ITaskSchedulerPtr customScheduler = nullptr
             );
 
         WSCLIENT_EXPORT static void Uninitialize();
@@ -135,6 +136,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ImsPassiveAuthUrl;
             WSCLIENT_EXPORT static const UrlDescriptor iModelBridgeConfiguration;
             WSCLIENT_EXPORT static const UrlDescriptor RecommendationServiceUrl;
+            WSCLIENT_EXPORT static const UrlDescriptor ProjectSharedFederatedUIURL;
             };
     };
 
