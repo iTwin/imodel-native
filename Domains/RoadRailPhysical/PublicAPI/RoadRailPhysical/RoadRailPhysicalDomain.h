@@ -29,16 +29,19 @@ public:
     RoadRailPhysicalDomain();
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR, Utf8CP physicalPartitionName);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR);
 
     //! @private
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnViewId SetUpDefaultViews(Dgn::SubjectCR, Utf8CP alignmentPartitionName = nullptr, Utf8CP physicalPartitionName = nullptr,
-        bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnViewId SetUpDefaultViews(Dgn::SubjectCR, bvector<Dgn::DgnCategoryId> const* additionalCategoriesForSelector = nullptr);
 
     //! Query for the physical model
     //! @param[in] parentSubject The parent subject of the physical model with \p modelName
-    //! @param[in] modelName The name of the physical model in the \p parentSubject
+    //! @return The PhysicalModel belonging to the \p parentSubject
     ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryPhysicalModel(Dgn::SubjectCR parentSubject);
+
+    //! Queryt for the Parent Subject
+    //! @param[in] model The PhysicalModel who's parent is being queried for.
+    //! @return The Subject of the \p model
     ROADRAILPHYSICAL_EXPORT static Dgn::SubjectCPtr GetParentSubject(Dgn::PhysicalModelCR model);
     //! The name of the default Physical partition
     static Utf8CP GetDefaultPhysicalPartitionName() { return "Roads/Rail Physical"; }
