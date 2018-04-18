@@ -56,6 +56,7 @@ private:
     DgnElementIdSet m_omitElemIds;      // IDs of any elements present in cache FeatureTable but since deleted from associated model or modified.
     DgnElementIdSet m_tileElemIds;      // IDs of elements present in cache, modulo any present in m_omitElemIds.
     Render::Primitives::GeometryCollection  m_geometry;
+    bool m_doTileRepair;
 
     Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
 
