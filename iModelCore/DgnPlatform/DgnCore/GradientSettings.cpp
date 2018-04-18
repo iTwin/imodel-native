@@ -71,6 +71,9 @@ bool GradientSymb::operator==(GradientSymbCR rhs) const
         if (rhs.m_colors[i] != m_colors[i])
             return false;
         }
+    if (m_mode == Mode::Thematic && ! (rhs.m_thematicSettings == m_thematicSettings))
+        return false;
+
 
     return true;
     }
@@ -103,6 +106,11 @@ bool GradientSymb::operator<(GradientSymbCR rhs) const
         else if (m_colors[i] != rhs.m_colors[i])
             return m_colors[i].GetValue() < rhs.m_colors[i].GetValue();
         }
+
+    if (m_mode == Mode::Thematic &&
+        !(rhs.m_thematicSettings == m_thematicSettings))
+        return m_thematicSettings < rhs.m_thematicSettings;
+        
 
     return false;
     }
@@ -433,7 +441,7 @@ Json::Value     GradientSymb::ThematicSettings::ToJson () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     GradientSymb::ThematicSettings::FromJson (Json::Value const& value) 
+void     GradientSymb::ThematicSettings ::FromJson (Json::Value const& value) 
     {
     m_stepCount = value["stepCount"].asUInt();
     m_margin = value["margin"].asDouble();
@@ -484,3 +492,41 @@ GradientSymb::GradientSymb(ThematicSettings const& settings) : m_thematicSetting
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GradientSymb::ThematicSettings::operator==(ThematicSettings const& rhs) const
+    {
+    if (this == &rhs)
+        return true;
+
+    return m_stepCount      == rhs.m_stepCount &&
+           m_margin         == rhs.m_margin &&
+           m_marginColor    == rhs.m_marginColor &&
+           m_mode           == rhs.m_mode &&
+           m_colorScheme    == rhs.m_colorScheme;
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GradientSymb::ThematicSettings::operator<(ThematicSettings const& rhs) const
+    {
+    if (this == &rhs)
+        return true;
+
+    if (m_stepCount != rhs.m_stepCount)
+        return m_stepCount < rhs.m_stepCount;
+
+    if (m_margin != rhs.m_margin)
+        return m_margin < rhs.m_margin;
+
+    if (m_marginColor.GetValue() != rhs.m_marginColor.GetValue())
+        return m_marginColor.GetValue() != rhs.m_marginColor.GetValue();
+
+    if (m_mode != rhs.m_mode)
+        return m_mode < rhs.m_mode;
+
+    return m_colorScheme < rhs.m_colorScheme;
+    }
