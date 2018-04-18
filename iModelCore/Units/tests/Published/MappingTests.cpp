@@ -89,7 +89,7 @@ bvector<Utf8String> names =
     "Stop1000-2-4u",
     "Stop1000-2u",
     "Stop100-2",
-    "stop100-2-4",
+    "Stop100-2-4",
     "Stop1000-2-4",
     "Stop1000-2",
     "SignedReal",
@@ -216,7 +216,7 @@ bvector<Utf8String> aliases =
     "fract8u",
     "fract16u",
     "fract32u",
-    "fract64u"
+    "fract64u",
     "fract128u",
     "cdms",
     "cdms8",
@@ -230,7 +230,7 @@ bvector<Utf8String> onlyNames =
     {
     "Real",
     "DefaultInt",
-    "RealU"
+    "RealU",
     "Real6U",
     "Fractional64",
     "Fractional64U",
