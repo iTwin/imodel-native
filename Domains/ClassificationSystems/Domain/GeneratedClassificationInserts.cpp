@@ -13,7 +13,7 @@ void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const
     {
     ClassificationSystemPtr system;
     ClassificationSystemClassDefinitionGroupPtr group;
-    system = ClassificationSystem::Create(db, "ASHRAE2004");
+    system = InsertSystem(db, "ASHRAE2004");
     group = InsertGroup(*system, "Recreation & Entertainment");
     InsertASHRAE2004(*system, *group, "Atrium - Each additional floor");
     InsertASHRAE2004(*system, *group, "Atrium - First 3 floors");
@@ -381,7 +381,7 @@ void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const
     InsertASHRAE2004(*system, *group, "Sales Area");
     InsertASHRAE2004(*system, *group, "Shipping/Receiving");
     InsertASHRAE2004(*system, *group, "Storage - Active");
-    system = ClassificationSystem::Create(db, "ASHRAE2010");
+    system = InsertSystem(db, "ASHRAE2010");
     group = InsertGroup(*system, "Recreation & Entertainment");
     InsertASHRAE2010(*system, *group, "Atrium - First 40 ft in height");
     InsertASHRAE2010(*system, *group, "Atrium - Height above 40 ft");
@@ -779,7 +779,7 @@ void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const
     InsertASHRAE2010(*system, *group, "Restrooms");
     InsertASHRAE2010(*system, *group, "Sales Area");
     InsertASHRAE2010(*system, *group, "Shipping/Receiving");
-    system = ClassificationSystem::Create(db, "ASHRAE2007");
+    system = InsertSystem(db, "ASHRAE2007");
     group = InsertGroup(*system, "Recreation & Entertainment");
     InsertASHRAE2007(*system, *group, "Atrium - Each additional floor");
     InsertASHRAE2007(*system, *group, "Atrium - First 3 floors");
@@ -1162,7 +1162,7 @@ void ClassificationSystemsDomain::InsertDefinitionSystems(Dgn::DgnDbR db) const
     InsertASHRAE2007(*system, *group, "Sales Area");
     InsertASHRAE2007(*system, *group, "Shipping/Receiving");
     InsertASHRAE2007(*system, *group, "Storage - Active");
-    system = ClassificationSystem::Create(db, "CIBSE");
+    system = InsertSystem(db, "CIBSE");
     group = InsertGroup(*system, "Industrial building");
     InsertCIBSE(*system, *group, "Cellular office");
     InsertCIBSE(*system, *group, "Chilled storage");

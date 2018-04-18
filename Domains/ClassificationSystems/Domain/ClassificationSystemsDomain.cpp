@@ -55,6 +55,23 @@ void ClassificationSystemsDomain::_OnSchemaImported(Dgn::DgnDbR db) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Martynas.Saulius              04/2018
 //---------------------------------------------------------------------------------------
+ClassificationSystemPtr ClassificationSystemsDomain::InsertSystem
+(
+    Dgn::DgnDbR db,
+    Utf8CP name
+) const
+    {
+    ClassificationSystemPtr classDefinitionGroup = ClassificationSystem::Create(db, name);
+    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinitionGroup.get(), BeSQLite::DbOpcode::Insert, "ClassificationSystem : Insertion"))
+        {
+        classDefinitionGroup->Insert();
+        return classDefinitionGroup;
+        }
+    return nullptr;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Martynas.Saulius              04/2018
+//---------------------------------------------------------------------------------------
 ClassificationSystemClassDefinitionGroupPtr ClassificationSystemsDomain::InsertGroup
 (
     ClassificationSystemCR system,
@@ -62,7 +79,7 @@ ClassificationSystemClassDefinitionGroupPtr ClassificationSystemsDomain::InsertG
 ) const
     {
     ClassificationSystemClassDefinitionGroupPtr classDefinitionGroup = ClassificationSystemClassDefinitionGroup::Create(system, name);
-    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinitionGroup.get(), BeSQLite::DbOpcode::Insert, "CIBSEClassDefinition : Insertion"))
+    if (Dgn::RepositoryStatus::Success == BS::BuildingLocks_LockElementForOperation(*classDefinitionGroup.get(), BeSQLite::DbOpcode::Insert, "ClassificationSystemClassDefinitionGroup : Insertion"))
         {
         classDefinitionGroup->Insert();
         return classDefinitionGroup;
