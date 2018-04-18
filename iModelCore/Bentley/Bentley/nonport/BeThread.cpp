@@ -159,7 +159,7 @@ static std::unique_lock<std::recursive_mutex>& to_uniquelock(BeMutexHolder* bhol
 static std::condition_variable_any& to_cv(BeConditionVariable* bcv){return *(std::condition_variable_any*)bcv;}
 
 BeMutex::BeMutex()      {new (this) std::recursive_mutex();}
-BeMutex::~BeMutex()     {to_mutex(this).~recursive_mutex();}
+BeMutex::~BeMutex()     {to_mutex(this).~recursive_mutex(); /* May assert if mutex is still locked */ }
 void BeMutex::lock()    {to_mutex(this).lock();}
 void BeMutex::unlock()  {to_mutex(this).unlock();}
 BeMutexHolder::BeMutexHolder(BeMutex& mutex, Lock lock)
