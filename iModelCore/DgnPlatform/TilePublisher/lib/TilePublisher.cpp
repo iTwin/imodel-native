@@ -3810,16 +3810,18 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     if (TileGeneratorStatus::Success != status)
         return ConvertStatus(status);
 
-    rootRange = DRange3d::NullRange();
+    bool noGeometry = true;
     for (auto const& kvp : m_modelRanges)
         {
         auto model = GetDgnDb().Models().GetModel(kvp.first);
-
-        if (model->IsSpatialModel())
-            rootRange.Extend(kvp.second.m_range);
+        if (!kvp.second.m_range.IsNull())
+            {
+            noGeometry = false;
+            break;
+            }
         }
 
-    if (rootRange.IsNull())
+    if (noGeometry)
         return ConvertStatus(TileGeneratorStatus::NoGeometry);
 
     return PublishClassifiers(viewedModels, generator, toleranceInMeters, progressMeter);
