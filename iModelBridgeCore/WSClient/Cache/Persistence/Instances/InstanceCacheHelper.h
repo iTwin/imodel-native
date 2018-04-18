@@ -24,6 +24,7 @@ USING_NAMESPACE_BENTLEY_EC
 USING_NAMESPACE_BENTLEY_SQLITE
 
 struct RootManager;
+struct ObjectInfoManager;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    06/2013
@@ -192,11 +193,13 @@ struct InstanceCacheHelper::PartialCachingState
 
     private:
         RootManager& m_rootManager;
+        ObjectInfoManager& m_objectManager;
+
         std::shared_ptr<ECInstanceKeyMultiMap> m_fullyPersistedInstances;
 
         bset<ObjectId>& m_rejected;
 
-        ECInstanceKeyMultiMap m_dataLossInstances;
+        bset<CachedInstanceKey> m_dataLossInstances;
         InstanceCacheHelper::QueryAnalyzer m_queryAnalyzer;
 
     private:
@@ -209,6 +212,7 @@ struct InstanceCacheHelper::PartialCachingState
             (
             InstanceCacheHelper::QueryAnalyzer queryAnalyzer,
             RootManager& rootManager,
+            ObjectInfoManager& objectManager,
             bset<ObjectId>& rejected
             );
 

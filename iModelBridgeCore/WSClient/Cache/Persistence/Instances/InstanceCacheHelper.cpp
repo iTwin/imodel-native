@@ -545,10 +545,12 @@ InstanceCacheHelper::PartialCachingState::PartialCachingState
 (
 QueryAnalyzer queryAnalyzer,
 RootManager& rootManager,
+ObjectInfoManager& objectManager,
 bset<ObjectId>& rejected
 ) :
 m_queryAnalyzer(queryAnalyzer),
 m_rootManager(rootManager),
+m_objectManager(objectManager),
 m_rejected(rejected)
     {}
 
@@ -907,13 +909,18 @@ bool InstanceCacheHelper::PartialCachingState::IsFullyPersisted(ObjectInfoCR inf
         {
         // TODO: this is very ineficient when a lot of instances are in Full persitance roots.
         // Underlying ECIntsanceFinder is slow
-        auto instances = std::make_shared<ECInstanceKeyMultiMap>();
-        if (SUCCESS != m_rootManager.GetInstancesByPersistence(CacheRootPersistence::Full, *instances))
+
+        ECInstanceKeyMultiMap fullyPersistedNodes;
+        auto fullyPersistedInstances = std::make_shared<ECInstanceKeyMultiMap>();
+
+        if (SUCCESS != m_rootManager.GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
+            SUCCESS != m_objectManager.ReadCachedInstanceKeys(fullyPersistedNodes, *fullyPersistedInstances))
             {
             BeAssert(false);
             return true;
             }
-        m_fullyPersistedInstances = instances;
+
+        m_fullyPersistedInstances = fullyPersistedInstances;
         }
 
     if (!ECDbHelper::IsInstanceInMultiMap(info.GetInstanceKey(), *m_fullyPersistedInstances))

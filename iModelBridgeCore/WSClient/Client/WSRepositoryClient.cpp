@@ -46,7 +46,7 @@ WSRepositoryClient::WSRepositoryClient(std::shared_ptr<struct ClientConnection> 
 m_connection(connection),
 m_serverClient(WSClient::Create(m_connection)),
 m_config(std::make_shared<Configuration>(Configuration(*m_connection)))
-    {}
+    {} 
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   09/2013

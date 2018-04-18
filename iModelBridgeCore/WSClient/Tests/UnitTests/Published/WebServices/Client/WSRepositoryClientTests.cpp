@@ -1248,7 +1248,7 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV25)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV25)
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV26_CapsWebApiToV26)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
@@ -2218,7 +2218,7 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_RequestOptionsNotIncluded_R
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
-        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::Default, request.GetTransferTimeoutSeconds());
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::Upload, request.GetTransferTimeoutSeconds());
         return StubHttpResponse();
         });
 
@@ -2296,67 +2296,6 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives200_Suc
     auto result = client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
     EXPECT_EQ("TestChangesetResponse", result.GetValue()->AsString());
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendChangesetRequest_RequestOptionsNotIncluded_RequestTimeOutsAreDefaults)
-    {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
-    GetHandler().ForRequest(2, [=](HttpRequestCR request)
-        {
-        EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
-        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::GetObject, request.GetTransferTimeoutSeconds());
-        return StubHttpResponse();
-        });
-
-    client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaRequestOptions_RequestTrasferTimeOutIsSet)
-    {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
-    GetHandler().ForRequest(2, [=](HttpRequestCR request)
-        {
-        EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
-        EXPECT_EQ(1111, request.GetTransferTimeoutSeconds());
-        return StubHttpResponse();
-        });
-
-    auto options = std::make_shared<IWSRepositoryClient::RequestOptions>();
-    options->SetTransferTimeOut(1111);
-    client->SendChangesetRequestWithOptions(HttpStringBody::Create(""), nullptr, options, nullptr)->Wait();
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsitest                                    Vincas.Razma                     07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(WSRepositoryClientTests, SendChangesetRequest_TransferTimeOutSetViaDefaultRequestOptions_RequestTrasferTimeOutIsSet)
-    {
-    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-    auto options = std::make_shared<WSRepositoryClient::RequestOptions>();
-
-    GetHandler().ExpectRequests(2);
-    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
-    GetHandler().ForRequest(2, [=](HttpRequestCR request)
-        {
-        EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
-        EXPECT_EQ(options->GetTransferTimeOut(), request.GetTransferTimeoutSeconds());
-        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::Default, options->GetTransferTimeOut());
-        return StubHttpResponse();
-        });
-
-    client->SendChangesetRequestWithOptions(HttpStringBody::Create(""), nullptr, options, nullptr)->Wait();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -3393,6 +3332,7 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_EnableJobsWebApiV2JobSucce
     options->GetJobOptions()->EnableJobsIfPossible();
     auto result = client->SendUpdateFileRequestWithOptions({"TestSchema.TestClass", "TestId"}, StubFile("TestContent"), nullptr, options)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
+    ASSERT_TRUE(result.GetValue().GetBody().IsValid());
     EXPECT_STREQ("Good Content", result.GetValue().GetBody()->AsString().c_str());
     }
 

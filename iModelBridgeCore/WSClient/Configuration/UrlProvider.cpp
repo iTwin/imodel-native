@@ -311,6 +311,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ProjectSharedFederatedUIURL(
     "https://dev-projectshareportal.bentley.com/",
     "https://qa-projectshareportal.bentley.com/",
     "https://projectshareportal.bentley.com/",
+    "https://perf-projectshareportal.bentley.com/",
     &s_urlRegistry
     );
 

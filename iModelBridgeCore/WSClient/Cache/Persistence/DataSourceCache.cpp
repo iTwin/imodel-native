@@ -1515,16 +1515,12 @@ ICancellationTokenPtr ct
             if (nullptr == rejectedOut)
                 return CacheStatus::Error;
 
-            ECInstanceKeyMultiMap fullyPersistedNodes;
-            if (SUCCESS != m_state->GetRootManager().GetNodesByPersistence(CacheRootPersistence::Full, fullyPersistedNodes) ||
-                SUCCESS != m_state->GetObjectInfoManager().ReadCachedInstanceKeys(fullyPersistedNodes, fullyPersistedInstances))
-                return CacheStatus::Error;
-
+            InstanceCacheHelper::QueryAnalyzer analyzer(m_state->GetECDbAdapter(), *query);
             partialCachingState = std::make_shared<InstanceCacheHelper::PartialCachingState>
                 (
-                m_state->GetECDbAdapter(),
-                *query,
-                fullyPersistedInstances,
+                analyzer,
+                m_state->GetRootManager(),
+                m_state->GetObjectInfoManager(),
                 *rejectedOut
                 );
             }

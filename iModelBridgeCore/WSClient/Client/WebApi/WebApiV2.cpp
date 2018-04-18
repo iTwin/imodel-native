@@ -539,7 +539,7 @@ ICancellationTokenPtr ct
     Http::Request request = m_configuration->GetHttpClient().CreatePostRequest(url);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
-    if (nullptr != options)
+    if (nullptr != options) 
         request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
 
     request.GetHeaders().SetContentType(REQUESTHEADER_ContentType_ApplicationJson);
