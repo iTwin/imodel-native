@@ -1492,6 +1492,11 @@ void            DwgDbBlockReference::GetBlockTransform (TransformR out) const { 
 DVec3d          DwgDbBlockReference::GetNormal () const { return Util::DVec3dFrom(T_Super::normal()); }
 DwgDbStatus     DwgDbBlockReference::ExplodeToOwnerSpace () const { return ToDwgDbStatus(T_Super::explodeToOwnerSpace()); }
 DwgDbObjectIterator DwgDbBlockReference::GetAttributeIterator () const { return DwgDbObjectIterator(T_Super::attributeIterator()); }
+DwgDbStatus    DwgDbBlockReference::SetPosition (DPoint3dCR o) { RETURNVOIDORSTATUS(T_Super::setPosition(Util::GePoint3dFrom(o))); }
+DwgDbStatus    DwgDbBlockReference::SetRotation (double a) { RETURNVOIDORSTATUS(T_Super::setRotation(a)); }
+DwgDbStatus    DwgDbBlockReference::SetScales (DVec3dCR s) { RETURNVOIDORSTATUS(T_Super::setScaleFactors(Util::GeScale3dFrom(s))); }
+DwgDbStatus    DwgDbBlockReference::SetNormal (DVec3dCR v) { RETURNVOIDORSTATUS(T_Super::setNormal(Util::GeVector3dFrom(v))); }
+DwgDbStatus    DwgDbBlockReference::SetBlockTableRecord (DwgDbObjectIdCR id) { RETURNVOIDORSTATUS(T_Super::setBlockTableRecord(id)); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          05/16

@@ -76,16 +76,22 @@ void ImporterTestBaseFixture::TearDown()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ImporterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR outputName, BentleyApi::BeFileNameCR inputFileName)
     {
-    m_options.SetInputFileName (inputFileName);
-    m_options.SetBridgeRegSubKey (ImporterTests::GetDwgBridgeRegistryKey());
-    m_options.SetIsUpdating (false);
-#ifndef WIP_GENRATE_THUMBNAILS
-    // don't generate thumbnails for now
-    m_options.SetWantThumbnails (false);
-#endif
+    InitializeImporterOptions (inputFileName, false);
     
     DwgImporter*    importer = new DwgImporter(m_options);
     ASSERT_NOT_NULL(importer);
+
+    DoConvert (importer, outputName, inputFileName);
+    delete importer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void    ImporterTestBaseFixture::DoConvert (DwgImporter* importer, BentleyApi::BeFileNameCR outputName, BentleyApi::BeFileNameCR inputFileName)
+    {
+    ASSERT_NOT_NULL(importer);
+
     // try open the inpurt DWG file:
     auto status = importer->OpenDwgFile(inputFileName);
     ASSERT_SUCCESS(status);
@@ -96,6 +102,7 @@ void ImporterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR outputName, Ben
 
     importer->SetDgnDb(*db.get());
     importer->AttachSyncInfo();
+    importer->MakeSchemaChanges ();
 
     // start a new import job
     ASSERT_EQ(DwgImporter::ImportJobCreateStatus::Success, importer->InitializeJob());
@@ -108,8 +115,6 @@ void ImporterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR outputName, Ben
     m_scaleDwgToMeters = importer->GetScaleToMeters ();
 
     db->SaveChanges();
-
-    delete importer;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -117,15 +122,20 @@ void ImporterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR outputName, Ben
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ImporterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR outputName, BentleyApi::BeFileNameCR inputFileName, bool expectFailure)
     {
-    m_options.SetInputFileName (inputFileName);
-    m_options.SetBridgeRegSubKey (ImporterTests::GetDwgBridgeRegistryKey());
-    m_options.SetIsUpdating (true);
-#ifndef WIP_GENRATE_THUMBNAILS
-    // don't generate thumbnails for now
-    m_options.SetWantThumbnails (false);
-#endif
+    InitializeImporterOptions (inputFileName, true);
 
     DwgImporter*    importer = new DwgImporter(m_options);
+    ASSERT_NOT_NULL(importer);
+
+    DoUpdate (importer, outputName, inputFileName);
+    delete importer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImporterTestBaseFixture::DoUpdate (DwgImporter* importer, BentleyApi::BeFileNameCR outputName, BentleyApi::BeFileNameCR inputFileName)
+    {
     ASSERT_NOT_NULL(importer);
 
     // try open the inpurt DWG file:
@@ -141,7 +151,7 @@ void ImporterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR outputName, Bent
     importer->MakeSchemaChanges ();
 
     // find an existing import job
-    ASSERT_EQ(DwgImporter::ImportJobLoadStatus::Success, importer->FindJob());
+    ASSERT_EQ (DwgImporter::ImportJobLoadStatus::Success, importer->FindJob());
 
     // ready to update the iModel from the DWG
     status = importer->Process ();
@@ -151,8 +161,6 @@ void ImporterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR outputName, Bent
     m_scaleDwgToMeters = importer->GetScaleToMeters ();
 
     db->SaveChanges();
-
-    delete importer;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -186,6 +194,19 @@ void ImporterTestBaseFixture::LineUpFilesForNewDwg(WCharCP outputDgnDbFileName, 
     MakeWritableCopyOf(outSyncFile, syncFile, DwgSyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          02/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void ImporterTestBaseFixture::InitializeImporterOptions (BentleyApi::BeFileNameCR dwgFilename, bool isUpdating)
+    {
+    m_options.SetInputFileName (dwgFilename);
+    m_options.SetBridgeRegSubKey (ImporterTests::GetDwgBridgeRegistryKey());
+    m_options.SetIsUpdating (isUpdating);
+#ifndef WIP_GENRATE_THUMBNAILS
+    // don't generate thumbnails for now
+    m_options.SetWantThumbnails (false);
+#endif
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/18
