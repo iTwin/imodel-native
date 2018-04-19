@@ -64,6 +64,7 @@ private:
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
     uint32_t m_hLineMaterialColors:1; //!< use material colors for hidden lines
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
+    uint32_t m_animate:1;          //!< Animate view (render continously).
 
 public:
     BE_JSON_NAME(acs);
@@ -88,6 +89,7 @@ public:
     BE_JSON_NAME(hlMatColors);
     BE_JSON_NAME(monochrome);
     BE_JSON_NAME(edgeMask);
+    BE_JSON_NAME(animate);
 
     ViewFlags()
         {
@@ -113,6 +115,7 @@ public:
         m_noGeometryMap = 0;
         m_hLineMaterialColors = 0;
         m_edgeMask = 0;
+        m_animate = 0;
         }
 
     bool ShowDimensions() const {return m_dimensions;}
@@ -159,8 +162,10 @@ public:
     bool UseHlineMaterialColors() const {return m_hLineMaterialColors;}
     int GetEdgeMask() const {return m_edgeMask;}
     void SetEdgeMask(int val) {m_edgeMask = val;}
+    bool GetAnimate() const { return m_animate; }
+    void SetAnimate(bool val) {m_animate = val;}
     
-    RenderMode GetRenderMode() const {return m_renderMode;}
+    RenderMode GetRenderMode() const {return m_renderMode; }
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 
     bool HiddenEdgesVisible() const
@@ -1101,6 +1106,9 @@ struct GradientSymb : RefCountedBase
         void SetMode(Mode mode) { m_mode = mode; }
         ColorScheme GetColorScheme() const { return m_colorScheme; }
         void SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
+        bool operator==(ThematicSettings const& rhs) const;
+        bool operator<(ThematicSettings const& rhs) const;
+
         };
 
 protected:
@@ -2542,6 +2550,7 @@ private:
 
 public:
         AuxChannel( bvector<DataPtr>&& data) : m_data(std::move(data)) { }
+        bool IsAnimatable() const { return m_data.size() > 1; }
         void AppendDataByIndex(RefCountedPtr<AuxChannel>& output, size_t index)
             {
             if (!output.IsValid())
@@ -2582,6 +2591,7 @@ struct MeshAuxData
     AuxParamChannelPtr              m_paramChannel;
 
     bool IsValid() const { return m_displacementChannel.IsValid() || m_paramChannel.IsValid(); }
+    bool IsAnimatable() const { return (m_displacementChannel.IsValid() && m_displacementChannel->IsAnimatable()) || (m_paramChannel.IsValid() && m_paramChannel->IsAnimatable()); }
 };  
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshAuxData);
