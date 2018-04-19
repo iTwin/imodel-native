@@ -358,16 +358,21 @@ SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchema
                             .append("(")
                             .append(std::to_string(prec.Value()).c_str())
                             .append(")");
-                            
-                        mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(nameWithPrec.c_str());
+                        Utf8String _alias;
+                        Utf8String name;
+                        ECClass::ParseClassName(_alias, name, nameWithPrec.c_str());     
+                        mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + name).c_str());
                         }
                     if (nullptr == mappedName)
                         {
-                        mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(formatName.c_str());
+                        Utf8String _alias;
+                        Utf8String name;
+                        ECClass::ParseClassName(_alias, name, formatName.c_str());
+                        mappedName = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(("FORMATS:" + name).c_str());
                         if (Utf8String::IsNullOrEmpty(mappedName))
                             {
                             LOG.warningv("Presentation Format String '%s' has a format that could not be mapped on KoQ '%s'", presValue.c_str(), GetFullName().c_str());
-                            mappedName = "DefaultRealU";
+                            mappedName = "DefaultRealR";
                             }
                         }
                     }
