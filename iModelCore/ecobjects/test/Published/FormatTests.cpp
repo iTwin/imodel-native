@@ -195,8 +195,6 @@ TEST_F(FormatTest, VerifyDefaults)
     EXPECT_EQ(',', nfs->GetThousandSeparator());
     EXPECT_FALSE(nfs->HasUomSeparator());
     EXPECT_STRCASEEQ(" ", nfs->GetUomSeparator());
-    EXPECT_FALSE(nfs->HasPrefixPadChar());
-    EXPECT_EQ('\0', nfs->GetPrefixPadChar());
     EXPECT_FALSE(nfs->HasStationSeparator());
     EXPECT_EQ('+', nfs->GetStationSeparator());
     EXPECT_FALSE(format->HasComposite());
@@ -654,32 +652,6 @@ TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyThousandSeparator)
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
     auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
     EXPECT_FALSE(nfs->HasThousandsSeparator());
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                               Kyle.Abramowitz                     03/2018
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(FormatOptionalAttributesTest, InvalidOrEmptyPrefixPadChar)
-    {
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" prefixPadChar="" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with empty prefixPadChar");
-    ExpectSchemaDeserializationFailure(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" prefixPadChar="bananas" precision="4"/>
-        </ECSchema>)xml", SchemaReadStatus::InvalidECSchemaXml, "Should fail with invalid prefixPadChar");
-    {
-    Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
-        <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
-            <Format typeName="AmerMYFI4" type="decimal" precision="4"/>
-        </ECSchema>)xml";
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
-    auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
-    EXPECT_FALSE(nfs->HasPrefixPadChar());
     }
     }
 

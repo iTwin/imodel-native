@@ -82,7 +82,6 @@
 #define FORMAT_UOM_SEPARATOR_ATTRIBUTE          "uomSeparator"
 #define FORMAT_STAT_SEPARATOR_ATTRIBUTE         "statSeparator"
 #define FORMAT_STATION_SIZE_ATTRIBUTE           "stationOffsetSize"
-#define FORMAT_PREFIX_PAD_CHAR_ATTRIBUTE        "prefixPadChar"
 #define FORMAT_MIN_WIDTH_ATTRIBUTE              "minWidth"
 
 #define COMPOSITE_SPACER_ATTRIBUTE          "spacer"

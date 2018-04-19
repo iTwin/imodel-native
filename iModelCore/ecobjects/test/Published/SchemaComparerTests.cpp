@@ -333,7 +333,6 @@ TEST_F(SchemaCompareTest, CompareFormatsIdentical)
     num.SetPrecision(Formatting::FractionalPrecision::Over_128);
     num.SetMinWidth(4);
     num.SetUomSeparator("");
-    num.SetPrefixPadChar('0');
     num.SetSignOption(Formatting::SignOption::NegativeParentheses);
     num.SetDecimalSeparator(',');
     num.SetThousandSeparator(',');
@@ -578,7 +577,6 @@ TEST_F(SchemaCompareTest, CompareFormatsDeletedNumericSpec)
     num.SetPrecision(Formatting::FractionalPrecision::Over_128);
     num.SetMinWidth(4);
     num.SetUomSeparator("");
-    num.SetPrefixPadChar('0');
     num.SetSignOption(Formatting::SignOption::NegativeParentheses);
     num.SetDecimalSeparator(',');
     num.SetThousandSeparator(',');
@@ -618,7 +616,6 @@ TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyNumericSpec)
     num.SetPrecision(Formatting::FractionalPrecision::Over_128);
     num.SetMinWidth(4);
     num.SetUomSeparator("");
-    num.SetPrefixPadChar('0');
     num.SetSignOption(Formatting::SignOption::NegativeParentheses);
     num.SetDecimalSeparator(',');
     num.SetThousandSeparator(',');
@@ -642,7 +639,7 @@ TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyNumericSpec)
     ASSERT_EQ(1, change.Count());
     auto formatChange = change.At(0);
 
-    ASSERT_EQ(9, formatChange.ChangesCount());
+    ASSERT_EQ(8, formatChange.ChangesCount());
 
     EXPECT_STRCASEEQ("applyRounding", formatChange.GetFormatTraits().GetOld().Value().c_str());
     EXPECT_TRUE(formatChange.GetFormatTraits().GetNew().IsNull());
@@ -652,8 +649,6 @@ TEST_F(SchemaCompareTest, CompareFormatsCompareToEmptyNumericSpec)
     EXPECT_TRUE(formatChange.GetMinWidth().GetNew().IsNull());
     EXPECT_STRCASEEQ("", formatChange.GetUomSeparator().GetOld().Value().c_str());
     EXPECT_TRUE(formatChange.GetUomSeparator().GetNew().IsNull());
-    EXPECT_STRCASEEQ("0", formatChange.GetPrefixPadChar().GetOld().Value().c_str());
-    EXPECT_TRUE(formatChange.GetPrefixPadChar().GetNew().IsNull());
     EXPECT_STRCASEEQ("NegativeParentheses", formatChange.GetShowSignOption().GetOld().Value().c_str());
     EXPECT_TRUE(formatChange.GetShowSignOption().GetNew().IsNull());
     EXPECT_STRCASEEQ(",", formatChange.GetDecimalSeparator().GetOld().Value().c_str());
@@ -676,7 +671,6 @@ TEST_F(SchemaCompareTest, CompareFormatsNewNumericSpec)
     num.SetPrecision(Formatting::FractionalPrecision::Over_128);
     num.SetMinWidth(4);
     num.SetUomSeparator("");
-    num.SetPrefixPadChar('0');
     num.SetSignOption(Formatting::SignOption::NegativeParentheses);
     num.SetDecimalSeparator(',');
     num.SetThousandSeparator(',');
@@ -700,7 +694,7 @@ TEST_F(SchemaCompareTest, CompareFormatsNewNumericSpec)
     ASSERT_EQ(1, change.Count());
     auto formatChange = change.At(0);
 
-    ASSERT_EQ(9, formatChange.ChangesCount());
+    ASSERT_EQ(8, formatChange.ChangesCount());
 
     EXPECT_STRCASEEQ("applyRounding", formatChange.GetFormatTraits().GetNew().Value().c_str());
     EXPECT_TRUE(formatChange.GetFormatTraits().GetOld().IsNull());
@@ -710,8 +704,6 @@ TEST_F(SchemaCompareTest, CompareFormatsNewNumericSpec)
     EXPECT_TRUE(formatChange.GetMinWidth().GetOld().IsNull());
     EXPECT_STRCASEEQ("", formatChange.GetUomSeparator().GetNew().Value().c_str());
     EXPECT_TRUE(formatChange.GetUomSeparator().GetOld().IsNull());
-    EXPECT_STRCASEEQ("0", formatChange.GetPrefixPadChar().GetNew().Value().c_str());
-    EXPECT_TRUE(formatChange.GetPrefixPadChar().GetOld().IsNull());
     EXPECT_STRCASEEQ("NegativeParentheses", formatChange.GetShowSignOption().GetNew().Value().c_str());
     EXPECT_TRUE(formatChange.GetShowSignOption().GetOld().IsNull());
     EXPECT_STRCASEEQ(",", formatChange.GetDecimalSeparator().GetNew().Value().c_str());
@@ -734,7 +726,6 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec)
     num.SetPrecision(Formatting::FractionalPrecision::Over_128);
     num.SetMinWidth(4);
     num.SetUomSeparator("");
-    num.SetPrefixPadChar('0');
     num.SetSignOption(Formatting::SignOption::NegativeParentheses);
     num.SetDecimalSeparator(',');
     num.SetThousandSeparator(',');
@@ -745,7 +736,6 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec)
     num2.SetPrecision(Formatting::DecimalPrecision::Precision10);
     num2.SetMinWidth(8);
     num2.SetUomSeparator("smoot");
-    num2.SetPrefixPadChar('x');
     num2.SetSignOption(Formatting::SignOption::OnlyNegative);
     num2.SetDecimalSeparator('.');
     num2.SetThousandSeparator('.');
@@ -767,7 +757,7 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec)
     ASSERT_EQ(1, change.Count());
     auto formatChange = change.At(0);
 
-    ASSERT_EQ(10, formatChange.ChangesCount());
+    ASSERT_EQ(9, formatChange.ChangesCount());
 
     EXPECT_STRCASEEQ("applyRounding", formatChange.GetFormatTraits().GetOld().Value().c_str());
     EXPECT_STRCASEEQ("exponentOnlyNegative", formatChange.GetFormatTraits().GetNew().Value().c_str());
@@ -781,8 +771,6 @@ TEST_F(SchemaCompareTest, CompareFormatsModifiedNumericSpec)
     EXPECT_EQ(8, formatChange.GetMinWidth().GetNew().Value());
     EXPECT_STRCASEEQ("", formatChange.GetUomSeparator().GetOld().Value().c_str());
     EXPECT_STRCASEEQ("smoot", formatChange.GetUomSeparator().GetNew().Value().c_str());
-    EXPECT_STRCASEEQ("0", formatChange.GetPrefixPadChar().GetOld().Value().c_str());
-    EXPECT_STRCASEEQ("x", formatChange.GetPrefixPadChar().GetNew().Value().c_str());
     EXPECT_STRCASEEQ("NegativeParentheses", formatChange.GetShowSignOption().GetOld().Value().c_str());
     EXPECT_STRCASEEQ("OnlyNegative", formatChange.GetShowSignOption().GetNew().Value().c_str());
     EXPECT_STRCASEEQ(",", formatChange.GetDecimalSeparator().GetOld().Value().c_str());

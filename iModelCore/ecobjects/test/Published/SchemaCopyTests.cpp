@@ -1005,7 +1005,6 @@ TEST_F(SchemaCopyTest, CopyStandardFormatsSchema)
     EXPECT_EQ(referenceDefault->GetDecimalSeparator(), defNum->GetDecimalSeparator());
     EXPECT_EQ(referenceDefault->GetFormatTraits(), defNum->GetFormatTraits());
     EXPECT_EQ(referenceDefault->GetMinWidth(), defNum->GetMinWidth());
-    EXPECT_EQ(referenceDefault->GetPrefixPadChar(), defNum->GetPrefixPadChar());
     EXPECT_EQ(referenceDefault->GetPresentationType(), defNum->GetPresentationType());
     EXPECT_DOUBLE_EQ(referenceDefault->GetRoundingFactor(), defNum->GetRoundingFactor());
     EXPECT_EQ(referenceDefault->GetSignOption(), defNum->GetSignOption());
@@ -1026,7 +1025,6 @@ TEST_F(SchemaCopyTest, CopyStandardFormatsSchema)
     EXPECT_EQ(refAmerFiNum->GetDecimalSeparator(), amerFiNum->GetDecimalSeparator());
     EXPECT_EQ(refAmerFiNum->GetFormatTraits(), amerFiNum->GetFormatTraits());
     EXPECT_EQ(refAmerFiNum->GetMinWidth(), amerFiNum->GetMinWidth());
-    EXPECT_EQ(refAmerFiNum->GetPrefixPadChar(), amerFiNum->GetPrefixPadChar());
     EXPECT_EQ(refAmerFiNum->GetPresentationType(), amerFiNum->GetPresentationType());
     EXPECT_DOUBLE_EQ(refAmerFiNum->GetRoundingFactor(), amerFiNum->GetRoundingFactor());
     EXPECT_EQ(refAmerFiNum->GetSignOption(), amerFiNum->GetSignOption());
