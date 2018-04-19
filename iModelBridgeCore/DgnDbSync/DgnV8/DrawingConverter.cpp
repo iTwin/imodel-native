@@ -1022,7 +1022,7 @@ void Converter::DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm)
         ConvertExtractionAttachments(v8mm, intoDrawing, firstViewInfo.get());
         }
 
-    v8model.Empty();
+    //v8model.Empty(); Since XDomains and bridges may need to cache elementRefs, v8Models shouldn't be freed prematurely. Thus, commenting this line out.
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
