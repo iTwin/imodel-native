@@ -38,6 +38,7 @@ public:
     void    AppendEntity (DwgDbEntityP entity, DwgDbBlockTableRecordP block, bool closeEntity = true);
     void    AttachXrefInDefaultModel (BeFileNameCR infile, DPoint3dCR origin = DPoint3d::FromZero(), double angle = 0.0);
     void    FindXrefInsert (DwgStringCR blockName);
+    void    FindXrefBlock (DwgStringCR blockName);
     size_t  CountAndCheckModelspaceEntity (bool& found, DwgDbHandleCR entityHandle) const;
 
     DwgDbObjectIdCR GetCurrentObjectId () const;

@@ -156,13 +156,18 @@ DWGDB_DEFINE_OBJECTPTR (SymbolTableRecord)
 /*=================================================================================**//**
 * @bsiclass                                                     Don.Fu          01/16
 +===============+===============+===============+===============+===============+======*/
+#define DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(__name__)     \
+    DWGDB_EXPORT DwgDbSymbolTableIterator NewIterator(bool atBeginning = true, bool skipDeleted = true) const;  \
+    DWGDB_EXPORT DwgDbObjectId  GetByName (WStringCR name, bool getErased = false) const;
+
+/*=================================================================================**//**
+* @bsiclass                                                     Don.Fu          01/16
++===============+===============+===============+===============+===============+======*/
 class DwgDbSymbolTable : public DWGDB_EXTENDCLASS(SymbolTable)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(SymbolTable)
-
-    DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
-    DWGDB_EXPORT DwgDbStatus                GetByName (DwgDbObjectIdR outId, WStringCR name, bool getErased = false) const;
+    DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(SymbolTable)
     };  // DwgDbSymbolTable
 DWGDB_DEFINE_OBJECTPTR (SymbolTable)
 
@@ -208,8 +213,8 @@ class DwgDbBlockTable : public DWGDB_EXTENDCLASS(BlockTable)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(BlockTable)
+    DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(BlockTable)
 
-    DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
     DWGDB_EXPORT DwgDbObjectId              GetModelspaceId () const;
     DWGDB_EXPORT DwgDbObjectId              GetPaperspaceId () const;
     };  // DwgDbBlockTable
@@ -251,8 +256,8 @@ class DwgDbLayerTable : public DWGDB_EXTENDCLASS(LayerTable)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(LayerTable)
+    DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(LayerTable)
 
-    DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
     DWGDB_EXPORT bool           HasUnreconciledLayers () const;
     DWGDB_EXPORT DwgDbStatus    GetUnreconciledLayers (DwgDbObjectIdArrayR layers) const;
     };  // DwgDbLayerTable
@@ -312,8 +317,7 @@ class DwgDbViewportTable : public DWGDB_EXTENDCLASS(ViewportTable)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(ViewportTable)
-
-    DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
+    DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(ViewportTable)
     };  // DwgDbViewportTable
 DWGDB_DEFINE_OBJECTPTR (ViewportTable)
 
@@ -345,8 +349,7 @@ class DwgDbTextStyleTable : public DWGDB_EXTENDCLASS(TextStyleTable)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(TextStyleTable)
-
-    DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
+    DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(TextStyleTable)
     };  // DwgDbTextStyleTable
 DWGDB_DEFINE_OBJECTPTR (TextStyleTable)
 
@@ -385,8 +388,7 @@ class DwgDbLinetypeTable : public DWGDB_EXTENDCLASS(LinetypeTable)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(LinetypeTable)
-
-    DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
+    DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(LinetypeTable)
     };  // DwgDbLineTypeTable
 DWGDB_DEFINE_OBJECTPTR (LinetypeTable)
 
@@ -409,8 +411,7 @@ class DwgDbRegAppTable : public DWGDB_EXTENDCLASS(RegAppTable)
     {
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(RegAppTable)
-
-    DWGDB_EXPORT DwgDbSymbolTableIterator   NewIterator(bool atBeginning = true, bool skipDeleted = true) const;
+    DWGDB_DECLARE_SYMBOLTABLE_MEMBERS(RegAppTable)
     };  // DwgDbRegAppTable
 DWGDB_DEFINE_OBJECTPTR (RegAppTable)
 
