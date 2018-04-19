@@ -2550,6 +2550,7 @@ private:
 
 public:
         AuxChannel( bvector<DataPtr>&& data) : m_data(std::move(data)) { }
+        bool IsAnimatable() const { return m_data.size() > 1; }
         void AppendDataByIndex(RefCountedPtr<AuxChannel>& output, size_t index)
             {
             if (!output.IsValid())
@@ -2590,6 +2591,7 @@ struct MeshAuxData
     AuxParamChannelPtr              m_paramChannel;
 
     bool IsValid() const { return m_displacementChannel.IsValid() || m_paramChannel.IsValid(); }
+    bool IsAnimatable() const { return (m_displacementChannel.IsValid() && m_displacementChannel->IsAnimatable()) || (m_paramChannel.IsValid() && m_paramChannel->IsAnimatable()); }
 };  
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshAuxData);
