@@ -82,6 +82,7 @@ struct UrlProvider
         //! @param customlocalState - custom local state for caching URLs
         //! @param customBuddi - custom buddi client for requesting URLs
         //! @param customHandler - custom handler
+        //! @param customScheduler - custom scheduler for async code
         WSCLIENT_EXPORT static void Initialize(
             Environment env,
             int64_t cacheTimeoutMs = DefaultTimeout,
