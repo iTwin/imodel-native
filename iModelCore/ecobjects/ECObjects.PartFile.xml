@@ -452,35 +452,4 @@
         <Directories DirectoryListName="ECObjectsTested"/>
     </Product>
 
-<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
-<!-- ///////////////////////////////////// BIS /////////////////////////////////////////// -->
-<!-- ///////////////////////////////////////////////////////////////////////////////////// -->
-
-    <Product Name="BisSchemasValidation" SaveProduct="true" PrgOutputDir="AllBisSchemas">
-        <Directories DirectoryListName="AllBisSchemas-Directories"/>
-        <Directories DirectoryListName="SchemaValidator"/>
-        <Directories DirectoryListName="ECObjects"/>
-        <SubPart PartName="BisSchemas" PartFile="BisSchemas" Repository="BisSchemas"/>
-        <SubPart PartName="SchemaValidator"/>
-        <SubPart PartName="ValidateSchemas"/>
-    </Product>
-
-    <Part Name="ValidateSchemas" BentleyBuildMakeFile="mki/BisSchemasValidation/SchemaValidatorSetup.mke" OnlyPlatforms="x64">
-        <SubPart PartName="BisSchemas" PartFile="BisSchemas" Repository="BisSchemas"/>
-        <SubPart PartName="V3_1ValidationSchemas" PartFile="ECStandards" Repository="ECStandards"/>
-        <SubPart PartName="SchemaValidator"/>
-    </Part>
-
-    <ProductDirectoryList ListName="AllBisSchemas-Directories">
-        <ProductDirectory Name="Assets" Path=""/>
-        <ProductDirectory Name="Assets" Path="" LibType="static"/>
-        <ProductDirectory Name="PlantDomainSchemasDir" Path="Assets/ECSchemas/Domain"/>
-        <ProductDirectory Name="Assemblies" Deliver="false"/>
-        <ProductDirectory Name="StructuralDomainIncludes" Deliver="false"/>
-        <ProductDirectory Name="ElectricalDomainIncludes" Deliver="false"/>
-        <ProductDirectory Name="BuildingDomainIncludes" Deliver="false"/>
-        <ProductDirectory Name="ProfilesDomainIncludes" Deliver="false"/>
-        <ProductDirectory Name="FormsDomainIncludes" Deliver="false"/>
-    </ProductDirectoryList>
-
 </BuildContext>
