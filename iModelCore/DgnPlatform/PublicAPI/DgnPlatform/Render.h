@@ -3103,9 +3103,9 @@ public:
 //! Overrides applied to elements take priority over those applied to subcategories.
 //! The rules for determining visibility and symbology follow a priority:
 //! Visibility:
-//!     If an element is in the "always drawn" list, it is visible.
+//!     If an element is in the "never drawn" list, it is invisible.
+//!     Else, if an element is in the "always drawn" list, it is visible.
 //!     Else, if the "always drawn" list is exclusive, it is invisible.
-//!     Else, if it is in the "never drawn" list, it is invisible.
 //!     Else, any geometry not in the "visible subcategories" list is invisible
 //!     Else, any geometry of a DgnGeometryClass marked as invisible is invisible.
 //!     Else, it is visible.
