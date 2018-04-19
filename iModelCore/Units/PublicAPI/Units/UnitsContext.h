@@ -11,8 +11,6 @@
 #include <Units/Units.h>
 
 BEGIN_BENTLEY_UNITS_NAMESPACE
-//! @addtogroup UnitsGroup
-//! @beginGroup
 
 //=======================================================================================
 //! The UnitsContext is an abstact class to provide a generic interface to look up Units,
