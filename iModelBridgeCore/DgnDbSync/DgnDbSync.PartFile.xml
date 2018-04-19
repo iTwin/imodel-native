@@ -477,9 +477,41 @@
         <Directories DirectoryListName="BisJsonDirList"/>
     </Product>
 
+    <!-- VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV -->
+    <!-- The below parts exist to work around a `bb buildinstallset` deficiency that ignores <VendorNotice> bindings. -->
+
+    <ProductDirectoryList ListName="DgnV8ConverterNoticesDirList">
+        <ProductDirectory Name="ApplicationRoot" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" Deliver="false"/>
+        <ProductDirectory Name="Assemblies" LibType="Static" Deliver="false"/>
+        <ProductDirectory Name="Assets" Deliver="false"/>
+        <ProductDirectory Name="DgnV8Dlls" Deliver="false"/>
+        <ProductDirectory Name="PublisherLoggingConfigXml" Deliver="false"/>
+        
+        <ProductDirectory Name="VendorNotices" Path=""/>
+        <ProductDirectory Name="VendorNotices" LibType="Static" Path=""/>
+    </ProductDirectoryList>
+
+    <Product Name="__DgnV8ConverterNotices" SaveProduct="false">
+        <Directories DirectoryListName="DgnV8ConverterNoticesDirList"/>
+        <SubPart PartName="DgnV8ConverterExe"/>
+    </Product>
+
+    <Part Name="__GatherDgnV8ConverterNotices" BentleyBuildMakeFile="DgnV8/Converters/DgnV8ConverterInstaller/GatherNotices.mke">
+        <SubProduct ProductName="__DgnV8ConverterNotices"/>
+        <Bindings>
+            <Files ProductDirectoryName="VendorNotices">
+                Delivery/DgnV8ConverterNotices/*.*
+            </Files>
+        </Bindings>
+    </Part>
+
+    <!-- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ -->
+
     <Product Name="DgnV8ConverterMsi" BuildInstallSet="true" SaveProduct="false">
         <SubPart PartName="DgnV8ConverterExe"/>
         <SubPart PartName="DgnV8ConverterMsiFiles"/>
+        <SubPart PartName="__GatherDgnV8ConverterNotices"/>
         
         <SubPart PartName="InstallFrameworkBase" PartFile="InstallFramework" Repository="InstallFramework"/>
         <InstallerWixFile SourceFile="DgnV8/Converters/DgnV8ConverterInstaller/DgnV8Converter"/>
