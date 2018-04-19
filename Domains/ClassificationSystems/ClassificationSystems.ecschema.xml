@@ -41,11 +41,11 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ClassificationSpecializesClassification" modifier="None" strength="referencing" description="">
-        <Source multiplicity="(1..1)" roleLabel="Specializes" polymorphic="true">
+    <ECRelationshipClass typeName="ClassificationSpecializesClassification" modifier="None" strength="referencing" description="a relationship">
+        <Source multiplicity="(0..*)" roleLabel="Specializes" polymorphic="true">
             <Class class="Classification"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="In" polymorphic="true">
             <Class class="Classification"/>
          </Target>
     </ECRelationshipClass>
