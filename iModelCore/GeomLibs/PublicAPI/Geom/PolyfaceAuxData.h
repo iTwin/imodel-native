@@ -137,14 +137,19 @@ struct PolyfaceAuxData : RefCountedBase
     public:
 
     bvector<int32_t> const&                 GetIndices() const          { return m_indices; }
-    ChannelsCR                              GetChannels() const                      { return m_channels; }                  
+    ChannelsCR                              GetChannels() const         { return m_channels; }                  
+    ChannelsR                               GetChannels()               { return m_channels; }                  
     GEOMDLLIMPEXP PolyfaceAuxChannelCPtr    GetChannel(Utf8CP name) const;
 
+                                            PolyfaceAuxData() { }
                                             PolyfaceAuxData(bvector<int32_t>&& indices, Channels&& channels) : m_indices(indices), m_channels(channels) { }
     PolyfaceAuxDataPtr                      CreateForVisitor() const;
     void                                    AdvanceVisitorToNextFace(PolyfaceAuxDataCR parent, uint32_t i0, uint32_t numItem, uint32_t numWrap);
 
     GEOMDLLIMPEXP void                      Transform(TransformCR transform);
+    GEOMDLLIMPEXP void                      AppendDataByIndex(ChannelsCR input, size_t index);
+                  void                      AddIndexTerminator() { m_indices.push_back(0); }
+
 
 };  // T_PolyfaceAuxData
 
