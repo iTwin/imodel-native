@@ -11,6 +11,12 @@
     <KindOfQuantity typeName="BEARING" displayLabel="Bearing" persistenceUnit="RAD(DefaultReal)" presentationUnits="ARC_DEG(dms)" relativeError="0.0001"/>
     <KindOfQuantity typeName="SLOPE" displayLabel="Slope" persistenceUnit="M/M" relativeError="0.0001" />
 
+    <ECEntityClass typeName="RoadRailCategoryModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
     <ECEntityClass typeName="ConfigurationModel" description="Container for configuration elements, such as categories, view-definitions, etc.">
         <BaseClass>bis:DefinitionModel</BaseClass>
         <ECCustomAttributes>
@@ -24,8 +30,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="STATION"/>
-        <ECProperty propertyName="StartValue" typeName="double" kindOfQuantity="LENGTH"/>
+        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="STATION" displayLabel="Start Station"/>
+        <ECProperty propertyName="StartValue" typeName="double" kindOfQuantity="LENGTH" displayLabel="Start Distance Along"/>
     </ECEntityClass>
     <ECEntityClass typeName="HorizontalAlignments" description="Horizontal/Top perspective on Alignments in an AlignmentModel that will be broken down in more detail in a separate HorizontalAlignmentModel.">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
