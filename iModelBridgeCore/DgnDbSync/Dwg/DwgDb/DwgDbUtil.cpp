@@ -18,6 +18,7 @@ DPoint2d    Util::DPoint2dFrom (DWGGE_TypeCR(Vector2d) geVector) { return DPoint
 DPoint2dCP  Util::DPoint2dCPFrom (DWGGE_TypeCP(Point2d) gePoints) { return reinterpret_cast<DPoint2dCP>(gePoints); }
 DVec3d      Util::DVec3dFrom (DWGGE_TypeCR(Vector3d) geVector) { return DVec3d::From(geVector.x, geVector.y, geVector.z); }
 DVec3d      Util::DVec3dFrom (DWGGE_TypeCR(Vector2d) geVector) { return DVec3d::From(geVector.x, geVector.y, 0.0); }
+DVec3d      Util::DVec3dFrom (DWGGE_TypeCR(Scale3d) geScale) { return DVec3d::From(geScale.sx, geScale.sy, geScale.sz); }
 DVec3dCP    Util::DVec3dCPFrom (DWGGE_TypeCP(Vector3d) geVectors) { return reinterpret_cast<DVec3dCP>(geVectors); }
 DVec2d      Util::DVec2dFrom (DWGGE_TypeCR(Vector2d) geVector) { return DVec2d::From(geVector.x, geVector.y); }
 DRange3d    Util::DRange3dFrom (DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents) const& extents) { return DRange3d::From (Util::DPoint3dFrom(extents.minPoint()), Util::DPoint3dFrom(extents.maxPoint())); }
@@ -27,6 +28,7 @@ DWGGE_Type(Point3d)     Util::GePoint3dFrom (DPoint3dCR p) { return DWGGE_Type(P
 DWGGE_Type(Point2d)     Util::GePoint2dFrom (DPoint2dCR p) { return DWGGE_Type(Point2d)(p.x, p.y); }
 DWGGE_Type(Vector3d)    Util::GeVector3dFrom (DVec3dCR v) { return DWGGE_Type(Vector3d)(v.x, v.y, v.z); }
 DWGGE_Type(Vector2d)    Util::GeVector2dFrom (DVec2dCR v) { return DWGGE_Type(Vector2d)(v.x, v.y); }
+DWGGE_Type(Scale3d)     Util::GeScale3dFrom (DVec3dCR v) { return DWGGE_Type(Scale3d)(v.x, v.y, v.z); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16

@@ -23,8 +23,10 @@ private:
     BeFileName          m_fileName;
 
 public:
-    // Constructors prerequsites implementation of IDwgDbHost!
+    // Constructors prerequsites implementation of IDwgDbHost through DwgImporter!
+    // the default constructor
     DwgFileEditor () { BeAssert(DwgImportHost::GetHost()._IsValid()); }
+    // constructor that opens an existing DWG file
     DwgFileEditor (BeFileNameCR infile) { BeAssert(DwgImportHost::GetHost()._IsValid()); OpenFile(infile); }
     void    CreateFile (BeFileNameCR infile);
     void    OpenFile (BeFileNameCR infile);
@@ -34,6 +36,8 @@ public:
     void    DeleteEntity (DwgDbHandleCR entityHandle);
     void    TransformEntitiesBy (T_EntityHandles const& handles, TransformCR transform);
     void    AppendEntity (DwgDbEntityP entity, DwgDbBlockTableRecordP block, bool closeEntity = true);
+    void    AttachXrefInDefaultModel (BeFileNameCR infile, DPoint3dCR origin = DPoint3d::FromZero(), double angle = 0.0);
+    void    FindXrefInsert (DwgStringCR blockName);
     size_t  CountAndCheckModelspaceEntity (bool& found, DwgDbHandleCR entityHandle) const;
 
     DwgDbObjectIdCR GetCurrentObjectId () const;

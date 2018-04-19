@@ -104,7 +104,7 @@ void Converter::SheetsConvertModelAndViews(ResolvedModelMapping const& v8mm, Vie
 
     SheetsConvertViewAttachments(v8mm, firstViewInfo.get(), nvvf);
 
-    v8model.Empty();
+    //v8model.Empty(); Since XDomains and bridges may need to cache elementRefs, v8Models shouldn't be freed prematurely. Thus, commenting this line out.
     }
 
 struct ScaleVote

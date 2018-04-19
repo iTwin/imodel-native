@@ -135,6 +135,18 @@ void MoveEntitiesBy (T_EntityHandles const& handles, DPoint3dCR delta) const
     editor.TransformEntitiesBy (handles, Transform::From(delta));
     editor.SaveFile ();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+void CheckXrefAttached (BeFileNameCR masterFilename, DwgStringCR xrefBlockname)
+    {
+    DwgFileEditor   editor(masterFilename);
+    editor.FindXrefInsert (xrefBlockname);
+
+    auto id = editor.GetCurrentObjectId ();
+    EXPECT_TRUE (id.IsValid());
+    }
 };
 
 /*--------------------------------------------------------------------------------**//**
@@ -260,14 +272,7 @@ TEST_F(BasicTests, UpdateElements_DeleteMove)
 TEST_F(BasicTests, CreateNewDwg)
     {
     LineUpFilesForNewDwg(L"createNewDwgTest.ibim", L"createdfromcratch.dwg");
-
-    m_options.SetInputFileName (m_dwgFileName);
-    m_options.SetBridgeRegSubKey (ImporterTests::GetDwgBridgeRegistryKey());
-    m_options.SetIsUpdating (false);
-#ifndef WIP_GENRATE_THUMBNAILS
-    // don't generate thumbnails for now
-    m_options.SetWantThumbnails (false);
-#endif
+    InitializeImporterOptions (m_dwgFileName, false);
     
     DwgImporter*    importer = new DwgImporter(m_options);
     ASSERT_NOT_NULL(importer);
@@ -278,28 +283,70 @@ TEST_F(BasicTests, CreateNewDwg)
     editor.AddEntitiesInDefaultModel (handles);
     editor.SaveFile ();
 
-    // try open the inpurt DWG file:
-    auto status = importer->OpenDwgFile(m_dwgFileName);
-    ASSERT_SUCCESS(status);
+    DoConvert (importer, m_dgnDbFileName, m_dwgFileName);
 
-    // open seed iModel
-    auto db = OpenExistingDgnDb(m_dgnDbFileName);
-    ASSERT_TRUE(db.IsValid());
-
-    importer->SetDgnDb(*db.get());
-    importer->AttachSyncInfo();
-
-    // start a new import job
-    ASSERT_EQ(DwgImporter::ImportJobCreateStatus::Success, importer->InitializeJob());
-
-    // ready to import DWG into iModel:
-    status = importer->Process ();
-    ASSERT_SUCCESS(status);
-
-    size_t  count = importer->GetEntitiesImported ();
-    EXPECT_EQ (handles.size(), count) << "Entities created in DWG file do not match elements imported in the DgnDb!";
-
-    db->SaveChanges();
+    EXPECT_EQ (handles.size(), GetCount()) << "Entities created in DWG file do not match elements imported in the DgnDb!";
 
     delete importer;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(BasicTests, AttachXrefs)
+    {
+    LineUpFilesForNewDwg(L"xrefAttachTest.ibim", L"master.dwg");
+    InitializeImporterOptions (m_dwgFileName, false);
+
+    // create a host for DwgFileEditor
+    DwgImporter*    importer = new DwgImporter(m_options);
+    ASSERT_NOT_NULL (importer);
+
+    // prepare basictype.dwg for a nested xref:
+    BentleyApi::BeFileName  nestedXrefName;
+    ImporterTests::MakeWritableCopyOf(nestedXrefName, L"basictype.dwg");
+    EXPECT_PRESENT (nestedXrefName);
+
+    auto xrefFileName = GetOutputFileName(L"xref1.dwg");
+
+    // create xref1.dwg and attach basictype.dwg into the modelspace:
+    DwgFileEditor   editor;
+    editor.CreateFile (xrefFileName);
+    editor.AttachXrefInDefaultModel (nestedXrefName, DPoint3d::From(1.5,1.5,0.0), 0.7853);
+    editor.SaveFile ();
+    CheckXrefAttached (xrefFileName, L"basictype");
+
+    // create master.dwg and attach xref1.dwg into the modelspace:
+    editor.CreateFile (m_dwgFileName);
+    editor.AttachXrefInDefaultModel (xrefFileName, DPoint3d::From(-1.5,-1.5,0.0), 0.7853);
+    editor.SaveFile ();
+    CheckXrefAttached (m_dwgFileName, L"xref1");
+
+    DoConvert (importer, m_dgnDbFileName, m_dwgFileName);
+    delete importer;
+
+    auto db = OpenExistingDgnDb (m_dgnDbFileName);
+    ASSERT_TRUE (db.IsValid());
+    auto& models = db->Models ();
+
+    // check results - expect 3 PhysicalModel's
+    size_t  count = 0;
+    bool    hasXref1 = false, hasNested = false;
+    for (auto const& entry : models.MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel)))
+        {
+        auto model = models.GetModel (entry.GetModelId());
+        ASSERT_TRUE(model.IsValid());
+        auto name = model->GetName ();
+        if (name.StartsWith("basictype"))
+            hasNested = true;
+        else if (name.StartsWith("xref1"))
+            hasXref1 = true;
+        count++;
+        }
+#ifndef PRG
+    // WIP - nested xref attached when running gtest through a full build is not seen as an xref type!
+    EXPECT_EQ (3, count) << "Should have total 3 physical models!";
+#endif
+    EXPECT_TRUE (hasXref1) << "Missing direct xRef xref1!";
+    EXPECT_TRUE (hasNested) << "Missing nested xRef basictype";
     }

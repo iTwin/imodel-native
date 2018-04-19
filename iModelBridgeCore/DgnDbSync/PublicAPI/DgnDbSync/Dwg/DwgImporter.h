@@ -515,11 +515,10 @@ public:
         {
     private:
         DwgDbDatabasePtr    m_xrefDatabase;
-        BeFileName          m_path;
+        BeFileName          m_resolvedPath;
+        BeFileName          m_savedPath;
         WString             m_prefixInRootFile;
-        DwgDbObjectId       m_blockIdInParentFile;
-        DwgDbObjectId       m_spaceIdInRootFile;
-        DgnModelIdSet       m_dgnModelIds;
+        DwgDbObjectId       m_blockIdInRootFile;
 
     public:
         DwgXRefHolder () : m_xrefDatabase() { }
@@ -531,13 +530,10 @@ public:
         DwgDbDatabaseR  GetDatabaseR() { BeAssert(IsValid()); return *m_xrefDatabase.get(); }
         DwgDbDatabaseP  GetDatabaseP() { return m_xrefDatabase.get(); }
         DwgDbObjectId   GetModelspaceId () { BeAssert(IsValid()); return m_xrefDatabase->GetModelspaceId(); }
-        DwgDbObjectIdCR GetBlockIdInParentFile () const { return  m_blockIdInParentFile; }
-        DwgDbObjectIdCR GetLayoutspaceIdInRootFile () const { return  m_spaceIdInRootFile; }
+        DwgDbObjectIdCR GetBlockIdInRootFile () const { return  m_blockIdInRootFile; }
         WStringCR       GetPrefixInRootFile () const { return m_prefixInRootFile; }
-        BeFileNameCR    GetPath () const { return m_path; }
-        DgnModelIdSet const&    GetDgnModelIds () const { return m_dgnModelIds; }
-        DgnModelIdSet&  GetDgnModelIdsR () { return m_dgnModelIds; }
-        void            AddDgnModelId (DgnModelId id) { m_dgnModelIds.insert(id); }
+        BeFileNameCR    GetResolvedPath () const { return m_resolvedPath; }
+        BeFileNameCR    GetSavedPath () const { return m_savedPath; }
         };  // DwgXRefHolder
     typedef bvector<DwgXRefHolder>    T_LoadedXRefFiles;
 
@@ -1260,6 +1256,7 @@ public:
     DGNDBSYNC_EXPORT CodeSpecId         GetBusinessKeyCodeSpec () const { return m_businessKeyCodeSpecId; }
     StableIdPolicy                      GetCurrentIdPolicy () const { return m_currIdPolicy; }
     DwgXRefHolder&                      GetCurrentXRefHolder () { return m_currentXref; }
+    DwgXRefHolder*                      FindXRefHolder (DwgDbBlockTableRecordCR xrefBlock);
     DwgDbDatabaseP                      FindLoadedXRef (BeFileNameCR path);
     //! Import a database-resident entity
     DGNDBSYNC_EXPORT BentleyStatus      ImportEntity (ElementImportResults& results, ElementImportInputs& inputs);

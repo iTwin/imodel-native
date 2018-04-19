@@ -1352,22 +1352,6 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::_PostProcessViewports ()
     {
-    // add the DgnModels we imported through importing entities
-    for (auto loadedXref : m_loadedXrefFiles)
-        {
-        if (loadedXref.GetLayoutspaceIdInRootFile() == m_modelspaceId)
-            {
-            m_modelspaceXrefs.insert (loadedXref.GetDgnModelIds().begin(), loadedXref.GetDgnModelIds().end());
-            }
-        else
-            {
-            DwgDbObjectId   blockId = loadedXref.GetBlockIdInParentFile ();
-            DwgDbObjectId   paperspaceId = loadedXref.GetLayoutspaceIdInRootFile ();
-            for (auto modelId : loadedXref.GetDgnModelIds())
-                m_paperspaceXrefs.push_back (DwgXRefInPaperspace(blockId, paperspaceId, modelId));
-            }
-        }
-    
     DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (*m_dwgdb);
     bool wantThumbnails = this->GetOptions().WantThumbnails ();
     BeDuration timeout = this->GetOptions().GetThumbnailTimeout ();
@@ -1415,7 +1399,6 @@ void            DwgImporter::_PostProcessViewports ()
                     auto&   modelSelector = spatialView->GetSpatialViewDefinition().GetModelSelector ();
                     modelSelector.GetModelsR().insert (m_modelspaceXrefs.begin(), m_modelspaceXrefs.end());
                     modelSelector.Update ();
-                    changed = true;
                     }
                 if (this->IsUpdating() && m_layersImported > 0)
                     {
