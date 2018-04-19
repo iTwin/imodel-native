@@ -38,7 +38,6 @@ BE_JSON_NAME(uomSeparator)
 BE_JSON_NAME(stationSeparator)
 BE_JSON_NAME(stationOffsetSize)
 BE_JSON_NAME(minWidth)
-BE_JSON_NAME(prefixPadChar)
 
 // Format Traits
 BE_JSON_NAME(trailZeroes)
@@ -180,7 +179,6 @@ struct NumericFormatSpec
 {
 private:
     bool m_explicitlyDefinedMinWidth = false;
-    bool m_explicitlyDefinedPrefixPadChar = false;
     bool m_explicitlyDefinedRoundFactor = false;
     bool m_explicitlyDefinedShowSign = false;
     bool m_explicitlyDefinedPrecision = false;
@@ -200,7 +198,6 @@ private:
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
     Utf8String          m_uomSeparator;          // Default separator between the number and UOM.
     Utf8Char            m_statSeparator;         // Default separator between parts of the stopping format.
-    Utf8Char            m_prefixPadChar;         // Character to pad with to reach minimum width
     int                 m_minWidth;              // The minimum width of the field. It will be taken into account
                                                  // only if the overall length (width) of the text representing integer
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
@@ -314,10 +311,6 @@ public:
     void SetStationSeparator(Utf8Char sep) {m_explicitlyDefinedStatSeparator = true; m_statSeparator = sep;}
     Utf8Char GetStationSeparator() const {return m_statSeparator;}
     bool HasStationSeparator() const {return m_explicitlyDefinedStatSeparator;}
-
-    void SetPrefixPadChar(Utf8Char pad) {m_explicitlyDefinedPrefixPadChar = true; m_prefixPadChar = pad;}
-    Utf8Char GetPrefixPadChar() const {return m_prefixPadChar;}
-    bool HasPrefixPadChar() const {return m_explicitlyDefinedPrefixPadChar;}
 
     //======================================
     // Format Traits Bit Setters/Getters

@@ -333,7 +333,6 @@ public:
     static Utf8String const DefaultUomSeparator() { return FormatConstant::BlankString(); };
     static Utf8Char const DefaultStationSeparator() {return '+';}
     static int const DefaultMinWidth() { return 0; }
-    static Utf8Char const DefaultPrefixPadChar() {return '\0';}
     static Utf8String const DefaultSpacer() {return " ";}
 
     static const size_t MinDecimalPrecisionIndex() { return static_cast<size_t>(DecimalPrecision::Precision0); }

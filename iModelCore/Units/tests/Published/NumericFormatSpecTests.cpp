@@ -126,13 +126,6 @@ void NumericFormatSpecTest::ValidateJson_DefaultCommonAttributes(JsonValueCR jva
     EXPECT_EQ(Json::intValue, minWidth.type());
     EXPECT_EQ(FormatConstant::DefaultMinWidth(), minWidth.asInt());
 
-    // Prefix Pad Char
-    JsonValueCR prefixPadChar = jval[json_prefixPadChar()];
-    
-    EXPECT_EQ(Json::stringValue, prefixPadChar.type());
-    Utf8String padChar = prefixPadChar.asString();
-    EXPECT_EQ(0, padChar.length());
-
     // Decimal Separator
     JsonValueCR decSeparator = jval[json_decSeparator()];
     EXPECT_EQ(Json::stringValue, decSeparator.type());
@@ -172,7 +165,7 @@ TEST_F(NumericFormatSpecTest, SerializeDecimalTypeToJson)
     {
     Json::Value verboseJson = format.ToJson(true);
     EXPECT_FALSE(verboseJson.empty());
-    EXPECT_EQ(10, (uint32_t)verboseJson.size()) << "Incorrect number of Decimal attributes.";
+    EXPECT_EQ(9, (uint32_t)verboseJson.size()) << "Incorrect number of Decimal attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }
     }
@@ -195,7 +188,7 @@ TEST_F(NumericFormatSpecTest, SerializeScientificToJson)
     {
     Json::Value verboseJson = format.ToJson(true);
     EXPECT_FALSE(verboseJson.empty());
-    EXPECT_EQ(11, (uint32_t)verboseJson.size()) << "Incorrect number of Scientific attributes.";
+    EXPECT_EQ(10, (uint32_t)verboseJson.size()) << "Incorrect number of Scientific attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }
     }
@@ -218,7 +211,7 @@ TEST_F(NumericFormatSpecTest, SerializeStationToJson)
     {
     Json::Value verboseJson = format.ToJson(true);
     EXPECT_FALSE(verboseJson.empty());
-    EXPECT_EQ(11, (uint32_t)verboseJson.size()) << "Incorrect number of Station attributes.";
+    EXPECT_EQ(10, (uint32_t)verboseJson.size()) << "Incorrect number of Station attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }
     }
@@ -239,7 +232,7 @@ TEST_F(NumericFormatSpecTest, SerializeFractionalToJson)
     {
     Json::Value verboseJson = format.ToJson(true);
     EXPECT_FALSE(verboseJson.empty());
-    EXPECT_EQ(10, (uint32_t)verboseJson.size()) << "Incorrect number of Fractional attributes.";
+    EXPECT_EQ(9, (uint32_t)verboseJson.size()) << "Incorrect number of Fractional attributes.";
     ValidateJson_DefaultCommonAttributes(verboseJson);
     }
     }
