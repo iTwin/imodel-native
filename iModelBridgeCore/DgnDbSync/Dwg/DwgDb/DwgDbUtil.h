@@ -33,6 +33,7 @@ public:
     static DPoint2dCP   DPoint2dCPFrom (DWGGE_TypeCP(Point2d) gePoints);
     static DVec3d       DVec3dFrom (DWGGE_TypeCR(Vector3d) gePoint);
     static DVec3d       DVec3dFrom (DWGGE_TypeCR(Vector2d) gePoint);
+    static DVec3d       DVec3dFrom (DWGGE_TypeCR(Scale3d) geScale);
     static DVec3dCP     DVec3dCPFrom (DWGGE_TypeCP(Vector3d) geVectors);
     static DVec2d       DVec2dFrom (DWGGE_TypeCR(Vector2d) gePoint);
     static DRange3d     DRange3dFrom (DWGDB_SDKNAME(OdGeExtents3d,AcDbExtents) const& extents);
@@ -54,6 +55,7 @@ public:
     static DWGGE_Type(Point2d)  GePoint2dFrom (DPoint2dCR p);
     static DWGGE_Type(Vector3d) GeVector3dFrom (DVec3dCR v);
     static DWGGE_Type(Vector2d) GeVector2dFrom (DVec2dCR v);
+    static DWGGE_Type(Scale3d)  GeScale3dFrom (DVec3dCR v);
     static void                 GetGeMatrix (DWGGE_TypeR(Matrix3d) matrix, TransformCR trans);
     static size_t               GetGePointArray (DWGGE_TypeR(Point3dArray) pointsOut, DPoint3dArrayCR pointsIn);
     static size_t               GetGePointArray (DWGGE_TypeR(Point2dArray) pointsOut, DPoint2dArrayCR pointsIn);

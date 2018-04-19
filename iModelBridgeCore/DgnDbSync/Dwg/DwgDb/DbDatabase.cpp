@@ -477,3 +477,21 @@ DwgDbStatus DwgDbDatabase::ResolveXrefs (bool useThreadEngine, bool newXrefsOnly
 #endif
     return  status;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/18
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgDbObjectId   DwgDbDatabase::CreateXrefBlock (DwgStringCR xrefPath, DwgStringCR blockName)
+    {
+    DwgDbObjectId   blockId;
+#if DWGTOOLKIT_OpenDwg
+    OdDbBlockTableRecordPtr block = OdDbXRefManExt::addNewXRefDefBlock (this, xrefPath, blockName, false);
+    if (!block.isNull())
+        blockId = block->objectId ();
+#elif DWGTOOLKIT_RealDwg
+    Acad::ErrorStatus es = ::acdbAttachXref (this, xrefPath.c_str(), blockName.c_str(), blockId);
+    if (Acad::eOk != es)
+        blockId.SetNull ();
+#endif  // TOOLKIT
+    return  blockId;
+    }

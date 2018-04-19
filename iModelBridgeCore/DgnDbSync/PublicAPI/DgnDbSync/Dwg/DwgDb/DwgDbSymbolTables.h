@@ -171,6 +171,11 @@ DWGDB_DEFINE_OBJECTPTR (SymbolTable)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbBlockTableRecord : public DWGDB_EXTENDCLASS(BlockTableRecord)
     {
+//__PUBLISH_SECTION_END__
+private:
+    // Only effective for RealDWG if xref's are resolved by acdbResolveCurrentXRefs, but the resulting database's are NOT ref counted!
+    DWGDB_EXPORT DwgDbDatabaseP             GetXrefDatabase (bool includeUnresolved = false) const;
+//__PUBLISH_SECTION_START__
 public:
     DWGDB_DECLARE_COMMON_MEMBERS(BlockTableRecord)
 
@@ -188,7 +193,6 @@ public:
     DWGDB_EXPORT DwgString                  GetPath () const;
     DWGDB_EXPORT DPoint3d                   GetBase () const;
     DWGDB_EXPORT DwgDbUnits                 GetINSUNITS () const;
-    DWGDB_EXPORT DwgDbDatabaseP             GetXrefDatabase (bool includeUnresolved = false) const;
     DWGDB_EXPORT DwgDbXrefStatus            GetXrefStatus () const;
     DWGDB_EXPORT DwgDbStatus                GetBlockReferenceIds (DwgDbObjectIdArrayR ids, bool noNested = true, bool validate = false);
     DWGDB_EXPORT DwgDbStatus                OpenSpatialIndex (DwgDbSpatialIndexPtr& indexOut, DwgDbOpenMode mode) const;

@@ -298,9 +298,6 @@ BentleyStatus   DwgImporter::OpenDwgFile (BeFileNameCR dwgdxfName)
         return  static_cast<BentleyStatus> (DwgFileVersion::Newer == dwgVersion ? DgnDbStatus::VersionTooNew : DgnDbStatus::NotOpen);
         }
     
-    // load fonts before we start reading the DWG file as the toolkit may search for them via the hostApp:
-    m_loadedFonts.LoadFonts ();
-
     WString  password;
     password.AppendUtf8 (this->GetOptions().GetPassword().c_str());
 
@@ -993,10 +990,6 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
     if (DwgDbStatus::Success != blockTable.OpenStatus())
         return  BSIERROR;
 
-    DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
-    if (!iter.IsValid())
-        return  BSIERROR;
-
     // make sure the root model has been created from the modelspace block first
     ResolvedModelMapping    modelMap = this->GetOrCreateRootModel (this->IsUpdating());
     if (!modelMap.IsValid())
@@ -1006,6 +999,10 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
     bool        hasPushedReferencesSubject = false;
     SubjectCPtr parentSubject = this->GetSpatialParentSubject ();
     BeAssert (parentSubject.IsValid() && "parent subject for spatial models not set yet!!");
+
+    DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
+    if (!iter.IsValid())
+        return  BSIERROR;
 
     // walk through all blocks and create models for paperspace and xref blocks:
     for (iter.Start(); !iter.Done(); iter.Step())
@@ -1056,7 +1053,7 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
             else
                 {
                 // can't load the xRef file - error out
-                Utf8String  filename = xref.GetPath().GetNameUtf8 ();
+                Utf8String  filename = xref.GetResolvedPath().GetNameUtf8 ();
                 if (filename.empty())
                     filename = Utf8String (name.c_str());
                 this->ReportError (IssueCategory::DiskIO(), Issue::FileNotFound(), filename.c_str());
@@ -1122,8 +1119,6 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
                         continue;
                         }
 
-                    xref.AddDgnModelId (model->GetModelId());
-
                     // give the updater a chance to cache skipped models as we may not see xref inserts during importing phase:
                     changeDetector._ShouldSkipModel (*this, modelMap);
 
@@ -1164,7 +1159,6 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
                         this->ReportError (IssueCategory::Unknown(), Issue::Error(), Utf8PrintfString("failed dropping nested xRef %ls", name.c_str()).c_str());
                     }
                 }
-            continue;
             }
         }
     
@@ -1873,6 +1867,9 @@ DwgImporter::DwgImporter (DwgImporter::Options& options) : m_options(options), m
     // try loading user object enablers if specified
     for (auto& oe : userObjectEnablers)
         DwgImportHost::GetHost().LoadObjectEnabler (BeFileName(oe.c_str()));
+
+    // load fonts before we start reading the DWG file as the toolkit may search for them via the hostApp:
+    m_loadedFonts.LoadFonts ();
     }
 
 /*---------------------------------------------------------------------------------**//**
