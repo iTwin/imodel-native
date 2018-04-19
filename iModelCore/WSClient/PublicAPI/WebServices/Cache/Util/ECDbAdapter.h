@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/Util/ECDbAdapter.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -110,7 +110,7 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             int ecInstanceIdcolumn = 1
             ) override;
 
-        WSCACHE_EXPORT int  CountClassInstances(ECClassCP ecClass) override;
+        WSCACHE_EXPORT int CountClassInstances(ECClassCP ecClass) override;
         WSCACHE_EXPORT ECInstanceId FindInstance(ECClassCP ecClass, Utf8CP whereClause = nullptr) override;
         WSCACHE_EXPORT bset<ECInstanceId> FindInstances(ECClassCP ecClass, Utf8CP whereClause = nullptr) override;
 
