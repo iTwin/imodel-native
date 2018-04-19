@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ECDbAdapterTests.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -71,6 +71,48 @@ TEST_F(ECDbAdapterTests, GetECClasses_MapWithTwoSameClassInstances_ReturnsOneCla
 
     ASSERT_EQ(1, classes.size());
     EXPECT_EQ(ecClass, classes[0]);
+    }
+
+TEST_F(ECDbAdapterTests, CountClassInstances_NullClass_Zero)
+    {
+    auto cache = GetTestCache();
+    EXPECT_EQ(0, cache->GetAdapter().CountClassInstances(nullptr));
+    }
+
+TEST_F(ECDbAdapterTests, FindInstance_NullClass_Invalid)
+    {
+    auto cache = GetTestCache();
+    Json::Value json;
+    EXPECT_EQ(false, cache->GetAdapter().FindInstance(nullptr).IsValid());
+    }
+
+TEST_F(ECDbAdapterTests, FindInstances_NullClass_Empty)
+    {
+    auto cache = GetTestCache();
+    Json::Value json;
+    EXPECT_EQ(0, cache->GetAdapter().FindInstances(nullptr).size());
+    }
+
+TEST_F(ECDbAdapterTests, GetJsonInstance_NullClassAndValidWhere_Error)
+    {
+    auto cache = GetTestCache();
+    Json::Value json;
+    EXPECT_EQ(ERROR, cache->GetAdapter().GetJsonInstance(json, nullptr, "true"));
+    }
+
+TEST_F(ECDbAdapterTests, GetJsonInstances_NullClassAndValidWhere_Error)
+    {
+    auto cache = GetTestCache();
+    Json::Value json;
+    EXPECT_EQ(ERROR, cache->GetAdapter().GetJsonInstances(json, nullptr, "true"));
+    }
+
+TEST_F(ECDbAdapterTests, GetJsonInstances_NullClassAndStatement_Error)
+    {
+    auto cache = GetTestCache();
+    Json::Value json;
+    ECSqlStatement statement;
+    EXPECT_EQ(ERROR, cache->GetAdapter().GetJsonInstances(json, nullptr, statement));
     }
 
 TEST_F(ECDbAdapterTests, FindRelationshipClasses_ShcemaHasSuchRelationshipClass_RelationshipClassReturned)
