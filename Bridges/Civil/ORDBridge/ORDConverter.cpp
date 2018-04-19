@@ -975,9 +975,28 @@ void ORDConverter::CreateAlignments(bset<DgnCategoryId>& additionalCategoriesFor
     if (m_cifAlignments.empty())
         return;
 
+    // There may be duplicate CifAlignments found via various V8 models. Some of them will have
+    // the same ElementRef, but others will not, so relying on SyncId to tell whether two
+    // CifAlignments are the same. Also, in some cases, some duplicate CifAlignments have
+    // a blank name, so leaving the one with a name in front during sorting - that will be the
+    // one processed later - the other duplicates will be ignored.
     std::sort(m_cifAlignments.begin(), m_cifAlignments.end(), [](CifAlignmentV8RefPair const& a, CifAlignmentV8RefPair const& b)
-        { return a.first->GetElementHandle()->GetElementRef() > b.first->GetElementHandle()->GetElementRef(); });
+        {
+        auto aSyncId = a.first->GetSyncId();        
+        auto bSyncId = b.first->GetSyncId();
+        auto equal = aSyncId.CompareTo(bSyncId);
 
+        if (0 == equal)
+            {
+            auto aCifName = a.first->GetName();
+            auto bCifName = b.first->GetName();
+            equal = aCifName.CompareTo(bCifName);
+            }
+
+        return (0 == equal) ? true : (0 < equal);
+        });
+
+    Bentley::WString lastSyncId;
     Bentley::ElementRefP lastAlignmentRefP = nullptr;
     RoadRailAlignment::AlignmentCPtr bimAlignmentCPtr;
     bmap<DgnCategoryId, DgnCategoryId> drawingToSpatialCategoryMap;
@@ -987,6 +1006,9 @@ void ORDConverter::CreateAlignments(bset<DgnCategoryId>& additionalCategoriesFor
         {
         auto& cifAlignmentPtr = cifAlignmentEntry.first;
         if (lastAlignmentRefP == cifAlignmentPtr->GetElementHandle()->GetElementRef())
+            continue;
+
+        if (0 == lastSyncId.CompareTo(cifAlignmentPtr->GetSyncId()))
             continue;
 
         DgnCategoryId categoryId;
@@ -1006,6 +1028,7 @@ void ORDConverter::CreateAlignments(bset<DgnCategoryId>& additionalCategoriesFor
             }
 
         auto bimAlignmentId = alignmentsConverterPtr->ConvertAlignment(*cifAlignmentPtr, *m_ordParams, categoryId);
+        lastSyncId = cifAlignmentPtr->GetSyncId();
         lastAlignmentRefP = cifAlignmentPtr->GetElementHandle()->GetElementRef();
         bimAlignmentCPtr = RoadRailAlignment::Alignment::Get(GetDgnDb(), bimAlignmentId);
 
