@@ -1758,6 +1758,7 @@ void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     double diagDist = GetElementRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
     m_tolerance = diagDist / (minToleranceRatio * m_zoomFactor);
     m_isLeaf = isLeaf;
+    BeAssert(0.0 != m_tolerance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2628,9 +2629,6 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         {
         collection.MarkIncomplete();
         }
-
-    if (collection.IsEmpty() && !m_geometries.empty())
-        collection.MarkIncomplete();
 
     if (m_geometries.ContainsCurves())
         collection.MarkCurved();

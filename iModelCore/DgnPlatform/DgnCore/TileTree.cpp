@@ -942,7 +942,7 @@ bool Tile::IsEmpty() const
     {
     // NB: A parent tile may be empty because the elements contained within it are all too small to contribute geometry -
     // children may not be empty.
-    return IsDisplayable() && IsReady() && !_HasGraphics() && !_HasChildren();
+    return IsReady() && !_HasGraphics() && !_HasChildren();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1689,8 +1689,7 @@ void Tile::Invalidate(DirtyRangesCR dirty)
     if (dirty.empty())
         return;
 
-    // some nodes are solely for structured and contain no graphics, therefore do not need to be invalidated.
-    if (IsDisplayable() && _IsInvalidated(dirty))
+    if (_IsInvalidated(dirty))
         {
         // This tile needs to be regenerated
         m_root.CancelTileLoad(*this);
