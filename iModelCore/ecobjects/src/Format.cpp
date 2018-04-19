@@ -238,17 +238,6 @@ SchemaReadStatus ECFormat::ReadXml(BeXmlNodeR unitFormatNode, ECSchemaReadContex
         spec.SetStationSeparator(statSeparator.at(0));
         }
 
-    Utf8String prefixPadChar;
-    if (BeXmlStatus::BEXML_Success == unitFormatNode.GetAttributeStringValue(prefixPadChar, FORMAT_PREFIX_PAD_CHAR_ATTRIBUTE))
-        {
-        if (prefixPadChar.length() > 1 || prefixPadChar.length() == 0)
-            {
-            LOG.errorv("%s node '%s' contains an invalid %s value %s", FORMAT_ELEMENT, GetFullName().c_str(), FORMAT_PREFIX_PAD_CHAR_ATTRIBUTE, prefixPadChar.c_str());
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-        spec.SetPrefixPadChar(prefixPadChar.at(0));
-        }
-
     SetNumericSpec(spec);
     auto child = unitFormatNode.GetFirstChild();
     if (nullptr != unitFormatNode.GetFirstChild())
@@ -388,8 +377,6 @@ SchemaWriteStatus ECFormat::WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVers
             xmlWriter.WriteAttribute(FORMAT_THOUSANDS_SEPARATOR_ATTRIBUTE, Utf8String(1,nfs->GetThousandSeparator()).c_str());
         if (nfs->HasUomSeparator())
             xmlWriter.WriteAttribute(FORMAT_UOM_SEPARATOR_ATTRIBUTE, nfs->GetUomSeparator());
-        if (nfs->HasPrefixPadChar())
-            xmlWriter.WriteAttribute(FORMAT_PREFIX_PAD_CHAR_ATTRIBUTE, Utf8String(1, nfs->GetPrefixPadChar()).c_str());
         if (nfs->HasStationSeparator())
             xmlWriter.WriteAttribute(FORMAT_STAT_SEPARATOR_ATTRIBUTE, Utf8String(1, nfs->GetStationSeparator()).c_str());
         if (Formatting::PresentationType::Station == GetPresentationType())

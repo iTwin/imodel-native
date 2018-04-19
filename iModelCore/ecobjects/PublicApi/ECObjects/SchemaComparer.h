@@ -125,7 +125,6 @@ enum class SystemId
     Phenomena,
     Phenomenon,
     PhenomenonDefinition,
-    PrefixPadChar,
     PresentationType,
     Properties,
     Property,
@@ -1289,7 +1288,6 @@ struct FormatChange final : ECObjectChange
         StringChange& GetDecimalSeparator() {return Get<StringChange>(SystemId::DecimalSeparator);}
         StringChange& GetThousandsSeparator() {return Get<StringChange>(SystemId::ThousandSeparator);}
         StringChange& GetUomSeparator() {return Get<StringChange>(SystemId::UomSeparator);}
-        StringChange& GetPrefixPadChar() {return Get<StringChange>(SystemId::PrefixPadChar);}
         StringChange& GetStationSeparator() {return Get<StringChange>(SystemId::StationSeparator);}
         UInt32Change& GetStationOffsetSize() {return Get<UInt32Change>(SystemId::StationOffsetSize);}
         BooleanChange& GetHasComposite() {return Get<BooleanChange>(SystemId::FormatHasComposite);}

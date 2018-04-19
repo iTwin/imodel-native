@@ -1718,13 +1718,6 @@ BentleyStatus SchemaComparer::CompareFormat(FormatChange& change, ECN::ECFormatC
         else if (oldNum->HasUomSeparator() && !newNum->HasUomSeparator())
             change.GetUomSeparator().SetValue(ValueId::Deleted, oldNum->GetUomSeparator());
 
-        if (oldNum->HasPrefixPadChar() && newNum->HasPrefixPadChar() && oldNum->GetPrefixPadChar() != newNum->GetPrefixPadChar())
-            change.GetPrefixPadChar().SetValue(Utf8String(1, oldNum->GetPrefixPadChar()), Utf8String(1, newNum->GetPrefixPadChar()));
-        else if (!oldNum->HasPrefixPadChar() && newNum->HasPrefixPadChar())
-            change.GetPrefixPadChar().SetValue(ValueId::New, Utf8String(1, newNum->GetPrefixPadChar()));
-        else if (oldNum->HasPrefixPadChar() && !newNum->HasPrefixPadChar())
-            change.GetPrefixPadChar().SetValue(ValueId::Deleted, Utf8String(1, oldNum->GetPrefixPadChar()));
-
         if (oldNum->HasStationSeparator() && newNum->HasStationSeparator() && oldNum->GetStationSeparator() != newNum->GetStationSeparator())
             change.GetStationSeparator().SetValue(Utf8String(1, oldNum->GetStationSeparator()), Utf8String(1, newNum->GetStationSeparator()));
         else if (!oldNum->HasStationSeparator() && newNum->HasStationSeparator())
@@ -2183,9 +2176,6 @@ BentleyStatus SchemaComparer::AppendFormat(FormatChanges& changes, ECFormatCR fo
         if (num->HasUomSeparator())
             change.GetUomSeparator().SetValue(appendType, num->GetUomSeparator());
 
-        if (num->HasPrefixPadChar())
-            change.GetPrefixPadChar().SetValue(appendType, Utf8String(1, num->GetPrefixPadChar()));
-
         if (num->HasStationSeparator())
             change.GetStationSeparator().SetValue(appendType, Utf8String(1, num->GetStationSeparator()));
 
@@ -2550,7 +2540,6 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::Phenomena: return "Phenomena";
             case SystemId::Phenomenon: return "Phenomenon";
             case SystemId::PhenomenonDefinition: return "PhenomenonDefinition";
-            case SystemId::PrefixPadChar: return "PrefixPadChar";
             case SystemId::PresentationType: return "PresentationType";
             case SystemId::Properties: return "Properties";
             case SystemId::Property: return "Property";
