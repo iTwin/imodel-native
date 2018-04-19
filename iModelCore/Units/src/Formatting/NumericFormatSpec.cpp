@@ -55,7 +55,6 @@ NumericFormatSpec::NumericFormatSpec()
     , m_minWidth(FormatConstant::DefaultMinWidth())
     , m_stationSize(0)
     , m_scientificType(ScientificType::Standard)
-    , m_prefixPadChar(FormatConstant::DefaultPrefixPadChar())
     {
     }
 
@@ -160,7 +159,6 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         jNFC[json_signOption()] = Utils::GetSignOptionString(m_signOption);
     if (verbose || HasRoundingFactor())
         jNFC[json_roundFactor()] = GetRoundingFactor();
-
     if (verbose || HasFormatTraits())
         jNFC[json_formatTraits()] = FormatTraitsToJson(verbose);
     if (verbose || HasDecimalSeparator())
@@ -169,11 +167,8 @@ Json::Value NumericFormatSpec::ToJson(bool verbose)const
         jNFC[json_thousandSeparator()] = Utf8String(1, GetThousandSeparator());
     if (verbose || HasUomSeparator())
         jNFC[json_uomSeparator()] = GetUomSeparator();
-
     if (verbose || HasMinWidth())
         jNFC[json_minWidth()] = GetMinWidth();
-    if (verbose || HasPrefixPadChar())
-        jNFC[json_prefixPadChar()] = Utf8String(1, GetPrefixPadChar());
 
     return jNFC;
     }
