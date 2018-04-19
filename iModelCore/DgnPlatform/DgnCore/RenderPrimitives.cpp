@@ -559,7 +559,6 @@ void DisplayParams::InitMesh(ColorDef lineColor, ColorDef fillColor, uint32_t wi
     m_gradient = grad;
     m_width = width;
     m_linePixels = pixels;
-    m_hasRegionOutline = ComputeHasRegionOutline();
     
     if (nullptr == mat && nullptr != tex)
         m_textureMapping = *tex;
@@ -644,22 +643,23 @@ DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part,
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
+* @bsimethod                                                    Paul.Connelly   04/18
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayParams::ComputeHasRegionOutline() const
+DisplayParams::RegionEdgeType DisplayParams::GetRegionEdgeType() const
     {
-    if (m_gradient.IsValid())
-        return m_gradient->GetIsOutlined();
-    else
-        return !NeverRegionOutline() && m_fillColor != m_lineColor;
-    }
+    if (HasBlankingFill())
+        return RegionEdgeType::None;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayParams::HasRegionOutline() const
-    {
-    return m_hasRegionOutline;
+    if (m_gradient.IsValid())
+        {
+        // Even if the gradient is not outlined, produce an outline to be displayed as the region's edges when fill ViewFlag is off.
+        if (m_gradient->GetIsOutlined() || FillFlags::None == (GetFillFlags() & FillFlags::Always))
+            return RegionEdgeType::Outline;
+        else
+            return RegionEdgeType::None;
+        }
+
+    return m_fillColor != m_lineColor ? RegionEdgeType::Outline : RegionEdgeType::Default;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -790,9 +790,12 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetLineWidth());
     TEST_LESS_THAN(GetLinePixels());
     TEST_LESS_THAN(GetFillFlags());
-    TEST_LESS_THAN(HasRegionOutline());
     TEST_LESS_THAN(GetMaterial());
     TEST_LESS_THAN(GetTextureMapping().GetTexture());
+
+    // Region outline produces a polyline which is considered an edge of a region surface
+    if (Type::Linear == GetType())
+        TEST_LESS_THAN(WantRegionOutline());
 
     if (ComparePurpose::Merge == purpose)
         {
@@ -831,8 +834,11 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetMaterial());
     TEST_EQUAL(GetLinePixels());
     TEST_EQUAL(GetFillFlags());
-    TEST_EQUAL(HasRegionOutline());
     TEST_EQUAL(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
+
+    // Region outline produces a polyline which is considered an edge of a region surface
+    if (Type::Linear == GetType())
+        TEST_EQUAL(WantRegionOutline());
 
     if (ComparePurpose::Merge == purpose)
         {
@@ -879,7 +885,7 @@ DisplayParamsCR DisplayParamsCache::Get(DisplayParamsR toFind)
 Utf8String DisplayParams::ToDebugString() const
     {
     Utf8CP types[3] = { "Mesh", "Linear", "Text" };
-    Utf8PrintfString str("%s line:%x fill:%x width:%u pix:%u fillflags:%u class:%u, %s%s",
+    Utf8PrintfString str("%s line:%x fill:%x width:%u pix:%u fillflags:%u class:%u, %s",
         types[static_cast<uint8_t>(m_type)],
         m_lineColor.GetValue(),
         m_fillColor.GetValue(),
@@ -887,8 +893,7 @@ Utf8String DisplayParams::ToDebugString() const
         static_cast<uint32_t>(m_linePixels),
         static_cast<uint32_t>(m_fillFlags),
         static_cast<uint32_t>(m_class),
-        m_ignoreLighting ? "ignoreLights " : "",
-        m_hasRegionOutline ? "outlined" : "");
+        m_ignoreLighting ? "ignoreLights" : "");
 
     return str;
     }
@@ -1553,6 +1558,9 @@ IFacetOptionsPtr SingularGeometry::CreateFacetOptions(double chordTolerance, Nor
     facetOptions->SetNormalsRequired(normalsRequired);
     facetOptions->SetParamsRequired(HasTexture());
 
+    if (DisplayParams::RegionEdgeType::Default != GetDisplayParams().GetRegionEdgeType())
+        facetOptions->SetEdgeChainsRequired(false);
+
     return facetOptions;
     }
 
@@ -1718,7 +1726,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions, ViewC
         // If there is no region outline, and never should be one, don't generate edges
         // See: text background (or anything else with blanking fill)
         DisplayParamsCR params = GetDisplayParams();
-        bool wantEdges = curveVector.IsNull() || (!params.HasBlankingFill() && !params.HasRegionOutline());
+        bool wantEdges = curveVector.IsNull() || DisplayParams::RegionEdgeType::Default == params.GetRegionEdgeType();
         polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, wantEdges, isPlanar));
         }
 
@@ -1738,7 +1746,7 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
 
     Strokes::PointLists     strokePoints;
 
-    if (! curveVector->IsAnyRegionType() || GetDisplayParams().HasRegionOutline())
+    if (!curveVector->IsAnyRegionType() || GetDisplayParams().WantRegionOutline())
         {
         strokePoints.clear();
         collectCurveStrokes(strokePoints, *curveVector, facetOptions, GetTransform());
@@ -1746,7 +1754,7 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions, ViewCon
         if (!strokePoints.empty())
             {
             bool isPlanar = curveVector->IsAnyRegionType();
-            BeAssert(isPlanar == GetDisplayParams().HasRegionOutline());
+            BeAssert(isPlanar == GetDisplayParams().WantRegionOutline());
             tileStrokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), m_disjoint, isPlanar));
             }
         }
@@ -2599,7 +2607,7 @@ void MeshArgs::Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PolylineArgs::Reset()
     {
-    m_disjoint = m_is2d = m_isPlanar = false;
+    m_flags = PolylineFlags();
     m_numPoints = m_numLines = 0;
     m_points = nullptr;
     m_lines = nullptr;
@@ -2617,12 +2625,27 @@ bool PolylineArgs::Init(MeshCR mesh)
     {
     Reset();
 
-    m_width = mesh.GetDisplayParams().GetLineWidth();
-    m_linePixels = mesh.GetDisplayParams().GetLinePixels();
+    auto const& displayParams = mesh.GetDisplayParams();
+    m_width = displayParams.GetLineWidth();
+    m_linePixels = displayParams.GetLinePixels();
 
-    m_is2d = mesh.Is2d();
-    m_isPlanar = mesh.IsPlanar();
-    m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
+    if (mesh.Is2d())
+        m_flags.SetIs2d();
+
+    if (mesh.IsPlanar())
+        m_flags.SetIsPlanar();
+
+    if (Mesh::PrimitiveType::Point == mesh.GetType())
+        m_flags.SetIsDisjoint();
+
+    if (displayParams.WantRegionOutline())
+        {
+        // This polyline is behaving as the edges of a region surface.
+        if (nullptr == displayParams.GetGradient() || displayParams.GetGradient()->GetIsOutlined())
+            m_flags.SetIsEdge();
+        else
+            m_flags.SetIsOutlineEdge(); // edges only displayed if fill undisplayed...
+        }
 
     m_polylines.reserve(mesh.Polylines().size());
 
