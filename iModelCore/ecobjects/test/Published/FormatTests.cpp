@@ -203,6 +203,32 @@ TEST_F(FormatTest, VerifyDefaults)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                               Kyle.Abramowitz                     04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(FormatTest, VerifyRoundTripMappings)
+    {
+    auto schema = ECTestFixture::GetFormatsSchema();
+    bvector<Utf8String> ignoredNames = {"FORMATS:StationUNS_100"};
+    for (const auto& f : schema->GetFormats())
+        {
+        if (ignoredNames.end() == std::find(ignoredNames.begin(), ignoredNames.end(), f->GetFullName()))
+            continue;
+        auto legacy = Formatting::LegacyNameMappings::TryGetLegacyNameFromFormatString(f->GetFullName().c_str());
+        EXPECT_NE(nullptr, legacy);
+        auto alias = Formatting::AliasMappings::TryGetAliasFromName(legacy);
+        EXPECT_NE(nullptr, alias);
+        legacy = Formatting::AliasMappings::TryGetNameFromAlias(alias);
+        auto roundTrippedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName(legacy);
+        ASSERT_NE(nullptr, roundTrippedName) << "Failed to round trip name " << f->GetFullName().c_str();
+        Utf8String _alias;
+        Utf8String name;
+        ECClass::ParseClassName(_alias, name, roundTrippedName);
+        auto format = schema->GetFormatCP(name.c_str());
+        EXPECT_TRUE(f->IsIdentical(*format));
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                               Kyle.Abramowitz                     03/2018
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(FormatRequiredAttributesTest, MissingOrInvalidType)
