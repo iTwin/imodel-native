@@ -197,90 +197,96 @@ Utf8CP LegacyNameMappings::TryGetFormatStringFromLegacyName(Utf8CP name)
 //--------------------------------------------------------------------------------------
 void LegacyNameMappings::AddMappings()
     {
-    AddMapping("DefaultReal", "f:DefaultReal");
-    AddMapping("DefaultRealU", "f:DefaultRealU");
-    //AddMapping("RealU", "f:DefaultRealU"); These are duplicates of DefaultRealU or DefaultReal
-    //AddMapping("Real6U", "f:DefaultRealU");
-    //AddMapping("Real", "f:DefaultReal");
-    //AddMapping("DefaultInt", "f:DefaultReal");
-    AddMapping("Real2", "f:DefaultReal(2)");
-    AddMapping("Real3", "f:DefaultReal(3)");
-    AddMapping("Real4", "f:DefaultReal(4)");
-    AddMapping("Real2U", "f:DefaultRealU(2)");
-    AddMapping("Real3U", "f:DefaultRealU(3)");
-    AddMapping("Real4U", "f:DefaultRealU(4)");
-    AddMapping("Real2UNS", "f:DefaultRealUNS(2)");
-    AddMapping("Real3UNS", "f:DefaultRealUNS(3)");
-    AddMapping("Real4UNS", "f:DefaultRealUNS(4)");
-    AddMapping("Real6UNS", "f:DefaultRealUNS");
+    AddMapping("DefaultReal", "FORMATS:DefaultReal");
+    // Duplicates names of DefaultReal
+    AddLegacyNameToFormatStringMapping("Real", "FORMATS:DefaultReal");
+    AddLegacyNameToFormatStringMapping("DefaultInt", "FORMATS:DefaultReal");
 
-    // TODO Stations
-    AddMapping("Stop100-2", "f:Station_100");
-    AddMapping("Stop100-2u", "f:StationU_100");
-    AddMapping("Stop100-2uz", "f:StationUZ_100");
+    AddMapping("DefaultRealU", "FORMATS:DefaultRealU");
+    // Duplicates names of FORMATS:DefaultRealU
+    AddLegacyNameToFormatStringMapping("RealU", "FORMATS:DefaultRealU");
+    AddLegacyNameToFormatStringMapping("Real6U", "FORMATS:DefaultRealU");
+    
+    AddMapping("Real2", "FORMATS:DefaultReal(2)");
+    AddMapping("Real3", "FORMATS:DefaultReal(3)");
+    AddMapping("Real4", "FORMATS:DefaultReal(4)");
+    AddMapping("Real2U", "FORMATS:DefaultRealU(2)");
+    AddMapping("Real3U", "FORMATS:DefaultRealU(3)");
+    AddMapping("Real4U", "FORMATS:DefaultRealU(4)");
+    AddMapping("Real2UNS", "FORMATS:DefaultRealUNS(2)");
+    AddMapping("Real3UNS", "FORMATS:DefaultRealUNS(3)");
+    AddMapping("Real4UNS", "FORMATS:DefaultRealUNS(4)");
+    AddMapping("Real6UNS", "FORMATS:DefaultRealUNS");
 
-    // AddMapping("Stop100-2-2z", "");
-    // AddMapping("Stop100-4", "");
-    // AddMapping("Stop100-4u", "");
+    AddMapping("Stop100-2", "FORMATS:Station_100");
+    AddMapping("Stop100-2u", "FORMATS:StationU_100");
+    AddMapping("Stop100-2uz", "FORMATS:StationUZ_100");
 
-    AddMapping("Stop1000-2", "f:Station_1000");
-    AddMapping("Stop1000-2u", "f:StationU_1000");
+    AddMapping("Stop100-2-2z", "FORMATS:StationZ_100_2");
 
-    // AddMapping("Stop1000-2-3z", "");
-    // AddMapping("Stop1000-2-4", "");
-    // AddMapping("Stop1000-2-4u", "");
-    //
+    AddMapping("Stop100-2-4", "FORMATS:Station_100_4");
+    AddMapping("Stop100-2-4u", "FORMATS:StationU_100_4");
 
-    AddMapping("SignedReal", "f:SignedReal");
-    AddMapping("ParenthsReal", "f:ParensReal");
+    AddMapping("Stop1000-2", "FORMATS:Station_1000");
+    AddMapping("Stop1000-2u", "FORMATS:StationU_1000");
 
-    AddMapping("DefaultFractional", "f:Fractional");
-    AddMapping("DefaultFractionalU", "f:FractionalU");
-    AddMapping("SignedFractional", "f:SignedFractional");
+    AddMapping("Stop1000-2-3z", "FORMATS:StationZ_1000_3");
+    AddMapping("Stop1000-2-4", "FORMATS:Station_1000_4");
+    AddMapping("Stop1000-2-4u", "FORMATS:StationU_1000_4");
 
-    AddMapping("Fractional4", "f:Fractional(4)");
-    AddMapping("Fractional4U", "f:FractionalU(4)");
-    AddMapping("Fractional8", "f:Fractional(8)");
-    AddMapping("Fractional8U", "f:FractionalU(8)");
-    AddMapping("Fractional16", "f:Fractional(16)");
-    AddMapping("Fractional16U", "f:FractionalU(16)");
-    AddMapping("Fractional32", "f:Fractional(32)");
-    AddMapping("Fractional32U", "f:FractionalU(32)");
-    AddMapping("Fractional64", "f:Fractional");
-    AddMapping("Fractional64U", "f:FractionalU");
-    AddMapping("Fractional128", "f:Fractional(128)");
-    AddMapping("Fractional128U", "f:FractionalU(128)");
+    AddMapping("SignedReal", "FORMATS:SignedReal");
+    AddMapping("ParenthsReal", "FORMATS:ParensReal");
 
-    AddMapping("DefaultExp", "f:Scientific");
-    AddMapping("SignedExp", "f:SignedScientific");
-    AddMapping("NormalizedExp", "f:ScientificNormal");
+    AddMapping("DefaultFractional", "FORMATS:Fractional");
+    AddLegacyNameToFormatStringMapping("Fractional64", "FORMATS:Fractional"); // Duplicate name of FORMATS:Fractional
 
-    AddMapping("AngleDMS", "f:AngleDMS");
-    AddMapping("AngleDMS8", "f:AngleDMS(8)");
-    AddMapping("AngleDM8", "f:AngleDM");
+    AddMapping("DefaultFractionalU", "FORMATS:FractionalU");
+    AddLegacyNameToFormatStringMapping("Fractional64U", "FORMATS:FractionalU"); // Duplicate name of FORMATS:FractionalU
 
-    AddMapping("HMS", "f:HMS");
+    AddMapping("SignedFractional", "FORMATS:SignedFractional");
 
-    AddMapping("AmerMYFI4", "f:AmerMYFI");
+    AddMapping("Fractional4", "FORMATS:Fractional(4)");
+    AddMapping("Fractional4U", "FORMATS:FractionalU(4)");
+    AddMapping("Fractional8", "FORMATS:Fractional(8)");
+    AddMapping("Fractional8U", "FORMATS:FractionalU(8)");
+    AddMapping("Fractional16", "FORMATS:Fractional(16)");
+    AddMapping("Fractional16U", "FORMATS:FractionalU(16)");
+    AddMapping("Fractional32", "FORMATS:Fractional(32)");
+    AddMapping("Fractional32U", "FORMATS:FractionalU(32)");
+    AddMapping("Fractional128", "FORMATS:Fractional(128)");
+    AddMapping("Fractional128U", "FORMATS:FractionalU(128)");
 
-    AddMapping("AmerFI8", "f:AmerFI");
-    AddMapping("AmerFI16", "f:AmerFI(16)");
-    AddMapping("AmerFI32", "f:AmerFI(32)");
+    AddMapping("DefaultExp", "FORMATS:Scientific");
+    AddMapping("SignedExp", "FORMATS:SignedScientific");
+    AddMapping("NormalizedExp", "FORMATS:ScientificNormal");
 
-    AddMapping("AmerYFI8", "f:AmerYFI");
+    AddMapping("AngleDMS", "FORMATS:AngleDMS");
+    AddLegacyNameToFormatStringMapping("CAngleDMS", "FORMATS:AngleDMS"); // Duplicate name of FORMATS:AngleDMS
+    AddMapping("AngleDMS8", "FORMATS:AngleDMS(8)");
+    AddLegacyNameToFormatStringMapping("CAngleDMS8", "FORMATS:AngleDMS(8)"); // Duplicate name of FORMATS:AngleDMS(8)
+    AddMapping("AngleDM8", "FORMATS:AngleDM");
+    AddLegacyNameToFormatStringMapping("CAngleDM8", "FORMATS:AngleDM"); // Duplicate name of FORMATS:AngleDM
 
-    AddMapping("Meters4u", "f:Meters4u");
-    AddMapping("Feet4u", "f:Feet4U");
-    AddMapping("Inches4u", "f:InchesU");
-    AddMapping("Inches8u", "f:InchesU(8)");
+    AddMapping("HMS", "FORMATS:HMS");
 
-    AddMapping("DecimalDeg4", "f:DecimalDeg4");
-    AddMapping("StationFt2", "f:StationFt2");
-    AddMapping("StationM4", "f:StationM4");
+    AddMapping("AmerMYFI4", "FORMATS:AmerMYFI");
 
-    AddMapping("CAngleDMS", "f:AngleDMS");
-    AddMapping("CAngleDMS8", "f:AngleDMS(8)");
-    AddMapping("CAngleDM8", "f:AngleDM");
+    AddMapping("AmerFI8", "FORMATS:AmerFI");
+    AddMapping("AmerFI16", "FORMATS:AmerFI(16)");
+    AddMapping("AmerFI32", "FORMATS:AmerFI(32)");
+
+    AddMapping("AmerYFI8", "FORMATS:AmerYFI");
+
+    AddMapping("Meters4u", "FORMATS:DefaultRealUNS(4)[u:M|m]");
+    AddMapping("Feet4u", "FORMATS:DefaultRealUNS(4)[u:FT|']");
+    AddMapping("Inches4u", "FORMATS:DefaultRealUNS(4)[u:IN|&quot;]");
+
+    // The name is incorrect here. The actual precision is 8.
+    AddMapping("Inches18u", "FORMATS:DefaultRealUNS(8)[u:IN|&quot;]");
+
+    AddMapping("DecimalDeg4", "FORMATS:DefaultRealUNS(4)[u:ARC_DEG|\xC2\xB0]");
+    AddMapping("StationFt2", "FORMATS:StationUNS_100[u:FT|']");
+    AddMapping("StationM4", "FORMATS:StationU_1000_4[u:M|m]");
     }
 
 END_BENTLEY_FORMATTING_NAMESPACE
