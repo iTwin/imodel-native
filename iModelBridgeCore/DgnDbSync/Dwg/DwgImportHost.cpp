@@ -60,7 +60,7 @@ DwgImportHost&  DwgImportHost::GetHost ()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool            DwgImportHost::_IsValid () const
     {
-    return  nullptr != s_dwgImportHostInstance;
+    return  nullptr != s_dwgImportHostInstance && nullptr != s_dwgImportHostInstance->m_importer;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -677,6 +677,11 @@ DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbXrefGraphNode)
 +===============+===============+===============+===============+===============+======*/
 class DwgDbXrefGraph : public DWGDB_EXTENDCLASS(XrefGraph)
     {
+//__PUBLISH_SECTION_START__
+private:
+    // Only effective for RealDWG if xref's are resolved by acdbResolveCurrentXRefs, but database's created this way are NOT ref counted!
+    DWGDB_EXPORT static DwgDbStatus     Build (DwgDbXrefGraph& graphOut, DwgDbDatabaseP hostDwg, bool includeGhosts = false);
+//__PUBLISH_SECTION_START__
 public:
     DEFINE_T_SUPER (DWGDB_SUPER_CONSTRUCTOR(XrefGraph))
 
@@ -690,8 +695,6 @@ public:
     DWGDB_EXPORT bool   MarkUnresolvedTrees ();
     DWGDB_EXPORT bool   FindCycles (DwgDbXrefGraphNodeP start = nullptr);
     DWGDB_EXPORT void   Reset ();
-
-    DWGDB_EXPORT static DwgDbStatus     Build (DwgDbXrefGraph& graphOut, DwgDbDatabaseP hostDwg, bool includeGhosts = false);
     };  // DwgDbXrefGraph
 DEFINE_NO_NAMESPACE_TYPEDEFS (DwgDbXrefGraph)
 

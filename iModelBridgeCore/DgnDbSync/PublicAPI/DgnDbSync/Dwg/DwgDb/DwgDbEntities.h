@@ -779,6 +779,11 @@ public:
     DWGDB_EXPORT bool           IsXAttachment (WStringP blockName = nullptr, WStringP path = nullptr) const;
     DWGDB_EXPORT DwgDbStatus    OpenSpatialFilter (DwgDbSpatialFilterPtr& filterOut, DwgDbOpenMode mode) const;
     DWGDB_EXPORT DwgDbObjectIterator    GetAttributeIterator () const;
+    DWGDB_EXPORT DwgDbStatus    SetPosition (DPoint3dCR origin);
+    DWGDB_EXPORT DwgDbStatus    SetRotation (double angle);
+    DWGDB_EXPORT DwgDbStatus    SetScales (DVec3dCR scales);
+    DWGDB_EXPORT DwgDbStatus    SetNormal (DVec3dCR normal);
+    DWGDB_EXPORT DwgDbStatus    SetBlockTableRecord (DwgDbObjectIdCR blockId);
     };  // DwgDbBlockReference
 DWGDB_DEFINE_OBJECTPTR (BlockReference)
 
