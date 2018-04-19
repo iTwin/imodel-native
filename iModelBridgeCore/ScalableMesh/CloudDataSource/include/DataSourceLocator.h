@@ -108,7 +108,7 @@ public:
 
                                            ~DataSourceLocator       () = default;
 
-    void                                    getURL                  (DataSourceURL &url);
+    CLOUD_EXPORT void                       getURL                  (DataSourceURL &url);
 
     void                                    setName                 (const DataSourceName &name);
     const DataSourceName                &   getName                 (void);

@@ -101,10 +101,13 @@ void DataSourceCached::setWriteToCache(bool write)
 
 bool DataSourceCached::getWriteToCache(void)
 {
-
-
     return writeCache;
 }
+
+void DataSourceCached::setForceWriteToCache(void)
+    {
+    writeCache = true;
+    }
 
 void DataSourceCached::setCacheURL(const DataSourceURL &url)
 {
@@ -169,6 +172,7 @@ DataSourceStatus DataSourceCached::close(void)
         {
             if ((status = writeToCache(getBuffer()->getExternalBuffer(), getBuffer()->getExternalBufferSize())).isFailed())
                 return status;
+            setWriteToCache(false);
         }
     }
                                                             // Return OK
@@ -185,6 +189,7 @@ DataSourceStatus DataSourceCached::read(Buffer *dest, DataSize destSize, DataSiz
                                                             // Try reading from the cache
         if (readFromCache(dest, destSize, readSize, size).isOK())
         {
+            m_isFromCache = true;
                                                             // If read, return OK
             return status;
         }
