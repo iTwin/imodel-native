@@ -441,10 +441,8 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
         LOG.errorv("Failed to find unit mapping for unit with name '%s' in legacy unit mappings", unitName.c_str());
         return ECObjectsStatus::InvalidUnitName;
         }
-    Utf8CP mappedName;
-    if (Utf8String::IsNullOrEmpty(formatName.c_str()))
-        mappedName = formatName.c_str();
-    else
+    Utf8CP mappedName = formatName.c_str();;
+    if (!Utf8String::IsNullOrEmpty(formatName.c_str()))
         {
         mappedName = Formatting::AliasMappings::TryGetNameFromAlias(formatName.c_str());
         mappedName = Formatting::LegacyNameMappings::TryGetFormatStringFromLegacyName((nullptr == mappedName) ? formatName.c_str() : mappedName);
@@ -456,16 +454,9 @@ static ECObjectsStatus ExtractUnitFormatAndMap(Utf8StringR unitName, Utf8StringR
         Utf8String alias;
         Utf8String name;
         ECClass::ParseClassName(alias, name, mappedName);
-        mappedName = ("f:" + name).c_str();
+        formatName = ("f:" + name).c_str();
         }
 
-    if (nullptr == mappedName)
-        {
-        LOG.errorv("Failed to find format mapping for format with name '%s' in legacy format mappings", mappedName);
-        return ECObjectsStatus::InvalidFormat;
-        }
-
-    formatName = mappedName;
     return ECObjectsStatus::Success;
     }
 
