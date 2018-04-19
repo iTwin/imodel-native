@@ -1282,6 +1282,8 @@ struct NativeDgnDb : Napi::ObjectWrap<NativeDgnDb>
             return Env().Undefined();
             }
 
+        fonts.Invalidate(); // Make sure font map gets updated...
+
         auto thisFont = Json::Value();
         thisFont[DgnFonts::json_id()] = (int)fontId.GetValue();
         thisFont[DgnFonts::json_type()] = (int)fontType;
