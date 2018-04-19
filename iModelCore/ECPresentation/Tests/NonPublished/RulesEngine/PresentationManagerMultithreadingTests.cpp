@@ -47,6 +47,7 @@ ECDbTestProject* RulesDrivenECPresentationManagerMultithreadingTestsBase::s_proj
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUpTestCase()
     {
+    Localization::Init();
     s_project = new ECDbTestProject();
     s_project->Create(s_projectName, "RulesEngineTest.01.00.ecschema.xml");
     }
@@ -57,6 +58,7 @@ void RulesDrivenECPresentationManagerMultithreadingTestsBase::SetUpTestCase()
 void RulesDrivenECPresentationManagerMultithreadingTestsBase::TearDownTestCase()
     {
     DELETE_AND_CLEAR(s_project);
+    Localization::Terminate();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1214,15 +1216,15 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
         });
 
     // make first request
-    SelectionInfo selectionInfo1(BeTest::GetNameOfCurrentTest(), false, 1);
+    SelectionInfoPtr selectionInfo1 = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), &selectionInfo1, options.GetJson()));
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), selectionInfo1.get(), options.GetJson()));
     EnsureBlocked();
 
     // make second request
-    SelectionInfo selectionInfo2(BeTest::GetNameOfCurrentTest(), false, 2);
-    m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), &selectionInfo2, options.GetJson()).wait();
+    SelectionInfoPtr selectionInfo2 = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2);
+    m_manager->GetContentDescriptor(s_project->GetECDb(), "Test", *KeySet::Create(), selectionInfo2.get(), options.GetJson()).wait();
 
     // verify
     VerifyCancelation(true, true, 1);
@@ -1241,14 +1243,14 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
         });
 
     // make first request
-    SelectionInfo selectionInfo1(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false);
+    SelectionInfoPtr selectionInfo1 = SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo1, options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo1.get(), options.GetJson()), false);
 
     // make second request
-    SelectionInfo selectionInfo2(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false);
-    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo2, options.GetJson());
+    SelectionInfoPtr selectionInfo2 = SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false);
+    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo2.get(), options.GetJson());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
@@ -1274,13 +1276,13 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
         });
 
     // make first request
-    SelectionInfo selectionInfo(BeTest::GetNameOfCurrentTest(), false);
+    SelectionInfoPtr selectionInfo = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo, options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
 
     // make second request
-    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo, options.GetJson());
+    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo.get(), options.GetJson());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
@@ -1310,13 +1312,13 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
         });
 
     // make the first request
-    SelectionInfo selectionInfo(BeTest::GetNameOfCurrentTest(), false);
+    SelectionInfoPtr selectionInfo = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo, options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
 
     // make second request
-    auto req = m_manager->GetContentDescriptor(connection2->GetECDb(), nullptr, *KeySet::Create(), &selectionInfo, options.GetJson());
+    auto req = m_manager->GetContentDescriptor(connection2->GetECDb(), nullptr, *KeySet::Create(), selectionInfo.get(), options.GetJson());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
@@ -1344,13 +1346,13 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentDescripto
         });
 
     // make first request
-    SelectionInfo selectionInfo(BeTest::GetNameOfCurrentTest(), false);
+    SelectionInfoPtr selectionInfo = SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     BlockECPresentationThread();
-    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test1", *KeySet::Create(), &selectionInfo, options.GetJson()), false);
+    DoRequest(m_manager->GetContentDescriptor(s_project->GetECDb(), "Test1", *KeySet::Create(), selectionInfo.get(), options.GetJson()), false);
 
     // make second request
-    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), "Test2", *KeySet::Create(), &selectionInfo, options.GetJson());
+    auto req = m_manager->GetContentDescriptor(s_project->GetECDb(), "Test2", *KeySet::Create(), selectionInfo.get(), options.GetJson());
 
     // wait until first request gets blocked and abort blocking
     EnsureBlocked();
@@ -1438,14 +1440,14 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestCa
     // make first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor1->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false, 1));
+    descriptor1->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1));
     BlockECPresentationThread();
     DoRequest(m_manager->GetContent(*descriptor1, PageOptions()));
     EnsureBlocked();
     
     // make second request
     ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor2->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false, 2));
+    descriptor2->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2));
     m_manager->GetContent(*descriptor2, PageOptions()).wait();
 
     // verify
@@ -1467,13 +1469,13 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     // make first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor1->SetSelectionInfo(SelectionInfo(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false));
+    descriptor1->SetSelectionInfo(*SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false));
     BlockECPresentationThread();
     DoRequest(m_manager->GetContent(*descriptor1, PageOptions()), false);
 
     // make second request
     ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor2->SetSelectionInfo(SelectionInfo(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false));
+    descriptor2->SetSelectionInfo(*SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false));
     auto req = m_manager->GetContent(*descriptor2, PageOptions());
 
     // wait until first request gets blocked and abort blocking
@@ -1502,7 +1504,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
     // make first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false));
+    descriptor->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false));
     BlockECPresentationThread();
     DoRequest(m_manager->GetContent(*descriptor, PageOptions()), false);
 
@@ -1537,7 +1539,6 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentRequestDo
         });
 
     // make the first request
-    SelectionInfo selectionInfo(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorCPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();
@@ -1635,14 +1636,14 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     // make first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor1->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false, 1));
+    descriptor1->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 1));
     BlockECPresentationThread();
     DoRequest(m_manager->GetContentSetSize(*descriptor1));
     EnsureBlocked();
 
     // make second request
     ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor2->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false, 2));
+    descriptor2->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false, 2));
     m_manager->GetContentSetSize(*descriptor2).wait();
 
     // verify
@@ -1664,13 +1665,13 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     // make first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor1->SetSelectionInfo(SelectionInfo(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false));
+    descriptor1->SetSelectionInfo(*SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 1), false));
     BlockECPresentationThread();
     DoRequest(m_manager->GetContentSetSize(*descriptor1), false);
 
     // make second request
     ContentDescriptorPtr descriptor2 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor2->SetSelectionInfo(SelectionInfo(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false));
+    descriptor2->SetSelectionInfo(*SelectionInfo::Create(Utf8PrintfString("%s:%d", BeTest::GetNameOfCurrentTest(), 2), false));
     auto req = m_manager->GetContentSetSize(*descriptor2);
 
     // wait until first request gets blocked and abort blocking
@@ -1699,7 +1700,7 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
     // make first request
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
-    descriptor->SetSelectionInfo(SelectionInfo(BeTest::GetNameOfCurrentTest(), false));
+    descriptor->SetSelectionInfo(*SelectionInfo::Create(BeTest::GetNameOfCurrentTest(), false));
     BlockECPresentationThread();
     DoRequest(m_manager->GetContentSetSize(*descriptor), false);
 
@@ -1734,7 +1735,6 @@ TEST_F(RulesDrivenECPresentationManagerRequestCancelationTests, ContentSetSizeRe
         });
 
     // make the first request
-    SelectionInfo selectionInfo(BeTest::GetNameOfCurrentTest(), false);
     RulesDrivenECPresentationManager::ContentOptions options(s_rulesetId);
     ContentDescriptorCPtr descriptor1 = ContentDescriptor::Create(*m_connection, options.GetJson(), *NavNodeKeyListContainer::Create());
     BlockECPresentationThread();

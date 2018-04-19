@@ -53,8 +53,6 @@ ContentProviderContext::ContentProviderContext(ContentProviderContextCR other)
 void ContentProviderContext::Init()
     {
     m_isSelectionContext = false;
-    m_selectionInfo = nullptr;
-    m_ownsSelectionInfo = false;
     m_propertyFormatter = nullptr;
     m_isNestedContent = false;
     m_createFields = true;
@@ -65,30 +63,16 @@ void ContentProviderContext::Init()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentProviderContext::~ContentProviderContext()
     {
-    if (m_ownsSelectionInfo)
-        DELETE_AND_CLEAR(m_selectionInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Grigas.Petraitis                04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProviderContext::SetSelectionInfo(SelectionInfo const& selectionInfo)
+void ContentProviderContext::SetSelectionInfo(SelectionInfoCR selectionInfo)
     {
     BeAssert(!IsSelectionContext());
     m_isSelectionContext = true;
-    m_selectionInfo = new SelectionInfo(selectionInfo);
-    m_ownsSelectionInfo = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                04/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentProviderContext::SetSelectionInfo(SelectionInfo&& selectionInfo)
-    {
-    BeAssert(!IsSelectionContext());
-    m_isSelectionContext = true;
-    m_selectionInfo = new SelectionInfo(std::move(selectionInfo));
-    m_ownsSelectionInfo = true;
+    m_selectionInfo = &selectionInfo;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -99,7 +83,6 @@ void ContentProviderContext::SetSelectionInfo(ContentProviderContextCR other)
     BeAssert(!IsSelectionContext());
     m_isSelectionContext = true;
     m_selectionInfo = other.m_selectionInfo;
-    m_ownsSelectionInfo = false;
     }
 
 /*---------------------------------------------------------------------------------**//**

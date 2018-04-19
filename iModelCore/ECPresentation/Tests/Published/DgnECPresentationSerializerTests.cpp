@@ -2193,7 +2193,7 @@ TEST_F(DgnECPresentationSerializerTests, ContentDescriptorSerializationWithSelec
         NavNodeKey::Create("TypeName2", {"456", "def"})
         });
     ContentDescriptorPtr descriptor = ContentDescriptor::Create(*connection, options.GetJson(), *container, "DisplayTypeText");
-    descriptor->SetSelectionInfo(SelectionInfo("ProviderNameText", true, 123));
+    descriptor->SetSelectionInfo(*SelectionInfo::Create("ProviderNameText", true, 123));
     rapidjson::Document actual = descriptor->AsJson();
 
     rapidjson::Document expected;

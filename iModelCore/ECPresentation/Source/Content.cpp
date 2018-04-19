@@ -74,7 +74,7 @@ Utf8String ContentDescriptor::Field::ArrayTypeDescription::CreateTypeName(TypeDe
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ContentDescriptor(IConnectionCR connection, JsonValueCR options, INavNodeKeysContainerCR input, Utf8String preferredDisplayType)
     : m_preferredDisplayType(preferredDisplayType), m_contentFlags(0), m_sortingFieldIndex(-1), m_sortDirection(SortDirection::Ascending), m_connection(connection),
-    m_selectionInfo(nullptr), m_inputKeys(&input), m_options(options)
+    m_inputKeys(&input), m_options(options)
     {
     }
 
@@ -83,7 +83,8 @@ ContentDescriptor::ContentDescriptor(IConnectionCR connection, JsonValueCR optio
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentDescriptor::ContentDescriptor(ContentDescriptorCR other) 
     : m_preferredDisplayType(other.m_preferredDisplayType), m_classes(other.m_classes), m_filterExpression(other.m_filterExpression), m_contentFlags(other.m_contentFlags),
-    m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connection(other.m_connection), m_inputKeys(other.m_inputKeys), m_options(other.m_options)
+    m_sortingFieldIndex(other.m_sortingFieldIndex), m_sortDirection(other.m_sortDirection), m_connection(other.m_connection), m_inputKeys(other.m_inputKeys), 
+    m_options(other.m_options), m_selectionInfo(other.m_selectionInfo)
     {
     bmap<Field const*, Field const*> fieldsRemapInfo;
     for (Field const* field : other.m_fields)
@@ -94,8 +95,6 @@ ContentDescriptor::ContentDescriptor(ContentDescriptorCR other)
         }
     for (Field* field : m_fields)
         field->NotifyFieldsCloned(fieldsRemapInfo);
-
-    m_selectionInfo = (nullptr != other.m_selectionInfo) ? new SelectionInfo(*other.m_selectionInfo) : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -105,8 +104,6 @@ ContentDescriptor::~ContentDescriptor()
     {
     for (Field* field : m_fields)
         delete field;
-
-    DELETE_AND_CLEAR(m_selectionInfo);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -140,10 +137,10 @@ bool ContentDescriptor::Equals(ContentDescriptor const& other) const
             return false;
         }
 
-    if ((nullptr != m_selectionInfo && nullptr == other.m_selectionInfo) || (nullptr == m_selectionInfo && nullptr != other.m_selectionInfo))
+    if ((m_selectionInfo.IsValid() && other.m_selectionInfo.IsNull()) || (m_selectionInfo.IsNull() && other.m_selectionInfo.IsValid()))
         return false;
 
-    if (nullptr != m_selectionInfo && nullptr != other.m_selectionInfo && !(*m_selectionInfo == *other.m_selectionInfo))
+    if (m_selectionInfo.IsValid() && other.m_selectionInfo.IsValid() && !(*m_selectionInfo == *other.m_selectionInfo))
         return false;
 
     return true;
@@ -225,8 +222,9 @@ void ContentDescriptor::MergeWith(ContentDescriptorCR other)
     BeAssert(m_filterExpression.Equals(other.m_filterExpression) && "Can't merge descriptors with different filter expressions");
     BeAssert(m_connection.GetId().Equals(other.m_connection.GetId()) && "Can't merge descriptors with different connections");
     BeAssert(m_options == other.m_options && "Can't merge descriptors with different options");
-    BeAssert((nullptr == m_selectionInfo && nullptr == other.m_selectionInfo)
-        || (nullptr != m_selectionInfo && nullptr != other.m_selectionInfo && *m_selectionInfo == *other.m_selectionInfo) && "Can't merge descriptors with different selection");
+    BeAssert((m_selectionInfo.IsNull() && other.m_selectionInfo.IsNull())
+        || (m_selectionInfo.IsValid() && other.m_selectionInfo.IsValid() && *m_selectionInfo == *other.m_selectionInfo) 
+        && "Can't merge descriptors with different selection info");
 
     for (SelectClassInfo const& sourceClassInfo : other.m_classes)
         {
@@ -1057,35 +1055,6 @@ ECInstanceChangeResult ECInstanceChangeResult::Ignore(Utf8String reason)
 rapidjson::Document ECInstanceChangeResult::AsJson(rapidjson::Document::AllocatorType* allocator) const
     {
     return IECPresentationManager::GetSerializer().AsJson(*this, allocator);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                08/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-SelectionInfo::SelectionInfo(ISelectionProvider const& selectionProvider, SelectionChangedEventCR evt)
-    : m_selectionProviderName(evt.GetSourceName()), m_isSubSelection(evt.IsSubSelection()), m_timestamp(evt.GetTimestamp())
-    {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-SelectionInfo& SelectionInfo::operator=(SelectionInfo const& other)
-    {
-    m_selectionProviderName = other.m_selectionProviderName;
-    m_isSubSelection = other.m_isSubSelection;
-    m_timestamp = other.m_timestamp;
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Grigas.Petraitis                07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-SelectionInfo& SelectionInfo::operator=(SelectionInfo&& other)
-    {
-    m_isSubSelection = other.m_isSubSelection;
-    m_selectionProviderName.swap(other.m_selectionProviderName);
-    m_timestamp = other.m_timestamp;
-    return *this;
     }
 
 /*---------------------------------------------------------------------------------**//**

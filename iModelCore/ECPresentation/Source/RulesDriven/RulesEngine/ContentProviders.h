@@ -29,8 +29,7 @@ private:
 
     // Selection info context
     bool m_isSelectionContext;
-    SelectionInfo const* m_selectionInfo;
-    bool m_ownsSelectionInfo;
+    SelectionInfoCPtr m_selectionInfo;
 
     // Property formatting context
     IECPropertyFormatter const* m_propertyFormatter;
@@ -62,11 +61,10 @@ public:
     void SetInputKeys(INavNodeKeysContainerCR inputNodeKeys) {m_inputNodeKeys = &inputNodeKeys;}
     
     // Selection info context
-    ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfo const& selectionInfo);
-    ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfo&& selectionInfo);
+    ECPRESENTATION_EXPORT void SetSelectionInfo(SelectionInfoCR selectionInfo);
     ECPRESENTATION_EXPORT void SetSelectionInfo(ContentProviderContextCR);
     bool IsSelectionContext() const {return m_isSelectionContext;}
-    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo;}
+    SelectionInfo const* GetSelectionInfo() const {return m_selectionInfo.get();}
     
     // Property formatting context
     ECPRESENTATION_EXPORT void SetPropertyFormattingContext(IECPropertyFormatter const&);

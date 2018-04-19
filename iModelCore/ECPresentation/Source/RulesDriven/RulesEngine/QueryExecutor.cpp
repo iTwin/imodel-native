@@ -76,9 +76,7 @@ void QueryExecutor::_Reset()
     if (nullptr != m_query && m_readStarted)
         {
         CachedECSqlStatementPtr statement = GetStatement();
-        if (statement.IsNull())
-            BeAssert(false);
-        else
+        if (statement.IsValid())
             statement->ClearBindings();
         }
 
@@ -106,6 +104,11 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
     CachedECSqlStatementPtr statement = GetStatement();
     if (statement.IsNull())
         {
+        if (nullptr != cancelationToken && cancelationToken->IsCanceled())
+            {
+            LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled while preparing statement", NativeLogging::LOG_TRACE);
+            return;
+            }
         BeAssert(false);
         return;
         }
@@ -118,7 +121,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
             
     if (nullptr != cancelationToken && cancelationToken->IsCanceled())
         {
-        LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled", NativeLogging::LOG_TRACE);
+        LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled before started reading", NativeLogging::LOG_TRACE);
         return;
         }
 
@@ -135,7 +138,7 @@ void QueryExecutor::ReadRecords(ICancelationTokenCP cancelationToken)
         if (nullptr != cancelationToken && cancelationToken->IsCanceled())
             {
             Reset();
-            LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled", NativeLogging::LOG_TRACE);
+            LoggingHelper::LogMessage(Log::Default, "[QueryExecutor] Records read canceled while reading records", NativeLogging::LOG_TRACE);
             return;
             }
         }

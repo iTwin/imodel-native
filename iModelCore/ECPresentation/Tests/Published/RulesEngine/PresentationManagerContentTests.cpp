@@ -3158,10 +3158,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_Provider)
     {
     // set up selection 1
-    SelectionInfo selection1("A", false);
+    SelectionInfoCPtr selection1 = SelectionInfo::Create("A", false);
     
     // set up selection 2
-    SelectionInfo selection2("B", false);
+    SelectionInfoCPtr selection2 = SelectionInfo::Create("B", false);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -3173,8 +3173,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selection1, options.GetJson()).get();
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selection2, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selection1.get(), options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selection2.get(), options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
@@ -3186,10 +3186,10 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCachedWhenParametersDifferent_SelectionInfo_SubSelection)
     {
     // set up selection 1
-    SelectionInfo selection1("", false);
+    SelectionInfoCPtr selection1 = SelectionInfo::Create("", false);
     
     // set up selection 2
-    SelectionInfo selection2("", true);
+    SelectionInfoCPtr selection2 = SelectionInfo::Create("", true);
 
     // create the rule set
     PresentationRuleSetPtr rules = PresentationRuleSet::CreateInstance(BeTest::GetNameOfCurrentTest(), 1, 0, false, "", "", "", false);
@@ -3201,8 +3201,8 @@ TEST_F(RulesDrivenECPresentationManagerContentTests, ContentDescriptorIsNotCache
 
     // request
     RulesDrivenECPresentationManager::ContentOptions options(rules->GetRuleSetId().c_str());
-    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selection1, options.GetJson()).get();
-    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), &selection2, options.GetJson()).get();
+    ContentDescriptorCPtr descriptor1 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selection1.get(), options.GetJson()).get();
+    ContentDescriptorCPtr descriptor2 = IECPresentationManager::GetManager().GetContentDescriptor(s_project->GetECDb(), nullptr, *KeySet::Create(), selection2.get(), options.GetJson()).get();
 
     // verify the two objects are equal
     EXPECT_NE(descriptor1, descriptor2);
