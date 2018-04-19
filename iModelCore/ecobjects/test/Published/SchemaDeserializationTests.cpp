@@ -1277,4 +1277,33 @@ TEST_F(SchemaDeserializationTest, DeserializeComprehensiveSchemaWithUnknowns)
     EXPECT_EQ(1, schema->GetEnumerationCount());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, SelfReferencingStructArray)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="testSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="Foo" description="Used as data type" isStruct="True" isDomainClass="False">
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECProperty propertyName="AreaType" typeName="string" />
+                    <ECProperty propertyName="Area" typeName="double" description="in [m2]" />
+                    <ECProperty propertyName="LuminaireCategory" typeName="int" />
+                    <ECArrayProperty propertyName="Luminaires" typeName="Foo" minOccurs="0" maxOccurs="unbounded" isStruct="True" />
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Failed to load schema";
+
+    ECClassCP foo = schema->GetClassCP("Foo");
+    ASSERT_NE(nullptr, foo);
+
+    ASSERT_EQ(4, foo->GetPropertyCount());
+    ECPropertyP bad = foo->GetPropertyP("Luminaires");
+    ASSERT_EQ(nullptr, bad);
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE
