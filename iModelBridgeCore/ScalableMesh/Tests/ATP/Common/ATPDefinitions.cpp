@@ -496,7 +496,7 @@ int CollectAllElmsCallback(ElementRefP elemRef, CallbackArgP callbackArg, ScanCr
     agendaP->Insert(elemRef, scP->GetModelRef());
     return SUCCESS;
     }
-
+#endif
 
 void PerformDrapeTestLnsFileCreation(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
