@@ -64,6 +64,7 @@ private:
     uint32_t m_noGeometryMap:1;    //!< ignore geometry maps
     uint32_t m_hLineMaterialColors:1; //!< use material colors for hidden lines
     uint32_t m_edgeMask:2;         //!< 0=none, 1=generate mask, 2=use mask
+    uint32_t m_animate:1;          //!< Animate view (render continously).
 
 public:
     BE_JSON_NAME(acs);
@@ -88,6 +89,7 @@ public:
     BE_JSON_NAME(hlMatColors);
     BE_JSON_NAME(monochrome);
     BE_JSON_NAME(edgeMask);
+    BE_JSON_NAME(animate);
 
     ViewFlags()
         {
@@ -113,6 +115,7 @@ public:
         m_noGeometryMap = 0;
         m_hLineMaterialColors = 0;
         m_edgeMask = 0;
+        m_animate = 0;
         }
 
     bool ShowDimensions() const {return m_dimensions;}
@@ -159,8 +162,10 @@ public:
     bool UseHlineMaterialColors() const {return m_hLineMaterialColors;}
     int GetEdgeMask() const {return m_edgeMask;}
     void SetEdgeMask(int val) {m_edgeMask = val;}
+    bool GetAnimate() const { return m_animate; }
+    void SetAnimate(bool val) {m_animate = val;}
     
-    RenderMode GetRenderMode() const {return m_renderMode;}
+    RenderMode GetRenderMode() const {return m_renderMode; }
     void SetRenderMode(RenderMode value) {m_renderMode = value;}
 
     bool HiddenEdgesVisible() const
@@ -1064,7 +1069,7 @@ struct GradientSymb : RefCountedBase
     
     struct ThematicSettings
         {
-        enum ColorScheme
+        enum class ColorScheme
             {
             BlueRed     = 0,
             RedBlue     = 1,
@@ -1073,12 +1078,20 @@ struct GradientSymb : RefCountedBase
             SeaMountain = 4,
             Custom      = 5,
             };
+        enum class Mode
+            {
+            Smooth,
+            Stepped,
+            SteppedWithDelimiter,
+            Isolines,
+            };
+
         private:
         uint32_t        m_stepCount = 10;
         double          m_margin = .05;
         ColorDef        m_marginColor = ColorDef(0x3f, 0x3f, 0x3f);
-        bool            m_stepped = false;
-        ColorScheme     m_colorScheme = BlueRed;
+        Mode            m_mode = Mode::Smooth;
+        ColorScheme     m_colorScheme = ColorScheme::BlueRed;
 
         public:
         Json::Value ToJson() const;
@@ -1089,10 +1102,13 @@ struct GradientSymb : RefCountedBase
         void SetStepCount(uint32_t stepCount) { m_stepCount = stepCount; }
         ColorDef GetMarginColor() const { return m_marginColor; }
         void SetMarginColor (ColorDefCR color) { m_marginColor = color; }
-        bool GetStepped() const { return m_stepped; }
-        void SetStepped(bool stepped) { m_stepped = stepped; }
+        Mode GetMode() const { return m_mode; ; }
+        void SetMode(Mode mode) { m_mode = mode; }
         ColorScheme GetColorScheme() const { return m_colorScheme; }
         void SetColorScheme(ColorScheme colorScheme) { m_colorScheme = colorScheme; }
+        bool operator==(ThematicSettings const& rhs) const;
+        bool operator<(ThematicSettings const& rhs) const;
+
         };
 
 protected:
@@ -1145,7 +1161,7 @@ public:
     // Thematic display.
     bool IsThematic() const { return m_mode == Mode::Thematic; } 
     ThematicSettings const& GetThematicSettings() const { return m_thematicSettings; }
-    ThematicSettings& GetThematicSettings() { return m_thematicSettings; }
+    ThematicSettings& GetThematicSettingsR() { return m_thematicSettings; }
 };
 
 
@@ -2534,6 +2550,7 @@ private:
 
 public:
         AuxChannel( bvector<DataPtr>&& data) : m_data(std::move(data)) { }
+        bool IsAnimatable() const { return m_data.size() > 1; }
         void AppendDataByIndex(RefCountedPtr<AuxChannel>& output, size_t index)
             {
             if (!output.IsValid())
@@ -2574,6 +2591,7 @@ struct MeshAuxData
     AuxParamChannelPtr              m_paramChannel;
 
     bool IsValid() const { return m_displacementChannel.IsValid() || m_paramChannel.IsValid(); }
+    bool IsAnimatable() const { return (m_displacementChannel.IsValid() && m_displacementChannel->IsAnimatable()) || (m_paramChannel.IsValid() && m_paramChannel->IsAnimatable()); }
 };  
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshAuxData);

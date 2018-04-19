@@ -600,6 +600,7 @@ public:
     bool IsContinuousRenderingEnabled() const { return m_renderContinuously; }
     void EnableContinuousRendering() { m_renderContinuously = true; }
     void DisableContinuousRendering() { m_renderContinuously = false; }
+    void SetContinousRendering(bool val) { m_renderContinuously = val; }
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 

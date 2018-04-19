@@ -23,10 +23,8 @@
 // thereby improving tile generation speed significantly.
 // #define POPULATE_ROOT_TILE
 
-// Uncomment to test selective tile repair
-// #define WIP_TILE_REPAIR
 // Uncomment to always use tile repair when reading from cache, instead of only when tile contents invalidated.
-// (Must have WIP_TILE_REPAIR defined too!)
+// (Must have Platform.TileRepair feature gate enabled too!)
 // #define TEST_TILE_REPAIR
 
 USING_NAMESPACE_ELEMENT_TILETREE
@@ -797,7 +795,8 @@ END_UNNAMED_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
-    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime)
+    : T_Super("", tile, loads, tile.GetRoot()._ConstructTileResource(tile), renderSys), m_createTime(tile.GetElementRoot().GetModel()->GetLastElementModifiedTime()), m_cacheCreateTime(m_createTime),
+    m_doTileRepair(T_HOST._IsFeatureEnabled("Platform.TileRepair"))
     {
 #if defined(DISABLE_PARTIAL_TILES)
     if (nullptr != loads)
@@ -1203,14 +1202,12 @@ BentleyStatus Loader::DoGetFromSource()
 bool Loader::_IsExpired(uint64_t createTimeMillis)
     {
     m_cacheCreateTime = createTimeMillis;
+    if (m_doTileRepair)
+        return false;
 
-#if defined(WIP_TILE_REPAIR)
-    return false;
-#else
     auto& tile = GetElementTile();
     uint64_t lastModMillis = tile.GetElementRoot().GetModel()->GetLastElementModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1220,16 +1217,16 @@ bool Loader::_IsValidData()
     {
     BeAssert(!m_tileBytes.empty());
     TileTree::IO::DgnTileReader reader(m_tileBytes, *GetElementTile().GetElementRoot().GetModel(), *GetRenderSystem());
-#if defined(WIP_TILE_REPAIR)
+
+    if (!m_doTileRepair)
+        return reader.VerifyFeatureTable();
+
     if (IsExpired())
         reader.GetElements(m_omitElemIds, m_tileElemIds, m_cacheCreateTime);
     else
         reader.FindDeletedElements(m_omitElemIds);
 
     return true;
-#else
-    return reader.VerifyFeatureTable();
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1237,14 +1234,13 @@ bool Loader::_IsValidData()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::_IsCompleteData()
     {
-#if defined(WIP_TILE_REPAIR)
+    if (!m_doTileRepair)
+        return true;
+
 #if defined(TEST_TILE_REPAIR)
     return false;
 #else
     return !IsExpired() && m_omitElemIds.empty();
-#endif
-#else
-    return true;
 #endif
     }
 
@@ -1762,6 +1758,7 @@ void Tile::InitTolerance(double minToleranceRatio, bool isLeaf)
     double diagDist = GetElementRoot().Is3d() ? m_range.DiagonalDistance() : m_range.DiagonalDistanceXY();
     m_tolerance = diagDist / (minToleranceRatio * m_zoomFactor);
     m_isLeaf = isLeaf;
+    BeAssert(0.0 != m_tolerance);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2632,9 +2629,6 @@ TileGenerator::Completion TileGenerator::GenerateGeometry(Render::Primitives::Ge
         {
         collection.MarkIncomplete();
         }
-
-    if (collection.IsEmpty() && !m_geometries.empty())
-        collection.MarkIncomplete();
 
     if (m_geometries.ContainsCurves())
         collection.MarkCurved();

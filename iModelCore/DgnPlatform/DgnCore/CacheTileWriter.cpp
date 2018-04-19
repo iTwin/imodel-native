@@ -101,7 +101,7 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
         primitiveJson["attributes"]["AUXDISPLACEMENTS"] = std::move(displacementValues);
         }
 
-    if (mesh.GetAuxData().m_displacementChannel.IsValid())
+    if (mesh.GetAuxData().m_paramChannel.IsValid())
         {
         Json::Value     paramValues = Json::arrayValue;
         uint32_t        index = 0;

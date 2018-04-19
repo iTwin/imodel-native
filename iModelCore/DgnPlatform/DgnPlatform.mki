@@ -2,10 +2,10 @@
 #
 #     $Source: DgnPlatform.mki $
 #
-#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
-OutDgnPlatformBuild             = $(OutBuildDir)DgnPlatform/
+OutDgnPlatformBuild             = $(PartBuildDir)
 DgnPlatformObj                  = $(OutDgnPlatformBuild)DgnPlatform/
 
 MultiCompileIntermediatePdbFile = $(DgnPlatformObj)$(CCompPDBName).pdb

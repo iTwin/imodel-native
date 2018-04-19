@@ -13,7 +13,7 @@
 
 SrcDir              = $(_MakeFilePath)
 SubpartLibs         = $(BuildContext)SubParts/Libs/
-o                   = $(OutputRootDir)Build/iModelConsole/
+o                   = $(PartBuildDir)
 ContextDeliveryDir  = $(BuildContext)Delivery/
 appName             = iModelConsole
 
