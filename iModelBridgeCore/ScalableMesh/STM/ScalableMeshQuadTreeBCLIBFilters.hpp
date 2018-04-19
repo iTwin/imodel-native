@@ -306,11 +306,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 	bvector<int> beginIdx(numSubNodes, -1);
 	for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
 	{
-		if (subNodes[indexNodes] != NULL)
+		if (subNodes[indexNodes] != NULL) 
 		{
 			RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
 			totalNumberOfPoints += subNodePointsPtr->size();
-
+        
 			HFCPtr<SMMeshIndexNode<POINT, EXTENT>> subMeshNode = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(subNodes[indexNodes]);
 
 			bvector<bvector<DPoint3d>> polylinesNode;
@@ -318,7 +318,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 			subMeshNode->ReadFeatureDefinitions(polylinesNode, typesNode);
 
 			for (auto& type : typesNode)
-				if (type == DTMFeatureType::Hull)
+				if (type == DTMFeatureType::Hull || type == DTMFeatureType::TinHull)
 					anyHull[indexNodes] = true;
 
 			types.insert(types.end(), typesNode.begin(), typesNode.end());
@@ -337,12 +337,12 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		DRange3d extent = DRange3d::NullRange();
 		parentPointsPtr->clear();
 		for (size_t indexNodes = 0; indexNodes < numSubNodes; indexNodes++)
-		{
-			extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
-
+		{            			
 			if (subNodes[indexNodes] != NULL)
 			{
 				if (subNodes[indexNodes]->GetNbObjects() == 0) continue;
+
+                extent.Extend(subNodes[indexNodes]->m_nodeHeader.m_contentExtent);
 
 				RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodesPointsPtr(subNodes[indexNodes]->GetPointsPtr());
 				parentPointsPtr->push_back(&(*subNodesPointsPtr)[0], subNodesPointsPtr->size());
@@ -382,7 +382,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 					}
 				}
 			}
-		}
+		}   
 		if (!extent.IsNull()) parentNode->m_nodeHeader.m_contentExtent = extent;
 		if (pParentMeshNode->m_nodeHeader.m_contentExtent.low.x == 0 && pParentMeshNode->m_nodeHeader.m_contentExtent.high.x != 0)
 		{
@@ -546,15 +546,18 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
             {
 		    for (size_t i = polylines.size() - 1; i > 0; i--)
 		        {
+                newTypes.clear();
+                otherNewTypes.clear();
+                newLines.clear();
 			    bvector<bvector<DPoint3d>> defsHull;
 			    defsHull.push_back(polylines[i]);
 			    defsHull.push_back(polylines[i - 1]);
-			    MergePolygonSets(defsHull, [&newTypes, &newLines, &types](const size_t i, const bvector<DPoint3d>& vec)
+			    MergePolygonSets(defsHull, [&newTypes, &newLines, &types, &i](const size_t j, const bvector<DPoint3d>& vec)
 			        {
-				    if (types[i] != DTMFeatureType::Hull)
+				    if (types[i-j] != DTMFeatureType::Hull &&  types[i-j] != DTMFeatureType::TinHull)
 				        {
 					    newLines.push_back(vec);
-					    newTypes.push_back(types[i]);
+					    newTypes.push_back(types[i-j]);
 					    return false;
 				    }
 				    else return true;
@@ -591,7 +594,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 		    std::transform(polylines.begin(), polylines.end(), newLines.begin(), polylines.begin(),
 			    [&types, &polylines](const bvector<DPoint3d>&vec, const bvector<DPoint3d>& vec2)
 		        {
-			    if (types[&vec - &polylines[0]] == DTMFeatureType::Hull)
+			    if (types[&vec - &polylines[0]] == DTMFeatureType::Hull || types[&vec - &polylines[0]] == DTMFeatureType::TinHull)
 				    return vec2;
 			    else return vec;
 		        });

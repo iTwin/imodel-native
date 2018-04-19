@@ -1677,6 +1677,8 @@ protected:
     bvector<size_t> m_countsOfNodesAtLevel;
     size_t m_countsOfNodesTotal = 0;
 
+    bool m_precomputedCountNodes = false;
+
     std::atomic<size_t> m_nMeshedNodes;
     std::atomic<size_t> m_nStitchedNodes;
     std::atomic<size_t> m_nFilteredNodes;
