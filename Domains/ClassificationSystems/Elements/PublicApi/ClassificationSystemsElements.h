@@ -68,6 +68,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
     DEFINE_T_SUPER(Dgn::DefinitionElement);
     private:
         BE_PROP_NAME(Group)
+        BE_PROP_NAME(Specialization)
 
     protected:
         explicit CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Classification(CreateParams const& params) : T_Super(params) {}
@@ -76,12 +77,21 @@ struct EXPORT_VTABLE_ATTRIBUTE Classification : Dgn::DefinitionElement
         //! @param[in] groupId to set
         void SetGroupId(Dgn::DgnElementId groupId);
 
+        //! Sets Specialization Classification Id
+        //! @param[in] specializationId to set
+        void SetSpecializationId(Dgn::DgnElementId specializationId);
+
     public:
         DECLARE_CLASSIFICATIONSYSTEMS_ELEMENT_BASE_METHODS(Classification, CLASSIFICATIONSYSTEMSELEMENTS_EXPORT)
 
         //!Returns id of group that has this Classification
         //! @return group id of the Classification
         CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetGroupId() const;
+
+        //!Returns id of Classification that this Classification Specializes in
+        //! @return group id of the Classification
+        CLASSIFICATIONSYSTEMSELEMENTS_EXPORT Dgn::DgnElementId GetSpecializationId() const;
+
 
     };
 //=======================================================================================

@@ -104,7 +104,6 @@ Utf8CP name
     return group;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -116,6 +115,16 @@ Dgn::DgnElementId groupId
     SetPropertyValue(prop_Group(), groupId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationIsInClassificationGroup));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+void Classification::SetSpecializationId
+(
+Dgn::DgnElementId specializationId
+)
+    {
+        SetPropertyValue(prop_Specialization(), specializationId, GetDgnDb().Schemas().GetClassId(CLASSIFICATIONSYSTEMS_SCHEMA_NAME, CLASSIFICATIONSYSTEMS_REL_ClassificationSpecializesClassification));
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Jonas.Valiunas                  04/2018
@@ -125,6 +134,16 @@ Dgn::DgnElementId               Classification::GetGroupId
 ) const
     {
     return GetPropertyValueId<Dgn::DgnElementId>(prop_Group());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Martynas.Saulius               04/2018
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnElementId Classification::GetSpecializationId
+(
+) const
+    {
+    return GetPropertyValueId<Dgn::DgnElementId>(prop_Specialization());
     }
 
 /*---------------------------------------------------------------------------------**//**

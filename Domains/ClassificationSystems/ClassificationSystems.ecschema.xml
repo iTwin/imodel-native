@@ -21,6 +21,7 @@
     <ECEntityClass typeName="Classification" modifier="Abstract" displayLabel="ClassificationSystem ClassDefinition" description="The ClassDefinition used to store classificationSystem data.">
         <BaseClass>bis:DefinitionElement</BaseClass>
         <ECNavigationProperty propertyName="Group" relationshipName="ClassificationIsInClassificationGroup" direction="Forward" description="Group this definition belong to" />
+        <ECNavigationProperty propertyName="Specialization" relationshipName="ClassificationSpecializesClassification" direction="Forward" description="Classification this Specializes in" />
     </ECEntityClass>
     
     <ECEntityClass typeName="ClassificationGroup" displayLabel="ClassificationSystem ClassDefinition group" description="The ClassDefinition group element">
@@ -39,7 +40,16 @@
             <Class class="ClassificationGroup"/>
         </Target>
     </ECRelationshipClass>
-    
+
+    <ECRelationshipClass typeName="ClassificationSpecializesClassification" modifier="None" strength="referencing" description="">
+        <Source multiplicity="(1..1)" roleLabel="Specializes" polymorphic="true">
+            <Class class="Classification"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="" polymorphic="true">
+            <Class class="Classification"/>
+         </Target>
+    </ECRelationshipClass>
+  
     <ECEntityClass typeName="CIBSEClassDefinition" displayLabel="CIBSE ClassDefinition" description="The ClassDefinition used to store CIBSE classificationSystem data">
         <BaseClass>Classification</BaseClass>
         <ECCustomAttributes>
