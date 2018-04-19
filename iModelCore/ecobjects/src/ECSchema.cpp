@@ -3665,11 +3665,11 @@ Utf8String ECSchema::ComputeSchemaXmlStringCheckSum(Utf8CP str, size_t len)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ECSchema::ComputeCheckSum ()
     {
-    WString xmlStr;
+    Utf8String xmlStr;
     if (SchemaWriteStatus::Success != WriteToXmlString (xmlStr, m_ecVersion))
         return "";
 
-    return CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(WChar)* xmlStr.length());
+    return CheckSumHelper::ComputeCheckSumForString (xmlStr.c_str(), sizeof(Utf8Char) * xmlStr.length());
     }
 
 /*---------------------------------------------------------------------------------**//**
