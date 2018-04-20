@@ -154,15 +154,20 @@ void CheckXrefAttached (BeFileNameCR masterFilename, DwgStringCR xrefBlockname)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void CheckXrefNested (BeFileNameCR masterFilename, DwgStringCR xrefBlockname)
     {
-    // a nested xref has no instance in master file, so check block only:
-    DwgFileEditor   editor(masterFilename);
+    /*-----------------------------------------------------------------------------------
+    A nested xref has no instance in master file, so check the block only.
+
+    When this unit test is run as a part of a full build, the test can fail if
+        1) the unit test is run as a part of a full build,
+        2) the master DWG file is opened for write.
+    When this happens, the nested xref block is not seen in the block table in the master file.
+    This may all be a RealDWG2018 bug, but we workaround it by opening the master file as read-only.
+    -----------------------------------------------------------------------------------*/
+    DwgFileEditor   editor(masterFilename, FileShareMode::DenyWrite);
     editor.FindXrefBlock (xrefBlockname);
 
     auto id = editor.GetCurrentObjectId ();
-#ifndef PRG
-    // nested attachment through full build is not seen in block table (filename corrupted?)
     EXPECT_TRUE (id.IsValid()) << "Nested xRef block is not found in the master file!";
-#endif
     }
 };  // BasicTests
 
@@ -322,7 +327,7 @@ TEST_F(BasicTests, AttachXrefs)
     // prepare basictype.dwg for a nested xref:
     BentleyApi::BeFileName  nestedXrefName;
     ImporterTests::MakeWritableCopyOf(nestedXrefName, L"basictype.dwg");
-    EXPECT_PRESENT (nestedXrefName);
+    EXPECT_PRESENT (nestedXrefName.c_str());
 
     auto xrefFileName = GetOutputFileName(L"xref1.dwg");
 
@@ -361,10 +366,7 @@ TEST_F(BasicTests, AttachXrefs)
             hasXref1 = true;
         count++;
         }
-#ifndef PRG
-    // WIP - nested xref attached when running gtest through a full build is not seen in block table!
     EXPECT_EQ (3, count) << "Should have total 3 physical models!";
     EXPECT_TRUE (hasNested) << "Missing nested xRef basictype";
-#endif
     EXPECT_TRUE (hasXref1) << "Missing direct xRef xref1!";
     }

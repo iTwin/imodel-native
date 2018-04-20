@@ -304,7 +304,16 @@ BentleyStatus   DwgImporter::OpenDwgFile (BeFileNameCR dwgdxfName)
     Utf8String  dispVersion = DwgHelper::GetStringFromDwgVersion (dwgVersion);
     this->SetStepName (ProgressMessage::STEP_OPENINGFILE(), dwgdxfName.c_str(), dispVersion.c_str());
 
-    m_dwgdb = DwgImportHost::GetHost().ReadFile (dwgdxfName, false, false, FileShareMode::DenyNo, password);
+    /*-----------------------------------------------------------------------------------
+    Apparently file open mode DenyNo somehow has a negative impact on nested xref blocks: 
+    there have been cases in which certain nested xref blocks are not seen in a master 
+    file's block table.  See unit test BasicTests.AttachXrefs for one such a case.  
+    Strange as it seems, file open mode DenyWrite does allow all nested xref blocks to be 
+    iterated through in a master file's block table.  Since the importer does not need to 
+    change the file on disc, i.e. delete etc, we opt for the file open mode DenyWrite.  
+    We can still make changes on objects and save changes back into database.
+    -----------------------------------------------------------------------------------*/
+    m_dwgdb = DwgImportHost::GetHost().ReadFile (dwgdxfName, false, false, FileShareMode::DenyWrite, password);
     if (!m_dwgdb.IsValid())
         return  BSIERROR;
 

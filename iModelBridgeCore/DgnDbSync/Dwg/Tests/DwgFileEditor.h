@@ -21,15 +21,17 @@ private:
     DwgDbDatabasePtr    m_dwgdb;
     DwgDbObjectId       m_currentObjectId;
     BeFileName          m_fileName;
+    FileShareMode       m_openMode;
 
 public:
     // Constructors prerequsites implementation of IDwgDbHost through DwgImporter!
     // the default constructor
     DwgFileEditor () { BeAssert(DwgImportHost::GetHost()._IsValid()); }
-    // constructor that opens an existing DWG file
-    DwgFileEditor (BeFileNameCR infile) { BeAssert(DwgImportHost::GetHost()._IsValid()); OpenFile(infile); }
+    // constructor that opens an existing DWG file - default to open for save
+    DwgFileEditor (BeFileNameCR infile, FileShareMode openMode = FileShareMode::DenyNo);
     void    CreateFile (BeFileNameCR infile);
-    void    OpenFile (BeFileNameCR infile);
+    // open DWG for save by default
+    void    OpenFile (BeFileNameCR infile, FileShareMode openMode = FileShareMode::DenyNo);
     void    SaveFile ();
     void    AddCircleInDefaultModel ();
     void    AddEntitiesInDefaultModel (T_EntityHandles& handles);
