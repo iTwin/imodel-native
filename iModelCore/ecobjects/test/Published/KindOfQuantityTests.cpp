@@ -601,10 +601,10 @@ TEST_F(KindOfQuantityDeserializationTest, UseDefaultFormatInNewerECVersion)
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
            <KindOfQuantity typeName="KoQWithPers" description="Kind of a Description here"
-               displayLabel="best quantity of all time" persistenceUnit="M(SILLYFORMAT)" relativeError="10e-3" />
+               displayLabel="best quantity of all time" persistenceUnit="u:M" relativeError="10e-3" />
 
             <KindOfQuantity typeName="KoQWithPres" description="Kind of a Description here"
-               displayLabel="best quantity of all time" persistenceUnit="M" presentationUnits="f:DefaultReal[u:MM];SILLYFORMAT[u:CM]" relativeError="10e-3" />
+               displayLabel="best quantity of all time" persistenceUnit="u:M" presentationUnits="f:DefaultReal[u:MM];SILLYFORMAT[u:CM]" relativeError="10e-3" />
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -621,10 +621,10 @@ TEST_F(KindOfQuantityDeserializationTest, UseDefaultFormatInNewerECVersion)
     ASSERT_FALSE(koq->GetPersistenceUnit().HasProblem());
 
     Formatting::NamedFormatSpecCP nfs = koq->GetPersistenceUnit().GetNamedFormatSpec();
-    EXPECT_STREQ("DefaultRealU", nfs->GetName());
+    EXPECT_STREQ("DefaultReal", nfs->GetName());
     ASSERT_FALSE(nfs->IsProblem());
     ASSERT_FALSE(koq->GetPersistenceUnit().HasProblem()) << "Expect no  problems because unknown units are not exposed as problems";
-    ASSERT_STREQ("M(DefaultRealU)", koq->GetPersistenceUnit().ToText(false).c_str()) << "Should be able to write FUS with default format to string";
+    ASSERT_STREQ("M(DefaultReal)", koq->GetPersistenceUnit().ToText(false).c_str()) << "Should be able to write FUS with default format to string";
 
     // Check Presentation Formats
     KindOfQuantityCP koq2 = schema->GetKindOfQuantityCP("KoQWithPres");
@@ -745,9 +745,9 @@ TEST_F(KindOfQuantityDeserializationTest, PropertyCannotBeOverridenWithDummyUnit
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <KindOfQuantity typeName="BridgeMeasurement_Meter" persistenceUnit="M(DefaultReal)" relativeError="10e-3" />
+            <KindOfQuantity typeName="BridgeMeasurement_Meter" persistenceUnit="u:M" relativeError="10e-3" />
 
-            <KindOfQuantity typeName="BridgeMeasurement_Smoot" persistenceUnit="Smoot(DefaultReal)" relativeError="10e-3" />
+            <KindOfQuantity typeName="BridgeMeasurement_Smoot" persistenceUnit="Smoot" relativeError="10e-3" />
 
             <ECEntityClass typeName="Bridge">
                 <ECProperty propertyName="Length" typeName="double" kindOfQuantity="BridgeMeasurement_Meter"/>
@@ -772,7 +772,7 @@ TEST_F(KindOfQuantityDeserializationTest, SameDummyUnitUsedInBothPersistenceAndP
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="testSchema" version="01.00.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.3">
-            <KindOfQuantity typeName="BridgeMeasurement_Meter" persistenceUnit="Smoot(DefaultReal)" presentationUnits="Smoot(DefaultRealU)" relativeError="10e-3" />
+            <KindOfQuantity typeName="BridgeMeasurement_Meter" persistenceUnit="Smoot" presentationUnits="f:DefaultRealU[Smoot]" relativeError="10e-3" />
         </ECSchema>)xml";
 
     ECSchemaPtr schema;
@@ -787,7 +787,7 @@ TEST_F(KindOfQuantityDeserializationTest, SameDummyUnitUsedInBothPersistenceAndP
 
     EXPECT_FALSE(koq->GetPersistenceUnit().HasProblem());
     auto& presList = koq->GetPresentationUnitList();
-    EXPECT_EQ(0, presList.size()) << "The presentation unit with the dummy unit should have been dropped.";
+    EXPECT_EQ(1, presList.size()) << "The presentation unit with the dummy unit should have been dropped.";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
