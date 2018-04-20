@@ -2448,15 +2448,16 @@ public:
     bool IsDisjoint() const { return m_bits.m_disjoint; }
     bool IsPlanar() const { return m_bits.m_planar; }
     bool Is2d() const { return m_bits.m_2d; }
-    bool IsEdge() const { return kType_Normal != m_bits.m_type; }
     bool IsOutlineEdge() const { return kType_Outline == m_bits.m_type; }
+    bool IsNormalEdge() const { return kType_Edge == m_bits.m_type; }
+    bool IsAnyEdge() const { return kType_Normal != m_bits.m_type; }
 
     uint8_t GetValue() const { return m_value; }
 
     void SetIsDisjoint() { m_bits.m_disjoint = 1; }
     void SetIsPlanar() { m_bits.m_planar = 1; }
     void SetIs2d() { m_bits.m_2d = 1; }
-    void SetIsEdge() { m_bits.m_type = kType_Edge; }
+    void SetIsNormalEdge() { m_bits.m_type = kType_Edge; }
     void SetIsOutlineEdge() { m_bits.m_type = kType_Outline; }
 
     static PolylineFlags FromValue(uint8_t value) { return PolylineFlags(value); }

@@ -794,8 +794,7 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetTextureMapping().GetTexture());
 
     // Region outline produces a polyline which is considered an edge of a region surface
-    if (Type::Linear == GetType())
-        TEST_LESS_THAN(WantRegionOutline());
+    TEST_LESS_THAN(WantRegionOutline());
 
     if (ComparePurpose::Merge == purpose)
         {
@@ -837,8 +836,7 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
 
     // Region outline produces a polyline which is considered an edge of a region surface
-    if (Type::Linear == GetType())
-        TEST_EQUAL(WantRegionOutline());
+    TEST_EQUAL(WantRegionOutline());
 
     if (ComparePurpose::Merge == purpose)
         {
@@ -2642,7 +2640,7 @@ bool PolylineArgs::Init(MeshCR mesh)
         {
         // This polyline is behaving as the edges of a region surface.
         if (nullptr == displayParams.GetGradient() || displayParams.GetGradient()->GetIsOutlined())
-            m_flags.SetIsEdge();
+            m_flags.SetIsNormalEdge();
         else
             m_flags.SetIsOutlineEdge(); // edges only displayed if fill undisplayed...
         }
