@@ -94,6 +94,7 @@ struct DisplayParams : RefCountedBase
     friend struct DisplayParamsCache;
 
     enum class Type { Mesh, Linear, Text };
+    enum class RegionEdgeType { None, Default, Outline };
 private:
     Type                m_type;
     DgnCategoryId       m_categoryId;
@@ -108,7 +109,6 @@ private:
     FillFlags           m_fillFlags = FillFlags::None; // meshes only
     DgnGeometryClass    m_class = DgnGeometryClass::Primary;
     bool                m_ignoreLighting = false; // always true for text and linear geometry; true for meshes only if normals not desired
-    bool                m_hasRegionOutline = false;
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
@@ -126,8 +126,6 @@ private:
     DisplayParams(ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels px, MaterialP mat, GradientSymbCP grad, TextureMappingCP tx,
         FillFlags ff, DgnCategoryId cat, DgnSubCategoryId sub, DgnGeometryClass gc)
         { InitMesh(lineColor, fillColor, width, px, mat, grad, tx, ff, cat, sub, gc); }
-
-    bool ComputeHasRegionOutline() const;
 
     void InitGeomParams(DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
     void InitText(ColorDef lineColor, DgnCategoryId, DgnSubCategoryId, DgnGeometryClass);
@@ -156,8 +154,9 @@ public:
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
     bool IsTextured() const { return GetTextureMapping().IsValid(); }
     bool HasBlankingFill() const { return FillFlags::Blanking == (GetFillFlags() & FillFlags::Blanking); }
-    bool NeverRegionOutline() const { return HasBlankingFill() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
-    bool HasRegionOutline() const;
+
+    RegionEdgeType GetRegionEdgeType() const;
+    bool WantRegionOutline() const { return RegionEdgeType::Outline == GetRegionEdgeType(); }
 
     enum class ComparePurpose
     {

@@ -2423,6 +2423,56 @@ enum class FillFlags : uint8_t
 ENUM_IS_FLAGS(FillFlags);
 
 //=======================================================================================
+//! Describes the semantics of an indexed polyline primitive.
+// @bsistruct                                                   Paul.Connelly   04/18
+//=======================================================================================
+struct PolylineFlags
+{
+private:
+    enum { kType_Normal, kType_Edge, kType_Outline };
+
+    struct Bits
+    {
+        uint8_t m_disjoint: 1;
+        uint8_t m_planar: 1;
+        uint8_t m_2d: 1;
+        uint8_t m_type: 2;
+    };
+
+    union
+    {
+        uint8_t m_value;
+        Bits    m_bits;
+    };
+
+    explicit PolylineFlags(uint8_t value) { m_value = value; }
+public:
+    PolylineFlags() : PolylineFlags(0) { }
+    PolylineFlags(bool is2d, bool isPlanar) : PolylineFlags()
+        {
+        if (is2d)       SetIs2d();
+        if (isPlanar)   SetIsPlanar();
+        }
+
+    bool IsDisjoint() const { return m_bits.m_disjoint; }
+    bool IsPlanar() const { return m_bits.m_planar; }
+    bool Is2d() const { return m_bits.m_2d; }
+    bool IsOutlineEdge() const { return kType_Outline == m_bits.m_type; }
+    bool IsNormalEdge() const { return kType_Edge == m_bits.m_type; }
+    bool IsAnyEdge() const { return kType_Normal != m_bits.m_type; }
+
+    uint8_t GetValue() const { return m_value; }
+
+    void SetIsDisjoint() { m_bits.m_disjoint = 1; }
+    void SetIsPlanar() { m_bits.m_planar = 1; }
+    void SetIs2d() { m_bits.m_2d = 1; }
+    void SetIsNormalEdge() { m_bits.m_type = kType_Edge; }
+    void SetIsOutlineEdge() { m_bits.m_type = kType_Outline; }
+
+    static PolylineFlags FromValue(uint8_t value) { return PolylineFlags(value); }
+};
+
+//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct MeshPolyline
@@ -2479,13 +2529,11 @@ struct IndexedPolylineArgs
     QPoint3d::Params    m_pointParams;
     uint32_t            m_width = 0;
     LinePixels          m_linePixels = LinePixels::Solid;
-    bool                m_disjoint = false;
-    bool                m_is2d = false;
-    bool                m_isPlanar = false;
+    PolylineFlags       m_flags;
 
     IndexedPolylineArgs() { }
     IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams, bool is2d, bool isPlanar)
-        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams), m_is2d(is2d), m_isPlanar(isPlanar) { }
+        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams), m_flags(is2d, isPlanar) { }
 };
 
 //=======================================================================================
@@ -3114,9 +3162,9 @@ public:
 //! Overrides applied to elements take priority over those applied to subcategories.
 //! The rules for determining visibility and symbology follow a priority:
 //! Visibility:
-//!     If an element is in the "always drawn" list, it is visible.
+//!     If an element is in the "never drawn" list, it is invisible.
+//!     Else, if an element is in the "always drawn" list, it is visible.
 //!     Else, if the "always drawn" list is exclusive, it is invisible.
-//!     Else, if it is in the "never drawn" list, it is invisible.
 //!     Else, any geometry not in the "visible subcategories" list is invisible
 //!     Else, any geometry of a DgnGeometryClass marked as invisible is invisible.
 //!     Else, it is visible.
