@@ -21,6 +21,7 @@ struct RotMatrix;
 struct Transform;
 struct FaceSymbology;
 struct FaceSymbologyIndex;
+struct DRange1d;
 struct PointPrimitive;
 struct PointPrimitive2d;
 struct ArcPrimitive;
@@ -104,36 +105,6 @@ inline const char **EnumNamesBRepType() {
 }
 
 inline const char *EnumNameBRepType(BRepType e) { return EnumNamesBRepType()[e]; }
-
-enum ThematicColorScheme {
-  ThematicColorScheme_BlueRed = 0,
-  ThematicColorScheme_RedBlue = 1,
-  ThematicColorScheme_Monochrome = 2,
-  ThematicColorScheme_Topographic = 3,
-  ThematicColorScheme_SeaMountain = 4,
-  ThematicColorScheme_Custom = 5
-};
-
-inline const char **EnumNamesThematicColorScheme() {
-  static const char *names[] = { "BlueRed", "RedBlue", "Monochrome", "Topographic", "SeaMountain", "Custom", nullptr };
-  return names;
-}
-
-inline const char *EnumNameThematicColorScheme(ThematicColorScheme e) { return EnumNamesThematicColorScheme()[e]; }
-
-enum ThematicMode {
-  ThematicMode_Smooth = 0,
-  ThematicMode_Stepped = 1,
-  ThematicMode_SteppedWithDelimiter = 2,
-  ThematicMode_Isolines = 3
-};
-
-inline const char **EnumNamesThematicMode() {
-  static const char *names[] = { "Smooth", "Stepped", "SteppedWithDelimiter", "Isolines", nullptr };
-  return names;
-}
-
-inline const char *EnumNameThematicMode(ThematicMode e) { return EnumNamesThematicMode()[e]; }
 
 MANUALLY_ALIGNED_STRUCT(8) DPoint3d {
  private:
@@ -286,6 +257,20 @@ MANUALLY_ALIGNED_STRUCT(4) FaceSymbologyIndex {
   uint32_t symbIndex() const { return flatbuffers::EndianScalar(symbIndex_); }
 };
 STRUCT_END(FaceSymbologyIndex, 8);
+
+MANUALLY_ALIGNED_STRUCT(8) DRange1d {
+ private:
+  double low_;
+  double high_;
+
+ public:
+  DRange1d(double low, double high)
+    : low_(flatbuffers::EndianScalar(low)), high_(flatbuffers::EndianScalar(high)) { }
+
+  double low() const { return flatbuffers::EndianScalar(low_); }
+  double high() const { return flatbuffers::EndianScalar(high_); }
+};
+STRUCT_END(DRange1d, 16);
 
 struct PointPrimitive : private flatbuffers::Table {
   const flatbuffers::Vector<const DPoint3d *> *coords() const { return GetPointer<const flatbuffers::Vector<const DPoint3d *> *>(4); }
@@ -816,15 +801,17 @@ struct ThematicSettings : private flatbuffers::Table {
   uint32_t stepCount() const { return GetField<uint32_t>(4, 0); }
   double margin() const { return GetField<double>(6, 0); }
   uint32_t marginColor() const { return GetField<uint32_t>(8, 0); }
-  ThematicMode mode() const { return static_cast<ThematicMode>(GetField<int8_t>(10, 0)); }
-  ThematicColorScheme colorScheme() const { return static_cast<ThematicColorScheme>(GetField<int8_t>(12, 0)); }
+  uint32_t mode() const { return GetField<uint32_t>(10, 0); }
+  uint32_t colorScheme() const { return GetField<uint32_t>(12, 0); }
+  const DRange1d *range() const { return GetStruct<const DRange1d *>(14); }
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint32_t>(verifier, 4 /* stepCount */) &&
            VerifyField<double>(verifier, 6 /* margin */) &&
            VerifyField<uint32_t>(verifier, 8 /* marginColor */) &&
-           VerifyField<int8_t>(verifier, 10 /* mode */) &&
-           VerifyField<int8_t>(verifier, 12 /* colorScheme */) &&
+           VerifyField<uint32_t>(verifier, 10 /* mode */) &&
+           VerifyField<uint32_t>(verifier, 12 /* colorScheme */) &&
+           VerifyField<DRange1d>(verifier, 14 /* range */) &&
            verifier.EndTable();
   }
   bool has_stepCount() const { return CheckField(4); }
@@ -832,6 +819,7 @@ struct ThematicSettings : private flatbuffers::Table {
   bool has_marginColor() const { return CheckField(8); }
   bool has_mode() const { return CheckField(10); }
   bool has_colorScheme() const { return CheckField(12); }
+  bool has_range() const { return CheckField(14); }
 };
 
 struct ThematicSettingsBuilder {
@@ -840,12 +828,13 @@ struct ThematicSettingsBuilder {
   void add_stepCount(uint32_t stepCount) { fbb_.AddElement<uint32_t>(4, stepCount, 0); }
   void add_margin(double margin) { fbb_.AddElement<double>(6, margin, 0); }
   void add_marginColor(uint32_t marginColor) { fbb_.AddElement<uint32_t>(8, marginColor, 0); }
-  void add_mode(ThematicMode mode) { fbb_.AddElement<int8_t>(10, static_cast<int8_t>(mode), 0); }
-  void add_colorScheme(ThematicColorScheme colorScheme) { fbb_.AddElement<int8_t>(12, static_cast<int8_t>(colorScheme), 0); }
+  void add_mode(uint32_t mode) { fbb_.AddElement<uint32_t>(10, mode, 0); }
+  void add_colorScheme(uint32_t colorScheme) { fbb_.AddElement<uint32_t>(12, colorScheme, 0); }
+  void add_range(const DRange1d *range) { fbb_.AddStruct(14, range); }
   ThematicSettingsBuilder(flatbuffers::FlatBufferBuilder &_fbb) : fbb_(_fbb) { start_ = fbb_.StartTable(); }
   ThematicSettingsBuilder &operator=(const ThematicSettingsBuilder &);
   flatbuffers::Offset<ThematicSettings> Finish() {
-    auto o = flatbuffers::Offset<ThematicSettings>(fbb_.EndTable(start_, 5));
+    auto o = flatbuffers::Offset<ThematicSettings>(fbb_.EndTable(start_, 6));
     return o;
   }
 };
@@ -854,14 +843,16 @@ inline flatbuffers::Offset<ThematicSettings> CreateThematicSettings(flatbuffers:
    uint32_t stepCount = 0,
    double margin = 0,
    uint32_t marginColor = 0,
-   ThematicMode mode = ThematicMode_Smooth,
-   ThematicColorScheme colorScheme = ThematicColorScheme_BlueRed) {
+   uint32_t mode = 0,
+   uint32_t colorScheme = 0,
+   const DRange1d *range = 0) {
   ThematicSettingsBuilder builder_(_fbb);
   builder_.add_margin(margin);
-  builder_.add_marginColor(marginColor);
-  builder_.add_stepCount(stepCount);
+  builder_.add_range(range);
   builder_.add_colorScheme(colorScheme);
   builder_.add_mode(mode);
+  builder_.add_marginColor(marginColor);
+  builder_.add_stepCount(stepCount);
   return builder_.Finish();
 }
 
