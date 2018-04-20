@@ -8,7 +8,7 @@
   "roundFactor": 0.0,
   "type": "Fractional",
   "showSignOption": "OnlyNegative",
-  "formatTraits": "LeadZeroes|TrailZeroes",
+  "formatTraits": "TrailZeroes|KeepSingleZero",
   "precision": 4,
   "decSeparator": ".",
   "thousandSeparator": ",",

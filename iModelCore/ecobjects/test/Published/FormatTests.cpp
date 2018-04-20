@@ -134,7 +134,7 @@ TEST_F(FormatTest, SerializeStandaloneUnitFormat)
     numeric.SetPresentationType(PresentationType::Fractional);
     numeric.SetRoundingFactor(0.0);
     numeric.SetSignOption(SignOption::OnlyNegative);
-    numeric.SetUseLeadingZeroes(true);
+    numeric.SetKeepSingleZero(true);
     numeric.SetKeepTrailingZeroes(true);
     numeric.SetPrecision(FractionalPrecision::Quarter);
     numeric.SetDecimalSeparator('.');
@@ -532,13 +532,12 @@ TEST_F(FormatOptionalAttributesTest, VerifyValidFormatTraits)
     Utf8CP goodSchemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" version="01.00" alias="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.2">
             <ECSchemaReference name="Units" version="01.00" alias="u"/>
-            <Format typeName="AmerMYFI4" type="fractional" formatTraits="leadZeroes|trailZeroes|keepSingleZero|zeroEmpty|keepDecimalPoint|applyRounding|fractionDash|showUnitLabel|prependUnitLabel|use1000Separator|exponentOnlyNegative" precision="4"/>
+            <Format typeName="AmerMYFI4" type="fractional" formatTraits="trailZeroes|keepSingleZero|zeroEmpty|keepDecimalPoint|applyRounding|fractionDash|showUnitLabel|prependUnitLabel|use1000Separator|exponentOnlyNegative" precision="4"/>
         </ECSchema>)xml";
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     ECSchemaPtr schema;
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, goodSchemaXml, *context));
     auto nfs = schema->GetFormatCP("AmerMYFI4")->GetNumericSpec();
-    EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::LeadingZeroes));
     EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::TrailingZeroes));
     EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::KeepSingleZero));
     EXPECT_TRUE(nfs->GetTraitsBit(Formatting::FormatTraits::ZeroEmpty));
