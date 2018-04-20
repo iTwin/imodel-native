@@ -142,7 +142,7 @@ DbResult TxnManager::SaveChanges(IByteArrayCR changeBytes, Utf8CP operation, boo
 DbResult TxnManager::SaveRebase(int64_t& id, Rebase const& rebase)
     {
     if (!m_enableRebasers)
-        return BE_SQLITE_OK;
+        return BE_SQLITE_DONE;
 
     BeAssert(0 != rebase.GetSize());
 

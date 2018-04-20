@@ -643,7 +643,7 @@ public:
 
     DbFontMapDirect& DbFontMap() {return m_dbFontMap;}
     DbFaceDataDirect& DbFaceData() {return m_dbFaceData;}
-    T_FontMap const& FontMap() {return m_fontMap;}
+    T_FontMap const& FontMap() {Update(); return m_fontMap;}
     void Invalidate() {m_isFontMapLoaded = false; m_fontMap.clear();}
     DGNPLATFORM_EXPORT void Update();
     DGNPLATFORM_EXPORT DgnFontCP FindFontById(DgnFontId) const;
