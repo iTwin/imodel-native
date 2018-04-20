@@ -700,7 +700,8 @@ DwgDbDatabasePtr    IDwgDbHost::ReadFile (WStringCR filename, bool convCodepage,
 
 #elif DWGTOOLKIT_RealDwg
 
-    DwgDbDatabasePtr    dwg = new DwgDbDatabase (false, false);
+    // create database with neither default data nor association to a document:
+    DwgDbDatabasePtr    dwg = new DwgDbDatabase (false, true);
     if (dwg.IsValid())
         {
 #if VendorVersion <= 2016

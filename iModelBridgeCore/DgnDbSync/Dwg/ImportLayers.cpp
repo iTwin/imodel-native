@@ -70,7 +70,7 @@ DwgDbObjectId   ResolveEntityLayer (DwgDbObjectId layerId)
         // xref layers are saved in the master file - find the layer in the master file by name:
         WString layerName = m_importer.GetCurrentXRefHolder().GetPrefixInRootFile() + WString(L"|") + layer->GetName().c_str();
         DwgDbSymbolTablePtr masterFileLayers(m_importer.GetDwgDb().GetLayerTableId(), DwgDbOpenMode::ForRead);
-        if (masterFileLayers.IsNull() || DwgDbStatus::Success != masterFileLayers->GetByName(layerId, layerName.c_str()))
+        if (masterFileLayers.IsNull() || !(layerId = masterFileLayers->GetByName(layerName.c_str())).IsValid())
             {
             m_importer.ReportError (DwgImporter::IssueCategory::UnexpectedData(), DwgImporter::Issue::Error(), Utf8PrintfString("can't find xref layer %ls", layerName.c_str()).c_str());
             effectiveLayerId = masterDwg.GetLayer0Id ();

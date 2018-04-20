@@ -57,14 +57,14 @@ DWGDB_DEFINE_SMARTPTR_MEMBERS(TextStyleTableRecord)
 DWGDB_DEFINE_SMARTPTR_MEMBERS(RegAppTable)
 DWGDB_DEFINE_SMARTPTR_MEMBERS(RegAppTableRecord)
 
-// define method DwgDbXxxxTable::NewIterator()
-DWGDB_DEFINE_SYMBOLTABLE_NEWITERATOR(SymbolTable)
-DWGDB_DEFINE_SYMBOLTABLE_NEWITERATOR(BlockTable)
-DWGDB_DEFINE_SYMBOLTABLE_NEWITERATOR(LayerTable)
-DWGDB_DEFINE_SYMBOLTABLE_NEWITERATOR(LinetypeTable)
-DWGDB_DEFINE_SYMBOLTABLE_NEWITERATOR(ViewportTable)
-DWGDB_DEFINE_SYMBOLTABLE_NEWITERATOR(TextStyleTable)
-DWGDB_DEFINE_SYMBOLTABLE_NEWITERATOR(RegAppTable)
+// define common method for symbol tables
+DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(SymbolTable)
+DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(BlockTable)
+DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(LayerTable)
+DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(LinetypeTable)
+DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(ViewportTable)
+DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(TextStyleTable)
+DWGDB_DEFINE_SYMBOLTABLE_MEMBERS(RegAppTable)
 
 // define DwgDbXxxxTableRecord::GetName()
 DWGDB_DEFINE_SYMBOLTABLERECORD_GETNAME(SymbolTableRecord)
@@ -84,19 +84,6 @@ AcDbSymbolTableRecord::AcDbSymbolTableRecord () { BeAssert(false && "No vtable c
 Acad::ErrorStatus AcDbBlockTableRecord::assumeOwnershipOf (const AcDbObjectIdArray& entitiesToMove) { BeAssert(false && "Symbol AcDbBlockTableRecord::assumeOwnershipOf unresolved in RealDWG!"); return Acad::eNotApplicable; }
 #endif
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DwgDbStatus     DwgDbSymbolTable::GetByName (DwgDbObjectIdR outId, WStringCR name, bool getErased) const
-    {
-#ifdef DWGTOOLKIT_OpenDwg
-    outId = (OdDbStub*) (T_Super::getAt (OdString(name.c_str()), getErased));
-    return  outId.isValid() ? DwgDbStatus::Success : DwgDbStatus::UnknownError;
-#elif DWGTOOLKIT_RealDwg
-    return ToDwgDbStatus (T_Super::getAt(name.c_str(), outId, getErased));
-#endif
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16

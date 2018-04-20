@@ -3520,10 +3520,13 @@ BentleyStatus   DwgImporter::DwgXRefHolder::InitFrom (DwgDbBlockTableRecordCR xr
             // if the DWG file has been previously loaded, use it
             m_xrefDatabase = importer.FindLoadedXRef (m_resolvedPath);
 
+            DwgFileVersion  version = DwgFileVersion::Invalid;
+
             // try creating a new DwgDb for the xref, but do not allow circular referencing:
-            if (!m_xrefDatabase.IsValid() && !m_resolvedPath.EqualsI(importer.GetRootDwgFileName()))
+            if (!m_xrefDatabase.IsValid() && !m_resolvedPath.EqualsI(importer.GetRootDwgFileName()) && DwgHelper::SniffDwgFile (m_resolvedPath, &version))
                 {
-                importer.SetStepName (DwgImporter::ProgressMessage::STEP_OPENINGFILE(), m_resolvedPath.c_str());
+                Utf8String  verstr = DwgHelper::GetStringFromDwgVersion (version);
+                importer.SetStepName (DwgImporter::ProgressMessage::STEP_OPENINGFILE(), m_resolvedPath.c_str(), verstr.c_str());
                 m_xrefDatabase = host.ReadFile (m_resolvedPath, false, false, FileShareMode::DenyNo);
                 }
             }
