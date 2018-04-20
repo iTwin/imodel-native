@@ -264,7 +264,10 @@ void BisJson1ImporterImpl::GenerateThumbnails()
         BeDuration timeout = BeDuration::FromSeconds(30);
         Point2d size = {resolution, resolution};
 
-        view->RenderAndSaveThumbnail(size, nullptr, timeout);
+        if (DbResult::BE_SQLITE_OK != view->RenderAndSaveThumbnail(size, nullptr, timeout))
+            {
+            GetLogger().warningv("Failed to create a thumbnail for view %s.", view->GetName().c_str());
+            }
         }
     }
 
