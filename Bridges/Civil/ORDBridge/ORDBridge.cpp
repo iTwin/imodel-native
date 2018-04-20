@@ -133,7 +133,7 @@ SubjectCPtr ORDBridge::_InitializeJob()
         RoadRailBim::RoadRailPhysicalDomain::GetDomain().SetUpModelHierarchy(subjectCR);
 
         // IMODELBRIDGE REQUIREMENT: Relate this model to the source document
-        auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(subjectCR);
+        auto physicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(subjectCR);
         InsertElementHasLinksRelationship(GetDgnDbR(), physicalModelPtr->GetModeledElementId(), m_converter->GetRepositoryLinkFromAppData(*m_converter->GetRootV8File()));
 
         auto alignmentModelPtr = RoadRailAlignment::AlignmentModel::Query(subjectCR);

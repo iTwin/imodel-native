@@ -623,7 +623,7 @@ public:
 ORDCorridorsConverter::ORDCorridorsConverter(DgnDbSync::DgnV8::Converter& converter, TransformCR unitsScaleTransform):
     m_converter(converter), m_unitsScaleTransform(unitsScaleTransform)
     {
-    m_bimPhysicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(m_converter.GetJobSubject());
+    m_bimPhysicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(m_converter.GetJobSubject());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1175,7 +1175,7 @@ void ORDConverter::CreateRoadRailElements()
     auto alignmentModelPtr = AlignmentBim::AlignmentModel::Query(GetJobSubject());
     auto horizontalAlignmentModelId = AlignmentBim::HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr);
     auto horizAlignmentModelCPtr = AlignmentBim::HorizontalAlignmentModel::Get(GetDgnDb(), horizontalAlignmentModelId);
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(GetJobSubject());
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(GetJobSubject());
 
     updateProjectExtents(*horizAlignmentModelCPtr, *m_ordParams, false);
     updateProjectExtents(*physicalModelPtr, *m_ordParams, true);
@@ -1255,9 +1255,9 @@ static void setUpModelFormatter(Dgn::GeometricModelR geometricModel, DgnV8Api::M
 * @bsimethod                                    Diego.Diaz                      02/2018
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ORDConverter::SetUpModelFormatters(Dgn::SubjectCR jobSubject)
-    {
-    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalDomain::QueryPhysicalModel(jobSubject);
+    {    
     auto alignmentModelPtr = RoadRailAlignment::AlignmentModel::Query(jobSubject);
+    auto physicalModelPtr = RoadRailBim::RoadRailPhysicalModel::Query(jobSubject);
 
     DgnV8Api::ModelInfo const& v8ModelInfo = _GetModelInfo(*GetRootModelP());
 

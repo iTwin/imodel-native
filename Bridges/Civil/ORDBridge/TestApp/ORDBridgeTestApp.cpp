@@ -28,11 +28,6 @@ static int runBridge(int argc, WCharCP argv[])
 
     iModelBridgeSacAdapter::InitializeHost(*iModelBridgeP);
 
-    // Testing affinity interface
-    WChar buffer[_MAX_PATH];
-    iModelBridgeAffinityLevel affinityLevel;    
-    iModelBridge_getAffinity(buffer, _MAX_PATH, affinityLevel, BeFileName(argv[0]).GetDirectoryName(), iModelBridgeP->_GetParams().GetInputFileName());
-
     if (BSISUCCESS != iModelBridgeP->_Initialize(argc, argv))
         {
         fprintf(stderr, "_Initialize failed\n");
@@ -40,6 +35,11 @@ static int runBridge(int argc, WCharCP argv[])
         }
 
     saparams.Initialize();
+
+    // Testing affinity interface
+    WChar buffer[_MAX_PATH];
+    iModelBridgeAffinityLevel affinityLevel;
+    iModelBridge_getAffinity(buffer, _MAX_PATH, affinityLevel, BeFileName(argv[0]).GetDirectoryName(), iModelBridgeP->_GetParams().GetInputFileName());
 
     if (affinityLevel == iModelBridgeAffinityLevel::None)
         {
