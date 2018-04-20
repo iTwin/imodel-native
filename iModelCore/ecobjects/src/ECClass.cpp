@@ -1893,7 +1893,15 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                     ECStructClassCP structClass;
                     ECObjectsStatus status = ResolveStructType(structClass, typeName, *this, false);
                     if (ECObjectsStatus::Success == status && NULL != structClass)
-                        isStruct = true;  
+                        {
+                        if (structClass == this)
+                            {
+                            LOG.warningv("Invalid ECSchemaXML: The StructECClass '%s' contains an array element whose type is the struct itself. This is no longer permitted and the property is being dropped.",
+                                       GetName().c_str());
+                            continue;
+                            }
+                        isStruct = true;
+                        }
                     }
                 if (isStruct)
                     ecProperty = new StructArrayECProperty(*this);
