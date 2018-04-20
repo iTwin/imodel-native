@@ -359,11 +359,24 @@ CompositeValue CompositeValueSpec::DecomposeValue(double dval, BEU::UnitCP uom) 
 //--------------------------------------------------------------------------------------
 bool CompositeValueSpec::IsIdentical(CompositeValueSpecCR other) const
     {
-    // TODO compare UnitProxies
+    auto compareProxies = [&]() -> bool
+        {
+        if (m_proxys.size() != other.m_proxys.size())
+            return false;
+        int i = 0;
+        for (auto const& p : m_proxys)
+            {
+            if (!p.IsIdentical(other.m_proxys[i]))
+                return false;
+            i++;
+            }
+        return true;
+        };
     return m_problem.GetProblemCode() == other.m_problem.GetProblemCode()
         && GetUnitCount() == other.GetUnitCount()
         && m_includeZero == other.m_includeZero
-        && m_spacer.Equals(other.m_spacer);
+        && m_spacer.Equals(other.m_spacer)
+        && compareProxies();
     }
 
 //--------------------------------------------------------------------------------------

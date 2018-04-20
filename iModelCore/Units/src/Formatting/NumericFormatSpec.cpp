@@ -188,6 +188,8 @@ bool NumericFormatSpec::IsIdentical(NumericFormatSpecCR other) const
     if (m_thousandsSeparator != other.m_thousandsSeparator) return false;
     if (!m_uomSeparator.Equals(other.m_uomSeparator)) return false;
     if (m_statSeparator != other.m_statSeparator) return false;
+    if (m_stationSize != other.m_stationSize) return false;
+    if (m_scientificType != other.m_scientificType) return false;
     if (m_minWidth != other.m_minWidth) return false;
 
     return true;

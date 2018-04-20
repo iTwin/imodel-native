@@ -67,10 +67,14 @@ struct FormattingTestUtils
 //=======================================================================================
 struct FormattingTestFixture : ::testing::Test
 {
+private:
+    static bmap<Utf8String, Format> s_stdFormats;
+    static void CreateStdFormats();
     // A UnitRegistry instance to use for all testing that does not require adding any additional Units.
     // If you need to add additional Units get a new copy of the UnitRegistry.
+public:
     static BEU::UnitRegistry* s_unitsContext;
-
+    bmap<Utf8String, Format> GetStdFormats() {return s_stdFormats;}
     virtual void SetUp() override;
     virtual void TearDown() override;
 };
