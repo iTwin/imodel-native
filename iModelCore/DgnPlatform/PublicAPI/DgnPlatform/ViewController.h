@@ -597,6 +597,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddModelLights(Render::SceneLightsR, Render::TargetR) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
     BentleyStatus CreateThumbnailScene(SceneContextR context);
+    DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
