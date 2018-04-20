@@ -288,7 +288,7 @@
     </Part>
 
     <Product Name="SchemaRoundtripValidation" SaveProduct="true" PrgOutputDir="SchemaRoundtripValidation">
-        <Directories DirectoryListName="AllBisSchemas-Directories"/>
+        <Directories DirectoryListName="AllBisSchemas-Directories" PartFile="BisSchemas" Repository="BisSchemas"/>
         <Directories DirectoryListName="SchemaComparison"/>
         <Directories DirectoryListName="SchemaRoundtrip"/>
         <Directories DirectoryListName="ECObjects"/>
