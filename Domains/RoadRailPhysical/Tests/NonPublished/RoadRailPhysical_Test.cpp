@@ -40,9 +40,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
 #pragma endregion
 
 #pragma region Create Road Elements
-    DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
-        DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
-    auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);
+    auto physicalModelPtr = RoadRailPhysicalModel::Query(*projectPtr->Elements().GetRootSubject());
 
     // Create Roadway
     auto roadwayPtr = Roadway::Create(*physicalModelPtr);

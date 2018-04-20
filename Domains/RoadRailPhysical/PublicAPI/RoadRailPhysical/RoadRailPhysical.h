@@ -49,6 +49,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Models
 #define BRRP_CLASS_RailwayStandardsModel                            "RailwayStandardsModel"
+#define BRRP_CLASS_RoadRailPhysicalModel                            "RoadRailPhysicalModel"
 #define BRRP_CLASS_RoadwayStandardsModel                            "RoadwayStandardsModel"
 
 
@@ -156,6 +157,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Road & Rail shared
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayPortionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailPhysicalModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(SignificantPointDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelPortionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(TravelSeparationPortionElement)
