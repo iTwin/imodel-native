@@ -754,8 +754,8 @@ size_t NumericFormatSpec::FormatDouble(double dval, Utf8P buf, size_t bufLen) co
             char expBuf[32];
             int expLen = FormatSimple ((int)expInt, expBuf, sizeof(expBuf), true, (IsExponentZero() ? true : false));
             locBuf[ind++] = 'e';
-            if (IsExponentZero())
-                locBuf[ind++] = '0';
+            //if (IsExponentZero())
+            //    locBuf[ind++] = '0';
             memcpy(&locBuf[ind], expBuf, expLen);
             ind += expLen;
             }

@@ -1082,24 +1082,24 @@ TEST_F(FormattingTestFixture, LargeNumbers)
     NumericFormatSpec spec = NumericFormatSpec(NumericFormatSpec::DefaultFormat());
     spec.SetPrecision(DecimalPrecision::Precision4);
     //TODO Go through and check these and fill in the expects
-    EXPECT_STREQ("", spec.Format(1.0).c_str());
-    EXPECT_STREQ("", spec.Format(1000.0).c_str());
-    EXPECT_STREQ("", spec.Format(1234567.0).c_str());
-    EXPECT_STREQ("", spec.Format(1234567891.0).c_str());
-    EXPECT_STREQ("", spec.Format(1234567891.0e+3).c_str());
-    EXPECT_STREQ("", spec.Format(1234567891.0e+6).c_str());
-    EXPECT_STREQ("", spec.Format(1234567891.0e+9).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+15).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+18).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+21).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+22).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+23).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+24).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+25).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+26).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+29).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+31).c_str());
-    EXPECT_STREQ("", spec.Format(-3.0479999999999998e+35).c_str());
+    EXPECT_STREQ("1.0", spec.Format(1.0).c_str());
+    EXPECT_STREQ("1000.0", spec.Format(1000.0).c_str());
+    EXPECT_STREQ("1234567.0", spec.Format(1234567.0).c_str());
+    EXPECT_STREQ("1234567891.0", spec.Format(1234567891.0).c_str());
+    EXPECT_STREQ("1.2346e+12", spec.Format(1234567891.0e+3).c_str());
+    EXPECT_STREQ("1.2346e+15", spec.Format(1234567891.0e+6).c_str());
+    EXPECT_STREQ("1.2346e+18", spec.Format(1234567891.0e+9).c_str());
+    EXPECT_STREQ("-3.048e+15", spec.Format(-3.0479999999999998e+15).c_str());
+    EXPECT_STREQ("-3.048e+18", spec.Format(-3.0479999999999998e+18).c_str());
+    EXPECT_STREQ("-3.048e+21", spec.Format(-3.0479999999999998e+21).c_str());
+    EXPECT_STREQ("-3.048e+22", spec.Format(-3.0479999999999998e+22).c_str());
+    EXPECT_STREQ("-3.048e+23", spec.Format(-3.0479999999999998e+23).c_str());
+    EXPECT_STREQ("-3.048e+24", spec.Format(-3.0479999999999998e+24).c_str());
+    EXPECT_STREQ("-3.048e+25", spec.Format(-3.0479999999999998e+25).c_str());
+    EXPECT_STREQ("-3.048e+26", spec.Format(-3.0479999999999998e+26).c_str());
+    EXPECT_STREQ("-3.048e+29", spec.Format(-3.0479999999999998e+29).c_str());
+    EXPECT_STREQ("-3.048e+31", spec.Format(-3.0479999999999998e+31).c_str());
+    EXPECT_STREQ("-3.048e+35", spec.Format(-3.0479999999999998e+35).c_str());
     }
 
 

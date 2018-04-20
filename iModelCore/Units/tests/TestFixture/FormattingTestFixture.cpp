@@ -27,7 +27,7 @@ bmap<Utf8String, Format> FormattingTestFixture::s_stdFormats = bmap<Utf8String, 
 
 void FormattingTestFixture::CreateStdFormats()
     {
-    NumericFormatSpec spec;
+    NumericFormatSpec spec = NumericFormatSpec(NumericFormatSpec::DefaultFormat());
     Format defaultRealU = Format(spec);
     s_stdFormats["DefaultRealU"] = defaultRealU;
 
