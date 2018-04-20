@@ -98,6 +98,10 @@ public:
     //! @remarks   Overwrites converter if key already exists. 
     ECOBJECTS_EXPORT ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter);
 
+    //! Removes the IECCustomAttributeConverterP associated with the given customAttributeQualifiedName, if it exists
+    //! @param[in] customAttributeQualifiedName Key used to retrieve converter
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveConverter(Utf8StringCR customAttributeQualifiedName);
+
     //! Adds the name of a schema to remove at the end of schema conversion.
     //! @param[in] schemaName   The name of the schema to remove.  Name only, do not include version.
     void AddSchemaReferenceToRemove(Utf8CP schemaName) { m_schemaReferencesToRemove.push_back(schemaName); };
@@ -153,6 +157,8 @@ public:
     //! @remarks   Overwrites converter if key already exists. 
     static ECObjectsStatus AddConverter(Utf8StringCR customAttributeQualifiedName, IECCustomAttributeConverterPtr& converter)
         { return GetSingleton()->AddConverter(customAttributeQualifiedName, converter); }
+
+    static ECObjectsStatus RemoveConverter(Utf8StringCR customAttributeQualifiedName) { return GetSingleton()->RemoveConverter(customAttributeQualifiedName); }
 
     //! Adds the name of a schema to remove at the end of schema conversion.
     //! @param[in] schemaName   The name of the schema to remove.  Name only, do not include version.

@@ -303,6 +303,7 @@ CustomECSchemaConverterP ECSchemaConverter::GetSingleton()
         ECSchemaConverterSingleton->AddConverter(BECA_SCHEMANAME, HIDE_PROPERTY, hideProp);
         IECCustomAttributeConverterPtr displayOpt = new DisplayOptionsConverter();
         ECSchemaConverterSingleton->AddConverter(BSCA_SCHEMANAME, DISPLAY_OPTIONS, displayOpt);
+
         }
 
     return ECSchemaConverterSingleton;
@@ -323,6 +324,17 @@ ECObjectsStatus CustomECSchemaConverter::AddConverter(Utf8StringCR schemaName, U
 ECObjectsStatus CustomECSchemaConverter::AddConverter(Utf8StringCR customAttributeKey, IECCustomAttributeConverterPtr& converter)
     {
     m_converterMap[customAttributeKey] = converter;
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            04/2018
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus CustomECSchemaConverter::RemoveConverter(Utf8StringCR customAttributeQualifiedName)
+    {
+    auto it = m_converterMap.find(customAttributeQualifiedName);
+    if (it != m_converterMap.end())
+        m_converterMap.erase(it);
     return ECObjectsStatus::Success;
     }
 
