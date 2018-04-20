@@ -2,7 +2,7 @@
 |
 |     $Source: src/native/log4cxx/log4cxx.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -563,7 +563,12 @@ unsigned int  valueSize
         {
         std::vector<std::wstring> fileNames;
 
-        if ( SUCCESS != GetLogfileNames(fileNames) && fileNames.begin() != fileNames.end() )
+        if ( SUCCESS != GetLogfileNames(fileNames) )
+            {
+            return ERROR;
+            }
+
+        if ( fileNames.empty() )
             {
             return ERROR;
             }

@@ -69,10 +69,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cinterface.cpp" />
+    <ClCompile Include="CustomAppenders\androidlogprintappender.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="log4cxx.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CustomAppenders\androidlogprintappender.h" />
     <ClInclude Include="log4cxx.h" />
   </ItemGroup>
   <ItemGroup>
